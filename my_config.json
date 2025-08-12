@@ -1,0 +1,621 @@
+{
+  "metadata": {
+    "_comment": "Project metadata and version information",
+    "config_version": "5.1",
+    "description": "Configuration for Homodyne Scattering Analysis - XPCS under Nonequilibrium Laminar Flow",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
+    "created_date": "2025-08-12",
+    "updated_date": "2025-08-12",
+    "authors": [
+      "Wei Chen",
+      "Hongrui He"
+    ],
+    "institution": "Argonne National Laboratory & University of Chicago",
+    "experiment_name": "Creep",
+    "sample_description": "SiOx-Cys colloidal suspension",
+    "script_compatibility": "homodyne.py"
+  },
+  "experimental_data": {
+    "_comment": "Data source and loading configuration",
+    "description": "Data source and loading configuration",
+    "data_folder_path": "./data/C020/",
+    "_data_folder_path_note": "Path to directory containing experimental data files",
+    "data_file_name": "C020_Cys0_Exp2_Creep_XPCS_20Pa_01_att02_Lq2_001_0001-8000_Twotime.hdf",
+    "_data_file_name_note": "Main experimental data file (HDF5 format recommended)",
+    "phi_angles_path": "./data/phi_angles/",
+    "_phi_angles_path_note": "Directory containing scattering angle information",
+    "phi_angles_file": "phi_list.txt",
+    "_phi_angles_file_note": "File containing phi angles (one angle per line)",
+    "exchange_key": "exchange",
+    "_exchange_key_note": "HDF5 dataset key for correlation data",
+    "cache_file_path": "./data/C020/",
+    "_cache_file_path_note": "Directory for cached processed data",
+    "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
+    "_cache_filename_template_note": "Template for cache filenames with frame range",
+    "cache_compression": true,
+    "_cache_compression_note": "Enable compression for cache files (saves disk space)",
+    "data_type": "float64",
+    "_data_type_note": "Data precision: float32 (faster) or float64 (more precise)",
+    "file_format": "HDF5",
+    "_file_format_note": "Supported formats: HDF5, NPZ",
+    "preprocessing": {
+      "_comment": "Data preprocessing options",
+      "apply_diagonal_correction": true,
+      "_apply_diagonal_correction_note": "Remove diagonal artifacts from correlation matrices",
+      "vectorized_correction": true,
+      "_vectorized_correction_note": "Use vectorized operations for speed",
+      "cache_processed_data": true,
+      "_cache_processed_data_note": "Save processed data to avoid recomputation",
+      "normalize_data": true,
+      "_normalize_data_note": "Apply data normalization",
+      "normalization_method": "baseline",
+      "_normalization_method_note": "Options: baseline, zscore, minmax"
+    }
+  },
+  "analyzer_parameters": {
+    "_comment": "Core analysis parameters and experimental geometry",
+    "description": "Core analysis parameters and experimental geometry",
+    "temporal": {
+      "_comment": "Time-related parameters",
+      "dt": 0.1,
+      "_dt_note": "Time step between correlation frames (adjust based on your acquisition)",
+      "dt_unit": "seconds",
+      "start_frame": 1001,
+      "_start_frame_note": "First frame to analyze (skip initial equilibration)",
+      "end_frame": 2000,
+      "_end_frame_note": "Last frame to analyze (or null for all frames)",
+      "frame_description": "Analysis window within experimental data"
+    },
+    "scattering": {
+      "_comment": "Scattering geometry parameters",
+      "wavevector_q": 0.0054,
+      "_wavevector_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
+      "q_description": "Scattering wavevector magnitude (q = 4π sin(θ/2)/λ)",
+      "typical_range": [
+        0.001,
+        0.1
+      ],
+      "_typical_range_note": "Typical q-range for XPCS experiments"
+    },
+    "geometry": {
+      "_comment": "Sample geometry parameters",
+      "stator_rotor_gap": 2000000,
+      "_stator_rotor_gap_note": "Gap between stator and rotor in Angstroms",
+      "gap_unit": "Å",
+      "gap_description": "Shear cell gap between stator and rotor",
+      "gap_in_microns": 200,
+      "_gap_in_microns_note": "Same gap in microns for reference"
+    },
+    "computational": {
+      "_comment": "Performance and resource settings",
+      "num_threads": 8,
+      "_num_threads_note": "Number of CPU threads to use (or 'auto' for automatic)",
+      "auto_detect_cores": true,
+      "_auto_detect_cores_note": "Automatically detect available CPU cores",
+      "max_threads_limit": 16,
+      "_max_threads_limit_note": "Maximum number of threads even with auto-detection",
+      "memory_limit_gb": 8,
+      "_memory_limit_gb_note": "Memory limit in GB (adjust based on available RAM)"
+    }
+  },
+  "initial_parameters": {
+    "_comment": "Starting values for optimization - CRITICAL: Adjust these for your system",
+    "description": "Starting values for optimization based on physical model",
+    "values": [
+      23312.0,
+      -0.8,
+      1070.0,
+      0.0006,
+      -0.4,
+      -0.00005,
+      1.0
+    ],
+    "_values_note": "Order: [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ],
+    "units": [
+      "Å²/s",
+      "dimensionless",
+      "Å²/s",
+      "s⁻¹",
+      "dimensionless",
+      "s⁻¹",
+      "degrees"
+    ],
+    "physical_meaning": {
+      "D0": "Reference diffusion coefficient",
+      "alpha": "Power-law exponent for D(t) evolution (0=constant, <0=subdiffusion)",
+      "D_offset": "Baseline diffusion coefficient",
+      "gamma_dot_t0": "Reference shear rate",
+      "beta": "Power-law exponent for γ̇(t) evolution (0=steady flow)",
+      "gamma_dot_t_offset": "Baseline shear rate",
+      "phi0": "Angular offset between flow direction and scattering vector"
+    },
+    "model_equations": {
+      "_comment": "Mathematical model equations",
+      "diffusion": "D(t) = D₀(t/t₀)^α + D_offset",
+      "shear_rate": "γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset",
+      "correlation": "c₂ = 1 + β[exp(-q²∫D(t)dt)] × sinc²[(qh/2π)∫γ̇(t)cos(φ)dt]"
+    },
+    "parameter_estimation_tips": {
+      "_comment": "Guidelines for estimating initial parameters",
+      "D0": "Estimate from single-particle diffusion measurements or literature values",
+      "alpha": "Start with 0 (constant diffusion) and adjust based on system behavior",
+      "D_offset": "Small positive value, often order of magnitude smaller than D0",
+      "gamma_dot_t0": "Estimate from rheology measurements or applied shear conditions",
+      "beta": "Start with 0 (steady flow) for constant shear rate systems",
+      "gamma_dot_t_offset": "Often small or zero for controlled shear experiments",
+      "phi0": "Start near 0, represents alignment between flow and scattering geometry"
+    }
+  },
+  "optimization_config": {
+    "_comment": "Configuration for optimization methods",
+    "description": "Configuration for optimization methods",
+    "angle_filtering": {
+      "_comment": "Angle filtering settings for optimization",
+      "enabled": true,
+      "_enabled_note": "Enable angle filtering to focus optimization on specific angular ranges",
+      "target_ranges": [
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0,
+          "_note": "First angular range for optimization (around 0 degrees)"
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0,
+          "_note": "Second angular range for optimization (around 180 degrees)"
+        }
+      ],
+      "_target_ranges_note": "Angular ranges in degrees where optimization focuses",
+      "fallback_to_all_angles": true,
+      "_fallback_to_all_angles_note": "Use all angles if no angles found in target ranges",
+      "performance_impact": {
+        "_comment": "Expected performance improvements",
+        "typical_data_reduction": "80-90% fewer data points",
+        "expected_speedup": "3-5x faster optimization",
+        "memory_savings": "Significant reduction in memory usage"
+      }
+    },
+    "classical_optimization": {
+      "_comment": "Traditional optimization algorithms",
+      "methods": [
+        "Nelder-Mead"
+      ],
+      "_methods_note": "Available: Nelder-Mead, Powell, BFGS, L-BFGS-B",
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": 3000,
+          "_maxiter_note": "Maximum iterations (increase for complex systems)",
+          "xatol": 1e-10,
+          "_xatol_note": "Absolute error in parameters",
+          "fatol": 1e-10,
+          "_fatol_note": "Absolute error in function value",
+          "adaptive": true,
+          "_adaptive_note": "Use adaptive algorithm variant"
+        },
+        "Powell": {
+          "maxiter": 10000,
+          "xtol": 1e-08,
+          "ftol": 1e-08,
+          "direc": null
+        },
+        "BFGS": {
+          "maxiter": 5000,
+          "gtol": 1e-06,
+          "norm": "inf",
+          "eps": 1.4901161193847656e-08
+        },
+        "L-BFGS-B": {
+          "maxiter": 5000,
+          "ftol": 1e-10,
+          "gtol": 1e-08,
+          "eps": 1e-08
+        }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "How to choose best result: best_chi_squared, consensus, first_success"
+    },
+    "bayesian_optimization": {
+      "_comment": "Bayesian optimization with Gaussian Processes",
+      "enabled": true,
+      "_enabled_note": "Enable Bayesian optimization (requires scikit-optimize)",
+      "n_calls": 500,
+      "_n_calls_note": "Number of optimization steps (more = better but slower)",
+      "n_initial_points": 20,
+      "_n_initial_points_note": "Random exploration points before optimization",
+      "n_jobs": -1,
+      "_n_jobs_note": "Parallel jobs (-1 = all cores, 1 = single core)",
+      "acquisition_function": "gp_hedge",
+      "_acquisition_function_note": "Options: gp_hedge, EI, PI, LCB",
+      "acq_optimizer": "auto",
+      "_acq_optimizer_note": "Acquisition function optimizer: auto, sampling, lbfgs",
+      "random_state": 42,
+      "_random_state_note": "Random seed for reproducible results"
+    },
+    "mcmc_sampling": {
+      "_comment": "Markov Chain Monte Carlo sampling",
+      "enabled": true,
+      "_enabled_note": "Enable MCMC sampling (requires PyMC)",
+      "sampler": "NUTS",
+      "_sampler_note": "Sampling algorithm: NUTS (recommended), Metropolis, HamiltonianMC",
+      "draws": 10000,
+      "_draws_note": "Number of MCMC samples to draw",
+      "tune": 1000,
+      "_tune_note": "Number of tuning steps before sampling",
+      "chains": 4,
+      "_chains_note": "Number of parallel MCMC chains",
+      "cores": 4,
+      "_cores_note": "CPU cores for parallel sampling",
+      "target_accept": 0.8,
+      "_target_accept_note": "Target acceptance rate for NUTS sampler",
+      "max_treedepth": 10,
+      "_max_treedepth_note": "Maximum tree depth for NUTS",
+      "return_inferencedata": true,
+      "_return_inferencedata_note": "Return ArviZ InferenceData object"
+    }
+  },
+  "parameter_space": {
+    "_comment": "Parameter bounds and priors for optimization",
+    "description": "Parameter bounds and prior distributions",
+    "bounds": [
+      {
+        "name": "D0",
+        "min": 0.001,
+        "_min_note": "Lower bound - adjust based on expected diffusion rates",
+        "max": 1000000.0,
+        "_max_note": "Upper bound - should encompass reasonable values",
+        "type": "log-uniform",
+        "_type_note": "Distribution type: uniform, log-uniform, normal",
+        "prior_mu": 4.6,
+        "_prior_mu_note": "Prior mean (log scale for log-uniform)",
+        "prior_sigma": 0.5,
+        "_prior_sigma_note": "Prior standard deviation",
+        "unit": "Å²/s",
+        "physical_constraint": "positive",
+        "_physical_constraint_note": "Physical constraints: positive, negative, none"
+      },
+      {
+        "name": "alpha",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.5,
+        "unit": "dimensionless",
+        "physical_constraint": "none"
+      },
+      {
+        "name": "D_offset",
+        "min": -5000,
+        "max": 5000,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 500.0,
+        "unit": "Å²/s",
+        "physical_constraint": "none"
+      },
+      {
+        "name": "gamma_dot_t0",
+        "min": 1e-06,
+        "max": 1.0,
+        "type": "log-uniform",
+        "prior_mu": -4.60517,
+        "prior_sigma": 0.5,
+        "unit": "s⁻¹",
+        "physical_constraint": "positive"
+      },
+      {
+        "name": "beta",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.5,
+        "unit": "dimensionless",
+        "physical_constraint": "none"
+      },
+      {
+        "name": "gamma_dot_t_offset",
+        "min": -0.1,
+        "max": 0.1,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.05,
+        "unit": "s⁻¹",
+        "physical_constraint": "none"
+      },
+      {
+        "name": "phi0",
+        "min": -15.0,
+        "max": 15.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 15.0,
+        "unit": "degrees",
+        "physical_constraint": "angular"
+      }
+    ]
+  },
+  "advanced_settings": {
+    "_comment": "Advanced configuration options",
+    "description": "Advanced analysis and computational settings",
+    "data_loading": {
+      "_comment": "Data loading and preprocessing parameters",
+      "use_diagonal_correction": true,
+      "_use_diagonal_correction_note": "Apply diagonal correction to correlation matrices",
+      "vectorized_diagonal_fix": true,
+      "_vectorized_diagonal_fix_note": "Use vectorized operations for diagonal correction"
+    },
+    "chi_squared_calculation": {
+      "_comment": "Chi-squared calculation parameters",
+      "method": "standard",
+      "_method_note": "Options: standard, weighted, robust",
+      "scaling_optimization": true,
+      "_scaling_optimization_note": "Optimize parameter scaling for numerical stability",
+      "uncertainty_estimation_factor": 0.1,
+      "_uncertainty_estimation_factor_note": "Factor for estimating measurement uncertainties",
+      "minimum_sigma": 1e-10,
+      "_minimum_sigma_note": "Minimum uncertainty to prevent division by zero",
+      "validity_check": {
+        "_comment": "Parameter validation settings",
+        "check_positive_D0": true,
+        "_check_positive_D0_note": "Validate that D0 parameter is positive",
+        "check_positive_gamma_dot_t0": true,
+        "_check_positive_gamma_dot_t0_note": "Validate that gamma_dot_t0 parameter is positive",
+        "check_positive_time_dependent": true,
+        "_check_positive_time_dependent_note": "Validate time-dependent parameters",
+        "check_parameter_bounds": true,
+        "_check_parameter_bounds_note": "Validate parameters are within specified bounds"
+      }
+    },
+    "numerical_integration": {
+      "_comment": "Numerical integration settings",
+      "method": "simpson",
+      "_method_note": "Integration method: simpson, trapezoid, romberg",
+      "relative_tolerance": 1e-08,
+      "_relative_tolerance_note": "Relative tolerance for integration",
+      "absolute_tolerance": 1e-12,
+      "_absolute_tolerance_note": "Absolute tolerance for integration"
+    },
+    "optimization_controls": {
+      "_comment": "Optimization control parameters",
+      "convergence_tolerance": 1e-08,
+      "_convergence_tolerance_note": "Convergence criterion for optimization",
+      "max_function_evaluations": 10000,
+      "_max_function_evaluations_note": "Maximum function evaluations per optimization",
+      "parameter_scaling": "auto",
+      "_parameter_scaling_note": "Parameter scaling: auto, manual, none",
+      "finite_difference_step": 1e-08,
+      "_finite_difference_step_note": "Step size for numerical gradients"
+    }
+  },
+  "performance_settings": {
+    "_comment": "Performance and resource management",
+    "description": "Performance optimization settings",
+    "caching": {
+      "_comment": "Data caching configuration",
+      "enable_memory_cache": true,
+      "_enable_memory_cache_note": "Cache frequently used data in memory",
+      "enable_disk_cache": true,
+      "_enable_disk_cache_note": "Cache processed data to disk",
+      "cache_size_limit_mb": 1000,
+      "_cache_size_limit_mb_note": "Maximum memory cache size in MB",
+      "auto_cleanup": true,
+      "_auto_cleanup_note": "Automatically clean old cache files"
+    },
+    "parallel_processing": {
+      "_comment": "Parallel processing settings",
+      "enable_multiprocessing": true,
+      "_enable_multiprocessing_note": "Use multiple CPU cores",
+      "chunk_size": "auto",
+      "_chunk_size_note": "Data chunk size for parallel processing",
+      "backend": "threading",
+      "_backend_note": "Parallel backend: threading, multiprocessing, joblib"
+    },
+    "memory_management": {
+      "_comment": "Memory usage optimization",
+      "low_memory_mode": false,
+      "_low_memory_mode_note": "Reduce memory usage at cost of speed",
+      "garbage_collection_frequency": 10,
+      "_garbage_collection_frequency_note": "How often to run garbage collection",
+      "memory_monitoring": false,
+      "_memory_monitoring_note": "Monitor memory usage during analysis"
+    },
+    "numba_optimization": {
+      "_comment": "Numba JIT compilation settings",
+      "enable_numba": true,
+      "_enable_numba_note": "Use Numba JIT compilation for speed",
+      "warmup_numba": true,
+      "_warmup_numba_note": "Pre-compile Numba functions on startup",
+      "parallel_numba": true,
+      "_parallel_numba_note": "Enable Numba parallel processing",
+      "cache_numba": true,
+      "_cache_numba_note": "Cache compiled Numba functions"
+    }
+  },
+  "validation_rules": {
+    "_comment": "Data validation and quality control",
+    "description": "Validation rules and quality checks",
+    "data_quality": {
+      "_comment": "Data quality validation",
+      "check_data_range": true,
+      "_check_data_range_note": "Validate data is within expected range",
+      "correlation_minimum": 0.0,
+      "_correlation_minimum_note": "Minimum allowed correlation value",
+      "correlation_maximum": 10.0,
+      "_correlation_maximum_note": "Maximum allowed correlation value",
+      "check_nan_values": true,
+      "_check_nan_values_note": "Check for NaN values in data",
+      "nan_handling": "raise",
+      "_nan_handling_note": "How to handle NaN: raise, skip, interpolate"
+    },
+    "parameter_validation": {
+      "_comment": "Parameter validation rules",
+      "check_bounds": true,
+      "_check_bounds_note": "Enforce parameter bounds during optimization",
+      "physics_constraints": true,
+      "_physics_constraints_note": "Apply physical constraint checks",
+      "correlation_checks": true,
+      "_correlation_checks_note": "Check for highly correlated parameters"
+    },
+    "fit_quality": {
+      "_comment": "Chi-squared fit quality validation",
+      "overall_chi_squared": {
+        "acceptable_threshold": 10.0,
+        "_acceptable_threshold_note": "Overall reduced chi-squared should be below this value for good fit",
+        "warning_threshold": 20.0,
+        "_warning_threshold_note": "Issue warning if overall chi-squared exceeds this",
+        "critical_threshold": 50.0,
+        "_critical_threshold_note": "Flag as critical if chi-squared exceeds this value"
+      },
+      "per_angle_chi_squared": {
+        "acceptable_threshold": 15.0,
+        "_acceptable_threshold_note": "Per-angle reduced chi-squared should be below this for acceptable fit",
+        "outlier_threshold_multiplier": 3.0,
+        "_outlier_threshold_multiplier_note": "Angles with chi2_red > mean + multiplier*std are outliers",
+        "max_outlier_fraction": 0.2,
+        "_max_outlier_fraction_note": "Maximum acceptable fraction of outlier angles (0.0-1.0)",
+        "min_good_angles": 5,
+        "_min_good_angles_note": "Minimum number of angles with acceptable fit required"
+      }
+    },
+    "frame_range": {
+      "_comment": "Frame range validation",
+      "minimum_frames": 10,
+      "_minimum_frames_note": "Minimum number of frames required for analysis",
+      "maximum_frames": null,
+      "_maximum_frames_note": "Maximum frames to process (null = no limit)",
+      "check_continuity": true,
+      "_check_continuity_note": "Check for gaps in frame sequence"
+    }
+  },
+  "output_settings": {
+    "_comment": "Output and reporting configuration",
+    "description": "Output formatting and saving options",
+    "file_formats": {
+      "_comment": "Output file format preferences",
+      "results_format": "json",
+      "_results_format_note": "Primary results format: json, hdf5, npz",
+      "save_intermediate": false,
+      "_save_intermediate_note": "Save intermediate optimization steps",
+      "compression": true,
+      "_compression_note": "Compress output files",
+      "precision": "float64",
+      "_precision_note": "Numerical precision for output: float32, float64"
+    },
+    "reporting": {
+      "_comment": "Analysis reporting options",
+      "generate_plots": true,
+      "_generate_plots_note": "Generate analysis plots automatically",
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
+      "_plot_formats_note": "Output plot formats",
+      "detailed_summary": true,
+      "_detailed_summary_note": "Include detailed parameter summary",
+      "convergence_diagnostics": true,
+      "_convergence_diagnostics_note": "Include optimization convergence information"
+    },
+    "logging": {
+      "_comment": "Logging configuration",
+      "log_level": "INFO",
+      "_log_level_note": "Logging level: DEBUG, INFO, WARNING, ERROR",
+      "log_to_file": true,
+      "_log_to_file_note": "Save logs to file",
+      "log_to_console": true,
+      "_log_to_console_note": "Display logs in console",
+      "log_filename": "homodyne_analysis.log",
+      "_log_filename_note": "Log file name",
+      "rotation": {
+        "max_bytes": 10485760,
+        "_max_bytes_note": "Maximum log file size (10MB)",
+        "backup_count": 3,
+        "_backup_count_note": "Number of backup log files to keep"
+      }
+    }
+  },
+  "_usage_examples": {
+    "_comment": "Examples of common configuration patterns",
+    "description": "Common usage patterns and examples",
+    "quick_start": {
+      "description": "Minimal configuration for getting started",
+      "required_changes": [
+        "Update experimental_data.data_folder_path with your data directory",
+        "Update experimental_data.data_file_name with your data file",
+        "Adjust analyzer_parameters.temporal.dt to match your acquisition time",
+        "Set analyzer_parameters.scattering.wavevector_q for your geometry",
+        "Estimate initial_parameters.values based on your system"
+      ]
+    },
+    "high_performance": {
+      "description": "Configuration for high-performance computing",
+      "settings": {
+        "analyzer_parameters.computational.num_threads": "auto",
+        "performance_settings.caching.enable_memory_cache": true,
+        "performance_settings.parallel_processing.enable_multiprocessing": true,
+        "performance_settings.numba_optimization.enable_numba": true
+      }
+    },
+    "low_memory": {
+      "description": "Configuration for memory-constrained systems",
+      "settings": {
+        "performance_settings.memory_management.low_memory_mode": true,
+        "performance_settings.caching.cache_size_limit_mb": 100,
+        "experimental_data.data_type": "float32"
+      }
+    },
+    "reproducible_research": {
+      "description": "Settings for reproducible results",
+      "settings": {
+        "optimization_config.bayesian_optimization.random_state": 42,
+        "optimization_config.mcmc_sampling.chains": 4,
+        "output_settings.save_intermediate": true,
+        "output_settings.detailed_summary": true
+      }
+    }
+  },
+  "_troubleshooting": {
+    "_comment": "Common issues and solutions",
+    "description": "Troubleshooting guide for common problems",
+    "optimization_not_converging": {
+      "problem": "Optimization fails to converge or gives poor results",
+      "solutions": [
+        "Check initial_parameters.values - they should be reasonable estimates",
+        "Adjust parameter_space.bounds to be physically meaningful",
+        "Increase optimization_config.classical_optimization.method_options.maxiter",
+        "Try different optimization methods",
+        "Check data quality and preprocessing settings"
+      ]
+    },
+    "memory_errors": {
+      "problem": "Out of memory errors during analysis",
+      "solutions": [
+        "Enable performance_settings.memory_management.low_memory_mode",
+        "Reduce performance_settings.caching.cache_size_limit_mb",
+        "Use experimental_data.data_type: 'float32'",
+        "Reduce analyzer_parameters.temporal frame range",
+        "Decrease analyzer_parameters.computational.num_threads"
+      ]
+    },
+    "slow_performance": {
+      "problem": "Analysis runs very slowly",
+      "solutions": [
+        "Enable performance_settings.numba_optimization.enable_numba",
+        "Increase analyzer_parameters.computational.num_threads",
+        "Enable performance_settings.caching.enable_memory_cache",
+        "Use experimental_data.cache_compression: true",
+        "Consider reducing precision with data_type: 'float32'"
+      ]
+    }
+  }
+}
