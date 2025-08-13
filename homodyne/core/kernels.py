@@ -114,9 +114,7 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
 
 
 @njit(float64[:](float64[:], float64, float64, float64), cache=True)
-def calculate_shear_rate_numba(
-    time_array, gamma_dot_t0, beta, gamma_dot_t_offset
-):
+def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
     """
     Calculate time-dependent shear rate.
 
@@ -162,9 +160,7 @@ def calculate_shear_rate_numba(
     """
     gamma_dot_t = np.zeros_like(time_array)
     for i in range(len(time_array)):
-        gamma_dot_t[i] = (
-            gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
-        )
+        gamma_dot_t[i] = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
     return gamma_dot_t
 
 
@@ -380,9 +376,7 @@ def memory_efficient_cache(maxsize=128):
                     return self
                 else:
                     # Return a bound method
-                    return lambda *args, **kwargs: self._func(
-                        instance, *args, **kwargs
-                    )
+                    return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
 
         return CachedFunction(wrapper)
 

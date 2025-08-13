@@ -70,13 +70,9 @@ def create_config_from_template(
             config["metadata"]["authors"] = [author]
 
     if sample_name and "experimental_data" in config:
-        config["experimental_data"][
-            "data_folder_path"
-        ] = f"./data/{sample_name}/"
+        config["experimental_data"]["data_folder_path"] = f"./data/{sample_name}/"
         if "cache_file_path" in config["experimental_data"]:
-            config["experimental_data"][
-                "cache_file_path"
-            ] = f"./data/{sample_name}/"
+            config["experimental_data"]["cache_file_path"] = f"./data/{sample_name}/"
 
     # Save configuration
     output_path = Path(output_file)
@@ -91,17 +87,13 @@ def create_config_from_template(
 
     # Provide next steps
     print("\nNext steps:")
-    print(
-        f"1. Edit {output_path} and customize the parameters for your experiment"
-    )
+    print(f"1. Edit {output_path} and customize the parameters for your experiment")
     print("2. Replace placeholder values (YOUR_*) with actual values")
     print("3. Adjust initial_parameters.values based on your system")
     print("4. Run analysis with: python run_homodyne.py --config", output_path)
 
     if template_type == "minimal":
-        print(
-            f"\nFor advanced options, see: {template_dir / 'config_template.json'}"
-        )
+        print(f"\nFor advanced options, see: {template_dir / 'config_template.json'}")
         print(f"Documentation: {template_dir / 'CONFIG_TEMPLATES_README.md'}")
 
 
@@ -133,9 +125,7 @@ Examples:
         help="Output configuration file name (default: my_config.json)",
     )
 
-    parser.add_argument(
-        "--sample", "-s", help="Sample name (used in data paths)"
-    )
+    parser.add_argument("--sample", "-s", help="Sample name (used in data paths)")
 
     parser.add_argument("--experiment", "-e", help="Experiment description")
 

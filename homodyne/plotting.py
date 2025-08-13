@@ -45,9 +45,7 @@ try:
     logger.info("corner package imported - Enhanced corner plots available")
 except ImportError:
     CORNER_AVAILABLE = False
-    logger.warning(
-        "corner package not available. Install with: pip install corner"
-    )
+    logger.warning("corner package not available. Install with: pip install corner")
 
 
 def get_plot_config(config: Optional[Dict] = None) -> Dict[str, Any]:
@@ -156,9 +154,7 @@ def plot_c2_heatmaps(
 
     # Validate input dimensions
     if exp.shape != theory.shape:
-        logger.error(
-            f"Shape mismatch: exp {exp.shape} vs theory {theory.shape}"
-        )
+        logger.error(f"Shape mismatch: exp {exp.shape} vs theory {theory.shape}")
         return False
 
     if len(phi_angles) != exp.shape[0]:
@@ -272,9 +268,7 @@ def plot_c2_heatmaps(
             )
 
             # Save the plot
-            filename = (
-                f"c2_heatmaps_phi_{phi:.1f}deg.{plot_config['plot_format']}"
-            )
+            filename = f"c2_heatmaps_phi_{phi:.1f}deg.{plot_config['plot_format']}"
             filepath = outdir / filename
 
             if save_fig(
@@ -341,8 +335,7 @@ def plot_parameter_evolution(
         # Get parameter values
         best_values = [best_params.get(name, 0) for name in param_names]
         initial_values = [
-            initial_params.get(name, 0) if initial_params else 0
-            for name in param_names
+            initial_params.get(name, 0) if initial_params else 0 for name in param_names
         ]
 
         # Create figure with two subplots
@@ -368,18 +361,10 @@ def plot_parameter_evolution(
         for i, bound in enumerate(bounds):
             if bound.get("type") == "log-uniform":
                 # Use log scale for log-uniform parameters
-                normalized_best.append(
-                    np.log10(max(abs(best_values[i]), 1e-10))
-                )
-                normalized_initial.append(
-                    np.log10(max(abs(initial_values[i]), 1e-10))
-                )
-                normalized_lower.append(
-                    np.log10(max(abs(lower_bounds[i]), 1e-10))
-                )
-                normalized_upper.append(
-                    np.log10(max(abs(upper_bounds[i]), 1e-10))
-                )
+                normalized_best.append(np.log10(max(abs(best_values[i]), 1e-10)))
+                normalized_initial.append(np.log10(max(abs(initial_values[i]), 1e-10)))
+                normalized_lower.append(np.log10(max(abs(lower_bounds[i]), 1e-10)))
+                normalized_upper.append(np.log10(max(abs(upper_bounds[i]), 1e-10)))
             else:
                 # Use linear scale
                 normalized_best.append(best_values[i])
@@ -426,10 +411,7 @@ def plot_parameter_evolution(
         ax1.set_title("Parameter Evolution: Initial vs Best Fit vs Bounds")
         ax1.set_xticks(x_pos)
         ax1.set_xticklabels(
-            [
-                f"{name}\n[{unit}]"
-                for name, unit in zip(param_names, param_units)
-            ],
+            [f"{name}\n[{unit}]" for name, unit in zip(param_names, param_units)],
             rotation=45,
             ha="right",
         )
@@ -463,8 +445,7 @@ def plot_parameter_evolution(
         if optimization_history:
             iterations = range(len(optimization_history))
             chi_squared = [
-                hist.get("chi_squared", np.nan)
-                for hist in optimization_history
+                hist.get("chi_squared", np.nan) for hist in optimization_history
             ]
 
             ax2.semilogy(
@@ -493,9 +474,7 @@ def plot_parameter_evolution(
                 )
         else:
             # Create a parameter correlation matrix if no history available
-            param_array = np.array(
-                [best_values]
-            )  # Single row for best parameters
+            param_array = np.array([best_values])  # Single row for best parameters
             im = ax2.imshow(
                 np.corrcoef(param_array.T),
                 cmap="RdBu_r",
@@ -718,9 +697,7 @@ def plot_diagnostic_summary(
 
         for key, value in results.items():
             if "chi_squared" in key or "chi2" in key:
-                method_name = key.replace("_chi_squared", "").replace(
-                    "_chi2", ""
-                )
+                method_name = key.replace("_chi_squared", "").replace("_chi2", "")
                 methods.append(method_name.replace("_", " ").title())
                 chi2_values.append(value)
 
@@ -801,9 +778,7 @@ def plot_diagnostic_summary(
 
                 # Overlay normal distribution for comparison
                 mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
-                x = np.linspace(
-                    flat_residuals.min(), flat_residuals.max(), 100
-                )
+                x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
                 ax4.plot(
                     x,
                     (1 / (sigma * np.sqrt(2 * np.pi)))
@@ -903,9 +878,7 @@ def create_all_plots(
         )
 
     # Diagnostic summary
-    plot_status["diagnostic_summary"] = plot_diagnostic_summary(
-        results, outdir, config
-    )
+    plot_status["diagnostic_summary"] = plot_diagnostic_summary(results, outdir, config)
 
     # Log summary
     successful_plots = sum(plot_status.values())
@@ -963,9 +936,7 @@ if __name__ == "__main__":
             {"name": "beta", "min": -1, "max": 1, "unit": "dimensionless"},
         ]
 
-        success2 = plot_parameter_evolution(
-            best_params, bounds, tmp_dir, test_config
-        )
+        success2 = plot_parameter_evolution(best_params, bounds, tmp_dir, test_config)
         print(f"Parameter evolution: {'Success' if success2 else 'Failed'}")
 
         print("Test completed!")

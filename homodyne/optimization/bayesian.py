@@ -121,9 +121,7 @@ class BayesianOptimizer:
 
         # Load data if needed
         if phi_angles is None or c2_experimental is None:
-            c2_experimental, _, phi_angles, _ = (
-                self.core.load_experimental_data()
-            )
+            c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data
         assert (
@@ -286,9 +284,7 @@ class BayesianOptimizer:
             "best_value": result.fun,
             "best_iteration": np.argmin(func_vals),
             "convergence_iteration": convergence_iter,
-            "improvement_ratio": (
-                np.sum(significant_improvements) / len(improvements)
-            ),
+            "improvement_ratio": (np.sum(significant_improvements) / len(improvements)),
             "final_improvement_rate": (
                 np.mean(improvements[-5:]) if len(improvements) >= 5 else 0
             ),
@@ -355,9 +351,7 @@ class BayesianOptimizer:
 
             for i in range(X.shape[1]):
                 correlation = np.corrcoef(X[:, i], y)[0, 1]
-                correlations.append(
-                    abs(correlation)
-                )  # Use absolute correlation
+                correlations.append(abs(correlation))  # Use absolute correlation
 
             # Calculate parameter ranges explored
             param_ranges = []
@@ -367,9 +361,7 @@ class BayesianOptimizer:
 
             # Normalize correlations
             max_correlation = max(correlations) if correlations else 1
-            normalized_correlations = [
-                c / max_correlation for c in correlations
-            ]
+            normalized_correlations = [c / max_correlation for c in correlations]
 
             return {
                 "parameter_names": param_names,
@@ -377,14 +369,10 @@ class BayesianOptimizer:
                 "normalized_correlations": normalized_correlations,
                 "parameter_ranges": param_ranges,
                 "most_important": (
-                    param_names[np.argmax(correlations)]
-                    if correlations
-                    else None
+                    param_names[np.argmax(correlations)] if correlations else None
                 ),
                 "least_important": (
-                    param_names[np.argmin(correlations)]
-                    if correlations
-                    else None
+                    param_names[np.argmin(correlations)] if correlations else None
                 ),
             }
 
@@ -409,19 +397,14 @@ class BayesianOptimizer:
         Dict[str, Any]
             Optimized acquisition strategy recommendations
         """
-        convergence_analysis = self.analyze_convergence(
-            initial_results.get("result")
-        )
+        convergence_analysis = self.analyze_convergence(initial_results.get("result"))
 
         # Check convergence status
         if convergence_analysis.get("improvement_ratio", 0) < 0.1:
             # Low improvement rate - focus on exploitation
             recommended_acq = "LCB"
             strategy = "exploitation"
-        elif (
-            convergence_analysis.get("best_iteration", 0)
-            < remaining_budget * 0.3
-        ):
+        elif convergence_analysis.get("best_iteration", 0) < remaining_budget * 0.3:
             # Found good solution early - continue exploration
             recommended_acq = "EI"
             strategy = "balanced"

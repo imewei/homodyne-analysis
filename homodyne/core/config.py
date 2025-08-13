@@ -60,9 +60,7 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
         module_logger.removeHandler(handler)
 
     # Parse configuration
-    log_level = getattr(
-        logging, cfg.get("level", "INFO").upper(), logging.INFO
-    )
+    log_level = getattr(logging, cfg.get("level", "INFO").upper(), logging.INFO)
     format_str = cfg.get(
         "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -81,9 +79,7 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
     if cfg.get("log_to_file", False):
         filename = cfg.get("log_filename", "homodyne_analysis.log")
         rotation_config = cfg.get("rotation", {})
-        max_bytes = rotation_config.get(
-            "max_bytes", 10 * 1024 * 1024
-        )  # 10MB default
+        max_bytes = rotation_config.get("max_bytes", 10 * 1024 * 1024)  # 10MB default
         backup_count = rotation_config.get("backup_count", 3)
 
         try:
@@ -185,9 +181,7 @@ class ConfigManager:
 
             # Display version information if available
             if "metadata" in self.config:
-                version = self.config["metadata"].get(
-                    "config_version", "Unknown"
-                )
+                version = self.config["metadata"].get("config_version", "Unknown")
                 logger.info(f"Configuration version: {version}")
 
         except json.JSONDecodeError as e:
@@ -196,9 +190,7 @@ class ConfigManager:
             self.config = self._get_default_config()
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
-            logger.exception(
-                "Full traceback for configuration loading failure:"
-            )
+            logger.exception("Full traceback for configuration loading failure:")
             logger.info("Using default configuration...")
             self.config = self._get_default_config()
 
@@ -240,9 +232,7 @@ class ConfigManager:
             .get("minimum_frames", 10)
         )
         if end - start < min_frames:
-            raise ValueError(
-                f"Insufficient frames: {end-start} < {min_frames}"
-            )
+            raise ValueError(f"Insufficient frames: {end-start} < {min_frames}")
 
         # Validate physical parameters
         self._validate_physical_parameters()
@@ -297,9 +287,7 @@ class ConfigManager:
             return configured_logger
         except Exception as e:
             logger.warning(f"Failed to configure logging: {e}")
-            logger.exception(
-                "Full traceback for logging configuration failure:"
-            )
+            logger.exception("Full traceback for logging configuration failure:")
             logger.info("Continuing without logging...")
             return None
 
@@ -340,9 +328,7 @@ class ConfigManager:
             - target_ranges: list of dicts with min_angle and max_angle
             - fallback_to_all_angles: bool, whether to use all angles if no targets found
         """
-        angle_filtering = self.get(
-            "optimization_config", "angle_filtering", default={}
-        )
+        angle_filtering = self.get("optimization_config", "angle_filtering", default={})
 
         # Ensure angle_filtering is a dictionary for unpacking
         if not isinstance(angle_filtering, dict):
@@ -377,9 +363,7 @@ class ConfigManager:
                         }
                     )
                 else:
-                    logger.warning(
-                        f"Invalid angle range configuration: {range_config}"
-                    )
+                    logger.warning(f"Invalid angle range configuration: {range_config}")
             result["target_ranges"] = valid_ranges
 
         return result
@@ -418,9 +402,7 @@ class ConfigManager:
         bool
             True if should fallback to all angles, False to raise error
         """
-        return self.get_angle_filtering_config().get(
-            "fallback_to_all_angles", True
-        )
+        return self.get_angle_filtering_config().get("fallback_to_all_angles", True)
 
     def get_test_config(self, test_name: str) -> Dict[str, Any]:
         """
@@ -444,9 +426,7 @@ class ConfigManager:
 
         if test_name not in configs:
             available = list(configs.keys())
-            raise ValueError(
-                f"Test '{test_name}' not found. Available: {available}"
-            )
+            raise ValueError(f"Test '{test_name}' not found. Available: {available}")
 
         return configs[test_name]
 

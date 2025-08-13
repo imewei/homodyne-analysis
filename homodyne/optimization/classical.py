@@ -114,9 +114,7 @@ class ClassicalOptimizer:
             )
 
         if phi_angles is None or c2_experimental is None:
-            c2_experimental, _, phi_angles, _ = (
-                self.core.load_experimental_data()
-            )
+            c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data to satisfy type checker
         assert (
@@ -148,11 +146,7 @@ class ClassicalOptimizer:
                     method=method,
                     objective_func=objective,
                     initial_parameters=initial_parameters,
-                    bounds=(
-                        bounds
-                        if method in ["L-BFGS-B", "TNC", "SLSQP"]
-                        else None
-                    ),
+                    bounds=(bounds if method in ["L-BFGS-B", "TNC", "SLSQP"] else None),
                     method_options=self.optimization_config.get(
                         "method_options", {}
                     ).get(method, {}),
@@ -174,13 +168,9 @@ class ClassicalOptimizer:
                             f"    ✓ New best: χ²_red = {result.fun:.6e} ({elapsed:.1f}s)"
                         )
                     else:
-                        print(
-                            f"    χ²_red = {result.fun:.6e} ({elapsed:.1f}s)"
-                        )
+                        print(f"    χ²_red = {result.fun:.6e} ({elapsed:.1f}s)")
                 else:
-                    all_results.append(
-                        (method, result)
-                    )  # Store exception for analysis
+                    all_results.append((method, result))  # Store exception for analysis
                     print(f"    ✗ Failed: {result}")
                     logger.warning(
                         f"Classical optimization method {method} failed: {result}"
@@ -189,12 +179,8 @@ class ClassicalOptimizer:
             except Exception as e:
                 all_results.append((method, e))
                 print(f"    ✗ Failed: {e}")
-                logger.warning(
-                    f"Classical optimization method {method} failed: {e}"
-                )
-                logger.exception(
-                    f"Full traceback for {method} optimization failure:"
-                )
+                logger.warning(f"Classical optimization method {method} failed: {e}")
+                logger.exception(f"Full traceback for {method} optimization failure:")
 
         if (
             best_result is not None
@@ -204,9 +190,7 @@ class ClassicalOptimizer:
             total_time = time.time() - start_time
 
             # Generate comprehensive summary (for future use)
-            _ = self.get_optimization_summary(
-                best_params, best_result, total_time
-            )
+            _ = self.get_optimization_summary(best_params, best_result, total_time)
 
             # Log results
             logger.info(
@@ -270,9 +254,7 @@ class ClassicalOptimizer:
             "trust-krylov",  # Krylov trust-region
         ]
 
-    def validate_method_compatibility(
-        self, method: str, has_bounds: bool
-    ) -> bool:
+    def validate_method_compatibility(self, method: str, has_bounds: bool) -> bool:
         """
         Validate if optimization method is compatible with current setup.
 
@@ -351,17 +333,11 @@ class ClassicalOptimizer:
         ]
 
         # Check positive D0
-        if (
-            validation.get("check_positive_D0", True)
-            and diffusion_params[0] <= 0
-        ):
+        if validation.get("check_positive_D0", True) and diffusion_params[0] <= 0:
             return False, f"Negative D0: {diffusion_params[0]}"
 
         # Check positive gamma_dot_t0
-        if (
-            validation.get("check_positive_gamma_dot_t0", True)
-            and shear_params[0] <= 0
-        ):
+        if validation.get("check_positive_gamma_dot_t0", True) and shear_params[0] <= 0:
             return False, f"Negative gamma_dot_t0: {shear_params[0]}"
 
         # Check parameter bounds
@@ -408,9 +384,7 @@ class ClassicalOptimizer:
         # Get angle filtering setting from configuration
         use_angle_filtering = True
         if hasattr(self.core, "config_manager") and self.core.config_manager:
-            use_angle_filtering = (
-                self.core.config_manager.is_angle_filtering_enabled()
-            )
+            use_angle_filtering = self.core.config_manager.is_angle_filtering_enabled()
         elif "angle_filtering" in self.config.get("optimization_config", {}):
             use_angle_filtering = self.config["optimization_config"][
                 "angle_filtering"
@@ -485,9 +459,7 @@ class ClassicalOptimizer:
 
     def analyze_optimization_results(
         self,
-        results: List[
-            Tuple[str, bool, Union[optimize.OptimizeResult, Exception]]
-        ],
+        results: List[Tuple[str, bool, Union[optimize.OptimizeResult, Exception]]],
     ) -> Dict[str, Any]:
         """
         Analyze and summarize optimization results from multiple methods.
@@ -519,9 +491,7 @@ class ClassicalOptimizer:
             }
 
         # Find best result
-        best_method, best_result = min(
-            successful_results, key=lambda x: x[1].fun
-        )
+        best_method, best_result = min(successful_results, key=lambda x: x[1].fun)
 
         # Compute statistics
         chi2_values = [result.fun for _, result in successful_results]
@@ -562,9 +532,7 @@ class ClassicalOptimizer:
         bounds = []
         param_bounds = self.config.get("parameter_space", {}).get("bounds", [])
         for bound in param_bounds:
-            bounds.append(
-                (bound.get("min", -np.inf), bound.get("max", np.inf))
-            )
+            bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
         return bounds
 
     def compare_optimization_results(
@@ -653,9 +621,7 @@ class ClassicalOptimizer:
             "optimization_successful": True,
             "best_chi_squared": best_result.fun,
             "best_parameters": {
-                (
-                    param_names[i] if i < len(param_names) else f"param_{i}"
-                ): float(param)
+                (param_names[i] if i < len(param_names) else f"param_{i}"): float(param)
                 for i, param in enumerate(best_params)
             },
             "optimization_details": {
@@ -678,9 +644,7 @@ class ClassicalOptimizer:
         is_valid, reason = self.validate_parameters(best_params, "Summary")
         summary["parameter_validation"] = {
             "valid": is_valid,
-            "reason": (
-                reason if not is_valid else "All parameters within bounds"
-            ),
+            "reason": (reason if not is_valid else "All parameters within bounds"),
         }
 
         return summary

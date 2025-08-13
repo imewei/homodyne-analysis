@@ -346,9 +346,7 @@ def get_output_directory(config: Optional[Dict] = None) -> Path:
     default_dir = "./results"
 
     if config and "output_settings" in config:
-        output_dir = config["output_settings"].get(
-            "results_directory", default_dir
-        )
+        output_dir = config["output_settings"].get("results_directory", default_dir)
     else:
         output_dir = default_dir
         logger.warning(
@@ -391,14 +389,11 @@ def save_analysis_results(
         results["correlation_data"], np.ndarray
     ):
         npz_path = output_dir / f"{filename_base}_data.npz"
-        save_status["numpy"] = save_numpy(
-            results["correlation_data"], npz_path
-        )
+        save_status["numpy"] = save_numpy(results["correlation_data"], npz_path)
 
     # Save complex objects as pickle
     if any(
-        key.startswith("mcmc_") or key.startswith("bayesian_")
-        for key in results.keys()
+        key.startswith("mcmc_") or key.startswith("bayesian_") for key in results.keys()
     ):
         pkl_path = output_dir / f"{filename_base}_full.pkl"
         save_status["pickle"] = save_pickle(results, pkl_path)
