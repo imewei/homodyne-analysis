@@ -2,7 +2,7 @@
 Bayesian Optimization Methods for Homodyne Scattering Analysis
 =============================================================
 
-This module contains Bayesian optimization algorithms extracted from the 
+This module contains Bayesian optimization algorithms extracted from the
 ConfigurableHomodyneAnalysis class, including:
 - Scikit-optimize (skopt) Gaussian Process optimization
 - Intelligent search space construction
@@ -27,6 +27,7 @@ try:
     from skopt import gp_minimize
     from skopt.space import Real
     from skopt.utils import use_named_args
+
     SKOPT_AVAILABLE = True
 except ImportError:
     # Mock functions and classes when skopt is not available
@@ -41,12 +42,12 @@ logger = logging.getLogger(__name__)
 class BayesianOptimizer:
     """
     Bayesian optimization for efficient parameter space exploration.
-    
+
     This class implements Gaussian Process-based optimization using
     scikit-optimize, providing intelligent parameter space exploration
     with acquisition function-guided sampling.
     """
-    
+
     def __init__(self, analysis_core, config: Dict[str, Any]):
         """
         Initialize Bayesian optimizer.
@@ -61,14 +62,16 @@ class BayesianOptimizer:
         self.core = analysis_core
         self.config = config
         self.best_params_bo = None
-        
+
         # Extract Bayesian optimization configuration
         self.bo_config = config.get("optimization_config", {}).get(
             "bayesian_optimization", {}
         )
-        
+
         if not SKOPT_AVAILABLE:
-            logger.warning("scikit-optimize not available - Bayesian optimization disabled")
+            logger.warning(
+                "scikit-optimize not available - Bayesian optimization disabled"
+            )
 
     def run_bayesian_optimization_skopt_optimized(
         self,
@@ -99,7 +102,7 @@ class BayesianOptimizer:
         -------
         dict
             Optimization results including best parameters and acquisition history
-            
+
         Raises
         ------
         ImportError
@@ -107,7 +110,7 @@ class BayesianOptimizer:
         """
         if not SKOPT_AVAILABLE:
             raise ImportError("scikit-optimize not available")
-        
+
         # Type assertions for mypy/pylance - these are guaranteed to be available after the check
         assert use_named_args is not None
         assert gp_minimize is not None
@@ -118,15 +121,19 @@ class BayesianOptimizer:
 
         # Load data if needed
         if phi_angles is None or c2_experimental is None:
-            c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
-        
+            c2_experimental, _, phi_angles, _ = (
+                self.core.load_experimental_data()
+            )
+
         # Type assertion after loading data
-        assert phi_angles is not None and c2_experimental is not None, "Failed to load experimental data"
+        assert (
+            phi_angles is not None and c2_experimental is not None
+        ), "Failed to load experimental data"
 
         # Configuration
         if bo_config is None:
             bo_config = self.bo_config or {}
-        
+
         # Ensure bo_config is not None for type checker
         assert bo_config is not None
 
@@ -137,8 +144,11 @@ class BayesianOptimizer:
         def objective(**params):
             param_array = np.array([params[s.name] for s in parameter_space])
             return self.core.calculate_chi_squared_optimized(
-                param_array, phi_angles, c2_experimental, "BayesOpt",
-                filter_angles_for_optimization=True  # Use angle filtering during optimization
+                param_array,
+                phi_angles,
+                c2_experimental,
+                "BayesOpt",
+                filter_angles_for_optimization=True,  # Use angle filtering during optimization
             )
 
         # Run optimization
@@ -162,10 +172,12 @@ class BayesianOptimizer:
             print("  Using warm start from previous optimization")
 
         result = gp_minimize(**kwargs)
-        
+
         # Ensure result is valid
         if result is None:
-            raise RuntimeError("Bayesian optimization failed - gp_minimize returned None")
+            raise RuntimeError(
+                "Bayesian optimization failed - gp_minimize returned None"
+            )
 
         elapsed = time.time() - start
         total_time = time.time() - start_time
@@ -193,7 +205,7 @@ class BayesianOptimizer:
     def _build_search_space(self) -> List[Any]:
         """
         Build search space for Bayesian optimization.
-        
+
         Returns
         -------
         List[Real]
@@ -201,98 +213,100 @@ class BayesianOptimizer:
         """
         if Real is None:
             raise ImportError("scikit-optimize Real class not available")
-        
+
         parameter_space = []
         bounds = self.config.get("parameter_space", {}).get("bounds", [])
-        
+
         for bound in bounds:
             if bound.get("type") == "log-uniform":
                 space = Real(
-                    bound["min"], 
-                    bound["max"], 
-                    prior="log-uniform", 
-                    name=bound["name"]
+                    bound["min"],
+                    bound["max"],
+                    prior="log-uniform",
+                    name=bound["name"],
                 )
             else:
-                space = Real(
-                    bound["min"], 
-                    bound["max"], 
-                    name=bound["name"]
-                )
+                space = Real(bound["min"], bound["max"], name=bound["name"])
             parameter_space.append(space)
-            
+
         return parameter_space
 
     def get_available_acquisition_functions(self) -> List[str]:
         """
         Get list of available acquisition functions.
-        
+
         Returns
         -------
         List[str]
             List of available acquisition functions
         """
         return [
-            "EI",      # Expected Improvement
-            "PI",      # Probability of Improvement  
-            "LCB",     # Lower Confidence Bound
-            "EIps",    # Expected Improvement per second
-            "PIps",    # Probability of Improvement per second
+            "EI",  # Expected Improvement
+            "PI",  # Probability of Improvement
+            "LCB",  # Lower Confidence Bound
+            "EIps",  # Expected Improvement per second
+            "PIps",  # Probability of Improvement per second
         ]
 
     def analyze_convergence(self, result) -> Dict[str, Any]:
         """
         Analyze convergence behavior of Bayesian optimization.
-        
+
         Parameters
         ----------
         result : skopt.OptimizeResult
             Result from skopt optimization
-            
+
         Returns
         -------
         Dict[str, Any]
             Convergence analysis including improvement trends
         """
-        if not hasattr(result, 'func_vals'):
+        if not hasattr(result, "func_vals"):
             return {"error": "No function values available for analysis"}
-            
+
         func_vals = np.array(result.func_vals)
-        
+
         # Calculate running minimum
         running_min = np.minimum.accumulate(func_vals)
-        
+
         # Calculate improvement over iterations
         improvements = np.diff(running_min)
         significant_improvements = improvements < -0.01 * running_min[:-1]
-        
+
         # Estimate convergence
         last_improvement_idx = np.where(significant_improvements)[0]
         if len(last_improvement_idx) > 0:
             convergence_iter = last_improvement_idx[-1] + 1
         else:
             convergence_iter = 0
-            
+
         return {
             "total_evaluations": len(func_vals),
             "best_value": result.fun,
             "best_iteration": np.argmin(func_vals),
             "convergence_iteration": convergence_iter,
-            "improvement_ratio": np.sum(significant_improvements) / len(improvements),
-            "final_improvement_rate": np.mean(improvements[-5:]) if len(improvements) >= 5 else 0,
+            "improvement_ratio": (
+                np.sum(significant_improvements) / len(improvements)
+            ),
+            "final_improvement_rate": (
+                np.mean(improvements[-5:]) if len(improvements) >= 5 else 0
+            ),
             "running_minimum": running_min,
             "function_values": func_vals,
         }
 
-    def suggest_acquisition_function(self, problem_characteristics: Dict[str, Any]) -> str:
+    def suggest_acquisition_function(
+        self, problem_characteristics: Dict[str, Any]
+    ) -> str:
         """
         Suggest appropriate acquisition function based on problem characteristics.
-        
+
         Parameters
         ----------
         problem_characteristics : Dict[str, Any]
             Problem characteristics (noise level, dimensionality, etc.)
-            
+
         Returns
         -------
         str
@@ -301,98 +315,113 @@ class BayesianOptimizer:
         # High-dimensional problems
         if problem_characteristics.get("dimensionality", 7) > 10:
             return "LCB"  # More conservative exploration
-            
+
         # Noisy objectives
         if problem_characteristics.get("noise_level", "low") == "high":
-            return "EI"   # Robust to noise
-            
+            return "EI"  # Robust to noise
+
         # Limited budget
         if problem_characteristics.get("budget", 50) < 30:
-            return "PI"   # Focuses on improvement probability
-            
+            return "PI"  # Focuses on improvement probability
+
         # Default: balanced exploration/exploitation
         return "EI"
 
     def create_parameter_importance_analysis(self, result) -> Dict[str, Any]:
         """
         Analyze parameter importance from Bayesian optimization results.
-        
+
         Parameters
         ----------
         result : skopt.OptimizeResult
             Result from skopt optimization
-            
+
         Returns
         -------
         Dict[str, Any]
             Parameter importance analysis
         """
-        if not hasattr(result, 'x_iters') or not hasattr(result, 'func_vals'):
+        if not hasattr(result, "x_iters") or not hasattr(result, "func_vals"):
             return {"error": "Insufficient data for importance analysis"}
-            
+
         try:
             # Get parameter samples and function values
             X = np.array(result.x_iters)
             y = np.array(result.func_vals)
-            
+
             # Calculate correlation between parameters and objective
             correlations = []
             param_names = [dim.name for dim in result.space.dimensions]
-            
+
             for i in range(X.shape[1]):
                 correlation = np.corrcoef(X[:, i], y)[0, 1]
-                correlations.append(abs(correlation))  # Use absolute correlation
-                
+                correlations.append(
+                    abs(correlation)
+                )  # Use absolute correlation
+
             # Calculate parameter ranges explored
             param_ranges = []
             for i in range(X.shape[1]):
                 param_range = np.max(X[:, i]) - np.min(X[:, i])
                 param_ranges.append(param_range)
-                
+
             # Normalize correlations
             max_correlation = max(correlations) if correlations else 1
-            normalized_correlations = [c / max_correlation for c in correlations]
-            
+            normalized_correlations = [
+                c / max_correlation for c in correlations
+            ]
+
             return {
                 "parameter_names": param_names,
                 "correlations": correlations,
                 "normalized_correlations": normalized_correlations,
                 "parameter_ranges": param_ranges,
-                "most_important": param_names[np.argmax(correlations)] if correlations else None,
-                "least_important": param_names[np.argmin(correlations)] if correlations else None,
+                "most_important": (
+                    param_names[np.argmax(correlations)]
+                    if correlations
+                    else None
+                ),
+                "least_important": (
+                    param_names[np.argmin(correlations)]
+                    if correlations
+                    else None
+                ),
             }
-            
+
         except Exception as e:
             return {"error": f"Analysis failed: {str(e)}"}
 
     def optimize_acquisition_strategy(
-        self, 
-        initial_results: Dict[str, Any],
-        remaining_budget: int
+        self, initial_results: Dict[str, Any], remaining_budget: int
     ) -> Dict[str, Any]:
         """
         Optimize acquisition strategy based on initial results.
-        
+
         Parameters
         ----------
         initial_results : Dict[str, Any]
             Results from initial optimization phase
         remaining_budget : int
             Remaining evaluation budget
-            
+
         Returns
         -------
         Dict[str, Any]
             Optimized acquisition strategy recommendations
         """
-        convergence_analysis = self.analyze_convergence(initial_results.get("result"))
-        
+        convergence_analysis = self.analyze_convergence(
+            initial_results.get("result")
+        )
+
         # Check convergence status
         if convergence_analysis.get("improvement_ratio", 0) < 0.1:
             # Low improvement rate - focus on exploitation
             recommended_acq = "LCB"
             strategy = "exploitation"
-        elif convergence_analysis.get("best_iteration", 0) < remaining_budget * 0.3:
+        elif (
+            convergence_analysis.get("best_iteration", 0)
+            < remaining_budget * 0.3
+        ):
             # Found good solution early - continue exploration
             recommended_acq = "EI"
             strategy = "balanced"
@@ -400,11 +429,14 @@ class BayesianOptimizer:
             # Still improving - maintain current strategy
             recommended_acq = initial_results.get("acquisition_function", "EI")
             strategy = "continuation"
-            
+
         return {
             "recommended_acquisition": recommended_acq,
             "strategy": strategy,
-            "reasoning": f"Based on {convergence_analysis.get('improvement_ratio', 0):.2%} improvement rate",
-            "suggested_n_calls": min(remaining_budget, 
-                                   max(10, int(remaining_budget * 0.5))),
+            "reasoning": (
+                f"Based on {convergence_analysis.get('improvement_ratio', 0):.2%} improvement rate"
+            ),
+            "suggested_n_calls": min(
+                remaining_budget, max(10, int(remaining_budget * 0.5))
+            ),
         }

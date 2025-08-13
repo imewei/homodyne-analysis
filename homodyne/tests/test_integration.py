@@ -15,38 +15,47 @@ import os
 
 # Import the modules to test
 from homodyne.tests.fixtures import (
-    dummy_config, 
+    dummy_config,
     dummy_correlation_data,
     dummy_theoretical_data,
     dummy_phi_angles,
     dummy_analysis_results,
     temp_directory,
     create_minimal_config_file,
-    mock_optimization_result
+    mock_optimization_result,
 )
 
 # Import modules being tested
 try:
-    from homodyne.core.io_utils import save_analysis_results, ensure_dir, get_output_directory
+    from homodyne.core.io_utils import (
+        save_analysis_results,
+        ensure_dir,
+        get_output_directory,
+    )
+
     IO_UTILS_AVAILABLE = True
 except ImportError:
     IO_UTILS_AVAILABLE = False
+
     # Provide fallback functions for type checker
     def save_analysis_results(*args, **kwargs):
         return {"json": False, "error": "IO utils not available"}
-    
+
     def ensure_dir(path, *args, **kwargs):
         # Return a Path object that behaves correctly for tests
         return Path(path)
-    
+
     def get_output_directory(*args, **kwargs):
         return Path("/tmp")
 
+
 try:
     from plotting import create_all_plots
+
     PLOTTING_AVAILABLE = True
 except ImportError:
     PLOTTING_AVAILABLE = False
+
     # Provide fallback function for type checker
     def create_all_plots(*args, **kwargs):
         return {}
@@ -54,64 +63,74 @@ except ImportError:
 
 class TestCompleteWorkflow:
     """Test complete analysis workflow integration."""
-    
-    @pytest.mark.skipif(not (IO_UTILS_AVAILABLE and PLOTTING_AVAILABLE), 
-                       reason="Required modules not available")
-    def test_full_analysis_pipeline(self, temp_directory, dummy_analysis_results, dummy_config):
+
+    @pytest.mark.skipif(
+        not (IO_UTILS_AVAILABLE and PLOTTING_AVAILABLE),
+        reason="Required modules not available",
+    )
+    def test_full_analysis_pipeline(
+        self, temp_directory, dummy_analysis_results, dummy_config
+    ):
         """Test complete pipeline: data processing → analysis → plotting → saving."""
         # Set up output directory in temp space
-        dummy_config["output_settings"]["results_directory"] = str(temp_directory / "full_pipeline")
-        
+        dummy_config["output_settings"]["results_directory"] = str(
+            temp_directory / "full_pipeline"
+        )
+
         # Step 1: Create output directories
         output_dir = get_output_directory(dummy_config)
         assert output_dir.exists()
-        
+
         # Step 2: Save analysis results
-        save_status = save_analysis_results(dummy_analysis_results, dummy_config, "integration_test")
+        save_status = save_analysis_results(
+            dummy_analysis_results, dummy_config, "integration_test"
+        )
         assert save_status["json"] is True
-        
+
         # Step 3: Create plots
-        plot_status = create_all_plots(dummy_analysis_results, output_dir, dummy_config)
+        plot_status = create_all_plots(
+            dummy_analysis_results, output_dir, dummy_config
+        )
         successful_plots = sum(1 for status in plot_status.values() if status)
         assert successful_plots >= 1
-        
+
         # Step 4: Verify all outputs exist
         json_files = list(output_dir.glob("*.json"))
         plot_files = list(output_dir.glob("*.png"))
-        
+
         assert len(json_files) >= 1
         assert len(plot_files) >= 1
-        
+
         # Verify JSON content is readable
-        with open(json_files[0], 'r') as f:
+        with open(json_files[0], "r") as f:
             saved_results = json.load(f)
         assert isinstance(saved_results, dict)
         assert "best_chi_squared" in saved_results
-    
+
     def test_directory_creation_workflow(self, temp_directory):
         """Test that the entire directory structure is created correctly."""
         base_dir = temp_directory / "analysis_workspace"
-        
+
         # Test nested directory creation
         required_dirs = [
             base_dir / "results",
             base_dir / "plots" / "c2_heatmaps",
-            base_dir / "plots" / "parameters", 
+            base_dir / "plots" / "parameters",
             base_dir / "plots" / "diagnostics",
             base_dir / "data" / "processed",
-            base_dir / "data" / "cached"
+            base_dir / "data" / "cached",
         ]
-        
+
         created_dirs = []
         for dir_path in required_dirs:
             result_dir = ensure_dir(dir_path)
             created_dirs.append(result_dir)
             assert result_dir.exists()
             assert result_dir.is_dir()
-        
+
         # Verify all directories were created
         assert len(created_dirs) == len(required_dirs)
-        
+
         # Test that they can be used for file operations
         test_file = created_dirs[0] / "test.txt"
         test_file.write_text("test content")
@@ -121,106 +140,120 @@ class TestCompleteWorkflow:
 
 class TestMockedHeavyComputation:
     """Test integration with mocked heavy computational components."""
-    
-    def test_mock_optimization_workflow(self, temp_directory, dummy_config, mock_optimization_result):
+
+    def test_mock_optimization_workflow(
+        self, temp_directory, dummy_config, mock_optimization_result
+    ):
         """Test analysis workflow with mocked optimization."""
-        
+
         # Mock the heavy optimization function
-        with patch('scipy.optimize.minimize') as mock_minimize:
+        with patch("scipy.optimize.minimize") as mock_minimize:
             mock_minimize.return_value = mock_optimization_result
-            
+
             # Simulate analysis workflow
             config = dummy_config.copy()
-            config["output_settings"]["results_directory"] = str(temp_directory / "mock_opt")
-            
+            config["output_settings"]["results_directory"] = str(
+                temp_directory / "mock_opt"
+            )
+
             # Create mock analysis function
             def mock_analysis_function():
                 """Simulate analysis with mocked optimization."""
                 # This would normally call heavy computation
                 # Instead, we return the mocked result
                 return {
-                    "best_parameters": dict(zip(
-                        config["initial_parameters"]["parameter_names"],
-                        mock_optimization_result.x
-                    )),
+                    "best_parameters": dict(
+                        zip(
+                            config["initial_parameters"]["parameter_names"],
+                            mock_optimization_result.x,
+                        )
+                    ),
                     "best_chi_squared": mock_optimization_result.fun,
                     "optimization_success": mock_optimization_result.success,
                     "iterations": mock_optimization_result.nit,
-                    "function_evaluations": mock_optimization_result.nfev
+                    "function_evaluations": mock_optimization_result.nfev,
                 }
-            
+
             # Run mocked analysis
             results = mock_analysis_function()
-            
+
             # Verify mock was called and results are reasonable
             assert results["best_chi_squared"] == mock_optimization_result.fun
             assert results["optimization_success"] is True
-            assert len(results["best_parameters"]) == len(config["initial_parameters"]["parameter_names"])
-            
+            assert len(results["best_parameters"]) == len(
+                config["initial_parameters"]["parameter_names"]
+            )
+
             # Test that we can save these results
             if IO_UTILS_AVAILABLE:
-                save_status = save_analysis_results(results, config, "mock_optimization")
+                save_status = save_analysis_results(
+                    results, config, "mock_optimization"
+                )
                 assert save_status["json"] is True
-    
+
     def test_mock_data_loading(self, temp_directory, dummy_config):
         """Test data loading workflow with mocked file I/O."""
-        
+
         # Create mock data files
         data_dir = temp_directory / "mock_data"
         data_dir.mkdir()
-        
+
         # Mock HDF5 data loading
         mock_correlation_data = np.random.exponential(1.0, (100, 50, 50))
         mock_phi_angles = np.array([0.0, 22.5, 45.0, 67.5, 90.0])
-        
-        with patch('numpy.load') as mock_load:
+
+        with patch("numpy.load") as mock_load:
             # Configure mock to return our test data
             mock_load.return_value = {
-                'correlation_data': mock_correlation_data,
-                'phi_angles': mock_phi_angles
+                "correlation_data": mock_correlation_data,
+                "phi_angles": mock_phi_angles,
             }
-            
+
             # Simulate data loading workflow
             def mock_load_data():
                 """Simulate heavy data loading operation."""
                 # This would normally load from HDF5
                 loaded = np.load("mock_file.npz")
                 return {
-                    "experimental_data": loaded['correlation_data'],
-                    "phi_angles": loaded['phi_angles']
+                    "experimental_data": loaded["correlation_data"],
+                    "phi_angles": loaded["phi_angles"],
                 }
-            
+
             # Test the workflow
             data = mock_load_data()
-            
+
             # Verify mock was used and data is correct shape
             mock_load.assert_called_once_with("mock_file.npz")
-            assert data["experimental_data"].shape == mock_correlation_data.shape
+            assert (
+                data["experimental_data"].shape == mock_correlation_data.shape
+            )
             assert np.array_equal(data["phi_angles"], mock_phi_angles)
-    
-    @pytest.mark.skipif(not PLOTTING_AVAILABLE, reason="Plotting module not available")
+
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting module not available"
+    )
     def test_mock_plotting_workflow(self, temp_directory, dummy_config):
         """Test plotting workflow with mocked matplotlib operations."""
-        
-        with patch('matplotlib.pyplot.savefig') as mock_savefig:
-            with patch('matplotlib.pyplot.subplots') as mock_subplots:
+
+        with patch("matplotlib.pyplot.savefig") as mock_savefig:
+            with patch("matplotlib.pyplot.subplots") as mock_subplots:
                 # Configure mocks
                 mock_fig = MagicMock()
                 mock_ax = MagicMock()
                 mock_subplots.return_value = (mock_fig, mock_ax)
                 mock_savefig.return_value = None
-                
+
                 # Simulate plotting workflow
                 from plotting import plot_parameter_evolution
-                
+
                 best_params = {"D0": 100.0, "alpha": -0.1}
                 bounds = dummy_config["parameter_space"]["bounds"][:2]
-                
+
                 # This should use mocked matplotlib functions
                 success = plot_parameter_evolution(
                     best_params, bounds, temp_directory, dummy_config
                 )
-                
+
                 # Verify mocks were called
                 mock_subplots.assert_called()
                 assert success is True  # Should succeed with mocks
@@ -228,77 +261,93 @@ class TestMockedHeavyComputation:
 
 class TestErrorHandlingIntegration:
     """Test error handling across the complete workflow."""
-    
+
     def test_partial_failure_recovery(self, temp_directory, dummy_config):
         """Test that workflow continues when some components fail."""
         config = dummy_config.copy()
-        config["output_settings"]["results_directory"] = str(temp_directory / "partial_failure")
-        
+        config["output_settings"]["results_directory"] = str(
+            temp_directory / "partial_failure"
+        )
+
         # Create results with some missing components
         partial_results = {
             "best_parameters": {"D0": 100.0},
             "best_chi_squared": 1.234,
             # Missing: experimental_data, theoretical_data (plots will fail)
-            "parameter_bounds": config["parameter_space"]["bounds"][:1]
+            "parameter_bounds": config["parameter_space"]["bounds"][:1],
         }
-        
+
         # Save should succeed
         if IO_UTILS_AVAILABLE:
-            save_status = save_analysis_results(partial_results, config, "partial_test")
+            save_status = save_analysis_results(
+                partial_results, config, "partial_test"
+            )
             assert save_status["json"] is True
-        
+
         # Plotting should handle missing data gracefully
         if PLOTTING_AVAILABLE:
-            plot_status = create_all_plots(partial_results, temp_directory / "partial_failure", config)
-            
+            plot_status = create_all_plots(
+                partial_results, temp_directory / "partial_failure", config
+            )
+
             # Some plots may fail, but the function should return status
             assert isinstance(plot_status, dict)
             # At least one plot type should succeed (parameter evolution)
             assert any(plot_status.values())
-    
+
     def test_configuration_error_handling(self, temp_directory):
         """Test handling of invalid configurations."""
         invalid_config = {
             "analyzer_parameters": {
-                "temporal": {"dt": -0.1, "start_frame": 100, "end_frame": 50}  # Invalid values
+                "temporal": {
+                    "dt": -0.1,
+                    "start_frame": 100,
+                    "end_frame": 50,
+                }  # Invalid values
             }
         }
-        
+
         config_file = temp_directory / "invalid_config.json"
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(invalid_config, f)
-        
+
         # Loading should work (JSON is valid)
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             loaded_config = json.load(f)
-        
+
         assert loaded_config == invalid_config
-        
+
         # But validation would catch the issues
         assert loaded_config["analyzer_parameters"]["temporal"]["dt"] < 0
-        assert (loaded_config["analyzer_parameters"]["temporal"]["start_frame"] > 
-                loaded_config["analyzer_parameters"]["temporal"]["end_frame"])
-    
+        assert (
+            loaded_config["analyzer_parameters"]["temporal"]["start_frame"]
+            > loaded_config["analyzer_parameters"]["temporal"]["end_frame"]
+        )
+
     def test_file_permission_error_handling(self, temp_directory):
         """Test handling of file permission errors."""
-        if os.name == 'nt':  # Skip on Windows
+        if os.name == "nt":  # Skip on Windows
             pytest.skip("Permission tests not reliable on Windows")
-        
+
         # Create a read-only directory
         readonly_dir = temp_directory / "readonly"
         readonly_dir.mkdir(mode=0o444)
-        
+
         try:
             # Attempt to save results should fail gracefully
             if IO_UTILS_AVAILABLE:
                 results = {"test": "data"}
-                config = {"output_settings": {"results_directory": str(readonly_dir)}}
-                
-                save_status = save_analysis_results(results, config, "permission_test")
-                
+                config = {
+                    "output_settings": {"results_directory": str(readonly_dir)}
+                }
+
+                save_status = save_analysis_results(
+                    results, config, "permission_test"
+                )
+
                 # Should handle permission error gracefully
                 assert save_status["json"] is False
-                
+
         finally:
             # Clean up
             readonly_dir.chmod(0o755)
@@ -306,163 +355,184 @@ class TestErrorHandlingIntegration:
 
 class TestDataValidation:
     """Test data validation throughout the workflow."""
-    
+
     def test_correlation_data_validation(self, dummy_phi_angles):
         """Test validation of correlation data shapes and values."""
-        
+
         # Valid data
-        valid_data = np.random.rand(3, 20, 30)  # angles x time_lags x delay_times
+        valid_data = np.random.rand(
+            3, 20, 30
+        )  # angles x time_lags x delay_times
         assert valid_data.shape[0] == len(dummy_phi_angles)
         assert not np.any(np.isnan(valid_data))
-        assert np.all(valid_data >= 0)  # Correlation data should be non-negative
-        
+        assert np.all(
+            valid_data >= 0
+        )  # Correlation data should be non-negative
+
         # Invalid data shapes
         wrong_angles = np.random.rand(5, 20, 30)  # Too many angles
         assert wrong_angles.shape[0] != len(dummy_phi_angles)
-        
-        wrong_dimensions = np.random.rand(3, 20)  # Missing delay time dimension
+
+        wrong_dimensions = np.random.rand(
+            3, 20
+        )  # Missing delay time dimension
         assert len(wrong_dimensions.shape) != 3
-        
+
         # Invalid data values
         nan_data = np.full((3, 20, 30), np.nan)
         assert np.all(np.isnan(nan_data))
-        
+
         negative_data = np.full((3, 20, 30), -1.0)
         assert np.all(negative_data < 0)
-    
+
     def test_parameter_bounds_validation(self, dummy_config):
         """Test parameter bounds validation."""
         bounds = dummy_config["parameter_space"]["bounds"]
-        
+
         for bound in bounds:
             # Check required fields
             assert "name" in bound
-            assert "min" in bound  
+            assert "min" in bound
             assert "max" in bound
-            
+
             # Check logical consistency
             assert bound["min"] < bound["max"]
-            
+
             # Check physical constraints for specific parameters
             if bound["name"] in ["D0", "gamma_dot_t0"]:
-                assert bound["min"] > 0, f"{bound['name']} must have positive minimum"
-            
+                assert (
+                    bound["min"] > 0
+                ), f"{bound['name']} must have positive minimum"
+
             # Check that bounds are reasonable
             assert not np.isinf(bound["min"])
             assert not np.isinf(bound["max"])
             assert not np.isnan(bound["min"])
             assert not np.isnan(bound["max"])
-    
+
     def test_time_array_validation(self):
         """Test validation of time arrays."""
         # Valid time arrays
         valid_time_lags = np.linspace(0.1, 2.0, 20)
         valid_delay_times = np.linspace(0.1, 3.0, 30)
-        
+
         assert np.all(valid_time_lags > 0)
         assert np.all(valid_delay_times > 0)
         assert len(valid_time_lags) == 20
         assert len(valid_delay_times) == 30
         assert np.all(np.diff(valid_time_lags) > 0)  # Should be increasing
         assert np.all(np.diff(valid_delay_times) > 0)
-        
+
         # Invalid time arrays
         negative_times = np.linspace(-1.0, 1.0, 10)
         assert np.any(negative_times < 0)
-        
+
         non_monotonic = np.array([0.1, 0.3, 0.2, 0.4])
         assert not np.all(np.diff(non_monotonic) > 0)
 
 
 class TestMemoryManagement:
     """Test memory-efficient operations and cleanup."""
-    
+
     def test_large_array_handling(self, temp_directory):
         """Test handling of large data arrays without excessive memory usage."""
         # Create moderately large arrays to test memory handling
         large_shape = (10, 100, 150)  # Still manageable in CI environments
-        
+
         # Use numpy's memory mapping capabilities for large arrays
-        large_data = np.random.rand(*large_shape).astype(np.float32)  # Use float32 to save memory
-        
+        large_data = np.random.rand(*large_shape).astype(
+            np.float32
+        )  # Use float32 to save memory
+
         # Test that we can process the data
         assert large_data.shape == large_shape
         assert large_data.dtype == np.float32
-        
+
         # Test basic operations that shouldn't cause memory issues
         mean_val = np.mean(large_data)
         std_val = np.std(large_data)
-        
+
         assert not np.isnan(mean_val)
         assert not np.isnan(std_val)
         assert std_val > 0
-        
+
         # Test saving large arrays
         if IO_UTILS_AVAILABLE:
             from homodyne.core.io_utils import save_numpy
+
             filepath = temp_directory / "large_array.npz"
             success = save_numpy(large_data, filepath, compressed=True)
-            
+
             assert success is True
             assert filepath.exists()
-            
+
             # Verify we can load it back
             loaded = np.load(filepath)
-            np.testing.assert_array_equal(loaded['data'], large_data)
-    
+            np.testing.assert_array_equal(loaded["data"], large_data)
+
     def test_cleanup_after_plotting(self, temp_directory, dummy_config):
         """Test that matplotlib figures are properly cleaned up."""
         import matplotlib.pyplot as plt
-        
+
         initial_figs = len(plt.get_fignums())
-        
+
         # Create and save a plot
         if PLOTTING_AVAILABLE:
             from plotting import plot_parameter_evolution
-            
+
             best_params = {"D0": 100.0}
-            bounds = [{"name": "D0", "min": 1.0, "max": 1000.0, "unit": "Å²/s"}]
-            
-            success = plot_parameter_evolution(best_params, bounds, temp_directory, dummy_config)
-            
+            bounds = [
+                {"name": "D0", "min": 1.0, "max": 1000.0, "unit": "Å²/s"}
+            ]
+
+            success = plot_parameter_evolution(
+                best_params, bounds, temp_directory, dummy_config
+            )
+
             # Check that figures were cleaned up
             final_figs = len(plt.get_fignums())
-            
+
             # Should not accumulate figures (memory leak prevention)
-            assert final_figs <= initial_figs + 1  # Allow for one figure that might remain
+            assert (
+                final_figs <= initial_figs + 1
+            )  # Allow for one figure that might remain
 
 
 class TestPerAngleAnalysisIntegration:
     """Integration tests for per-angle chi-squared analysis."""
-    
-    def test_per_angle_analysis_with_quality_assessment(self, temp_directory, dummy_config):
+
+    def test_per_angle_analysis_with_quality_assessment(
+        self, temp_directory, dummy_config
+    ):
         """Test per-angle analysis integration with quality assessment."""
         from unittest.mock import Mock, patch
-        
+
         # Add fit_quality rules to config if not present
         if "validation_rules" not in dummy_config:
             dummy_config["validation_rules"] = {}
-        
+
         dummy_config["validation_rules"]["fit_quality"] = {
             "overall_chi_squared": {
                 "acceptable_threshold": 10.0,
                 "warning_threshold": 20.0,
-                "critical_threshold": 50.0
+                "critical_threshold": 50.0,
             },
             "per_angle_chi_squared": {
                 "acceptable_threshold": 15.0,
                 "outlier_threshold_multiplier": 3.0,
                 "max_outlier_fraction": 0.2,
-                "min_good_angles": 5
-            }
+                "min_good_angles": 5,
+            },
         }
-        
+
         # Mock analyzer with per-angle analysis capability
-        with patch('homodyne.analysis.core.HomodyneAnalysisCore') as MockAnalyzer:
+        with patch(
+            "homodyne.analysis.core.HomodyneAnalysisCore"
+        ) as MockAnalyzer:
             mock_instance = Mock()
             MockAnalyzer.return_value = mock_instance
             mock_instance.config = dummy_config
-            
+
             # Mock per-angle analysis method
             mock_instance.analyze_per_angle_chi_squared.return_value = {
                 "method": "TestMethod",
@@ -471,70 +541,84 @@ class TestPerAngleAnalysisIntegration:
                     "overall_quality": "warning",
                     "per_angle_quality": "acceptable",
                     "combined_quality": "warning",
-                    "quality_issues": ["Overall chi-squared above warning threshold"]
+                    "quality_issues": [
+                        "Overall chi-squared above warning threshold"
+                    ],
                 },
                 "angle_categorization": {
                     "good_angles": {"count": 8, "fraction": 0.8},
                     "unacceptable_angles": {"count": 2, "fraction": 0.2},
-                    "statistical_outliers": {"count": 1, "fraction": 0.1}
-                }
+                    "statistical_outliers": {"count": 1, "fraction": 0.1},
+                },
             }
-            
+
             # Test analysis execution
             parameters = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
-            phi_angles = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0])
-            c2_exp = np.random.rand(10, 4, 5)
-            
-            result = mock_instance.analyze_per_angle_chi_squared(
-                parameters, phi_angles, c2_exp,
-                save_to_file=True, output_dir=str(temp_directory)
+            phi_angles = np.array(
+                [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
             )
-            
+            c2_exp = np.random.rand(10, 4, 5)
+
+            result = mock_instance.analyze_per_angle_chi_squared(
+                parameters,
+                phi_angles,
+                c2_exp,
+                save_to_file=True,
+                output_dir=str(temp_directory),
+            )
+
             # Verify analysis was called
             mock_instance.analyze_per_angle_chi_squared.assert_called_once()
-            
+
             # Verify quality assessment structure
             assert "quality_assessment" in result
             assert "angle_categorization" in result
-            assert result["quality_assessment"]["combined_quality"] == "warning"
+            assert (
+                result["quality_assessment"]["combined_quality"] == "warning"
+            )
 
-    def test_per_angle_file_output_integration(self, temp_directory, dummy_config):
+    def test_per_angle_file_output_integration(
+        self, temp_directory, dummy_config
+    ):
         """Test that per-angle results are properly saved to files."""
         from pathlib import Path
         import json
         from unittest.mock import Mock, patch
-        
+
         # Create mock results that would be saved
         mock_results = {
-            "method": "Classical", 
+            "method": "Classical",
             "overall_reduced_chi_squared": 15.0,
             "per_angle_analysis": {
                 "phi_angles_deg": [10.0, 20.0, 30.0, 40.0, 50.0],
-                "chi_squared_reduced": [8.0, 12.0, 18.0, 25.0, 30.0]
+                "chi_squared_reduced": [8.0, 12.0, 18.0, 25.0, 30.0],
             },
             "quality_assessment": {
                 "combined_quality": "warning",
-                "thresholds_used": {
-                    "acceptable_per_angle": 15.0
-                }
+                "thresholds_used": {"acceptable_per_angle": 15.0},
             },
             "angle_categorization": {
                 "good_angles": {"count": 2, "angles_deg": [10.0, 20.0]},
-                "unacceptable_angles": {"count": 3, "angles_deg": [30.0, 40.0, 50.0]}
-            }
+                "unacceptable_angles": {
+                    "count": 3,
+                    "angles_deg": [30.0, 40.0, 50.0],
+                },
+            },
         }
-        
+
         # Mock file saving by creating the expected file manually
-        results_file = Path(temp_directory) / "per_angle_chi_squared_classical.json"
-        with open(results_file, 'w') as f:
+        results_file = (
+            Path(temp_directory) / "per_angle_chi_squared_classical.json"
+        )
+        with open(results_file, "w") as f:
             json.dump(mock_results, f, indent=2)
-        
+
         # Verify file was created and contains expected data
         assert results_file.exists()
-        
-        with open(results_file, 'r') as f:
+
+        with open(results_file, "r") as f:
             saved_data = json.load(f)
-        
+
         assert saved_data["method"] == "Classical"
         assert "quality_assessment" in saved_data
         assert "angle_categorization" in saved_data
@@ -543,16 +627,16 @@ class TestPerAngleAnalysisIntegration:
 
 class TestConcurrencyAndRaceConditions:
     """Test handling of concurrent operations and race conditions."""
-    
+
     def test_concurrent_directory_creation(self, temp_directory):
         """Test that concurrent directory creation is handled safely."""
         from concurrent.futures import ThreadPoolExecutor
         import threading
-        
+
         base_dir = temp_directory / "concurrent_test"
         results = []
         errors = []
-        
+
         def create_directory(subdir_name):
             """Function to create directory in thread."""
             try:
@@ -562,56 +646,60 @@ class TestConcurrencyAndRaceConditions:
             except Exception as e:
                 errors.append(e)
                 return None
-        
+
         # Create multiple directories concurrently
         subdirs = [f"subdir_{i}" for i in range(5)]
-        
+
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(create_directory, subdir) for subdir in subdirs]
-            
+            futures = [
+                executor.submit(create_directory, subdir) for subdir in subdirs
+            ]
+
             # Wait for all to complete
             for future in futures:
                 future.result()
-        
+
         # Check that all directories were created
         assert len(errors) == 0, f"Errors occurred: {errors}"
         assert len(results) == len(subdirs)
-        
+
         for subdir in subdirs:
             assert (base_dir / subdir).exists()
-    
+
     def test_concurrent_file_saving(self, temp_directory):
         """Test concurrent file saving operations."""
         from concurrent.futures import ThreadPoolExecutor
-        
+
         if not IO_UTILS_AVAILABLE:
             pytest.skip("IO utils not available")
-        
+
         from homodyne.core.io_utils import save_json
-        
+
         def save_test_file(file_id):
             """Function to save file in thread."""
             data = {"id": file_id, "data": list(range(file_id, file_id + 10))}
             filepath = temp_directory / f"concurrent_file_{file_id}.json"
             return save_json(data, filepath)
-        
+
         # Save multiple files concurrently
         file_ids = list(range(5))
-        
+
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(save_test_file, fid) for fid in file_ids]
+            futures = [
+                executor.submit(save_test_file, fid) for fid in file_ids
+            ]
             results = [future.result() for future in futures]
-        
+
         # All saves should succeed
         assert all(results)
-        
+
         # Verify all files exist and have correct content
         for file_id in file_ids:
             filepath = temp_directory / f"concurrent_file_{file_id}.json"
             assert filepath.exists()
-            
-            with open(filepath, 'r') as f:
+
+            with open(filepath, "r") as f:
                 data = json.load(f)
-            
+
             assert data["id"] == file_id
             assert data["data"] == list(range(file_id, file_id + 10))

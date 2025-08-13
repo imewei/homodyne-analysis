@@ -14,16 +14,16 @@ from .kernels import (
     calculate_shear_rate_numba,
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
-    memory_efficient_cache
+    memory_efficient_cache,
 )
 
 __all__ = [
-    'ConfigManager',
-    'configure_logging',
-    'create_time_integral_matrix_numba',
-    'calculate_diffusion_coefficient_numba',
-    'calculate_shear_rate_numba', 
-    'compute_g1_correlation_numba',
-    'compute_sinc_squared_numba',
-    'memory_efficient_cache',
+    "ConfigManager",
+    "configure_logging",
+    "create_time_integral_matrix_numba",
+    "calculate_diffusion_coefficient_numba",
+    "calculate_shear_rate_numba",
+    "compute_g1_correlation_numba",
+    "compute_sinc_squared_numba",
+    "memory_efficient_cache",
 ]

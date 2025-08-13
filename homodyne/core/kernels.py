@@ -11,7 +11,6 @@ Institution: Argonne National Laboratory & University of Chicago
 
 import numpy as np
 from functools import wraps
-from typing import Any, Callable
 
 # Numba imports with fallbacks
 try:
@@ -115,7 +114,9 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
 
 
 @njit(float64[:](float64[:], float64, float64, float64), cache=True)
-def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
+def calculate_shear_rate_numba(
+    time_array, gamma_dot_t0, beta, gamma_dot_t_offset
+):
     """
     Calculate time-dependent shear rate.
 
@@ -161,8 +162,9 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     """
     gamma_dot_t = np.zeros_like(time_array)
     for i in range(len(time_array)):
-        gamma_dot_t[i] = gamma_dot_t0 * \
-            (time_array[i] ** beta) + gamma_dot_t_offset
+        gamma_dot_t[i] = (
+            gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
+        )
     return gamma_dot_t
 
 
@@ -365,20 +367,22 @@ def memory_efficient_cache(maxsize=128):
                 self.cache_info = cache_info
                 self.cache_clear = cache_clear
                 # Copy function attributes for proper method binding
-                self.__name__ = getattr(func, '__name__', 'cached_function')
-                self.__doc__ = getattr(func, '__doc__', None)
-                self.__module__ = getattr(func, '__module__', '') or ''
+                self.__name__ = getattr(func, "__name__", "cached_function")
+                self.__doc__ = getattr(func, "__doc__", None)
+                self.__module__ = getattr(func, "__module__", "") or ""
 
             def __call__(self, *args, **kwargs):
                 return self._func(*args, **kwargs)
-            
+
             def __get__(self, instance, owner):
                 """Support instance methods by implementing descriptor protocol."""
                 if instance is None:
                     return self
                 else:
                     # Return a bound method
-                    return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
+                    return lambda *args, **kwargs: self._func(
+                        instance, *args, **kwargs
+                    )
 
         return CachedFunction(wrapper)
 

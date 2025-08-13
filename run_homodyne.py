@@ -80,7 +80,8 @@ def print_banner(args: argparse.Namespace) -> None:
     print(f"Method:           {args.method}")
     print(f"Config file:      {args.config}")
     print(f"Output directory: {args.output_dir}")
-    print(f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}")
+    print(
+        f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}")
     print()
     print("Starting analysis...")
     print("-" * 60)
@@ -95,12 +96,15 @@ def run_analysis(args: argparse.Namespace) -> None:
     # 1. Verify the config file exists; exit with clear error if not
     config_path = Path(args.config)
     if not config_path.exists():
-        logger.error(f"❌ Configuration file not found: {config_path.absolute()}")
-        logger.error("Please check the file path and ensure the configuration file exists.")
+        logger.error(
+            f"❌ Configuration file not found: {config_path.absolute()}")
+        logger.error(
+            "Please check the file path and ensure the configuration file exists.")
         sys.exit(1)
 
     if not config_path.is_file():
-        logger.error(f"❌ Configuration path is not a file: {config_path.absolute()}")
+        logger.error(
+            f"❌ Configuration path is not a file: {config_path.absolute()}")
         sys.exit(1)
 
     logger.info(f"✓ Configuration file found: {config_path.absolute()}")
@@ -111,21 +115,25 @@ def run_analysis(args: argparse.Namespace) -> None:
         logger.info("✓ Successfully imported HomodyneAnalysisCore")
     except ImportError as e:
         logger.error(f"❌ Failed to import HomodyneAnalysisCore: {e}")
-        logger.error("Please ensure the homodyne package is properly installed.")
+        logger.error(
+            "Please ensure the homodyne package is properly installed.")
         sys.exit(1)
 
     # 3. Create analysis core instance with error handling
     try:
-        logger.info(f"Initializing Homodyne Analysis with config: {config_path}")
+        logger.info(
+            f"Initializing Homodyne Analysis with config: {config_path}")
         analyzer = HomodyneAnalysisCore(config_file=str(config_path))
         logger.info("✓ HomodyneAnalysisCore initialized successfully")
     except (ImportError, ModuleNotFoundError) as e:
-        logger.error(f"❌ Import error while creating HomodyneAnalysisCore: {e}")
+        logger.error(
+            f"❌ Import error while creating HomodyneAnalysisCore: {e}")
         logger.error("Please ensure all required dependencies are installed.")
         sys.exit(1)
     except (ValueError, KeyError, FileNotFoundError) as e:
         logger.error(f"❌ JSON configuration error: {e}")
-        logger.error("Please check your configuration file format and content.")
+        logger.error(
+            "Please check your configuration file format and content.")
         sys.exit(1)
     except Exception as e:
         logger.error(f"❌ Unexpected error initializing analysis core: {e}")
@@ -141,9 +149,11 @@ def run_analysis(args: argparse.Namespace) -> None:
         logger.error("❌ Analyzer configuration is None. Please check your configuration file and "
                      "ensure it is loaded correctly.")
         sys.exit(1)
-    initial_params = analyzer.config.get("initial_parameters", {}).get("values", None)
+    initial_params = analyzer.config.get(
+        "initial_parameters", {}).get("values", None)
     if initial_params is None:
-        logger.error("❌ Initial parameters not found in configuration. Please check your configuration file format.")
+        logger.error(
+            "❌ Initial parameters not found in configuration. Please check your configuration file format.")
         sys.exit(1)
 
     # Calculate chi-squared for initial parameters
@@ -159,25 +169,30 @@ def run_analysis(args: argparse.Namespace) -> None:
     try:
         if args.method == 'classical':
             methods_attempted = ['Classical']
-            results = run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp)
+            results = run_classical_optimization(
+                analyzer, initial_params, phi_angles, c2_exp)
         elif args.method == 'bayesian':
             methods_attempted = ['Bayesian']
-            results = run_bayesian_optimization(analyzer, initial_params, phi_angles, c2_exp)
+            results = run_bayesian_optimization(
+                analyzer, initial_params, phi_angles, c2_exp)
         elif args.method == 'mcmc':
             methods_attempted = ['MCMC']
-            results = run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
+            results = run_mcmc_optimization(
+                analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
         elif args.method == 'all':
             methods_attempted = ['Classical', 'Bayesian', 'MCMC']
-            results = run_all_methods(analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
+            results = run_all_methods(
+                analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
 
         if results:
             # Save results
             analyzer.save_results_with_config(results)
-            
+
             # Perform per-angle chi-squared analysis for each successful method
             successful_methods = results.get("methods_used", [])
-            logger.info(f"Running per-angle chi-squared analysis for methods: {', '.join(successful_methods)}")
-            
+            logger.info(
+                f"Running per-angle chi-squared analysis for methods: {', '.join(successful_methods)}")
+
             for method in successful_methods:
                 method_key = f"{method.lower()}_optimization"
                 if method_key in results and "parameters" in results[method_key]:
@@ -185,23 +200,25 @@ def run_analysis(args: argparse.Namespace) -> None:
                     if method_params is not None:
                         try:
                             analyzer.analyze_per_angle_chi_squared(
-                                np.array(method_params), 
-                                phi_angles, 
-                                c2_exp, 
+                                np.array(method_params),
+                                phi_angles,
+                                c2_exp,
                                 method_name=method,
                                 save_to_file=True,
                                 output_dir=args.output_dir
                             )
                         except Exception as e:
-                            logger.warning(f"Per-angle analysis failed for {method}: {e}")
-            
+                            logger.warning(
+                                f"Per-angle analysis failed for {method}: {e}")
+
             logger.info("✓ Analysis completed successfully!")
             logger.info(f"Successful methods: {', '.join(successful_methods)}")
         else:
             logger.error("❌ Analysis failed - no results generated")
             if len(methods_attempted) == 1:
                 # Single method failed - this is a hard failure
-                logger.error(f"The only requested method ({args.method}) failed to complete")
+                logger.error(
+                    f"The only requested method ({args.method}) failed to complete")
                 sys.exit(1)
             else:
                 # Multiple methods attempted - check if any succeeded
@@ -260,12 +277,14 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         elif "numpy" in str(e).lower():
             logger.error("❌ Install numpy: pip install numpy")
         else:
-            logger.error("❌ Install required dependencies: pip install scipy numpy")
+            logger.error(
+                "❌ Install required dependencies: pip install scipy numpy")
         return None
     except (ValueError, KeyError) as e:
         error_msg = f"Classical optimization failed - configuration error: {e}"
         logger.error(error_msg)
-        logger.error("❌ Please check your configuration file format and parameter bounds")
+        logger.error(
+            "❌ Please check your configuration file format and parameter bounds")
         return None
     except Exception as e:
         error_msg = f"Classical optimization failed - unexpected error: {e}"
@@ -285,9 +304,11 @@ def run_bayesian_optimization(analyzer, initial_params, phi_angles, c2_exp):
             from homodyne.optimization.bayesian import BayesianOptimizer
         except ImportError as import_err:
             if "skopt" in str(import_err).lower() or "scikit-optimize" in str(import_err).lower():
-                logger.error("❌ Bayesian optimization requires scikit-optimize: pip install scikit-optimize")
+                logger.error(
+                    "❌ Bayesian optimization requires scikit-optimize: pip install scikit-optimize")
             else:
-                logger.error(f"❌ Failed to import Bayesian optimizer: {import_err}")
+                logger.error(
+                    f"❌ Failed to import Bayesian optimizer: {import_err}")
             return None
 
         # Create and run Bayesian optimizer
@@ -321,23 +342,27 @@ def run_bayesian_optimization(analyzer, initial_params, phi_angles, c2_exp):
                 "methods_used": ["Bayesian"]
             }
         else:
-            logger.error("Bayesian optimization completed but returned no results")
+            logger.error(
+                "Bayesian optimization completed but returned no results")
             return None
 
     except ImportError as e:
         error_msg = f"Bayesian optimization failed - missing dependencies: {e}"
         logger.error(error_msg)
         if "skopt" in str(e).lower() or "scikit-optimize" in str(e).lower():
-            logger.error("❌ Install scikit-optimize: pip install scikit-optimize")
+            logger.error(
+                "❌ Install scikit-optimize: pip install scikit-optimize")
         elif "sklearn" in str(e).lower():
             logger.error("❌ Install scikit-learn: pip install scikit-learn")
         else:
-            logger.error("❌ Install required dependencies: pip install scikit-optimize scikit-learn")
+            logger.error(
+                "❌ Install required dependencies: pip install scikit-optimize scikit-learn")
         return None
     except (ValueError, KeyError) as e:
         error_msg = f"Bayesian optimization failed - configuration error: {e}"
         logger.error(error_msg)
-        logger.error("❌ Please check your configuration file and parameter bounds")
+        logger.error(
+            "❌ Please check your configuration file and parameter bounds")
         return None
     except Exception as e:
         error_msg = f"Bayesian optimization failed - unexpected error: {e}"
@@ -358,9 +383,11 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
     except ImportError as e:
         logger.error(f"❌ Failed to import MCMC module: {e}")
         if "pymc" in str(e).lower() or "pytensor" in str(e).lower() or "arviz" in str(e).lower():
-            logger.error("❌ MCMC sampling requires PyMC and ArviZ: pip install pymc arviz")
+            logger.error(
+                "❌ MCMC sampling requires PyMC and ArviZ: pip install pymc arviz")
         else:
-            logger.error("❌ Install required dependencies: pip install pymc arviz pytensor")
+            logger.error(
+                "❌ Install required dependencies: pip install pymc arviz pytensor")
         return None
 
     try:
@@ -381,7 +408,8 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         )
 
         mcmc_execution_time = time.time() - mcmc_start_time
-        logger.info(f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
+        logger.info(
+            f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
 
         # Step 5 & 6: Save inference data and write convergence diagnostics
         if output_dir is None:
@@ -401,7 +429,8 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 az.to_netcdf(mcmc_results['trace'], str(netcdf_path))
                 logger.info(f"✓ MCMC trace saved to NetCDF: {netcdf_path}")
             except ImportError as import_err:
-                logger.error(f"❌ ArviZ not available for saving trace: {import_err}")
+                logger.error(
+                    f"❌ ArviZ not available for saving trace: {import_err}")
                 logger.error("❌ Install ArviZ: pip install arviz")
             except Exception as e:
                 logger.error(f"❌ Failed to save NetCDF trace: {e}")
@@ -430,15 +459,18 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
             logger.info(f"  Max R-hat: {diagnostics.get('max_rhat', 'N/A')}")
             logger.info(f"  Min ESS: {diagnostics.get('min_ess', 'N/A')}")
             logger.info(f"  Converged: {diagnostics.get('converged', False)}")
-            logger.info(f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
+            logger.info(
+                f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
 
             if not diagnostics.get('converged', False):
-                logger.warning("⚠ MCMC chains may not have converged - check diagnostics!")
+                logger.warning(
+                    "⚠ MCMC chains may not have converged - check diagnostics!")
 
         # Add posterior statistics if available
         if hasattr(sampler, 'extract_posterior_statistics'):
             try:
-                posterior_stats = sampler.extract_posterior_statistics(mcmc_results.get('trace'))
+                posterior_stats = sampler.extract_posterior_statistics(
+                    mcmc_results.get('trace'))
                 if posterior_stats and 'parameter_statistics' in posterior_stats:
                     summary_results['parameter_statistics'] = posterior_stats['parameter_statistics']
             except Exception as e:
@@ -456,9 +488,11 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         # Extract best parameters from posterior means for compatibility with other methods
         best_params = None
         if 'posterior_means' in mcmc_results:
-            param_names = analyzer.config.get('initial_parameters', {}).get('parameter_names', [])
+            param_names = analyzer.config.get(
+                'initial_parameters', {}).get('parameter_names', [])
             posterior_means = mcmc_results['posterior_means']
-            best_params = [posterior_means.get(name, 0.0) for name in param_names]
+            best_params = [posterior_means.get(
+                name, 0.0) for name in param_names]
 
         # Calculate chi-squared for best MCMC parameters
         chi_squared = None
@@ -469,7 +503,8 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 )
                 logger.info(f"MCMC posterior mean χ²_red: {chi_squared:.6e}")
             except Exception as e:
-                logger.warning(f"Failed to calculate chi-squared for MCMC results: {e}")
+                logger.warning(
+                    f"Failed to calculate chi-squared for MCMC results: {e}")
 
         # Format results for compatibility with main analysis framework
         return {
@@ -501,12 +536,14 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         elif "pytensor" in str(e).lower():
             logger.error("❌ Install PyTensor: pip install pytensor")
         else:
-            logger.error("❌ Install required dependencies: pip install pymc arviz pytensor")
+            logger.error(
+                "❌ Install required dependencies: pip install pymc arviz pytensor")
         return None
     except (ValueError, KeyError) as e:
         error_msg = f"MCMC optimization failed - configuration error: {e}"
         logger.error(error_msg)
-        logger.error("❌ Please check your MCMC configuration and parameter priors")
+        logger.error(
+            "❌ Please check your MCMC configuration and parameter priors")
         return None
     except Exception as e:
         error_msg = f"MCMC optimization failed - unexpected error: {e}"
@@ -529,7 +566,8 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     # Run classical optimization
     methods_attempted.append("Classical")
     logger.info("Attempting Classical optimization...")
-    classical_results = run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp)
+    classical_results = run_classical_optimization(
+        analyzer, initial_params, phi_angles, c2_exp)
     if classical_results:
         all_results.update(classical_results)
         methods_used.append("Classical")
@@ -540,7 +578,8 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     # Run Bayesian optimization
     methods_attempted.append("Bayesian")
     logger.info("Attempting Bayesian optimization...")
-    bayesian_results = run_bayesian_optimization(analyzer, initial_params, phi_angles, c2_exp)
+    bayesian_results = run_bayesian_optimization(
+        analyzer, initial_params, phi_angles, c2_exp)
     if bayesian_results:
         all_results.update(bayesian_results)
         methods_used.append("Bayesian")
@@ -551,7 +590,8 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     # Run MCMC sampling
     methods_attempted.append("MCMC")
     logger.info("Attempting MCMC sampling...")
-    mcmc_results = run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir)
+    mcmc_results = run_mcmc_optimization(
+        analyzer, initial_params, phi_angles, c2_exp, output_dir)
     if mcmc_results:
         all_results.update(mcmc_results)
         methods_used.append("MCMC")
@@ -644,7 +684,8 @@ Examples:
         raise
     except Exception as e:
         logger.error(f"❌ Analysis failed: {e}")
-        logger.error("Please check your configuration and ensure all dependencies are installed")
+        logger.error(
+            "Please check your configuration and ensure all dependencies are installed")
         # Exit with non-zero code - failure
         sys.exit(1)
 

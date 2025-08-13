@@ -12,10 +12,9 @@ Institution: Argonne National Laboratory & University of Chicago
 import json
 import logging
 import multiprocessing as mp
-from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 # Default parallelization setting
 DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
@@ -61,8 +60,9 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
         module_logger.removeHandler(handler)
 
     # Parse configuration
-    log_level = getattr(logging, cfg.get(
-        "level", "INFO").upper(), logging.INFO)
+    log_level = getattr(
+        logging, cfg.get("level", "INFO").upper(), logging.INFO
+    )
     format_str = cfg.get(
         "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -82,7 +82,8 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
         filename = cfg.get("log_filename", "homodyne_analysis.log")
         rotation_config = cfg.get("rotation", {})
         max_bytes = rotation_config.get(
-            "max_bytes", 10 * 1024 * 1024)  # 10MB default
+            "max_bytes", 10 * 1024 * 1024
+        )  # 10MB default
         backup_count = rotation_config.get("backup_count", 3)
 
         try:
@@ -185,7 +186,8 @@ class ConfigManager:
             # Display version information if available
             if "metadata" in self.config:
                 version = self.config["metadata"].get(
-                    "config_version", "Unknown")
+                    "config_version", "Unknown"
+                )
                 logger.info(f"Configuration version: {version}")
 
         except json.JSONDecodeError as e:
@@ -195,7 +197,8 @@ class ConfigManager:
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             logger.exception(
-                "Full traceback for configuration loading failure:")
+                "Full traceback for configuration loading failure:"
+            )
             logger.info("Using default configuration...")
             self.config = self._get_default_config()
 
@@ -238,7 +241,8 @@ class ConfigManager:
         )
         if end - start < min_frames:
             raise ValueError(
-                f"Insufficient frames: {end-start} < {min_frames}")
+                f"Insufficient frames: {end-start} < {min_frames}"
+            )
 
         # Validate physical parameters
         self._validate_physical_parameters()
@@ -250,7 +254,9 @@ class ConfigManager:
     def _validate_physical_parameters(self):
         """Validate physical parameter ranges."""
         if self.config is None or "analyzer_parameters" not in self.config:
-            raise ValueError("Configuration or 'analyzer_parameters' section is missing.")
+            raise ValueError(
+                "Configuration or 'analyzer_parameters' section is missing."
+            )
 
         params = self.config["analyzer_parameters"]
 
@@ -292,7 +298,8 @@ class ConfigManager:
         except Exception as e:
             logger.warning(f"Failed to configure logging: {e}")
             logger.exception(
-                "Full traceback for logging configuration failure:")
+                "Full traceback for logging configuration failure:"
+            )
             logger.info("Continuing without logging...")
             return None
 
@@ -324,7 +331,7 @@ class ConfigManager:
     def get_angle_filtering_config(self) -> Dict[str, Any]:
         """
         Get angle filtering configuration with defaults.
-        
+
         Returns
         -------
         dict
@@ -333,44 +340,54 @@ class ConfigManager:
             - target_ranges: list of dicts with min_angle and max_angle
             - fallback_to_all_angles: bool, whether to use all angles if no targets found
         """
-        angle_filtering = self.get("optimization_config", "angle_filtering", default={})
-        
+        angle_filtering = self.get(
+            "optimization_config", "angle_filtering", default={}
+        )
+
         # Ensure angle_filtering is a dictionary for unpacking
         if not isinstance(angle_filtering, dict):
             angle_filtering = {}
-        
+
         # Provide sensible defaults if configuration is missing or incomplete
         default_config = {
             "enabled": True,
             "target_ranges": [
                 {"min_angle": -10.0, "max_angle": 10.0},
-                {"min_angle": 170.0, "max_angle": 190.0}
+                {"min_angle": 170.0, "max_angle": 190.0},
             ],
-            "fallback_to_all_angles": True
+            "fallback_to_all_angles": True,
         }
-        
+
         # Merge with defaults
         result = {**default_config, **angle_filtering}
-        
+
         # Validate target_ranges structure
         if "target_ranges" in result:
             valid_ranges = []
             for range_config in result["target_ranges"]:
-                if isinstance(range_config, dict) and "min_angle" in range_config and "max_angle" in range_config:
-                    valid_ranges.append({
-                        "min_angle": float(range_config["min_angle"]),
-                        "max_angle": float(range_config["max_angle"])
-                    })
+                if (
+                    isinstance(range_config, dict)
+                    and "min_angle" in range_config
+                    and "max_angle" in range_config
+                ):
+                    valid_ranges.append(
+                        {
+                            "min_angle": float(range_config["min_angle"]),
+                            "max_angle": float(range_config["max_angle"]),
+                        }
+                    )
                 else:
-                    logger.warning(f"Invalid angle range configuration: {range_config}")
+                    logger.warning(
+                        f"Invalid angle range configuration: {range_config}"
+                    )
             result["target_ranges"] = valid_ranges
-        
+
         return result
 
     def is_angle_filtering_enabled(self) -> bool:
         """
         Check if angle filtering is enabled in configuration.
-        
+
         Returns
         -------
         bool
@@ -381,7 +398,7 @@ class ConfigManager:
     def get_target_angle_ranges(self) -> List[Tuple[float, float]]:
         """
         Get list of target angle ranges for optimization.
-        
+
         Returns
         -------
         list of tuple
@@ -389,19 +406,21 @@ class ConfigManager:
         """
         config = self.get_angle_filtering_config()
         ranges = config.get("target_ranges", [])
-        
+
         return [(r["min_angle"], r["max_angle"]) for r in ranges]
 
     def should_fallback_to_all_angles(self) -> bool:
         """
         Check if system should fallback to all angles when no targets found.
-        
+
         Returns
         -------
         bool
             True if should fallback to all angles, False to raise error
         """
-        return self.get_angle_filtering_config().get("fallback_to_all_angles", True)
+        return self.get_angle_filtering_config().get(
+            "fallback_to_all_angles", True
+        )
 
     def get_test_config(self, test_name: str) -> Dict[str, Any]:
         """
@@ -418,15 +437,81 @@ class ConfigManager:
             Test-specific configuration
         """
         if self.config is None:
-            raise ValueError("Configuration is None. Cannot retrieve test configurations.")
+            raise ValueError(
+                "Configuration is None. Cannot retrieve test configurations."
+            )
         configs = self.config.get("test_configurations", {})
 
         if test_name not in configs:
             available = list(configs.keys())
             raise ValueError(
-                f"Test '{test_name}' not found. Available: {available}")
+                f"Test '{test_name}' not found. Available: {available}"
+            )
 
         return configs[test_name]
+
+    def is_static_mode_enabled(self) -> bool:
+        """
+        Check if static mode is enabled in configuration.
+
+        Returns
+        -------
+        bool
+            True if static mode is enabled, False otherwise
+        """
+        return self.get("analysis_settings", "static_mode", default=False)
+
+    def get_analysis_mode(self) -> str:
+        """
+        Get the current analysis mode.
+
+        Returns
+        -------
+        str
+            "static" if static mode is enabled, "laminar_flow" otherwise
+        """
+        return "static" if self.is_static_mode_enabled() else "laminar_flow"
+
+    def get_effective_parameter_count(self) -> int:
+        """
+        Get the effective number of model parameters based on analysis mode.
+
+        Returns
+        -------
+        int
+            Number of parameters used in the analysis:
+            - Static mode: 3 (only diffusion parameters)
+            - Laminar flow mode: 7 (all parameters)
+        """
+        return 3 if self.is_static_mode_enabled() else 7
+
+    def get_analysis_settings(self) -> Dict[str, Any]:
+        """
+        Get analysis settings with defaults.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Analysis settings including static_mode flag and descriptions
+        """
+        analysis_settings = self.get("analysis_settings", default={})
+
+        # Provide sensible defaults
+        default_settings = {
+            "static_mode": False,
+            "model_description": {
+                "static_case": (
+                    "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) = g₁_diff(t₁,t₂), g₂(t₁,t₂) = [g₁(t₁,t₂)]²"
+                ),
+                "laminar_flow_case": (
+                    "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂) where g₁_shear = [sinc(Φ)]² and Φ = (1/2π)qL cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
+                ),
+            },
+        }
+
+        # Merge with defaults
+        result = {**default_settings, **analysis_settings}
+        return result
 
     def _get_default_config(self) -> Dict[str, Any]:
         """Generate minimal default configuration."""
@@ -436,7 +521,11 @@ class ConfigManager:
                 "description": "Emergency fallback configuration",
             },
             "analyzer_parameters": {
-                "temporal": {"dt": 0.1, "start_frame": 1001, "end_frame": 2000},
+                "temporal": {
+                    "dt": 0.1,
+                    "start_frame": 1001,
+                    "end_frame": 2000,
+                },
                 "scattering": {"wavevector_q": 0.0054},
                 "geometry": {"stator_rotor_gap": 2000000},
                 "computational": {
@@ -452,7 +541,20 @@ class ConfigManager:
                 "phi_angles_file": "phi_list.txt",
                 "exchange_key": "exchange",
                 "cache_file_path": ".",
-                "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
+                "cache_filename_template": (
+                    "cached_c2_frames_{start_frame}_{end_frame}.npz"
+                ),
+            },
+            "analysis_settings": {
+                "static_mode": False,
+                "model_description": {
+                    "static_case": (
+                        "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) = g₁_diff(t₁,t₂), g₂(t₁,t₂) = [g₁(t₁,t₂)]²"
+                    ),
+                    "laminar_flow_case": (
+                        "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂) where g₁_shear = [sinc(Φ)]² and Φ = (1/2π)qL cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
+                    ),
+                },
             },
             "initial_parameters": {
                 "values": [1324.1, -0.014, -0.674361, 0.003, -0.909, 0.0, 0.0],
@@ -471,39 +573,70 @@ class ConfigManager:
                     "enabled": True,
                     "target_ranges": [
                         {"min_angle": -10.0, "max_angle": 10.0},
-                        {"min_angle": 170.0, "max_angle": 190.0}
+                        {"min_angle": 170.0, "max_angle": 190.0},
                     ],
-                    "fallback_to_all_angles": True
+                    "fallback_to_all_angles": True,
                 },
                 "classical_optimization": {
                     "methods": ["Nelder-Mead"],
                     "method_options": {
-                        "Nelder-Mead": {"maxiter": 5000, "xatol": 1e-8, "fatol": 1e-8}
+                        "Nelder-Mead": {
+                            "maxiter": 5000,
+                            "xatol": 1e-8,
+                            "fatol": 1e-8,
+                        }
                     },
                 },
-                "bayesian_optimization": {"n_calls": 20, "n_initial_points": 5},
+                "bayesian_optimization": {
+                    "n_calls": 20,
+                    "n_initial_points": 5,
+                },
                 "bayesian_inference": {"mcmc_draws": 1000, "mcmc_tune": 500},
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 1e-3, "max": 1e6, "type": "log-uniform"},
-                    {"name": "alpha", "min": -2.0, "max": 2.0, "type": "uniform"},
-                    {"name": "D_offset", "min": -5000,
-                        "max": 5000, "type": "uniform"},
+                    {
+                        "name": "D0",
+                        "min": 1e-3,
+                        "max": 1e6,
+                        "type": "log-uniform",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "uniform",
+                    },
+                    {
+                        "name": "D_offset",
+                        "min": -5000,
+                        "max": 5000,
+                        "type": "uniform",
+                    },
                     {
                         "name": "gamma_dot_t0",
                         "min": 1e-6,
                         "max": 1.0,
                         "type": "log-uniform",
                     },
-                    {"name": "beta", "min": -2.0, "max": 2.0, "type": "uniform"},
+                    {
+                        "name": "beta",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "uniform",
+                    },
                     {
                         "name": "gamma_dot_t_offset",
                         "min": -0.1,
                         "max": 0.1,
                         "type": "uniform",
                     },
-                    {"name": "phi0", "min": -15.0, "max": 15.0, "type": "uniform"},
+                    {
+                        "name": "phi0",
+                        "min": -15.0,
+                        "max": 15.0,
+                        "type": "uniform",
+                    },
                 ]
             },
             "validation_rules": {"frame_range": {"minimum_frames": 10}},

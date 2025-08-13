@@ -36,6 +36,11 @@
     }
   },
 
+  "analysis_settings": {
+    "static_mode": false,
+    "_comment": "Set static_mode to true for static (no-flow) analysis where γ̇=0, β=0, γ̇_offset=0, φ₀=0"
+  },
+
   "initial_parameters": {
     "values": [
       23312.0,

@@ -13,24 +13,30 @@ import sys
 from pathlib import Path
 
 # Use non-GUI matplotlib backend for testing
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 
 # Add the project root directory to Python path for imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Configure numpy to raise on errors (helps catch numerical issues)
-np.seterr(all='raise', under='ignore')  # Ignore underflow which is common in exp calculations
+np.seterr(
+    all="raise", under="ignore"
+)  # Ignore underflow which is common in exp calculations
 
 # Filter common warnings during testing
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*invalid value encountered.*")
+warnings.filterwarnings(
+    "ignore", category=RuntimeWarning, message=".*invalid value encountered.*"
+)
+
 
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
     config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+        "markers",
+        "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
     config.addinivalue_line(
         "markers", "integration: marks tests as integration tests"
@@ -49,17 +55,20 @@ def pytest_collection_modifyitems(config, items):
         # Mark integration tests
         if "test_integration" in item.nodeid:
             item.add_marker(pytest.mark.integration)
-        
+
         # Mark plotting tests
         if "test_plotting" in item.nodeid or "plot" in item.name.lower():
             item.add_marker(pytest.mark.plotting)
-        
+
         # Mark I/O tests
         if "test_io" in item.nodeid or "io_utils" in item.nodeid:
             item.add_marker(pytest.mark.io)
-        
+
         # Mark slow tests (integration, large data handling, etc.)
-        if any(keyword in item.name.lower() for keyword in ["integration", "large", "concurrent", "memory"]):
+        if any(
+            keyword in item.name.lower()
+            for keyword in ["integration", "large", "concurrent", "memory"]
+        ):
             item.add_marker(pytest.mark.slow)
 
 
@@ -67,12 +76,13 @@ def pytest_collection_modifyitems(config, items):
 def reset_matplotlib():
     """Reset matplotlib state between tests to avoid interference."""
     import matplotlib.pyplot as plt
+
     yield
-    plt.close('all')  # Close all figures after each test
+    plt.close("all")  # Close all figures after each test
     plt.rcdefaults()  # Reset rcParams to defaults
 
 
-@pytest.fixture(autouse=True) 
+@pytest.fixture(autouse=True)
 def numpy_random_seed():
     """Set a consistent random seed for reproducible tests."""
     np.random.seed(42)
@@ -87,7 +97,7 @@ def test_data_dir():
     return Path(__file__).parent / "data"
 
 
-@pytest.fixture(scope="session") 
+@pytest.fixture(scope="session")
 def sample_config_path():
     """Path to the sample configuration file."""
     return Path(__file__).parent.parent.parent / "homodyne_config.json"
@@ -101,44 +111,48 @@ def pytest_report_header(config):
     """Add custom header information to pytest report."""
     import numpy as np
     import matplotlib
-    
+
     # Check for optional dependencies
     optional_deps = {}
-    
+
     try:
         import numba
-        optional_deps['numba'] = numba.__version__
+
+        optional_deps["numba"] = numba.__version__
     except ImportError:
-        optional_deps['numba'] = 'Not available'
-    
+        optional_deps["numba"] = "Not available"
+
     try:
         import pymc
-        optional_deps['pymc'] = pymc.__version__
+
+        optional_deps["pymc"] = pymc.__version__
     except ImportError:
-        optional_deps['pymc'] = 'Not available'
-    
+        optional_deps["pymc"] = "Not available"
+
     try:
         import arviz
-        optional_deps['arviz'] = arviz.__version__
+
+        optional_deps["arviz"] = arviz.__version__
     except ImportError:
-        optional_deps['arviz'] = 'Not available'
-    
+        optional_deps["arviz"] = "Not available"
+
     try:
         import corner
-        optional_deps['corner'] = corner.__version__
+
+        optional_deps["corner"] = corner.__version__
     except ImportError:
-        optional_deps['corner'] = 'Not available'
-    
+        optional_deps["corner"] = "Not available"
+
     header_lines = [
         f"numpy: {np.__version__}",
         f"matplotlib: {matplotlib.__version__}",
         f"matplotlib backend: {matplotlib.get_backend()}",
-        "Optional dependencies:"
+        "Optional dependencies:",
     ]
-    
+
     for name, version in optional_deps.items():
         header_lines.append(f"  {name}: {version}")
-    
+
     return "\n".join(header_lines)
 
 
@@ -146,6 +160,7 @@ def pytest_runtest_setup(item):
     """Setup actions before each test."""
     # Clear any potential memory issues
     import gc
+
     gc.collect()
 
 
@@ -153,9 +168,9 @@ def pytest_runtest_teardown(item, nextitem):
     """Teardown actions after each test."""
     import gc
     import matplotlib.pyplot as plt
-    
+
     # Ensure all matplotlib figures are closed
-    plt.close('all')
-    
+    plt.close("all")
+
     # Force garbage collection to free memory
     gc.collect()

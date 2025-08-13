@@ -31,7 +31,14 @@ Time-Dependent Transport Coefficients:
     D(t) = D₀ t^α + D_offset    (anomalous diffusion)
     γ̇(t) = γ̇₀ t^β + γ̇_offset   (time-dependent shear rate)
 
-7-Parameter Model:
+Parameter Models:
+Static Mode (3 parameters):
+- D₀: Reference diffusion coefficient [Å²/s]
+- α: Diffusion time-dependence exponent [-]
+- D_offset: Baseline diffusion [Å²/s]
+(γ̇₀, β, γ̇_offset, φ₀ = 0 - automatically set and irrelevant)
+
+Laminar Flow Mode (7 parameters):
 - D₀: Reference diffusion coefficient [Å²/s]
 - α: Diffusion time-dependence exponent [-]
 - D_offset: Baseline diffusion [Å²/s]
@@ -64,32 +71,27 @@ Usage
 
 References
 ----------
-He, H., Chen, W., et al. (2024). "Time-dependent dynamics in nonequilibrium 
+He, H., Chen, W., et al. (2024). "Time-dependent dynamics in nonequilibrium
 laminar flow systems via X-ray photon correlation spectroscopy."
 
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
 """
 
-import json
 import logging
 import multiprocessing as mp
 import os
-import sys
 import time
-import warnings
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from datetime import datetime
-from functools import lru_cache, wraps
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
 # Import optional dependencies
 try:
     from pyxpcsviewer import XpcsFile as xf
+
     PYXPCSVIEWER_AVAILABLE = True
 except ImportError:
     PYXPCSVIEWER_AVAILABLE = False
@@ -98,24 +100,28 @@ except ImportError:
 # Import performance optimization dependencies
 try:
     from numba import jit, njit, prange
+
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
+
     def jit(*args, **kwargs):
         return args[0] if args and callable(args[0]) else lambda f: f
+
     def njit(*args, **kwargs):
         return args[0] if args and callable(args[0]) else lambda f: f
+
     prange = range
 
 # Import core dependencies from the main module
 from ..core.config import ConfigManager
 from ..core.kernels import (
     create_time_integral_matrix_numba,
-    calculate_diffusion_coefficient_numba, 
+    calculate_diffusion_coefficient_numba,
     calculate_shear_rate_numba,
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
-    memory_efficient_cache
+    memory_efficient_cache,
 )
 
 logger = logging.getLogger(__name__)
@@ -128,13 +134,15 @@ DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
 
 # Check for optional dependencies
 try:
-    import pymc as pm
+    import pymc  # noqa: F401
+
     PYMC_AVAILABLE = True
 except ImportError:
     PYMC_AVAILABLE = False
 
 try:
-    import skopt
+    import skopt  # noqa: F401
+
     SKOPT_AVAILABLE = True
 except ImportError:
     SKOPT_AVAILABLE = False
@@ -143,14 +151,14 @@ except ImportError:
 class HomodyneAnalysisCore:
     """
     Core analysis engine for homodyne scattering data.
-    
+
     This class provides the fundamental analysis capabilities including:
     - Configuration-driven parameter management
     - Experimental data loading with intelligent caching
     - Correlation function calculations with performance optimizations
     - Time-dependent diffusion and shear rate modeling
     """
-    
+
     def __init__(
         self,
         config_file: str = "homodyne_config.json",
@@ -185,8 +193,12 @@ class HomodyneAnalysisCore:
         self._initialize_caching()
 
         # Warm up JIT functions
-        if NUMBA_AVAILABLE and self.config is not None and self.config.get("performance_settings", {}).get(
-            "warmup_numba", True
+        if (
+            NUMBA_AVAILABLE
+            and self.config is not None
+            and self.config.get("performance_settings", {}).get(
+                "warmup_numba", True
+            )
         ):
             self._warmup_numba_functions()
 
@@ -214,21 +226,25 @@ class HomodyneAnalysisCore:
 
         # Pre-compute constants
         self.wavevector_q_squared = self.wavevector_q**2
-        self.wavevector_q_squared_half_dt = 0.5 * self.wavevector_q_squared * self.dt
+        self.wavevector_q_squared_half_dt = (
+            0.5 * self.wavevector_q_squared * self.dt
+        )
         self.sinc_prefactor = (
             0.5 / np.pi * self.wavevector_q * self.stator_rotor_gap * self.dt
         )
 
         # Time array
         self.time_array = np.linspace(
-            self.dt, self.dt * self.time_length, self.time_length, dtype=np.float64
+            self.dt,
+            self.dt * self.time_length,
+            self.time_length,
+            dtype=np.float64,
         )
 
     def _setup_performance(self):
         """Configure performance settings."""
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
-        perf_config = self.config.get("performance_settings", {})
         params = self.config["analyzer_parameters"]
         comp_params = params.get("computational", {})
 
@@ -238,7 +254,9 @@ class HomodyneAnalysisCore:
             max_threads = comp_params.get("max_threads_limit", 128)
             self.num_threads = min(detected, max_threads)
         else:
-            self.num_threads = comp_params.get("num_threads", DEFAULT_NUM_THREADS)
+            self.num_threads = comp_params.get(
+                "num_threads", DEFAULT_NUM_THREADS
+            )
 
     def _initialize_caching(self):
         """Initialize caching systems."""
@@ -277,7 +295,7 @@ class HomodyneAnalysisCore:
 
     def _print_initialization_summary(self):
         """Print initialization summary."""
-        logger.info(f"HomodyneAnalysis Core initialized:")
+        logger.info("HomodyneAnalysis Core initialized:")
         logger.info(
             f"  • Frames: {self.start_frame}-{self.end_frame} ({self.time_length} frames)"
         )
@@ -289,8 +307,117 @@ class HomodyneAnalysisCore:
             f"  • Optimizations: {'Numba JIT' if NUMBA_AVAILABLE else 'Pure Python'}"
         )
 
+    def is_static_mode(self) -> bool:
+        """
+        Check if the analysis is configured for static (no-flow) mode.
+
+        In static mode:
+        - Shear rate γ̇ = 0
+        - Shear exponent β = 0
+        - Shear offset γ̇_offset = 0
+        - sinc² function = 1 (no shear decorrelation)
+        - Only diffusion contribution g₁_diff remains
+
+        Returns
+        -------
+        bool
+            True if static mode is enabled in configuration
+        """
+        if self.config is None:
+            return False
+
+        # Check for static mode flag in configuration
+        analysis_settings = self.config.get("analysis_settings", {})
+        return analysis_settings.get("static_mode", False)
+
+    def is_static_parameters(self, shear_params: np.ndarray) -> bool:
+        """
+        Check if shear parameters correspond to static conditions.
+
+        In static conditions:
+        - gamma_dot_t0 (shear_params[0]) ≈ 0
+        - beta (shear_params[1]) = 0 (no time dependence)
+        - gamma_dot_offset (shear_params[2]) ≈ 0
+
+        Parameters
+        ----------
+        shear_params : np.ndarray
+            Shear rate parameters [gamma_dot_t0, beta, gamma_dot_offset]
+
+        Returns
+        -------
+        bool
+            True if parameters indicate static conditions
+        """
+        if len(shear_params) < 3:
+            return False
+
+        gamma_dot_t0 = shear_params[0]
+        beta = shear_params[1]
+        gamma_dot_offset = shear_params[2]
+
+        # Define small threshold for "effectively zero"
+        threshold = 1e-10
+
+        # Check if all shear parameters are effectively zero
+        return (
+            abs(gamma_dot_t0) < threshold
+            and abs(beta) < threshold
+            and abs(gamma_dot_offset) < threshold
+        )
+
+    def get_effective_parameter_count(self) -> int:
+        """
+        Get the effective number of parameters based on analysis mode.
+
+        Returns
+        -------
+        int
+            Number of parameters actually used in the analysis:
+            - Static mode: 3 (only diffusion parameters: D₀, α, D_offset)
+            - Laminar flow mode: 7 (all parameters including shear and φ₀)
+        """
+        if self.is_static_mode():
+            # Static mode: only diffusion parameters are meaningful
+            return self.num_diffusion_params  # 3 parameters
+        else:
+            # Laminar flow mode: all parameters are used
+            return (
+                self.num_diffusion_params + self.num_shear_rate_params + 1
+            )  # 7 parameters
+
+    def get_effective_parameters(self, parameters: np.ndarray) -> np.ndarray:
+        """
+        Extract only the effective parameters based on analysis mode.
+
+        Parameters
+        ----------
+        parameters : np.ndarray
+            Full parameter array [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]
+
+        Returns
+        -------
+        np.ndarray
+            Effective parameters based on mode:
+            - Static mode: [D0, alpha, D_offset] (shear params set to 0, phi0 ignored)
+            - Laminar flow mode: all parameters as provided
+        """
+        if self.is_static_mode():
+            # Return only diffusion parameters, set others to zero
+            effective_params = np.zeros(7)  # Standard 7-parameter array
+            effective_params[: self.num_diffusion_params] = parameters[
+                : self.num_diffusion_params
+            ]
+            # Shear parameters (indices 3,4,5) remain zero
+            # phi0 (index 6) remains zero - irrelevant in static mode
+            return effective_params
+        else:
+            # Return all parameters as provided
+            return parameters.copy()
+
     def _apply_config_overrides(self, overrides: Dict[str, Any]):
         """Apply configuration overrides with deep merging."""
+
         def deep_update(base, update):
             for key, value in update.items():
                 if (
@@ -310,7 +437,9 @@ class HomodyneAnalysisCore:
     # ============================================================================
 
     @memory_efficient_cache(maxsize=32)
-    def load_experimental_data(self) -> Tuple[np.ndarray, int, np.ndarray, int]:
+    def load_experimental_data(
+        self,
+    ) -> Tuple[np.ndarray, int, np.ndarray, int]:
         """
         Load experimental correlation data with caching.
 
@@ -339,7 +468,9 @@ class HomodyneAnalysisCore:
             raise ValueError("Configuration not loaded: self.config is None.")
 
         # Load angle configuration
-        phi_angles_path = self.config["experimental_data"].get("phi_angles_path", ".")
+        phi_angles_path = self.config["experimental_data"].get(
+            "phi_angles_path", "."
+        )
         phi_angles_file = self.config["experimental_data"]["phi_angles_file"]
         phi_file = os.path.join(phi_angles_path, phi_angles_file)
         logger.debug(f"Loading phi angles from: {phi_file}")
@@ -348,8 +479,12 @@ class HomodyneAnalysisCore:
         logger.debug(f"Loaded {num_angles} phi angles: {phi_angles}")
 
         # Check for cached processed data
-        cache_template = self.config["experimental_data"]["cache_filename_template"]
-        cache_file_path = self.config["experimental_data"].get("cache_file_path", ".")
+        cache_template = self.config["experimental_data"][
+            "cache_filename_template"
+        ]
+        cache_file_path = self.config["experimental_data"].get(
+            "cache_file_path", "."
+        )
         cache_filename = cache_template.format(
             start_frame=self.start_frame, end_frame=self.end_frame
         )
@@ -373,7 +508,9 @@ class HomodyneAnalysisCore:
                 "cache_compression", True
             )
             logger.debug(
-                f"Saving data to cache with compression={'enabled' if compression_enabled else 'disabled'}: {cache_file}"
+                f"Saving data to cache with compression="
+                f"{'enabled' if compression_enabled else 'disabled'}: "
+                f"{cache_file}"
             )
             if compression_enabled:
                 np.savez_compressed(cache_file, c2_exp=c2_experimental)
@@ -385,19 +522,27 @@ class HomodyneAnalysisCore:
         if self.config["advanced_settings"]["data_loading"].get(
             "use_diagonal_correction", True
         ):
-            logger.debug("Applying diagonal correction to correlation matrices")
-            c2_experimental = self._fix_diagonal_correction_vectorized(c2_experimental)
+            logger.debug(
+                "Applying diagonal correction to correlation matrices"
+            )
+            c2_experimental = self._fix_diagonal_correction_vectorized(
+                c2_experimental
+            )
             logger.debug("Diagonal correction completed")
 
         # Cache in memory
         self.cached_experimental_data = c2_experimental
         self.cached_phi_angles = phi_angles
-        logger.debug(f"Data cached in memory - final shape: {c2_experimental.shape}")
+        logger.debug(
+            f"Data cached in memory - final shape: {c2_experimental.shape}"
+        )
 
-        logger.debug(f"load_experimental_data method completed successfully")
+        logger.debug("load_experimental_data method completed successfully")
         return c2_experimental, self.time_length, phi_angles, num_angles
 
-    def _load_raw_data(self, phi_angles: np.ndarray, num_angles: int) -> np.ndarray:
+    def _load_raw_data(
+        self, phi_angles: np.ndarray, num_angles: int
+    ) -> np.ndarray:
         """Load raw data from HDF5 files."""
         logger.debug("Starting _load_raw_data method")
 
@@ -422,7 +567,7 @@ class HomodyneAnalysisCore:
                 "pyxpcsviewer is required for loading raw experimental data. "
                 "Install it with: pip install pyxpcsviewer"
             )
-        
+
         try:
             data_file = xf(full_path)
             logger.debug(f"Successfully opened HDF5 file: {filename}")
@@ -433,23 +578,32 @@ class HomodyneAnalysisCore:
         # Pre-allocate output
         expected_shape = (num_angles, self.time_length, self.time_length)
         c2_experimental = np.zeros(expected_shape, dtype=np.float64)
-        logger.debug(f"Pre-allocated output array with shape: {expected_shape}")
+        logger.debug(
+            f"Pre-allocated output array with shape: {expected_shape}"
+        )
 
         # Load each angle
         logger.info(f"Loading data for {num_angles} angles...")
         for i in range(num_angles):
             angle_deg = phi_angles[i]
-            logger.debug(f"Loading angle {i+1}/{num_angles} (φ={angle_deg:.2f}°)")
+            logger.debug(
+                f"Loading angle {i+1}/{num_angles} (φ={angle_deg:.2f}°)"
+            )
 
             try:
                 # Fix: Pass correct_diag as bool, not int. If you want diagonal correction, set to True, else False.
-                raw_data = data_file.get_twotime_c2(exchange_key, correct_diag=False)
+                raw_data = data_file.get_twotime_c2(
+                    exchange_key, correct_diag=False
+                )
                 if raw_data is None:
-                    raise ValueError(f"get_twotime_c2 returned None for angle {i+1} (φ={angle_deg:.2f}°)")
+                    raise ValueError(
+                        f"get_twotime_c2 returned None for angle {i+1} (φ={angle_deg:.2f}°)"
+                    )
                 # Ensure raw_data is a NumPy array
                 raw_data_np = np.array(raw_data)
                 sliced_data = raw_data_np[
-                    self.start_frame : self.end_frame, self.start_frame : self.end_frame
+                    self.start_frame : self.end_frame,
+                    self.start_frame : self.end_frame,
                 ]
                 c2_experimental[i] = sliced_data.astype(np.float64)
                 logger.debug(
@@ -466,16 +620,15 @@ class HomodyneAnalysisCore:
         )
         return c2_experimental
 
-    def _fix_diagonal_correction_vectorized(self, c2_data: np.ndarray) -> np.ndarray:
+    def _fix_diagonal_correction_vectorized(
+        self, c2_data: np.ndarray
+    ) -> np.ndarray:
         """Apply diagonal correction to correlation matrices."""
-        if (
-            self.config is None
-            or not (
-                isinstance(self.config, dict)
-                and self.config.get("advanced_settings", {})
-                .get("data_loading", {})
-                .get("vectorized_diagonal_fix", True)
-            )
+        if self.config is None or not (
+            isinstance(self.config, dict)
+            and self.config.get("advanced_settings", {})
+            .get("data_loading", {})
+            .get("vectorized_diagonal_fix", True)
         ):
             return c2_data
 
@@ -558,12 +711,16 @@ class HomodyneAnalysisCore:
         )
         frame_count = end_frame - start_frame
         if frame_count < min_frames:
-            raise ValueError(f"Frame count ({frame_count}) must be >= {min_frames}")
+            raise ValueError(
+                f"Frame count ({frame_count}) must be >= {min_frames}"
+            )
 
         # Update configuration and recalculate derived parameters
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
-        self.config["analyzer_parameters"]["temporal"]["start_frame"] = start_frame
+        self.config["analyzer_parameters"]["temporal"][
+            "start_frame"
+        ] = start_frame
         self.config["analyzer_parameters"]["temporal"]["end_frame"] = end_frame
 
         # Re-initialize parameters with new frame range
@@ -577,12 +734,9 @@ class HomodyneAnalysisCore:
         self, param_hash: str, time_array: np.ndarray
     ) -> np.ndarray:
         """Create cached time integral matrix."""
-        if (
-            self.config is None or
-            not self.config.get("advanced_settings", {})
-            .get("integral_matrix", {})
-            .get("cache_matrices", True)
-        ):
+        if self.config is None or not self.config.get(
+            "advanced_settings", {}
+        ).get("integral_matrix", {}).get("cache_matrices", True):
             # Direct computation when caching is disabled or config is None
             if NUMBA_AVAILABLE:
                 return create_time_integral_matrix_numba(time_array)
@@ -606,10 +760,15 @@ class HomodyneAnalysisCore:
         """
         Calculate correlation function for a single angle.
 
+        Supports both laminar flow and static (no-flow) cases:
+        - Laminar flow: Full 7-parameter model with diffusion and shear contributions
+        - Static case: Only diffusion contribution (sinc² = 1), φ₀ irrelevant and set to 0
+
         Parameters
         ----------
         parameters : np.ndarray
             Model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]
+            In static mode: only first 3 diffusion parameters are used, others ignored/set to 0
         phi_angle : float
             Scattering angle in degrees
 
@@ -618,6 +777,9 @@ class HomodyneAnalysisCore:
         np.ndarray
             Correlation matrix c2(t1, t2)
         """
+        # Check if we're in static mode
+        static_mode = self.is_static_mode()
+
         # Extract parameters
         diffusion_params = parameters[: self.num_diffusion_params]
         shear_params = parameters[
@@ -629,12 +791,10 @@ class HomodyneAnalysisCore:
         # Calculate time-dependent quantities
         param_hash = hash(tuple(parameters))
         D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
-        gamma_dot_t = self.calculate_shear_rate_optimized(shear_params)
 
-        # Create integral matrices
-        D_integral = self.create_time_integral_matrix_cached(f"D_{param_hash}", D_t)
-        gamma_integral = self.create_time_integral_matrix_cached(
-            f"gamma_{param_hash}", gamma_dot_t
+        # Create diffusion integral matrix
+        D_integral = self.create_time_integral_matrix_cached(
+            f"D_{param_hash}", D_t
         )
 
         # Compute g1 correlation (diffusion contribution)
@@ -645,16 +805,30 @@ class HomodyneAnalysisCore:
         else:
             g1 = np.exp(-self.wavevector_q_squared_half_dt * D_integral)
 
-        # Compute sinc² (shear contribution)
-        angle_rad = np.deg2rad(phi_offset - phi_angle)
-        cos_phi = np.cos(angle_rad)
-        prefactor = self.sinc_prefactor * cos_phi
-
-        if NUMBA_AVAILABLE:
-            sinc2 = compute_sinc_squared_numba(gamma_integral, prefactor)
+        # Handle shear contribution based on mode
+        if static_mode or self.is_static_parameters(shear_params):
+            # Static case: sinc² = 1 (no shear contribution)
+            # g₁(t₁,t₂) = g₁_diff(t₁,t₂) = exp[-q²/2 ∫|t₂-t₁| D(t')dt']
+            # g₂(t₁,t₂) = [g₁(t₁,t₂)]²
+            # Note: φ₀ is irrelevant in static mode since shear term is not used
+            sinc2 = np.ones_like(g1)
         else:
-            arg = prefactor * gamma_integral
-            sinc2 = np.sinc(arg) ** 2
+            # Laminar flow case: calculate full sinc² contribution
+            gamma_dot_t = self.calculate_shear_rate_optimized(shear_params)
+            gamma_integral = self.create_time_integral_matrix_cached(
+                f"gamma_{param_hash}", gamma_dot_t
+            )
+
+            # Compute sinc² (shear contribution)
+            angle_rad = np.deg2rad(phi_offset - phi_angle)
+            cos_phi = np.cos(angle_rad)
+            prefactor = self.sinc_prefactor * cos_phi
+
+            if NUMBA_AVAILABLE:
+                sinc2 = compute_sinc_squared_numba(gamma_integral, prefactor)
+            else:
+                arg = prefactor * gamma_integral
+                sinc2 = np.sinc(arg) ** 2
 
         # Combine contributions: c2 = (g1 × sinc²)²
         return (sinc2 * g1) ** 2
@@ -680,7 +854,9 @@ class HomodyneAnalysisCore:
         num_angles = len(phi_angles)
         use_parallel = True
         if self.config is not None:
-            use_parallel = self.config.get("performance_settings", {}).get("parallel_execution", True)
+            use_parallel = self.config.get("performance_settings", {}).get(
+                "parallel_execution", True
+            )
 
         # Avoid threading conflicts with Numba parallel operations
         if (
@@ -691,7 +867,8 @@ class HomodyneAnalysisCore:
         ):
             # Sequential processing (Numba will handle internal parallelization)
             c2_calculated = np.zeros(
-                (num_angles, self.time_length, self.time_length), dtype=np.float64
+                (num_angles, self.time_length, self.time_length),
+                dtype=np.float64,
             )
 
             for i in range(num_angles):
@@ -705,19 +882,26 @@ class HomodyneAnalysisCore:
             # Parallel processing (only when Numba not available)
             use_threading = True
             if self.config is not None:
-                use_threading = self.config.get("performance_settings", {}).get("use_threading", True)
-            Executor = ThreadPoolExecutor if use_threading else ProcessPoolExecutor
+                use_threading = self.config.get(
+                    "performance_settings", {}
+                ).get("use_threading", True)
+            Executor = (
+                ThreadPoolExecutor if use_threading else ProcessPoolExecutor
+            )
 
             with Executor(max_workers=self.num_threads) as executor:
                 futures = [
                     executor.submit(
-                        self.calculate_c2_single_angle_optimized, parameters, angle
+                        self.calculate_c2_single_angle_optimized,
+                        parameters,
+                        angle,
                     )
                     for angle in phi_angles
                 ]
 
                 c2_calculated = np.zeros(
-                    (num_angles, self.time_length, self.time_length), dtype=np.float64
+                    (num_angles, self.time_length, self.time_length),
+                    dtype=np.float64,
                 )
                 for i, future in enumerate(futures):
                     c2_calculated[i] = future.result()
@@ -757,13 +941,13 @@ class HomodyneAnalysisCore:
             Reduced chi-squared value or detailed results
         """
         global OPTIMIZATION_COUNTER
-        
+
         # Parameter validation
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
-        validation = self.config["advanced_settings"]["chi_squared_calculation"][
-            "validity_check"
-        ]
+        validation = self.config["advanced_settings"][
+            "chi_squared_calculation"
+        ]["validity_check"]
 
         diffusion_params = parameters[: self.num_diffusion_params]
         shear_params = parameters[
@@ -772,14 +956,24 @@ class HomodyneAnalysisCore:
         ]
 
         # Quick validity checks
-        if validation.get("check_positive_D0", True) and diffusion_params[0] <= 0:
+        if (
+            validation.get("check_positive_D0", True)
+            and diffusion_params[0] <= 0
+        ):
             return (
                 np.inf
                 if not return_components
-                else {"chi_squared": np.inf, "valid": False, "reason": "Negative D0"}
+                else {
+                    "chi_squared": np.inf,
+                    "valid": False,
+                    "reason": "Negative D0",
+                }
             )
 
-        if validation.get("check_positive_gamma_dot_t0", True) and shear_params[0] <= 0:
+        if (
+            validation.get("check_positive_gamma_dot_t0", True)
+            and shear_params[0] <= 0
+        ):
             return (
                 np.inf
                 if not return_components
@@ -800,7 +994,8 @@ class HomodyneAnalysisCore:
                     param_max = bound.get("max", np.inf)
 
                     if not (param_min <= param_val <= param_max):
-                        reason = f'Parameter {bound.get("name", f"p{i}")} out of bounds'
+                        reason = f'Parameter {bound.get("name", f"p{i}")
+                                                        } out of bounds'
                         return (
                             np.inf
                             if not return_components
@@ -818,25 +1013,42 @@ class HomodyneAnalysisCore:
             )
 
             # Chi-squared calculation
-            chi_config = self.config["advanced_settings"]["chi_squared_calculation"]
-            uncertainty_factor = chi_config.get("uncertainty_estimation_factor", 0.1)
+            chi_config = self.config["advanced_settings"][
+                "chi_squared_calculation"
+            ]
+            uncertainty_factor = chi_config.get(
+                "uncertainty_estimation_factor", 0.1
+            )
             min_sigma = chi_config.get("minimum_sigma", 1e-10)
 
             # Calculate parameters for DOF calculation
             n_params = len(parameters)
-            
+
             # Angle filtering for optimization
             if filter_angles_for_optimization:
                 # Get target angle ranges from ConfigManager if available
-                target_ranges = [(-10.0, 10.0), (170.0, 190.0)]  # Default ranges
-                if hasattr(self, 'config_manager') and self.config_manager:
-                    target_ranges = self.config_manager.get_target_angle_ranges()
-                elif hasattr(self, 'config') and self.config:
-                    angle_config = self.config.get('optimization_config', {}).get('angle_filtering', {})
-                    config_ranges = angle_config.get('target_ranges', [])
+                target_ranges = [
+                    (-10.0, 10.0),
+                    (170.0, 190.0),
+                ]  # Default ranges
+                if hasattr(self, "config_manager") and self.config_manager:
+                    target_ranges = (
+                        self.config_manager.get_target_angle_ranges()
+                    )
+                elif hasattr(self, "config") and self.config:
+                    angle_config = self.config.get(
+                        "optimization_config", {}
+                    ).get("angle_filtering", {})
+                    config_ranges = angle_config.get("target_ranges", [])
                     if config_ranges:
-                        target_ranges = [(r.get('min_angle', -10.0), r.get('max_angle', 10.0)) for r in config_ranges]
-                
+                        target_ranges = [
+                            (
+                                r.get("min_angle", -10.0),
+                                r.get("max_angle", 10.0),
+                            )
+                            for r in config_ranges
+                        ]
+
                 # Find indices of angles in target ranges
                 optimization_indices = []
                 for i, angle in enumerate(phi_angles):
@@ -844,29 +1056,47 @@ class HomodyneAnalysisCore:
                         if min_angle <= angle <= max_angle:
                             optimization_indices.append(i)
                             break
-                
-                logger.debug(f"Filtering angles for optimization: using {len(optimization_indices)}/{len(phi_angles)} angles")
+
+                logger.debug(
+                    f"Filtering angles for optimization: using {len(optimization_indices)}/{len(phi_angles)} angles"
+                )
                 if optimization_indices:
                     filtered_angles = phi_angles[optimization_indices]
-                    logger.debug(f"Optimization angles: {filtered_angles.tolist()}")
+                    logger.debug(
+                        f"Optimization angles: {filtered_angles.tolist()}"
+                    )
                 else:
                     # Check if fallback is enabled
                     should_fallback = True
-                    if hasattr(self, 'config_manager') and self.config_manager:
-                        should_fallback = self.config_manager.should_fallback_to_all_angles()
-                    elif hasattr(self, 'config') and self.config:
-                        angle_config = self.config.get('optimization_config', {}).get('angle_filtering', {})
-                        should_fallback = angle_config.get('fallback_to_all_angles', True)
-                    
+                    if hasattr(self, "config_manager") and self.config_manager:
+                        should_fallback = (
+                            self.config_manager.should_fallback_to_all_angles()
+                        )
+                    elif hasattr(self, "config") and self.config:
+                        angle_config = self.config.get(
+                            "optimization_config", {}
+                        ).get("angle_filtering", {})
+                        should_fallback = angle_config.get(
+                            "fallback_to_all_angles", True
+                        )
+
                     if should_fallback:
-                        logger.warning(f"No angles found in target optimization ranges {target_ranges}")
-                        logger.warning("Falling back to using all angles for optimization")
-                        optimization_indices = list(range(len(phi_angles)))  # Fall back to all angles
+                        logger.warning(
+                            f"No angles found in target optimization ranges {target_ranges}"
+                        )
+                        logger.warning(
+                            "Falling back to using all angles for optimization"
+                        )
+                        optimization_indices = list(
+                            range(len(phi_angles))
+                        )  # Fall back to all angles
                     else:
-                        raise ValueError(f"No angles found in target optimization ranges {target_ranges} and fallback disabled")
+                        raise ValueError(
+                            f"No angles found in target optimization ranges {target_ranges} and fallback disabled"
+                        )
             else:
                 optimization_indices = list(range(len(phi_angles)))
-            
+
             total_chi2 = 0.0
             angle_chi2 = []
             angle_chi2_reduced = []
@@ -882,7 +1112,9 @@ class HomodyneAnalysisCore:
                 # Optimal scaling
                 if chi_config.get("scaling_optimization", True):
                     A = np.vstack([theory, np.ones(len(theory))]).T
-                    scaling, residuals, _, _ = np.linalg.lstsq(A, exp, rcond=None)
+                    scaling, residuals, _, _ = np.linalg.lstsq(
+                        A, exp, rcond=None
+                    )
 
                     if len(scaling) == 2:
                         contrast, offset = scaling
@@ -901,15 +1133,20 @@ class HomodyneAnalysisCore:
                 chi2_angle = np.sum(residuals**2) / (sigma**2)
 
                 # Calculate reduced chi-squared for this angle
-                dof_angle = max(n_data_angle - n_params, 1)  # DOF for this angle
+                dof_angle = max(
+                    n_data_angle - n_params, 1
+                )  # DOF for this angle
                 chi2_reduced_angle = chi2_angle / dof_angle
 
                 angle_chi2.append(chi2_angle)
                 angle_chi2_reduced.append(chi2_reduced_angle)
                 angle_data_points.append(n_data_angle)
-                
+
                 # Only include this angle in total chi2 if it's in the optimization set
-                if not filter_angles_for_optimization or i in optimization_indices:
+                if (
+                    not filter_angles_for_optimization
+                    or i in optimization_indices
+                ):
                     total_chi2 += chi2_angle
 
             # Reduced chi-squared calculation
@@ -919,12 +1156,14 @@ class HomodyneAnalysisCore:
                     angle_data_points[i] for i in optimization_indices
                 )
                 dof = max(n_data_optimization - n_params, 1)
-                logger.debug(f"Optimization mode: using {n_data_optimization} data points from {len(optimization_indices)} angles")
+                logger.debug(
+                    f"Optimization mode: using {n_data_optimization} data points from {len(optimization_indices)} angles"
+                )
             else:
                 # Use all data for DOF calculation
                 n_data = c2_experimental.size
                 dof = max(n_data - n_params, 1)
-            
+
             reduced_chi2 = total_chi2 / dof
 
             # Logging
@@ -954,7 +1193,9 @@ class HomodyneAnalysisCore:
 
         except Exception as e:
             logger.warning(f"Chi-squared calculation failed: {e}")
-            logger.exception("Full traceback for chi-squared calculation failure:")
+            logger.exception(
+                "Full traceback for chi-squared calculation failure:"
+            )
             if return_components:
                 return {"chi_squared": np.inf, "valid": False, "error": str(e)}
             else:
@@ -967,11 +1208,11 @@ class HomodyneAnalysisCore:
         c2_experimental: np.ndarray,
         method_name: str = "Final",
         save_to_file: bool = True,
-        output_dir: Optional[str] = None
+        output_dir: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Analyze per-angle reduced chi-squared values and identify poorly fitting angles.
-        
+
         Parameters
         ----------
         parameters : np.ndarray
@@ -986,7 +1227,7 @@ class HomodyneAnalysisCore:
             Whether to save results to file
         output_dir : str, optional
             Output directory for results
-            
+
         Returns
         -------
         Dict[str, Any]
@@ -994,94 +1235,141 @@ class HomodyneAnalysisCore:
         """
         # Get detailed chi-squared components
         chi_results = self.calculate_chi_squared_optimized(
-            parameters, phi_angles, c2_experimental, 
-            method_name=method_name, return_components=True
+            parameters,
+            phi_angles,
+            c2_experimental,
+            method_name=method_name,
+            return_components=True,
         )
-        
+
         # Handle case where chi_results might be a float (when return_components=False fails)
-        if not isinstance(chi_results, dict) or not chi_results.get("valid", False):
-            logger.error("Chi-squared calculation failed for per-angle analysis")
+        if not isinstance(chi_results, dict) or not chi_results.get(
+            "valid", False
+        ):
+            logger.error(
+                "Chi-squared calculation failed for per-angle analysis"
+            )
             return {"valid": False, "error": "Chi-squared calculation failed"}
-            
+
         # Extract per-angle data
         angle_chi2_reduced = chi_results["angle_chi_squared_reduced"]
         angles = chi_results["phi_angles"]
-        
+
         # Analysis statistics
         mean_chi2_red = np.mean(angle_chi2_reduced)
         std_chi2_red = np.std(angle_chi2_reduced)
         min_chi2_red = np.min(angle_chi2_reduced)
         max_chi2_red = np.max(angle_chi2_reduced)
-        
+
         # Get validation thresholds from configuration
-        validation_config = self.config.get("validation_rules", {}) if self.config else {}
+        validation_config = (
+            self.config.get("validation_rules", {}) if self.config else {}
+        )
         fit_quality_config = validation_config.get("fit_quality", {})
         overall_config = fit_quality_config.get("overall_chi_squared", {})
         per_angle_config = fit_quality_config.get("per_angle_chi_squared", {})
-        
+
         # Overall chi-squared quality assessment
         overall_chi2 = chi_results["reduced_chi_squared"]
         acceptable_overall = overall_config.get("acceptable_threshold", 10.0)
         warning_overall = overall_config.get("warning_threshold", 20.0)
         critical_overall = overall_config.get("critical_threshold", 50.0)
-        
+
         overall_quality = "excellent"
         if overall_chi2 > acceptable_overall:
-            overall_quality = "acceptable" if overall_chi2 <= warning_overall else "poor"
+            overall_quality = (
+                "acceptable" if overall_chi2 <= warning_overall else "poor"
+            )
         if overall_chi2 > warning_overall:
-            overall_quality = "warning" if overall_chi2 <= critical_overall else "critical"
-            
+            overall_quality = (
+                "warning" if overall_chi2 <= critical_overall else "critical"
+            )
+
         # Per-angle quality assessment
-        acceptable_per_angle = per_angle_config.get("acceptable_threshold", 15.0)
-        outlier_multiplier = per_angle_config.get("outlier_threshold_multiplier", 3.0)
-        max_outlier_fraction = per_angle_config.get("max_outlier_fraction", 0.2)
+        acceptable_per_angle = per_angle_config.get(
+            "acceptable_threshold", 15.0
+        )
+        outlier_multiplier = per_angle_config.get(
+            "outlier_threshold_multiplier", 3.0
+        )
+        max_outlier_fraction = per_angle_config.get(
+            "max_outlier_fraction", 0.2
+        )
         min_good_angles = per_angle_config.get("min_good_angles", 5)
-        
+
         # Identify outlier angles using configurable threshold
         outlier_threshold = mean_chi2_red + outlier_multiplier * std_chi2_red
-        outlier_indices = np.where(np.array(angle_chi2_reduced) > outlier_threshold)[0]
+        outlier_indices = np.where(
+            np.array(angle_chi2_reduced) > outlier_threshold
+        )[0]
         outlier_angles = [angles[i] for i in outlier_indices]
         outlier_chi2 = [angle_chi2_reduced[i] for i in outlier_indices]
-        
+
         # Identify unacceptable angles (above absolute threshold)
-        unacceptable_indices = np.where(np.array(angle_chi2_reduced) > acceptable_per_angle)[0]
+        unacceptable_indices = np.where(
+            np.array(angle_chi2_reduced) > acceptable_per_angle
+        )[0]
         unacceptable_angles = [angles[i] for i in unacceptable_indices]
-        unacceptable_chi2 = [angle_chi2_reduced[i] for i in unacceptable_indices]
-        
+        unacceptable_chi2 = [
+            angle_chi2_reduced[i] for i in unacceptable_indices
+        ]
+
         # Good angles (below acceptable threshold)
-        good_indices = np.where(np.array(angle_chi2_reduced) <= acceptable_per_angle)[0]
+        good_indices = np.where(
+            np.array(angle_chi2_reduced) <= acceptable_per_angle
+        )[0]
         good_angles = [angles[i] for i in good_indices]
         num_good_angles = len(good_angles)
-        
+
         # Quality assessment
         outlier_fraction = len(outlier_angles) / len(angles)
         unacceptable_fraction = len(unacceptable_angles) / len(angles)
-        
+
         per_angle_quality = "excellent"
         quality_issues = []
-        
+
         if num_good_angles < min_good_angles:
             per_angle_quality = "critical"
-            quality_issues.append(f"Only {num_good_angles} good angles (min required: {min_good_angles})")
-        
+            quality_issues.append(
+                f"Only {num_good_angles} good angles (min required: {min_good_angles})"
+            )
+
         if unacceptable_fraction > max_outlier_fraction:
-            per_angle_quality = "poor" if per_angle_quality != "critical" else per_angle_quality
-            quality_issues.append(f"{unacceptable_fraction:.1%} angles unacceptable (max allowed: {max_outlier_fraction:.1%})")
-        
+            per_angle_quality = (
+                "poor"
+                if per_angle_quality != "critical"
+                else per_angle_quality
+            )
+            quality_issues.append(
+                f"{unacceptable_fraction:.1%} angles unacceptable (max allowed: {max_outlier_fraction:.1%})"
+            )
+
         if outlier_fraction > max_outlier_fraction:
-            per_angle_quality = "warning" if per_angle_quality == "excellent" else per_angle_quality
-            quality_issues.append(f"{outlier_fraction:.1%} statistical outliers (max recommended: {max_outlier_fraction:.1%})")
-            
-        # Combined assessment  
-        if overall_quality in ["critical", "poor"] or per_angle_quality in ["critical", "poor"]:
+            per_angle_quality = (
+                "warning"
+                if per_angle_quality == "excellent"
+                else per_angle_quality
+            )
+            quality_issues.append(
+                f"{outlier_fraction:.1%} statistical outliers (max recommended: {max_outlier_fraction:.1%})"
+            )
+
+        # Combined assessment
+        if overall_quality in ["critical", "poor"] or per_angle_quality in [
+            "critical",
+            "poor",
+        ]:
             combined_quality = "poor"
         elif overall_quality == "warning" or per_angle_quality == "warning":
             combined_quality = "warning"
-        elif overall_quality == "acceptable" or per_angle_quality == "acceptable":
+        elif (
+            overall_quality == "acceptable"
+            or per_angle_quality == "acceptable"
+        ):
             combined_quality = "acceptable"
         else:
             combined_quality = "excellent"
-        
+
         # Create comprehensive results
         per_angle_results = {
             "method": method_name,
@@ -1090,14 +1378,14 @@ class HomodyneAnalysisCore:
                 "phi_angles_deg": angles,
                 "chi_squared_reduced": angle_chi2_reduced,
                 "data_points_per_angle": chi_results["angle_data_points"],
-                "scaling_solutions": chi_results["scaling_solutions"]
+                "scaling_solutions": chi_results["scaling_solutions"],
             },
             "statistics": {
                 "mean_chi2_reduced": mean_chi2_red,
                 "std_chi2_reduced": std_chi2_red,
                 "min_chi2_reduced": min_chi2_red,
                 "max_chi2_reduced": max_chi2_red,
-                "range_chi2_reduced": max_chi2_red - min_chi2_red
+                "range_chi2_reduced": max_chi2_red - min_chi2_red,
             },
             "quality_assessment": {
                 "overall_quality": overall_quality,
@@ -1111,90 +1399,120 @@ class HomodyneAnalysisCore:
                     "acceptable_per_angle": acceptable_per_angle,
                     "outlier_multiplier": outlier_multiplier,
                     "max_outlier_fraction": max_outlier_fraction,
-                    "min_good_angles": min_good_angles
-                }
+                    "min_good_angles": min_good_angles,
+                },
             },
             "angle_categorization": {
                 "good_angles": {
                     "angles_deg": good_angles,
                     "count": num_good_angles,
                     "fraction": num_good_angles / len(angles),
-                    "criteria": f"χ²_red ≤ {acceptable_per_angle}"
+                    "criteria": f"χ²_red ≤ {acceptable_per_angle}",
                 },
                 "unacceptable_angles": {
                     "angles_deg": unacceptable_angles,
                     "chi2_reduced": unacceptable_chi2,
                     "count": len(unacceptable_angles),
                     "fraction": unacceptable_fraction,
-                    "criteria": f"χ²_red > {acceptable_per_angle}"
+                    "criteria": f"χ²_red > {acceptable_per_angle}",
                 },
                 "statistical_outliers": {
                     "angles_deg": outlier_angles,
                     "chi2_reduced": outlier_chi2,
                     "count": len(outlier_angles),
                     "fraction": outlier_fraction,
-                    "criteria": f"χ²_red > mean + {outlier_multiplier}×std ({outlier_threshold:.3f})"
-                }
-            }
+                    "criteria": (
+                        f"χ²_red > mean + {outlier_multiplier}×std ({outlier_threshold:.3f})"
+                    ),
+                },
+            },
         }
-        
+
         # Save to file if requested
         if save_to_file:
             if output_dir is None:
                 output_dir = "./homodyne_results"
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
-            
+
             # Save detailed per-angle results
-            angle_results_file = output_path / f"per_angle_chi_squared_{method_name.lower()}.json"
+            angle_results_file = (
+                output_path
+                / f"per_angle_chi_squared_{method_name.lower()}.json"
+            )
             try:
-                import json
-                with open(angle_results_file, 'w') as f:
+                import json  # noqa: F811
+
+                with open(angle_results_file, "w") as f:
                     json.dump(per_angle_results, f, indent=2, default=str)
-                logger.info(f"Per-angle chi-squared analysis saved to: {angle_results_file}")
+                logger.info(
+                    f"Per-angle chi-squared analysis saved to: {angle_results_file}"
+                )
             except Exception as e:
                 logger.error(f"Failed to save per-angle results: {e}")
-                
+
         # Log summary with quality assessment
         logger.info(f"Per-angle chi-squared analysis [{method_name}]:")
-        logger.info(f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ({overall_quality})")
-        logger.info(f"  Mean per-angle χ²_red: {mean_chi2_red:.6e} ± {std_chi2_red:.6e}")
+        logger.info(
+            f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ({overall_quality})"
+        )
+        logger.info(
+            f"  Mean per-angle χ²_red: {mean_chi2_red:.6e} ± {std_chi2_red:.6e}"
+        )
         logger.info(f"  Range: {min_chi2_red:.6e} - {max_chi2_red:.6e}")
-        
+
         # Quality assessment logging
         logger.info(f"  Quality Assessment: {combined_quality.upper()}")
-        logger.info(f"    Overall: {overall_quality} (threshold: {acceptable_overall:.1f})")
+        logger.info(
+            f"    Overall: {overall_quality} (threshold: {acceptable_overall:.1f})"
+        )
         logger.info(f"    Per-angle: {per_angle_quality}")
-        
+
         # Angle categorization
-        logger.info(f"  Angle Categorization:")
-        logger.info(f"    Good angles: {num_good_angles}/{len(angles)} ({100*num_good_angles/len(angles):.1f}%) [χ²_red ≤ {acceptable_per_angle}]")
-        logger.info(f"    Unacceptable angles: {len(unacceptable_angles)}/{len(angles)} ({100*unacceptable_fraction:.1f}%) [χ²_red > {acceptable_per_angle}]")
-        logger.info(f"    Statistical outliers: {len(outlier_angles)}/{len(angles)} ({100*outlier_fraction:.1f}%) [χ²_red > {outlier_threshold:.3f}]")
-        
+        logger.info("  Angle Categorization:")
+        logger.info(
+            f"    Good angles: {num_good_angles}/{len(angles)} ({100*num_good_angles/len(angles):.1f}%) [χ²_red ≤ {acceptable_per_angle}]"
+        )
+        logger.info(
+            f"    Unacceptable angles: {len(unacceptable_angles)}/{len(angles)} ({100*unacceptable_fraction:.1f}%) [χ²_red > {acceptable_per_angle}]"
+        )
+        logger.info(
+            f"    Statistical outliers: {len(outlier_angles)}/{len(angles)} ({100*outlier_fraction:.1f}%) [χ²_red > {outlier_threshold:.3f}]"
+        )
+
         # Warnings and issues
         if quality_issues:
             for issue in quality_issues:
                 logger.warning(f"  Quality Issue: {issue}")
-        
+
         if unacceptable_angles:
             logger.warning(f"  Unacceptable angles: {unacceptable_angles}")
-            
+
         if outlier_angles:
             logger.warning(f"  Statistical outlier angles: {outlier_angles}")
-            
+
         # Overall quality verdict
         if combined_quality == "critical":
-            logger.error(f"  ❌ CRITICAL: Fit quality is unacceptable - consider parameter adjustment or data quality check")
+            logger.error(
+                "  ❌ CRITICAL: Fit quality is unacceptable - consider parameter adjustment or data quality check"
+            )
         elif combined_quality == "poor":
-            logger.warning(f"  ⚠ POOR: Fit quality is poor - optimization may need improvement")
+            logger.warning(
+                "  ⚠ POOR: Fit quality is poor - optimization may need improvement"
+            )
         elif combined_quality == "warning":
-            logger.warning(f"  ⚠ WARNING: Some angles show poor fit - consider investigation")
+            logger.warning(
+                "  ⚠ WARNING: Some angles show poor fit - consider investigation"
+            )
         elif combined_quality == "acceptable":
-            logger.info(f"  ✓ ACCEPTABLE: Fit quality is acceptable with some limitations")
+            logger.info(
+                "  ✓ ACCEPTABLE: Fit quality is acceptable with some limitations"
+            )
         else:
-            logger.info(f"  ✅ EXCELLENT: Fit quality is excellent across all angles")
-            
+            logger.info(
+                "  ✅ EXCELLENT: Fit quality is excellent across all angles"
+            )
+
         return per_angle_results
 
     # ============================================================================
@@ -1225,10 +1543,10 @@ class HomodyneAnalysisCore:
         output_dir : Optional[str]
             Custom output directory path
         """
-        import json
-        import sys
-        import time
-        from pathlib import Path
+        import json  # noqa: F811
+        import sys  # noqa: F811
+        import time  # noqa: F811
+        from pathlib import Path  # noqa: F811
 
         # Determine output directory from configuration or parameter
         config = self.config if self.config is not None else {}
@@ -1254,7 +1572,11 @@ class HomodyneAnalysisCore:
             )
 
         # Get output configuration settings
-        output_config = self.config.get("output_settings", {}) if self.config is not None else {}
+        output_config = (
+            self.config.get("output_settings", {})
+            if self.config is not None
+            else {}
+        )
 
         # =======================
         # SAVE ANALYSIS CONFIGURATION
@@ -1265,17 +1587,23 @@ class HomodyneAnalysisCore:
 
         try:
             # Enhanced configuration with execution metadata
-            enhanced_config = self.config.copy() if self.config is not None else {}
+            enhanced_config = (
+                self.config.copy() if self.config is not None else {}
+            )
             enhanced_config["execution_metadata"] = {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+                "timestamp": time.strftime(
+                    "%Y-%m-%d %H:%M:%S UTC", time.gmtime()
+                ),
                 "total_execution_time_seconds": sum(
                     r.get("optimization_time", 0) + r.get("total_time", 0)
                     for r in results.values()
                     if isinstance(r, dict)
                 ),
                 "methods_executed": results.get("methods_used", []),
-                "analysis_success": "best_overall" in results
-                and results["best_overall"]["parameters"] is not None,
+                "analysis_success": (
+                    "best_overall" in results
+                    and results["best_overall"]["parameters"] is not None
+                ),
                 "frame_range_analyzed": (self.start_frame, self.end_frame),
                 "time_window_seconds": self.time_length * self.dt,
                 "computational_environment": {
@@ -1290,6 +1618,7 @@ class HomodyneAnalysisCore:
             # Add git information if available
             try:
                 import subprocess
+
                 git_commit = (
                     subprocess.check_output(
                         ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
@@ -1297,13 +1626,17 @@ class HomodyneAnalysisCore:
                     .decode("utf-8")
                     .strip()
                 )
-                enhanced_config["execution_metadata"]["git_commit"] = git_commit
+                enhanced_config["execution_metadata"][
+                    "git_commit"
+                ] = git_commit
             except Exception:
                 # Git not available or not in a git repository
                 pass
 
             with open(config_file, "w") as f:
-                json.dump(enhanced_config, f, indent=2, default=str, sort_keys=True)
+                json.dump(
+                    enhanced_config, f, indent=2, default=str, sort_keys=True
+                )
 
             print(f"    ✓ Configuration saved: {config_file.name}")
 
@@ -1341,9 +1674,13 @@ class HomodyneAnalysisCore:
                     else:
                         np.savez(exp_data_file, **data_to_save)
 
-                    print(f"    ✓ Experimental data saved: {exp_data_file.name}")
+                    print(
+                        f"    ✓ Experimental data saved: {exp_data_file.name}"
+                    )
                 else:
-                    print("    ⚠ Warning: No experimental data in cache to save")
+                    print(
+                        "    ⚠ Warning: No experimental data in cache to save"
+                    )
 
             except Exception as e:
                 print(f"    ⚠ Warning: Failed to save experimental data: {e}")
@@ -1361,34 +1698,53 @@ class HomodyneAnalysisCore:
                 f.write(
                     f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n"
                 )
-                f.write(f"Core analysis configuration: {self.config_manager.config_file}\n")
-                f.write(f"Frame range: {self.start_frame}-{self.end_frame} ({self.time_length} frames)\n")
+                f.write(
+                    f"Core analysis configuration: {self.config_manager.config_file}\n"
+                )
+                f.write(
+                    f"Frame range: {self.start_frame}-{self.end_frame} ({self.time_length} frames)\n"
+                )
                 f.write(f"Time step: {self.dt} s/frame\n")
                 f.write(f"Wavevector: {self.wavevector_q:.6f} Å⁻¹\n")
                 f.write(f"Gap size: {self.stator_rotor_gap/1e4:.1f} μm\n")
                 f.write(f"Processing threads: {self.num_threads}\n\n")
 
                 # Analysis results summary
-                if "best_overall" in results and results["best_overall"]["parameters"] is not None:
+                if (
+                    "best_overall" in results
+                    and results["best_overall"]["parameters"] is not None
+                ):
                     f.write("ANALYSIS SUCCESS\n")
                     f.write("-" * 20 + "\n")
                     best_params = results["best_overall"]["parameters"]
-                    param_names = ["D₀", "α", "D_offset", "γ̇₀", "β", "γ̇_offset", "φ₀"]
-                    
+                    param_names = [
+                        "D₀",
+                        "α",
+                        "D_offset",
+                        "γ̇₀",
+                        "β",
+                        "γ̇_offset",
+                        "φ₀",
+                    ]
+
                     for name, value in zip(param_names, best_params):
                         if abs(value) < 1e-3 or abs(value) > 1e3:
                             formatted_value = f"{value:.3e}"
                         else:
                             formatted_value = f"{value:.6f}"
                         f.write(f"{name:<15} {formatted_value}\n")
-                    
-                    f.write(f"\nBest χ²_red: {results['best_overall']['chi_squared']:.6e}\n")
+
+                    f.write(
+                        f"\nBest χ²_red: {results['best_overall']['chi_squared']:.6e}\n"
+                    )
                 else:
                     f.write("ANALYSIS INCOMPLETE OR FAILED\n")
                     f.write("-" * 30 + "\n")
                     f.write("No successful optimization results available.\n")
 
-                f.write(f"\nSummary generated: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n")
+                f.write(
+                    f"\nSummary generated: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n"
+                )
 
             print(f"    ✓ Analysis summary saved: {summary_file.name}")
 
@@ -1398,45 +1754,60 @@ class HomodyneAnalysisCore:
         # =======================
         # SAVE OPTIMIZATION RESULTS
         # =======================
-        
+
         print("  💾 Saving optimization results...")
         try:
             results_file = output_path / "optimization_results.json"
-            
+
             # Create a clean results dictionary for JSON serialization
             clean_results = {}
             for key, value in results.items():
                 if key == "methods_used" or key == "methods_attempted":
                     clean_results[key] = value
-                elif isinstance(value, dict) and any(opt_key in key for opt_key in ["optimization", "best_overall"]):
+                elif isinstance(value, dict) and any(
+                    opt_key in key
+                    for opt_key in ["optimization", "best_overall"]
+                ):
                     clean_results[key] = {}
                     for sub_key, sub_value in value.items():
                         if isinstance(sub_value, np.ndarray):
                             clean_results[key][sub_key] = sub_value.tolist()
                         elif isinstance(sub_value, (np.integer, np.floating)):
-                            clean_results[key][sub_key] = float(sub_value) if isinstance(sub_value, np.floating) else int(sub_value)
+                            clean_results[key][sub_key] = (
+                                float(sub_value)
+                                if isinstance(sub_value, np.floating)
+                                else int(sub_value)
+                            )
                         else:
                             clean_results[key][sub_key] = sub_value
                 else:
                     clean_results[key] = value
-            
+
             # Add metadata
             clean_results["metadata"] = {
-                "timestamp": time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime()),
-                "config_file": self.config_manager.config_file if hasattr(self, 'config_manager') else "unknown",
+                "timestamp": time.strftime(
+                    "%Y-%m-%d %H:%M:%S UTC", time.gmtime()
+                ),
+                "config_file": (
+                    self.config_manager.config_file
+                    if hasattr(self, "config_manager")
+                    else "unknown"
+                ),
                 "frame_range": f"{self.start_frame}-{self.end_frame}",
                 "analysis_parameters": {
                     "dt": self.dt,
                     "wavevector_q": self.wavevector_q,
-                    "gap_microns": self.stator_rotor_gap/1e4
-                }
+                    "gap_microns": self.stator_rotor_gap / 1e4,
+                },
             }
-            
-            with open(results_file, 'w') as f:
-                json.dump(clean_results, f, indent=2, default=str, sort_keys=True)
-            
+
+            with open(results_file, "w") as f:
+                json.dump(
+                    clean_results, f, indent=2, default=str, sort_keys=True
+                )
+
             print(f"    ✓ Optimization results saved: {results_file.name}")
-            
+
             # Log summary of saved methods
             saved_methods = results.get("methods_used", [])
             print(f"    📊 Methods saved: {', '.join(saved_methods)}")
@@ -1444,12 +1815,21 @@ class HomodyneAnalysisCore:
                 method_key = f"{method.lower()}_optimization"
                 if method_key in results:
                     chi2 = results[method_key].get("chi_squared", "N/A")
-                    params_count = len(results[method_key].get("parameters", [])) if results[method_key].get("parameters") else 0
-                    print(f"        {method}: χ²_red={chi2:.6e}, {params_count} parameters" if isinstance(chi2, (int, float)) else f"        {method}: χ²_red={chi2}, {params_count} parameters")
-                    
+                    params_count = (
+                        len(results[method_key].get("parameters", []))
+                        if results[method_key].get("parameters")
+                        else 0
+                    )
+                    print(
+                        f"        {method}: χ²_red={chi2:.6e}, {params_count} parameters"
+                        if isinstance(chi2, (int, float))
+                        else f"        {method}: χ²_red={chi2}, {params_count} parameters"
+                    )
+
         except Exception as e:
             print(f"    ⚠ Warning: Failed to save optimization results: {e}")
             import traceback
+
             logger.debug(f"Full traceback: {traceback.format_exc()}")
 
         # =======================
@@ -1457,9 +1837,9 @@ class HomodyneAnalysisCore:
         # =======================
 
         saved_files = list(output_path.glob("*"))
-        total_size_mb = sum(f.stat().st_size for f in saved_files if f.is_file()) / (
-            1024 * 1024
-        )
+        total_size_mb = sum(
+            f.stat().st_size for f in saved_files if f.is_file()
+        ) / (1024 * 1024)
 
         print(f"\n✅ Results saved successfully!")
         print(f"   📁 Output directory: {output_path.absolute()}")
