@@ -82,6 +82,15 @@ def print_banner(args: argparse.Namespace) -> None:
     print(f"Output directory: {args.output_dir}")
     print(
         f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}")
+    
+    # Show analysis mode
+    if args.static:
+        print(f"Analysis mode:    Static (zero shear, 3 parameters)")
+    elif args.laminar_flow:
+        print(f"Analysis mode:    Laminar flow (7 parameters)")
+    else:
+        print(f"Analysis mode:    From configuration file")
+    
     print()
     print("Starting analysis...")
     print("-" * 60)
@@ -123,8 +132,23 @@ def run_analysis(args: argparse.Namespace) -> None:
     try:
         logger.info(
             f"Initializing Homodyne Analysis with config: {config_path}")
-        analyzer = HomodyneAnalysisCore(config_file=str(config_path))
+        
+        # Apply mode override if specified
+        config_override = None
+        if args.static:
+            config_override = {"analysis_settings": {"static_mode": True}}
+            logger.info("Using command-line override: static mode (3 parameters)")
+        elif args.laminar_flow:
+            config_override = {"analysis_settings": {"static_mode": False}}
+            logger.info("Using command-line override: laminar flow mode (7 parameters)")
+        
+        analyzer = HomodyneAnalysisCore(config_file=str(config_path), config_override=config_override)
         logger.info("✓ HomodyneAnalysisCore initialized successfully")
+        
+        # Log the actual analysis mode being used
+        analysis_mode = analyzer.config_manager.get_analysis_mode()
+        param_count = analyzer.config_manager.get_effective_parameter_count()
+        logger.info(f"Analysis mode: {analysis_mode} ({param_count} parameters)")
     except (ImportError, ModuleNotFoundError) as e:
         logger.error(
             f"❌ Import error while creating HomodyneAnalysisCore: {e}")
@@ -624,6 +648,9 @@ Examples:
   %(prog)s --method all --verbose             # Run all methods with debug logging
   %(prog)s --config my_config.json            # Use custom config file
   %(prog)s --output-dir ./results --verbose   # Custom output directory with verbose logging
+  %(prog)s --static                           # Force static mode (zero shear, 3 parameters)
+  %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
+  %(prog)s --static --method all              # Run all methods in static mode
         """
     )
 
@@ -654,6 +681,19 @@ Examples:
         help='Enable verbose DEBUG logging'
     )
 
+    # Add analysis mode selection
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        '--static',
+        action='store_true',
+        help='Force static mode analysis (zero shear, 3 parameters: D₀, α, D_offset)'
+    )
+    mode_group.add_argument(
+        '--laminar-flow',
+        action='store_true',
+        help='Force laminar flow mode analysis (7 parameters: all diffusion and shear parameters)'
+    )
+
     args = parser.parse_args()
 
     # Setup logging and prepare output directory
@@ -670,6 +710,14 @@ Examples:
     logger.info(f"Configuration file: {args.config}")
     logger.info(f"Output directory: {args.output_dir}")
     logger.info(f"Log file: {args.output_dir / 'run.log'}")
+    
+    # Log analysis mode selection
+    if args.static:
+        logger.info("Command-line mode: static (zero shear, 3 parameters)")
+    elif args.laminar_flow:
+        logger.info("Command-line mode: laminar flow (7 parameters)")
+    else:
+        logger.info("Analysis mode: from configuration file")
 
     # Run the analysis
     try:
