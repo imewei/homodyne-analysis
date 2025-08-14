@@ -98,6 +98,20 @@ class ClassicalOptimizer:
         start_time = time.time()
         print("\n═══ Classical Optimization ═══")
 
+        # Determine analysis mode and effective parameter count
+        if hasattr(self.core, 'config_manager') and self.core.config_manager:
+            is_static_mode = self.core.config_manager.is_static_mode_enabled()
+            analysis_mode = self.core.config_manager.get_analysis_mode()
+            effective_param_count = self.core.config_manager.get_effective_parameter_count()
+        else:
+            # Fallback to core method
+            is_static_mode = getattr(self.core, 'is_static_mode', lambda: False)()
+            analysis_mode = "static" if is_static_mode else "laminar_flow"
+            effective_param_count = 3 if is_static_mode else 7
+
+        print(f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
+        logger.info(f"Classical optimization using {analysis_mode} mode with {effective_param_count} parameters")
+
         # Load defaults if not provided
         if methods is None:
             methods = self.optimization_config.get(
@@ -113,6 +127,18 @@ class ClassicalOptimizer:
                 self.config["initial_parameters"]["values"], dtype=np.float64
             )
 
+        # Adjust parameters based on analysis mode
+        if is_static_mode and len(initial_parameters) > effective_param_count:
+            # For static mode, only use diffusion parameters (first 3)
+            initial_parameters = initial_parameters[:effective_param_count]
+            print(f"  Using first {effective_param_count} parameters for static mode: {initial_parameters}")
+        elif not is_static_mode and len(initial_parameters) < effective_param_count:
+            # For laminar flow mode, ensure we have all 7 parameters
+            full_parameters = np.zeros(effective_param_count)
+            full_parameters[:len(initial_parameters)] = initial_parameters
+            initial_parameters = full_parameters
+            print(f"  Extended to {effective_param_count} parameters for laminar flow mode")
+
         if phi_angles is None or c2_experimental is None:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
@@ -126,12 +152,12 @@ class ClassicalOptimizer:
         best_chi2 = np.inf
         all_results = []  # Store all results for analysis
 
-        # Get parameter bounds using utility method
-        bounds = self.get_parameter_bounds()
+        # Get parameter bounds using utility method (adjusted for mode)
+        bounds = self.get_parameter_bounds(effective_param_count, is_static_mode)
 
         # Create objective function using utility method
         objective = self.create_objective_function(
-            phi_angles, c2_experimental, "Classical"
+            phi_angles, c2_experimental, f"Classical-{analysis_mode.capitalize()}"
         )
 
         # Try each method
@@ -520,9 +546,16 @@ class ClassicalOptimizer:
             },
         }
 
-    def get_parameter_bounds(self) -> List[Tuple[float, float]]:
+    def get_parameter_bounds(self, effective_param_count: Optional[int] = None, is_static_mode: Optional[bool] = None) -> List[Tuple[float, float]]:
         """
-        Extract parameter bounds from configuration.
+        Extract parameter bounds from configuration, adjusted for analysis mode.
+
+        Parameters
+        ----------
+        effective_param_count : int, optional
+            Number of parameters to use (3 for static, 7 for laminar flow)
+        is_static_mode : bool, optional
+            Whether static mode is enabled
 
         Returns
         -------
@@ -531,9 +564,24 @@ class ClassicalOptimizer:
         """
         bounds = []
         param_bounds = self.config.get("parameter_space", {}).get("bounds", [])
-        for bound in param_bounds:
-            bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
-        return bounds
+        
+        # Determine effective parameter count if not provided
+        if effective_param_count is None:
+            if hasattr(self.core, 'config_manager') and self.core.config_manager:
+                effective_param_count = self.core.config_manager.get_effective_parameter_count()
+            else:
+                effective_param_count = 7  # Default to laminar flow
+        
+        # Extract bounds for the effective parameters
+        for i, bound in enumerate(param_bounds):
+            if i < effective_param_count:
+                bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
+        
+        # Ensure we have enough bounds
+        while len(bounds) < effective_param_count:
+            bounds.append((-np.inf, np.inf))
+            
+        return bounds[:effective_param_count]
 
     def compare_optimization_results(
         self,

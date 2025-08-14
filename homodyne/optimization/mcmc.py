@@ -110,6 +110,8 @@ class MCMCSampler:
         c2_experimental: np.ndarray,
         phi_angles: np.ndarray,
         filter_angles_for_optimization: bool = True,
+        is_static_mode: bool = False,
+        effective_param_count: int = 7,
     ):
         """
         Build optimized Bayesian model for MCMC sampling.
@@ -125,6 +127,10 @@ class MCMCSampler:
             Scattering angles
         filter_angles_for_optimization : bool, default True
             If True, use only angles in ranges [-10°, 10°] and [170°, 190°] for likelihood
+        is_static_mode : bool, default False
+            Whether static mode is enabled
+        effective_param_count : int, default 7
+            Number of parameters to use (3 for static, 7 for laminar flow)
 
         Returns
         -------
@@ -217,20 +223,27 @@ class MCMCSampler:
                 "bounds", []
             )  # noqa: F841
 
-            # Parameter priors
-            # Diffusion coefficient
+            # Parameter priors - mode-aware construction
+            print(f"   Building {effective_param_count}-parameter model for {('static' if is_static_mode else 'laminar flow')} mode")
+            
+            # Always include diffusion parameters (first 3)
             D0 = pm.LogNormal("D0", mu=np.log(1000), sigma=2.0)
             alpha = pm.Normal("alpha", mu=0.0, sigma=1.0)  # Power-law exponent
             D_offset = pm.Normal("D_offset", mu=0.0, sigma=1000.0)  # Diffusion offset
-            gamma_dot_t0 = pm.LogNormal(
-                "gamma_dot_t0", mu=np.log(0.01), sigma=2.0
-            )  # Shear rate
-            # Shear power-law exponent
-            beta = pm.Normal("beta", mu=0.0, sigma=1.0)
-            gamma_dot_t_offset = pm.Normal(
-                "gamma_dot_t_offset", mu=0.0, sigma=0.01
-            )  # Shear offset
-            phi0 = pm.Normal("phi0", mu=0.0, sigma=10.0)  # Angular offset
+            
+            if not is_static_mode and effective_param_count > 3:
+                # Laminar flow mode: include shear and angular parameters
+                gamma_dot_t0 = pm.LogNormal(
+                    "gamma_dot_t0", mu=np.log(0.01), sigma=2.0
+                )  # Shear rate
+                beta = pm.Normal("beta", mu=0.0, sigma=1.0)  # Shear power-law exponent
+                gamma_dot_t_offset = pm.Normal(
+                    "gamma_dot_t_offset", mu=0.0, sigma=0.01
+                )  # Shear offset
+                phi0 = pm.Normal("phi0", mu=0.0, sigma=10.0)  # Angular offset
+            else:
+                # Static mode: shear parameters are fixed at zero (not used)
+                print("   Static mode: shear and angular parameters excluded from model")
 
             # Noise model
             noise_config = performance_config.get("noise_model", {})
@@ -243,17 +256,22 @@ class MCMCSampler:
             )  # noqa: F841
 
             # Forward model (simplified for computational efficiency)
-            params = pt.stack(  # noqa: F841
-                [
-                    D0,
-                    alpha,
-                    D_offset,
-                    gamma_dot_t0,
-                    beta,
-                    gamma_dot_t_offset,
-                    phi0,
-                ]
-            )
+            if is_static_mode:
+                # Static mode: only diffusion parameters
+                params = pt.stack([D0, alpha, D_offset])  # noqa: F841
+            else:
+                # Laminar flow mode: all parameters
+                params = pt.stack(  # noqa: F841
+                    [
+                        D0,
+                        alpha,
+                        D_offset,
+                        gamma_dot_t0,
+                        beta,
+                        gamma_dot_t_offset,
+                        phi0,
+                    ]
+                )
 
             # Simplified forward model for demonstration
             simple_forward = noise_config.get("use_simple_forward_model", True)
@@ -300,6 +318,9 @@ class MCMCSampler:
         phi_angles: np.ndarray,
         config: Dict[str, Any],
         filter_angles_for_optimization: bool = True,
+        is_static_mode: bool = False,
+        analysis_mode: str = "laminar_flow",
+        effective_param_count: int = 7,
     ) -> Dict[str, Any]:
         """
         Run MCMC NUTS sampling for parameter uncertainty quantification.
@@ -317,6 +338,12 @@ class MCMCSampler:
             MCMC configuration
         filter_angles_for_optimization : bool, default True
             If True, use only angles in ranges [-10°, 10°] and [170°, 190°] for sampling
+        is_static_mode : bool, default False
+            Whether static mode is enabled
+        analysis_mode : str, default "laminar_flow"
+            Analysis mode ("static" or "laminar_flow")
+        effective_param_count : int, default 7
+            Number of parameters to use (3 for static, 7 for laminar flow)
 
         Returns
         -------
@@ -343,6 +370,7 @@ class MCMCSampler:
         cores = min(chains, getattr(self.core, "num_threads", 1))
 
         print(f"   Running MCMC (NUTS) Sampling...")
+        print(f"     Mode: {analysis_mode} ({effective_param_count} parameters)")
         print(
             f"     Settings: draws={draws}, tune={tune}, chains={chains}, cores={cores}"
         )
@@ -352,6 +380,8 @@ class MCMCSampler:
             c2_experimental,
             phi_angles,
             filter_angles_for_optimization=filter_angles_for_optimization,
+            is_static_mode=is_static_mode,
+            effective_param_count=effective_param_count,
         )
 
         # Prepare initial values from best parameters
@@ -371,8 +401,25 @@ class MCMCSampler:
 
         if init_params is not None:
             param_names = self.config["initial_parameters"]["parameter_names"]
+            
+            # Adjust initialization parameters based on mode
+            if is_static_mode and len(init_params) > effective_param_count:
+                # Use only diffusion parameters for static mode
+                init_params_adjusted = init_params[:effective_param_count]
+                param_names_adjusted = param_names[:effective_param_count]
+                print(f"     Using {effective_param_count} diffusion parameters for static mode initialization")
+            elif not is_static_mode and len(init_params) < effective_param_count:
+                # Extend for laminar flow mode
+                init_params_adjusted = np.zeros(effective_param_count)
+                init_params_adjusted[:len(init_params)] = init_params
+                param_names_adjusted = param_names[:effective_param_count]
+                print(f"     Extended to {effective_param_count} parameters for laminar flow initialization")
+            else:
+                init_params_adjusted = init_params[:effective_param_count]
+                param_names_adjusted = param_names[:effective_param_count]
+            
             initvals = [
-                {name: init_params[i] for i, name in enumerate(param_names)}
+                {name: init_params_adjusted[i] for i, name in enumerate(param_names_adjusted)}
                 for _ in range(chains)
             ]
             # Add small random perturbations for different chains
@@ -397,10 +444,11 @@ class MCMCSampler:
 
         mcmc_time = time.time() - mcmc_start
 
-        # Extract posterior means
+        # Extract posterior means (mode-aware)
         param_names = self.config["initial_parameters"]["parameter_names"]
+        param_names_effective = param_names[:effective_param_count]
         posterior_means = {}
-        for var_name in param_names:
+        for var_name in param_names_effective:
             # type: ignore[attr-defined]
             if hasattr(trace, "posterior") and var_name in trace.posterior:
                 posterior_means[var_name] = float(
@@ -452,6 +500,20 @@ class MCMCSampler:
 
         print("\n═══ MCMC/NUTS Sampling ═══")
 
+        # Determine analysis mode and effective parameter count
+        if hasattr(self.core, 'config_manager') and self.core.config_manager:
+            is_static_mode = self.core.config_manager.is_static_mode_enabled()
+            analysis_mode = self.core.config_manager.get_analysis_mode()
+            effective_param_count = self.core.config_manager.get_effective_parameter_count()
+        else:
+            # Fallback to core method
+            is_static_mode = getattr(self.core, 'is_static_mode', lambda: False)()
+            analysis_mode = "static" if is_static_mode else "laminar_flow"
+            effective_param_count = 3 if is_static_mode else 7
+
+        print(f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
+        logger.info(f"MCMC sampling using {analysis_mode} mode with {effective_param_count} parameters")
+
         # Load data if needed
         if c2_experimental is None or phi_angles is None:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
@@ -490,6 +552,9 @@ class MCMCSampler:
             phi_angles,
             mcmc_config,
             filter_angles_for_optimization,
+            is_static_mode,
+            analysis_mode,
+            effective_param_count,
         )
 
         # Add convergence diagnostics

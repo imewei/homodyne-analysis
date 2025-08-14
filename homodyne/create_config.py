@@ -13,19 +13,16 @@ from datetime import datetime
 
 
 def create_config_from_template(
-    template_type="minimal",
     output_file="my_config.json",
     sample_name=None,
     experiment_name=None,
     author=None,
 ):
     """
-    Create a configuration file from a template.
+    Create a configuration file from the complete template.
 
     Parameters
     ----------
-    template_type : str
-        Template to use: "minimal" or "complete"
     output_file : str
         Output configuration file name
     sample_name : str, optional
@@ -36,14 +33,9 @@ def create_config_from_template(
         Author name
     """
 
-    # Get template path
+    # Get template path - only use the complete template
     template_dir = Path(__file__).parent
-    if template_type == "minimal":
-        template_file = template_dir / "config_minimal_template.json"
-    elif template_type == "complete":
-        template_file = template_dir / "config_template.json"
-    else:
-        raise ValueError("template_type must be 'minimal' or 'complete'")
+    template_file = template_dir / "config_template.json"
 
     if not template_file.exists():
         raise FileNotFoundError(f"Template not found: {template_file}")
@@ -91,31 +83,20 @@ def create_config_from_template(
     print("2. Replace placeholder values (YOUR_*) with actual values")
     print("3. Adjust initial_parameters.values based on your system")
     print("4. Run analysis with: python run_homodyne.py --config", output_path)
-
-    if template_type == "minimal":
-        print(f"\nFor advanced options, see: {template_dir / 'config_template.json'}")
-        print(f"Documentation: {template_dir / 'CONFIG_TEMPLATES_README.md'}")
+    print(f"\nDocumentation: {template_dir / 'CONFIG_TEMPLATES_README.md'}")
 
 
 def main():
     """Command-line interface for config creation."""
     parser = argparse.ArgumentParser(
-        description="Create homodyne analysis configuration from templates",
+        description="Create homodyne analysis configuration from the complete template",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python create_config.py --output my_experiment.json
-  python create_config.py --template complete --sample protein_01 --author "Your Name"
-  python create_config.py --template minimal --experiment "Protein dynamics under shear"
+  python create_config.py --sample protein_01 --author "Your Name"
+  python create_config.py --experiment "Protein dynamics under shear"
         """,
-    )
-
-    parser.add_argument(
-        "--template",
-        "-t",
-        choices=["minimal", "complete"],
-        default="minimal",
-        help="Template type to use (default: minimal)",
     )
 
     parser.add_argument(
@@ -135,7 +116,6 @@ Examples:
 
     try:
         create_config_from_template(
-            template_type=args.template,
             output_file=args.output,
             sample_name=args.sample,
             experiment_name=args.experiment,

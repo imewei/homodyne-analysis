@@ -354,7 +354,7 @@ class HomodyneAnalysisCore:
         threshold = 1e-10
 
         # Check if all shear parameters are effectively zero
-        return (
+        return bool(
             abs(gamma_dot_t0) < threshold
             and abs(beta) < threshold
             and abs(gamma_dot_offset) < threshold

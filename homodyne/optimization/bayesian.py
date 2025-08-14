@@ -119,6 +119,20 @@ class BayesianOptimizer:
         start_time = time.time()
         print("\n═══ Bayesian Optimization ═══")
 
+        # Determine analysis mode and effective parameter count
+        if hasattr(self.core, 'config_manager') and self.core.config_manager:
+            is_static_mode = self.core.config_manager.is_static_mode_enabled()
+            analysis_mode = self.core.config_manager.get_analysis_mode()
+            effective_param_count = self.core.config_manager.get_effective_parameter_count()
+        else:
+            # Fallback to core method
+            is_static_mode = getattr(self.core, 'is_static_mode', lambda: False)()
+            analysis_mode = "static" if is_static_mode else "laminar_flow"
+            effective_param_count = 3 if is_static_mode else 7
+
+        print(f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
+        logger.info(f"Bayesian optimization using {analysis_mode} mode with {effective_param_count} parameters")
+
         # Load data if needed
         if phi_angles is None or c2_experimental is None:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
@@ -135,8 +149,8 @@ class BayesianOptimizer:
         # Ensure bo_config is not None for type checker
         assert bo_config is not None
 
-        # Build search space
-        parameter_space = self._build_search_space()
+        # Build search space (adjusted for analysis mode)
+        parameter_space = self._build_search_space(effective_param_count, is_static_mode)
 
         @use_named_args(parameter_space)
         def objective(**params):
@@ -145,7 +159,7 @@ class BayesianOptimizer:
                 param_array,
                 phi_angles,
                 c2_experimental,
-                "BayesOpt",
+                f"BayesOpt-{analysis_mode.capitalize()}",
                 filter_angles_for_optimization=True,  # Use angle filtering during optimization
             )
 
@@ -166,8 +180,18 @@ class BayesianOptimizer:
         }
 
         if x0 is not None:
-            kwargs["x0"] = [list(x0)]
-            print("  Using warm start from previous optimization")
+            # Adjust x0 to match effective parameter count
+            if len(x0) > effective_param_count:
+                x0_adjusted = x0[:effective_param_count]
+                print(f"  Using warm start (adjusted to {effective_param_count} params): {x0_adjusted}")
+            elif len(x0) < effective_param_count:
+                x0_adjusted = np.zeros(effective_param_count)
+                x0_adjusted[:len(x0)] = x0
+                print(f"  Using warm start (extended to {effective_param_count} params)")
+            else:
+                x0_adjusted = x0
+                print("  Using warm start from previous optimization")
+            kwargs["x0"] = [list(x0_adjusted)]
 
         result = gp_minimize(**kwargs)
 
@@ -200,9 +224,16 @@ class BayesianOptimizer:
             "acquisition_function": bo_config.get("acquisition_func", "EI"),
         }
 
-    def _build_search_space(self) -> List[Any]:
+    def _build_search_space(self, effective_param_count: Optional[int] = None, is_static_mode: Optional[bool] = None) -> List[Any]:
         """
-        Build search space for Bayesian optimization.
+        Build search space for Bayesian optimization, adjusted for analysis mode.
+
+        Parameters
+        ----------
+        effective_param_count : int, optional
+            Number of parameters to use (3 for static, 7 for laminar flow)
+        is_static_mode : bool, optional
+            Whether static mode is enabled
 
         Returns
         -------
@@ -215,17 +246,26 @@ class BayesianOptimizer:
         parameter_space = []
         bounds = self.config.get("parameter_space", {}).get("bounds", [])
 
-        for bound in bounds:
-            if bound.get("type") == "log-uniform":
-                space = Real(
-                    bound["min"],
-                    bound["max"],
-                    prior="log-uniform",
-                    name=bound["name"],
-                )
+        # Determine effective parameter count if not provided
+        if effective_param_count is None:
+            if hasattr(self.core, 'config_manager') and self.core.config_manager:
+                effective_param_count = self.core.config_manager.get_effective_parameter_count()
             else:
-                space = Real(bound["min"], bound["max"], name=bound["name"])
-            parameter_space.append(space)
+                effective_param_count = 7  # Default to laminar flow
+
+        # Only use bounds for the effective parameters
+        for i, bound in enumerate(bounds):
+            if i < effective_param_count:
+                if bound.get("type") == "log-uniform":
+                    space = Real(
+                        bound["min"],
+                        bound["max"],
+                        prior="log-uniform",
+                        name=bound["name"],
+                    )
+                else:
+                    space = Real(bound["min"], bound["max"], name=bound["name"])
+                parameter_space.append(space)
 
         return parameter_space
 
