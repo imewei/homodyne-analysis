@@ -203,19 +203,19 @@ def dummy_correlation_data():
     np.random.seed(42)  # Reproducible data
 
     n_angles = 3
-    n_time_lags = 20
-    n_delay_times = 30
+    n_t2 = 20
+    n_t1 = 30
 
     # Create realistic-looking correlation data
     # Start with exponential decay plus noise
-    time_lags = np.linspace(0.1, 2.0, n_time_lags)
-    delay_times = np.linspace(0.1, 3.0, n_delay_times)
+    t2 = np.linspace(0.1, 2.0, n_t2)
+    t1 = np.linspace(0.1, 3.0, n_t1)
 
-    experimental_data = np.zeros((n_angles, n_time_lags, n_delay_times))
+    experimental_data = np.zeros((n_angles, n_t2, n_t1))
 
     for i in range(n_angles):
-        for j, tau in enumerate(time_lags):
-            for k, t in enumerate(delay_times):
+        for j, tau in enumerate(t2):
+            for k, t in enumerate(t1):
                 # Base correlation with exponential decay
                 base_corr = 1.0 + 0.8 * np.exp(-tau / 1.0 - t / 2.0)
                 # Add some angle dependence
@@ -236,9 +236,9 @@ def dummy_phi_angles():
 @pytest.fixture
 def dummy_time_arrays():
     """Generate time lag and delay time arrays."""
-    time_lags = np.linspace(0.1, 2.0, 20)
-    delay_times = np.linspace(0.1, 3.0, 30)
-    return time_lags, delay_times
+    t2 = np.linspace(0.1, 2.0, 20)
+    t1 = np.linspace(0.1, 3.0, 30)
+    return t2, t1
 
 
 @pytest.fixture
@@ -316,7 +316,7 @@ def dummy_hdf5_data(temp_directory):
     np.random.seed(42)
     correlation_data = np.random.exponential(
         1.0, (100, 50, 50)
-    )  # frames x time_lags x delay_times
+    )  # frames x t2 x t1
 
     # Save as npz for testing (simulating HDF5 structure)
     data_file = data_dir / "test_correlation_data.npz"

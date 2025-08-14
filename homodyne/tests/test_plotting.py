@@ -138,7 +138,7 @@ class TestC2HeatmapPlots:
         dummy_config,
     ):
         """Test C2 heatmaps with explicit time arrays."""
-        time_lags, delay_times = dummy_time_arrays
+        t2, t1 = dummy_time_arrays
 
         success = plot_c2_heatmaps(
             dummy_correlation_data,
@@ -146,8 +146,8 @@ class TestC2HeatmapPlots:
             dummy_phi_angles,
             temp_directory,
             dummy_config,
-            time_lags=time_lags,
-            delay_times=delay_times,
+            t2=t2,
+            t1=t1,
         )
 
         assert success is True
@@ -463,7 +463,7 @@ class TestCompleteWorkflow:
 class TestPlotErrorHandling:
     """Test error handling in plotting functions."""
 
-    def test_plot_with_invalid_data(self, temp_directory, dummy_config):
+    def test_plot_with_invalid_data(self, temp_directory, dummy_phi_angles, dummy_config):
         """Test plotting with invalid data types."""
         invalid_exp_data = "not_an_array"
         invalid_theory_data = None

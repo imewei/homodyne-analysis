@@ -362,7 +362,7 @@ class TestDataValidation:
         # Valid data
         valid_data = np.random.rand(
             3, 20, 30
-        )  # angles x time_lags x delay_times
+        )  # angles x t2 x t1
         assert valid_data.shape[0] == len(dummy_phi_angles)
         assert not np.any(np.isnan(valid_data))
         assert np.all(
@@ -413,15 +413,15 @@ class TestDataValidation:
     def test_time_array_validation(self):
         """Test validation of time arrays."""
         # Valid time arrays
-        valid_time_lags = np.linspace(0.1, 2.0, 20)
-        valid_delay_times = np.linspace(0.1, 3.0, 30)
+        valid_t2 = np.linspace(0.1, 2.0, 20)
+        valid_t1 = np.linspace(0.1, 3.0, 30)
 
-        assert np.all(valid_time_lags > 0)
-        assert np.all(valid_delay_times > 0)
-        assert len(valid_time_lags) == 20
-        assert len(valid_delay_times) == 30
-        assert np.all(np.diff(valid_time_lags) > 0)  # Should be increasing
-        assert np.all(np.diff(valid_delay_times) > 0)
+        assert np.all(valid_t2 > 0)
+        assert np.all(valid_t1 > 0)
+        assert len(valid_t2) == 20
+        assert len(valid_t1) == 30
+        assert np.all(np.diff(valid_t2) > 0)  # Should be increasing
+        assert np.all(np.diff(valid_t1) > 0)
 
         # Invalid time arrays
         negative_times = np.linspace(-1.0, 1.0, 10)

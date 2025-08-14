@@ -30,8 +30,7 @@ logger = logging.getLogger(__name__)
 # Try to import optional dependencies for advanced plotting
 try:
     import arviz as az
-    import pandas as pd
-
+    # pandas is imported locally when needed
     ARVIZ_AVAILABLE = True
     logger.info("ArviZ imported - MCMC corner plots available")
 except ImportError:
@@ -39,8 +38,8 @@ except ImportError:
     logger.warning("ArviZ not available. Install with: pip install arviz")
 
 try:
+    # corner is imported locally when needed
     import corner
-
     CORNER_AVAILABLE = True
     logger.info("corner package imported - Enhanced corner plots available")
 except ImportError:
@@ -124,26 +123,32 @@ def plot_c2_heatmaps(
     phi_angles: np.ndarray,
     outdir: Union[str, Path],
     config: Optional[Dict] = None,
-    time_lags: Optional[np.ndarray] = None,
-    delay_times: Optional[np.ndarray] = None,
+    t2: Optional[np.ndarray] = None,
+    t1: Optional[np.ndarray] = None,
 ) -> bool:
     """
     Create side-by-side heatmaps comparing experimental and theoretical C2 correlation functions,
     plus residuals for each phi angle.
 
     Args:
-        exp (np.ndarray): Experimental correlation data [n_angles, n_time_lags, n_delay_times]
-        theory (np.ndarray): Theoretical correlation data [n_angles, n_time_lags, n_delay_times]
+        exp (np.ndarray): Experimental correlation data [n_angles, n_t2, n_t1]
+        theory (np.ndarray): Theoretical correlation data [n_angles, n_t2, n_t1]
         phi_angles (np.ndarray): Array of phi angles in degrees
         outdir (Union[str, Path]): Output directory for saved plots
         config (Optional[Dict]): Configuration dictionary
-        time_lags (Optional[np.ndarray]): Time lag values for y-axis
-        delay_times (Optional[np.ndarray]): Delay time values for x-axis
+        t2 (Optional[np.ndarray]): Time lag values (t₂) for y-axis
+        t1 (Optional[np.ndarray]): Delay time values (t₁) for x-axis
 
     Returns:
         bool: True if plots were created successfully
     """
-    logger.info(f"Creating C2 heatmaps for {len(phi_angles)} phi angles")
+    # Validate inputs first
+    try:
+        phi_angles_len = len(phi_angles) if phi_angles is not None else 0
+        logger.info(f"Creating C2 heatmaps for {phi_angles_len} phi angles")
+    except TypeError:
+        logger.error("Invalid phi_angles parameter - must be array-like")
+        return False
 
     # Get plotting configuration
     plot_config = get_plot_config(config)
@@ -151,6 +156,18 @@ def plot_c2_heatmaps(
 
     # Ensure output directory exists
     outdir = ensure_dir(outdir)
+
+    # Validate exp and theory inputs
+    try:
+        if exp is None or not hasattr(exp, 'shape'):
+            logger.error("Experimental data must be a numpy array with shape attribute")
+            return False
+        if theory is None or not hasattr(theory, 'shape'):
+            logger.error("Theoretical data must be a numpy array with shape attribute")
+            return False
+    except Exception as e:
+        logger.error(f"Error validating input arrays: {e}")
+        return False
 
     # Validate input dimensions
     if exp.shape != theory.shape:
@@ -164,10 +181,13 @@ def plot_c2_heatmaps(
         return False
 
     # Generate default axes if not provided
-    if time_lags is None:
-        time_lags = np.arange(exp.shape[1])
-    if delay_times is None:
-        delay_times = np.arange(exp.shape[2])
+    if t2 is None:
+        t2 = np.arange(exp.shape[1])
+    if t1 is None:
+        t1 = np.arange(exp.shape[2])
+    
+    # Type assertion to help Pylance understand these are no longer None
+    assert t2 is not None and t1 is not None
 
     # Calculate residuals
     residuals = exp - theory
@@ -194,17 +214,17 @@ def plot_c2_heatmaps(
                 exp[i],
                 aspect="auto",
                 origin="lower",
-                extent=[
-                    delay_times[0],
-                    delay_times[-1],
-                    time_lags[0],
-                    time_lags[-1],
-                ],
+                extent=(
+                    float(t1[0]),
+                    float(t1[-1]),
+                    float(t2[0]),
+                    float(t2[-1]),
+                ),
                 cmap="viridis",
             )
             ax1.set_title(f"Experimental C₂\nφ = {phi:.1f}°")
-            ax1.set_xlabel("Delay Time")
-            ax1.set_ylabel("Time Lag")
+            ax1.set_xlabel("t₁")
+            ax1.set_ylabel("t₂")
 
             # Theoretical data heatmap
             ax2 = fig.add_subplot(gs[0, 1])
@@ -212,17 +232,17 @@ def plot_c2_heatmaps(
                 theory[i],
                 aspect="auto",
                 origin="lower",
-                extent=[
-                    delay_times[0],
-                    delay_times[-1],
-                    time_lags[0],
-                    time_lags[-1],
-                ],
+                extent=(
+                    float(t1[0]),
+                    float(t1[-1]),
+                    float(t2[0]),
+                    float(t2[-1]),
+                ),
                 cmap="viridis",
             )
             ax2.set_title(f"Theoretical C₂\nφ = {phi:.1f}°")
-            ax2.set_xlabel("Delay Time")
-            ax2.set_ylabel("Time Lag")
+            ax2.set_xlabel("t₁")
+            ax2.set_ylabel("t₂")
 
             # Shared colorbar for exp and theory
             cbar_ax1 = fig.add_subplot(gs[0, 2])
@@ -238,17 +258,17 @@ def plot_c2_heatmaps(
                 residuals[i],
                 aspect="auto",
                 origin="lower",
-                extent=[
-                    delay_times[0],
-                    delay_times[-1],
-                    time_lags[0],
-                    time_lags[-1],
-                ],
+                extent=(
+                    float(t1[0]),
+                    float(t1[-1]),
+                    float(t2[0]),
+                    float(t2[-1]),
+                ),
                 cmap="RdBu_r",
             )
             ax3.set_title(f"Residuals (Exp - Theory)\nφ = {phi:.1f}°")
-            ax3.set_xlabel("Delay Time")
-            ax3.set_ylabel("Time Lag")
+            ax3.set_xlabel("t₁")
+            ax3.set_ylabel("t₂")
 
             # Residuals colorbar
             cbar_ax2 = fig.add_subplot(gs[1, 2])
@@ -373,7 +393,7 @@ def plot_parameter_evolution(
                 normalized_upper.append(upper_bounds[i])
 
         # Create bars
-        bars1 = ax1.bar(
+        _bars1 = ax1.bar(
             x_pos - width,
             normalized_initial,
             width,
@@ -389,7 +409,7 @@ def plot_parameter_evolution(
             alpha=0.7,
             color="darkblue",
         )
-        bars3 = ax1.bar(
+        _bars3 = ax1.bar(
             x_pos + width,
             normalized_lower,
             width,
@@ -397,7 +417,7 @@ def plot_parameter_evolution(
             alpha=0.5,
             color="red",
         )
-        bars4 = ax1.bar(
+        _bars4 = ax1.bar(
             x_pos + 1.5 * width,
             normalized_upper,
             width,
@@ -422,20 +442,23 @@ def plot_parameter_evolution(
         def add_value_labels(bars, values):
             for bar, value in zip(bars, values):
                 height = bar.get_height()
-                ax1.annotate(
-                    (
-                        f"{value:.2e}"
-                        if abs(value) < 1e-3 or abs(value) > 1e3
-                        else f"{value:.3f}"
-                    ),
-                    xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 3),  # 3 points vertical offset
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=8,
-                    rotation=90,
-                )
+                # Avoid division by zero if bar width is zero
+                bar_width = bar.get_width()
+                if bar_width > 0:
+                    ax1.annotate(
+                        (
+                            f"{value:.2e}"
+                            if abs(value) < 1e-3 or abs(value) > 1e3
+                            else f"{value:.3f}"
+                        ),
+                        xy=(bar.get_x() + bar_width / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha="center",
+                        va="bottom",
+                        fontsize=8,
+                        rotation=90,
+                    )
 
         add_value_labels(
             bars2, best_values
@@ -473,37 +496,20 @@ def plot_parameter_evolution(
                     bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
                 )
         else:
-            # Create a parameter correlation matrix if no history available
-            param_array = np.array([best_values])  # Single row for best parameters
-            im = ax2.imshow(
-                np.corrcoef(param_array.T),
-                cmap="RdBu_r",
-                vmin=-1,
-                vmax=1,
-                aspect="auto",
-            )
-            ax2.set_title("Parameter Values (Best Fit)")
-            ax2.set_xticks(range(len(param_names)))
-            ax2.set_yticks(range(len(param_names)))
-            ax2.set_xticklabels(param_names, rotation=45, ha="right")
-            ax2.set_yticklabels(param_names)
-
-            # Add text annotations
-            for i in range(len(param_names)):
-                ax2.text(
-                    i,
-                    i,
-                    f"{best_values[i]:.3e}",
-                    ha="center",
-                    va="center",
-                    color=(
-                        "white"
-                        if abs(best_values[i]) > np.mean(np.abs(best_values))
-                        else "black"
-                    ),
-                    fontsize=8,
-                    weight="bold",
-                )
+            # Show parameter values as a bar chart instead of correlation matrix
+            # (correlation requires multiple data points, which we don't have)
+            bars = ax2.bar(param_names, best_values, alpha=0.7, color="darkgreen")
+            ax2.set_title("Best Fit Parameter Values")
+            ax2.tick_params(axis='x', rotation=45)
+            
+            # Add value labels on bars
+            for bar, value in zip(bars, best_values):
+                height = bar.get_height()
+                bar_width = bar.get_width()
+                if bar_width > 0:  # Avoid division by zero
+                    ax2.text(bar.get_x() + bar_width/2., height,
+                            f'{value:.3g}',
+                            ha='center', va='bottom', fontsize=8)
 
         plt.tight_layout()
 
@@ -578,6 +584,10 @@ def plot_mcmc_corner(
         else:
             # Try to convert to DataFrame
             try:
+                if not ARVIZ_AVAILABLE:
+                    logger.error("Pandas not available for DataFrame conversion")
+                    return False
+                import pandas as pd
                 samples = pd.DataFrame(trace_data)
             except:
                 logger.error("Unsupported trace data format for corner plot")
@@ -586,13 +596,14 @@ def plot_mcmc_corner(
         # Create corner plot using ArviZ
         if hasattr(samples, "stack"):
             # ArviZ format - stack chains
-            stacked_samples = samples.stack(sample=("chain", "draw"))
+            stacked_samples = samples.stack(sample=("chain", "draw"))  # type: ignore
         else:
             stacked_samples = samples
 
         # Create the corner plot
         if CORNER_AVAILABLE:
             # Use corner package if available (better formatting)
+            import corner
             fig = corner.corner(
                 stacked_samples,
                 labels=[
@@ -615,6 +626,7 @@ def plot_mcmc_corner(
             )
         else:
             # Use ArviZ built-in plot
+            import arviz as az
             axes = az.plot_pair(
                 stacked_samples,
                 kind="kde",
@@ -714,14 +726,16 @@ def plot_diagnostic_summary(
 
             # Add value labels
             for bar, value in zip(bars, chi2_values):
-                ax1.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() * 1.1,
-                    f"{value:.2e}",
-                    ha="center",
-                    va="bottom",
-                    fontsize=10,
-                )
+                bar_width = bar.get_width()
+                if bar_width > 0:  # Avoid division by zero
+                    ax1.text(
+                        bar.get_x() + bar_width / 2,
+                        bar.get_height() * 1.1,
+                        f"{value:.2e}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=10,
+                    )
 
         # Plot 2: Parameter uncertainty (if available)
         ax2 = fig.add_subplot(gs[0, 1])
@@ -778,15 +792,23 @@ def plot_diagnostic_summary(
 
                 # Overlay normal distribution for comparison
                 mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
-                x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
-                ax4.plot(
-                    x,
-                    (1 / (sigma * np.sqrt(2 * np.pi)))
-                    * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
-                    "r-",
-                    linewidth=2,
-                    label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
-                )
+                
+                # Avoid division by zero if sigma is too small
+                if sigma > 1e-10:
+                    x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
+                    ax4.plot(
+                        x,
+                        (1 / (sigma * np.sqrt(2 * np.pi)))
+                        * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
+                        "r-",
+                        linewidth=2,
+                        label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
+                    )
+                else:
+                    # If sigma is effectively zero, just show the mean as a vertical line
+                    ax4.axvline(float(mu), color='red', linestyle='--', linewidth=2, 
+                               label=f"Mean={mu:.3e} (σ≈0)")
+                    logger.warning("Standard deviation is very small, showing mean line instead of normal distribution")
 
                 ax4.set_xlabel("Residual Value")
                 ax4.set_ylabel("Density")
@@ -898,13 +920,13 @@ if __name__ == "__main__":
     print("Testing plotting functions...")
 
     # Create test data
-    n_angles, n_time_lags, n_delay_times = 3, 50, 100
+    n_angles, n_t2, n_t1 = 3, 50, 100
     phi_angles = np.array([0, 45, 90])
 
     # Generate synthetic correlation data
     np.random.seed(42)
     exp_data = 1 + 0.5 * np.random.exponential(
-        1, (n_angles, n_time_lags, n_delay_times)
+        1, (n_angles, n_t2, n_t1)
     )
     theory_data = exp_data + 0.1 * np.random.normal(0, 1, exp_data.shape)
 
