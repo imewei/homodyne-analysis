@@ -429,7 +429,14 @@ class MCMCSampler:
 
         mcmc_start = time.time()
 
+        # Create callback for intermediate logging
+        def log_sampling_progress(approx, loss, i):
+            if i % 100 == 0:  # Log every 100 samples
+                print(f"    Sample {i}: Log-posterior = {-loss:.6e}")
+        
         with model:
+            # For MCMC, we can't directly log chi-squared but can monitor the log-posterior
+            print(f"    Starting MCMC sampling ({draws} draws + {tune} tuning)...")
             trace = pm.sample(
                 draws=draws,
                 tune=tune,
