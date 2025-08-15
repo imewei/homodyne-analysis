@@ -189,8 +189,36 @@ def plot_c2_heatmaps(
     # Type assertion to help Pylance understand these are no longer None
     assert t2 is not None and t1 is not None
 
-    # Calculate residuals
-    residuals = exp - theory
+    # Calculate fitted values and residuals with proper scaling optimization
+    fitted = np.zeros_like(theory)
+    
+    # Check if scaling optimization should be used
+    scaling_optimization = True
+    if config and "chi_squared_calculation" in config:
+        chi_config = config["chi_squared_calculation"]
+        scaling_optimization = chi_config.get("scaling_optimization", True)
+    
+    for i in range(exp.shape[0]):  # For each phi angle
+        exp_flat = exp[i].flatten()
+        theory_flat = theory[i].flatten()
+        
+        if scaling_optimization:
+            # Optimal scaling: fitted = theory * contrast + offset
+            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
+            try:
+                scaling, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+                if len(scaling) == 2:
+                    contrast, offset = scaling
+                    fitted[i] = theory[i] * contrast + offset
+                else:
+                    fitted[i] = theory[i]
+            except np.linalg.LinAlgError:
+                fitted[i] = theory[i]
+        else:
+            fitted[i] = theory[i]
+    
+    # Calculate residuals: exp - fitted
+    residuals = exp - fitted
 
     # Create plots for each phi angle
     success_count = 0

@@ -1047,7 +1047,7 @@ class HomodyneAnalysisCore:
             else:
                 optimization_indices = list(range(len(phi_angles)))
 
-            total_chi2 = 0.0
+            optimization_chi2_angles = []
             angle_chi2 = []
             angle_chi2_reduced = []
             angle_data_points = []
@@ -1076,7 +1076,7 @@ class HomodyneAnalysisCore:
                     scaling_solutions.append([1.0, 0.0])
 
                 # Calculate chi-squared for this angle
-                residuals = fitted - exp
+                residuals = exp - fitted
                 sigma = max(np.std(exp) * uncertainty_factor, min_sigma)
                 chi2_angle = np.sum(residuals**2) / (sigma**2)
 
@@ -1088,26 +1088,21 @@ class HomodyneAnalysisCore:
                 angle_chi2_reduced.append(chi2_reduced_angle)
                 angle_data_points.append(n_data_angle)
 
-                # Only include this angle in total chi2 if it's in the optimization set
+                # Collect chi2 values for optimization angles (for averaging)
                 if not filter_angles_for_optimization or i in optimization_indices:
-                    total_chi2 += chi2_angle
+                    optimization_chi2_angles.append(chi2_reduced_angle)
 
-            # Reduced chi-squared calculation
-            if filter_angles_for_optimization:
-                # Use only data from optimization angles for DOF calculation
-                n_data_optimization = sum(
-                    angle_data_points[i] for i in optimization_indices
-                )
-                dof = max(n_data_optimization - n_params, 1)
+            # Calculate average reduced chi-squared from optimization angles
+            if optimization_chi2_angles:
+                reduced_chi2 = np.mean(optimization_chi2_angles)
+                n_optimization_angles = len(optimization_chi2_angles)
                 logger.debug(
-                    f"Optimization mode: using {n_data_optimization} data points from {len(optimization_indices)} angles"
+                    f"Using average of {n_optimization_angles} optimization angles: χ²_red = {reduced_chi2:.6e}"
                 )
             else:
-                # Use all data for DOF calculation
-                n_data = c2_experimental.size
-                dof = max(n_data - n_params, 1)
-
-            reduced_chi2 = total_chi2 / dof
+                # Fallback if no optimization angles (shouldn't happen)
+                reduced_chi2 = np.mean(angle_chi2_reduced) if angle_chi2_reduced else 1e6
+                logger.warning("No optimization angles found, using average of all angles")
 
             # Logging
             OPTIMIZATION_COUNTER += 1
@@ -1118,12 +1113,20 @@ class HomodyneAnalysisCore:
                 logger.info(
                     f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {reduced_chi2:.6e}"
                 )
+                # Log reduced chi-square per angle
+                for i, (phi, chi2_red_angle) in enumerate(zip(phi_angles, angle_chi2_reduced)):
+                    logger.info(
+                        f"  Angle {i+1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
+                    )
 
             if return_components:
+                # Calculate total chi2 for compatibility (sum of optimization angles)
+                total_chi2_compat = sum(angle_chi2[i] for i in optimization_indices) if filter_angles_for_optimization else sum(angle_chi2)
+                
                 return {
-                    "chi_squared": total_chi2,
-                    "reduced_chi_squared": reduced_chi2,
-                    "degrees_of_freedom": dof,
+                    "chi_squared": total_chi2_compat,
+                    "reduced_chi_squared": float(reduced_chi2),
+                    "n_optimization_angles": len(optimization_chi2_angles),
                     "angle_chi_squared": angle_chi2,
                     "angle_chi_squared_reduced": angle_chi2_reduced,
                     "angle_data_points": angle_data_points,
@@ -1132,7 +1135,7 @@ class HomodyneAnalysisCore:
                     "valid": True,
                 }
             else:
-                return reduced_chi2
+                return float(reduced_chi2)
 
         except Exception as e:
             logger.warning(f"Chi-squared calculation failed: {e}")
@@ -1206,27 +1209,32 @@ class HomodyneAnalysisCore:
         overall_config = fit_quality_config.get("overall_chi_squared", {})
         per_angle_config = fit_quality_config.get("per_angle_chi_squared", {})
 
-        # Overall chi-squared quality assessment
+        # Overall reduced chi-squared quality assessment (updated thresholds for reduced chi2)
         overall_chi2 = chi_results["reduced_chi_squared"]
-        acceptable_overall = overall_config.get("acceptable_threshold", 10.0)
-        warning_overall = overall_config.get("warning_threshold", 20.0)
-        critical_overall = overall_config.get("critical_threshold", 50.0)
+        excellent_threshold = overall_config.get("excellent_threshold", 2.0)
+        acceptable_overall = overall_config.get("acceptable_threshold", 5.0)
+        warning_overall = overall_config.get("warning_threshold", 10.0)
+        critical_overall = overall_config.get("critical_threshold", 20.0)
 
-        overall_quality = "excellent"
-        if overall_chi2 > acceptable_overall:
-            overall_quality = (
-                "acceptable" if overall_chi2 <= warning_overall else "poor"
-            )
-        if overall_chi2 > warning_overall:
-            overall_quality = (
-                "warning" if overall_chi2 <= critical_overall else "critical"
-            )
+        # Determine overall quality based on reduced chi-squared
+        if overall_chi2 <= excellent_threshold:
+            overall_quality = "excellent"
+        elif overall_chi2 <= acceptable_overall:
+            overall_quality = "acceptable"
+        elif overall_chi2 <= warning_overall:
+            overall_quality = "warning"
+        elif overall_chi2 <= critical_overall:
+            overall_quality = "poor"
+        else:
+            overall_quality = "critical"
 
-        # Per-angle quality assessment
-        acceptable_per_angle = per_angle_config.get("acceptable_threshold", 15.0)
-        outlier_multiplier = per_angle_config.get("outlier_threshold_multiplier", 3.0)
-        max_outlier_fraction = per_angle_config.get("max_outlier_fraction", 0.2)
-        min_good_angles = per_angle_config.get("min_good_angles", 5)
+        # Per-angle quality assessment (updated thresholds for reduced chi2)
+        excellent_per_angle = per_angle_config.get("excellent_threshold", 2.0)
+        acceptable_per_angle = per_angle_config.get("acceptable_threshold", 5.0)
+        warning_per_angle = per_angle_config.get("warning_threshold", 10.0)
+        outlier_multiplier = per_angle_config.get("outlier_threshold_multiplier", 2.5)
+        max_outlier_fraction = per_angle_config.get("max_outlier_fraction", 0.25)
+        min_good_angles = per_angle_config.get("min_good_angles", 3)
 
         # Identify outlier angles using configurable threshold
         outlier_threshold = mean_chi2_red + outlier_multiplier * std_chi2_red
@@ -1234,17 +1242,34 @@ class HomodyneAnalysisCore:
         outlier_angles = [angles[i] for i in outlier_indices]
         outlier_chi2 = [angle_chi2_reduced[i] for i in outlier_indices]
 
-        # Identify unacceptable angles (above absolute threshold)
-        unacceptable_indices = np.where(
-            np.array(angle_chi2_reduced) > acceptable_per_angle
+        # Categorize angles by quality levels
+        angle_chi2_array = np.array(angle_chi2_reduced)
+        
+        # Excellent angles (≤ 2.0)
+        excellent_indices = np.where(angle_chi2_array <= excellent_per_angle)[0]
+        excellent_angles = [angles[i] for i in excellent_indices]
+        
+        # Acceptable angles (≤ 5.0)
+        acceptable_indices = np.where(angle_chi2_array <= acceptable_per_angle)[0]
+        acceptable_angles = [angles[i] for i in acceptable_indices]
+        
+        # Warning angles (> 5.0, ≤ 10.0)
+        warning_indices = np.where(
+            (angle_chi2_array > acceptable_per_angle) & 
+            (angle_chi2_array <= warning_per_angle)
         )[0]
-        unacceptable_angles = [angles[i] for i in unacceptable_indices]
-        unacceptable_chi2 = [angle_chi2_reduced[i] for i in unacceptable_indices]
-
-        # Good angles (below acceptable threshold)
-        good_indices = np.where(np.array(angle_chi2_reduced) <= acceptable_per_angle)[0]
-        good_angles = [angles[i] for i in good_indices]
-        num_good_angles = len(good_angles)
+        warning_angles = [angles[i] for i in warning_indices]
+        
+        # Poor angles (> 10.0)
+        poor_indices = np.where(angle_chi2_array > warning_per_angle)[0]
+        poor_angles = [angles[i] for i in poor_indices]
+        poor_chi2 = [angle_chi2_reduced[i] for i in poor_indices]
+        
+        # Legacy compatibility
+        unacceptable_angles = poor_angles
+        unacceptable_chi2 = poor_chi2
+        good_angles = acceptable_angles
+        num_good_angles = len(acceptable_angles)
 
         # Quality assessment
         outlier_fraction = len(outlier_angles) / len(angles)
@@ -1311,16 +1336,50 @@ class HomodyneAnalysisCore:
                 "combined_quality": combined_quality,
                 "quality_issues": quality_issues,
                 "thresholds_used": {
+                    "excellent_overall": excellent_threshold,
                     "acceptable_overall": acceptable_overall,
                     "warning_overall": warning_overall,
                     "critical_overall": critical_overall,
+                    "excellent_per_angle": excellent_per_angle,
                     "acceptable_per_angle": acceptable_per_angle,
+                    "warning_per_angle": warning_per_angle,
                     "outlier_multiplier": outlier_multiplier,
                     "max_outlier_fraction": max_outlier_fraction,
                     "min_good_angles": min_good_angles,
                 },
+                "interpretation": {
+                    "overall_chi2_meaning": _get_chi2_interpretation(overall_chi2),
+                    "quality_explanation": _get_quality_explanation(combined_quality),
+                    "recommended_actions": _get_quality_recommendations(combined_quality, quality_issues),
+                },
             },
             "angle_categorization": {
+                "excellent_angles": {
+                    "angles_deg": excellent_angles,
+                    "count": len(excellent_angles),
+                    "fraction": len(excellent_angles) / len(angles),
+                    "criteria": f"χ²_red ≤ {excellent_per_angle}",
+                },
+                "acceptable_angles": {
+                    "angles_deg": acceptable_angles,
+                    "count": len(acceptable_angles),
+                    "fraction": len(acceptable_angles) / len(angles),
+                    "criteria": f"χ²_red ≤ {acceptable_per_angle}",
+                },
+                "warning_angles": {
+                    "angles_deg": warning_angles,
+                    "count": len(warning_angles),
+                    "fraction": len(warning_angles) / len(angles),
+                    "criteria": f"{acceptable_per_angle} < χ²_red ≤ {warning_per_angle}",
+                },
+                "poor_angles": {
+                    "angles_deg": poor_angles,
+                    "chi2_reduced": poor_chi2,
+                    "count": len(poor_angles),
+                    "fraction": len(poor_angles) / len(angles),
+                    "criteria": f"χ²_red > {warning_per_angle}",
+                },
+                # Legacy compatibility
                 "good_angles": {
                     "angles_deg": good_angles,
                     "count": num_good_angles,
@@ -1430,313 +1489,67 @@ class HomodyneAnalysisCore:
 
         return per_angle_results
 
-    # ============================================================================
-    # PARAMETER MANAGEMENT AND RESULTS SAVING
-    # ============================================================================
 
-    def save_results_with_config(
-        self, results: Dict[str, Any], output_dir: Optional[str] = None
-    ):
-        """
-        Save comprehensive analysis results with configuration-based formatting.
+def _get_chi2_interpretation(chi2_value: float) -> str:
+    """Provide interpretation of reduced chi-squared value."""
+    if chi2_value <= 1.0:
+        return f"Excellent fit (χ²_red = {chi2_value:.2f} ≤ 1.0): Model matches data within expected noise"
+    elif chi2_value <= 2.0:
+        return f"Very good fit (χ²_red = {chi2_value:.2f}): Model captures main features with minor deviations"
+    elif chi2_value <= 5.0:
+        return f"Acceptable fit (χ²_red = {chi2_value:.2f}): Model reasonable but some systematic deviations present"
+    elif chi2_value <= 10.0:
+        return f"Poor fit (χ²_red = {chi2_value:.2f}): Significant deviations suggest model inadequacy or underestimated uncertainties"
+    else:
+        return f"Very poor fit (χ²_red = {chi2_value:.2f}): Major systematic deviations, model likely inappropriate"
 
-        This method provides flexible, configuration-driven result saving that can
-        accommodate different output formats, compression levels, and organizational
-        structures. The saving process is designed to support:
 
-        - Reproducible research through complete configuration archival
-        - Multiple output formats for different analysis workflows
-        - Efficient storage with configurable compression
-        - Automatic organization and naming conventions
-        - Integration with analysis pipelines and databases
-        - Long-term archival and result retrieval
+def _get_quality_explanation(quality: str) -> str:
+    """Provide explanation of quality assessment."""
+    explanations = {
+        "excellent": "Model provides exceptional agreement with experimental data across all angles",
+        "acceptable": "Model provides reasonable agreement with experimental data for most angles",
+        "warning": "Model shows concerning deviations that may indicate systematic issues",
+        "poor": "Model shows significant inadequacies in describing the experimental data",
+        "critical": "Model is fundamentally inappropriate for this dataset"
+    }
+    return explanations.get(quality, "Unknown quality level")
 
-        Parameters
-        ----------
-        results : Dict[str, Any]
-            Complete results dictionary from comprehensive analysis
-        output_dir : Optional[str]
-            Custom output directory path
-        """
-        import json  # noqa: F811
-        import sys  # noqa: F811
-        import time  # noqa: F811
-        from pathlib import Path  # noqa: F811
 
-        # Determine output directory from configuration or parameter
-        config = self.config if self.config is not None else {}
-        if output_dir is None:
-            output_dir = config.get("output_settings", {}).get(
-                "results_directory", "homodyne_analysis_results"
-            )
-        if output_dir is None:
-            output_dir = "homodyne_analysis_results"
+def _get_quality_recommendations(quality: str, issues: list) -> list:
+    """Provide actionable recommendations based on quality assessment."""
+    recommendations = []
+    
+    if quality == "excellent":
+        recommendations.append("Results are reliable for publication")
+        recommendations.append("Consider this model for further analysis")
+    elif quality == "acceptable":
+        recommendations.append("Results may be suitable with appropriate caveats")
+        recommendations.append("Consider checking specific angles with higher chi-squared")
+    elif quality == "warning":
+        recommendations.append("Investigate systematic deviations before publication")
+        recommendations.append("Consider alternative models or parameter ranges")
+        recommendations.append("Check experimental uncertainties and data quality")
+    elif quality in ["poor", "critical"]:
+        recommendations.append("Do not use results for quantitative conclusions")
+        recommendations.append("Consider fundamental model revision")
+        recommendations.append("Check experimental setup and data processing")
+        recommendations.append("Investigate alternative theoretical approaches")
+    
+    # Add issue-specific recommendations
+    for issue in issues:
+        if "outliers" in issue.lower():
+            recommendations.append("Investigate outlier angles for experimental artifacts")
+        if "good angles" in issue.lower():
+            recommendations.append("Consider focusing analysis on subset of reliable angles")
+    
+    return recommendations
 
-        # Ensure output directory exists with proper error handling
-        output_path = Path(str(output_dir))
-        try:
-            output_path.mkdir(parents=True, exist_ok=True)
-            print(f"📁 Saving results to: {output_path.absolute()}")
-        except PermissionError:
-            raise IOError(f"Permission denied: Cannot create directory {output_dir}")
-        except OSError as e:
-            raise IOError(f"Failed to create output directory {output_dir}: {e}")
 
-        # Get output configuration settings
-        output_config = (
-            self.config.get("output_settings", {}) if self.config is not None else {}
-        )
+# ============================================================================
+# PARAMETER MANAGEMENT AND RESULTS SAVING
+# ============================================================================
 
-        # =======================
-        # SAVE ANALYSIS CONFIGURATION
-        # =======================
+# Note: Additional methods would be defined here if needed
 
-        print("  💾 Saving analysis configuration...")
-        config_file = output_path / "run_configuration.json"
 
-        try:
-            # Enhanced configuration with execution metadata
-            enhanced_config = self.config.copy() if self.config is not None else {}
-            enhanced_config["execution_metadata"] = {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-                "total_execution_time_seconds": sum(
-                    r.get("optimization_time", 0) + r.get("total_time", 0)
-                    for r in results.values()
-                    if isinstance(r, dict)
-                ),
-                "methods_executed": results.get("methods_used", []),
-                "analysis_success": (
-                    "best_overall" in results
-                    and results["best_overall"]["parameters"] is not None
-                ),
-                "frame_range_analyzed": (self.start_frame, self.end_frame),
-                "time_window_seconds": self.time_length * self.dt,
-                "computational_environment": {
-                    "numba_available": NUMBA_AVAILABLE,
-                    "pymc_available": PYMC_AVAILABLE,
-                    "skopt_available": SKOPT_AVAILABLE,
-                    "threads_used": self.num_threads,
-                    "python_version": sys.version.split()[0],
-                },
-            }
-
-            # Add git information if available
-            try:
-                import subprocess
-
-                git_commit = (
-                    subprocess.check_output(
-                        ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-                    )
-                    .decode("utf-8")
-                    .strip()
-                )
-                enhanced_config["execution_metadata"]["git_commit"] = git_commit
-            except Exception:
-                # Git not available or not in a git repository
-                pass
-
-            with open(config_file, "w") as f:
-                json.dump(enhanced_config, f, indent=2, default=str, sort_keys=True)
-
-            print(f"    ✓ Configuration saved: {config_file.name}")
-
-        except Exception as e:
-            print(f"    ⚠ Warning: Failed to save configuration: {e}")
-
-        # =======================
-        # SAVE EXPERIMENTAL DATA
-        # =======================
-
-        if output_config.get("save_experimental_data", True):
-            print("  💾 Saving experimental data...")
-            try:
-                exp_data_file = output_path / "experimental_data.npz"
-                # Get experimental data if not already loaded
-                if (
-                    self.cached_experimental_data is not None
-                    and self.cached_phi_angles is not None
-                ):
-                    data_to_save = {
-                        "c2_experimental": self.cached_experimental_data,
-                        "phi_angles": self.cached_phi_angles,
-                        "time_array": self.time_array,
-                        "metadata": {
-                            "start_frame": self.start_frame,
-                            "end_frame": self.end_frame,
-                            "dt": self.dt,
-                            "wavevector_q": self.wavevector_q,
-                            "stator_rotor_gap": self.stator_rotor_gap,
-                        },
-                    }
-
-                    if output_config.get("compress_data", True):
-                        np.savez_compressed(exp_data_file, **data_to_save)
-                    else:
-                        np.savez(exp_data_file, **data_to_save)
-
-                    print(f"    ✓ Experimental data saved: {exp_data_file.name}")
-                else:
-                    print("    ⚠ Warning: No experimental data in cache to save")
-
-            except Exception as e:
-                print(f"    ⚠ Warning: Failed to save experimental data: {e}")
-
-        # =======================
-        # CREATE RESULTS SUMMARY
-        # =======================
-
-        try:
-            summary_file = output_path / "analysis_summary.txt"
-            with open(summary_file, "w") as f:
-                f.write("HOMODYNE SCATTERING ANALYSIS SUMMARY\n")
-                f.write("=" * 50 + "\n\n")
-
-                f.write(
-                    f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n"
-                )
-                f.write(
-                    f"Core analysis configuration: {self.config_manager.config_file}\n"
-                )
-                f.write(
-                    f"Frame range: {self.start_frame}-{self.end_frame} ({self.time_length} frames)\n"
-                )
-                f.write(f"Time step: {self.dt} s/frame\n")
-                f.write(f"Wavevector: {self.wavevector_q:.6f} Å⁻¹\n")
-                f.write(f"Gap size: {self.stator_rotor_gap/1e4:.1f} μm\n")
-                f.write(f"Processing threads: {self.num_threads}\n\n")
-
-                # Analysis results summary
-                if (
-                    "best_overall" in results
-                    and results["best_overall"]["parameters"] is not None
-                ):
-                    f.write("ANALYSIS SUCCESS\n")
-                    f.write("-" * 20 + "\n")
-                    best_params = results["best_overall"]["parameters"]
-                    param_names = [
-                        "D₀",
-                        "α",
-                        "D_offset",
-                        "γ̇₀",
-                        "β",
-                        "γ̇_offset",
-                        "φ₀",
-                    ]
-
-                    for name, value in zip(param_names, best_params):
-                        if abs(value) < 1e-3 or abs(value) > 1e3:
-                            formatted_value = f"{value:.3e}"
-                        else:
-                            formatted_value = f"{value:.6f}"
-                        f.write(f"{name:<15} {formatted_value}\n")
-
-                    f.write(
-                        f"\nBest χ²_red: {results['best_overall']['chi_squared']:.6e}\n"
-                    )
-                else:
-                    f.write("ANALYSIS INCOMPLETE OR FAILED\n")
-                    f.write("-" * 30 + "\n")
-                    f.write("No successful optimization results available.\n")
-
-                f.write(
-                    f"\nSummary generated: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n"
-                )
-
-            print(f"    ✓ Analysis summary saved: {summary_file.name}")
-
-        except Exception as e:
-            print(f"    ⚠ Warning: Failed to create analysis summary: {e}")
-
-        # =======================
-        # SAVE OPTIMIZATION RESULTS
-        # =======================
-
-        print("  💾 Saving optimization results...")
-        try:
-            results_file = output_path / "optimization_results.json"
-
-            # Create a clean results dictionary for JSON serialization
-            clean_results = {}
-            for key, value in results.items():
-                if key == "methods_used" or key == "methods_attempted":
-                    clean_results[key] = value
-                elif isinstance(value, dict) and any(
-                    opt_key in key for opt_key in ["optimization", "best_overall"]
-                ):
-                    clean_results[key] = {}
-                    for sub_key, sub_value in value.items():
-                        if isinstance(sub_value, np.ndarray):
-                            clean_results[key][sub_key] = sub_value.tolist()
-                        elif isinstance(sub_value, (np.integer, np.floating)):
-                            clean_results[key][sub_key] = (
-                                float(sub_value)
-                                if isinstance(sub_value, np.floating)
-                                else int(sub_value)
-                            )
-                        else:
-                            clean_results[key][sub_key] = sub_value
-                else:
-                    clean_results[key] = value
-
-            # Add metadata
-            clean_results["metadata"] = {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-                "config_file": (
-                    self.config_manager.config_file
-                    if hasattr(self, "config_manager")
-                    else "unknown"
-                ),
-                "frame_range": f"{self.start_frame}-{self.end_frame}",
-                "analysis_parameters": {
-                    "dt": self.dt,
-                    "wavevector_q": self.wavevector_q,
-                    "gap_microns": self.stator_rotor_gap / 1e4,
-                },
-            }
-
-            with open(results_file, "w") as f:
-                json.dump(clean_results, f, indent=2, default=str, sort_keys=True)
-
-            print(f"    ✓ Optimization results saved: {results_file.name}")
-
-            # Log summary of saved methods
-            saved_methods = results.get("methods_used", [])
-            print(f"    📊 Methods saved: {', '.join(saved_methods)}")
-            for method in saved_methods:
-                method_key = f"{method.lower()}_optimization"
-                if method_key in results:
-                    chi2 = results[method_key].get("chi_squared", "N/A")
-                    params = results[method_key].get("parameters")
-                    params_count = (
-                        len(params)
-                        if params is not None and len(params) > 0
-                        else 0
-                    )
-                    print(
-                        f"        {method}: χ²_red={chi2:.6e}, {params_count} parameters"
-                        if isinstance(chi2, (int, float))
-                        else f"        {method}: χ²_red={chi2}, {params_count} parameters"
-                    )
-
-        except Exception as e:
-            print(f"    ⚠ Warning: Failed to save optimization results: {e}")
-            import traceback
-
-            logger.debug(f"Full traceback: {traceback.format_exc()}")
-
-        # =======================
-        # FINAL SUMMARY
-        # =======================
-
-        saved_files = list(output_path.glob("*"))
-        total_size_mb = sum(f.stat().st_size for f in saved_files if f.is_file()) / (
-            1024 * 1024
-        )
-
-        print(f"\n✅ Results saved successfully!")
-        print(f"   📁 Output directory: {output_path.absolute()}")
-        print(f"   📄 Files saved: {len(saved_files)}")
-        print(f"   💾 Total size: {total_size_mb:.1f} MB")
-
-        return output_path

@@ -416,21 +416,14 @@ class ClassicalOptimizer:
                 "angle_filtering"
             ].get("enabled", True)
 
-        # Track iteration count for this method
-        iteration_count = [0]
-        
         def objective(params):
-            chi2 = self.core.calculate_chi_squared_optimized(
+            return self.core.calculate_chi_squared_optimized(
                 params,
                 phi_angles,
                 c2_experimental,
                 method_name,
                 filter_angles_for_optimization=use_angle_filtering,
             )
-            iteration_count[0] += 1
-            if iteration_count[0] % 10 == 0 or iteration_count[0] <= 5:  # Log first 5 and every 10th iteration
-                print(f"    Iteration {iteration_count[0]}: χ²_red = {chi2:.6e}")
-            return chi2
 
         return objective
 

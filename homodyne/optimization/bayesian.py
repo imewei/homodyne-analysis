@@ -152,23 +152,16 @@ class BayesianOptimizer:
         # Build search space (adjusted for analysis mode)
         parameter_space = self._build_search_space(effective_param_count, is_static_mode)
 
-        # Track evaluation count for logging
-        evaluation_count = [0]
-        
         @use_named_args(parameter_space)
         def objective(**params):
             param_array = np.array([params[s.name] for s in parameter_space])
-            chi2 = self.core.calculate_chi_squared_optimized(
+            return self.core.calculate_chi_squared_optimized(
                 param_array,
                 phi_angles,
                 c2_experimental,
                 f"BayesOpt-{analysis_mode.capitalize()}",
                 filter_angles_for_optimization=True,  # Use angle filtering during optimization
             )
-            evaluation_count[0] += 1
-            if evaluation_count[0] % 5 == 0 or evaluation_count[0] <= 3:  # Log first 3 and every 5th evaluation
-                print(f"    Evaluation {evaluation_count[0]}: χ²_red = {chi2:.6e}")
-            return chi2
 
         # Run optimization
         n_calls = bo_config.get("n_calls", 50)

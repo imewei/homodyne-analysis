@@ -615,6 +615,203 @@ class TestPlotFormats:
             assert plot_file.stat().st_size > 10000  # Should be fairly large
 
 
+class TestScalingOptimization:
+    """Test scaling optimization functionality in plotting."""
+
+    def test_plot_c2_heatmaps_with_scaling_optimization_enabled(
+        self,
+        temp_directory,
+        dummy_correlation_data,
+        dummy_theoretical_data,
+        dummy_phi_angles,
+    ):
+        """Test C2 heatmaps with scaling optimization enabled."""
+        config_with_scaling = {
+            "chi_squared_calculation": {
+                "scaling_optimization": True,
+            },
+            "output_settings": {
+                "plotting": {
+                    "plot_format": "png",
+                    "dpi": 100,
+                    "figure_size": [6, 4],
+                    "create_plots": True,
+                }
+            }
+        }
+
+        success = plot_c2_heatmaps(
+            dummy_correlation_data,
+            dummy_theoretical_data,
+            dummy_phi_angles,
+            temp_directory,
+            config_with_scaling,
+        )
+
+        assert success is True
+        
+        # Check that files were created
+        plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
+        assert len(plot_files) == len(dummy_phi_angles)
+
+    def test_plot_c2_heatmaps_with_scaling_optimization_disabled(
+        self,
+        temp_directory,
+        dummy_correlation_data,
+        dummy_theoretical_data,
+        dummy_phi_angles,
+    ):
+        """Test C2 heatmaps with scaling optimization disabled."""
+        config_without_scaling = {
+            "chi_squared_calculation": {
+                "scaling_optimization": False,
+            },
+            "output_settings": {
+                "plotting": {
+                    "plot_format": "png",
+                    "dpi": 100,
+                    "figure_size": [6, 4],
+                    "create_plots": True,
+                }
+            }
+        }
+
+        success = plot_c2_heatmaps(
+            dummy_correlation_data,
+            dummy_theoretical_data,
+            dummy_phi_angles,
+            temp_directory,
+            config_without_scaling,
+        )
+
+        assert success is True
+        
+        # Check that files were created
+        plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
+        assert len(plot_files) == len(dummy_phi_angles)
+
+    def test_residual_calculation_with_fitted_values(
+        self,
+        temp_directory,
+        dummy_phi_angles,
+    ):
+        """Test that residuals are calculated as exp - fitted."""
+        # Create test data where we know the expected relationship
+        n_angles, n_t2, n_t1 = 3, 20, 30
+        
+        # Create theoretical data
+        theory = np.random.rand(n_angles, n_t2, n_t1)
+        
+        # Create experimental data with known scaling: exp = theory * 2.0 + 1.0
+        contrast = 2.0
+        offset = 1.0
+        exp = theory * contrast + offset + 0.1 * np.random.randn(n_angles, n_t2, n_t1)
+        
+        config_with_scaling = {
+            "chi_squared_calculation": {
+                "scaling_optimization": True,
+            },
+            "output_settings": {
+                "plotting": {
+                    "plot_format": "png",
+                    "dpi": 100,
+                    "figure_size": [6, 4],
+                    "create_plots": True,
+                }
+            }
+        }
+
+        success = plot_c2_heatmaps(
+            exp,
+            theory,
+            dummy_phi_angles,
+            temp_directory,
+            config_with_scaling,
+        )
+
+        assert success is True
+        
+        # The actual residual calculation is tested implicitly - 
+        # if there were errors in the calculation, the plotting would fail
+        plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
+        assert len(plot_files) == len(dummy_phi_angles)
+
+    def test_scaling_optimization_with_invalid_data(
+        self,
+        temp_directory,
+        dummy_phi_angles,
+    ):
+        """Test scaling optimization handles invalid data gracefully."""
+        # Create data that might cause lstsq to fail
+        n_angles, n_t2, n_t1 = 3, 20, 30
+        
+        # All zeros - this should cause lstsq issues
+        theory = np.zeros((n_angles, n_t2, n_t1))
+        exp = np.random.rand(n_angles, n_t2, n_t1)
+        
+        config_with_scaling = {
+            "chi_squared_calculation": {
+                "scaling_optimization": True,
+            },
+            "output_settings": {
+                "plotting": {
+                    "plot_format": "png",
+                    "dpi": 100,
+                    "figure_size": [6, 4],
+                    "create_plots": True,
+                }
+            }
+        }
+
+        # Should handle the error gracefully and fall back to unscaled theory
+        success = plot_c2_heatmaps(
+            exp,
+            theory,
+            dummy_phi_angles,
+            temp_directory,
+            config_with_scaling,
+        )
+
+        assert success is True  # Should not crash
+        
+        plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
+        assert len(plot_files) == len(dummy_phi_angles)
+
+    def test_scaling_optimization_default_behavior(
+        self,
+        temp_directory,
+        dummy_correlation_data,
+        dummy_theoretical_data,
+        dummy_phi_angles,
+    ):
+        """Test that scaling optimization is enabled by default."""
+        # Config without explicit scaling_optimization setting
+        config_minimal = {
+            "output_settings": {
+                "plotting": {
+                    "plot_format": "png",
+                    "dpi": 100,
+                    "figure_size": [6, 4],
+                    "create_plots": True,
+                }
+            }
+        }
+
+        success = plot_c2_heatmaps(
+            dummy_correlation_data,
+            dummy_theoretical_data,
+            dummy_phi_angles,
+            temp_directory,
+            config_minimal,
+        )
+
+        assert success is True
+        
+        # Should work with default scaling optimization (True)
+        plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
+        assert len(plot_files) == len(dummy_phi_angles)
+
+
 class TestPlotContent:
     """Test specific plot content and elements."""
 

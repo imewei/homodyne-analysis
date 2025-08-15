@@ -479,23 +479,29 @@
       "_correlation_checks_note": "Check for highly correlated parameters"
     },
     "fit_quality": {
-      "_comment": "Chi-squared fit quality validation",
+      "_comment": "Reduced chi-squared fit quality validation with updated thresholds",
       "overall_chi_squared": {
-        "acceptable_threshold": 10.0,
-        "_acceptable_threshold_note": "Overall reduced chi-squared should be below this value for good fit",
-        "warning_threshold": 20.0,
+        "excellent_threshold": 2.0,
+        "_excellent_threshold_note": "Overall reduced chi-squared ≤2.0 indicates excellent fit",
+        "acceptable_threshold": 5.0,
+        "_acceptable_threshold_note": "Overall reduced chi-squared ≤5.0 indicates acceptable fit",
+        "warning_threshold": 10.0,
         "_warning_threshold_note": "Issue warning if overall chi-squared exceeds this",
-        "critical_threshold": 50.0,
+        "critical_threshold": 20.0,
         "_critical_threshold_note": "Flag as critical if chi-squared exceeds this value"
       },
       "per_angle_chi_squared": {
-        "acceptable_threshold": 15.0,
-        "_acceptable_threshold_note": "Per-angle reduced chi-squared should be below this for acceptable fit",
-        "outlier_threshold_multiplier": 3.0,
+        "excellent_threshold": 2.0,
+        "_excellent_threshold_note": "Per-angle reduced chi-squared ≤2.0 indicates excellent fit",
+        "acceptable_threshold": 5.0,
+        "_acceptable_threshold_note": "Per-angle reduced chi-squared ≤5.0 indicates acceptable fit",
+        "warning_threshold": 10.0,
+        "_warning_threshold_note": "Per-angle reduced chi-squared >5.0 but ≤10.0 indicates warning level",
+        "outlier_threshold_multiplier": 2.5,
         "_outlier_threshold_multiplier_note": "Angles with chi2_red > mean + multiplier*std are outliers",
-        "max_outlier_fraction": 0.2,
+        "max_outlier_fraction": 0.25,
         "_max_outlier_fraction_note": "Maximum acceptable fraction of outlier angles (0.0-1.0)",
-        "min_good_angles": 5,
+        "min_good_angles": 3,
         "_min_good_angles_note": "Minimum number of angles with acceptable fit required"
       }
     },
