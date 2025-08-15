@@ -252,6 +252,10 @@ class BayesianOptimizer:
                 effective_param_count = self.core.config_manager.get_effective_parameter_count()
             else:
                 effective_param_count = 7  # Default to laminar flow
+        
+        # Ensure effective_param_count is not None for type checking
+        if effective_param_count is None:
+            effective_param_count = 7  # Final fallback to laminar flow
 
         # Only use bounds for the effective parameters
         for i, bound in enumerate(bounds):

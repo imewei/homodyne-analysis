@@ -259,6 +259,11 @@ class MCMCSampler:
             else:
                 # Static mode: shear parameters are fixed at zero (not used)
                 print("   Static mode: shear and angular parameters excluded from model")
+                # Define dummy variables for static mode to avoid unbound variable errors
+                gamma_dot_t0 = pt.constant(0.0, name="gamma_dot_t0")
+                beta = pt.constant(0.0, name="beta") 
+                gamma_dot_t_offset = pt.constant(0.0, name="gamma_dot_t_offset")
+                phi0 = pt.constant(0.0, name="phi0")
 
             # Noise model
             noise_config = performance_config.get("noise_model", {})
@@ -333,8 +338,8 @@ class MCMCSampler:
                 likelihood_components = []
                 
                 for angle_idx in range(n_angles):
-                    # Get experimental data for this angle
-                    c2_exp_angle = c2_data_shared[angle_idx].flatten()
+                    # Get experimental data for this angle using PyTensor tensor operations
+                    c2_exp_angle = c2_data_shared[angle_idx]  # type: ignore[index]
                     
                     # Theoretical calculation would go here (simplified placeholder)
                     # In reality, this should call the homodyne theory calculation
@@ -362,9 +367,11 @@ class MCMCSampler:
 
             # Add validation checks
             D_positive = pm.Deterministic("D_positive", D0 > 0)  # noqa: F841
-            gamma_positive = pm.Deterministic(
-                "gamma_positive", gamma_dot_t0 > 0
-            )  # noqa: F841
+            if not is_static_mode and effective_param_count > 3:
+                # Only check gamma_dot_t0 positivity in laminar flow mode
+                gamma_positive = pm.Deterministic(
+                    "gamma_positive", gamma_dot_t0 > 0
+                )  # noqa: F841
             D_total = pm.Deterministic("D_total", D0 + D_offset)  # noqa: F841
 
         print(f"   ✓ Bayesian model constructed successfully")
@@ -513,11 +520,10 @@ class MCMCSampler:
         param_names_effective = param_names[:effective_param_count]
         posterior_means = {}
         for var_name in param_names_effective:
-            # type: ignore[attr-defined]
-            if hasattr(trace, "posterior") and var_name in trace.posterior:
+            posterior = getattr(trace, "posterior", None)
+            if posterior is not None and var_name in posterior:
                 posterior_means[var_name] = float(
-                    # type: ignore[attr-defined]
-                    trace.posterior[var_name].mean()
+                    posterior[var_name].mean()  # type: ignore[attr-defined]
                 )
 
         results = {
@@ -662,13 +668,9 @@ class MCMCSampler:
             # Overall convergence assessment
             try:
                 max_rhat = (
-                    float(rhat.to_array().max())
-                    if hasattr(
-                        # type: ignore[attr-defined]
-                        rhat,
-                        "to_array",
-                    )
-                    else float(np.max(rhat))
+                    float(rhat.to_array().max())  # type: ignore[attr-defined]
+                    if hasattr(rhat, "to_array")
+                    else float(np.max(rhat))  # type: ignore[arg-type]
                 )
             except (AttributeError, TypeError):
                 max_rhat = 1.0
@@ -784,13 +786,9 @@ class MCMCSampler:
 
             # Extract samples for each parameter
             for param in param_names:
-                # type: ignore[attr-defined]
-                if (
-                    hasattr(self.mcmc_trace, "posterior")
-                    and param in self.mcmc_trace.posterior
-                ):
-                    # type: ignore[attr-defined]
-                    param_samples = self.mcmc_trace.posterior[param].values.flatten()
+                posterior = getattr(self.mcmc_trace, "posterior", None)
+                if posterior is not None and param in posterior:
+                    param_samples = posterior[param].values.flatten()  # type: ignore[attr-defined]
                     # Randomly subsample if more samples available than requested
                     if len(param_samples) > n_samples:
                         indices = np.random.choice(
@@ -1177,13 +1175,9 @@ class MCMCSampler:
             uncertainties = {}
 
             for param in param_names:
-                # type: ignore[attr-defined]
-                if (
-                    hasattr(self.mcmc_trace, "posterior")
-                    and param in self.mcmc_trace.posterior
-                ):
-                    # type: ignore[attr-defined]
-                    samples = self.mcmc_trace.posterior[param].values.flatten()
+                posterior = getattr(self.mcmc_trace, "posterior", None)
+                if posterior is not None and param in posterior:
+                    samples = posterior[param].values.flatten()  # type: ignore[attr-defined]
                     uncertainties[param] = float(np.std(samples))
 
             return uncertainties

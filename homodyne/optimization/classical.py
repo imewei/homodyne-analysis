@@ -572,6 +572,10 @@ class ClassicalOptimizer:
             else:
                 effective_param_count = 7  # Default to laminar flow
         
+        # Ensure effective_param_count is not None for type checking
+        if effective_param_count is None:
+            effective_param_count = 7  # Final fallback to laminar flow
+        
         # Extract bounds for the effective parameters
         for i, bound in enumerate(param_bounds):
             if i < effective_param_count:
