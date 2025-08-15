@@ -1628,8 +1628,11 @@ class HomodyneAnalysisCore:
         from datetime import datetime
         
         # Create comprehensive results with configuration
+        from datetime import timezone
+        timestamp = datetime.now(timezone.utc).isoformat()
+        
         output_data = {
-            "timestamp": datetime.utcnow().isoformat() + " UTC",
+            "timestamp": timestamp,
             "config": self.config,
             "results": results
         }
@@ -1638,13 +1641,16 @@ class HomodyneAnalysisCore:
         if "execution_metadata" not in output_data:
             output_data["execution_metadata"] = {
                 "analysis_success": True,
-                "timestamp": datetime.utcnow().isoformat() + " UTC"
+                "timestamp": timestamp
             }
         
         # Determine output file name
-        output_settings = self.config.get("output_settings", {})
-        file_formats = output_settings.get("file_formats", {})
-        results_format = file_formats.get("results_format", "json")
+        if self.config is not None:
+            output_settings = self.config.get("output_settings", {})
+            file_formats = output_settings.get("file_formats", {})
+            results_format = file_formats.get("results_format", "json")
+        else:
+            results_format = "json"
         
         if results_format == "json":
             output_file = "homodyne_analysis_results.json"

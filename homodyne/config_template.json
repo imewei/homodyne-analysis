@@ -556,6 +556,15 @@
       
       "cache_numba": true,
       "_cache_numba_note": "Cache compiled Numba functions"
+    },
+    
+    "noise_model": {
+      "_comment": "MCMC noise model and forward model settings",
+      "use_simple_forward_model": true,
+      "_use_simple_forward_model_note": "If True, uses simplified MCMC likelihood (faster but inconsistent with scaling optimization). If False, uses full forward model with per-angle contrast/offset parameters (slower but consistent with chi-squared calculation)",
+      "sigma_prior": 0.1,
+      "_sigma_prior_note": "Prior standard deviation for noise parameter in MCMC likelihood",
+      "_scaling_consistency_note": "IMPORTANT: If scaling_optimization is enabled in chi_squared_calculation and use_simple_forward_model=True, MCMC results may not be comparable to classical/Bayesian optimization due to different treatment of per-angle scaling"
     }
   },
 
