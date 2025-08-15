@@ -1707,9 +1707,10 @@ class HomodyneAnalysisCore:
                 method_key = f"{method.lower()}_optimization"
                 if method_key in results:
                     chi2 = results[method_key].get("chi_squared", "N/A")
+                    params = results[method_key].get("parameters")
                     params_count = (
-                        len(results[method_key].get("parameters", []))
-                        if results[method_key].get("parameters")
+                        len(params)
+                        if params is not None and len(params) > 0
                         else 0
                     )
                     print(

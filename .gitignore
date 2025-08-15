@@ -1,5 +1,7 @@
-# Raw data
+# Run code
 data/
+homodyne_analysis_results/
+homodyne_results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
