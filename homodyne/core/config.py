@@ -439,7 +439,8 @@ class ConfigManager:
         bool
             True if static mode is enabled, False otherwise
         """
-        return self.get("analysis_settings", "static_mode", default=False)
+        result = self.get("analysis_settings", "static_mode", default=False)
+        return bool(result)
 
     def get_analysis_mode(self) -> str:
         """
@@ -475,6 +476,10 @@ class ConfigManager:
             Analysis settings including static_mode flag and descriptions
         """
         analysis_settings = self.get("analysis_settings", default={})
+        
+        # Ensure analysis_settings is a dictionary for type safety
+        if not isinstance(analysis_settings, dict):
+            analysis_settings = {}
 
         # Provide sensible defaults
         default_settings = {
