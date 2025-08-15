@@ -513,15 +513,18 @@ class TestPerAngleAnalysisIntegration:
 
         dummy_config["validation_rules"]["fit_quality"] = {
             "overall_chi_squared": {
-                "acceptable_threshold": 10.0,
-                "warning_threshold": 20.0,
-                "critical_threshold": 50.0,
+                "excellent_threshold": 2.0,
+                "acceptable_threshold": 5.0,
+                "warning_threshold": 10.0,
+                "critical_threshold": 20.0,
             },
             "per_angle_chi_squared": {
-                "acceptable_threshold": 15.0,
-                "outlier_threshold_multiplier": 3.0,
-                "max_outlier_fraction": 0.2,
-                "min_good_angles": 5,
+                "excellent_threshold": 2.0,
+                "acceptable_threshold": 5.0,
+                "warning_threshold": 10.0,
+                "outlier_threshold_multiplier": 2.5,
+                "max_outlier_fraction": 0.25,
+                "min_good_angles": 3,
             },
         }
 

@@ -66,12 +66,15 @@ class TestPerAngleChiSquaredCalculation:
             "validation_rules": {
                 "fit_quality": {
                     "overall_chi_squared": {
+                        "excellent_threshold": 2.0,
                         "acceptable_threshold": 5.0,
                         "warning_threshold": 10.0,
                         "critical_threshold": 25.0,
                     },
                     "per_angle_chi_squared": {
+                        "excellent_threshold": 2.0,
                         "acceptable_threshold": 8.0,
+                        "warning_threshold": 15.0,
                         "outlier_threshold_multiplier": 2.5,
                         "max_outlier_fraction": 0.3,
                         "min_good_angles": 3,
@@ -321,8 +324,8 @@ class TestPerAngleChiSquaredCalculation:
             (1.5, "excellent"),  # <= 2.0
             (3.0, "acceptable"),  # 2.0 < chi2 <= 5.0  
             (7.0, "warning"),  # 5.0 < chi2 <= 10.0
-            (15.0, "poor"),  # 10.0 < chi2 <= 20.0
-            (25.0, "critical"),  # > 20.0
+            (15.0, "poor"),  # 10.0 < chi2 <= 25.0 (test config critical_threshold)
+            (30.0, "critical"),  # > 25.0 (test config critical_threshold)
         ]
 
         for overall_chi2, expected_quality in test_cases:
