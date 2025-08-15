@@ -882,27 +882,77 @@ class HomodyneAnalysisCore:
         filter_angles_for_optimization: bool = False,
     ) -> Union[float, Dict[str, Any]]:
         """
-        Calculate chi-squared goodness of fit.
+        Calculate chi-squared goodness of fit with per-angle analysis and uncertainty estimation.
+
+        This method computes the reduced chi-squared statistic for model validation, with optional
+        detailed per-angle analysis and uncertainty quantification. The uncertainty in reduced
+        chi-squared provides insight into the consistency of fit quality across different angles.
 
         Parameters
         ----------
         parameters : np.ndarray
-            Model parameters
+            Model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]
         phi_angles : np.ndarray
-            Scattering angles
+            Scattering angles in degrees
         c2_experimental : np.ndarray
-            Experimental correlation data
-        method_name : str
-            Name of optimization method (for logging)
-        return_components : bool
-            If True, return detailed results dictionary
-        filter_angles_for_optimization : bool
-            If True, only include angles in ranges [-10°, 10°] and [170°, 190°] in chi-squared sum
+            Experimental correlation data with shape (n_angles, delay_frames, lag_frames)
+        method_name : str, optional
+            Name of optimization method for logging purposes
+        return_components : bool, optional
+            If True, return detailed results dictionary with per-angle analysis
+        filter_angles_for_optimization : bool, optional
+            If True, only include angles in optimization ranges [-10°, 10°] and [170°, 190°]
+            for chi-squared calculation
 
         Returns
         -------
         float or dict
-            Reduced chi-squared value or detailed results
+            If return_components=False: Reduced chi-squared value (float)
+            If return_components=True: Dictionary containing:
+                - chi_squared : float
+                    Total chi-squared value
+                - reduced_chi_squared : float
+                    Averaged reduced chi-squared from optimization angles
+                - reduced_chi_squared_uncertainty : float
+                    Standard error of reduced chi-squared across angles (uncertainty estimate)
+                - reduced_chi_squared_std : float
+                    Standard deviation of reduced chi-squared across angles
+                - n_optimization_angles : int
+                    Number of angles used for optimization
+                - degrees_of_freedom : int
+                    Degrees of freedom for statistical testing (data_points - n_parameters)
+                - angle_chi_squared : list
+                    Chi-squared values for each angle
+                - angle_chi_squared_reduced : list
+                    Reduced chi-squared values for each angle
+                - angle_data_points : list
+                    Number of data points per angle
+                - phi_angles : list
+                    Scattering angles used
+                - scaling_solutions : list
+                    Contrast and offset parameters for each angle
+                - valid : bool
+                    Whether calculation was successful
+
+        Notes
+        -----
+        The uncertainty calculation follows standard error of the mean:
+        
+        reduced_chi2_uncertainty = std(angle_chi2_reduced) / sqrt(n_angles)
+        
+        Interpretation of uncertainty:
+        - Small uncertainty (< 0.1 * reduced_chi2): Consistent fit across angles
+        - Large uncertainty (> 0.5 * reduced_chi2): High angle variability, potential
+          systematic issues or model inadequacy
+        
+        The method uses averaged (not summed) chi-squared for better angle weighting:
+        reduced_chi2 = mean(chi2_reduced_per_angle) for optimization angles only
+        
+        Quality assessment guidelines:
+        - Excellent: reduced_chi2 ≤ 2.0
+        - Acceptable: 2.0 < reduced_chi2 ≤ 5.0  
+        - Warning: 5.0 < reduced_chi2 ≤ 10.0
+        - Poor/Critical: reduced_chi2 > 10.0
         """
         global OPTIMIZATION_COUNTER
 
@@ -1092,16 +1142,29 @@ class HomodyneAnalysisCore:
                 if not filter_angles_for_optimization or i in optimization_indices:
                     optimization_chi2_angles.append(chi2_reduced_angle)
 
-            # Calculate average reduced chi-squared from optimization angles
+            # Calculate average reduced chi-squared from optimization angles with uncertainty
             if optimization_chi2_angles:
                 reduced_chi2 = np.mean(optimization_chi2_angles)
                 n_optimization_angles = len(optimization_chi2_angles)
+                
+                # Calculate uncertainty in reduced chi-squared
+                if n_optimization_angles > 1:
+                    # Standard error of the mean
+                    reduced_chi2_std = np.std(optimization_chi2_angles, ddof=1)
+                    reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(n_optimization_angles)
+                else:
+                    # Single angle case
+                    reduced_chi2_std = 0.0
+                    reduced_chi2_uncertainty = 0.0
+                
                 logger.debug(
-                    f"Using average of {n_optimization_angles} optimization angles: χ²_red = {reduced_chi2:.6e}"
+                    f"Using average of {n_optimization_angles} optimization angles: χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
             else:
                 # Fallback if no optimization angles (shouldn't happen)
                 reduced_chi2 = np.mean(angle_chi2_reduced) if angle_chi2_reduced else 1e6
+                reduced_chi2_std = np.std(angle_chi2_reduced, ddof=1) if len(angle_chi2_reduced) > 1 else 0.0
+                reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(len(angle_chi2_reduced)) if len(angle_chi2_reduced) > 1 else 0.0
                 logger.warning("No optimization angles found, using average of all angles")
 
             # Logging
@@ -1111,7 +1174,7 @@ class HomodyneAnalysisCore:
             )
             if OPTIMIZATION_COUNTER % log_freq == 0:
                 logger.info(
-                    f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {reduced_chi2:.6e}"
+                    f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
                 # Log reduced chi-square per angle
                 for i, (phi, chi2_red_angle) in enumerate(zip(phi_angles, angle_chi2_reduced)):
@@ -1123,10 +1186,18 @@ class HomodyneAnalysisCore:
                 # Calculate total chi2 for compatibility (sum of optimization angles)
                 total_chi2_compat = sum(angle_chi2[i] for i in optimization_indices) if filter_angles_for_optimization else sum(angle_chi2)
                 
+                # Calculate degrees of freedom
+                total_data_points = sum(angle_data_points[i] for i in optimization_indices) if filter_angles_for_optimization else sum(angle_data_points)
+                num_parameters = len(parameters)
+                degrees_of_freedom = max(1, total_data_points - num_parameters)
+                
                 return {
                     "chi_squared": total_chi2_compat,
                     "reduced_chi_squared": float(reduced_chi2),
+                    "reduced_chi_squared_uncertainty": float(reduced_chi2_uncertainty),
+                    "reduced_chi_squared_std": float(reduced_chi2_std),
                     "n_optimization_angles": len(optimization_chi2_angles),
+                    "degrees_of_freedom": degrees_of_freedom,
                     "angle_chi_squared": angle_chi2,
                     "angle_chi_squared_reduced": angle_chi2_reduced,
                     "angle_data_points": angle_data_points,
@@ -1155,27 +1226,69 @@ class HomodyneAnalysisCore:
         output_dir: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Analyze per-angle reduced chi-squared values and identify poorly fitting angles.
+        Comprehensive per-angle reduced chi-squared analysis with quality assessment.
+
+        This method performs detailed analysis of chi-squared values across different
+        scattering angles, providing quality metrics, uncertainty estimation, and
+        angle categorization to identify systematic fitting issues.
 
         Parameters
         ----------
         parameters : np.ndarray
-            Optimized model parameters
+            Optimized model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]
         phi_angles : np.ndarray
-            Scattering angles
+            Scattering angles in degrees
         c2_experimental : np.ndarray
-            Experimental correlation data
-        method_name : str
-            Name of the analysis method
-        save_to_file : bool
-            Whether to save results to file
+            Experimental correlation data with shape (n_angles, delay_frames, lag_frames)
+        method_name : str, optional
+            Name of the analysis method for file naming and logging
+        save_to_file : bool, optional
+            Whether to save detailed results to JSON file
         output_dir : str, optional
-            Output directory for results
+            Output directory for saved results (defaults to current directory)
 
         Returns
         -------
         Dict[str, Any]
-            Per-angle analysis results
+            Comprehensive analysis results containing:
+                - method : str
+                    Analysis method name
+                - overall_reduced_chi_squared : float
+                    Average reduced chi-squared across optimization angles
+                - reduced_chi_squared_uncertainty : float
+                    Standard error of reduced chi-squared (uncertainty measure)
+                - quality_assessment : dict
+                    Overall and per-angle quality evaluation with thresholds
+                - angle_categorization : dict
+                    Classification of angles into good, unacceptable, and outlier groups
+                - per_angle_analysis : dict
+                    Detailed per-angle chi-squared values and statistics
+                - statistical_summary : dict
+                    Summary statistics including means, medians, and percentiles
+                - recommendations : list
+                    Specific recommendations based on quality assessment
+
+        Notes
+        -----
+        Quality Assessment Criteria:
+        - Overall reduced chi-squared uncertainty indicates fit consistency:
+          * Small uncertainty (< 10% of chi2): Consistent across angles
+          * Large uncertainty (> 50% of chi2): High variability, investigate systematically
+        
+        Angle Classification:
+        - Good angles: reduced_chi2 ≤ acceptable_threshold (default 5.0)
+        - Unacceptable angles: reduced_chi2 > acceptable_threshold
+        - Statistical outliers: reduced_chi2 > mean + 2.5*std
+        
+        The method uses configuration-driven thresholds from validation_rules.fit_quality
+        for consistent quality assessment across the package.
+        
+        Files saved (if save_to_file=True):
+        - per_angle_chi_squared_{method_name.lower()}.json: Detailed analysis results
+        
+        See Also
+        --------
+        calculate_chi_squared_optimized : Underlying chi-squared calculation
         """
         # Get detailed chi-squared components
         chi_results = self.calculate_chi_squared_optimized(
@@ -1317,6 +1430,9 @@ class HomodyneAnalysisCore:
         per_angle_results = {
             "method": method_name,
             "overall_reduced_chi_squared": chi_results["reduced_chi_squared"],
+            "overall_reduced_chi_squared_uncertainty": chi_results.get("reduced_chi_squared_uncertainty", 0.0),
+            "overall_reduced_chi_squared_std": chi_results.get("reduced_chi_squared_std", 0.0),
+            "n_optimization_angles": chi_results.get("n_optimization_angles", len(angles)),
             "per_angle_analysis": {
                 "phi_angles_deg": angles,
                 "chi_squared_reduced": angle_chi2_reduced,
@@ -1329,6 +1445,7 @@ class HomodyneAnalysisCore:
                 "min_chi2_reduced": min_chi2_red,
                 "max_chi2_reduced": max_chi2_red,
                 "range_chi2_reduced": max_chi2_red - min_chi2_red,
+                "uncertainty_from_angles": chi_results.get("reduced_chi_squared_uncertainty", 0.0),
             },
             "quality_assessment": {
                 "overall_quality": overall_quality,
@@ -1429,9 +1546,15 @@ class HomodyneAnalysisCore:
 
         # Log summary with quality assessment
         logger.info(f"Per-angle chi-squared analysis [{method_name}]:")
-        logger.info(
-            f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ({overall_quality})"
-        )
+        overall_uncertainty = chi_results.get('reduced_chi_squared_uncertainty', 0.0)
+        if overall_uncertainty > 0:
+            logger.info(
+                f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ± {overall_uncertainty:.6e} ({overall_quality})"
+            )
+        else:
+            logger.info(
+                f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ({overall_quality})"
+            )
         logger.info(
             f"  Mean per-angle χ²_red: {mean_chi2_red:.6e} ± {std_chi2_red:.6e}"
         )
@@ -1489,9 +1612,83 @@ class HomodyneAnalysisCore:
 
         return per_angle_results
 
+    def save_results_with_config(self, results: Dict[str, Any]) -> None:
+        """
+        Save optimization results along with configuration to JSON file.
+        
+        This method ensures all results including uncertainty fields are properly
+        saved with the configuration for reproducibility.
+        
+        Parameters
+        ----------
+        results : Dict[str, Any]
+            Results dictionary from optimization methods
+        """
+        import json
+        from datetime import datetime
+        
+        # Create comprehensive results with configuration
+        output_data = {
+            "timestamp": datetime.utcnow().isoformat() + " UTC",
+            "config": self.config,
+            "results": results
+        }
+        
+        # Add execution metadata
+        if "execution_metadata" not in output_data:
+            output_data["execution_metadata"] = {
+                "analysis_success": True,
+                "timestamp": datetime.utcnow().isoformat() + " UTC"
+            }
+        
+        # Determine output file name
+        output_settings = self.config.get("output_settings", {})
+        file_formats = output_settings.get("file_formats", {})
+        results_format = file_formats.get("results_format", "json")
+        
+        if results_format == "json":
+            output_file = "homodyne_analysis_results.json"
+        else:
+            output_file = f"homodyne_analysis_results.{results_format}"
+        
+        try:
+            # Save to JSON format regardless of specified format for compatibility
+            with open(output_file, 'w') as f:
+                json.dump(output_data, f, indent=2, default=str)
+            
+            logger.info(f"Results and configuration saved to {output_file}")
+            
+            # Also save a copy to results directory if it exists
+            results_dir = "homodyne_analysis_results"
+            if os.path.exists(results_dir):
+                results_file_path = os.path.join(results_dir, "run_configuration.json")
+                with open(results_file_path, 'w') as f:
+                    json.dump(output_data, f, indent=2, default=str)
+                logger.info(f"Results also saved to {results_file_path}")
+                
+        except Exception as e:
+            logger.error(f"Failed to save results: {e}")
+            raise
+
 
 def _get_chi2_interpretation(chi2_value: float) -> str:
-    """Provide interpretation of reduced chi-squared value."""
+    """Provide interpretation of reduced chi-squared value with uncertainty context.
+    
+    The reduced chi-squared uncertainty quantifies the reliability of the average:
+    - Small uncertainty (< 0.1 * χ²_red): Consistent fit quality across angles
+    - Moderate uncertainty (0.1-0.5 * χ²_red): Some angle variation, generally acceptable
+    - Large uncertainty (> 0.5 * χ²_red): High variability between angles, potential systematic issues
+    
+    Parameters
+    ----------
+    chi2_value : float
+        Reduced chi-squared value
+        
+    Returns
+    -------
+    str
+        Interpretation string with quality assessment and statistical meaning
+    """
     if chi2_value <= 1.0:
         return f"Excellent fit (χ²_red = {chi2_value:.2f} ≤ 1.0): Model matches data within expected noise"
     elif chi2_value <= 2.0:

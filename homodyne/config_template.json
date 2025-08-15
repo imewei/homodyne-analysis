@@ -448,6 +448,17 @@
       "minimum_sigma": 1e-10,
       "_minimum_sigma_note": "Minimum uncertainty to prevent division by zero",
       
+      "uncertainty_calculation": {
+        "_comment": "Reduced chi-squared uncertainty calculation settings",
+        "enable_uncertainty": true,
+        "_enable_uncertainty_note": "Calculate uncertainty in reduced chi-squared from per-angle variation",
+        "report_uncertainty": true,
+        "_report_uncertainty_note": "Include uncertainty in log output and results",
+        "minimum_angles_for_uncertainty": 2,
+        "_minimum_angles_for_uncertainty_note": "Minimum number of angles required for uncertainty calculation",
+        "_interpretation_note": "Uncertainty in reduced chi-squared from per-angle variation: Small uncertainty (< 10% of χ²_red) = consistent fit across angles; Large uncertainty (> 50% of χ²_red) = high angle variability, potential systematic issues or model inadequacy. Use for quality assessment: consistent uncertainty indicates reliable optimization."
+      },
+      
       "validity_check": {
         "_comment": "Parameter validation settings",
         "check_positive_D0": true,

@@ -123,6 +123,9 @@ class TestPerAngleChiSquaredCalculation:
                     "valid": True,
                     "chi_squared": 100.0,
                     "reduced_chi_squared": 10.0,
+                    "reduced_chi_squared_uncertainty": 0.5,  # Mock uncertainty
+                    "reduced_chi_squared_std": 1.1,  # Mock standard deviation
+                    "n_optimization_angles": n_angles,
                     "degrees_of_freedom": 10,
                     "angle_chi_squared": [20.0, 18.0, 22.0, 15.0, 25.0],
                     "angle_chi_squared_reduced": [2.0, 1.8, 2.2, 1.5, 2.5],
@@ -152,6 +155,9 @@ class TestPerAngleChiSquaredCalculation:
         assert result["valid"] == True
         assert "chi_squared" in result
         assert "reduced_chi_squared" in result
+        assert "reduced_chi_squared_uncertainty" in result
+        assert "reduced_chi_squared_std" in result
+        assert "n_optimization_angles" in result
         assert "angle_chi_squared_reduced" in result
         assert "angle_data_points" in result
         assert "phi_angles" in result
@@ -164,6 +170,16 @@ class TestPerAngleChiSquaredCalculation:
 
         # All per-angle chi-squared values should be positive
         assert all(chi2 > 0 for chi2 in result["angle_chi_squared_reduced"])
+        
+        # Verify uncertainty fields
+        assert result["reduced_chi_squared_uncertainty"] >= 0  # Should be non-negative
+        assert result["reduced_chi_squared_std"] >= 0  # Should be non-negative
+        assert result["n_optimization_angles"] > 0  # Should have at least one angle
+        
+        # For multiple angles, uncertainty should be calculated
+        if result["n_optimization_angles"] > 1:
+            assert result["reduced_chi_squared_uncertainty"] >= 0
+            assert result["reduced_chi_squared_std"] >= 0
 
     def test_analyze_per_angle_chi_squared_quality_assessment(
         self, mock_analyzer

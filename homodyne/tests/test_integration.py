@@ -540,6 +540,9 @@ class TestPerAngleAnalysisIntegration:
             mock_instance.analyze_per_angle_chi_squared.return_value = {
                 "method": "TestMethod",
                 "overall_reduced_chi_squared": 25.0,
+                "overall_reduced_chi_squared_uncertainty": 2.5,
+                "overall_reduced_chi_squared_std": 5.5,
+                "n_optimization_angles": 5,
                 "quality_assessment": {
                     "overall_quality": "warning",
                     "per_angle_quality": "acceptable",
@@ -592,6 +595,9 @@ class TestPerAngleAnalysisIntegration:
         mock_results = {
             "method": "Classical",
             "overall_reduced_chi_squared": 15.0,
+            "overall_reduced_chi_squared_uncertainty": 1.8,
+            "overall_reduced_chi_squared_std": 4.0,
+            "n_optimization_angles": 5,
             "per_angle_analysis": {
                 "phi_angles_deg": [10.0, 20.0, 30.0, 40.0, 50.0],
                 "chi_squared_reduced": [8.0, 12.0, 18.0, 25.0, 30.0],
