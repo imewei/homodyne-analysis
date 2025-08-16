@@ -22,7 +22,7 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
 """
 
-from .core.config import ConfigManager, configure_logging
+from .core.config import ConfigManager, configure_logging, performance_monitor
 from .core.kernels import (
     create_time_integral_matrix_numba,
     calculate_diffusion_coefficient_numba,
@@ -30,6 +30,12 @@ from .core.kernels import (
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
     memory_efficient_cache,
+    # New optimized kernels
+    create_symmetric_matrix_optimized,
+    matrix_vector_multiply_optimized,
+    apply_scaling_vectorized,
+    compute_chi_squared_fast,
+    exp_negative_vectorized,
 )
 from .analysis.core import HomodyneAnalysisCore
 
@@ -61,6 +67,7 @@ __all__ = [
     # Core functionality
     "ConfigManager",
     "configure_logging",
+    "performance_monitor",
     "HomodyneAnalysisCore",
     # Computational kernels
     "create_time_integral_matrix_numba",
@@ -69,6 +76,12 @@ __all__ = [
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
     "memory_efficient_cache",
+    # Optimized kernels
+    "create_symmetric_matrix_optimized",
+    "matrix_vector_multiply_optimized",
+    "apply_scaling_vectorized",
+    "compute_chi_squared_fast",
+    "exp_negative_vectorized",
     # Optimization (conditionally available)
     "ClassicalOptimizer",
     "MCMCSampler",

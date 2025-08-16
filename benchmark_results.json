@@ -1,0 +1,20 @@
+{
+  "kernels": {
+    "time_integral_matrix": 0.0008818584028631449,
+    "diffusion_coefficient": 0.00044736679992638526,
+    "shear_rate": 0.00040200839866884054,
+    "g1_correlation": 0.0005439166037831455,
+    "sinc_squared": 0.0005189165996853263
+  },
+  "optimized_kernels": {
+    "symmetric_matrix": 0.0009733084007166326,
+    "matrix_vector_multiply": 0.0007591081957798451,
+    "vectorized_scaling": 0.0004777249996550381,
+    "chi_squared_fast": 2.616801066324115e-06,
+    "exp_negative": 0.0004727999970782548
+  },
+  "configuration": {
+    "config_loading": 0.09088951660087333,
+    "cached_access": 3.024999750778079e-07
+  }
+}

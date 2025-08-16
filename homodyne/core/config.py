@@ -12,6 +12,8 @@ Institution: Argonne National Laboratory & University of Chicago
 import json
 import logging
 import multiprocessing as mp
+import time
+import gc
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -166,33 +168,71 @@ class ConfigManager:
         self.setup_logging()
 
     def load_config(self):
-        """Load configuration from JSON file with error handling."""
-        try:
-            config_path = Path(self.config_file)
-            if not config_path.exists():
-                raise FileNotFoundError(
-                    f"Configuration file not found: {self.config_file}"
-                )
+        """Load configuration from JSON file with error handling and performance optimization."""
+        with performance_monitor.time_function("config_loading"):
+            try:
+                config_path = Path(self.config_file)
+                if not config_path.exists():
+                    raise FileNotFoundError(
+                        f"Configuration file not found: {self.config_file}"
+                    )
 
-            with open(config_path, "r") as f:
-                self.config = json.load(f)
+                # Optimized JSON loading with memory pre-allocation hints
+                with open(config_path, "r", buffering=8192) as f:
+                    self.config = json.load(f)
 
-            logger.info(f"Configuration loaded from: {self.config_file}")
+                # Optimize configuration structure for faster access
+                self._optimize_config_structure()
 
-            # Display version information if available
-            if "metadata" in self.config:
-                version = self.config["metadata"].get("config_version", "Unknown")
-                logger.info(f"Configuration version: {version}")
+                logger.info(f"Configuration loaded from: {self.config_file}")
 
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON parsing error: {e}")
-            logger.info("Using default configuration...")
-            self.config = self._get_default_config()
-        except Exception as e:
-            logger.error(f"Failed to load configuration: {e}")
-            logger.exception("Full traceback for configuration loading failure:")
-            logger.info("Using default configuration...")
-            self.config = self._get_default_config()
+                # Display version information if available
+                if "metadata" in self.config:
+                    version = self.config["metadata"].get("config_version", "Unknown")
+                    logger.info(f"Configuration version: {version}")
+
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.info("Using default configuration...")
+                self.config = self._get_default_config()
+            except Exception as e:
+                logger.error(f"Failed to load configuration: {e}")
+                logger.exception("Full traceback for configuration loading failure:")
+                logger.info("Using default configuration...")
+                self.config = self._get_default_config()
+    
+    def _optimize_config_structure(self):
+        """Optimize configuration structure for faster runtime access."""
+        if not self.config:
+            return
+            
+        # Pre-compute frequently accessed values
+        self._cached_values = {}
+        
+        # Cache optimization config paths
+        if "optimization_config" in self.config:
+            opt_config = self.config["optimization_config"]
+            self._cached_values["angle_filtering_enabled"] = (
+                opt_config.get("angle_filtering", {}).get("enabled", True)
+            )
+            self._cached_values["target_angle_ranges"] = (
+                opt_config.get("angle_filtering", {}).get("target_ranges", [])
+            )
+        
+        # Cache analysis settings
+        if "analysis_settings" in self.config:
+            analysis = self.config["analysis_settings"]
+            self._cached_values["static_mode"] = analysis.get("static_mode", False)
+        
+        # Cache parameter bounds for faster access
+        if "parameter_space" in self.config:
+            bounds = self.config["parameter_space"].get("bounds", [])
+            self._cached_values["parameter_bounds"] = bounds
+            
+        # Pre-compute effective parameter count
+        self._cached_values["effective_param_count"] = (
+            3 if self._cached_values.get("static_mode", False) else 7
+        )
 
     def validate_config(self):
         """
@@ -439,6 +479,10 @@ class ConfigManager:
         bool
             True if static mode is enabled, False otherwise
         """
+        # Use cached value for performance
+        if hasattr(self, '_cached_values') and 'static_mode' in self._cached_values:
+            return self._cached_values['static_mode']
+        
         result = self.get("analysis_settings", "static_mode", default=False)
         return bool(result)
 
@@ -464,6 +508,10 @@ class ConfigManager:
             - Static mode: 3 (only diffusion parameters)
             - Laminar flow mode: 7 (all parameters)
         """
+        # Use cached value for performance
+        if hasattr(self, '_cached_values') and 'effective_param_count' in self._cached_values:
+            return self._cached_values['effective_param_count']
+        
         return 3 if self.is_static_mode_enabled() else 7
 
     def get_analysis_settings(self) -> Dict[str, Any]:
@@ -652,3 +700,86 @@ class ConfigManager:
                 }
             },
         }
+
+
+class PerformanceMonitor:
+    """
+    Performance monitoring and profiling utilities.
+    
+    Provides lightweight profiling and memory monitoring
+    for optimization of computational kernels.
+    """
+    
+    def __init__(self):
+        self.timings = {}
+        self.memory_usage = {}
+        
+    def time_function(self, func_name: str):
+        """
+        Context manager for timing function execution.
+        
+        Parameters
+        ----------
+        func_name : str
+            Name of function being timed
+            
+        Usage
+        -----
+        with monitor.time_function("my_function"):
+            # function code here
+            pass
+        """
+        return self._TimingContext(self, func_name)
+    
+    class _TimingContext:
+        def __init__(self, monitor, func_name):
+            self.monitor = monitor
+            self.func_name = func_name
+            self.start_time = None
+            
+        def __enter__(self):
+            gc.collect()  # Clean memory before timing
+            self.start_time = time.perf_counter()
+            return self
+            
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            elapsed = time.perf_counter() - self.start_time
+            if self.func_name not in self.monitor.timings:
+                self.monitor.timings[self.func_name] = []
+            self.monitor.timings[self.func_name].append(elapsed)
+    
+    def get_timing_summary(self) -> Dict[str, Dict[str, float]]:
+        """Get summary statistics for all timed functions."""
+        summary = {}
+        for func_name, times in self.timings.items():
+            summary[func_name] = {
+                'mean': sum(times) / len(times),
+                'min': min(times),
+                'max': max(times),
+                'total': sum(times),
+                'calls': len(times)
+            }
+        return summary
+    
+    def reset_timings(self):
+        """Clear all timing data."""
+        self.timings.clear()
+        self.memory_usage.clear()
+    
+    def log_performance_summary(self, logger=None):
+        """Log performance summary to logger."""
+        if logger is None:
+            logger = logging.getLogger(__name__)
+            
+        summary = self.get_timing_summary()
+        if summary:
+            logger.info("=== Performance Summary ===")
+            for func_name, stats in summary.items():
+                logger.info(
+                    f"{func_name}: {stats['calls']} calls, "
+                    f"avg={stats['mean']:.4f}s, total={stats['total']:.4f}s"
+                )
+
+
+# Global performance monitor instance
+performance_monitor = PerformanceMonitor()
