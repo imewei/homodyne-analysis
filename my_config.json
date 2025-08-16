@@ -4,23 +4,23 @@
     "config_version": "5.1",
     "description": "Configuration for Homodyne Scattering Analysis - XPCS under Nonequilibrium Laminar Flow",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
-    "created_date": "2025-08-12",
-    "updated_date": "2025-08-12",
+    "created_date": "2025-08-15",
+    "updated_date": "2025-08-15",
     "authors": [
-      "Wei Chen",
-      "Hongrui He"
+      "Your Name",
+      "Collaborator Name"
     ],
-    "institution": "Argonne National Laboratory & University of Chicago",
-    "experiment_name": "Creep",
-    "sample_description": "SiOx-Cys colloidal suspension",
+    "institution": "Your Institution",
+    "experiment_name": "Your Experiment Description",
+    "sample_description": "Sample details and preparation method",
     "script_compatibility": "homodyne.py"
   },
   "experimental_data": {
     "_comment": "Data source and loading configuration",
     "description": "Data source and loading configuration",
-    "data_folder_path": "./data/C020/",
+    "data_folder_path": "./data/SAMPLE_NAME/",
     "_data_folder_path_note": "Path to directory containing experimental data files",
-    "data_file_name": "C020_Cys0_Exp2_Creep_XPCS_20Pa_01_att02_Lq2_001_0001-8000_Twotime.hdf",
+    "data_file_name": "your_data_file.hdf",
     "_data_file_name_note": "Main experimental data file (HDF5 format recommended)",
     "phi_angles_path": "./data/phi_angles/",
     "_phi_angles_path_note": "Directory containing scattering angle information",
@@ -28,7 +28,7 @@
     "_phi_angles_file_note": "File containing phi angles (one angle per line)",
     "exchange_key": "exchange",
     "_exchange_key_note": "HDF5 dataset key for correlation data",
-    "cache_file_path": "./data/C020/",
+    "cache_file_path": "./data/SAMPLE_NAME/",
     "_cache_file_path_note": "Directory for cached processed data",
     "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
     "_cache_filename_template_note": "Template for cache filenames with frame range",
@@ -99,28 +99,17 @@
       "_memory_limit_gb_note": "Memory limit in GB (adjust based on available RAM)"
     }
   },
-  "analysis_settings": {
-    "_comment": "Analysis mode and model configuration",
-    "description": "Configure the analysis mode for different experimental conditions",
-    "static_mode": false,
-    "_static_mode_note": "Set to true for static (no-flow) analysis where γ̇=0, β=0, γ̇_offset=0, φ₀=0",
-    "_static_mode_description": "In static mode, sinc²(0)=1 and only diffusion contribution g₁_diff remains: g₂(t₁,t₂) ~ [exp(-q²/2 ∫|t₂-t₁| D(t')dt')]². Angular offset φ₀ is irrelevant and automatically set to 0.",
-    "model_description": {
-      "static_case": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) = g₁_diff(t₁,t₂), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
-      "laminar_flow_case": "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂) where g₁_shear = [sinc(Φ)]² and Φ = (1/2π)qL cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
-    }
-  },
   "initial_parameters": {
     "_comment": "Starting values for optimization - CRITICAL: Adjust these for your system",
     "description": "Starting values for optimization based on physical model",
     "values": [
-      23312.0,
-      -0.8,
-      1070.0,
-      0.0006,
-      -0.4,
-      -0.00005,
-      1.0
+      23312.0668,
+      -0.803648101,
+      1070.69538,
+      0.000629448943,
+      -0.397625233,
+      -5.43178144e-05,
+      0.967322591
     ],
     "_values_note": "Order: [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
     "parameter_names": [
@@ -201,7 +190,7 @@
       "methods": [
         "Nelder-Mead"
       ],
-      "_methods_note": "Available: Nelder-Mead, Powell, BFGS, L-BFGS-B",
+      "_methods_note": "Optimized to use only Nelder-Mead for best performance",
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 3000,
@@ -212,24 +201,6 @@
           "_fatol_note": "Absolute error in function value",
           "adaptive": true,
           "_adaptive_note": "Use adaptive algorithm variant"
-        },
-        "Powell": {
-          "maxiter": 10000,
-          "xtol": 1e-08,
-          "ftol": 1e-08,
-          "direc": null
-        },
-        "BFGS": {
-          "maxiter": 5000,
-          "gtol": 1e-06,
-          "norm": "inf",
-          "eps": 1.4901161193847656e-08
-        },
-        "L-BFGS-B": {
-          "maxiter": 5000,
-          "ftol": 1e-10,
-          "gtol": 1e-08,
-          "eps": 1e-08
         }
       },
       "selection_strategy": "best_chi_squared",
@@ -263,9 +234,9 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 0.001,
+        "min": 1e-3,
         "_min_note": "Lower bound - adjust based on expected diffusion rates",
-        "max": 1000000.0,
+        "max": 1e6,
         "_max_note": "Upper bound - should encompass reasonable values",
         "type": "log-uniform",
         "_type_note": "Distribution type: uniform, log-uniform, normal",
@@ -309,8 +280,8 @@
       },
       {
         "name": "beta",
-        "min": -2.0,
-        "max": 2.0,
+        "min": -10.0,
+        "max": 10.0,
         "type": "uniform",
         "prior_mu": 0.0,
         "prior_sigma": 0.5,
@@ -339,6 +310,17 @@
       }
     ]
   },
+  "analysis_settings": {
+    "_comment": "Analysis mode and model configuration",
+    "description": "Configure the analysis mode for different experimental conditions",
+    "static_mode": false,
+    "_static_mode_note": "Set to true for static (no-flow) analysis where γ̇=0, β=0, γ̇_offset=0, φ₀=0",
+    "_static_mode_description": "In static mode, sinc²(0)=1 and only diffusion contribution g₁_diff remains: g₂(t₁,t₂) ~ [exp(-q²/2 ∫|t₂-t₁| D(t')dt')]². Angular offset φ₀ is irrelevant and automatically set to 0.",
+    "model_description": {
+      "static_case": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) = g₁_diff(t₁,t₂), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
+      "laminar_flow_case": "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂) where g₁_shear = [sinc(Φ)]² and Φ = (1/2π)qL cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
+    }
+  },
   "advanced_settings": {
     "_comment": "Advanced configuration options",
     "description": "Advanced analysis and computational settings",
@@ -359,6 +341,8 @@
       "_uncertainty_estimation_factor_note": "Factor for estimating measurement uncertainties",
       "minimum_sigma": 1e-10,
       "_minimum_sigma_note": "Minimum uncertainty to prevent division by zero",
+      "fast_computation": true,
+      "_fast_computation_note": "Use optimized chi-squared kernels for performance",
       "uncertainty_calculation": {
         "_comment": "Reduced chi-squared uncertainty calculation settings",
         "enable_uncertainty": true,

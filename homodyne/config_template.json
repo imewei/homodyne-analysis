@@ -233,36 +233,18 @@
     "classical_optimization": {
       "_comment": "Traditional optimization algorithms",
       "methods": ["Nelder-Mead"],
-      "_methods_note": "Available: Nelder-Mead, Powell, BFGS, L-BFGS-B",
+      "_methods_note": "Optimized to use only Nelder-Mead for best performance",
       
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 3000,
-          "_maxiter_note": "Maximum iterations (increase for complex systems)",
-          "xatol": 1e-10,
-          "_xatol_note": "Absolute error in parameters",
-          "fatol": 1e-10, 
+          "maxiter": 2000,
+          "_maxiter_note": "Maximum iterations (reduced from 3000 for faster convergence)",
+          "xatol": 1e-8,
+          "_xatol_note": "Absolute error in parameters (balanced precision vs speed)",
+          "fatol": 1e-8, 
           "_fatol_note": "Absolute error in function value",
           "adaptive": true,
           "_adaptive_note": "Use adaptive algorithm variant"
-        },
-        "Powell": {
-          "maxiter": 10000,
-          "xtol": 1e-08,
-          "ftol": 1e-08,
-          "direc": null
-        },
-        "BFGS": {
-          "maxiter": 5000,
-          "gtol": 1e-06,
-          "norm": "inf",
-          "eps": 1.4901161193847656e-08
-        },
-        "L-BFGS-B": {
-          "maxiter": 5000,
-          "ftol": 1e-10,
-          "gtol": 1e-08,
-          "eps": 1e-08
         }
       },
       "selection_strategy": "best_chi_squared",
@@ -424,6 +406,9 @@
       
       "minimum_sigma": 1e-10,
       "_minimum_sigma_note": "Minimum uncertainty to prevent division by zero",
+      
+      "fast_computation": true,
+      "_fast_computation_note": "Use optimized chi-squared kernels for performance",
       
       "uncertainty_calculation": {
         "_comment": "Reduced chi-squared uncertainty calculation settings",
@@ -732,7 +717,7 @@
         "Check initial_parameters.values - they should be reasonable estimates",
         "Adjust parameter_space.bounds to be physically meaningful",
         "Increase optimization_config.classical_optimization.method_options.maxiter",
-        "Try different optimization methods",
+        "Increase maxiter if using complex parameter spaces",
         "Check data quality and preprocessing settings"
       ]
     },

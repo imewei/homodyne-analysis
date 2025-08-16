@@ -319,19 +319,12 @@ class TestConfigurationSections:
         assert isinstance(classical["methods"], list)
         assert len(classical["methods"]) > 0
 
-        # Check that methods are valid
-        valid_methods = [
-            "Nelder-Mead",
-            "Powell",
-            "BFGS",
-            "L-BFGS-B",
-            "CG",
-            "SLSQP",
-        ]
+        # Check that methods are valid (only Nelder-Mead is supported for optimization)
+        valid_methods = ["Nelder-Mead"]
         for method in classical["methods"]:
             assert (
                 method in valid_methods
-            ), f"Unknown optimization method: {method}"
+            ), f"Unsupported optimization method: {method}. Only Nelder-Mead is supported."
 
 
 class TestParameterTypes:
