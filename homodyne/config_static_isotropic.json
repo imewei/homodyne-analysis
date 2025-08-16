@@ -11,7 +11,23 @@
       "Isotropic scattering - no angle selection",
       "phi_angles_file not loaded - uses dummy angles",
       "Angle filtering automatically disabled",
-      "Only diffusion parameters (D0, alpha, D_offset) are relevant"
+      "Only diffusion parameters (D0, alpha, D_offset) are relevant",
+      "Scaling optimization always enabled for proper chi-squared calculation"
+    ],
+    
+    "_scaling_optimization_benefits_isotropic": {
+      "overview": "Even in isotropic mode, scaling optimization (g₂ = offset + contrast × g₁) is essential",
+      "single_scaling": "One scaling relationship applies to all 'angles' (isotropic averaging)",
+      "faster_computation": "Simpler geometry but same mathematical rigor for chi-squared",
+      "robust_results": "Accounts for instrumental factors even in simplified isotropic case"
+    },
+    
+    "_when_to_use_this_template": [
+      "Sample shows no angular dependence in scattering",
+      "No flow or rotation applied to sample",
+      "Want fastest analysis with 3-parameter model",
+      "Focus on diffusion dynamics only (D0, alpha, D_offset)",
+      "Sample is liquid, powder, or isotropic solid"
     ]
   },
 
@@ -291,7 +307,17 @@
         "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
         "_accounts_for": ["instrumental response", "background signals", "detector variations", "normalization differences"],
         "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
-        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]"
+        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]",
+        "_isotropic_mode_benefits": [
+          "Single scaling relationship applied (no angular dependence)",
+          "Faster computation due to simplified geometry",
+          "Robust fitting with isotropic averaging",
+          "Consistent results independent of sample orientation"
+        ],
+        "_typical_values_isotropic": {
+          "contrast": "0.5-2.0 (narrower range due to isotropic averaging)",
+          "offset": "0.01-0.05 (typically smaller due to reduced background anisotropy)"
+        }
       },
       "uncertainty_estimation_factor": 0.1,
       "minimum_sigma": 1e-10,

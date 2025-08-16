@@ -877,7 +877,7 @@ class ConfigManager:
                     "vectorized_diagonal_fix": True,
                 },
                 "chi_squared_calculation": {
-                    "scaling_optimization": True,
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
                     "uncertainty_estimation_factor": 0.1,
                     "minimum_sigma": 1e-10,
                     "validity_check": {

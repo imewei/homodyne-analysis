@@ -11,7 +11,23 @@
       "Anisotropic scattering - uses angle selection",
       "phi_angles_file loaded for angle information",
       "Angle filtering enabled for optimization",
-      "Only diffusion parameters (D0, alpha, D_offset) are relevant"
+      "Only diffusion parameters (D0, alpha, D_offset) are relevant",
+      "Per-angle scaling optimization for accurate anisotropic analysis"
+    ],
+    
+    "_scaling_optimization_benefits_anisotropic": {
+      "overview": "Per-angle scaling optimization (g₂ = offset + contrast × g₁) essential for anisotropic analysis",
+      "per_angle_scaling": "Independent scaling for each scattering angle accounts for angular variations",
+      "anisotropy_detection": "Variations in scaling parameters may reveal sample anisotropy",
+      "robust_analysis": "Proper chi-squared calculation across all scattering angles"
+    },
+    
+    "_when_to_use_this_template": [
+      "Sample exhibits angular dependence in scattering",
+      "No flow but orientation or structure anisotropy expected",
+      "Need angle-resolved analysis with 3-parameter diffusion model",
+      "Crystalline samples, oriented fibers, or structured materials",
+      "Want to detect and quantify anisotropic effects"
     ]
   },
 
@@ -302,7 +318,23 @@
         "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
         "_accounts_for": ["instrumental response", "background signals", "detector variations", "normalization differences"],
         "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
-        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]"
+        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]",
+        "_anisotropic_mode_considerations": [
+          "Per-angle scaling optimization accounts for angular variations",
+          "Different contrast/offset values expected for different scattering angles",
+          "Angular dependence in scaling factors may reveal sample anisotropy",
+          "More robust fitting quality assessment across angular range"
+        ],
+        "_typical_values_anisotropic": {
+          "contrast": "0.2-5.0 (wider range due to angular variations)",
+          "offset": "0.0-0.1 (may vary significantly with angle)",
+          "angular_variation": "contrast and offset values may show systematic angular dependence"
+        },
+        "_interpretation_guidelines": [
+          "Systematic angular variation in contrast may indicate sample anisotropy",
+          "Large offset variations suggest angle-dependent background signals",
+          "Check for correlation between contrast values and scattering angle"
+        ]
       },
       "uncertainty_estimation_factor": 0.1,
       "minimum_sigma": 1e-10,

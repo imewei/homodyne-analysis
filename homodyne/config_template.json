@@ -5,8 +5,38 @@
     "description": "Complete configuration template for X-ray Photon Correlation Spectroscopy (XPCS) analysis",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "usage": "Copy this template, rename it, and modify the values for your specific experiment",
+    "mode": "general_template",
     "required_sections": ["metadata", "analyzer_parameters", "experimental_data", "optimization_config"],
-    "template_created": "2024-08-16"
+    "template_created": "2024-08-16",
+    
+    "key_features": [
+      "Comprehensive template for all analysis modes",
+      "Complete documentation and examples for all parameters",
+      "Detailed scaling optimization documentation",
+      "Template selection guide for choosing appropriate specialized templates",
+      "Migration notes for updating from previous versions"
+    ],
+    
+    "_available_templates": {
+      "config_template.json": "General-purpose template with comprehensive documentation for all analysis modes",
+      "config_static_isotropic.json": "Optimized for static samples with isotropic scattering (3 parameters: D0, alpha, D_offset)",
+      "config_static_anisotropic.json": "For static samples with angular dependence (3 parameters + angle filtering)",
+      "config_laminar_flow.json": "For samples under laminar flow conditions (7 parameters including flow dynamics)"
+    },
+    
+    "_template_selection_guide": {
+      "static_isotropic": "Use when: no flow, no angular dependence expected, fastest analysis",
+      "static_anisotropic": "Use when: no flow but angular variations present, moderate complexity",
+      "laminar_flow": "Use when: samples under controlled flow, most comprehensive analysis",
+      "general_template": "Use when: creating custom configurations or need all options documented"
+    },
+    
+    "_scaling_optimization_update": {
+      "important_change": "Scaling optimization is now ALWAYS ENABLED across all templates",
+      "removed_setting": "The 'scaling_optimization' boolean setting has been removed",
+      "migration": "If your config contains 'scaling_optimization': true/false, simply remove that line",
+      "benefit": "More consistent and scientifically accurate chi-squared calculations"
+    }
   },
 
   "metadata": {
@@ -522,7 +552,26 @@
           "Accounts for unavoidable systematic factors in real measurements",
           "Ensures consistency across different optimization methods (classical, MCMC, Bayesian)",
           "Independent of number of scattering angles or analysis mode"
-        ]
+        ],
+        
+        "_implementation_details": {
+          "_per_angle_processing": "Scaling optimization is performed independently for each scattering angle",
+          "_robust_handling": "Graceful fallback to identity scaling if least squares fails",
+          "_computational_cost": "Minimal overhead - O(n) where n is number of data points per angle",
+          "_memory_usage": "Temporary matrices A and x only, no significant memory impact"
+        },
+        
+        "_usage_examples": {
+          "_typical_results": "contrast ≈ 0.1-10.0, offset ≈ 0.0-0.1 for well-normalized data",
+          "_interpretation": "Large contrast deviations may indicate normalization issues or instrumental effects",
+          "_quality_indicators": "Contrast values significantly different from 1.0 suggest systematic scaling factors"
+        },
+        
+        "_migration_notes": {
+          "_from_previous_versions": "If your config contains 'scaling_optimization': true/false, remove this line - scaling is now always enabled",
+          "_backward_compatibility": "All previous configurations work unchanged - scaling is applied automatically",
+          "_performance_impact": "No performance degradation - optimization was typically enabled in production use"
+        }
       },
       
       "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
