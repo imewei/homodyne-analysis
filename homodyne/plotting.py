@@ -27,9 +27,9 @@ from homodyne.core.io_utils import ensure_dir, save_fig
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Try to import optional dependencies for advanced plotting
+# Check availability of optional dependencies for advanced plotting
 try:
-    import arviz as az
+    import arviz  # noqa: F401
     # pandas is imported locally when needed
     ARVIZ_AVAILABLE = True
     logger.info("ArviZ imported - MCMC corner plots available")
@@ -38,8 +38,7 @@ except ImportError:
     logger.warning("ArviZ not available. Install with: pip install arviz")
 
 try:
-    # corner is imported locally when needed
-    import corner
+    import corner  # noqa: F401
     CORNER_AVAILABLE = True
     logger.info("corner package imported - Enhanced corner plots available")
 except ImportError:
@@ -225,14 +224,13 @@ def plot_c2_heatmaps(
 
     for i, phi in enumerate(phi_angles):
         try:
-            # Create figure with subplots
-            fig = plt.figure(figsize=plot_config["figure_size"])
+            # Create figure with single row, 3 columns + 2 colorbars
+            fig = plt.figure(figsize=(plot_config["figure_size"][0] * 1.5, plot_config["figure_size"][1] * 0.7))
             gs = gridspec.GridSpec(
-                2,
-                3,
-                height_ratios=[1, 1],
-                width_ratios=[1, 1, 0.05],
-                hspace=0.3,
+                1,
+                5,
+                width_ratios=[1, 1, 1, 0.05, 0.05],
+                hspace=0.2,
                 wspace=0.3,
             )
 
@@ -272,16 +270,8 @@ def plot_c2_heatmaps(
             ax2.set_xlabel("t₁")
             ax2.set_ylabel("t₂")
 
-            # Shared colorbar for exp and theory
-            cbar_ax1 = fig.add_subplot(gs[0, 2])
-            vmin = min(np.min(exp[i]), np.min(theory[i]))
-            vmax = max(np.max(exp[i]), np.max(theory[i]))
-            im1.set_clim(vmin, vmax)
-            im2.set_clim(vmin, vmax)
-            plt.colorbar(im1, cax=cbar_ax1, label="C₂")
-
-            # Residuals heatmap (spans both columns)
-            ax3 = fig.add_subplot(gs[1, :2])
+            # Residuals heatmap
+            ax3 = fig.add_subplot(gs[0, 2])
             im3 = ax3.imshow(
                 residuals[i],
                 aspect="auto",
@@ -298,8 +288,16 @@ def plot_c2_heatmaps(
             ax3.set_xlabel("t₁")
             ax3.set_ylabel("t₂")
 
+            # Shared colorbar for exp and theory
+            cbar_ax1 = fig.add_subplot(gs[0, 3])
+            vmin = min(np.min(exp[i]), np.min(theory[i]))
+            vmax = max(np.max(exp[i]), np.max(theory[i]))
+            im1.set_clim(vmin, vmax)
+            im2.set_clim(vmin, vmax)
+            plt.colorbar(im1, cax=cbar_ax1, label="C₂")
+
             # Residuals colorbar
-            cbar_ax2 = fig.add_subplot(gs[1, 2])
+            cbar_ax2 = fig.add_subplot(gs[0, 4])
             plt.colorbar(im3, cax=cbar_ax2, label="Residual")
 
             # Add statistics text
@@ -421,7 +419,7 @@ def plot_parameter_evolution(
                 normalized_upper.append(upper_bounds[i])
 
         # Create bars
-        _bars1 = ax1.bar(
+        ax1.bar(
             x_pos - width,
             normalized_initial,
             width,
@@ -437,7 +435,7 @@ def plot_parameter_evolution(
             alpha=0.7,
             color="darkblue",
         )
-        _bars3 = ax1.bar(
+        ax1.bar(
             x_pos + width,
             normalized_lower,
             width,
@@ -445,7 +443,7 @@ def plot_parameter_evolution(
             alpha=0.5,
             color="red",
         )
-        _bars4 = ax1.bar(
+        ax1.bar(
             x_pos + 1.5 * width,
             normalized_upper,
             width,
@@ -695,6 +693,272 @@ def plot_mcmc_corner(
         return False
 
 
+def plot_mcmc_trace(
+    trace_data: Any,
+    outdir: Union[str, Path],
+    config: Optional[Dict] = None,
+    param_names: Optional[List[str]] = None,
+    param_units: Optional[List[str]] = None,
+) -> bool:
+    """
+    Create MCMC trace plots showing parameter evolution across chains.
+
+    Args:
+        trace_data: MCMC trace data (ArviZ InferenceData or similar)
+        outdir (Union[str, Path]): Output directory for saved plots
+        config (Optional[Dict]): Configuration dictionary
+        param_names (Optional[List[str]]): Parameter names for labeling
+        param_units (Optional[List[str]]): Parameter units for labeling
+
+    Returns:
+        bool: True if trace plots were created successfully
+    """
+    if not ARVIZ_AVAILABLE:
+        logger.warning("ArviZ not available - cannot create MCMC trace plots")
+        return False
+
+    logger.info("Creating MCMC trace plots")
+
+    # Get plotting configuration
+    plot_config = get_plot_config(config)
+    setup_matplotlib_style(plot_config)
+
+    # Ensure output directory exists
+    outdir = ensure_dir(outdir)
+
+    try:
+        import arviz as az
+        
+        # Handle different trace data formats
+        if hasattr(trace_data, "posterior"):
+            # ArviZ InferenceData
+            trace_obj = trace_data
+        else:
+            logger.error("Unsupported trace data format for trace plots")
+            return False
+
+        # Create trace plot
+        axes = az.plot_trace(
+            trace_obj,
+            var_names=param_names if param_names else None,
+            figsize=(plot_config["figure_size"][0] * 1.2, plot_config["figure_size"][1] * 1.5),
+            compact=True,
+        )
+        
+        fig = axes.ravel()[0].figure
+        
+        # Add parameter units to y-labels if available
+        if param_names and param_units:
+            for i, (name, unit) in enumerate(zip(param_names, param_units)):
+                if i < len(axes):
+                    # Find the KDE plot (right column)
+                    if len(axes.shape) > 1 and axes.shape[1] > 1:
+                        kde_ax = axes[i, 1]
+                        kde_ax.set_ylabel(f"{name}\n[{unit}]")
+
+        # Add title
+        fig.suptitle("MCMC Trace Plots - Parameter Evolution", fontsize=16, y=0.98)
+
+        # Save the plot
+        filename = f"mcmc_trace_plots.{plot_config['plot_format']}"
+        filepath = outdir / filename
+
+        success = save_fig(
+            fig,
+            filepath,
+            dpi=plot_config["dpi"],
+            format=plot_config["plot_format"],
+        )
+        plt.close(fig)
+
+        if success:
+            logger.info("Successfully created MCMC trace plots")
+        else:
+            logger.error("Failed to save MCMC trace plots")
+
+        return success
+
+    except Exception as e:
+        logger.error(f"Error creating MCMC trace plots: {e}")
+        plt.close("all")
+        return False
+
+
+def plot_mcmc_convergence_diagnostics(
+    trace_data: Any,
+    diagnostics: Dict[str, Any],
+    outdir: Union[str, Path],
+    config: Optional[Dict] = None,
+    param_names: Optional[List[str]] = None,
+) -> bool:
+    """
+    Create comprehensive MCMC convergence diagnostic plots.
+
+    Args:
+        trace_data: MCMC trace data (ArviZ InferenceData or similar)
+        diagnostics: Convergence diagnostics dictionary
+        outdir (Union[str, Path]): Output directory for saved plots
+        config (Optional[Dict]): Configuration dictionary
+        param_names (Optional[List[str]]): Parameter names for labeling
+
+    Returns:
+        bool: True if diagnostic plots were created successfully
+    """
+    if not ARVIZ_AVAILABLE:
+        logger.warning("ArviZ not available - cannot create MCMC diagnostic plots")
+        return False
+
+    logger.info("Creating MCMC convergence diagnostic plots")
+
+    # Get plotting configuration
+    plot_config = get_plot_config(config)
+    setup_matplotlib_style(plot_config)
+
+    # Ensure output directory exists
+    outdir = ensure_dir(outdir)
+
+    try:
+        import arviz as az
+        
+        # Create figure with multiple subplots
+        fig = plt.figure(figsize=(plot_config["figure_size"][0] * 1.5, plot_config["figure_size"][1] * 1.2))
+        gs = gridspec.GridSpec(2, 3, hspace=0.3, wspace=0.3)
+
+        # Plot 1: R-hat values
+        ax1 = fig.add_subplot(gs[0, 0])
+        if "r_hat" in diagnostics and diagnostics["r_hat"]:
+            r_hat_dict = diagnostics["r_hat"]
+            param_names_plot = list(r_hat_dict.keys()) if param_names is None else param_names
+            r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names_plot]
+            
+            colors = ["green" if r < 1.1 else "orange" if r < 1.2 else "red" for r in r_hat_values]
+            bars = ax1.barh(param_names_plot, r_hat_values, color=colors, alpha=0.7)
+            
+            # Add value labels
+            for bar, value in zip(bars, r_hat_values):
+                width = bar.get_width()
+                ax1.text(width + 0.01, bar.get_y() + bar.get_height()/2, 
+                        f'{value:.3f}', ha='left', va='center', fontsize=10)
+            
+            ax1.axvline(x=1.1, color="red", linestyle="--", alpha=0.7, label="R̂ = 1.1 threshold")
+            ax1.set_xlabel("R̂ (Gelman-Rubin statistic)")
+            ax1.set_title("Convergence: R̂ Values")
+            ax1.legend()
+            ax1.grid(True, alpha=0.3)
+
+        # Plot 2: Effective Sample Size (ESS)
+        ax2 = fig.add_subplot(gs[0, 1])
+        if "ess_bulk" in diagnostics and diagnostics["ess_bulk"]:
+            ess_dict = diagnostics["ess_bulk"]
+            param_names_plot = list(ess_dict.keys()) if param_names is None else param_names
+            ess_values = [ess_dict.get(name, 0) for name in param_names_plot]
+            
+            # Color based on ESS quality (>400 good, >100 okay, <100 poor)
+            colors = ["green" if ess > 400 else "orange" if ess > 100 else "red" for ess in ess_values]
+            bars = ax2.barh(param_names_plot, ess_values, color=colors, alpha=0.7)
+            
+            # Add value labels
+            for bar, value in zip(bars, ess_values):
+                width = bar.get_width()
+                ax2.text(width + max(ess_values)*0.01, bar.get_y() + bar.get_height()/2, 
+                        f'{int(value)}', ha='left', va='center', fontsize=10)
+            
+            ax2.axvline(x=400, color="green", linestyle="--", alpha=0.7, label="ESS = 400 (good)")
+            ax2.axvline(x=100, color="orange", linestyle="--", alpha=0.7, label="ESS = 100 (minimum)")
+            ax2.set_xlabel("Effective Sample Size")
+            ax2.set_title("Sampling Efficiency: ESS")
+            ax2.legend()
+            ax2.grid(True, alpha=0.3)
+
+        # Plot 3: Monte Carlo Standard Error
+        ax3 = fig.add_subplot(gs[0, 2])
+        if "mcse_mean" in diagnostics and diagnostics["mcse_mean"]:
+            mcse_dict = diagnostics["mcse_mean"]
+            param_names_plot = list(mcse_dict.keys()) if param_names is None else param_names
+            mcse_values = [mcse_dict.get(name, 0) for name in param_names_plot]
+            
+            bars = ax3.barh(param_names_plot, mcse_values, alpha=0.7, color="skyblue")
+            
+            # Add value labels
+            for bar, value in zip(bars, mcse_values):
+                width = bar.get_width()
+                ax3.text(width + max(mcse_values)*0.01, bar.get_y() + bar.get_height()/2, 
+                        f'{value:.2e}', ha='left', va='center', fontsize=9)
+            
+            ax3.set_xlabel("Monte Carlo Standard Error")
+            ax3.set_title("Uncertainty: MCSE")
+            ax3.grid(True, alpha=0.3)
+
+        # Plot 4: Energy plot (if available)
+        ax4 = fig.add_subplot(gs[1, :2])
+        try:
+            if hasattr(trace_data, "sample_stats") and "energy" in trace_data.sample_stats:
+                az.plot_energy(trace_data, ax=ax4)
+                ax4.set_title("Energy Plot - Sampling Efficiency")
+            else:
+                ax4.text(0.5, 0.5, "Energy data not available", 
+                        ha='center', va='center', transform=ax4.transAxes, fontsize=12)
+                ax4.set_title("Energy Plot - Not Available")
+        except Exception as e:
+            logger.warning(f"Could not create energy plot: {e}")
+            ax4.text(0.5, 0.5, f"Energy plot failed: {str(e)[:50]}...", 
+                    ha='center', va='center', transform=ax4.transAxes, fontsize=10)
+
+        # Plot 5: Summary statistics
+        ax5 = fig.add_subplot(gs[1, 2])
+        ax5.axis('off')
+        
+        # Create summary text
+        summary_text = "MCMC Summary:\n\n"
+        if "max_rhat" in diagnostics:
+            summary_text += f"Max R̂: {diagnostics['max_rhat']:.3f}\n"
+        if "min_ess" in diagnostics:
+            summary_text += f"Min ESS: {int(diagnostics['min_ess'])}\n"
+        if "converged" in diagnostics:
+            converged_status = "✓ Yes" if diagnostics['converged'] else "✗ No"
+            summary_text += f"Converged: {converged_status}\n"
+        if "assessment" in diagnostics:
+            summary_text += f"Assessment: {diagnostics['assessment']}\n"
+        
+        # Add chain info if available
+        if hasattr(trace_data, "posterior"):
+            n_chains = trace_data.posterior.dims.get("chain", "Unknown")
+            n_draws = trace_data.posterior.dims.get("draw", "Unknown")
+            summary_text += f"\nChains: {n_chains}\n"
+            summary_text += f"Draws: {n_draws}"
+        
+        ax5.text(0.05, 0.95, summary_text, transform=ax5.transAxes, 
+                fontsize=11, verticalalignment='top', fontfamily='monospace',
+                bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.5))
+
+        # Add overall title
+        fig.suptitle("MCMC Convergence Diagnostics", fontsize=16, y=0.98)
+
+        # Save the plot
+        filename = f"mcmc_convergence_diagnostics.{plot_config['plot_format']}"
+        filepath = outdir / filename
+
+        success = save_fig(
+            fig,
+            filepath,
+            dpi=plot_config["dpi"],
+            format=plot_config["plot_format"],
+        )
+        plt.close(fig)
+
+        if success:
+            logger.info("Successfully created MCMC convergence diagnostic plots")
+        else:
+            logger.error("Failed to save MCMC convergence diagnostic plots")
+
+        return success
+
+    except Exception as e:
+        logger.error(f"Error creating MCMC convergence diagnostic plots: {e}")
+        plt.close("all")
+        return False
+
+
 def plot_diagnostic_summary(
     results: Dict[str, Any],
     outdir: Union[str, Path],
@@ -917,8 +1181,9 @@ def create_all_plots(
             optimization_history=results.get("optimization_history"),
         )
 
-    # MCMC corner plot (if trace data available)
+    # MCMC plots (if trace data available)
     if "mcmc_trace" in results:
+        # MCMC corner plot
         plot_status["mcmc_corner"] = plot_mcmc_corner(
             results["mcmc_trace"],
             outdir,
@@ -926,6 +1191,25 @@ def create_all_plots(
             param_names=results.get("parameter_names"),
             param_units=results.get("parameter_units"),
         )
+        
+        # MCMC trace plots
+        plot_status["mcmc_trace"] = plot_mcmc_trace(
+            results["mcmc_trace"],
+            outdir,
+            config,
+            param_names=results.get("parameter_names"),
+            param_units=results.get("parameter_units"),
+        )
+        
+        # MCMC convergence diagnostics (if diagnostics available)
+        if "mcmc_diagnostics" in results:
+            plot_status["mcmc_convergence"] = plot_mcmc_convergence_diagnostics(
+                results["mcmc_trace"],
+                results["mcmc_diagnostics"],
+                outdir,
+                config,
+                param_names=results.get("parameter_names"),
+            )
 
     # Diagnostic summary
     plot_status["diagnostic_summary"] = plot_diagnostic_summary(results, outdir, config)

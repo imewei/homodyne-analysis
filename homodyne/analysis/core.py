@@ -251,6 +251,10 @@ class HomodyneAnalysisCore:
         self._cache = {}
         self.cached_experimental_data = None
         self.cached_phi_angles = None
+        
+        # Initialize plotting cache variables
+        self._last_experimental_data = None
+        self._last_phi_angles = None
 
     def _warmup_numba_functions(self):
         """Pre-compile Numba functions to eliminate first-call overhead."""
@@ -511,6 +515,10 @@ class HomodyneAnalysisCore:
         # Cache in memory
         self.cached_experimental_data = c2_experimental
         self.cached_phi_angles = phi_angles
+        
+        # Cache for plotting
+        self._last_experimental_data = c2_experimental
+        self._last_phi_angles = phi_angles
         logger.debug(f"Data cached in memory - final shape: {c2_experimental.shape}")
 
         logger.debug("load_experimental_data method completed successfully")
@@ -1669,6 +1677,348 @@ class HomodyneAnalysisCore:
         except Exception as e:
             logger.error(f"Failed to save results: {e}")
             raise
+        
+        # Generate plots if enabled in configuration
+        self._generate_analysis_plots(results, output_data)
+
+    def _generate_analysis_plots(self, results: Dict[str, Any], output_data: Dict[str, Any]) -> None:
+        """
+        Generate analysis plots including C2 heatmaps with experimental vs theoretical comparison.
+        
+        Parameters
+        ----------
+        results : Dict[str, Any]
+            Results dictionary from optimization methods
+        output_data : Dict[str, Any]
+            Complete output data including configuration
+        """
+        logger = logging.getLogger(__name__)
+        
+        # Check if plotting is enabled in configuration
+        config = output_data.get("config", {})
+        output_settings = config.get("output_settings", {})
+        reporting = output_settings.get("reporting", {})
+        
+        if not reporting.get("generate_plots", True):
+            logger.info("Plotting disabled in configuration - skipping plot generation")
+            return
+        
+        logger.info("Generating analysis plots...")
+        
+        try:
+            # Import plotting module
+            from homodyne.plotting import (
+                plot_c2_heatmaps, plot_parameter_evolution, plot_diagnostic_summary,
+                plot_mcmc_corner, plot_mcmc_trace, plot_mcmc_convergence_diagnostics
+            )
+            
+            # Determine output directory
+            results_dir = Path("homodyne_results")
+            plots_dir = results_dir / "plots"
+            plots_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Prepare data for plotting
+            plot_data = self._prepare_plot_data(results, config)
+            
+            if plot_data is None:
+                logger.warning("Insufficient data for plotting - skipping plot generation")
+                return
+            
+            # Generate C2 heatmaps if experimental and theoretical data are available
+            if all(key in plot_data for key in ["experimental_data", "theoretical_data", "phi_angles"]):
+                logger.info("Generating C2 correlation heatmaps...")
+                try:
+                    success = plot_c2_heatmaps(
+                        plot_data["experimental_data"],
+                        plot_data["theoretical_data"], 
+                        plot_data["phi_angles"],
+                        plots_dir,
+                        config,
+                        t2=plot_data.get("t2"),
+                        t1=plot_data.get("t1")
+                    )
+                    if success:
+                        logger.info("✓ C2 heatmaps generated successfully")
+                    else:
+                        logger.warning("⚠ Some C2 heatmaps failed to generate")
+                except Exception as e:
+                    logger.error(f"Failed to generate C2 heatmaps: {e}")
+            
+            # Generate parameter evolution plot
+            if all(key in plot_data for key in ["best_parameters", "parameter_bounds"]):
+                logger.info("Generating parameter evolution plot...")
+                try:
+                    success = plot_parameter_evolution(
+                        plot_data["best_parameters"],
+                        plot_data["parameter_bounds"],
+                        plots_dir,
+                        config,
+                        initial_params=plot_data.get("initial_parameters"),
+                        optimization_history=plot_data.get("optimization_history")
+                    )
+                    if success:
+                        logger.info("✓ Parameter evolution plot generated successfully")
+                    else:
+                        logger.warning("⚠ Parameter evolution plot failed to generate")
+                except Exception as e:
+                    logger.error(f"Failed to generate parameter evolution plot: {e}")
+            
+            # Generate MCMC plots if trace data is available
+            if "mcmc_trace" in plot_data:
+                logger.info("Generating MCMC plots...")
+                
+                # MCMC corner plot
+                try:
+                    success = plot_mcmc_corner(
+                        plot_data["mcmc_trace"],
+                        plots_dir,
+                        config,
+                        param_names=plot_data.get("parameter_names"),
+                        param_units=plot_data.get("parameter_units"),
+                    )
+                    if success:
+                        logger.info("✓ MCMC corner plot generated successfully")
+                    else:
+                        logger.warning("⚠ MCMC corner plot failed to generate")
+                except Exception as e:
+                    logger.error(f"Failed to generate MCMC corner plot: {e}")
+                
+                # MCMC trace plots
+                try:
+                    success = plot_mcmc_trace(
+                        plot_data["mcmc_trace"],
+                        plots_dir,
+                        config,
+                        param_names=plot_data.get("parameter_names"),
+                        param_units=plot_data.get("parameter_units"),
+                    )
+                    if success:
+                        logger.info("✓ MCMC trace plots generated successfully")
+                    else:
+                        logger.warning("⚠ MCMC trace plots failed to generate")
+                except Exception as e:
+                    logger.error(f"Failed to generate MCMC trace plots: {e}")
+                
+                # MCMC convergence diagnostics
+                if "mcmc_diagnostics" in plot_data:
+                    try:
+                        success = plot_mcmc_convergence_diagnostics(
+                            plot_data["mcmc_trace"],
+                            plot_data["mcmc_diagnostics"],
+                            plots_dir,
+                            config,
+                            param_names=plot_data.get("parameter_names"),
+                        )
+                        if success:
+                            logger.info("✓ MCMC convergence diagnostics generated successfully")
+                        else:
+                            logger.warning("⚠ MCMC convergence diagnostics failed to generate")
+                    except Exception as e:
+                        logger.error(f"Failed to generate MCMC convergence diagnostics: {e}")
+            else:
+                logger.debug("MCMC trace data not available - skipping MCMC plots")
+
+            # Generate diagnostic summary plot
+            logger.info("Generating diagnostic summary plot...")
+            try:
+                success = plot_diagnostic_summary(plot_data, plots_dir, config)
+                if success:
+                    logger.info("✓ Diagnostic summary plot generated successfully")
+                else:
+                    logger.warning("⚠ Diagnostic summary plot failed to generate")
+            except Exception as e:
+                logger.error(f"Failed to generate diagnostic summary plot: {e}")
+                
+            logger.info(f"Plots saved to: {plots_dir}")
+            
+        except ImportError as e:
+            logger.warning(f"Plotting module not available: {e}")
+            logger.info("Install matplotlib for plotting: pip install matplotlib")
+        except Exception as e:
+            logger.error(f"Unexpected error during plot generation: {e}")
+
+    def _prepare_plot_data(self, results: Dict[str, Any], config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Prepare data for plotting from analysis results.
+        
+        Parameters
+        ----------
+        results : Dict[str, Any]
+            Results dictionary from optimization methods
+        config : Dict[str, Any]
+            Configuration dictionary
+            
+        Returns
+        -------
+        Optional[Dict[str, Any]]
+            Plot data dictionary or None if insufficient data
+        """
+        logger = logging.getLogger(__name__)
+        
+        try:
+            plot_data = {}
+            
+            # Find the best method results
+            best_method = None
+            best_chi2 = float('inf')
+            
+            # Check different method results
+            for method_key in ["classical_optimization", "mcmc_optimization"]:
+                if method_key in results:
+                    method_results = results[method_key]
+                    chi2 = method_results.get("chi_squared")
+                    if chi2 is not None and chi2 < best_chi2:
+                        best_chi2 = chi2
+                        best_method = method_key
+            
+            if best_method is None:
+                logger.warning("No valid optimization results found for plotting")
+                return None
+            
+            # Extract best parameters
+            best_params_list = results[best_method].get("parameters")
+            if best_params_list is not None:
+                # Convert parameter list to dictionary
+                param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+                if len(param_names) == len(best_params_list):
+                    plot_data["best_parameters"] = dict(zip(param_names, best_params_list))
+                else:
+                    # Use generic names if parameter names don't match
+                    plot_data["best_parameters"] = {f"param_{i}": val for i, val in enumerate(best_params_list)}
+            
+            # Extract parameter bounds
+            parameter_space = config.get("parameter_space", {})
+            if "bounds" in parameter_space:
+                plot_data["parameter_bounds"] = parameter_space["bounds"]
+            
+            # Extract initial parameters
+            initial_params = config.get("initial_parameters", {}).get("values")
+            if initial_params is not None:
+                param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+                if len(param_names) == len(initial_params):
+                    plot_data["initial_parameters"] = dict(zip(param_names, initial_params))
+            
+            # Try to reconstruct experimental and theoretical data for plotting
+            if hasattr(self, '_last_experimental_data') and hasattr(self, '_last_phi_angles'):
+                plot_data["experimental_data"] = self._last_experimental_data
+                plot_data["phi_angles"] = self._last_phi_angles
+                
+                # Generate theoretical data using best parameters
+                if best_params_list is not None:
+                    try:
+                        theoretical_data = self._generate_theoretical_data(best_params_list, self._last_phi_angles)
+                        plot_data["theoretical_data"] = theoretical_data
+                    except Exception as e:
+                        logger.warning(f"Failed to generate theoretical data for plotting: {e}")
+            
+            # Add time axes if available
+            temporal = config.get("analyzer_parameters", {}).get("temporal", {})
+            dt = temporal.get("dt", 0.1)
+            start_frame = temporal.get("start_frame", 1)
+            end_frame = temporal.get("end_frame", 1000)
+            
+            # Generate time arrays (these are approximate)
+            n_frames = end_frame - start_frame + 1
+            t_array = np.arange(n_frames) * dt
+            plot_data["t1"] = t_array
+            plot_data["t2"] = t_array
+            
+            # Add parameter names and units for MCMC plotting
+            param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+            if param_names:
+                plot_data["parameter_names"] = param_names
+                
+            # Extract parameter units from bounds configuration
+            parameter_space = config.get("parameter_space", {})
+            bounds = parameter_space.get("bounds", [])
+            if bounds:
+                param_units = [bound.get("unit", "") for bound in bounds]
+                plot_data["parameter_units"] = param_units
+            
+            # Add MCMC-specific data if available
+            if "mcmc_optimization" in results:
+                mcmc_results = results["mcmc_optimization"]
+                
+                # Add convergence diagnostics
+                if "convergence_diagnostics" in mcmc_results:
+                    plot_data["mcmc_diagnostics"] = mcmc_results["convergence_diagnostics"]
+                
+                # Add posterior means
+                if "posterior_means" in mcmc_results:
+                    plot_data["posterior_means"] = mcmc_results["posterior_means"]
+                    
+                # Try to load MCMC trace data from file if available
+                try:
+                    from pathlib import Path
+                    mcmc_results_dir = Path("homodyne_results") / "mcmc_results"
+                    trace_file = mcmc_results_dir / "mcmc_trace.nc"
+                    
+                    if trace_file.exists():
+                        try:
+                            import arviz as az
+                            trace_data = az.from_netcdf(str(trace_file))
+                            plot_data["mcmc_trace"] = trace_data
+                            logger.debug(f"Loaded MCMC trace data from {trace_file}")
+                        except ImportError:
+                            logger.warning("ArviZ not available - cannot load MCMC trace for plotting")
+                        except Exception as e:
+                            logger.warning(f"Failed to load MCMC trace data: {e}")
+                    else:
+                        logger.debug("MCMC trace file not found - trace plots will be skipped")
+                        
+                except Exception as e:
+                    logger.warning(f"Error checking for MCMC trace file: {e}")
+            
+            # Add other plot data
+            plot_data["chi_squared"] = best_chi2
+            plot_data["method"] = best_method.replace("_optimization", "").title()
+            
+            return plot_data
+            
+        except Exception as e:
+            logger.error(f"Error preparing plot data: {e}")
+            return None
+
+    def _generate_theoretical_data(self, parameters: list, phi_angles: np.ndarray) -> np.ndarray:
+        """
+        Generate theoretical correlation data for plotting.
+        
+        Parameters
+        ----------
+        parameters : list
+            Optimized parameters
+        phi_angles : np.ndarray
+            Array of phi angles
+            
+        Returns
+        -------
+        np.ndarray
+            Theoretical correlation data
+        """
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Use the existing physics model to generate theoretical data
+            logger.debug(f"Generating theoretical data for {len(phi_angles)} angles")
+            
+            # Call the main correlation calculation method
+            theoretical_data = self.calculate_c2_nonequilibrium_laminar_parallel(
+                parameters, phi_angles
+            )
+            
+            logger.debug(f"Successfully generated theoretical data with shape: {theoretical_data.shape}")
+            return theoretical_data
+                
+        except Exception as e:
+            logger.error(f"Error generating theoretical data: {e}")
+            # Fallback: return experimental data shape filled with ones if available
+            if hasattr(self, '_last_experimental_data') and self._last_experimental_data is not None:
+                shape = self._last_experimental_data.shape
+                logger.warning(f"Using fallback data with shape {shape}")
+                return np.ones(shape)
+            else:
+                logger.warning("No fallback data available")
+                return np.array([])
 
 
 def _get_chi2_interpretation(chi2_value: float) -> str:
