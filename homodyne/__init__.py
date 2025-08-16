@@ -2,21 +2,39 @@
 Homodyne Scattering Analysis Package
 ===================================
 
-A comprehensive package for analyzing homodyne scattering in X-ray Photon
-Correlation Spectroscopy (XPCS) under nonequilibrium conditions.
+A comprehensive Python package for analyzing homodyne scattering in X-ray Photon
+Correlation Spectroscopy (XPCS) under nonequilibrium conditions, specifically
+designed for characterizing transport properties in flowing soft matter systems.
 
-This package implements the theoretical framework described in:
+Physical Framework:
+------------------
+This package implements the theoretical framework for analyzing time-dependent 
+intensity correlation functions g₂(φ,t₁,t₂) that capture the interplay between 
+Brownian diffusion and advective shear flow in complex fluids.
+
+Reference:
 H. He, H. Liang, M. Chu, Z. Jiang, J.J. de Pablo, M.V. Tirrell, S. Narayanan,
 & W. Chen, "Transport coefficient approach for characterizing nonequilibrium
 dynamics in soft matter", Proc. Natl. Acad. Sci. U.S.A. 121 (31) e2401162121 (2024).
 
-Modules:
---------
-- core: Core functionality (configuration, computational kernels)
-- analysis: Analysis engines and data processing
-- optimization: Optimization methods (classical, MCMC)
-- io_utils: Input/output utilities
-- plotting: Visualization functions
+Key Capabilities:
+----------------
+- Dual Analysis Modes: Static (3 parameters) and Laminar Flow (7 parameters)
+- Classical Optimization: Fast Nelder-Mead for point estimates
+- Bayesian MCMC: Full posterior distributions with uncertainty quantification
+- Performance Optimization: Numba JIT compilation and smart angle filtering
+- Data Validation: Comprehensive quality control and visualization
+- Result Management: JSON serialization with custom NumPy array handling
+
+Core Modules:
+------------
+- core.config: Configuration management with template system
+- core.kernels: Optimized computational kernels for correlation functions
+- core.io_utils: Data I/O with experimental data loading and result saving
+- analysis.core: Main analysis engine and chi-squared fitting
+- optimization.classical: Scipy-based optimization with angle filtering
+- optimization.mcmc: PyMC-based Bayesian parameter estimation
+- plotting: Comprehensive visualization for data validation and diagnostics
 
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
@@ -39,7 +57,8 @@ from .core.kernels import (
 )
 from .analysis.core import HomodyneAnalysisCore
 
-# Optional optimization imports with error handling
+# Import optimization modules with graceful degradation
+# Classical optimization requires only scipy (typically available)
 try:
     from .optimization.classical import ClassicalOptimizer
 except ImportError as e:
@@ -47,10 +66,10 @@ except ImportError as e:
     import logging
 
     logging.getLogger(__name__).warning(
-        f"ClassicalOptimizer not available: {e}"
+        f"Classical optimization not available - missing scipy: {e}"
     )
 
-
+# MCMC optimization requires PyMC ecosystem (optional advanced feature)
 try:
     from .optimization.mcmc import MCMCSampler, create_mcmc_sampler
 except ImportError as e:
@@ -59,7 +78,7 @@ except ImportError as e:
     import logging
 
     logging.getLogger(__name__).warning(
-        f"MCMC functionality not available: {e}"
+        f"MCMC Bayesian analysis not available - missing PyMC/ArviZ: {e}"
     )
 
 # Core exports that should always be available

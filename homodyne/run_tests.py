@@ -1,8 +1,30 @@
 """
-Test Runner for Rheo-SAXS-XPCS Analysis
-======================================
+Test Runner for Homodyne Scattering Analysis
+===========================================
 
-Convenience script to run the test suite with appropriate options.
+Advanced test execution framework for comprehensive validation of XPCS
+analysis components. Provides flexible test selection, performance profiling,
+and detailed reporting capabilities for development and quality assurance.
+
+Testing Framework Features:
+- Selective test execution (fast vs comprehensive)
+- Parallel test execution with pytest-xdist integration
+- Code coverage analysis and reporting
+- Performance benchmarking and regression detection
+- Flexible test filtering and marker-based selection
+
+Test Categories:
+- Unit tests: Core functionality and computational kernels
+- Integration tests: End-to-end analysis workflows
+- Performance tests: Optimization and scaling validation
+- I/O tests: Data loading, saving, and serialization
+- Plotting tests: Visualization and result presentation
+
+Usage Scenarios:
+- Development validation: Quick smoke tests during coding
+- CI/CD integration: Comprehensive validation pipelines
+- Performance monitoring: Regression detection and optimization
+- Release validation: Full test suite execution with coverage
 """
 
 import sys
@@ -12,8 +34,20 @@ import argparse
 
 
 def main():
-    """Run the test suite with configurable options."""
-    parser = argparse.ArgumentParser(description="Run Rheo-SAXS-XPCS test suite")
+    """
+    Execute comprehensive test suite with intelligent configuration.
+    
+    Orchestrates test execution with advanced options for development,
+    continuous integration, and quality assurance workflows. Automatically
+    detects available testing tools and configures optimal execution strategy.
+    
+    Test Execution Strategy:
+    - Fast mode: Unit tests only, optimized for development cycles
+    - Full mode: Complete test suite including slow integration tests
+    - Parallel mode: Multi-worker execution for faster completion
+    - Coverage mode: Code coverage analysis with detailed reporting
+    """
+    parser = argparse.ArgumentParser(description="Run homodyne analysis test suite with advanced options")
 
     parser.add_argument(
         "--fast",

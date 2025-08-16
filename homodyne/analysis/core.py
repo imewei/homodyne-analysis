@@ -15,7 +15,7 @@ under nonequilibrium laminar flow conditions. The model captures the interplay b
 Brownian diffusion and advective shear flow in the two-time correlation dynamics.
 
 The correlation function has the form:
-    g2(φ,t₁,t₂) = [g1(φ,t₁,t₂)]²
+    g2(φ,t₁,t₂) = 1 + contrast × [g1(φ,t₁,t₂)]²
 
 where g1 is the field correlation function with separable contributions:
     g1(φ,t₁,t₂) = g1_diff(t₁,t₂) × g1_shear(φ,t₁,t₂)
@@ -1746,7 +1746,7 @@ class HomodyneAnalysisCore:
                 # 1. Full heatmap
                 ax1 = fig.add_subplot(gs[i, 0])
                 im1 = ax1.imshow(angle_data, aspect='auto', origin='lower',
-                               extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]],
+                               extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]], # type: ignore
                                cmap='viridis')
                 ax1.set_xlabel('Time t₁ (s)')
                 ax1.set_ylabel('Time t₂ (s)')
@@ -1815,12 +1815,12 @@ Validation:
                         bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
             
             # Overall title
-            sample_desc = self.config.get('metadata', {}).get('sample_description', 'Unknown Sample')
+            sample_desc = self.config.get('metadata', {}).get('sample_description', 'Unknown Sample') # type: ignore
             plt.suptitle(f'Experimental Data Validation: {sample_desc}', 
                         fontsize=16, fontweight='bold')
             
             # Save the validation plot
-            plots_base_dir = self.config.get("output_settings", {}).get("plotting", {}).get("output", {}).get("base_directory", "./plots")
+            plots_base_dir = self.config.get("output_settings", {}).get("plotting", {}).get("output", {}).get("base_directory", "./plots") # type: ignore
             plots_dir = Path(plots_base_dir) / "data_validation"
             plots_dir.mkdir(parents=True, exist_ok=True)
             
@@ -1829,7 +1829,7 @@ Validation:
             logger.info(f"Experimental data validation plot saved to: {output_file}")
             
             # Optionally show the plot
-            show_plots = self.config.get("output_settings", {}).get("plotting", {}).get("general", {}).get("show_plots", False)
+            show_plots = self.config.get("output_settings", {}).get("plotting", {}).get("general", {}).get("show_plots", False) # type: ignore
             if show_plots:
                 plt.show()
             else:
@@ -1854,7 +1854,7 @@ Validation:
         logger = logging.getLogger(__name__)
         
         # Check if plotting is enabled in configuration
-        config = output_data.get("config", {})
+        config = output_data.get("config") or {}
         output_settings = config.get("output_settings", {})
         reporting = output_settings.get("reporting", {})
         
@@ -2065,7 +2065,7 @@ Validation:
                 # Generate theoretical data using best parameters
                 if best_params_list is not None:
                     try:
-                        theoretical_data = self._generate_theoretical_data(best_params_list, self._last_phi_angles)
+                        theoretical_data = self._generate_theoretical_data(best_params_list, self._last_phi_angles) # type: ignore
                         plot_data["theoretical_data"] = theoretical_data
                     except Exception as e:
                         logger.warning(f"Failed to generate theoretical data for plotting: {e}")
@@ -2162,7 +2162,7 @@ Validation:
             
             # Call the main correlation calculation method
             theoretical_data = self.calculate_c2_nonequilibrium_laminar_parallel(
-                parameters, phi_angles
+                parameters, phi_angles # type: ignore
             )
             
             logger.debug(f"Successfully generated theoretical data with shape: {theoretical_data.shape}")

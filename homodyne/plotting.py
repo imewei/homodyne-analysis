@@ -385,7 +385,7 @@ def plot_parameter_evolution(
         ]
 
         # Create figure with two subplots
-        fig, (ax1, ax2) = plt.subplots(
+        fig, axes = plt.subplots(
             2,
             1,
             figsize=(
@@ -393,6 +393,7 @@ def plot_parameter_evolution(
                 plot_config["figure_size"][1] * 1.2,
             ),
         )
+        ax1, ax2 = axes
 
         # Plot 1: Parameter comparison bar chart
         x_pos = np.arange(len(param_names))
@@ -626,6 +627,33 @@ def plot_mcmc_corner(
         else:
             stacked_samples = samples
 
+        # Check for parameters with no dynamic range and add explicit ranges
+        ranges = None
+        if hasattr(stacked_samples, 'values'):
+            # NumPy array or similar
+            sample_data = stacked_samples.values if hasattr(stacked_samples, 'values') else stacked_samples
+        elif isinstance(stacked_samples, np.ndarray):
+            sample_data = stacked_samples
+        else:
+            # Try to convert to numpy
+            try:
+                sample_data = np.array(stacked_samples)
+            except:
+                sample_data = None
+        
+        if sample_data is not None:
+            ranges = []
+            for i in range(sample_data.shape[-1]):
+                param_data = sample_data[..., i].flatten()
+                param_range = np.max(param_data) - np.min(param_data)
+                if param_range == 0 or param_range < 1e-10:
+                    # Constant parameter - add small range around the value
+                    center = np.mean(param_data)
+                    delta = max(abs(center) * 0.01, 1e-6)
+                    ranges.append((center - delta, center + delta))
+                else:
+                    ranges.append(None)  # Let corner determine automatically
+        
         # Create the corner plot
         if CORNER_AVAILABLE:
             # Use corner package if available (better formatting)
@@ -635,13 +663,13 @@ def plot_mcmc_corner(
                 labels=[
                     (
                         f"{name}\n[{unit}]"
-                        if param_names and param_units
+                        if param_names and param_units and i < len(param_names) and i < len(param_units)
+                        else param_names[i] if param_names and i < len(param_names)
                         else f"Param {i}"
                     )
-                    for i, (name, unit) in enumerate(
-                        zip(param_names or [], param_units or [])
-                    )
+                    for i in range(len(ranges) if ranges else 7)  # Default to 7 parameters
                 ],
+                range=ranges,
                 show_titles=True,
                 title_kwargs={"fontsize": 12},
                 label_kwargs={"fontsize": 14},
@@ -737,13 +765,43 @@ def plot_mcmc_trace(
             logger.error("Unsupported trace data format for trace plots")
             return False
 
-        # Create trace plot
-        axes = az.plot_trace(
-            trace_obj,
-            var_names=param_names if param_names else None,
-            figsize=(plot_config["figure_size"][0] * 1.2, plot_config["figure_size"][1] * 1.5),
-            compact=True,
-        )
+        # Create trace plot with proper variable name handling
+        try:
+            # First check what variables are actually available
+            if hasattr(trace_obj, "posterior") and hasattr(trace_obj.posterior, "data_vars"):
+                available_vars = list(trace_obj.posterior.data_vars.keys())
+                logger.debug(f"Available variables in trace: {available_vars}")
+                
+                # Use only parameter names that exist in the trace
+                if param_names:
+                    var_names_to_use = [name for name in param_names if name in available_vars]
+                    if not var_names_to_use:
+                        logger.warning(f"None of the requested parameter names {param_names} found in trace")
+                        var_names_to_use = None  # Use all available
+                else:
+                    var_names_to_use = None
+            else:
+                var_names_to_use = None
+            
+            axes = az.plot_trace(
+                trace_obj,
+                var_names=var_names_to_use,
+                figsize=(plot_config["figure_size"][0] * 1.2, plot_config["figure_size"][1] * 1.5),
+                compact=True,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to create trace plot with requested variables: {e}")
+            # Fallback: try without specifying variable names
+            try:
+                axes = az.plot_trace(
+                    trace_obj,
+                    var_names=None,
+                    figsize=(plot_config["figure_size"][0] * 1.2, plot_config["figure_size"][1] * 1.5),
+                    compact=True,
+                )
+            except Exception as e2:
+                logger.error(f"Failed to create trace plot even without variable names: {e2}")
+                return False
         
         fig = axes.ravel()[0].figure
         
@@ -819,6 +877,11 @@ def plot_mcmc_convergence_diagnostics(
 
     try:
         import arviz as az
+        
+        # Validate trace data format
+        if not hasattr(trace_data, "posterior"):
+            logger.error("Unsupported trace data format for convergence diagnostics")
+            return False
         
         # Create figure with multiple subplots
         fig = plt.figure(figsize=(plot_config["figure_size"][0] * 1.5, plot_config["figure_size"][1] * 1.2))
@@ -1220,6 +1283,197 @@ def create_all_plots(
     logger.info(f"Successfully created {successful_plots}/{total_plots} plots")
 
     return plot_status
+
+
+def plot_experimental_c2_data(
+    c2_experimental: np.ndarray,
+    phi_angles: np.ndarray,
+    outdir: Union[str, Path] = "./plots",
+    config: Optional[Dict] = None,
+    dt: float = 1.0,
+    sample_description: str = "Experimental Data"
+) -> bool:
+    """
+    Standalone function to plot experimental C2 data validation plots.
+    
+    This function creates comprehensive validation plots of experimental correlation data
+    to verify data integrity and structure. It's designed to be used immediately after
+    data loading for quality control.
+    
+    Parameters
+    ----------
+    c2_experimental : np.ndarray
+        Experimental correlation data with shape (n_angles, n_t2, n_t1)
+    phi_angles : np.ndarray
+        Array of scattering angles in degrees
+    outdir : Union[str, Path], optional
+        Output directory for saved plots (default: "./plots")
+    config : Optional[Dict], optional
+        Configuration dictionary for plotting settings
+    dt : float, optional
+        Time step between frames in seconds (default: 1.0)
+    sample_description : str, optional
+        Description of the sample for plot titles
+        
+    Returns
+    -------
+    bool
+        True if plots were created successfully
+        
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from homodyne.plotting import plot_experimental_c2_data
+    >>> 
+    >>> # Load your experimental data
+    >>> c2_data = np.load('experimental_data.npy')  # shape: (n_angles, n_t2, n_t1)
+    >>> angles = np.array([0, 45, 90, 135, 180])  # degrees
+    >>> 
+    >>> # Create validation plots
+    >>> success = plot_experimental_c2_data(
+    ...     c2_data, angles, 
+    ...     outdir='./validation_plots',
+    ...     dt=0.1,  # 0.1 seconds per frame
+    ...     sample_description='Protein under shear'
+    ... )
+    """
+    try:
+        # Import plotting dependencies
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+        from pathlib import Path
+        
+        logger.info(f"Creating experimental C2 data validation plots for {len(phi_angles)} angles")
+        
+        # Set up plotting style
+        plt.style.use('default')
+        plt.rcParams.update({
+            'font.size': 11,
+            'axes.labelsize': 12,
+            'axes.titlesize': 14,
+            'figure.dpi': 150
+        })
+        
+        # Create output directory
+        outdir = Path(outdir)
+        plots_dir = outdir / "experimental_data_validation"
+        plots_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Validate input dimensions
+        n_angles, n_t2, n_t1 = c2_experimental.shape
+        time_t2 = np.arange(n_t2) * dt
+        time_t1 = np.arange(n_t1) * dt
+        
+        logger.debug(f"Data shape: {c2_experimental.shape}")
+        logger.debug(f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s")
+        
+        if len(phi_angles) != n_angles:
+            logger.error(f"Number of angles ({len(phi_angles)}) doesn't match data shape ({n_angles})")
+            return False
+        
+        # Create the validation plot
+        n_plot_angles = min(3, n_angles)  # Show up to 3 angles
+        fig = plt.figure(figsize=(16, 4 * n_plot_angles))
+        gs = gridspec.GridSpec(n_plot_angles, 4, hspace=0.3, wspace=0.3)
+        
+        for i in range(n_plot_angles):
+            angle_idx = i * (n_angles // n_plot_angles) if n_angles > 1 else 0
+            if angle_idx >= n_angles:
+                angle_idx = n_angles - 1
+                
+            angle_data = c2_experimental[angle_idx, :, :]
+            phi_deg = phi_angles[angle_idx] if len(phi_angles) > angle_idx else 0.0
+            
+            # 1. Full heatmap
+            ax1 = fig.add_subplot(gs[i, 0])
+            im1 = ax1.imshow(angle_data, aspect='auto', origin='lower',
+                           extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]],
+                           cmap='viridis')
+            ax1.set_xlabel('Time t₁ (s)')
+            ax1.set_ylabel('Time t₂ (s)')
+            ax1.set_title(f'g₂(t₁,t₂) at φ={phi_deg:.1f}°')
+            plt.colorbar(im1, ax=ax1, shrink=0.8)
+            
+            # 2. Diagonal slice
+            ax2 = fig.add_subplot(gs[i, 1])
+            diagonal = np.diag(angle_data)
+            time_diag = time_t1[:len(diagonal)]
+            ax2.plot(time_diag, diagonal, 'b-', linewidth=2)
+            ax2.set_xlabel('Time (s)')
+            ax2.set_ylabel('g₂(t,t)')
+            ax2.set_title(f'Diagonal at φ={phi_deg:.1f}°')
+            ax2.grid(True, alpha=0.3)
+            
+            # 3. Cross-sections
+            ax3 = fig.add_subplot(gs[i, 2])
+            n_sections = 3
+            section_indices = np.linspace(5, n_t2-5, n_sections, dtype=int)
+            colors = ['red', 'blue', 'green']
+            
+            for idx, color in zip(section_indices, colors):
+                if idx < n_t2:
+                    ax3.plot(time_t1, angle_data[idx, :], color=color, 
+                           linewidth=1.5, alpha=0.8, label=f't₂={time_t2[idx]:.1f}s')
+            
+            ax3.set_xlabel('Time t₁ (s)')
+            ax3.set_ylabel('g₂(t₁,t₂)')
+            ax3.set_title(f'Cross-sections at φ={phi_deg:.1f}°')
+            ax3.legend(fontsize=9)
+            ax3.grid(True, alpha=0.3)
+            
+            # 4. Statistics
+            ax4 = fig.add_subplot(gs[i, 3])
+            ax4.axis('off')
+            
+            # Calculate statistics
+            mean_val = np.mean(angle_data)
+            std_val = np.std(angle_data)
+            min_val = np.min(angle_data)
+            max_val = np.max(angle_data)
+            diag_mean = np.mean(diagonal)
+            contrast = (max_val - min_val) / min_val if min_val > 0 else 0
+            
+            stats_text = f"""Data Statistics (φ={phi_deg:.1f}°):
+
+Shape: {angle_data.shape[0]} × {angle_data.shape[1]}
+
+g₂ Values:
+Mean: {mean_val:.4f}
+Std:  {std_val:.4f}
+Min:  {min_val:.4f}
+Max:  {max_val:.4f}
+
+Diagonal mean: {diag_mean:.4f}
+Contrast: {contrast:.3f}
+
+Validation:
+{'✓' if 0.9 < mean_val < 1.2 else '✗'} Mean around 1.0
+{'✓' if diag_mean > mean_val else '✗'} Diagonal enhanced
+{'✓' if contrast > 0.001 else '✗'} Sufficient contrast"""
+            
+            ax4.text(0.05, 0.95, stats_text, transform=ax4.transAxes, fontsize=9,
+                    verticalalignment='top', fontfamily='monospace',
+                    bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
+        
+        # Overall title
+        plt.suptitle(f'Experimental Data Validation: {sample_description}', 
+                    fontsize=16, fontweight='bold')
+        
+        # Save the validation plot
+        output_file = plots_dir / "experimental_data_validation.png"
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        logger.info(f"Experimental data validation plot saved to: {output_file}")
+        
+        # Close to free memory
+        plt.close(fig)
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to create experimental data validation plot: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
+        return False
 
 
 if __name__ == "__main__":

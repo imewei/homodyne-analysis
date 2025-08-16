@@ -1,10 +1,31 @@
 """
 IO Utilities for Homodyne Scattering Analysis
+===========================================
 
-This module provides utility functions for safe file system operations,
-timestamped filename generation, and robust data saving with error handling.
+Comprehensive I/O utilities for safe data handling in XPCS analysis workflows.
+Provides robust file operations, intelligent data serialization, and structured
+result management with extensive error handling and logging.
 
-Created for: Rheo-SAXS-XPCS Homodyne Analysis
+Key Features:
+- Thread-safe directory creation with race condition handling
+- Timestamped filename generation with configurable formatting
+- Multi-format data serialization (JSON, NumPy, Pickle, Matplotlib)
+- Custom JSON serializer for NumPy arrays and complex objects
+- Comprehensive error handling with detailed logging
+- Structured result saving for analysis workflows
+
+Data Formats Supported:
+- JSON: Configuration files, analysis results, metadata
+- NumPy (.npz): Correlation functions, parameter arrays, numerical data
+- Pickle (.pkl): Complex Python objects, MCMC traces, model instances
+- Matplotlib: Figures and plots with publication-quality settings
+
+Safety Features:
+- Atomic file operations where possible
+- Directory creation with appropriate permissions
+- Comprehensive exception handling for I/O errors
+- Logging of all operations for debugging and audit trails
+
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
 """
@@ -17,31 +38,42 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import numpy as np
 
-# Set up logging
+# Module-level logger for I/O operations tracking and debugging
 logger = logging.getLogger(__name__)
 
 
 def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
     """
-    Create directories recursively with race-condition safety.
+    Thread-safe recursive directory creation with comprehensive error handling.
 
-    This function safely creates directories, handling race conditions
-    where multiple processes might try to create the same directory
-    simultaneously.
+    Creates directory hierarchies safely, handling race conditions that can occur
+    in multi-process environments (e.g., parallel optimization runs). Uses atomic
+    operations where possible and validates directory creation success.
+
+    Features:
+    - Race condition safety for concurrent directory creation
+    - Recursive parent directory creation
+    - Configurable permissions for security control
+    - Path validation and type checking
+    - Comprehensive error reporting
 
     Args:
-        path (Union[str, Path]): Directory path to create
-        permissions (int): Directory permissions (default: 0o755)
+        path (Union[str, Path]): Directory path to create (absolute or relative)
+        permissions (int): Unix-style permissions (default: 0o755 = rwxr-xr-x)
 
     Returns:
-        Path: Path object of the created directory
+        Path: Pathlib.Path object of the created/validated directory
 
     Raises:
-        OSError: If directory creation fails for reasons other than already existing
+        OSError: Directory creation failed, path exists but isn't a directory,
+                or permissions issues
 
     Example:
-        >>> ensure_dir("./results/data")
-        PosixPath('./results/data')
+        >>> ensure_dir("./results/mcmc/traces")
+        PosixPath('./results/mcmc/traces')
+        
+        >>> ensure_dir("/tmp/analysis", permissions=0o700)  # Owner-only access
+        PosixPath('/tmp/analysis')
     """
     path_obj = Path(path)
 
@@ -64,24 +96,43 @@ def timestamped_filename(
     base_name: str, chi2: Optional[float] = None, config: Optional[Dict] = None
 ) -> str:
     """
-    Build timestamped filenames based on output_settings["file_naming"] configuration.
+    Generate intelligently formatted filenames with timestamps and analysis metadata.
 
-    Creates filenames with timestamps and optional chi-squared values according
-    to the configuration settings.
+    Creates structured filenames that include temporal information and analysis
+    quality metrics, facilitating result organization and identification. Supports
+    configurable timestamp formats and optional inclusion of chi-squared values
+    for quick quality assessment.
+
+    Filename Components:
+    - Base name: User-specified prefix (e.g., 'analysis_results')
+    - Timestamp: Configurable format for temporal ordering
+    - Chi-squared: Optional goodness-of-fit indicator
+    - Config version: Optional configuration identification
+
+    Configuration Options:
+    - timestamp_format: strftime format string (default: "%Y%m%d_%H%M%S")
+    - include_chi_squared: Boolean flag for chi2 inclusion
+    - include_config_name: Boolean flag for configuration version
 
     Args:
-        base_name (str): Base filename (without extension)
-        chi2 (Optional[float]): Chi-squared value to include in filename
-        config (Optional[Dict]): Configuration dictionary containing output_settings
+        base_name (str): Base filename prefix (without extension)
+        chi2 (Optional[float]): Chi-squared value for quality indication
+        config (Optional[Dict]): Configuration with output_settings/file_naming
 
     Returns:
-        str: Formatted filename with timestamp and optional chi2 value
+        str: Structured filename string ready for file operations
 
-    Example:
-        >>> config = {"output_settings": {"file_naming": {"timestamp_format": "%Y%m%d_%H%M%S",
-        ...                                               "include_chi_squared": True}}}
-        >>> timestamped_filename("results", 1.234, config)
-        'results_20240315_143022_chi2_1.234000'
+    Examples:
+        >>> config = {"output_settings": {"file_naming": {
+        ...     "timestamp_format": "%Y%m%d_%H%M%S",
+        ...     "include_chi_squared": True,
+        ...     "include_config_name": True
+        ... }}}
+        >>> timestamped_filename("mcmc_results", 1.234e-3, config)
+        'mcmc_results_20240315_143022_chi2_0.001234_v5.1'
+        
+        >>> timestamped_filename("quick_analysis")  # Minimal version
+        'quick_analysis_20240315_143022'
     """
     # Default configuration
     default_naming = {
@@ -127,22 +178,71 @@ def timestamped_filename(
     return filename
 
 
+def _json_serializer(obj):
+    """
+    Custom JSON serializer for scientific computing objects.
+    
+    Handles NumPy arrays, scalars, and complex Python objects that are not
+    natively JSON-serializable. Essential for saving analysis results that
+    contain numerical arrays and computed parameters.
+    
+    Supported Object Types:
+    - NumPy arrays: Converted to Python lists
+    - NumPy scalars: Extracted as native Python types
+    - Complex objects: String representation fallback
+    - Other types: Safe string conversion
+    
+    Args:
+        obj: Object to serialize
+        
+    Returns:
+        JSON-serializable representation of the object
+    """
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.integer, np.floating)):
+        return obj.item()
+    elif hasattr(obj, '__dict__'):
+        return str(obj)  # Convert complex objects to string
+    else:
+        return str(obj)
+
+
 def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
     """
-    Save data as JSON with error handling and logging.
+    Save data as JSON with robust error handling and NumPy support.
+
+    Provides safe JSON serialization with automatic handling of scientific
+    computing objects like NumPy arrays and scalars. Uses custom serializer
+    to ensure compatibility with analysis results containing numerical data.
+
+    Features:
+    - Custom NumPy serializer for arrays and scalars
+    - Automatic directory creation for output path
+    - UTF-8 encoding for international character support
+    - Comprehensive error handling with detailed logging
+    - Configurable JSON formatting options
+
+    Default JSON Parameters:
+    - indent=2: Pretty formatting for readability
+    - ensure_ascii=False: Support for Unicode characters
+    - default=_json_serializer: NumPy and object handling
 
     Args:
-        data: Data to save (must be JSON serializable)
-        filepath (Union[str, Path]): Output file path
-        **kwargs: Additional arguments passed to json.dump()
+        data: Data structure to save (dicts, lists, arrays, etc.)
+        filepath (Union[str, Path]): Output file path (directories created automatically)
+        **kwargs: Additional json.dump() arguments (override defaults)
 
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if save successful, False if any error occurred
 
-    Example:
-        >>> data = {"results": [1, 2, 3], "chi2": 1.234}
-        >>> save_json(data, "results.json", indent=2)
+    Examples:
+        >>> results = {"parameters": np.array([1.2, 3.4]), "chi2": 1.234e-5}
+        >>> save_json(results, "analysis_results.json")
         True
+        
+        >>> save_json(data, "compact.json", indent=None, separators=(',', ':'))
+        True  # Compact JSON format
     """
     filepath = Path(filepath)
 
@@ -150,8 +250,8 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
         # Ensure parent directory exists
         ensure_dir(filepath.parent)
 
-        # Set default JSON parameters
-        json_kwargs = {"indent": 2, "ensure_ascii": False}
+        # Set default JSON parameters with custom serializer
+        json_kwargs = {"indent": 2, "ensure_ascii": False, "default": _json_serializer}
         json_kwargs.update(kwargs)
 
         # Save JSON file
@@ -179,21 +279,39 @@ def save_numpy(
     **kwargs,
 ) -> bool:
     """
-    Save NumPy array with error handling and logging.
+    Save NumPy arrays with optimal compression and format selection.
+
+    Provides efficient storage of numerical data with automatic format selection
+    based on file extension and compression preferences. Essential for saving
+    correlation functions, parameter arrays, and other numerical results.
+
+    Format Selection:
+    - .npz extension or compressed=True: Uses np.savez_compressed (recommended)
+    - Other extensions with compressed=False: Uses np.save (uncompressed)
+    - Automatic directory creation for nested paths
+
+    Compression Benefits:
+    - Significantly reduced file sizes (typically 2-10x smaller)
+    - Faster I/O for large arrays due to reduced data transfer
+    - Standard NumPy format compatibility
 
     Args:
-        data (np.ndarray): NumPy array to save
-        filepath (Union[str, Path]): Output file path
-        compressed (bool): Whether to use compression (default: True)
-        **kwargs: Additional arguments passed to np.savez_compressed or np.save
+        data (np.ndarray): NumPy array to save (any shape/dtype)
+        filepath (Union[str, Path]): Output file path (.npz recommended)
+        compressed (bool): Enable compression (default: True for efficiency)
+        **kwargs: Additional arguments for np.savez_compressed/np.save
 
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if save successful, False if error occurred
 
-    Example:
-        >>> data = np.random.rand(100, 100)
-        >>> save_numpy(data, "data.npz", compressed=True)
-        True
+    Examples:
+        >>> correlation_data = np.random.rand(1000, 50, 50)  # Large 3D array
+        >>> save_numpy(correlation_data, "c2_experimental.npz")
+        True  # Compressed format, much smaller file
+        
+        >>> parameters = np.array([1.2, -0.5, 3.4e-3, 0.1])
+        >>> save_numpy(parameters, "optimized_params.npy", compressed=False)
+        True  # Uncompressed for small arrays
     """
     filepath = Path(filepath)
 
@@ -362,15 +480,49 @@ def save_analysis_results(
     base_name: str = "analysis_results",
 ) -> Dict[str, bool]:
     """
-    Save complete analysis results using appropriate formats.
+    Orchestrate comprehensive saving of analysis results in multiple formats.
+
+    Intelligently saves analysis results using optimal formats for different
+    data types: JSON for structured metadata, NumPy for numerical arrays,
+    and Pickle for complex objects like MCMC traces. Creates organized
+    output structure with consistent naming and timestamping.
+
+    Save Strategy:
+    - JSON: Main results, parameters, metadata (human-readable)
+    - NumPy (.npz): Correlation data, large numerical arrays (efficient)
+    - Pickle (.pkl): Complex objects, MCMC traces, model instances (complete)
+
+    File Organization:
+    - Timestamped base filename for chronological organization
+    - Format-specific suffixes: .json, _data.npz, _full.pkl
+    - Automatic directory creation and organization
+    - Consistent naming across all output files
 
     Args:
-        results (Dict): Analysis results dictionary
-        config (Optional[Dict]): Configuration dictionary
-        base_name (str): Base filename for outputs
+        results (Dict): Complete analysis results dictionary containing:
+                       - Optimization results and parameters
+                       - Correlation data arrays
+                       - MCMC traces and diagnostics
+                       - Configuration and metadata
+        config (Optional[Dict]): Configuration for output directory and naming
+        base_name (str): Prefix for all output files (default: "analysis_results")
 
     Returns:
-        Dict[str, bool]: Status of each save operation
+        Dict[str, bool]: Save status for each format:
+                        - "json": JSON save status
+                        - "numpy": NumPy array save status (if applicable)
+                        - "pickle": Pickle save status (if applicable)
+
+    Example:
+        >>> results = {
+        ...     "classical_optimization": {"parameters": [1.2, -0.5, 3.4]},
+        ...     "correlation_data": np.random.rand(100, 50, 50),
+        ...     "mcmc_trace": mcmc_trace_object,
+        ...     "best_chi_squared": 1.234e-5
+        ... }
+        >>> status = save_analysis_results(results, config, "experiment_A")
+        >>> print(status)
+        {'json': True, 'numpy': True, 'pickle': True}
     """
     output_dir = get_output_directory(config)
     chi2 = results.get("best_chi_squared")

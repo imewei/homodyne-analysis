@@ -393,6 +393,9 @@
       "plot_integration_enabled": true,
       "_plot_integration_enabled_note": "Enable plotting integration in analysis workflow",
       
+      "plot_experimental_data_on_load": false,
+      "_plot_experimental_data_on_load_note": "Generate comprehensive validation plots of experimental data immediately after loading for quality checking (includes heatmaps, cross-sections, statistics)",
+      
       "cache_plot_data": true,
       "_cache_plot_data_note": "Cache experimental and theoretical data for plotting",
       

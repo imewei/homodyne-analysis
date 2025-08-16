@@ -1,10 +1,28 @@
 """
 Configuration Management for Homodyne Scattering Analysis
+=======================================================
 
-This module provides centralized configuration management through the ConfigManager
-class and associated logging utilities.
+Centralized configuration system for XPCS analysis under nonequilibrium conditions.
+Provides JSON-based configuration management with validation, hierarchical parameter
+organization, and performance optimization features.
 
-Created for: Rheo-SAXS-XPCS Homodyne Analysis
+Key Features:
+- Hierarchical JSON configuration with validation
+- Runtime parameter override capabilities
+- Performance-optimized configuration access with caching
+- Comprehensive logging system with rotation and formatting
+- Physical parameter validation and bounds checking
+- Angle filtering configuration for computational efficiency
+- Test configuration management for different analysis scenarios
+
+Configuration Structure:
+- analyzer_parameters: Core physics parameters (q-vector, time steps, geometry)
+- experimental_data: Data paths, file formats, and loading options
+- analysis_settings: Mode selection (static vs laminar flow)
+- optimization_config: Method settings, hyperparameters, angle filtering
+- parameter_space: Physical bounds, priors, and parameter constraints
+- performance_settings: Computational optimization flags
+
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
 """
@@ -18,10 +36,12 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-# Default parallelization setting
+# Default parallelization setting - balance performance and resource usage
+# Limit to 16 threads to avoid overwhelming system resources while providing
+# substantial speedup for computational kernels
 DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
 
-# Create module-level logger
+# Module-level logger for configuration-related messages
 logger = logging.getLogger(__name__)
 
 
@@ -136,20 +156,34 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
 
 class ConfigManager:
     """
-    Manages JSON-based configuration for the analysis pipeline.
+    Centralized configuration manager for homodyne scattering analysis.
 
-    This class provides a centralized configuration system that:
-    - Loads and validates JSON configuration files
-    - Provides hierarchical parameter organization
-    - Supports runtime configuration overrides
-    - Manages test configurations for different scenarios
+    This class orchestrates the entire configuration system for XPCS analysis,
+    providing structured access to all analysis parameters with validation,
+    caching, and runtime override capabilities.
 
-    Configuration Structure:
-    - analyzer_parameters: Core analysis settings
-    - experimental_data: Data paths and loading options
-    - optimization_config: Method settings and hyperparameters
-    - parameter_space: Physical bounds and priors
-    - performance_settings: Computational optimizations
+    Core Responsibilities:
+    - JSON configuration file loading with comprehensive error handling
+    - Hierarchical parameter validation (physics, computation, file paths)
+    - Performance-optimized configuration access through intelligent caching
+    - Runtime configuration overrides for analysis mode switching
+    - Logging system setup with rotation and appropriate formatting
+    - Test configuration management for different experimental scenarios
+
+    Configuration Hierarchy:
+    - analyzer_parameters: Physics parameters (q-vector, time steps, gap size)
+    - experimental_data: Data file paths, loading options, caching settings
+    - analysis_settings: Mode selection (static/laminar flow), model descriptions
+    - optimization_config: Method settings, angle filtering, hyperparameters
+    - parameter_space: Physical parameter bounds, prior distributions
+    - performance_settings: Parallelization, computational optimizations
+    - validation_rules: Data quality checks and minimum requirements
+    - advanced_settings: Fine-tuning options for specialized use cases
+    
+    Usage:
+        config_manager = ConfigManager('my_config.json')
+        is_static = config_manager.is_static_mode_enabled()
+        angle_ranges = config_manager.get_target_angle_ranges()
     """
 
     def __init__(self, config_file: str = "homodyne_config.json"):
@@ -168,7 +202,23 @@ class ConfigManager:
         self.setup_logging()
 
     def load_config(self):
-        """Load configuration from JSON file with error handling and performance optimization."""
+        """
+        Load and parse JSON configuration file with comprehensive error handling.
+        
+        Implements performance-optimized loading with buffering, structure
+        optimization for runtime access, and graceful fallback to default
+        configuration if primary config fails.
+        
+        Error Handling:
+        - FileNotFoundError: Missing configuration file
+        - JSONDecodeError: Malformed JSON syntax
+        - General exceptions: Unexpected loading issues
+        
+        Performance Optimizations:
+        - 8KB buffering for efficient file I/O
+        - Configuration structure caching for fast access
+        - Timing instrumentation for performance monitoring
+        """
         with performance_monitor.time_function("config_loading"):
             try:
                 config_path = Path(self.config_file)
@@ -181,7 +231,7 @@ class ConfigManager:
                 with open(config_path, "r", buffering=8192) as f:
                     self.config = json.load(f)
 
-                # Optimize configuration structure for faster access
+                # Optimize configuration structure for faster runtime access
                 self._optimize_config_structure()
 
                 logger.info(f"Configuration loaded from: {self.config_file}")
@@ -202,11 +252,24 @@ class ConfigManager:
                 self.config = self._get_default_config()
     
     def _optimize_config_structure(self):
-        """Optimize configuration structure for faster runtime access."""
+        """
+        Pre-compute and cache frequently accessed configuration values.
+        
+        This optimization reduces repeated nested dictionary lookups during
+        analysis runtime, particularly for values accessed in tight loops
+        such as angle filtering settings and parameter bounds.
+        
+        Cached Values:
+        - angle_filtering_enabled: Boolean flag for optimization filtering
+        - target_angle_ranges: Pre-parsed angle ranges for filtering
+        - static_mode: Analysis mode flag (static vs laminar flow)
+        - parameter_bounds: Parameter constraints for validation
+        - effective_param_count: Number of active parameters (3 or 7)
+        """
         if not self.config:
             return
             
-        # Pre-compute frequently accessed values
+        # Initialize cache dictionary for performance-critical values
         self._cached_values = {}
         
         # Cache optimization config paths
@@ -236,13 +299,32 @@ class ConfigManager:
 
     def validate_config(self):
         """
-        Validate configuration parameters for consistency.
+        Comprehensive validation of configuration parameters.
 
-        Checks:
-        - Required sections are present
-        - Frame ranges are valid
-        - Physical parameters are reasonable
-        - File paths exist (if enabled)
+        Performs multi-level validation to ensure configuration integrity:
+        
+        Structural Validation:
+        - Required sections presence (analyzer_parameters, experimental_data, etc.)
+        - Configuration hierarchy completeness
+        - Parameter type consistency
+        
+        Physical Parameter Validation:
+        - Frame range consistency (start < end, sufficient frames)
+        - Wavevector positivity and reasonable magnitude
+        - Time step positivity
+        - Gap size physical reasonableness
+        
+        Data Validation:
+        - Minimum frame count requirements
+        - Parameter bounds consistency
+        - File path accessibility (optional)
+        
+        Raises
+        ------
+        ValueError
+            Invalid configuration parameters or structure
+        FileNotFoundError
+            Missing required data files (if validation enabled)
         """
         if not self.config:
             raise ValueError("Configuration is None")
@@ -282,7 +364,27 @@ class ConfigManager:
         )
 
     def _validate_physical_parameters(self):
-        """Validate physical parameter ranges."""
+        """
+        Validate physical parameters for scientific and computational validity.
+        
+        Performs detailed validation of core physics parameters to ensure
+        they fall within physically meaningful and computationally stable ranges.
+        
+        Parameter Checks:
+        - Wavevector q: Must be positive, warns if outside typical XPCS range
+        - Time step dt: Must be positive for temporal evolution
+        - Gap size h: Must be positive for rheometer geometry
+        
+        Typical Parameter Ranges:
+        - q-vector: 0.001-0.1 Å⁻¹ (typical XPCS range)
+        - Time step: 0.01-10 s (depending on dynamics)
+        - Gap size: μm-mm range (rheometer geometry)
+        
+        Raises
+        ------
+        ValueError
+            Invalid parameter values that would cause computation failure
+        """
         if self.config is None or "analyzer_parameters" not in self.config:
             raise ValueError(
                 "Configuration or 'analyzer_parameters' section is missing."

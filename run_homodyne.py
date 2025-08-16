@@ -1,7 +1,16 @@
 """
 Homodyne Analysis Runner
+========================
 
-A command-line interface for running homodyne analysis with various methods.
+Command-line interface for running homodyne scattering analysis in X-ray Photon 
+Correlation Spectroscopy (XPCS) under nonequilibrium conditions.
+
+This script provides a unified interface for:
+- Classical optimization (Nelder-Mead) for fast parameter estimation
+- Bayesian MCMC sampling (NUTS) for full posterior distributions
+- Dual analysis modes: Static (3 params) and Laminar Flow (7 params)
+- Comprehensive data validation and quality control
+- Automated result saving and visualization
 """
 
 import argparse
@@ -13,19 +22,20 @@ import json
 from pathlib import Path
 import numpy as np
 
-# Add the homodyne package to the path if needed
+# Add the homodyne package to the path for local development
 sys.path.insert(0, './homodyne')
 
-# Import homodyne modules (will be used when implementing actual analysis logic)
+# Import core analysis components with graceful error handling
+# This allows the script to provide informative error messages if dependencies are missing
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
     from homodyne.optimization.classical import ClassicalOptimizer
 except ImportError:
-    # Modules not available yet, will add TODO for implementation
+    # Will be handled with specific error messages during runtime
     HomodyneAnalysisCore = None
     ClassicalOptimizer = None
 
-# Try to import MCMC sampler
+# Import MCMC components - these require additional dependencies (PyMC, ArviZ)
 try:
     from homodyne.optimization.mcmc import create_mcmc_sampler
     MCMC_AVAILABLE = True
@@ -35,11 +45,23 @@ except ImportError:
 
 
 def setup_logging(verbose: bool, output_dir: Path) -> None:
-    """Configure logging based on verbosity level and add file handler."""
-    # 1. Prepare output directory & logging
+    """
+    Configure comprehensive logging for the analysis session.
+    
+    Sets up both console and file logging with appropriate formatting.
+    Debug level provides detailed execution information for troubleshooting.
+    
+    Parameters
+    ----------
+    verbose : bool
+        Enable DEBUG level logging for detailed output
+    output_dir : Path
+        Directory where log file will be created
+    """
+    # Ensure output directory exists for log file
     os.makedirs(output_dir, exist_ok=True)
 
-    # 2. Configure logging with level INFO or DEBUG (if --verbose)
+    # Set logging level based on verbosity preference
     level = logging.DEBUG if verbose else logging.INFO
 
     # Create formatter
@@ -70,7 +92,17 @@ def setup_logging(verbose: bool, output_dir: Path) -> None:
 
 
 def print_banner(args: argparse.Namespace) -> None:
-    """Print an informative banner with selected options."""
+    """
+    Display analysis configuration and session information.
+    
+    Provides a clear overview of the selected analysis parameters,
+    methods, and output settings before starting the computation.
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments containing analysis configuration
+    """
     print("=" * 60)
     print("            HOMODYNE ANALYSIS RUNNER")
     print("=" * 60)
@@ -95,10 +127,24 @@ def print_banner(args: argparse.Namespace) -> None:
 
 
 def run_analysis(args: argparse.Namespace) -> None:
-    """Run the homodyne analysis based on the selected method."""
+    """
+    Execute the complete homodyne scattering analysis workflow.
+    
+    This is the main analysis orchestrator that:
+    1. Loads and validates configuration
+    2. Initializes the analysis engine
+    3. Loads experimental data with optional validation plots
+    4. Runs selected optimization method(s)
+    5. Saves results and generates diagnostic output
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Command-line arguments specifying analysis configuration
+    """
     logger = logging.getLogger(__name__)
 
-    # Step 2: Load configuration & create analysis core
+    # Load configuration and initialize analysis engine
 
     # 1. Verify the config file exists; exit with clear error if not
     config_path = Path(args.config)
@@ -139,6 +185,17 @@ def run_analysis(args: argparse.Namespace) -> None:
         elif args.laminar_flow:
             config_override = {"analysis_settings": {"static_mode": False}}
             logger.info("Using command-line override: laminar flow mode (7 parameters)")
+        
+        # Add experimental data plotting override if specified
+        if args.plot_experimental_data:
+            if config_override is None:
+                config_override = {}
+            if "workflow_integration" not in config_override:
+                config_override["workflow_integration"] = {}
+            if "analysis_workflow" not in config_override["workflow_integration"]:
+                config_override["workflow_integration"]["analysis_workflow"] = {} # type: ignore
+            config_override["workflow_integration"]["analysis_workflow"]["plot_experimental_data_on_load"] = True # type: ignore
+            logger.info("Using command-line override: experimental data plotting enabled")
         
         analyzer = HomodyneAnalysisCore(config_file=str(config_path), config_override=config_override)
         logger.info("✓ HomodyneAnalysisCore initialized successfully")
@@ -252,7 +309,30 @@ def run_analysis(args: argparse.Namespace) -> None:
 
 
 def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
-    """Run classical optimization method."""
+    """
+    Execute classical optimization using Nelder-Mead simplex method.
+    
+    Provides fast parameter estimation with point estimates and goodness-of-fit
+    statistics. Uses scipy.optimize for robust convergence with intelligent
+    angle filtering for performance on large datasets.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    initial_params : list
+        Starting parameter values for optimization
+    phi_angles : ndarray
+        Angular coordinates for the scattering data
+    c2_exp : ndarray
+        Experimental correlation function data
+        
+    Returns
+    -------
+    dict or None
+        Results dictionary with optimized parameters and fit statistics,
+        or None if optimization fails
+    """
     logger = logging.getLogger(__name__)
     logger.info("Running classical optimization...")
 
@@ -314,7 +394,32 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
 
 
 def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
-    """Run MCMC sampling with warm start."""
+    """
+    Execute Bayesian MCMC sampling using NUTS (No-U-Turn Sampler).
+    
+    Provides full posterior distributions with uncertainty quantification.
+    Uses PyMC for robust sampling with convergence diagnostics (R-hat, ESS).
+    Results include parameter uncertainties and correlation analysis.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    initial_params : list
+        Starting parameter values (used for prior initialization)
+    phi_angles : ndarray
+        Angular coordinates for the scattering data
+    c2_exp : ndarray
+        Experimental correlation function data
+    output_dir : Path, optional
+        Directory for saving MCMC traces and diagnostics
+        
+    Returns
+    -------
+    dict or None
+        Results dictionary with posterior statistics and convergence info,
+        or None if sampling fails
+    """
     logger = logging.getLogger(__name__)
     logger.info("Running MCMC sampling...")
 
@@ -497,7 +602,32 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
 
 
 def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
-    """Run all available optimization methods."""
+    """
+    Execute both classical and MCMC optimization methods sequentially.
+    
+    Recommended workflow that combines fast classical optimization for initial
+    parameter estimates with comprehensive MCMC sampling for full uncertainty
+    analysis. Gracefully handles failures in individual methods.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    initial_params : list
+        Starting parameter values for optimization
+    phi_angles : ndarray
+        Angular coordinates for the scattering data
+    c2_exp : ndarray
+        Experimental correlation function data
+    output_dir : Path, optional
+        Directory for saving results and diagnostics
+        
+    Returns
+    -------
+    dict or None
+        Combined results from all successful methods,
+        or None if all methods fail
+    """
     logger = logging.getLogger(__name__)
     logger.info("Running all optimization methods...")
 
@@ -544,9 +674,15 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
 
 
 def main():
-    """Main entry point for the homodyne analysis runner."""
+    """
+    Command-line entry point for homodyne scattering analysis.
+    
+    Provides a complete interface for XPCS analysis under nonequilibrium
+    conditions, supporting both static and laminar flow analysis modes
+    with classical and Bayesian optimization approaches.
+    """
     parser = argparse.ArgumentParser(
-        description="Run homodyne analysis with various methods",
+        description="Run homodyne scattering analysis for XPCS under nonequilibrium conditions",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -598,6 +734,12 @@ Examples:
         '--laminar-flow',
         action='store_true',
         help='Force laminar flow mode analysis (7 parameters: all diffusion and shear parameters)'
+    )
+
+    parser.add_argument(
+        '--plot-experimental-data',
+        action='store_true',
+        help='Generate validation plots of experimental data after loading for quality checking'
     )
 
     args = parser.parse_args()

@@ -1,13 +1,35 @@
 #!/usr/bin/env python3
 """
-Performance Benchmark Script for Homodyne Package Optimizations
-===============================================================
+Performance Benchmark Suite for Homodyne Analysis Optimizations
+==============================================================
 
-This script benchmarks the performance improvements from optimizations
-including Numba acceleration, memory optimizations, and configuration caching.
+Comprehensive performance testing framework for validating computational
+optimizations in XPCS analysis workflows. Measures the effectiveness of
+Numba JIT compilation, memory optimizations, configuration caching, and
+vectorized operations across different array sizes and iteration counts.
+
+Benchmarking Categories:
+- Computational Kernels: Core physics calculations with Numba acceleration
+- Optimized Operations: Vectorized and memory-efficient implementations
+- Configuration Management: Loading, caching, and access performance
+- Comparative Analysis: NumPy baseline vs optimized implementations
+
+Performance Metrics:
+- Execution time per operation (average over multiple iterations)
+- Memory efficiency and allocation patterns
+- Speedup factors for optimized vs baseline implementations
+- Configuration loading and cached access performance
+
+Output:
+- Detailed timing results for each benchmark category
+- Comparative performance analysis with speedup factors
+- JSON results file for historical performance tracking
+- Performance regression detection capabilities
 
 Usage:
-    python benchmark_performance.py [--iterations N] [--config CONFIG]
+    python benchmark_performance.py [--iterations N] [--size SIZE] [--config CONFIG]
+    python benchmark_performance.py --iterations 50 --size 1000  # Comprehensive test
+    python benchmark_performance.py --fast                        # Quick validation
 """
 
 import time
@@ -35,7 +57,32 @@ from homodyne.core.config import performance_monitor
 
 
 def benchmark_kernel_performance(iterations=10, array_size=1000):
-    """Benchmark computational kernels."""
+    """
+    Benchmark core computational kernels with Numba JIT acceleration.
+    
+    Tests the performance of physics-based calculations that form the foundation
+    of XPCS analysis, including time integration, diffusion calculations,
+    shear rate computations, and correlation function evaluations.
+    
+    Benchmarked Operations:
+    - Time integral matrix creation: Core temporal evolution calculations
+    - Diffusion coefficient calculation: Transport property computations
+    - Shear rate calculation: Flow field characterization
+    - G1 correlation computation: Primary correlation function
+    - Sinc squared computation: Flow geometry effects
+    
+    Parameters
+    ----------
+    iterations : int
+        Number of benchmark iterations for statistical averaging
+    array_size : int
+        Size of arrays used in computations (affects memory and complexity)
+        
+    Returns
+    -------
+    dict
+        Timing results for each kernel operation
+    """
     print(f"=== Benchmarking Computational Kernels (size={array_size}, iterations={iterations}) ===")
     
     # Generate test data
@@ -94,7 +141,39 @@ def benchmark_kernel_performance(iterations=10, array_size=1000):
 
 
 def benchmark_optimized_kernels(iterations=10, array_size=1000):
-    """Benchmark new optimized kernels."""
+    """
+    Benchmark advanced optimized kernels for enhanced performance.
+    
+    Evaluates performance of newly implemented optimization kernels that
+    provide memory-efficient and vectorized alternatives to standard
+    operations. These kernels are designed for high-performance computing
+    scenarios with large datasets.
+    
+    Optimized Kernel Categories:
+    - Matrix operations: Symmetric matrix creation and manipulation
+    - Linear algebra: Optimized matrix-vector multiplication
+    - Vectorized operations: SIMD-optimized scaling and transformations
+    - Statistical computations: Fast chi-squared calculations
+    - Mathematical functions: Vectorized exponential evaluations
+    
+    Performance Features:
+    - Memory layout optimization for cache efficiency
+    - SIMD vectorization for parallel processing
+    - Reduced memory allocations and copies
+    - Loop optimization and unrolling
+    
+    Parameters
+    ----------
+    iterations : int
+        Number of benchmark iterations for reliable timing
+    array_size : int
+        Computational problem size for scaling analysis
+        
+    Returns
+    -------
+    dict
+        Performance metrics for each optimized kernel
+    """
     print(f"\\n=== Benchmarking Optimized Kernels (size={array_size}, iterations={iterations}) ===")
     
     # Generate test data
@@ -155,7 +234,39 @@ def benchmark_optimized_kernels(iterations=10, array_size=1000):
 
 
 def benchmark_config_loading(config_file, iterations=100):
-    """Benchmark configuration loading performance."""
+    """
+    Benchmark configuration system performance and caching efficiency.
+    
+    Evaluates the performance of the configuration management system,
+    including initial loading, validation, and cached access patterns.
+    Critical for applications requiring frequent parameter access during
+    optimization and analysis workflows.
+    
+    Configuration Performance Aspects:
+    - JSON parsing and validation time
+    - Configuration structure optimization
+    - Cached parameter access speed
+    - Memory efficiency of configuration storage
+    - Performance monitoring integration
+    
+    Testing Scenarios:
+    - Cold start: Initial configuration loading from disk
+    - Cached access: Repeated parameter retrieval performance
+    - Validation overhead: Parameter checking and bounds validation
+    - Memory usage: Configuration object memory footprint
+    
+    Parameters
+    ----------
+    config_file : str
+        Path to configuration file for benchmarking
+    iterations : int
+        Number of load/access cycles for statistical analysis
+        
+    Returns
+    -------
+    dict
+        Configuration performance metrics including loading and access times
+    """
     print(f"\\n=== Benchmarking Configuration Loading (iterations={iterations}) ===")
     
     # Benchmark regular config loading
@@ -188,7 +299,38 @@ def benchmark_config_loading(config_file, iterations=100):
 
 
 def compare_numpy_vs_optimized(array_size=1000):
-    """Compare numpy operations vs optimized kernels."""
+    """
+    Comparative performance analysis of NumPy baseline vs optimized implementations.
+    
+    Provides direct performance comparisons between standard NumPy operations
+    and custom-optimized implementations, quantifying the benefits of
+    specialization and optimization for XPCS analysis workflows.
+    
+    Comparison Categories:
+    - Matrix Operations: Standard BLAS vs optimized implementations
+    - Vectorized Operations: NumPy ufuncs vs custom vectorization
+    - Memory Access: Cache efficiency and memory layout optimization
+    - Computational Intensity: Operation-specific optimizations
+    
+    Performance Metrics:
+    - Absolute timing for each implementation
+    - Speedup factors (optimized/baseline)
+    - Memory usage comparisons
+    - Scalability analysis across problem sizes
+    
+    Parameters
+    ----------
+    array_size : int
+        Problem size for comparative analysis
+        
+    Notes
+    -----
+    Results depend on:
+    - Hardware architecture (CPU, cache sizes, SIMD capabilities)
+    - BLAS library implementation (OpenBLAS, MKL, etc.)
+    - Memory subsystem performance
+    - Compiler optimizations and JIT compilation effects
+    """
     print(f"\\n=== Comparing NumPy vs Optimized Operations (size={array_size}) ===")
     
     # Test data
@@ -238,7 +380,34 @@ def compare_numpy_vs_optimized(array_size=1000):
 
 
 def main():
-    """Main benchmark function."""
+    """
+    Orchestrate comprehensive performance benchmark suite.
+    
+    Coordinates execution of all benchmark categories, manages test
+    configuration, and provides consolidated performance reporting.
+    Handles error conditions gracefully and saves results for
+    historical performance tracking and regression analysis.
+    
+    Benchmark Execution Flow:
+    1. Parse command-line arguments and validate configuration
+    2. Execute computational kernel benchmarks
+    3. Run optimized kernel performance tests
+    4. Evaluate configuration system performance
+    5. Perform comparative analysis against NumPy baselines
+    6. Generate comprehensive performance report
+    7. Save results for historical tracking
+    
+    Error Handling:
+    - Graceful degradation for missing dependencies
+    - Configuration file fallback mechanisms
+    - Exception capture and detailed error reporting
+    - Performance monitoring system integration
+    
+    Returns
+    -------
+    int
+        Exit code: 0 for success, 1 for failure
+    """
     parser = argparse.ArgumentParser(description="Benchmark homodyne package performance")
     parser.add_argument("--iterations", type=int, default=10, 
                        help="Number of iterations for benchmarking")

@@ -2,7 +2,29 @@
 Configuration Creator for Homodyne Analysis
 ==========================================
 
-Helper script to create and customize configuration files from templates.
+Interactive configuration file generator for XPCS homodyne analysis workflows.
+Creates customized JSON configuration files from comprehensive templates,
+enabling quick setup of analysis parameters for different experimental scenarios.
+
+Key Features:
+- Template-based configuration generation
+- Customizable sample and experiment metadata
+- Automatic path structure generation
+- Validation and guidance for next steps
+- Support for different analysis modes and optimization methods
+
+Usage Scenarios:
+- New experiment setup with custom sample names
+- Batch analysis preparation with consistent naming
+- Quick configuration generation for different analysis modes
+- Template customization for specific experimental conditions
+
+Generated Configuration Includes:
+- Physics parameters (q-vector, time steps, geometry)
+- Data loading paths and file specifications
+- Optimization method settings and hyperparameters
+- Analysis mode selection (static vs laminar flow)
+- Output formatting and result organization
 """
 
 import json
@@ -19,18 +41,40 @@ def create_config_from_template(
     author=None,
 ):
     """
-    Create a configuration file from the complete template.
+    Generate customized configuration file from comprehensive template.
+
+    Creates a complete configuration file by loading the master template,
+    applying user customizations, and generating appropriate file paths
+    and metadata. Removes template-specific fields to create a clean
+    production configuration.
+
+    Customization Process:
+    - Load complete template with all analysis options
+    - Apply user-specified metadata (author, experiment, sample)
+    - Generate appropriate data paths based on sample name
+    - Set creation/update timestamps
+    - Remove template metadata for clean output
+    - Validate structure and provide usage guidance
 
     Parameters
     ----------
     output_file : str
-        Output configuration file name
+        Output configuration filename (default: "my_config.json")
     sample_name : str, optional
-        Sample name to use in paths
+        Sample identifier for automatic path generation
     experiment_name : str, optional
-        Experiment description
+        Descriptive experiment name for metadata
     author : str, optional
-        Author name
+        Author name for configuration attribution
+        
+    Raises
+    ------
+    FileNotFoundError
+        Template file not found in expected location
+    JSONDecodeError
+        Template file contains invalid JSON
+    OSError
+        File system errors during creation
     """
 
     # Get template path - only use the complete template
