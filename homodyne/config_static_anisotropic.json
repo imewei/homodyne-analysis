@@ -297,8 +297,13 @@
     
     "chi_squared_calculation": {
       "method": "standard",
-      "scaling_optimization": true,
-      "_scaling_optimization_note": "Enabled for per-angle scaling in anisotropic mode",
+      "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
+      "_scaling_details": {
+        "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
+        "_accounts_for": ["instrumental response", "background signals", "detector variations", "normalization differences"],
+        "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
+        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]"
+      },
       "uncertainty_estimation_factor": 0.1,
       "minimum_sigma": 1e-10,
       "fast_computation": true,

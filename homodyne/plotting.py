@@ -188,32 +188,35 @@ def plot_c2_heatmaps(
     # Type assertion to help Pylance understand these are no longer None
     assert t2 is not None and t1 is not None
 
-    # Calculate fitted values and residuals with proper scaling optimization
+    # SCALING OPTIMIZATION FOR PLOTTING (ALWAYS ENABLED)
+    # ==================================================
+    # Calculate fitted values and residuals with proper scaling optimization.
+    # This determines the optimal scaling relationship g₂ = offset + contrast × g₁
+    # for visualization purposes, ensuring plotted data is meaningful.
     fitted = np.zeros_like(theory)
     
-    # Check if scaling optimization should be used
-    scaling_optimization = True
-    if config and "chi_squared_calculation" in config:
-        chi_config = config["chi_squared_calculation"]
-        scaling_optimization = chi_config.get("scaling_optimization", True)
+    # SCALING OPTIMIZATION: ALWAYS PERFORMED
+    # This scaling optimization is essential for meaningful plots because:
+    # 1. Raw theoretical and experimental data may have different scales
+    # 2. Systematic offsets need to be accounted for in visualization  
+    # 3. Residual plots (exp - fitted) are only meaningful with proper scaling
+    # 4. Consistent with chi-squared calculation methodology used in analysis
+    # The relationship g₂ = offset + contrast × g₁ is fitted for each angle independently.
     
     for i in range(exp.shape[0]):  # For each phi angle
         exp_flat = exp[i].flatten()
         theory_flat = theory[i].flatten()
         
-        if scaling_optimization:
-            # Optimal scaling: fitted = theory * contrast + offset
-            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
-            try:
-                scaling, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
-                if len(scaling) == 2:
-                    contrast, offset = scaling
-                    fitted[i] = theory[i] * contrast + offset
-                else:
-                    fitted[i] = theory[i]
-            except np.linalg.LinAlgError:
+        # Optimal scaling: fitted = theory * contrast + offset
+        A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
+        try:
+            scaling, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+            if len(scaling) == 2:
+                contrast, offset = scaling
+                fitted[i] = theory[i] * contrast + offset
+            else:
                 fitted[i] = theory[i]
-        else:
+        except np.linalg.LinAlgError:
             fitted[i] = theory[i]
     
     # Calculate residuals: exp - fitted

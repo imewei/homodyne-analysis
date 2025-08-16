@@ -293,25 +293,28 @@ class MCMCSampler:
                     ]
                 )
 
-            # Check if scaling optimization should be applied (for consistency with chi-squared calculation)
-            chi_config = self.config.get("advanced_settings", {}).get("chi_squared_calculation", {})
-            use_scaling_optimization = chi_config.get("scaling_optimization", True)
+            # SCALING OPTIMIZATION IN MCMC (ALWAYS ENABLED)
+            # =============================================
+            # Scaling optimization (g₂ = offset + contrast × g₁) is ALWAYS enabled in
+            # chi-squared calculation for consistency with classical optimization methods.
+            # This ensures that MCMC results are comparable and physically meaningful.
+            # The choice between simple and full forward models affects computational speed
+            # but scaling optimization is fundamental to proper uncertainty quantification.
             simple_forward = noise_config.get("use_simple_forward_model", True)
 
             if simple_forward:
                 print(
                     "   Using simplified forward model (faster sampling, reduced accuracy)"
                 )
-                if use_scaling_optimization:
-                    print(
-                        "   Warning: Simplified forward model does not support scaling optimization"
-                    )
-                    print(
-                        "   Results may not be comparable to classical/Bayesian optimization"
-                    )
-                    logger.warning(
-                        "MCMC using simplified model without scaling optimization - results may be inconsistent"
-                    )
+                print(
+                    "   Warning: Simplified forward model does not support scaling optimization"
+                )
+                print(
+                    "   Results may not be comparable to classical/Bayesian optimization"
+                )
+                logger.warning(
+                    "MCMC using simplified model without scaling optimization - results may be inconsistent"
+                )
                 
                 # Create simplified deterministic relationship
                 mu = pm.Deterministic("mu", D0 * 0.001)  # Placeholder scaling
@@ -325,13 +328,14 @@ class MCMCSampler:
                 print(
                     "   Using full forward model with scaling optimization"
                 )
-                if use_scaling_optimization:
-                    print(
-                        "   Properly accounting for per-angle contrast and offset scaling"
-                    )
-                    print(
-                        "   Consistent with chi-squared calculation methodology"
-                    )
+                # Scaling optimization is always enabled: g₂ = offset + contrast × g₁
+                # This is essential for proper chi-squared calculation regardless of mode or number of angles
+                print(
+                    "   Properly accounting for per-angle contrast and offset scaling"
+                )
+                print(
+                    "   Consistent with chi-squared calculation methodology"
+                )
                 
                 # For each angle, implement scaling optimization in the likelihood
                 # This is a simplified but more consistent approach

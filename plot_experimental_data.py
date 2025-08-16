@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-Experimental Data Plotting Script for Homodyne XPCS Analysis
-============================================================
+Experimental C2 Data Plotting Script for Homodyne XPCS Analysis
+==============================================================
 
-This script creates comprehensive validation plots of experimental C2 correlation data
+This script creates validation plots of experimental C2 correlation data
 for X-ray Photon Correlation Spectroscopy (XPCS) analysis. It loads data according to
 the configuration file and generates quality assessment plots.
 
 Features:
-- Load experimental data using homodyne package configuration
-- Generate comprehensive validation plots including heatmaps, diagonal slices, and statistics
+- Load experimental C2 correlation data using homodyne package configuration
+- Generate validation plots including heatmaps, diagonal slices, and statistics
 - Support for both HDF5 and NPZ data formats
 - Automatic data quality assessment with validation metrics
-- Configurable plotting parameters and output formats
+- Save plots to ./homodyne_results directory
 
 Usage:
-    python plot_experimental_data.py [--config CONFIG_FILE] [--output-dir OUTPUT_DIR] [--verbose]
+    python plot_experimental_data.py [--config CONFIG_FILE] [--verbose]
 
 Example:
-    python plot_experimental_data.py --config my_config_simon.json --output-dir ./validation_plots --verbose
+    python plot_experimental_data.py --config my_config_simon.json --verbose
 
 Author: Generated for Homodyne XPCS Analysis Package
 Based on: He et al. PNAS 2024 - Transport coefficient approach
@@ -95,17 +95,15 @@ def validate_config_file(config_path: Path) -> dict:
 
 
 def main():
-    """Main function for experimental data plotting."""
+    """Main function for experimental C2 data plotting."""
     parser = argparse.ArgumentParser(
-        description="Create experimental data validation plots using homodyne package",
+        description="Create experimental C2 data validation plots using homodyne package",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s                                    # Use default config file
   %(prog)s --config my_config_simon.json     # Use specific config file
-  %(prog)s --output-dir ./validation_plots   # Custom output directory
   %(prog)s --verbose                          # Enable debug logging
-  %(prog)s --config my_config_simon.json --output-dir ./plots --verbose
         """,
     )
 
@@ -117,23 +115,19 @@ Examples:
     )
 
     parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default="./experimental_data_plots",
-        help="Output directory for plots (default: %(default)s)",
-    )
-
-    parser.add_argument(
         "--verbose", action="store_true", help="Enable verbose DEBUG logging"
     )
 
     args = parser.parse_args()
+    
+    # Set fixed output directory
+    output_dir = Path("./homodyne_results")
 
     # Setup logging
     setup_logging(args.verbose)
     logger = logging.getLogger(__name__)
 
-    logger.info("🔬 Homodyne XPCS Experimental Data Plotter")
+    logger.info("🔬 Homodyne XPCS Experimental C2 Data Plotter")
     logger.info("=" * 50)
 
     try:
@@ -151,7 +145,7 @@ Examples:
         logger.info(f"Sample: {sample_description}")
         logger.info(f"Experiment: {experiment_name}")
         logger.info(f"Time step: {dt} seconds")
-        logger.info(f"Output directory: {args.output_dir.absolute()}")
+        logger.info(f"Output directory: {output_dir.absolute()}")
 
         # Import homodyne modules
         try:
@@ -201,20 +195,20 @@ Examples:
             sys.exit(1)
 
         # Create output directory
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"✓ Output directory created: {args.output_dir.absolute()}")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"✓ Output directory created: {output_dir.absolute()}")
 
-        # Generate experimental data plots
+        # Generate experimental C2 data plots
         try:
-            logger.info("Creating experimental data validation plots...")
+            logger.info("Creating experimental C2 data validation plots...")
             logger.info(
-                "Generating heatmaps, diagonal slices, cross-sections, and statistics..."
+                "Generating C2 heatmaps, diagonal slices, cross-sections, and statistics..."
             )
 
             success = plot_experimental_c2_data(
                 c2_experimental=c2_experimental,
                 phi_angles=phi_angles,
-                outdir=args.output_dir,
+                outdir=output_dir,
                 config=config,
                 dt=dt,
                 sample_description=f"{sample_description} - {experiment_name}",
@@ -222,19 +216,19 @@ Examples:
 
             if success:
                 logger.info(
-                    "✓ Experimental data validation plots created successfully!"
+                    "✓ Experimental C2 data validation plots created successfully!"
                 )
                 logger.info(
-                    f"📊 Plots saved to: {args.output_dir / 'experimental_data_validation'}"
+                    f"📊 Plots saved to: {output_dir / 'experimental_data_validation'}"
                 )
 
                 # Provide information about what was plotted
                 logger.info("")
-                logger.info("📋 Generated plots include:")
-                logger.info("  • Full correlation function heatmaps g₂(t₁,t₂)")
+                logger.info("📋 Generated C2 plots include:")
+                logger.info("  • Full C2 correlation function heatmaps g₂(t₁,t₂)")
                 logger.info("  • Diagonal slices g₂(t,t) showing temporal decay")
                 logger.info("  • Cross-sectional profiles at different time points")
-                logger.info("  • Statistical summaries with data quality metrics")
+                logger.info("  • Statistical summaries with C2 data quality metrics")
                 logger.info("")
                 logger.info("🔍 Quality indicators to check:")
                 logger.info("  • Mean values should be around 1.0 (expected for g₂)")
@@ -243,7 +237,7 @@ Examples:
                 logger.info("  • Structure should be consistent across angles")
 
             else:
-                logger.error("❌ Failed to create experimental data plots")
+                logger.error("❌ Failed to create experimental C2 data plots")
                 logger.error("Check the log messages above for specific error details")
                 sys.exit(1)
 
@@ -257,15 +251,15 @@ Examples:
 
         # Summary and next steps
         logger.info("")
-        logger.info("🎉 Experimental data plotting completed successfully!")
+        logger.info("🎉 Experimental C2 data plotting completed successfully!")
         logger.info("=" * 50)
         logger.info("📁 Results location:")
-        logger.info(f"   {args.output_dir.absolute()}")
+        logger.info(f"   {output_dir.absolute()}")
         logger.info("")
         logger.info("🚀 Next steps:")
-        logger.info("1. Review the validation plots to assess data quality")
+        logger.info("1. Review the C2 validation plots to assess data quality")
         logger.info("2. Check for any quality warnings in the statistics panels")
-        logger.info("3. If data looks good, proceed with homodyne analysis:")
+        logger.info("3. If C2 data looks good, proceed with homodyne analysis:")
         logger.info(f"   python run_homodyne.py --config {args.config}")
         logger.info("4. For comprehensive analysis with validation plots:")
         logger.info(

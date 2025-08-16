@@ -63,7 +63,7 @@ class TestIsotropicModeIntegration:
             "advanced_settings": {
                 "data_loading": {"use_diagonal_correction": False},
                 "chi_squared_calculation": {
-                    "scaling_optimization": False,  # Should be automatically disabled
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
                     "validity_check": {"check_positive_D0": True, "check_positive_gamma_dot_t0": True}
                 }
             },

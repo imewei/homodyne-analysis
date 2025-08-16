@@ -1156,18 +1156,37 @@ class HomodyneAnalysisCore:
                 exp = c2_experimental[i].ravel()
                 n_data_angle = len(exp)  # Number of data points for this angle
 
-                # Optimal scaling
-                if chi_config.get("scaling_optimization", True):
-                    A = np.vstack([theory, np.ones(len(theory))]).T
-                    scaling, residuals, _, _ = np.linalg.lstsq(A, exp, rcond=None)
+                # SCALING OPTIMIZATION (ALWAYS ENABLED)
+                # =====================================
+                # This performs least squares fitting to determine the optimal scaling relationship:
+                # g₂ = offset + contrast × g₁ where:
+                # - g₁ is the theoretical correlation function 
+                # - g₂ is the experimental correlation function
+                # - contrast and offset are fitted scaling parameters
+                #
+                # WHY THIS IS ESSENTIAL:
+                # This scaling optimization is ALWAYS enabled because it is fundamental to proper
+                # chi-squared calculation. Without it, we would compare raw theoretical values 
+                # directly to experimental data, which ignores systematic scaling factors and 
+                # offsets that are physically present due to:
+                # - Instrumental response functions
+                # - Background signals  
+                # - Detector gain variations
+                # - Normalization differences
+                #
+                # The chi-squared is calculated as χ² = Σ(experimental - fitted)²/σ²
+                # where fitted = theory × contrast + offset from the optimal scaling.
+                # This provides meaningful fitting quality assessment regardless of the number
+                # of scattering angles or analysis mode.
+                #
+                # Mathematical implementation: solve A·x = b where A = [theory, ones], x = [contrast, offset]
+                A = np.vstack([theory, np.ones(len(theory))]).T
+                scaling, residuals, _, _ = np.linalg.lstsq(A, exp, rcond=None)
 
-                    if len(scaling) == 2:
-                        contrast, offset = scaling
-                        fitted = theory * contrast + offset
-                        scaling_solutions.append([contrast, offset])
-                    else:
-                        fitted = theory
-                        scaling_solutions.append([1.0, 0.0])
+                if len(scaling) == 2:
+                    contrast, offset = scaling
+                    fitted = theory * contrast + offset
+                    scaling_solutions.append([contrast, offset])
                 else:
                     fitted = theory
                     scaling_solutions.append([1.0, 0.0])

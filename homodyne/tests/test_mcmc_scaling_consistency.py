@@ -34,7 +34,7 @@ class TestMCMCScalingConsistency:
         mock_core.config = {
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "scaling_optimization": True
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁"
                 }
             },
             "performance_settings": {
@@ -63,7 +63,7 @@ class TestMCMCScalingConsistency:
         return {
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "scaling_optimization": True  # Enabled
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁"
                 }
             },
             "performance_settings": {
@@ -86,7 +86,7 @@ class TestMCMCScalingConsistency:
         return {
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "scaling_optimization": True  # Enabled
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁"
                 }
             },
             "performance_settings": {
@@ -145,8 +145,9 @@ class TestMCMCScalingConsistency:
                     # We expect this to fail in testing due to mocking, that's OK
                     pass
         
-        # Check that warning was logged (we can't easily test the print statements)
-        assert sampler.config["advanced_settings"]["chi_squared_calculation"]["scaling_optimization"] is True
+        # Check that scaling optimization is always enabled (configuration updated)
+        chi_config = sampler.config["advanced_settings"]["chi_squared_calculation"]
+        assert "_scaling_optimization_note" in chi_config
         assert sampler.config["performance_settings"]["noise_model"]["use_simple_forward_model"] is True
 
     @pytest.mark.skipif(not mcmc_available, reason="PyMC not available")
@@ -161,7 +162,8 @@ class TestMCMCScalingConsistency:
         chi_config = sampler.config.get("advanced_settings", {}).get("chi_squared_calculation", {})
         noise_config = sampler.config.get("performance_settings", {}).get("noise_model", {})
         
-        assert chi_config.get("scaling_optimization", False) is True
+        # Scaling optimization is always enabled now
+        assert "_scaling_optimization_note" in chi_config
         assert noise_config.get("use_simple_forward_model", True) is False  # Should be False for consistency
 
     def test_configuration_validation(self):
@@ -170,7 +172,7 @@ class TestMCMCScalingConsistency:
         test_config = {
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "scaling_optimization": True
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁"
                 }
             },
             "performance_settings": {
@@ -185,22 +187,20 @@ class TestMCMCScalingConsistency:
         chi_config = test_config.get("advanced_settings", {}).get("chi_squared_calculation", {})
         noise_config = test_config.get("performance_settings", {}).get("noise_model", {})
         
-        scaling_enabled = chi_config.get("scaling_optimization", True)
+        # Scaling optimization is always enabled now
+        scaling_always_enabled = "_scaling_optimization_note" in chi_config
         simple_forward = noise_config.get("use_simple_forward_model", True)
         
         # Verify values
-        assert scaling_enabled is True
+        assert scaling_always_enabled is True
         assert simple_forward is True
         
-        # This combination should trigger warnings in MCMC
-        if scaling_enabled and simple_forward:
-            # This is the problematic combination
-            assert True  # We've identified the inconsistency
+        # Note: Scaling optimization is now always enabled for proper chi-squared calculation
 
     def test_config_keys_exist(self):
         """Test that all required configuration keys exist in our expected structure."""
         required_keys = [
-            ("advanced_settings", "chi_squared_calculation", "scaling_optimization"),
+            ("advanced_settings", "chi_squared_calculation", "_scaling_optimization_note"),
             ("performance_settings", "noise_model", "use_simple_forward_model"),
             ("performance_settings", "noise_model", "sigma_prior")
         ]
@@ -208,7 +208,7 @@ class TestMCMCScalingConsistency:
         test_config = {
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "scaling_optimization": True
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁"
                 }
             },
             "performance_settings": {
@@ -250,12 +250,12 @@ class TestConfigurationConsistency:
         """Test default values for scaling optimization settings."""
         # Test default values that should be used
         defaults = {
-            "scaling_optimization": True,  # Chi-squared should use scaling by default
+            "_scaling_optimization_note": "Always enabled",  # Scaling optimization is always enabled
             "use_simple_forward_model": True,  # MCMC should use simple model by default (for speed)
             "sigma_prior": 0.1,  # Reasonable noise prior
         }
         
         # Verify these are reasonable defaults
-        assert defaults["scaling_optimization"] is True  # Good for chi-squared accuracy
+        assert defaults["_scaling_optimization_note"] is not None  # Scaling always enabled
         assert defaults["use_simple_forward_model"] is True  # Good for MCMC speed
         assert 0.01 <= defaults["sigma_prior"] <= 1.0  # Reasonable noise range

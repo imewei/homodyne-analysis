@@ -920,19 +920,19 @@ class TestPlotFormats:
 
 
 class TestScalingOptimization:
-    """Test scaling optimization functionality in plotting."""
+    """Test scaling optimization functionality in plotting (always enabled)."""
 
-    def test_plot_c2_heatmaps_with_scaling_optimization_enabled(
+    def test_plot_c2_heatmaps_with_scaling_optimization_always_enabled(
         self,
         temp_directory,
         dummy_correlation_data,
         dummy_theoretical_data,
         dummy_phi_angles,
     ):
-        """Test C2 heatmaps with scaling optimization enabled."""
+        """Test C2 heatmaps with scaling optimization (always enabled)."""
         config_with_scaling = {
             "chi_squared_calculation": {
-                "scaling_optimization": True,
+                "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
             },
             "output_settings": {
                 "plotting": {
@@ -958,41 +958,6 @@ class TestScalingOptimization:
         plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
         assert len(plot_files) == len(dummy_phi_angles)
 
-    def test_plot_c2_heatmaps_with_scaling_optimization_disabled(
-        self,
-        temp_directory,
-        dummy_correlation_data,
-        dummy_theoretical_data,
-        dummy_phi_angles,
-    ):
-        """Test C2 heatmaps with scaling optimization disabled."""
-        config_without_scaling = {
-            "chi_squared_calculation": {
-                "scaling_optimization": False,
-            },
-            "output_settings": {
-                "plotting": {
-                    "plot_format": "png",
-                    "dpi": 100,
-                    "figure_size": [6, 4],
-                    "create_plots": True,
-                }
-            }
-        }
-
-        success = plot_c2_heatmaps(
-            dummy_correlation_data,
-            dummy_theoretical_data,
-            dummy_phi_angles,
-            temp_directory,
-            config_without_scaling,
-        )
-
-        assert success is True
-        
-        # Check that files were created
-        plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
-        assert len(plot_files) == len(dummy_phi_angles)
 
     def test_residual_calculation_with_fitted_values(
         self,
@@ -1013,7 +978,7 @@ class TestScalingOptimization:
         
         config_with_scaling = {
             "chi_squared_calculation": {
-                "scaling_optimization": True,
+                "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
             },
             "output_settings": {
                 "plotting": {
@@ -1055,7 +1020,7 @@ class TestScalingOptimization:
         
         config_with_scaling = {
             "chi_squared_calculation": {
-                "scaling_optimization": True,
+                "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
             },
             "output_settings": {
                 "plotting": {
@@ -1081,15 +1046,15 @@ class TestScalingOptimization:
         plot_files = list(temp_directory.glob("c2_heatmaps_*.png"))
         assert len(plot_files) == len(dummy_phi_angles)
 
-    def test_scaling_optimization_default_behavior(
+    def test_scaling_optimization_always_enabled(
         self,
         temp_directory,
         dummy_correlation_data,
         dummy_theoretical_data,
         dummy_phi_angles,
     ):
-        """Test that scaling optimization is enabled by default."""
-        # Config without explicit scaling_optimization setting
+        """Test that scaling optimization is always enabled (even without explicit config)."""
+        # Config without explicit chi_squared_calculation section
         config_minimal = {
             "output_settings": {
                 "plotting": {

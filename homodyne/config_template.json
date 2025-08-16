@@ -481,8 +481,51 @@
       "method": "standard",
       "_method_note": "Options: standard, weighted, robust",
       
-      "scaling_optimization": true,
-      "_scaling_optimization_note": "Optimize parameter scaling for numerical stability",
+      "_scaling_optimization_documentation": {
+        "_description": "SCALING OPTIMIZATION (ALWAYS ENABLED)",
+        "_overview": "Scaling optimization is always enabled and performs least squares fitting to determine optimal scaling relationship between experimental and theoretical data",
+        
+        "_mathematical_relationship": "g₂ = offset + contrast × g₁",
+        "_where": {
+          "g₁": "theoretical correlation function",
+          "g₂": "experimental correlation function", 
+          "contrast": "fitted scaling parameter (multiplicative factor)",
+          "offset": "fitted baseline parameter (additive factor)"
+        },
+        
+        "_physical_significance": {
+          "_purpose": "Accounts for systematic scaling factors present in experimental data",
+          "_factors_addressed": [
+            "Instrumental response functions",
+            "Background signals",
+            "Detector gain variations", 
+            "Normalization differences",
+            "Systematic measurement offsets"
+          ]
+        },
+        
+        "_implementation": {
+          "_method": "Least squares fitting using numpy.linalg.lstsq",
+          "_matrix_equation": "A·x = b where A = [theory, ones], x = [contrast, offset], b = experimental",
+          "_solution": "fitted = theory × contrast + offset"
+        },
+        
+        "_chi_squared_calculation": {
+          "_formula": "χ² = Σ(experimental - fitted)²/σ²",
+          "_fitted_definition": "fitted = theory × contrast + offset from optimal scaling",
+          "_significance": "Provides meaningful fitting quality assessment regardless of analysis mode or number of angles"
+        },
+        
+        "_always_enabled_because": [
+          "Essential for proper chi-squared calculation",
+          "Required for meaningful comparison between experimental and theoretical data",
+          "Accounts for unavoidable systematic factors in real measurements",
+          "Ensures consistency across different optimization methods (classical, MCMC, Bayesian)",
+          "Independent of number of scattering angles or analysis mode"
+        ]
+      },
+      
+      "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
       
       "uncertainty_estimation_factor": 0.1,
       "_uncertainty_estimation_factor_note": "Factor for estimating measurement uncertainties",

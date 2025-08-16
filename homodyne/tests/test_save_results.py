@@ -34,7 +34,7 @@ class TestSaveResultsWithConfig:
             },
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "scaling_optimization": True,
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
                     "uncertainty_calculation": {
                         "enable_uncertainty": True,
                         "report_uncertainty": True

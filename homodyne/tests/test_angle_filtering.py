@@ -65,7 +65,7 @@ class TestAngleFilteringCore:
                     "validity_check": {"check_positive_D0": True},
                     "uncertainty_estimation_factor": 0.1,
                     "minimum_sigma": 1e-10,
-                    "scaling_optimization": True,
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
                 },
             },
             "parameter_space": {
