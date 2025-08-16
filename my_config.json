@@ -18,7 +18,7 @@
   "experimental_data": {
     "_comment": "Data source and loading configuration",
     "description": "Data source and loading configuration",
-    "data_folder_path": "./data/SAMPLE_NAME/",
+    "data_folder_path": "./data/C020/",
     "_data_folder_path_note": "Path to directory containing experimental data files",
     "data_file_name": "your_data_file.hdf",
     "_data_file_name_note": "Main experimental data file (HDF5 format recommended)",
@@ -28,7 +28,7 @@
     "_phi_angles_file_note": "File containing phi angles (one angle per line)",
     "exchange_key": "exchange",
     "_exchange_key_note": "HDF5 dataset key for correlation data",
-    "cache_file_path": "./data/SAMPLE_NAME/",
+    "cache_file_path": "./data/C020/",
     "_cache_file_path_note": "Directory for cached processed data",
     "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
     "_cache_filename_template_note": "Template for cache filenames with frame range",
