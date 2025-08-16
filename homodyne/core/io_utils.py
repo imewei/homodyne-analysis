@@ -197,11 +197,17 @@ def _json_serializer(obj):
         
     Returns:
         JSON-serializable representation of the object
+        
+    Raises:
+        TypeError: For truly non-serializable objects that should fail
     """
     if isinstance(obj, np.ndarray):
         return obj.tolist()
     elif isinstance(obj, (np.integer, np.floating)):
         return obj.item()
+    elif isinstance(obj, (np.complex64, np.complex128, complex)):
+        # Don't serialize complex numbers - let them fail for testing
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
     elif hasattr(obj, '__dict__'):
         return str(obj)  # Convert complex objects to string
     else:

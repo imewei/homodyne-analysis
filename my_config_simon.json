@@ -21,7 +21,7 @@
     "_data_folder_path_note": "Path to directory containing experimental data files",
     "data_file_name": "your_data_file.hdf",
     "_data_file_name_note": "Main experimental data file (HDF5 format recommended)",
-    "phi_angles_path": "./data/phi_angles/",
+    "phi_angles_path": "./data/Simon/",
     "_phi_angles_path_note": "Directory containing scattering angle information",
     "phi_angles_file": "phi_list.txt",
     "_phi_angles_file_note": "File containing phi angles (one angle per line)",
@@ -59,7 +59,7 @@
       "dt": 0.5,
       "_dt_note": "Time step between correlation frames (adjust based on your acquisition)",
       "dt_unit": "seconds",
-      "start_frame": 1,
+      "start_frame": 400,
       "_start_frame_note": "First frame to analyze (skip initial equilibration)",
       "end_frame": 1000,
       "_end_frame_note": "Last frame to analyze (or null for all frames)",
@@ -102,13 +102,9 @@
     "_comment": "Starting values for optimization - CRITICAL: Adjust these for your system",
     "description": "Starting values for optimization based on physical model",
     "values": [
-      23312.0668,
-      -0.803648101,
-      1070.69538,
-      0.000629448943,
-      -0.397625233,
-      -5.43178144e-05,
-      0.967322591
+      1.80E+04,
+      -1.59E+00,
+      3.10E+00
     ],
     "_values_note": "Order: [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
     "parameter_names": [
@@ -167,11 +163,6 @@
           "min_angle": -10.0,
           "max_angle": 10.0,
           "_note": "First angular range for optimization (around 0 degrees)"
-        },
-        {
-          "min_angle": 170.0,
-          "max_angle": 190.0,
-          "_note": "Second angular range for optimization (around 180 degrees)"
         }
       ],
       "_target_ranges_note": "Angular ranges in degrees where optimization focuses",
@@ -312,7 +303,7 @@
   "analysis_settings": {
     "_comment": "Analysis mode and model configuration",
     "description": "Configure the analysis mode for different experimental conditions",
-    "static_mode": false,
+    "static_mode": true,
     "_static_mode_note": "Set to true for static (no-flow) analysis where γ̇=0, β=0, γ̇_offset=0, φ₀=0",
     "_static_mode_description": "In static mode, sinc²(0)=1 and only diffusion contribution g₁_diff remains: g₂(t₁,t₂) ~ [exp(-q²/2 ∫|t₂-t₁| D(t')dt')]². Angular offset φ₀ is irrelevant and automatically set to 0.",
     "model_description": {

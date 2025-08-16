@@ -286,6 +286,23 @@ class ConfigManager:
         if "analysis_settings" in self.config:
             analysis = self.config["analysis_settings"]
             self._cached_values["static_mode"] = analysis.get("static_mode", False)
+            
+            # Cache static submode if static mode is enabled
+            if self._cached_values["static_mode"]:
+                raw_submode = analysis.get("static_submode", "anisotropic")
+                if raw_submode is None:
+                    submode = "anisotropic"
+                else:
+                    submode_str = str(raw_submode).lower().strip()
+                    if submode_str in ["isotropic", "iso"]:
+                        submode = "isotropic"
+                    elif submode_str in ["anisotropic", "aniso"]:
+                        submode = "anisotropic"
+                    else:
+                        submode = "anisotropic"
+                self._cached_values["static_submode"] = submode
+            else:
+                self._cached_values["static_submode"] = None
         
         # Cache parameter bounds for faster access
         if "parameter_space" in self.config:
@@ -513,12 +530,26 @@ class ConfigManager:
     def is_angle_filtering_enabled(self) -> bool:
         """
         Check if angle filtering is enabled in configuration.
+        
+        Automatically returns False for static isotropic mode, regardless of 
+        configuration setting.
 
         Returns
         -------
         bool
             True if angle filtering should be used, False otherwise
         """
+        # Always disable angle filtering for static isotropic mode
+        if self.is_static_isotropic_enabled():
+            # Warn if user explicitly enabled angle filtering but it's ignored
+            explicit_enabled = self.get_angle_filtering_config().get("enabled", True)
+            if explicit_enabled:
+                logger.debug(
+                    "Angle filtering disabled for static isotropic mode "
+                    "(ignoring configuration setting)"
+                )
+            return False
+            
         return self.get_angle_filtering_config().get("enabled", True)
 
     def get_target_angle_ranges(self) -> List[Tuple[float, float]]:
@@ -588,6 +619,63 @@ class ConfigManager:
         result = self.get("analysis_settings", "static_mode", default=False)
         return bool(result)
 
+    def get_static_submode(self) -> Optional[str]:
+        """
+        Get the static sub-mode for analysis.
+        
+        Returns
+        -------
+        Optional[str]
+            "isotropic", "anisotropic", or None if static mode is disabled
+        """
+        # Return None if static mode is not enabled
+        if not self.is_static_mode_enabled():
+            return None
+            
+        # Use cached value for performance
+        if hasattr(self, '_cached_values') and 'static_submode' in self._cached_values:
+            return self._cached_values['static_submode']
+            
+        # Get submode from configuration (case-insensitive)
+        raw_submode = self.get("analysis_settings", "static_submode", default="anisotropic")
+        if raw_submode is None:
+            submode = "anisotropic"  # Default for backward compatibility
+        else:
+            submode_str = str(raw_submode).lower().strip()
+            if submode_str in ["isotropic", "iso"]:
+                submode = "isotropic"
+            elif submode_str in ["anisotropic", "aniso"]:
+                submode = "anisotropic"
+            else:
+                logger.warning(
+                    f"Invalid static_submode '{raw_submode}', defaulting to 'anisotropic'"
+                )
+                submode = "anisotropic"
+                
+        return submode
+    
+    def is_static_isotropic_enabled(self) -> bool:
+        """
+        Check if static isotropic mode is enabled.
+        
+        Returns
+        -------
+        bool
+            True if analysis mode is static isotropic, False otherwise
+        """
+        return self.is_static_mode_enabled() and self.get_static_submode() == "isotropic"
+    
+    def is_static_anisotropic_enabled(self) -> bool:
+        """
+        Check if static anisotropic mode is enabled.
+        
+        Returns
+        -------
+        bool
+            True if analysis mode is static anisotropic, False otherwise
+        """
+        return self.is_static_mode_enabled() and self.get_static_submode() == "anisotropic"
+
     def get_analysis_mode(self) -> str:
         """
         Get the current analysis mode.
@@ -595,9 +683,16 @@ class ConfigManager:
         Returns
         -------
         str
-            "static" if static mode is enabled, "laminar_flow" otherwise
+            "static_isotropic", "static_anisotropic", or "laminar_flow"
         """
-        return "static" if self.is_static_mode_enabled() else "laminar_flow"
+        if not self.is_static_mode_enabled():
+            return "laminar_flow"
+            
+        submode = self.get_static_submode()
+        if submode == "isotropic":
+            return "static_isotropic"
+        else:
+            return "static_anisotropic"
 
     def get_effective_parameter_count(self) -> int:
         """

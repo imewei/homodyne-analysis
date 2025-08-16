@@ -1,0 +1,519 @@
+{
+  "_template_info": {
+    "name": "Homodyne Laminar Flow Mode Configuration",
+    "version": "2.0",
+    "description": "Specialized configuration for laminar flow scattering analysis",
+    "based_on": "config_template.json - specialized for laminar flow mode",
+    "usage": "Copy this template for laminar flow scattering experiments",
+    "mode": "laminar_flow",
+    "key_features": [
+      "Dynamic laminar flow analysis",
+      "All 7 parameters active: D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0",
+      "phi_angles_file loaded for angle-dependent shear effects",
+      "Angle filtering enabled for optimization",
+      "Full flow and diffusion physics model"
+    ]
+  },
+
+  "metadata": {
+    "_comment": "Project metadata for laminar flow analysis",
+    "config_version": "6.0",
+    "description": "Laminar Flow Scattering Analysis - Full flow and diffusion model",
+    "analysis_mode": "laminar_flow",
+    "created_date": "YYYY-MM-DD",
+    "updated_date": "YYYY-MM-DD",
+    "authors": ["Your Name"],
+    "institution": "Your Institution",
+    "experiment_name": "Laminar Flow Scattering Experiment",
+    "sample_description": "Sample description for flow measurement under laminar conditions"
+  },
+
+  "experimental_data": {
+    "_comment": "Data configuration for laminar flow mode",
+    "description": "Full data configuration - phi_angles_file required for flow analysis",
+    
+    "data_folder_path": "./data/SAMPLE_NAME/",
+    "data_file_name": "your_data_file.hdf",
+    
+    "phi_angles_path": "./data/phi_angles/",
+    "_phi_angles_path_note": "REQUIRED: Directory with angle information for flow analysis",
+    
+    "phi_angles_file": "phi_list.txt",
+    "_phi_angles_file_note": "REQUIRED: File with phi angles - essential for flow effects",
+    
+    "exchange_key": "exchange",
+    "cache_file_path": "./data/SAMPLE_NAME/",
+    "cache_filename_template": "cached_c2_flow_frames_{start_frame}_{end_frame}.npz",
+    
+    "cache_compression": true,
+    "data_type": "float64",
+    "file_format": "NPZ",
+    
+    "preprocessing": {
+      "_comment": "Full preprocessing for laminar flow mode",
+      "apply_diagonal_correction": true,
+      "vectorized_correction": true,
+      "cache_processed_data": true,
+      "normalize_data": true,
+      "normalization_method": "baseline"
+    }
+  },
+
+  "analyzer_parameters": {
+    "_comment": "Analysis parameters for laminar flow mode",
+    
+    "temporal": {
+      "dt": 0.1,
+      "_dt_note": "Time step - critical for both diffusion and flow dynamics",
+      "dt_unit": "seconds",
+      "start_frame": 1001,
+      "end_frame": 2000
+    },
+    
+    "scattering": {
+      "wavevector_q": 0.0054,
+      "_wavevector_q_note": "q-vector magnitude - affects both diffusion and flow terms",
+      "q_unit": "Å⁻¹"
+    },
+    
+    "geometry": {
+      "_comment": "Geometry parameters - gap is important for flow calculations",
+      "stator_rotor_gap": 2000000,
+      "_stator_rotor_gap_note": "IMPORTANT: Gap size affects shear rate calculations",
+      "gap_unit": "Å",
+      "gap_in_microns": 200,
+      "_gap_note": "Critical parameter for flow physics - sinc argument calculation"
+    },
+    
+    "computational": {
+      "num_threads": 8,
+      "auto_detect_cores": true,
+      "max_threads_limit": 16,
+      "memory_limit_gb": 8
+    }
+  },
+
+  "initial_parameters": {
+    "_comment": "Initial parameters for laminar flow mode - all 7 parameters active",
+    "description": "All parameters are physically meaningful and optimized in laminar flow mode",
+    
+    "values": [
+      23312.0668,
+      -0.803648101,
+      1070.69538,
+      0.000629448943,
+      -0.397625233,
+      -0.0000543178144,
+      0.967322591
+    ],
+    "_values_note": "All 7 parameters: [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
+    
+    "parameter_names": [
+      "D0",
+      "alpha", 
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ],
+    
+    "units": [
+      "Å²/s",
+      "dimensionless",
+      "Å²/s", 
+      "s⁻¹",
+      "dimensionless",
+      "s⁻¹",
+      "degrees"
+    ],
+    
+    "physical_meaning": {
+      "D0": "Reference diffusion coefficient - ACTIVE PARAMETER",
+      "alpha": "Power-law exponent for D(t) evolution - ACTIVE PARAMETER",
+      "D_offset": "Baseline diffusion coefficient - ACTIVE PARAMETER",
+      "gamma_dot_t0": "Reference shear rate - ACTIVE PARAMETER",
+      "beta": "Power-law exponent for γ̇(t) evolution - ACTIVE PARAMETER",
+      "gamma_dot_t_offset": "Baseline shear rate - ACTIVE PARAMETER",
+      "phi0": "Angular offset between flow direction and scattering vector - ACTIVE PARAMETER"
+    },
+    
+    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+    "_active_parameters_note": "All 7 parameters are optimized in laminar flow mode",
+    
+    "model_equations": {
+      "_comment": "Complete mathematical model for laminar flow",
+      "diffusion": "D(t) = D₀(t/t₀)^α + D_offset",
+      "shear_rate": "γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset", 
+      "correlation": "c₂ = 1 + β[exp(-q²∫D(t)dt)] × sinc²[(qh/2π)∫γ̇(t)cos(φ₀-φ)dt]",
+      "sinc_argument": "Φ = (qh/2π)cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
+    }
+  },
+
+  "optimization_config": {
+    "_comment": "Optimization for laminar flow mode - all parameters active",
+    
+    "angle_filtering": {
+      "_comment": "Angle filtering highly recommended for 7-parameter optimization",
+      "enabled": true,
+      "_enabled_note": "RECOMMENDED: Reduces computational cost for 7-parameter optimization",
+      "target_ranges": [
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0,
+          "_note": "Primary angular range - high flow sensitivity"
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0,
+          "_note": "Secondary angular range - complementary information"
+        }
+      ],
+      "fallback_to_all_angles": true,
+      "_fallback_note": "Use all angles if no angles found in target ranges",
+      "_performance_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits"
+    },
+    
+    "classical_optimization": {
+      "methods": ["Nelder-Mead"],
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": 5000,
+          "_maxiter_note": "Increased iterations for complex 7-parameter optimization",
+          "xatol": 1e-8,
+          "fatol": 1e-8,
+          "adaptive": true
+        }
+      },
+      "_optimization_note": "7-parameter optimization is complex - good initial values critical"
+    },
+    
+    "mcmc_sampling": {
+      "enabled": true,
+      "sampler": "NUTS",
+      "draws": 10000,
+      "_draws_note": "More draws needed for 7-parameter posterior exploration",
+      "tune": 1000,
+      "chains": 4,
+      "cores": 4,
+      "target_accept": 0.95,
+      "max_treedepth": 10,
+      "return_inferencedata": true,
+      "_mcmc_note": "MCMC is particularly valuable for flow analysis - captures parameter correlations"
+    }
+  },
+
+  "parameter_space": {
+    "_comment": "Parameter bounds for all 7 parameters in laminar flow mode",
+    
+    "bounds": [
+      {
+        "name": "D0",
+        "min": 1e-3,
+        "max": 1e6,
+        "type": "log-uniform",
+        "prior_mu": 4.6,
+        "prior_sigma": 0.5,
+        "unit": "Å²/s",
+        "physical_constraint": "positive",
+        "_note": "Reference diffusion coefficient - log-uniform for wide range"
+      },
+      {
+        "name": "alpha",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.5,
+        "unit": "dimensionless",
+        "physical_constraint": "none",
+        "_note": "Diffusion time dependence - negative for subdiffusion"
+      },
+      {
+        "name": "D_offset", 
+        "min": -5000,
+        "max": 5000,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 500.0,
+        "unit": "Å²/s",
+        "physical_constraint": "none",
+        "_note": "Baseline diffusion coefficient - can be negative"
+      },
+      {
+        "name": "gamma_dot_t0",
+        "min": 1e-6,
+        "max": 1.0,
+        "type": "log-uniform",
+        "prior_mu": -4.60517,
+        "prior_sigma": 0.5,
+        "unit": "s⁻¹",
+        "physical_constraint": "positive",
+        "_note": "Reference shear rate - must be positive, log-uniform"
+      },
+      {
+        "name": "beta",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.5,
+        "unit": "dimensionless",
+        "physical_constraint": "none",
+        "_note": "Shear rate time dependence - 0 for steady flow"
+      },
+      {
+        "name": "gamma_dot_t_offset",
+        "min": -0.1,
+        "max": 0.1,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.05,
+        "unit": "s⁻¹",
+        "physical_constraint": "none",
+        "_note": "Baseline shear rate - often small or zero"
+      },
+      {
+        "name": "phi0",
+        "min": -15.0,
+        "max": 15.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 15.0,
+        "unit": "degrees",
+        "physical_constraint": "angular",
+        "_note": "Angular offset - alignment between flow and scattering geometry"
+      }
+    ],
+    
+    "_parameter_correlations_note": "Parameters can be highly correlated in flow analysis - MCMC essential for proper uncertainty quantification"
+  },
+
+  "analysis_settings": {
+    "_comment": "Laminar flow mode configuration",
+    
+    "static_mode": false,
+    "_static_mode_note": "REQUIRED: Must be false for laminar flow analysis",
+    
+    "static_submode": null,
+    "_static_submode_note": "Not applicable for laminar flow mode",
+    
+    "model_description": {
+      "current_mode": "laminar_flow_case",
+      "equation": "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂)",
+      "components": {
+        "g1_diff": "exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) - diffusion contribution",
+        "g1_shear": "sinc²(Φ) where Φ = (qh/2π)cos(φ₀-φ)∫γ̇(t)dt - flow contribution"
+      },
+      "description": "Combined diffusion and flow dynamics with full angular dependence",
+      "key_features": [
+        "Time-dependent diffusion D(t) = D₀(t/t₀)^α + D_offset",
+        "Time-dependent shear rate γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset",
+        "Angular dependence through cos(φ₀-φ) term",
+        "7 active parameters capturing full physics",
+        "Sinc function from shear-induced decorrelation"
+      ]
+    }
+  },
+
+  "advanced_settings": {
+    "data_loading": {
+      "use_diagonal_correction": true,
+      "vectorized_diagonal_fix": true
+    },
+    
+    "chi_squared_calculation": {
+      "method": "standard",
+      "scaling_optimization": true,
+      "_scaling_optimization_note": "IMPORTANT: Per-angle scaling critical for flow analysis",
+      "uncertainty_estimation_factor": 0.1,
+      "minimum_sigma": 1e-10,
+      "fast_computation": true,
+      
+      "uncertainty_calculation": {
+        "enable_uncertainty": true,
+        "_enable_uncertainty_note": "Uncertainty calculation valuable for flow fit quality assessment",
+        "report_uncertainty": true,
+        "minimum_angles_for_uncertainty": 2
+      },
+      
+      "validity_check": {
+        "check_positive_D0": true,
+        "check_positive_gamma_dot_t0": true,
+        "_check_positive_gamma_dot_t0_note": "Critical - shear rate must be positive",
+        "check_positive_time_dependent": true,
+        "check_parameter_bounds": true
+      }
+    },
+    
+    "numerical_integration": {
+      "_comment": "High precision integration important for flow calculations",
+      "method": "simpson",
+      "relative_tolerance": 1e-8,
+      "absolute_tolerance": 1e-12,
+      "_integration_note": "Flow model requires careful integration of time-dependent functions"
+    }
+  },
+
+  "performance_settings": {
+    "caching": {
+      "enable_memory_cache": true,
+      "enable_disk_cache": true,
+      "cache_size_limit_mb": 1000,
+      "auto_cleanup": true
+    },
+    
+    "parallel_processing": {
+      "enable_multiprocessing": true,
+      "chunk_size": "auto",
+      "backend": "threading",
+      "_performance_note": "Parallelization important for complex 7-parameter optimization"
+    },
+    
+    "noise_model": {
+      "use_simple_forward_model": false,
+      "_use_simple_forward_model_note": "Full forward model recommended for flow analysis consistency",
+      "sigma_prior": 0.1,
+      "_noise_model_note": "Full model maintains consistency between classical and MCMC approaches"
+    }
+  },
+
+  "validation_rules": {
+    "_comment": "Enhanced validation for laminar flow analysis",
+    
+    "fit_quality": {
+      "overall_chi_squared": {
+        "excellent_threshold": 2.0,
+        "acceptable_threshold": 5.0,
+        "warning_threshold": 10.0,
+        "critical_threshold": 20.0,
+        "_flow_note": "Flow models can be complex - slightly higher chi-squared acceptable"
+      },
+      
+      "per_angle_chi_squared": {
+        "excellent_threshold": 2.0,
+        "acceptable_threshold": 5.0,
+        "warning_threshold": 10.0,
+        "outlier_threshold_multiplier": 2.5,
+        "max_outlier_fraction": 0.25,
+        "min_good_angles": 3,
+        "_angle_validation_note": "Per-angle validation critical for flow analysis quality"
+      }
+    },
+    
+    "parameter_validation": {
+      "_comment": "Enhanced parameter validation for flow mode",
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true,
+      "_flow_constraints": [
+        "D0 must be positive (physical diffusion)",
+        "gamma_dot_t0 must be positive (physical shear rate)",
+        "Time-dependent functions D(t) and γ̇(t) should remain positive",
+        "phi0 should be within reasonable angular range"
+      ]
+    }
+  },
+
+  "output_settings": {
+    "reporting": {
+      "generate_plots": true,
+      "plot_formats": ["png", "pdf"],
+      "detailed_summary": true,
+      "convergence_diagnostics": true,
+      "_flow_reporting_note": "Comprehensive reporting essential for complex 7-parameter fits"
+    },
+    
+    "plotting": {
+      "general": {
+        "create_plots": true,
+        "plot_format": "png",
+        "dpi": 300,
+        "figure_size": [10, 8],
+        "style": "publication"
+      },
+      
+      "c2_heatmaps": {
+        "enabled": true,
+        "_enabled_note": "Multi-angle heatmaps show flow effects across angles",
+        "layout": "single_row",
+        "include_experimental": true,
+        "include_theoretical": true,
+        "include_residuals": true,
+        "title_prefix": "C2 Laminar Flow Mode"
+      },
+      
+      "parameter_evolution": {
+        "enabled": true,
+        "show_bounds": true,
+        "log_scale_params": ["D0", "gamma_dot_t0"],
+        "_log_scale_note": "Both D0 and gamma_dot_t0 benefit from log scale display"
+      },
+      
+      "mcmc_plots": {
+        "enabled": true,
+        "_mcmc_plots_note": "MCMC plots critical for flow analysis - shows parameter correlations",
+        "corner_plots": {
+          "enabled": true,
+          "figsize": [15, 15],
+          "_figsize_note": "Larger size needed for 7x7 parameter correlation matrix"
+        },
+        "trace_plots": {
+          "enabled": true,
+          "figsize": [12, 10],
+          "_figsize_note": "Extended layout for 7 parameter traces"
+        },
+        "convergence_diagnostics": {
+          "enabled": true,
+          "_convergence_note": "Convergence diagnostics essential for 7-parameter MCMC"
+        }
+      }
+    }
+  },
+
+  "_usage_notes": {
+    "description": "Specific usage notes for laminar flow mode",
+    
+    "key_features": [
+      "All 7 parameters are active and optimized",
+      "phi_angles_file is required for angle-dependent flow effects",
+      "Angle filtering highly recommended for computational efficiency",
+      "Full physics model: diffusion + shear-induced decorrelation",
+      "Complex parameter space with potential correlations",
+      "MCMC analysis provides valuable uncertainty quantification"
+    ],
+    
+    "when_to_use": [
+      "Samples under controlled flow or shear conditions",
+      "Systems where both diffusion and flow dynamics are important",
+      "When you have sufficient signal-to-noise for 7-parameter fitting",
+      "Experiments with measurable angular dependence due to flow"
+    ],
+    
+    "optimization_challenges": [
+      "7-parameter space is complex - good initial estimates crucial",
+      "Parameters can be highly correlated (D0-alpha, gamma_dot_t0-beta)",
+      "Angle filtering recommended to reduce computational cost",
+      "MCMC sampling valuable for uncertainty quantification",
+      "Chi-squared landscape can have multiple local minima"
+    ],
+    
+    "parameter_estimation_tips": [
+      "D0: Estimate from single-particle measurements or literature",
+      "alpha: Start with 0 (constant diffusion), adjust for time dependence",
+      "D_offset: Usually small compared to D0",
+      "gamma_dot_t0: Estimate from applied shear rate or rheology",
+      "beta: Start with 0 (steady flow) for constant shear systems",
+      "gamma_dot_t_offset: Often small or zero",
+      "phi0: Start near 0, represents geometry alignment"
+    ],
+    
+    "performance_considerations": [
+      "Computational cost scales with number of angles and parameters",
+      "Angle filtering provides 3-5x speedup with minimal accuracy loss",
+      "MCMC sampling is computationally intensive but valuable",
+      "Per-angle scaling optimization improves fit quality",
+      "Memory usage scales with data size and number of angles"
+    ]
+  }
+}

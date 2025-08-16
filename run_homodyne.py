@@ -115,7 +115,11 @@ def print_banner(args: argparse.Namespace) -> None:
     
     # Show analysis mode
     if args.static:
-        print(f"Analysis mode:    Static (zero shear, 3 parameters)")
+        print(f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)")
+    elif args.static_isotropic:
+        print(f"Analysis mode:    Static isotropic (3 parameters, no angle selection)")
+    elif args.static_anisotropic:
+        print(f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)")
     elif args.laminar_flow:
         print(f"Analysis mode:    Laminar flow (7 parameters)")
     else:
@@ -180,8 +184,16 @@ def run_analysis(args: argparse.Namespace) -> None:
         # Apply mode override if specified
         config_override = None
         if args.static:
-            config_override = {"analysis_settings": {"static_mode": True}}
-            logger.info("Using command-line override: static mode (3 parameters)")
+            # Keep backward compatibility: --static maps to static anisotropic
+            config_override = {"analysis_settings": {"static_mode": True, "static_submode": "anisotropic"}}
+            logger.info("Using command-line override: static anisotropic mode (3 parameters, with angle selection)")
+            logger.warning("Note: --static is deprecated, use --static-anisotropic instead")
+        elif args.static_isotropic:
+            config_override = {"analysis_settings": {"static_mode": True, "static_submode": "isotropic"}}
+            logger.info("Using command-line override: static isotropic mode (3 parameters, no angle selection)")
+        elif args.static_anisotropic:
+            config_override = {"analysis_settings": {"static_mode": True, "static_submode": "anisotropic"}}
+            logger.info("Using command-line override: static anisotropic mode (3 parameters, with angle selection)")
         elif args.laminar_flow:
             config_override = {"analysis_settings": {"static_mode": False}}
             logger.info("Using command-line override: laminar flow mode (7 parameters)")
@@ -728,7 +740,17 @@ Examples:
     mode_group.add_argument(
         '--static',
         action='store_true',
-        help='Force static mode analysis (zero shear, 3 parameters: D₀, α, D_offset)'
+        help='Force static anisotropic mode analysis (3 parameters, with angle selection) [deprecated: use --static-anisotropic]'
+    )
+    mode_group.add_argument(
+        '--static-isotropic',
+        action='store_true',
+        help='Force static isotropic mode analysis (3 parameters, no angle selection)'
+    )
+    mode_group.add_argument(
+        '--static-anisotropic',
+        action='store_true',
+        help='Force static anisotropic mode analysis (3 parameters, with angle selection)'
     )
     mode_group.add_argument(
         '--laminar-flow',
@@ -761,7 +783,12 @@ Examples:
     
     # Log analysis mode selection
     if args.static:
-        logger.info("Command-line mode: static (zero shear, 3 parameters)")
+        logger.info("Command-line mode: static anisotropic (3 parameters, with angle selection)")
+        logger.warning("Note: --static is deprecated, use --static-anisotropic instead")
+    elif args.static_isotropic:
+        logger.info("Command-line mode: static isotropic (3 parameters, no angle selection)")
+    elif args.static_anisotropic:
+        logger.info("Command-line mode: static anisotropic (3 parameters, with angle selection)")
     elif args.laminar_flow:
         logger.info("Command-line mode: laminar flow (7 parameters)")
     else:

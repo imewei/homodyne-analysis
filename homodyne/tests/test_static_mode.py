@@ -283,7 +283,7 @@ class TestConfigManagerStaticMode:
         manager = ConfigManager(str(config_file))
 
         assert manager.is_static_mode_enabled() is True
-        assert manager.get_analysis_mode() == "static"
+        assert manager.get_analysis_mode() == "static_anisotropic"
         assert manager.get_effective_parameter_count() == 3
 
         settings = manager.get_analysis_settings()

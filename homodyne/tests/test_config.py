@@ -144,9 +144,9 @@ class TestConfigManager:
 
         manager = ConfigManager(str(config_file))
 
-        # Test static mode detection
+        # Test static mode detection - defaults to anisotropic when submode not specified
         assert manager.is_static_mode_enabled() is True
-        assert manager.get_analysis_mode() == "static"
+        assert manager.get_analysis_mode() == "static_anisotropic"
         assert manager.get_effective_parameter_count() == 3
 
         # Test analysis settings

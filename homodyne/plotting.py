@@ -393,7 +393,16 @@ def plot_parameter_evolution(
                 plot_config["figure_size"][1] * 1.2,
             ),
         )
-        ax1, ax2 = axes
+        # Ensure axes is always iterable
+        if not isinstance(axes, (list, tuple, np.ndarray)):
+            axes = [axes]
+        
+        # Handle both single and multiple subplot cases
+        if len(axes) >= 2:
+            ax1, ax2 = axes[0], axes[1]
+        else:
+            ax1 = axes[0] if len(axes) > 0 else plt.gca()
+            ax2 = plt.subplot(2, 1, 2) if len(axes) == 1 else plt.gca()
 
         # Plot 1: Parameter comparison bar chart
         x_pos = np.arange(len(param_names))
@@ -601,12 +610,20 @@ def plot_mcmc_corner(
     outdir = ensure_dir(outdir)
 
     try:
+        # Validate trace data format first
+        if callable(trace_data):
+            logger.error("Trace data is a function, not actual data - cannot create corner plot")
+            return False
+            
         # Handle different trace data formats
         if hasattr(trace_data, "posterior"):
             # ArviZ InferenceData
             samples = trace_data.posterior
         elif isinstance(trace_data, dict):
             # Dictionary of samples
+            samples = trace_data
+        elif isinstance(trace_data, np.ndarray):
+            # NumPy array - use directly
             samples = trace_data
         else:
             # Try to convert to DataFrame
@@ -616,68 +633,176 @@ def plot_mcmc_corner(
                     return False
                 import pandas as pd
                 samples = pd.DataFrame(trace_data)
-            except:
-                logger.error("Unsupported trace data format for corner plot")
+            except Exception as conversion_error:
+                logger.error(f"Unsupported trace data format for corner plot: {type(trace_data)}, error: {conversion_error}")
                 return False
 
         # Create corner plot using ArviZ
         if hasattr(samples, "stack"):
             # ArviZ format - stack chains
             stacked_samples = samples.stack(sample=("chain", "draw"))  # type: ignore
+            logger.debug(f"Stacked ArviZ samples: {type(stacked_samples)}")
+            if hasattr(stacked_samples, 'data_vars'):
+                logger.debug(f"Available variables: {list(stacked_samples.data_vars)}")
+            if hasattr(stacked_samples, 'dims'):
+                logger.debug(f"Dimensions: {stacked_samples.dims}")
         else:
             stacked_samples = samples
 
         # Check for parameters with no dynamic range and add explicit ranges
         ranges = None
-        if hasattr(stacked_samples, 'values'):
-            # NumPy array or similar
-            sample_data = stacked_samples.values if hasattr(stacked_samples, 'values') else stacked_samples
-        elif isinstance(stacked_samples, np.ndarray):
-            sample_data = stacked_samples
-        else:
-            # Try to convert to numpy
-            try:
-                sample_data = np.array(stacked_samples)
-            except:
-                sample_data = None
         
-        if sample_data is not None:
-            ranges = []
-            for i in range(sample_data.shape[-1]):
-                param_data = sample_data[..., i].flatten()
-                param_range = np.max(param_data) - np.min(param_data)
-                if param_range == 0 or param_range < 1e-10:
-                    # Constant parameter - add small range around the value
-                    center = np.mean(param_data)
-                    delta = max(abs(center) * 0.01, 1e-6)
-                    ranges.append((center - delta, center + delta))
+        # Handle different data formats for corner plot range calculation
+        # For ArviZ stacked samples, try to determine proper ranges
+        if hasattr(stacked_samples, 'to_numpy'):
+            # xarray Dataset - use to_numpy() method
+            try:
+                sample_data = stacked_samples.to_numpy()
+                ranges = []
+                for i in range(sample_data.shape[-1]):
+                    param_data = sample_data[..., i].flatten()
+                    param_range = np.max(param_data) - np.min(param_data)
+                    if param_range == 0 or param_range < 1e-10:
+                        # Constant parameter - add small range around the value
+                        center = np.mean(param_data)
+                        delta = max(abs(center) * 0.01, 1e-6)
+                        ranges.append((center - delta, center + delta))
+                    else:
+                        ranges.append(None)  # Let corner determine automatically
+            except Exception as e:
+                logger.debug(f"Could not extract ranges from stacked samples: {e}")
+                # Fallback: try to use individual parameter ranges
+                try:
+                    if hasattr(stacked_samples, 'data_vars'):
+                        ranges = []
+                        for var_name in list(stacked_samples.data_vars):
+                            var_data = stacked_samples[var_name].values.flatten()
+                            param_range = np.max(var_data) - np.min(var_data)
+                            if param_range == 0 or param_range < 1e-10:
+                                center = np.mean(var_data)
+                                delta = max(abs(center) * 0.01, 1e-6)
+                                ranges.append((center - delta, center + delta))
+                            else:
+                                ranges.append(None)
+                    else:
+                        ranges = None
+                except Exception as e2:
+                    logger.debug(f"Could not determine parameter ranges: {e2}")
+                    ranges = None
+        else:
+            # For other data types, try basic conversion
+            try:
+                if isinstance(stacked_samples, np.ndarray):
+                    sample_data = stacked_samples
+                elif hasattr(stacked_samples, 'values'):
+                    sample_data = stacked_samples.values
                 else:
-                    ranges.append(None)  # Let corner determine automatically
+                    sample_data = np.array(stacked_samples)
+                
+                ranges = []
+                for i in range(sample_data.shape[-1]):
+                    param_data = sample_data[..., i].flatten()
+                    param_range = np.max(param_data) - np.min(param_data)
+                    if param_range == 0 or param_range < 1e-10:
+                        # Constant parameter - add small range around the value
+                        center = np.mean(param_data)
+                        delta = max(abs(center) * 0.01, 1e-6)
+                        ranges.append((center - delta, center + delta))
+                    else:
+                        ranges.append(None)  # Let corner determine automatically
+            except Exception as e:
+                logger.debug(f"Could not determine ranges for corner plot: {e}")
+                ranges = None
         
         # Create the corner plot
         if CORNER_AVAILABLE:
             # Use corner package if available (better formatting)
             import corner
-            fig = corner.corner(
-                stacked_samples,
-                labels=[
-                    (
-                        f"{name}\n[{unit}]"
-                        if param_names and param_units and i < len(param_names) and i < len(param_units)
-                        else param_names[i] if param_names and i < len(param_names)
-                        else f"Param {i}"
-                    )
-                    for i in range(len(ranges) if ranges else 7)  # Default to 7 parameters
-                ],
-                range=ranges,
-                show_titles=True,
-                title_kwargs={"fontsize": 12},
-                label_kwargs={"fontsize": 14},
-                hist_kwargs={"density": True, "alpha": 0.8},
-                contour_kwargs={"colors": ["C0", "C1", "C2"]},
-                fill_contours=True,
-                plot_contours=True,
-            )
+            
+            # Debug: Check what we're passing to corner
+            logger.debug(f"Stacked samples type: {type(stacked_samples)}")
+            logger.debug(f"Stacked samples shape: {getattr(stacked_samples, 'shape', 'No shape attr')}")
+            logger.debug(f"Ranges: {ranges}")
+            
+            # Try to convert ArviZ data to numpy for corner plot
+            try:
+                # Handle xarray Dataset conversion properly
+                if hasattr(stacked_samples, 'data_vars'):
+                    # This is an xarray Dataset - need to extract data from each variable
+                    var_names = list(stacked_samples.data_vars.keys())
+                    logger.debug(f"Extracting data from variables: {var_names}")
+                    
+                    # Extract data arrays for each parameter and stack them
+                    param_arrays = []
+                    for var_name in var_names:
+                        var_data = stacked_samples[var_name].values.flatten()
+                        param_arrays.append(var_data)
+                        logger.debug(f"Variable {var_name} shape after flatten: {var_data.shape}")
+                    
+                    # Stack parameter arrays to create (n_samples, n_params) array
+                    corner_data = np.column_stack(param_arrays)
+                    logger.debug(f"Stacked corner data shape: {corner_data.shape}")
+                    
+                elif hasattr(stacked_samples, 'to_numpy'):
+                    corner_data = stacked_samples.to_numpy()
+                    logger.debug(f"Converted to numpy shape: {corner_data.shape}")
+                elif hasattr(stacked_samples, 'values') and not callable(stacked_samples.values):
+                    # .values is a property, not a method - access it correctly
+                    corner_data = stacked_samples.values
+                    logger.debug(f"Using .values property shape: {corner_data.shape}")
+                else:
+                    corner_data = stacked_samples
+                    
+                # Ensure we have 2D data (samples x parameters)
+                if hasattr(corner_data, 'ndim') and corner_data.ndim > 2:
+                    # Flatten extra dimensions
+                    corner_data = corner_data.reshape(-1, corner_data.shape[-1])
+                    logger.debug(f"Reshaped to: {corner_data.shape}")
+                elif not hasattr(corner_data, 'ndim'):
+                    # For remaining objects without ndim, try to convert to numpy
+                    try:
+                        if hasattr(corner_data, 'to_numpy'):
+                            corner_data = corner_data.to_numpy()
+                            logger.debug(f"Converted Dataset to numpy with shape: {corner_data.shape}")
+                        else:
+                            # Convert using pandas if possible
+                            corner_data = corner_data.to_pandas().values
+                            logger.debug(f"Converted via pandas with shape: {corner_data.shape}")
+                    except Exception as conversion_error:
+                        logger.debug(f"Failed to convert corner_data: {conversion_error}")
+                        raise
+                    
+                fig = corner.corner(
+                    corner_data,
+                    labels=[
+                        (
+                            f"{param_names[i]}\n[{param_units[i]}]"
+                            if param_names and param_units and i < len(param_names) and i < len(param_units)
+                            else param_names[i] if param_names and i < len(param_names)
+                            else f"Param {i}"
+                        )
+                        for i in range(corner_data.shape[1] if hasattr(corner_data, 'shape') else (len(ranges) if ranges else 3))
+                    ],
+                    range=ranges,
+                    show_titles=True,
+                    title_kwargs={"fontsize": 12},
+                    label_kwargs={"fontsize": 14},
+                    hist_kwargs={"density": True, "alpha": 0.8},
+                    contour_kwargs={"colors": ["C0", "C1", "C2"]},
+                    fill_contours=True,
+                    plot_contours=True,
+                )
+            except Exception as corner_error:
+                logger.warning(f"Corner plot failed with corner package: {corner_error}")
+                # Fall back to ArviZ built-in plot
+                import arviz as az
+                axes = az.plot_pair(
+                    samples,  # Use original samples, not stacked
+                    kind="kde",
+                    marginals=True,
+                    figsize=plot_config["figure_size"],
+                )
+                fig = axes.ravel()[0].figure
         else:
             # Use ArviZ built-in plot
             import arviz as az
@@ -985,8 +1110,10 @@ def plot_mcmc_convergence_diagnostics(
         
         # Add chain info if available
         if hasattr(trace_data, "posterior"):
-            n_chains = trace_data.posterior.dims.get("chain", "Unknown")
-            n_draws = trace_data.posterior.dims.get("draw", "Unknown")
+            # Use sizes instead of dims to avoid FutureWarning
+            posterior_sizes = getattr(trace_data.posterior, 'sizes', trace_data.posterior.dims)
+            n_chains = posterior_sizes.get("chain", "Unknown")
+            n_draws = posterior_sizes.get("draw", "Unknown")
             summary_text += f"\nChains: {n_chains}\n"
             summary_text += f"Draws: {n_draws}"
         

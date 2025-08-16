@@ -397,7 +397,7 @@ class TestMCMCPlots:
                     posterior_dict[param] = np.random.normal(0, 0.1, (n_chains, n_draws))
 
             # Create ArviZ InferenceData object
-            trace_data = az.from_dict({"posterior": posterior_dict})
+            trace_data = az.from_dict(posterior_dict)
             
             param_units = ["Å²/s", "dimensionless", "dimensionless"]
 
@@ -447,7 +447,7 @@ class TestMCMCPlots:
             for param in param_names:
                 posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
             
-            trace_data = az.from_dict({"posterior": posterior_dict})
+            trace_data = az.from_dict(posterior_dict)
             param_units = ["Å²/s", "dimensionless", "Å²/s"]
 
             success = plot_mcmc_trace(
@@ -480,7 +480,7 @@ class TestMCMCPlots:
             for param in param_names:
                 posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
             
-            trace_data = az.from_dict({"posterior": posterior_dict})
+            trace_data = az.from_dict(posterior_dict)
             
             # Create comprehensive mock diagnostics
             diagnostics = {
@@ -535,7 +535,7 @@ class TestMCMCPlots:
                 "param1": np.random.normal(0, 1, (2, 100)),
                 "param2": np.random.normal(0, 1, (2, 100))
             }
-            trace_data = az.from_dict({"posterior": posterior_dict})
+            trace_data = az.from_dict(posterior_dict)
             
             # Create diagnostics indicating poor convergence
             poor_diagnostics = {
@@ -571,7 +571,7 @@ class TestMCMCPlots:
             
             # Create minimal trace data
             posterior_dict = {"param1": np.random.normal(0, 1, (2, 100))}
-            trace_data = az.from_dict({"posterior": posterior_dict})
+            trace_data = az.from_dict(posterior_dict)
             
             # Test with incomplete diagnostics
             incomplete_diagnostics = {
@@ -715,7 +715,7 @@ class TestCompleteWorkflow:
                 else:
                     posterior_dict[param] = np.random.normal(0, 0.1, (n_chains, n_draws))
 
-            trace_data = az.from_dict({"posterior": posterior_dict})
+            trace_data = az.from_dict(posterior_dict)
             
             mcmc_results = {
                 "experimental_data": np.random.rand(3, 20, 20) + 1.0,

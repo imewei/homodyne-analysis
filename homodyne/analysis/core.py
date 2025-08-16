@@ -459,14 +459,21 @@ class HomodyneAnalysisCore:
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
 
-        # Load angle configuration
-        phi_angles_path = self.config["experimental_data"].get("phi_angles_path", ".")
-        phi_angles_file = self.config["experimental_data"]["phi_angles_file"]
-        phi_file = os.path.join(phi_angles_path, phi_angles_file)
-        logger.debug(f"Loading phi angles from: {phi_file}")
-        phi_angles = np.loadtxt(phi_file, dtype=np.float64)
-        num_angles = len(phi_angles)
-        logger.debug(f"Loaded {num_angles} phi angles: {phi_angles}")
+        # Load angle configuration - skip for isotropic static mode
+        if self.config_manager.is_static_isotropic_enabled():
+            # In isotropic static mode, create a single dummy angle
+            phi_angles = np.array([0.0], dtype=np.float64)
+            num_angles = 1
+            logger.info("Isotropic static mode: Using single dummy angle (0.0°) instead of loading phi_angles_file")
+        else:
+            # Normal mode: load phi angles from file
+            phi_angles_path = self.config["experimental_data"].get("phi_angles_path", ".")
+            phi_angles_file = self.config["experimental_data"]["phi_angles_file"]
+            phi_file = os.path.join(phi_angles_path, phi_angles_file)
+            logger.debug(f"Loading phi angles from: {phi_file}")
+            phi_angles = np.loadtxt(phi_file, dtype=np.float64)
+            num_angles = len(phi_angles)
+            logger.debug(f"Loaded {num_angles} phi angles: {phi_angles}")
 
         # Check for cached processed data
         cache_template = self.config["experimental_data"]["cache_filename_template"]
@@ -571,34 +578,61 @@ class HomodyneAnalysisCore:
         c2_experimental = np.zeros(expected_shape, dtype=np.float64)
         logger.debug(f"Pre-allocated output array with shape: {expected_shape}")
 
-        # Load each angle
-        logger.info(f"Loading data for {num_angles} angles...")
-        for i in range(num_angles):
-            angle_deg = phi_angles[i]
-            logger.debug(f"Loading angle {i+1}/{num_angles} (φ={angle_deg:.2f}°)")
-
+        # Handle data loading for isotropic static mode vs normal mode
+        if self.config_manager.is_static_isotropic_enabled():
+            # In isotropic static mode, load data only once and use for the single dummy angle
+            logger.info(f"Isotropic static mode: Loading single correlation matrix for dummy angle")
+            
             try:
-                # Fix: Pass correct_diag as bool, not int. If you want diagonal correction, set to True, else False.
+                # Load data once for isotropic case
                 raw_data = data_file.get_twotime_c2(exchange_key, correct_diag=False)
                 if raw_data is None:
-                    raise ValueError(
-                        f"get_twotime_c2 returned None for angle {i+1} (φ={angle_deg:.2f}°)"
-                    )
+                    raise ValueError("get_twotime_c2 returned None in isotropic static mode")
+                
                 # Ensure raw_data is a NumPy array
                 raw_data_np = np.array(raw_data)
                 sliced_data = raw_data_np[
                     self.start_frame : self.end_frame,
                     self.start_frame : self.end_frame,
                 ]
-                c2_experimental[i] = sliced_data.astype(np.float64)
+                # Use the same data for the single dummy angle
+                c2_experimental[0] = sliced_data.astype(np.float64)
                 logger.debug(
-                    f"  Raw data shape: {raw_data_np.shape} -> sliced: {sliced_data.shape}"
+                    f"  Isotropic mode - Raw data shape: {raw_data_np.shape} -> sliced: {sliced_data.shape}"
                 )
+                
             except Exception as e:
-                logger.error(
-                    f"Failed to load data for angle {i+1} (φ={angle_deg:.2f}°): {e}"
-                )
+                logger.error(f"Failed to load data in isotropic static mode: {e}")
                 raise
+        else:
+            # Normal mode: load data for each angle
+            logger.info(f"Loading data for {num_angles} angles...")
+            for i in range(num_angles):
+                angle_deg = phi_angles[i]
+                logger.debug(f"Loading angle {i+1}/{num_angles} (φ={angle_deg:.2f}°)")
+
+                try:
+                    # Fix: Pass correct_diag as bool, not int. If you want diagonal correction, set to True, else False.
+                    raw_data = data_file.get_twotime_c2(exchange_key, correct_diag=False)
+                    if raw_data is None:
+                        raise ValueError(
+                            f"get_twotime_c2 returned None for angle {i+1} (φ={angle_deg:.2f}°)"
+                        )
+                    # Ensure raw_data is a NumPy array
+                    raw_data_np = np.array(raw_data)
+                    sliced_data = raw_data_np[
+                        self.start_frame : self.end_frame,
+                        self.start_frame : self.end_frame,
+                    ]
+                    c2_experimental[i] = sliced_data.astype(np.float64)
+                    logger.debug(
+                        f"  Raw data shape: {raw_data_np.shape} -> sliced: {sliced_data.shape}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to load data for angle {i+1} (φ={angle_deg:.2f}°): {e}"
+                    )
+                    raise
 
         logger.info(
             f"Successfully loaded raw data with final shape: {c2_experimental.shape}"
