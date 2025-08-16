@@ -735,7 +735,7 @@ class PerformanceMonitor:
         def __init__(self, monitor, func_name):
             self.monitor = monitor
             self.func_name = func_name
-            self.start_time = None
+            self.start_time: Optional[float] = None
             
         def __enter__(self):
             gc.collect()  # Clean memory before timing
@@ -743,10 +743,14 @@ class PerformanceMonitor:
             return self
             
         def __exit__(self, exc_type, exc_val, exc_tb):
-            elapsed = time.perf_counter() - self.start_time
-            if self.func_name not in self.monitor.timings:
-                self.monitor.timings[self.func_name] = []
-            self.monitor.timings[self.func_name].append(elapsed)
+            # Suppress unused parameter warnings
+            _ = exc_type, exc_val, exc_tb
+            
+            if self.start_time is not None:
+                elapsed = time.perf_counter() - self.start_time
+                if self.func_name not in self.monitor.timings:
+                    self.monitor.timings[self.func_name] = []
+                self.monitor.timings[self.func_name].append(elapsed)
     
     def get_timing_summary(self) -> Dict[str, Dict[str, float]]:
         """Get summary statistics for all timed functions."""

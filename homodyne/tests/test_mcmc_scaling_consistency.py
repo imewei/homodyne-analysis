@@ -106,6 +106,8 @@ class TestMCMCScalingConsistency:
     @pytest.mark.skipif(not mcmc_available, reason="PyMC not available")
     def test_mcmc_sampler_initialization_with_scaling_config(self, mock_analysis_core):
         """Test that MCMC sampler initializes correctly with scaling configuration."""
+        if MCMCSampler is None:
+            pytest.skip("MCMCSampler not available")
         sampler = MCMCSampler(mock_analysis_core, mock_analysis_core.config)
         
         assert sampler.core == mock_analysis_core
@@ -122,6 +124,8 @@ class TestMCMCScalingConsistency:
             
             # Update mock core with inconsistent config
             mock_analysis_core.config = config_with_scaling_inconsistency
+            if MCMCSampler is None:
+                pytest.skip("MCMCSampler not available")
             sampler = MCMCSampler(mock_analysis_core, config_with_scaling_inconsistency)
             
             # Mock PyMC model building to avoid actual computation
@@ -149,6 +153,8 @@ class TestMCMCScalingConsistency:
     def test_scaling_consistency_configuration(self, mock_analysis_core, config_with_scaling_consistency):
         """Test configuration that should provide scaling consistency."""
         mock_analysis_core.config = config_with_scaling_consistency
+        if MCMCSampler is None:
+            pytest.skip("MCMCSampler not available")
         sampler = MCMCSampler(mock_analysis_core, config_with_scaling_consistency)
         
         # Check that configuration indicates full forward model
