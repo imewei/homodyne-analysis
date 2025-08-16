@@ -14,7 +14,7 @@ Modules:
 --------
 - core: Core functionality (configuration, computational kernels)
 - analysis: Analysis engines and data processing
-- optimization: Optimization methods (classical, Bayesian, MCMC)
+- optimization: Optimization methods (classical, MCMC)
 - io_utils: Input/output utilities
 - plotting: Visualization functions
 
@@ -44,15 +44,6 @@ except ImportError as e:
         f"ClassicalOptimizer not available: {e}"
     )
 
-try:
-    from .optimization.bayesian import BayesianOptimizer
-except ImportError as e:
-    BayesianOptimizer = None
-    import logging
-
-    logging.getLogger(__name__).warning(
-        f"BayesianOptimizer not available: {e}"
-    )
 
 try:
     from .optimization.mcmc import MCMCSampler, create_mcmc_sampler
@@ -80,7 +71,6 @@ __all__ = [
     "memory_efficient_cache",
     # Optimization (conditionally available)
     "ClassicalOptimizer",
-    "BayesianOptimizer",
     "MCMCSampler",
     "create_mcmc_sampler",
 ]

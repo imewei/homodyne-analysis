@@ -57,15 +57,6 @@ class TestSaveResultsWithConfig:
                 "degrees_of_freedom": 1234,
                 "convergence": True
             },
-            "bayesian_optimization": {
-                "parameters": [1050.0, -0.52, 98.0, 0.0012, -0.28, 0.00012, 0.48],
-                "reduced_chi_squared": 3.1,
-                "reduced_chi_squared_uncertainty": 0.12,
-                "reduced_chi_squared_std": 0.75,
-                "n_optimization_angles": 5,
-                "degrees_of_freedom": 1234,
-                "convergence": True
-            }
         }
 
     def test_save_with_valid_config(self, mock_analyzer, sample_results_with_uncertainty):

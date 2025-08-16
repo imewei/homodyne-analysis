@@ -20,12 +20,10 @@ sys.path.insert(0, './homodyne')
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
     from homodyne.optimization.classical import ClassicalOptimizer
-    from homodyne.optimization.bayesian import BayesianOptimizer
 except ImportError:
     # Modules not available yet, will add TODO for implementation
     HomodyneAnalysisCore = None
     ClassicalOptimizer = None
-    BayesianOptimizer = None
 
 # Try to import MCMC sampler
 try:
@@ -195,16 +193,12 @@ def run_analysis(args: argparse.Namespace) -> None:
             methods_attempted = ['Classical']
             results = run_classical_optimization(
                 analyzer, initial_params, phi_angles, c2_exp)
-        elif args.method == 'bayesian':
-            methods_attempted = ['Bayesian']
-            results = run_bayesian_optimization(
-                analyzer, initial_params, phi_angles, c2_exp)
         elif args.method == 'mcmc':
             methods_attempted = ['MCMC']
             results = run_mcmc_optimization(
                 analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
         elif args.method == 'all':
-            methods_attempted = ['Classical', 'Bayesian', 'MCMC']
+            methods_attempted = ['Classical', 'MCMC']
             results = run_all_methods(
                 analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
 
@@ -317,82 +311,6 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         return None
 
 
-def run_bayesian_optimization(analyzer, initial_params, phi_angles, c2_exp):
-    """Run Bayesian optimization method."""
-    logger = logging.getLogger(__name__)
-    logger.info("Running Bayesian optimization...")
-
-    try:
-        # Check if scikit-optimize is available
-        try:
-            from homodyne.optimization.bayesian import BayesianOptimizer
-        except ImportError as import_err:
-            if "skopt" in str(import_err).lower() or "scikit-optimize" in str(import_err).lower():
-                logger.error(
-                    "❌ Bayesian optimization requires scikit-optimize: pip install scikit-optimize")
-            else:
-                logger.error(
-                    f"❌ Failed to import Bayesian optimizer: {import_err}")
-            return None
-
-        # Create and run Bayesian optimizer
-        optimizer = BayesianOptimizer(analyzer, analyzer.config)
-        bo_results = optimizer.run_bayesian_optimization_skopt_optimized(
-            phi_angles=phi_angles,
-            c2_experimental=c2_exp,
-            x0=initial_params
-        )
-
-        if bo_results and "best_params" in bo_results:
-            best_params = bo_results["best_params"]
-            best_chi2 = bo_results["best_chi_squared"]
-
-            return {
-                "bayesian_optimization": {
-                    "parameters": best_params,
-                    "chi_squared": best_chi2,
-                    "optimization_time": bo_results.get("optimization_time", 0),
-                    "total_time": bo_results.get("optimization_time", 0),
-                    "success": True,
-                    "method": "Bayesian_GP",
-                    "n_calls": bo_results.get("n_calls", 0),
-                    "acquisition_function": bo_results.get("acquisition_function", "EI")
-                },
-                "best_overall": {
-                    "parameters": best_params,
-                    "chi_squared": best_chi2,
-                    "method": "Bayesian"
-                },
-                "methods_used": ["Bayesian"]
-            }
-        else:
-            logger.error(
-                "Bayesian optimization completed but returned no results")
-            return None
-
-    except ImportError as e:
-        error_msg = f"Bayesian optimization failed - missing dependencies: {e}"
-        logger.error(error_msg)
-        if "skopt" in str(e).lower() or "scikit-optimize" in str(e).lower():
-            logger.error(
-                "❌ Install scikit-optimize: pip install scikit-optimize")
-        elif "sklearn" in str(e).lower():
-            logger.error("❌ Install scikit-learn: pip install scikit-learn")
-        else:
-            logger.error(
-                "❌ Install required dependencies: pip install scikit-optimize scikit-learn")
-        return None
-    except (ValueError, KeyError) as e:
-        error_msg = f"Bayesian optimization failed - configuration error: {e}"
-        logger.error(error_msg)
-        logger.error(
-            "❌ Please check your configuration file and parameter bounds")
-        return None
-    except Exception as e:
-        error_msg = f"Bayesian optimization failed - unexpected error: {e}"
-        logger.error(error_msg)
-        logger.error("❌ Please check your data files and configuration")
-        return None
 
 
 def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
@@ -599,17 +517,6 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     else:
         logger.warning("⚠ Classical optimization failed")
 
-    # Run Bayesian optimization
-    methods_attempted.append("Bayesian")
-    logger.info("Attempting Bayesian optimization...")
-    bayesian_results = run_bayesian_optimization(
-        analyzer, initial_params, phi_angles, c2_exp)
-    if bayesian_results:
-        all_results.update(bayesian_results)
-        methods_used.append("Bayesian")
-        logger.info("✓ Bayesian optimization completed successfully")
-    else:
-        logger.warning("⚠ Bayesian optimization failed")
 
     # Run MCMC sampling
     methods_attempted.append("MCMC")
@@ -644,7 +551,6 @@ def main():
         epilog="""
 Examples:
   %(prog)s                                    # Run with default classical method
-  %(prog)s --method bayesian                  # Run Bayesian analysis
   %(prog)s --method all --verbose             # Run all methods with debug logging
   %(prog)s --config my_config.json            # Use custom config file
   %(prog)s --output-dir ./results --verbose   # Custom output directory with verbose logging
@@ -656,7 +562,7 @@ Examples:
 
     parser.add_argument(
         '--method',
-        choices=['classical', 'bayesian', 'mcmc', 'all'],
+        choices=['classical', 'mcmc', 'all'],
         default='classical',
         help='Analysis method to use (default: %(default)s)'
     )

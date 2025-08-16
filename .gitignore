@@ -2,6 +2,7 @@
 data/
 homodyne_analysis_results/
 homodyne_results/
+homodyne_analysis_results.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

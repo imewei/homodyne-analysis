@@ -572,10 +572,6 @@ class ConfigManager:
                         }
                     },
                 },
-                "bayesian_optimization": {
-                    "n_calls": 20,
-                    "n_initial_points": 5,
-                },
                 "bayesian_inference": {"mcmc_draws": 1000, "mcmc_tune": 500},
             },
             "parameter_space": {

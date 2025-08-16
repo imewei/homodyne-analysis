@@ -140,12 +140,6 @@ try:
 except ImportError:
     PYMC_AVAILABLE = False
 
-try:
-    import skopt  # noqa: F401
-
-    SKOPT_AVAILABLE = True
-except ImportError:
-    SKOPT_AVAILABLE = False
 
 
 class HomodyneAnalysisCore:

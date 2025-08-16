@@ -4,7 +4,6 @@ Optimization methods for homodyne scattering analysis.
 This subpackage provides various optimization approaches for fitting
 theoretical models to experimental data:
 - Classical optimization using scipy methods
-- Bayesian optimization using Gaussian processes
 - MCMC sampling for uncertainty quantification
 """
 
@@ -17,16 +16,6 @@ except ImportError as e:
 
     warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning)
 
-try:
-    from .bayesian import BayesianOptimizer
-except ImportError as e:
-    BayesianOptimizer = None
-    import warnings
-
-    warnings.warn(
-        f"BayesianOptimizer not available (scikit-optimize required): {e}",
-        ImportWarning,
-    )
 
 try:
     from .mcmc import MCMCSampler, create_mcmc_sampler
@@ -41,7 +30,6 @@ except ImportError as e:
 
 __all__ = [
     "ClassicalOptimizer",
-    "BayesianOptimizer",
     "MCMCSampler",
     "create_mcmc_sampler",
 ]

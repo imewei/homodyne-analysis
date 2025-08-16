@@ -269,29 +269,6 @@
       "_selection_strategy_note": "How to choose best result: best_chi_squared, consensus, first_success"
     },
     
-    "bayesian_optimization": {
-      "_comment": "Bayesian optimization with Gaussian Processes",
-      "enabled": true,
-      "_enabled_note": "Enable Bayesian optimization (requires scikit-optimize)",
-      
-      "n_calls": 500,
-      "_n_calls_note": "Number of optimization steps (more = better but slower)",
-      
-      "n_initial_points": 20,
-      "_n_initial_points_note": "Random exploration points before optimization",
-      
-      "n_jobs": -1,
-      "_n_jobs_note": "Parallel jobs (-1 = all cores, 1 = single core)",
-      
-      "acquisition_function": "gp_hedge",
-      "_acquisition_function_note": "Options: gp_hedge, EI, PI, LCB",
-      
-      "acq_optimizer": "auto",
-      "_acq_optimizer_note": "Acquisition function optimizer: auto, sampling, lbfgs",
-      
-      "random_state": 42,
-      "_random_state_note": "Random seed for reproducible results"
-    },
     
     "mcmc_sampling": {
       "_comment": "Markov Chain Monte Carlo sampling",
@@ -564,7 +541,7 @@
       "_use_simple_forward_model_note": "If True, uses simplified MCMC likelihood (faster but inconsistent with scaling optimization). If False, uses full forward model with per-angle contrast/offset parameters (slower but consistent with chi-squared calculation)",
       "sigma_prior": 0.1,
       "_sigma_prior_note": "Prior standard deviation for noise parameter in MCMC likelihood",
-      "_scaling_consistency_note": "IMPORTANT: If scaling_optimization is enabled in chi_squared_calculation and use_simple_forward_model=True, MCMC results may not be comparable to classical/Bayesian optimization due to different treatment of per-angle scaling"
+      "_scaling_consistency_note": "IMPORTANT: If scaling_optimization is enabled in chi_squared_calculation and use_simple_forward_model=True, MCMC results may not be comparable to classical optimization due to different treatment of per-angle scaling"
     }
   },
 
@@ -738,7 +715,6 @@
     "reproducible_research": {
       "description": "Settings for reproducible results",
       "settings": {
-        "optimization_config.bayesian_optimization.random_state": 42,
         "optimization_config.mcmc_sampling.chains": 4,
         "output_settings.save_intermediate": true,
         "output_settings.detailed_summary": true

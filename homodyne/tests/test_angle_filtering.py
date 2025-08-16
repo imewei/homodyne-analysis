@@ -488,23 +488,6 @@ class TestAngleFilteringOptimizationIntegration:
         )
         assert result == 10.0
 
-    def test_bayesian_optimizer_uses_angle_filtering(self):
-        """Test that Bayesian optimizer uses angle filtering in objective function."""
-        try:
-            from homodyne.optimization.bayesian import (
-                BayesianOptimizer,
-                SKOPT_AVAILABLE,
-            )
-
-            if not SKOPT_AVAILABLE:
-                pytest.skip("scikit-optimize not available")
-
-            # This test would require more complex mocking of skopt
-            # For now, just verify that the class exists and can be imported
-            assert BayesianOptimizer is not None
-
-        except ImportError:
-            pytest.skip("Bayesian optimization module not available")
 
     def test_mcmc_sampler_uses_angle_filtering(self):
         """Test that MCMC sampler uses angle filtering by default."""
@@ -627,20 +610,6 @@ class TestAngleFilteringOptimizationIntegration:
         except ImportError:
             pass  # Classical optimization not available
 
-        # Test Bayesian optimization
-        try:
-            from homodyne.optimization.bayesian import (
-                BayesianOptimizer,
-                SKOPT_AVAILABLE,
-            )
-
-            if SKOPT_AVAILABLE:
-                # Bayesian optimization uses filtering in objective function
-                # This is verified by the existing test
-                pass
-
-        except ImportError:
-            pass  # Bayesian optimization not available
 
         # Test MCMC
         try:

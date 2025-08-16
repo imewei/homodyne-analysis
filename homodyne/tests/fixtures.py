@@ -139,11 +139,6 @@ def dummy_config():
                     }
                 },
             },
-            "bayesian_optimization": {
-                "enabled": False,
-                "n_calls": 5,
-                "n_initial_points": 2,
-            },
             "mcmc_sampling": {
                 "enabled": False,
                 "draws": 10,

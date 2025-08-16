@@ -339,7 +339,6 @@ class TestDiagnosticPlots:
         """Test diagnostic plot with multiple chi-squared values."""
         results = {
             "classical_chi_squared": 1.234,
-            "bayesian_chi2": 1.100,
             "mcmc_chi_squared": 1.050,
             "residuals": np.random.normal(0, 0.1, (50, 50)),
         }
