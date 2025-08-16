@@ -1,26 +1,25 @@
 {
   "metadata": {
     "_comment": "Project metadata and version information",
-    "config_version": "5.1",
+    "config_version": "6.0",
     "description": "Configuration for Homodyne Scattering Analysis - XPCS under Nonequilibrium Laminar Flow",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
-    "created_date": "2025-08-15",
-    "updated_date": "2025-08-15",
+    "created_date": "2025-08-16",
+    "updated_date": "2025-08-16",
     "authors": [
-      "Your Name",
-      "Collaborator Name"
+      "Wei Chen"
     ],
-    "institution": "Your Institution",
-    "experiment_name": "Your Experiment Description",
-    "sample_description": "Sample details and preparation method",
+    "institution": "Argonne National Laboratory",
+    "experiment_name": "Testing",
+    "sample_description": "Simon PNAS",
     "script_compatibility": "homodyne.py"
   },
   "experimental_data": {
     "_comment": "Data source and loading configuration",
     "description": "Data source and loading configuration",
-    "data_folder_path": "./data/C020/",
+    "data_folder_path": "./data/Simon/",
     "_data_folder_path_note": "Path to directory containing experimental data files",
-    "data_file_name": "cached_c2_frames_1001_2000.npz",
+    "data_file_name": "your_data_file.hdf",
     "_data_file_name_note": "Main experimental data file (HDF5 format recommended)",
     "phi_angles_path": "./data/phi_angles/",
     "_phi_angles_path_note": "Directory containing scattering angle information",
@@ -28,16 +27,16 @@
     "_phi_angles_file_note": "File containing phi angles (one angle per line)",
     "exchange_key": "exchange",
     "_exchange_key_note": "HDF5 dataset key for correlation data",
-    "cache_file_path": "./data/C020/",
+    "cache_file_path": "./data/Simon/",
     "_cache_file_path_note": "Directory for cached processed data",
-    "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
+    "cache_filename_template": "twotime_plot_100pa_fig2c.npz",
     "_cache_filename_template_note": "Template for cache filenames with frame range",
     "cache_compression": true,
     "_cache_compression_note": "Enable compression for cache files (saves disk space)",
     "data_type": "float64",
     "_data_type_note": "Data precision: float32 (faster) or float64 (more precise)",
     "file_format": "NPZ",
-    "_file_format_note": "Supported formats: HDF5, NPZ",
+    "_file_format_note": "Supported formats: HDF5, NPZ (NPZ recommended for better compatibility)",
     "preprocessing": {
       "_comment": "Data preprocessing options",
       "apply_diagonal_correction": true,
@@ -57,18 +56,18 @@
     "description": "Core analysis parameters and experimental geometry",
     "temporal": {
       "_comment": "Time-related parameters",
-      "dt": 0.1,
+      "dt": 0.5,
       "_dt_note": "Time step between correlation frames (adjust based on your acquisition)",
       "dt_unit": "seconds",
-      "start_frame": 1001,
+      "start_frame": 1,
       "_start_frame_note": "First frame to analyze (skip initial equilibration)",
-      "end_frame": 2000,
+      "end_frame": 1000,
       "_end_frame_note": "Last frame to analyze (or null for all frames)",
       "frame_description": "Analysis window within experimental data"
     },
     "scattering": {
       "_comment": "Scattering geometry parameters",
-      "wavevector_q": 0.0054,
+      "wavevector_q": 0.0237,
       "_wavevector_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
       "q_unit": "Å⁻¹",
       "q_description": "Scattering wavevector magnitude (q = 4π sin(θ/2)/λ)",
@@ -194,7 +193,7 @@
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 5000,
-          "_maxiter_note": "Maximum iterations (reduced from 3000 for faster convergence)",
+          "_maxiter_note": "Maximum iterations (increased for better convergence)",
           "xatol": 1e-08,
           "_xatol_note": "Absolute error in parameters (balanced precision vs speed)",
           "fatol": 1e-08,
@@ -221,7 +220,7 @@
       "cores": 4,
       "_cores_note": "CPU cores for parallel sampling",
       "target_accept": 0.95,
-      "_target_accept_note": "Target acceptance rate for NUTS sampler",
+      "_target_accept_note": "Target acceptance rate for NUTS sampler (increased for better convergence)",
       "max_treedepth": 10,
       "_max_treedepth_note": "Maximum tree depth for NUTS",
       "return_inferencedata": true,
@@ -319,6 +318,58 @@
     "model_description": {
       "static_case": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) = g₁_diff(t₁,t₂), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
       "laminar_flow_case": "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂) where g₁_shear = [sinc(Φ)]² and Φ = (1/2π)qL cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
+    }
+  },
+  "workflow_integration": {
+    "_comment": "Analysis workflow and plotting integration settings",
+    "description": "Configure integration between analysis workflow and plotting/visualization",
+    "analysis_workflow": {
+      "_comment": "Core analysis workflow settings",
+      "auto_generate_plots": true,
+      "_auto_generate_plots_note": "Automatically generate plots after analysis completion",
+      "plot_integration_enabled": true,
+      "_plot_integration_enabled_note": "Enable plotting integration in analysis workflow",
+      "cache_plot_data": true,
+      "_cache_plot_data_note": "Cache experimental and theoretical data for plotting",
+      "save_intermediate_plots": false,
+      "_save_intermediate_plots_note": "Save plots during intermediate analysis steps"
+    },
+    "mcmc_integration": {
+      "_comment": "MCMC workflow integration settings",
+      "auto_save_traces": true,
+      "_auto_save_traces_note": "Automatically save MCMC trace data to NetCDF files",
+      "trace_file_format": "netcdf",
+      "_trace_file_format_note": "Format for MCMC trace files: netcdf, pickle, json",
+      "include_warmup_in_traces": false,
+      "_include_warmup_in_traces_note": "Include warmup samples in saved traces",
+      "convergence_diagnostics_auto": true,
+      "_convergence_diagnostics_auto_note": "Automatically compute convergence diagnostics",
+      "plot_mcmc_results": true,
+      "_plot_mcmc_results_note": "Generate MCMC plots automatically after sampling"
+    },
+    "data_management": {
+      "_comment": "Data caching and management for workflow integration",
+      "experimental_data_cache": true,
+      "_experimental_data_cache_note": "Cache experimental data for plotting and analysis",
+      "theoretical_data_cache": true,
+      "_theoretical_data_cache_note": "Cache generated theoretical data",
+      "cache_directory": "./cache",
+      "_cache_directory_note": "Directory for workflow data caching",
+      "auto_cleanup_cache": false,
+      "_auto_cleanup_cache_note": "Automatically clean old cache files",
+      "cache_retention_days": 30,
+      "_cache_retention_days_note": "Number of days to retain cache files"
+    },
+    "error_handling": {
+      "_comment": "Error handling during workflow integration",
+      "continue_on_plot_errors": true,
+      "_continue_on_plot_errors_note": "Continue analysis if plotting fails",
+      "log_plot_errors": true,
+      "_log_plot_errors_note": "Log detailed error information for plotting failures",
+      "fallback_plotting": true,
+      "_fallback_plotting_note": "Use simplified plotting if advanced features fail",
+      "validate_plot_data": true,
+      "_validate_plot_data_note": "Validate data before attempting to plot"
     }
   },
   "advanced_settings": {
@@ -522,11 +573,168 @@
         "png",
         "pdf"
       ],
-      "_plot_formats_note": "Output plot formats",
+      "_plot_formats_note": "Output plot formats: png, pdf, svg, eps",
       "detailed_summary": true,
       "_detailed_summary_note": "Include detailed parameter summary",
       "convergence_diagnostics": true,
       "_convergence_diagnostics_note": "Include optimization convergence information"
+    },
+    "plotting": {
+      "_comment": "Comprehensive plotting configuration for analysis visualization",
+      "description": "Configuration for C2 heatmaps, parameter evolution, and MCMC plots",
+      "general": {
+        "_comment": "General plotting settings",
+        "create_plots": true,
+        "_create_plots_note": "Enable automatic plot generation",
+        "plot_format": "png",
+        "_plot_format_note": "Default plot format: png, pdf, svg, eps",
+        "dpi": 300,
+        "_dpi_note": "Resolution for raster formats (dots per inch)",
+        "figure_size": [
+          10,
+          8
+        ],
+        "_figure_size_note": "Default figure size in inches [width, height]",
+        "style": "publication",
+        "_style_note": "Plot style: publication, presentation, notebook",
+        "save_plots": true,
+        "_save_plots_note": "Save plots to files",
+        "show_plots": false,
+        "_show_plots_note": "Display plots interactively (use false for batch processing)"
+      },
+      "c2_heatmaps": {
+        "_comment": "C2 correlation function heatmap settings",
+        "enabled": true,
+        "_enabled_note": "Generate C2 correlation function heatmaps",
+        "layout": "single_row",
+        "_layout_note": "Layout style: single_row (1x3), stacked (3x1), compact (2x2)",
+        "include_experimental": true,
+        "_include_experimental_note": "Show experimental data heatmap",
+        "include_theoretical": true,
+        "_include_theoretical_note": "Show theoretical model heatmap",
+        "include_residuals": true,
+        "_include_residuals_note": "Show residuals (experimental - theoretical) heatmap",
+        "colormap": "viridis",
+        "_colormap_note": "Colormap for heatmaps: viridis, plasma, inferno, magma, RdYlBu",
+        "colorbar_position": "right",
+        "_colorbar_position_note": "Colorbar position: right, bottom, separate",
+        "title_prefix": "C2 Correlation Function",
+        "_title_prefix_note": "Prefix for heatmap titles",
+        "figsize": [
+          15,
+          5
+        ],
+        "_figsize_note": "Figure size for C2 heatmaps [width, height]"
+      },
+      "parameter_evolution": {
+        "_comment": "Parameter evolution and optimization history plots",
+        "enabled": true,
+        "_enabled_note": "Generate parameter evolution plots",
+        "show_bounds": true,
+        "_show_bounds_note": "Display parameter bounds as shaded regions",
+        "show_initial": true,
+        "_show_initial_note": "Mark initial parameter values",
+        "show_final": true,
+        "_show_final_note": "Mark final optimized values",
+        "log_scale_params": [
+          "D0",
+          "gamma_dot_t0"
+        ],
+        "_log_scale_params_note": "Parameters to plot on log scale",
+        "subplot_layout": "auto",
+        "_subplot_layout_note": "Subplot arrangement: auto, grid, vertical, horizontal"
+      },
+      "mcmc_plots": {
+        "_comment": "MCMC analysis visualization settings",
+        "enabled": true,
+        "_enabled_note": "Generate MCMC analysis plots (requires ArviZ)",
+        "corner_plots": {
+          "_comment": "Corner plot settings for posterior distributions",
+          "enabled": true,
+          "_enabled_note": "Generate corner plots showing parameter correlations",
+          "show_titles": true,
+          "_show_titles_note": "Show parameter names as subplot titles",
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
+          "_quantiles_note": "Quantile lines to show (16th, 50th, 84th percentiles)",
+          "show_truths": false,
+          "_show_truths_note": "Show true parameter values if known",
+          "use_arviz": true,
+          "_use_arviz_note": "Use ArviZ for corner plots (recommended)",
+          "figsize": [
+            12,
+            12
+          ],
+          "_figsize_note": "Figure size for corner plots"
+        },
+        "trace_plots": {
+          "_comment": "MCMC trace plot settings",
+          "enabled": true,
+          "_enabled_note": "Generate trace plots showing parameter evolution",
+          "show_chains": true,
+          "_show_chains_note": "Show individual chain traces",
+          "show_warmup": false,
+          "_show_warmup_note": "Include warmup/tuning period in plots",
+          "compact_layout": false,
+          "_compact_layout_note": "Use compact subplot layout",
+          "figsize": [
+            12,
+            8
+          ],
+          "_figsize_note": "Figure size for trace plots"
+        },
+        "convergence_diagnostics": {
+          "_comment": "MCMC convergence diagnostic plots",
+          "enabled": true,
+          "_enabled_note": "Generate convergence diagnostic plots",
+          "show_rhat": true,
+          "_show_rhat_note": "Show R-hat convergence diagnostic",
+          "show_ess": true,
+          "_show_ess_note": "Show effective sample size diagnostic",
+          "show_mcse": true,
+          "_show_mcse_note": "Show Monte Carlo standard error",
+          "show_energy": true,
+          "_show_energy_note": "Show energy plots for HMC/NUTS diagnostics",
+          "rhat_threshold": 1.1,
+          "_rhat_threshold_note": "R-hat threshold for convergence warning",
+          "ess_threshold": 100,
+          "_ess_threshold_note": "Minimum effective sample size threshold"
+        }
+      },
+      "diagnostic_plots": {
+        "_comment": "General diagnostic and quality assessment plots",
+        "enabled": true,
+        "_enabled_note": "Generate diagnostic plots",
+        "chi_squared_summary": true,
+        "_chi_squared_summary_note": "Plot chi-squared fit quality summary",
+        "parameter_correlations": true,
+        "_parameter_correlations_note": "Show parameter correlation matrix",
+        "residual_analysis": true,
+        "_residual_analysis_note": "Generate residual analysis plots",
+        "convergence_history": true,
+        "_convergence_history_note": "Plot optimization convergence history"
+      },
+      "output": {
+        "_comment": "Plot output and file management",
+        "base_directory": "./plots",
+        "_base_directory_note": "Base directory for saving plots",
+        "subdirectories": {
+          "c2_heatmaps": "c2_correlation",
+          "parameter_plots": "parameters",
+          "mcmc_plots": "mcmc_analysis",
+          "diagnostics": "diagnostics"
+        },
+        "_subdirectories_note": "Organize plots into subdirectories by type",
+        "filename_template": "{analysis_type}_{timestamp}_{method}",
+        "_filename_template_note": "Template for plot filenames",
+        "include_timestamp": true,
+        "_include_timestamp_note": "Include timestamp in filenames",
+        "overwrite_existing": false,
+        "_overwrite_existing_note": "Overwrite existing plot files"
+      }
     },
     "logging": {
       "_comment": "Logging configuration",
@@ -565,7 +773,9 @@
         "analyzer_parameters.computational.num_threads": "auto",
         "performance_settings.caching.enable_memory_cache": true,
         "performance_settings.parallel_processing.enable_multiprocessing": true,
-        "performance_settings.numba_optimization.enable_numba": true
+        "performance_settings.numba_optimization.enable_numba": true,
+        "optimization_config.mcmc_sampling.cores": 8,
+        "output_settings.plotting.general.dpi": 150
       }
     },
     "low_memory": {
@@ -573,7 +783,9 @@
       "settings": {
         "performance_settings.memory_management.low_memory_mode": true,
         "performance_settings.caching.cache_size_limit_mb": 100,
-        "experimental_data.data_type": "float32"
+        "experimental_data.data_type": "float32",
+        "output_settings.plotting.general.dpi": 150,
+        "optimization_config.mcmc_sampling.draws": 5000
       }
     },
     "reproducible_research": {
@@ -581,7 +793,56 @@
       "settings": {
         "optimization_config.mcmc_sampling.chains": 4,
         "output_settings.save_intermediate": true,
-        "output_settings.detailed_summary": true
+        "output_settings.detailed_summary": true,
+        "workflow_integration.mcmc_integration.auto_save_traces": true,
+        "output_settings.plotting.general.create_plots": true
+      }
+    },
+    "comprehensive_plotting": {
+      "description": "Full plotting and visualization configuration",
+      "settings": {
+        "output_settings.plotting.c2_heatmaps.enabled": true,
+        "output_settings.plotting.mcmc_plots.enabled": true,
+        "output_settings.plotting.parameter_evolution.enabled": true,
+        "output_settings.plotting.diagnostic_plots.enabled": true,
+        "workflow_integration.analysis_workflow.auto_generate_plots": true,
+        "output_settings.plotting.general.plot_format": "pdf",
+        "output_settings.plotting.general.dpi": 300
+      }
+    },
+    "mcmc_focused": {
+      "description": "Configuration optimized for MCMC analysis",
+      "settings": {
+        "optimization_config.mcmc_sampling.enabled": true,
+        "optimization_config.mcmc_sampling.draws": 15000,
+        "optimization_config.mcmc_sampling.tune": 2000,
+        "optimization_config.mcmc_sampling.chains": 6,
+        "optimization_config.mcmc_sampling.target_accept": 0.95,
+        "output_settings.plotting.mcmc_plots.corner_plots.enabled": true,
+        "output_settings.plotting.mcmc_plots.trace_plots.enabled": true,
+        "output_settings.plotting.mcmc_plots.convergence_diagnostics.enabled": true,
+        "workflow_integration.mcmc_integration.auto_save_traces": true
+      }
+    },
+    "publication_quality": {
+      "description": "Settings for publication-quality figures",
+      "settings": {
+        "output_settings.plotting.general.dpi": 300,
+        "output_settings.plotting.general.plot_format": "pdf",
+        "output_settings.plotting.general.style": "publication",
+        "output_settings.plotting.c2_heatmaps.figsize": [
+          12,
+          4
+        ],
+        "output_settings.plotting.mcmc_plots.corner_plots.figsize": [
+          10,
+          10
+        ],
+        "output_settings.reporting.plot_formats": [
+          "pdf",
+          "svg"
+        ],
+        "output_settings.plotting.general.show_plots": false
       }
     }
   },
@@ -615,7 +876,54 @@
         "Increase analyzer_parameters.computational.num_threads",
         "Enable performance_settings.caching.enable_memory_cache",
         "Use experimental_data.cache_compression: true",
-        "Consider reducing precision with data_type: 'float32'"
+        "Consider reducing precision with data_type: 'float32'",
+        "Reduce plotting resolution: output_settings.plotting.general.dpi: 150"
+      ]
+    },
+    "plotting_errors": {
+      "problem": "Plotting functions fail or produce errors",
+      "solutions": [
+        "Check that matplotlib is installed: pip install matplotlib",
+        "For MCMC plots, install ArviZ: pip install arviz",
+        "For enhanced corner plots, install corner: pip install corner",
+        "Set output_settings.plotting.general.show_plots: false for headless systems",
+        "Enable workflow_integration.error_handling.continue_on_plot_errors: true",
+        "Check output_settings.plotting.output.base_directory permissions",
+        "Reduce figure complexity: disable some plot types in plotting config"
+      ]
+    },
+    "mcmc_convergence_issues": {
+      "problem": "MCMC sampling does not converge properly",
+      "solutions": [
+        "Increase optimization_config.mcmc_sampling.tune (try 3000-5000)",
+        "Increase optimization_config.mcmc_sampling.target_accept to 0.95",
+        "Add more chains: optimization_config.mcmc_sampling.chains: 6 or 8",
+        "Increase draws: optimization_config.mcmc_sampling.draws: 15000+",
+        "Check parameter bounds are reasonable in parameter_space.bounds",
+        "Use better initial parameter estimates from classical optimization",
+        "Enable output_settings.plotting.mcmc_plots.convergence_diagnostics to diagnose issues"
+      ]
+    },
+    "missing_dependencies": {
+      "problem": "ImportError for optional plotting or MCMC packages",
+      "solutions": [
+        "Install complete plotting suite: pip install matplotlib seaborn arviz corner",
+        "For MCMC functionality: pip install pymc arviz",
+        "For enhanced plotting: pip install corner",
+        "Check package versions are compatible",
+        "Set plotting.mcmc_plots.enabled: false if MCMC plotting not needed",
+        "Use plotting.general.fallback_plotting: true for basic plots only"
+      ]
+    },
+    "large_data_plotting": {
+      "problem": "Plotting fails with large datasets or out of memory errors",
+      "solutions": [
+        "Reduce plotting resolution: plotting.general.dpi: 150",
+        "Use plotting.c2_heatmaps.layout: 'compact' instead of 'single_row'",
+        "Enable workflow_integration.data_management.auto_cleanup_cache: true",
+        "Reduce MCMC sample size for plotting: use subset of traces",
+        "Set plotting.general.figure_size to smaller values",
+        "Enable experimental_data.cache_compression: true"
       ]
     }
   }

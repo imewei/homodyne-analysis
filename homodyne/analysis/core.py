@@ -521,6 +521,15 @@ class HomodyneAnalysisCore:
         self._last_phi_angles = phi_angles
         logger.debug(f"Data cached in memory - final shape: {c2_experimental.shape}")
 
+        # Plot experimental data for validation if enabled
+        if self.config.get("workflow_integration", {}).get("analysis_workflow", {}).get("plot_experimental_data_on_load", False):
+            logger.info("Plotting experimental data for validation...")
+            try:
+                self._plot_experimental_data_validation(c2_experimental, phi_angles)
+                logger.info("Experimental data validation plot created successfully")
+            except Exception as e:
+                logger.warning(f"Failed to create experimental data validation plot: {e}")
+
         logger.debug("load_experimental_data method completed successfully")
         return c2_experimental, self.time_length, phi_angles, num_angles
 
@@ -1680,6 +1689,156 @@ class HomodyneAnalysisCore:
         
         # Generate plots if enabled in configuration
         self._generate_analysis_plots(results, output_data)
+
+    def _plot_experimental_data_validation(self, c2_experimental: np.ndarray, phi_angles: np.ndarray) -> None:
+        """
+        Plot experimental C2 data immediately after loading for validation.
+        
+        This method creates a comprehensive validation plot of the loaded experimental
+        data to verify data integrity and structure before analysis.
+        
+        Parameters
+        ----------
+        c2_experimental : np.ndarray
+            Experimental correlation data with shape (n_angles, n_t2, n_t1)
+        phi_angles : np.ndarray
+            Array of scattering angles in degrees
+        """
+        try:
+            # Import plotting dependencies
+            import matplotlib.pyplot as plt
+            import matplotlib.gridspec as gridspec
+            from pathlib import Path
+            
+            logger.debug("Creating experimental data validation plot")
+            
+            # Set up plotting style
+            plt.style.use('default')
+            plt.rcParams.update({
+                'font.size': 11,
+                'axes.labelsize': 12,
+                'axes.titlesize': 14,
+                'figure.dpi': 150
+            })
+            
+            # Get temporal parameters
+            dt = self.dt
+            n_angles, n_t2, n_t1 = c2_experimental.shape
+            time_t2 = np.arange(n_t2) * dt
+            time_t1 = np.arange(n_t1) * dt
+            
+            logger.debug(f"Data shape for validation plot: {c2_experimental.shape}")
+            logger.debug(f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s")
+            
+            # Create the validation plot
+            n_plot_angles = min(3, n_angles)  # Show up to 3 angles
+            fig = plt.figure(figsize=(16, 4 * n_plot_angles))
+            gs = gridspec.GridSpec(n_plot_angles, 4, hspace=0.3, wspace=0.3)
+            
+            for i in range(n_plot_angles):
+                angle_idx = i * (n_angles // n_plot_angles) if n_angles > 1 else 0
+                if angle_idx >= n_angles:
+                    angle_idx = n_angles - 1
+                    
+                angle_data = c2_experimental[angle_idx, :, :]
+                phi_deg = phi_angles[angle_idx] if len(phi_angles) > angle_idx else 0.0
+                
+                # 1. Full heatmap
+                ax1 = fig.add_subplot(gs[i, 0])
+                im1 = ax1.imshow(angle_data, aspect='auto', origin='lower',
+                               extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]],
+                               cmap='viridis')
+                ax1.set_xlabel('Time t₁ (s)')
+                ax1.set_ylabel('Time t₂ (s)')
+                ax1.set_title(f'g₂(t₁,t₂) at φ={phi_deg:.1f}°')
+                plt.colorbar(im1, ax=ax1, shrink=0.8)
+                
+                # 2. Diagonal slice
+                ax2 = fig.add_subplot(gs[i, 1])
+                diagonal = np.diag(angle_data)
+                time_diag = time_t1[:len(diagonal)]
+                ax2.plot(time_diag, diagonal, 'b-', linewidth=2)
+                ax2.set_xlabel('Time (s)')
+                ax2.set_ylabel('g₂(t,t)')
+                ax2.set_title(f'Diagonal at φ={phi_deg:.1f}°')
+                ax2.grid(True, alpha=0.3)
+                
+                # 3. Cross-sections
+                ax3 = fig.add_subplot(gs[i, 2])
+                n_sections = 3
+                section_indices = np.linspace(5, n_t2-5, n_sections, dtype=int)
+                colors = ['red', 'blue', 'green']
+                
+                for idx, color in zip(section_indices, colors):
+                    if idx < n_t2:
+                        ax3.plot(time_t1, angle_data[idx, :], color=color, 
+                               linewidth=1.5, alpha=0.8, label=f't₂={time_t2[idx]:.1f}s')
+                
+                ax3.set_xlabel('Time t₁ (s)')
+                ax3.set_ylabel('g₂(t₁,t₂)')
+                ax3.set_title(f'Cross-sections at φ={phi_deg:.1f}°')
+                ax3.legend(fontsize=9)
+                ax3.grid(True, alpha=0.3)
+                
+                # 4. Statistics
+                ax4 = fig.add_subplot(gs[i, 3])
+                ax4.axis('off')
+                
+                # Calculate statistics
+                mean_val = np.mean(angle_data)
+                std_val = np.std(angle_data)
+                min_val = np.min(angle_data)
+                max_val = np.max(angle_data)
+                diag_mean = np.mean(diagonal)
+                contrast = (max_val - min_val) / min_val
+                
+                stats_text = f"""Data Statistics (φ={phi_deg:.1f}°):
+
+Shape: {angle_data.shape[0]} × {angle_data.shape[1]}
+
+g₂ Values:
+Mean: {mean_val:.4f}
+Std:  {std_val:.4f}
+Min:  {min_val:.4f}
+Max:  {max_val:.4f}
+
+Diagonal mean: {diag_mean:.4f}
+Contrast: {contrast:.3f}
+
+Validation:
+{'✓' if 0.9 < mean_val < 1.2 else '✗'} Mean around 1.0
+{'✓' if diag_mean > mean_val else '✗'} Diagonal enhanced
+{'✓' if contrast > 0.001 else '✗'} Sufficient contrast"""
+                
+                ax4.text(0.05, 0.95, stats_text, transform=ax4.transAxes, fontsize=9,
+                        verticalalignment='top', fontfamily='monospace',
+                        bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
+            
+            # Overall title
+            sample_desc = self.config.get('metadata', {}).get('sample_description', 'Unknown Sample')
+            plt.suptitle(f'Experimental Data Validation: {sample_desc}', 
+                        fontsize=16, fontweight='bold')
+            
+            # Save the validation plot
+            plots_base_dir = self.config.get("output_settings", {}).get("plotting", {}).get("output", {}).get("base_directory", "./plots")
+            plots_dir = Path(plots_base_dir) / "data_validation"
+            plots_dir.mkdir(parents=True, exist_ok=True)
+            
+            output_file = plots_dir / "experimental_data_validation.png"
+            plt.savefig(output_file, dpi=300, bbox_inches='tight')
+            logger.info(f"Experimental data validation plot saved to: {output_file}")
+            
+            # Optionally show the plot
+            show_plots = self.config.get("output_settings", {}).get("plotting", {}).get("general", {}).get("show_plots", False)
+            if show_plots:
+                plt.show()
+            else:
+                plt.close(fig)
+                
+        except Exception as e:
+            logger.error(f"Failed to create experimental data validation plot: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
 
     def _generate_analysis_plots(self, results: Dict[str, Any], output_data: Dict[str, Any]) -> None:
         """
