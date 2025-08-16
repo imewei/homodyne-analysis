@@ -193,11 +193,11 @@
       "_methods_note": "Optimized to use only Nelder-Mead for best performance",
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 3000,
-          "_maxiter_note": "Maximum iterations (increase for complex systems)",
-          "xatol": 1e-10,
-          "_xatol_note": "Absolute error in parameters",
-          "fatol": 1e-10,
+          "maxiter": 2000,
+          "_maxiter_note": "Maximum iterations (reduced from 3000 for faster convergence)",
+          "xatol": 1e-08,
+          "_xatol_note": "Absolute error in parameters (balanced precision vs speed)",
+          "fatol": 1e-08,
           "_fatol_note": "Absolute error in function value",
           "adaptive": true,
           "_adaptive_note": "Use adaptive algorithm variant"
@@ -234,9 +234,9 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 1e-3,
+        "min": 0.001,
         "_min_note": "Lower bound - adjust based on expected diffusion rates",
-        "max": 1e6,
+        "max": 1000000.0,
         "_max_note": "Upper bound - should encompass reasonable values",
         "type": "log-uniform",
         "_type_note": "Distribution type: uniform, log-uniform, normal",
@@ -280,8 +280,8 @@
       },
       {
         "name": "beta",
-        "min": -10.0,
-        "max": 10.0,
+        "min": -2.0,
+        "max": 2.0,
         "type": "uniform",
         "prior_mu": 0.0,
         "prior_sigma": 0.5,
@@ -594,7 +594,7 @@
         "Check initial_parameters.values - they should be reasonable estimates",
         "Adjust parameter_space.bounds to be physically meaningful",
         "Increase optimization_config.classical_optimization.method_options.maxiter",
-        "Try different optimization methods",
+        "Increase maxiter if using complex parameter spaces",
         "Check data quality and preprocessing settings"
       ]
     },
