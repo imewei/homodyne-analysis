@@ -34,6 +34,9 @@ try:
         plot_c2_heatmaps,
         plot_parameter_evolution,
         plot_diagnostic_summary,
+        plot_mcmc_corner,
+        plot_mcmc_trace,
+        plot_mcmc_convergence_diagnostics,
         create_all_plots,
         get_plot_config,
         setup_matplotlib_style,
@@ -373,15 +376,248 @@ class TestDiagnosticPlots:
 
 
 class TestMCMCPlots:
-    """Test MCMC corner plots (if available)."""
+    """Test MCMC plotting functions."""
 
-    @pytest.mark.skipif(
-        True, reason="ArviZ/corner package may not be available"
-    )
-    def test_plot_mcmc_corner_basic(self, temp_directory, dummy_config):
-        """Test basic MCMC corner plot (requires ArviZ)."""
-        # Create mock trace data
-        mock_trace = {
+    def test_plot_mcmc_corner_with_arviz_available(self, temp_directory, dummy_config):
+        """Test MCMC corner plot when ArviZ is available."""
+        try:
+            import arviz as az
+            import numpy as np
+
+            # Create mock ArviZ InferenceData
+            n_chains, n_draws = 4, 500
+            param_names = ["D0", "alpha", "beta"]
+            
+            # Create posterior samples
+            posterior_dict = {}
+            for param in param_names:
+                if param == "D0":
+                    posterior_dict[param] = np.random.lognormal(5, 0.5, (n_chains, n_draws))
+                else:
+                    posterior_dict[param] = np.random.normal(0, 0.1, (n_chains, n_draws))
+
+            # Create ArviZ InferenceData object
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            
+            param_units = ["Å²/s", "dimensionless", "dimensionless"]
+
+            success = plot_mcmc_corner(
+                trace_data,
+                temp_directory,
+                dummy_config,
+                param_names=param_names,
+                param_units=param_units,
+            )
+
+            assert success is True
+            
+            plot_files = list(temp_directory.glob("mcmc_corner_plot.png"))
+            assert len(plot_files) == 1
+            assert plot_files[0].stat().st_size > 10000  # Should be substantial file
+
+        except ImportError:
+            pytest.skip("ArviZ not available")
+
+    def test_plot_mcmc_corner_without_arviz(self, temp_directory, dummy_config):
+        """Test MCMC corner plot graceful handling when ArviZ unavailable."""
+        # Mock ArviZ as unavailable
+        with patch('homodyne.plotting.ARVIZ_AVAILABLE', False):
+            success = plot_mcmc_corner(
+                {},  # Empty trace data
+                temp_directory,
+                dummy_config,
+            )
+            
+            assert success is False  # Should fail gracefully
+            
+            # No files should be created
+            plot_files = list(temp_directory.glob("mcmc_corner_plot.*"))
+            assert len(plot_files) == 0
+
+    def test_plot_mcmc_trace_with_arviz_available(self, temp_directory, dummy_config):
+        """Test MCMC trace plots when ArviZ is available."""
+        try:
+            import arviz as az
+            
+            # Create mock trace data
+            n_chains, n_draws = 4, 500
+            param_names = ["D0", "alpha", "D_offset"]
+            
+            posterior_dict = {}
+            for param in param_names:
+                posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
+            
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            param_units = ["Å²/s", "dimensionless", "Å²/s"]
+
+            success = plot_mcmc_trace(
+                trace_data,
+                temp_directory,
+                dummy_config,
+                param_names=param_names,
+                param_units=param_units,
+            )
+
+            assert success is True
+            
+            plot_files = list(temp_directory.glob("mcmc_trace_plots.png"))
+            assert len(plot_files) == 1
+            assert plot_files[0].stat().st_size > 15000  # Trace plots are typically larger
+
+        except ImportError:
+            pytest.skip("ArviZ not available")
+
+    def test_plot_mcmc_convergence_diagnostics(self, temp_directory, dummy_config):
+        """Test MCMC convergence diagnostic plots."""
+        try:
+            import arviz as az
+            
+            # Create mock trace data
+            n_chains, n_draws = 4, 1000
+            param_names = ["D0", "alpha", "beta", "gamma_dot_t0"]
+            
+            posterior_dict = {}
+            for param in param_names:
+                posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
+            
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            
+            # Create comprehensive mock diagnostics
+            diagnostics = {
+                "r_hat": {
+                    "D0": 1.02,
+                    "alpha": 1.05,
+                    "beta": 1.01,
+                    "gamma_dot_t0": 1.08
+                },
+                "ess_bulk": {
+                    "D0": 800,
+                    "alpha": 600,
+                    "beta": 900,
+                    "gamma_dot_t0": 450
+                },
+                "mcse_mean": {
+                    "D0": 0.001,
+                    "alpha": 0.002,
+                    "beta": 0.0015,
+                    "gamma_dot_t0": 0.003
+                },
+                "max_rhat": 1.08,
+                "min_ess": 450,
+                "converged": True,
+                "assessment": "Good"
+            }
+
+            success = plot_mcmc_convergence_diagnostics(
+                trace_data,
+                diagnostics,
+                temp_directory,
+                dummy_config,
+                param_names=param_names,
+            )
+
+            assert success is True
+            
+            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            assert len(plot_files) == 1
+            assert plot_files[0].stat().st_size > 20000  # Complex diagnostic plot
+
+        except ImportError:
+            pytest.skip("ArviZ not available")
+
+    def test_plot_mcmc_convergence_diagnostics_poor_convergence(self, temp_directory, dummy_config):
+        """Test MCMC diagnostics with poor convergence indicators."""
+        try:
+            import arviz as az
+            
+            # Create mock trace data
+            posterior_dict = {
+                "param1": np.random.normal(0, 1, (2, 100)),
+                "param2": np.random.normal(0, 1, (2, 100))
+            }
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            
+            # Create diagnostics indicating poor convergence
+            poor_diagnostics = {
+                "r_hat": {"param1": 1.15, "param2": 1.25},  # High R-hat
+                "ess_bulk": {"param1": 50, "param2": 30},   # Low ESS
+                "mcse_mean": {"param1": 0.01, "param2": 0.02},
+                "max_rhat": 1.25,
+                "min_ess": 30,
+                "converged": False,
+                "assessment": "Poor - chains did not converge"
+            }
+
+            success = plot_mcmc_convergence_diagnostics(
+                trace_data,
+                poor_diagnostics,
+                temp_directory,
+                dummy_config,
+                param_names=["param1", "param2"],
+            )
+
+            assert success is True  # Should still create plot
+            
+            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            assert len(plot_files) == 1
+
+        except ImportError:
+            pytest.skip("ArviZ not available")
+
+    def test_plot_mcmc_functions_handle_missing_diagnostics(self, temp_directory, dummy_config):
+        """Test MCMC plotting with missing diagnostic data."""
+        try:
+            import arviz as az
+            
+            # Create minimal trace data
+            posterior_dict = {"param1": np.random.normal(0, 1, (2, 100))}
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            
+            # Test with incomplete diagnostics
+            incomplete_diagnostics = {
+                "max_rhat": 1.05,
+                "converged": True
+                # Missing r_hat, ess_bulk, mcse_mean dictionaries
+            }
+
+            success = plot_mcmc_convergence_diagnostics(
+                trace_data,
+                incomplete_diagnostics,
+                temp_directory,
+                dummy_config,
+                param_names=["param1"],
+            )
+
+            assert success is True  # Should handle gracefully
+            
+            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            assert len(plot_files) == 1
+
+        except ImportError:
+            pytest.skip("ArviZ not available")
+
+    def test_mcmc_plotting_error_handling(self, temp_directory, dummy_config):
+        """Test error handling in MCMC plotting functions."""
+        # Test with invalid trace data
+        invalid_trace = "not_a_trace"
+        
+        success1 = plot_mcmc_corner(invalid_trace, temp_directory, dummy_config)
+        success2 = plot_mcmc_trace(invalid_trace, temp_directory, dummy_config)
+        
+        assert success1 is False
+        assert success2 is False
+        
+        # Test convergence diagnostics with invalid trace
+        mock_diagnostics = {"max_rhat": 1.0, "converged": True}
+        success3 = plot_mcmc_convergence_diagnostics(
+            invalid_trace, mock_diagnostics, temp_directory, dummy_config
+        )
+        assert success3 is False
+
+    def test_mcmc_plotting_with_dictionary_trace(self, temp_directory, dummy_config):
+        """Test MCMC corner plot with dictionary trace data."""
+        # Create dictionary-format trace data
+        dict_trace = {
             "D0": np.random.lognormal(5, 0.5, 1000),
             "alpha": np.random.normal(-0.1, 0.05, 1000),
             "beta": np.random.normal(0.2, 0.1, 1000),
@@ -390,24 +626,20 @@ class TestMCMCPlots:
         param_names = ["D0", "alpha", "beta"]
         param_units = ["Å²/s", "dimensionless", "dimensionless"]
 
-        try:
-            from homodyne.plotting import plot_mcmc_corner
+        success = plot_mcmc_corner(
+            dict_trace,
+            temp_directory,
+            dummy_config,
+            param_names=param_names,
+            param_units=param_units,
+        )
 
-            success = plot_mcmc_corner(
-                mock_trace,
-                temp_directory,
-                dummy_config,
-                param_names=param_names,
-                param_units=param_units,
-            )
-
-            # This may fail if ArviZ is not available, which is acceptable
-            if success:
-                plot_files = list(temp_directory.glob("mcmc_corner_plot.png"))
-                assert len(plot_files) == 1
-
-        except ImportError:
-            pytest.skip("ArviZ or corner package not available")
+        # Success depends on whether corner/arviz packages are available
+        assert isinstance(success, bool)
+        
+        if success:
+            plot_files = list(temp_directory.glob("mcmc_corner_plot.png"))
+            assert len(plot_files) == 1
 
 
 class TestCompleteWorkflow:
@@ -426,15 +658,23 @@ class TestCompleteWorkflow:
         # Check that multiple plot types were attempted
         expected_plots = [
             "c2_heatmaps",
-            "parameter_evolution",
+            "parameter_evolution", 
             "diagnostic_summary",
         ]
+        # MCMC plots are optional depending on data availability
+        optional_plots = ["mcmc_corner", "mcmc_trace", "mcmc_convergence"]
+        
         for plot_type in expected_plots:
             if plot_type in plot_status:
                 # If the plot was attempted, it should have succeeded with dummy data
                 assert (
                     plot_status[plot_type] is True
                 ), f"{plot_type} plot failed"
+        
+        # Optional plots should not fail if attempted
+        for plot_type in optional_plots:
+            if plot_type in plot_status:
+                assert isinstance(plot_status[plot_type], bool), f"{plot_type} should return boolean"
 
         # Check that actual files were created
         all_plot_files = list(temp_directory.glob("*.png"))
@@ -457,6 +697,71 @@ class TestCompleteWorkflow:
         # At least some plots should succeed
         successful_plots = sum(1 for status in plot_status.values() if status)
         assert successful_plots >= 1
+
+    def test_create_all_plots_with_mcmc_data(self, temp_directory, dummy_config):
+        """Test plotting workflow with MCMC results included."""
+        try:
+            import arviz as az
+            
+            # Create comprehensive results with MCMC data
+            n_chains, n_draws = 4, 500
+            param_names = ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
+            
+            # Create mock ArviZ trace data
+            posterior_dict = {}
+            for param in param_names:
+                if param == "D0":
+                    posterior_dict[param] = np.random.lognormal(5, 0.5, (n_chains, n_draws))
+                else:
+                    posterior_dict[param] = np.random.normal(0, 0.1, (n_chains, n_draws))
+
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            
+            mcmc_results = {
+                "experimental_data": np.random.rand(3, 20, 20) + 1.0,
+                "theoretical_data": np.random.rand(3, 20, 20) + 1.0,
+                "phi_angles": np.array([0, 45, 90]),
+                "best_parameters": {name: np.random.normal() for name in param_names},
+                "parameter_bounds": dummy_config["parameter_space"]["bounds"],
+                "parameter_names": param_names,
+                "parameter_units": ["Å²/s", "dimensionless", "Å²/s", "s⁻¹", "dimensionless", "s⁻¹", "degrees"],
+                "mcmc_trace": trace_data,
+                "mcmc_diagnostics": {
+                    "r_hat": {name: np.random.uniform(1.0, 1.1) for name in param_names},
+                    "ess_bulk": {name: np.random.randint(400, 1000) for name in param_names},
+                    "mcse_mean": {name: np.random.uniform(0.001, 0.005) for name in param_names},
+                    "max_rhat": 1.08,
+                    "min_ess": 450,
+                    "converged": True,
+                    "assessment": "Good"
+                },
+                "chi_squared": 2.5,
+                "method": "MCMC"
+            }
+
+            plot_status = create_all_plots(mcmc_results, temp_directory, dummy_config)
+
+            assert isinstance(plot_status, dict)
+
+            # Check that MCMC-specific plots were created
+            mcmc_plot_types = ["mcmc_corner", "mcmc_trace", "mcmc_convergence"]
+            mcmc_plots_created = [plot_type for plot_type in mcmc_plot_types if plot_status.get(plot_type, False)]
+            
+            # At least some MCMC plots should be successful
+            assert len(mcmc_plots_created) >= 2, f"Expected at least 2 MCMC plots, got: {mcmc_plots_created}"
+
+            # Check for actual MCMC plot files
+            mcmc_files = [
+                list(temp_directory.glob("mcmc_corner_plot.*")),
+                list(temp_directory.glob("mcmc_trace_plots.*")),
+                list(temp_directory.glob("mcmc_convergence_diagnostics.*"))
+            ]
+            
+            total_mcmc_files = sum(len(files) for files in mcmc_files)
+            assert total_mcmc_files >= 2, "Expected at least 2 MCMC plot files to be created"
+
+        except ImportError:
+            pytest.skip("ArviZ not available for MCMC plotting test")
 
 
 class TestPlotErrorHandling:
