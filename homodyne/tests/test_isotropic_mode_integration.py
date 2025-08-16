@@ -238,6 +238,14 @@ class TestIsotropicModeIntegration:
 
     def test_isotropic_mode_caching_behavior(self, temp_directory, isotropic_config):
         """Test caching behavior with dummy angles in isotropic mode."""
+        # Reset any global state that might interfere with this test
+        import homodyne.analysis.core
+        homodyne.analysis.core.OPTIMIZATION_COUNTER = 0
+        
+        # Clear any potential module-level imports that might interfere
+        import importlib
+        importlib.reload(homodyne.analysis.core)
+        
         config_file = temp_directory / "isotropic_config.json"
         
         # Create the cache directory that the config references
@@ -253,17 +261,18 @@ class TestIsotropicModeIntegration:
         core = HomodyneAnalysisCore(str(config_file))
         
         # Mock experimental data for single angle
-        mock_c2_data = np.random.rand(1, 49)  # Single angle
+        mock_c2_data = np.random.rand(1, 49, 49)  # Single angle, 49x49 correlation matrix
         
         # Test that data is cached in memory after loading
         assert core.cached_experimental_data is None  # Initially None
         assert core.cached_phi_angles is None  # Initially None
         
-        with patch.object(core, '_load_raw_data') as mock_load_raw:
-            with patch('homodyne.analysis.core.os.path.isfile') as mock_isfile:
-                # Mock cache miss to ensure fresh load
-                mock_isfile.return_value = False
-                mock_load_raw.return_value = mock_c2_data
+        # Use more specific and safer mocking approach
+        with patch.object(core, '_load_raw_data', return_value=mock_c2_data) as mock_load_raw:
+            with patch('os.path.isfile', return_value=False) as mock_isfile:
+                # Ensure instance cache is cleared before test
+                core.cached_experimental_data = None
+                core.cached_phi_angles = None
                 
                 # Load data - should trigger internal caching
                 c2_data, time_length, phi_angles, num_angles = core.load_experimental_data()
@@ -274,8 +283,8 @@ class TestIsotropicModeIntegration:
                 assert phi_angles[0] == 0.0
                 
                 # Verify internal memory caching occurred
-                assert core.cached_experimental_data is not None
-                assert core.cached_phi_angles is not None
+                assert core.cached_experimental_data is not None, f"Cache not populated! Actual: {core.cached_experimental_data}"
+                assert core.cached_phi_angles is not None, f"Phi angles cache not populated! Actual: {core.cached_phi_angles}"
                 assert len(core.cached_phi_angles) == 1
                 assert core.cached_phi_angles[0] == 0.0
                 

@@ -472,6 +472,8 @@ class HomodyneAnalysisCore:
             phi_file = os.path.join(phi_angles_path, phi_angles_file)
             logger.debug(f"Loading phi angles from: {phi_file}")
             phi_angles = np.loadtxt(phi_file, dtype=np.float64)
+            # Ensure phi_angles is always an array, even for single values
+            phi_angles = np.atleast_1d(phi_angles)
             num_angles = len(phi_angles)
             logger.debug(f"Loaded {num_angles} phi angles: {phi_angles}")
 
