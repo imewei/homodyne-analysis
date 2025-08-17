@@ -873,7 +873,7 @@
     
     "plotting": {
       "_comment": "Comprehensive plotting configuration for analysis visualization",
-      "description": "Configuration for C2 heatmaps, parameter evolution, and MCMC plots",
+      "description": "Configuration for C2 heatmaps, diagnostic plots, and MCMC plots",
       
       "general": {
         "_comment": "General plotting settings",
@@ -929,27 +929,6 @@
         "_figsize_note": "Figure size for C2 heatmaps [width, height]"
       },
       
-      "parameter_evolution": {
-        "_comment": "Parameter evolution and optimization history plots",
-        "enabled": true,
-        "_enabled_note": "Generate parameter evolution plots",
-        
-        "show_bounds": true,
-        "_show_bounds_note": "Display parameter bounds as shaded regions",
-        
-        "show_initial": true,
-        "_show_initial_note": "Mark initial parameter values",
-        
-        "show_final": true,
-        "_show_final_note": "Mark final optimized values",
-        
-        "log_scale_params": ["D0", "gamma_dot_t0"],
-        "_log_scale_params_note": "Parameters to plot on log scale",
-        
-        "subplot_layout": "auto",
-        "_subplot_layout_note": "Subplot arrangement: auto, grid, vertical, horizontal"
-      },
-      
       "mcmc_plots": {
         "_comment": "MCMC analysis visualization settings",
         "enabled": true,
@@ -979,7 +958,7 @@
         "trace_plots": {
           "_comment": "MCMC trace plot settings",
           "enabled": true,
-          "_enabled_note": "Generate trace plots showing parameter evolution",
+          "_enabled_note": "Generate trace plots showing MCMC chain evolution",
           
           "show_chains": true,
           "_show_chains_note": "Show individual chain traces",
@@ -1138,7 +1117,6 @@
       "settings": {
         "output_settings.plotting.c2_heatmaps.enabled": true,
         "output_settings.plotting.mcmc_plots.enabled": true,
-        "output_settings.plotting.parameter_evolution.enabled": true,
         "output_settings.plotting.diagnostic_plots.enabled": true,
         "workflow_integration.analysis_workflow.auto_generate_plots": true,
         "output_settings.plotting.general.plot_format": "pdf",

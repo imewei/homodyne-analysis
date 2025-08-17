@@ -239,31 +239,26 @@ class TestMockedHeavyComputation:
     @pytest.mark.skipif(
         not PLOTTING_AVAILABLE, reason="Plotting module not available"
     )
-    def test_mock_plotting_workflow(self, temp_directory, dummy_config):
-        """Test plotting workflow with mocked matplotlib operations."""
+    def test_plotting_workflow_integration(self, temp_directory, dummy_config):
+        """Test plotting workflow integration without parameter evolution."""
 
-        with patch("matplotlib.pyplot.savefig") as mock_savefig:
-            with patch("matplotlib.pyplot.subplots") as mock_subplots:
-                # Configure mocks
-                mock_fig = MagicMock()
-                mock_ax = MagicMock()
-                mock_subplots.return_value = (mock_fig, mock_ax)
-                mock_savefig.return_value = None
+        # Test that plotting works without the removed parameter evolution function
+        from homodyne.plotting import plot_c2_heatmaps
+        import numpy as np
 
-                # Simulate plotting workflow
-                from plotting import plot_parameter_evolution
+        exp_data = np.random.random((1, 10, 10)) + 1.0
+        theory_data = np.random.random((1, 10, 10)) + 1.0
+        phi_angles = np.array([0.0])
 
-                best_params = {"D0": 100.0, "alpha": -0.1}
-                bounds = dummy_config["parameter_space"]["bounds"][:2]
+        # This should work with actual plotting functions
+        success = plot_c2_heatmaps(
+            exp_data, theory_data, phi_angles, temp_directory, dummy_config
+        )
 
-                # This should use mocked matplotlib functions
-                success = plot_parameter_evolution(
-                    best_params, bounds, temp_directory, dummy_config
-                )
-
-                # Verify mocks were called
-                mock_subplots.assert_called()
-                assert success is True  # Should succeed with mocks
+        # Should succeed and create plot files
+        assert success is True
+        plot_files = list(temp_directory.glob("*.png"))
+        assert len(plot_files) > 0
 
 
 class TestErrorHandlingIntegration:
@@ -485,15 +480,15 @@ class TestMemoryManagement:
 
         # Create and save a plot
         if PLOTTING_AVAILABLE:
-            from plotting import plot_parameter_evolution
+            from homodyne.plotting import plot_c2_heatmaps
+            import numpy as np
 
-            best_params = {"D0": 100.0}
-            bounds = [
-                {"name": "D0", "min": 1.0, "max": 1000.0, "unit": "Å²/s"}
-            ]
+            exp_data = np.random.random((1, 10, 10)) + 1.0
+            theory_data = np.random.random((1, 10, 10)) + 1.0
+            phi_angles = np.array([0.0])
 
-            success = plot_parameter_evolution(
-                best_params, bounds, temp_directory, dummy_config
+            success = plot_c2_heatmaps(
+                exp_data, theory_data, phi_angles, temp_directory, dummy_config
             )
 
             # Check that figures were cleaned up
@@ -974,7 +969,8 @@ class TestAnalysisWorkflowIntegration:
         assert isinstance(plot_status, dict)
         
         # Should have attempted multiple plot types
-        expected_basic_plots = ["c2_heatmaps", "parameter_evolution", "diagnostic_summary"]
+        expected_basic_plots = ["c2_heatmaps", "diagnostic_summary"]
+        # parameter_evolution has been removed due to persistent issues
         for plot_type in expected_basic_plots:
             if plot_type in plot_status:
                 assert isinstance(plot_status[plot_type], bool)

@@ -380,13 +380,6 @@
         "title_prefix": "C2 Isotropic Static Mode"
       },
       
-      "parameter_evolution": {
-        "enabled": true,
-        "show_bounds": true,
-        "log_scale_params": ["D0"],
-        "_log_scale_note": "Only D0 needs log scale in static isotropic mode"
-      },
-      
       "mcmc_plots": {
         "enabled": true,
         "corner_plots": {

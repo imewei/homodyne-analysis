@@ -306,13 +306,13 @@ def plot_c2_heatmaps(
 
             # Shared colorbar for exp and theory
             cbar_ax1 = fig.add_subplot(gs[0, 3])
-            data_min = min(np.min(exp[i]), np.min(theory[i]))
-            data_max = max(np.max(exp[i]), np.max(theory[i]))
-            # Only set vmin=1.0 if data actually has values >= 1.0, otherwise use data minimum
-            vmin = 1.0 if data_min >= 1.0 else data_min
-            vmax = data_max
-            im1.set_clim(vmin, vmax)
-            im2.set_clim(vmin, vmax)
+            data_min = min(np.min(exp[i]), np.min(fitted[i]))
+            data_max = max(np.max(exp[i]), np.max(fitted[i]))
+            # Use the same vmin logic as the imshow calls
+            colorbar_vmin = 1.0 if data_min >= 1.0 else data_min
+            colorbar_vmax = data_max
+            im1.set_clim(colorbar_vmin, colorbar_vmax)
+            im2.set_clim(colorbar_vmin, colorbar_vmax)
             plt.colorbar(im1, cax=cbar_ax1, label="C₂")
 
             # Residuals colorbar
@@ -358,260 +358,6 @@ def plot_c2_heatmaps(
     )
     return success_count == len(phi_angles)
 
-
-def plot_parameter_evolution(
-    best_params: Dict[str, float],
-    bounds: List[Dict],
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-    initial_params: Optional[Dict[str, float]] = None,
-    optimization_history: Optional[List[Dict]] = None,
-) -> bool:
-    """
-    Create bar chart or corner plot comparing initial parameters, best parameters, and bounds.
-
-    Args:
-        best_params (Dict[str, float]): Best-fit parameters from optimization
-        bounds (List[Dict]): Parameter bounds from configuration
-        outdir (Union[str, Path]): Output directory for saved plots
-        config (Optional[Dict]): Configuration dictionary
-        initial_params (Optional[Dict[str, float]]): Initial parameter values
-        optimization_history (Optional[List[Dict]]): History of optimization iterations
-
-    Returns:
-        bool: True if plot was created successfully
-    """
-    logger.info("Creating parameter evolution plot")
-
-    # Get plotting configuration
-    plot_config = get_plot_config(config)
-    setup_matplotlib_style(plot_config)
-
-    # Ensure output directory exists
-    outdir = ensure_dir(outdir)
-
-    try:
-        # Get active parameters from config to filter out inactive ones
-        active_param_names = None
-        if config and "initial_parameters" in config and "active_parameters" in config["initial_parameters"]:
-            active_param_names = config["initial_parameters"]["active_parameters"]
-        
-        # Extract parameter information, filtering for active parameters only
-        if active_param_names:
-            # Filter bounds to only include active parameters
-            active_bounds = [bound for bound in bounds if bound["name"] in active_param_names]
-            param_names = [bound["name"] for bound in active_bounds]
-            param_units = [bound.get("unit", "") for bound in active_bounds]
-            lower_bounds = [bound["min"] for bound in active_bounds]
-            upper_bounds = [bound["max"] for bound in active_bounds]
-        else:
-            # Fallback to all parameters if active_parameters not specified
-            param_names = [bound["name"] for bound in bounds]
-            param_units = [bound.get("unit", "") for bound in bounds]
-            lower_bounds = [bound["min"] for bound in bounds]
-            upper_bounds = [bound["max"] for bound in bounds]
-
-        # Get parameter values
-        best_values = [best_params.get(name, 0) for name in param_names]
-        initial_values = [
-            initial_params.get(name, 0) if initial_params else 0 for name in param_names
-        ]
-
-        # Create figure with two subplots
-        fig, axes = plt.subplots(
-            2,
-            1,
-            figsize=(
-                plot_config["figure_size"][0],
-                plot_config["figure_size"][1] * 1.2,
-            ),
-        )
-        # Handle matplotlib's return type (axes can be single or array)
-        if hasattr(axes, "__len__") and len(axes) >= 2:
-            ax1, ax2 = axes[0], axes[1]  # type: ignore[index]
-        elif hasattr(axes, "__len__") and len(axes) == 1:
-            ax1 = axes[0]  # type: ignore[index]
-            ax2 = plt.subplot(2, 1, 2)
-        else:
-            # Single axis case (shouldn't happen with 2 subplots, but handle it)
-            ax1 = axes  # type: ignore[assignment]
-            ax2 = plt.subplot(2, 1, 2)
-
-        # Plot 1: Parameter comparison bar chart
-        x_pos = np.arange(len(param_names))
-        width = 0.25
-
-        # Normalize values for log-scale parameters
-        normalized_best = []
-        normalized_initial = []
-        normalized_lower = []
-        normalized_upper = []
-
-        # Use the filtered bounds if active parameters were specified
-        bounds_to_use = active_bounds if active_param_names else bounds # type: ignore
-        for i, bound in enumerate(bounds_to_use):
-            if bound.get("type") == "log-uniform":
-                # Use log scale for log-uniform parameters
-                normalized_best.append(np.log10(max(abs(best_values[i]), 1e-10)))
-                normalized_initial.append(np.log10(max(abs(initial_values[i]), 1e-10)))
-                normalized_lower.append(np.log10(max(abs(lower_bounds[i]), 1e-10)))
-                normalized_upper.append(np.log10(max(abs(upper_bounds[i]), 1e-10)))
-            else:
-                # Use linear scale
-                normalized_best.append(best_values[i])
-                normalized_initial.append(initial_values[i])
-                normalized_lower.append(lower_bounds[i])
-                normalized_upper.append(upper_bounds[i])
-
-        # Create bars
-        ax1.bar(
-            x_pos - width,
-            normalized_initial,
-            width,
-            label="Initial",
-            alpha=0.7,
-            color="lightblue",
-        )
-        bars2 = ax1.bar(
-            x_pos,
-            normalized_best,
-            width,
-            label="Best Fit",
-            alpha=0.7,
-            color="darkblue",
-        )
-        ax1.bar(
-            x_pos + width,
-            normalized_lower,
-            width,
-            label="Lower Bound",
-            alpha=0.5,
-            color="red",
-        )
-        ax1.bar(
-            x_pos + 1.5 * width,
-            normalized_upper,
-            width,
-            label="Upper Bound",
-            alpha=0.5,
-            color="green",
-        )
-
-        ax1.set_xlabel("Parameters")
-        ax1.set_ylabel("Parameter Values")
-        ax1.set_title("Parameter Evolution: Initial vs Best Fit vs Bounds")
-        ax1.set_xticks(x_pos)
-        ax1.set_xticklabels(
-            [f"{name}\n[{unit}]" for name, unit in zip(param_names, param_units)],
-            rotation=45,
-            ha="right",
-        )
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
-
-        # Add value labels on bars
-        def add_value_labels(bars, values) -> None:
-            for bar, value in zip(bars, values):
-                height = bar.get_height()
-                # Avoid division by zero if bar width is zero
-                bar_width = bar.get_width()
-                if bar_width > 0:
-                    ax1.annotate(
-                        (
-                            f"{value:.2e}"
-                            if abs(value) < 1e-3 or abs(value) > 1e3
-                            else f"{value:.3f}"
-                        ),
-                        xy=(bar.get_x() + bar_width / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha="center",
-                        va="bottom",
-                        fontsize=8,
-                        rotation=90,
-                    )
-
-        add_value_labels(
-            bars2, best_values
-        )  # Only label best fit values to avoid clutter
-
-        # Plot 2: Optimization history (if available)
-        if optimization_history:
-            iterations = range(len(optimization_history))
-            chi_squared = [
-                hist.get("chi_squared", np.nan) for hist in optimization_history
-            ]
-
-            ax2.semilogy(
-                iterations,
-                chi_squared,
-                "b-",
-                marker="o",
-                markersize=3,
-                linewidth=1.5,
-            )
-            ax2.set_xlabel("Optimization Iteration")
-            ax2.set_ylabel("χ² Value (log scale)")
-            ax2.set_title("Optimization Convergence")
-            ax2.grid(True, alpha=0.3)
-
-            # Add final chi-squared value
-            if chi_squared and not np.isnan(chi_squared[-1]):
-                ax2.text(
-                    0.98,
-                    0.95,
-                    f"Final χ² = {chi_squared[-1]:.6f}",
-                    transform=ax2.transAxes,
-                    ha="right",
-                    va="top",
-                    bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
-                )
-        else:
-            # Show parameter values as a bar chart instead of correlation matrix
-            # (correlation requires multiple data points, which we don't have)
-            bars = ax2.bar(param_names, best_values, alpha=0.7, color="darkgreen")
-            ax2.set_title("Best Fit Parameter Values")
-            ax2.tick_params(axis="x", rotation=45)
-
-            # Add value labels on bars
-            for bar, value in zip(bars, best_values):
-                height = bar.get_height()
-                bar_width = bar.get_width()
-                if bar_width > 0:  # Avoid division by zero
-                    ax2.text(
-                        bar.get_x() + bar_width / 2.0,
-                        height,
-                        f"{value:.3g}",
-                        ha="center",
-                        va="bottom",
-                        fontsize=8,
-                    )
-
-        plt.tight_layout()
-
-        # Save the plot
-        filename = f"parameter_evolution.{plot_config['plot_format']}"
-        filepath = outdir / filename
-
-        success = save_fig(
-            fig,
-            filepath,
-            dpi=plot_config["dpi"],
-            format=plot_config["plot_format"],
-        )
-        plt.close(fig)
-
-        if success:
-            logger.info("Successfully created parameter evolution plot")
-        else:
-            logger.error("Failed to save parameter evolution plot")
-
-        return success
-
-    except Exception as e:
-        logger.error(f"Error creating parameter evolution plot: {e}")
-        plt.close("all")
-        return False
 
 
 def plot_mcmc_corner(
@@ -1667,16 +1413,17 @@ def create_all_plots(
             config,
         )
 
-    # Parameter evolution plot
-    if all(key in results for key in ["best_parameters", "parameter_bounds"]):
-        plot_status["parameter_evolution"] = plot_parameter_evolution(
-            results["best_parameters"],
-            results["parameter_bounds"],
-            outdir,
-            config,
-            initial_params=results.get("initial_parameters"),
-            optimization_history=results.get("optimization_history"),
-        )
+    # Parameter evolution plot - DISABLED
+    # This plot has never been working correctly, so it's disabled
+    # if all(key in results for key in ["best_parameters", "parameter_bounds"]):
+    #     plot_status["parameter_evolution"] = plot_parameter_evolution(
+    #         results["best_parameters"],
+    #         results["parameter_bounds"],
+    #         outdir,
+    #         config,
+    #         initial_params=results.get("initial_parameters"),
+    #         optimization_history=results.get("optimization_history"),
+    #     )
 
     # MCMC plots (if trace data available)
     if "mcmc_trace" in results:
@@ -1948,15 +1695,6 @@ if __name__ == "__main__":
         )
         print(f"C2 heatmaps: {'Success' if success1 else 'Failed'}")
 
-        # Test parameter evolution
-        best_params = {"D0": 1000, "alpha": -0.5, "beta": 0.3}
-        bounds = [
-            {"name": "D0", "min": 1, "max": 10000, "unit": "Å²/s"},
-            {"name": "alpha", "min": -2, "max": 2, "unit": "dimensionless"},
-            {"name": "beta", "min": -1, "max": 1, "unit": "dimensionless"},
-        ]
-
-        success2 = plot_parameter_evolution(best_params, bounds, tmp_dir, test_config)
-        print(f"Parameter evolution: {'Success' if success2 else 'Failed'}")
+        # Parameter evolution test removed - function was non-functional
 
         print("Test completed!")

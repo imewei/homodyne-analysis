@@ -536,13 +536,6 @@
         "title_prefix": "C2 Laminar Flow Mode"
       },
       
-      "parameter_evolution": {
-        "enabled": true,
-        "show_bounds": true,
-        "log_scale_params": ["D0", "gamma_dot_t0"],
-        "_log_scale_note": "Both D0 and gamma_dot_t0 benefit from log scale display"
-      },
-      
       "mcmc_plots": {
         "enabled": true,
         "_mcmc_plots_note": "MCMC plots critical for flow analysis - shows parameter correlations",

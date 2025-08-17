@@ -1922,7 +1922,7 @@ Validation:
         try:
             # Import plotting module
             from homodyne.plotting import (
-                plot_c2_heatmaps, plot_parameter_evolution, plot_diagnostic_summary,
+                plot_c2_heatmaps, plot_diagnostic_summary,
                 plot_mcmc_corner, plot_mcmc_trace, plot_mcmc_convergence_diagnostics
             )
             
@@ -1958,24 +1958,8 @@ Validation:
                 except Exception as e:
                     logger.error(f"Failed to generate C2 heatmaps: {e}")
             
-            # Generate parameter evolution plot
-            if all(key in plot_data for key in ["best_parameters", "parameter_bounds"]):
-                logger.info("Generating parameter evolution plot...")
-                try:
-                    success = plot_parameter_evolution(
-                        plot_data["best_parameters"],
-                        plot_data["parameter_bounds"],
-                        plots_dir,
-                        config,
-                        initial_params=plot_data.get("initial_parameters"),
-                        optimization_history=plot_data.get("optimization_history")
-                    )
-                    if success:
-                        logger.info("✓ Parameter evolution plot generated successfully")
-                    else:
-                        logger.warning("⚠ Parameter evolution plot failed to generate")
-                except Exception as e:
-                    logger.error(f"Failed to generate parameter evolution plot: {e}")
+            # Parameter evolution plot - DISABLED (was non-functional)
+            # This plot has been removed due to persistent issues
             
             # Generate MCMC plots if trace data is available
             if "mcmc_trace" in plot_data:
