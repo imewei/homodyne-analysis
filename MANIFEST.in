@@ -1,0 +1,41 @@
+# Include the README and other documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
+include pyproject.toml
+
+# Include configuration templates and data files
+recursive-include homodyne *.json
+recursive-include homodyne/templates *.json
+
+# Include documentation files
+recursive-include docs *.md
+recursive-include docs *.rst
+recursive-include docs *.txt
+recursive-include docs *.py
+include docs/Makefile
+include docs/make.bat
+
+# Exclude test files from the package
+recursive-exclude homodyne/tests *
+recursive-exclude tests *
+
+# Exclude development and build files
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * *.so
+recursive-exclude * *.dylib
+recursive-exclude .git *
+recursive-exclude .pytest_cache *
+recursive-exclude *.egg-info *
+exclude .DS_Store
+exclude .gitignore
+exclude .github
+exclude .benchmarks
+exclude .claude
+exclude benchmark_performance.py
+exclude create_config.py
+exclude run_homodyne.py
+exclude my_config*.json
+exclude WARP.md

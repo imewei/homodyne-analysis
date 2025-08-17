@@ -1,0 +1,13 @@
+# Core requirements for the Homodyne Scattering Analysis Package
+numpy>=1.19.0
+scipy>=1.7.0
+matplotlib>=3.3.0
+
+# Performance enhancement (recommended)
+numba>=0.56.0
+
+# Optional MCMC dependencies (for Bayesian analysis)
+# Uncomment these lines if you want full MCMC functionality:
+# pymc>=5.0.0
+# arviz>=0.12.0
+# pytensor>=2.8.0

@@ -1,0 +1,1778 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.core package &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="homodyne.optimization package" href="homodyne.optimization.html" />
+    <link rel="prev" title="homodyne.analysis package" href="homodyne.analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">homodyne</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="homodyne.html">homodyne package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="homodyne.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="homodyne.analysis.html">homodyne.analysis package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">homodyne.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="homodyne.optimization.html">homodyne.optimization package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="homodyne.tests.html">homodyne.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.plotting">homodyne.plotting module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.run_tests">homodyne.run_tests module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">homodyne</a></li>
+          <li class="breadcrumb-item"><a href="homodyne.html">homodyne package</a></li>
+      <li class="breadcrumb-item active">homodyne.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/homodyne.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="homodyne-core-package">
+<h1>homodyne.core package<a class="headerlink" href="#homodyne-core-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-homodyne.core.config">
+<span id="homodyne-core-config-module"></span><h2>homodyne.core.config module<a class="headerlink" href="#module-homodyne.core.config" title="Link to this heading"></a></h2>
+<section id="configuration-management-for-homodyne-scattering-analysis">
+<h3>Configuration Management for Homodyne Scattering Analysis<a class="headerlink" href="#configuration-management-for-homodyne-scattering-analysis" title="Link to this heading"></a></h3>
+<p>Centralized configuration system for XPCS analysis under nonequilibrium conditions.
+Provides JSON-based configuration management with validation, hierarchical parameter
+organization, and performance optimization features.</p>
+<p>Key Features:
+- Hierarchical JSON configuration with validation
+- Runtime parameter override capabilities
+- Performance-optimized configuration access with caching
+- Comprehensive logging system with rotation and formatting
+- Physical parameter validation and bounds checking
+- Angle filtering configuration for computational efficiency
+- Test configuration management for different analysis scenarios</p>
+<p>Configuration Structure:
+- analyzer_parameters: Core physics parameters (q-vector, time steps, geometry)
+- experimental_data: Data paths, file formats, and loading options
+- analysis_settings: Mode selection (static vs laminar flow)
+- optimization_config: Method settings, hyperparameters, angle filtering
+- parameter_space: Physical bounds, priors, and parameter constraints
+- performance_settings: Computational optimization flags</p>
+<p>Authors: Wei Chen, Hongrui He
+Institution: Argonne National Laboratory &amp; University of Chicago</p>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.config.configure_logging">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.config.</span></span><span class="sig-name descname"><span class="pre">configure_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#configure_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.configure_logging" title="Link to this definition"></a></dt>
+<dd><p>Configure centralized logging system with hierarchy and handlers.</p>
+<p>This function sets up a complete logging infrastructure:
+- Creates a logger hierarchy (root + module logger)
+- Sets up RotatingFileHandler with size-based rotation
+- Optionally creates StreamHandler for console output
+- Applies consistent formatting and log levels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Logging configuration dictionary with keys:
+- log_to_file: bool, enable file logging
+- log_to_console: bool, enable console logging
+- log_filename: str, log file path
+- level: str, logging level (‘DEBUG’, ‘INFO’, ‘WARNING’, ‘ERROR’)
+- format: str, log message format string
+- rotation: dict with ‘max_bytes’ and ‘backup_count’</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configured logger instance for reuse</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.13)">logging.Logger</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">homodyne.core.config.</span></span><span class="sig-name descname"><span class="pre">ConfigManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Centralized configuration manager for homodyne scattering analysis.</p>
+<p>This class orchestrates the entire configuration system for XPCS analysis,
+providing structured access to all analysis parameters with validation,
+caching, and runtime override capabilities.</p>
+<p>Core Responsibilities:
+- JSON configuration file loading with comprehensive error handling
+- Hierarchical parameter validation (physics, computation, file paths)
+- Performance-optimized configuration access through intelligent caching
+- Runtime configuration overrides for analysis mode switching
+- Logging system setup with rotation and appropriate formatting
+- Test configuration management for different experimental scenarios</p>
+<p>Configuration Hierarchy:
+- analyzer_parameters: Physics parameters (q-vector, time steps, gap size)
+- experimental_data: Data file paths, loading options, caching settings
+- analysis_settings: Mode selection (static/laminar flow), model descriptions
+- optimization_config: Method settings, angle filtering, hyperparameters
+- parameter_space: Physical parameter bounds, prior distributions
+- performance_settings: Parallelization, computational optimizations
+- validation_rules: Data quality checks and minimum requirements
+- advanced_settings: Fine-tuning options for specialized use cases</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>config_manager = ConfigManager(‘my_config.json’)
+is_static = config_manager.is_static_mode_enabled()
+angle_ranges = config_manager.get_target_angle_ranges()</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.load_config">
+<span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.load_config" title="Link to this definition"></a></dt>
+<dd><p>Load and parse JSON configuration file with comprehensive error handling.</p>
+<p>Implements performance-optimized loading with buffering, structure
+optimization for runtime access, and graceful fallback to default
+configuration if primary config fails.</p>
+<p>Error Handling:
+- FileNotFoundError: Missing configuration file
+- JSONDecodeError: Malformed JSON syntax
+- General exceptions: Unexpected loading issues</p>
+<p>Performance Optimizations:
+- 8KB buffering for efficient file I/O
+- Configuration structure caching for fast access
+- Timing instrumentation for performance monitoring</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.validate_config">
+<span class="sig-name descname"><span class="pre">validate_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.validate_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.validate_config" title="Link to this definition"></a></dt>
+<dd><p>Comprehensive validation of configuration parameters.</p>
+<p>Performs multi-level validation to ensure configuration integrity:</p>
+<p>Structural Validation:
+- Required sections presence (analyzer_parameters, experimental_data, etc.)
+- Configuration hierarchy completeness
+- Parameter type consistency</p>
+<p>Physical Parameter Validation:
+- Frame range consistency (start &lt; end, sufficient frames)
+- Wavevector positivity and reasonable magnitude
+- Time step positivity
+- Gap size physical reasonableness</p>
+<p>Data Validation:
+- Minimum frame count requirements
+- Parameter bounds consistency
+- File path accessibility (optional)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – Invalid configuration parameters or structure</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.13)"><strong>FileNotFoundError</strong></a> – Missing required data files (if validation enabled)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.setup_logging">
+<span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.setup_logging" title="Link to this definition"></a></dt>
+<dd><p>Configure logging based on configuration using centralized configure_logging().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.13)"><em>Logger</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get" title="Link to this definition"></a></dt>
+<dd><p>Get nested configuration value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*keys</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Sequence of nested keys</p></li>
+<li><p><strong>default</strong> (<em>any</em>) – Default value if key not found</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configuration value or default</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_angle_filtering_config">
+<span class="sig-name descname"><span class="pre">get_angle_filtering_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_angle_filtering_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_angle_filtering_config" title="Link to this definition"></a></dt>
+<dd><p>Get angle filtering configuration with defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Angle filtering configuration including:
+- enabled: bool, whether angle filtering is enabled
+- target_ranges: list of dicts with min_angle and max_angle
+- fallback_to_all_angles: bool, whether to use all angles if no targets found</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.is_angle_filtering_enabled">
+<span class="sig-name descname"><span class="pre">is_angle_filtering_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_angle_filtering_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.is_angle_filtering_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if angle filtering is enabled in configuration.</p>
+<p>Automatically returns False for static isotropic mode, regardless of
+configuration setting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if angle filtering should be used, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_target_angle_ranges">
+<span class="sig-name descname"><span class="pre">get_target_angle_ranges</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_target_angle_ranges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_target_angle_ranges" title="Link to this definition"></a></dt>
+<dd><p>Get list of target angle ranges for optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of (min_angle, max_angle) tuples in degrees</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.should_fallback_to_all_angles">
+<span class="sig-name descname"><span class="pre">should_fallback_to_all_angles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.should_fallback_to_all_angles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.should_fallback_to_all_angles" title="Link to this definition"></a></dt>
+<dd><p>Check if system should fallback to all angles when no targets found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if should fallback to all angles, False to raise error</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_test_config">
+<span class="sig-name descname"><span class="pre">get_test_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_test_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_test_config" title="Link to this definition"></a></dt>
+<dd><p>Get predefined test configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>test_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of test configuration</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Test-specific configuration</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.is_static_mode_enabled">
+<span class="sig-name descname"><span class="pre">is_static_mode_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_static_mode_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.is_static_mode_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if static mode is enabled in configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if static mode is enabled, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_static_submode">
+<span class="sig-name descname"><span class="pre">get_static_submode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_static_submode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_static_submode" title="Link to this definition"></a></dt>
+<dd><p>Get the static sub-mode for analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“isotropic”, “anisotropic”, or None if static mode is disabled</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.is_static_isotropic_enabled">
+<span class="sig-name descname"><span class="pre">is_static_isotropic_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_static_isotropic_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.is_static_isotropic_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if static isotropic mode is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if analysis mode is static isotropic, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.is_static_anisotropic_enabled">
+<span class="sig-name descname"><span class="pre">is_static_anisotropic_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_static_anisotropic_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.is_static_anisotropic_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if static anisotropic mode is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if analysis mode is static anisotropic, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_analysis_mode">
+<span class="sig-name descname"><span class="pre">get_analysis_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_analysis_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_analysis_mode" title="Link to this definition"></a></dt>
+<dd><p>Get the current analysis mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“static_isotropic”, “static_anisotropic”, or “laminar_flow”</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_active_parameters">
+<span class="sig-name descname"><span class="pre">get_active_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_active_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_active_parameters" title="Link to this definition"></a></dt>
+<dd><p>Get list of active parameters from configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of parameter names to be optimized and displayed in plots.
+Falls back to all parameters if not specified in configuration.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_effective_parameter_count">
+<span class="sig-name descname"><span class="pre">get_effective_parameter_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_effective_parameter_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_effective_parameter_count" title="Link to this definition"></a></dt>
+<dd><p>Get the effective number of model parameters based on active_parameters configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of parameters used in the analysis based on active_parameters.
+Falls back to mode-based logic if active_parameters not specified:
+- Static mode: 3 (only diffusion parameters)
+- Laminar flow mode: 7 (all parameters)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.get_analysis_settings">
+<span class="sig-name descname"><span class="pre">get_analysis_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_analysis_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.get_analysis_settings" title="Link to this definition"></a></dt>
+<dd><p>Get analysis settings with defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Analysis settings including static_mode flag and descriptions</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">homodyne.core.config.</span></span><span class="sig-name descname"><span class="pre">PerformanceMonitor</span></span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Performance monitoring and profiling utilities.</p>
+<p>Provides lightweight profiling and memory monitoring
+for optimization of computational kernels.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor.time_function">
+<span class="sig-name descname"><span class="pre">time_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor.time_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor.time_function" title="Link to this definition"></a></dt>
+<dd><p>Context manager for timing function execution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of function being timed</p></li>
+<li><p><strong>Usage</strong></p></li>
+<li><p><strong>-----</strong></p></li>
+<li><p><strong>monitor.time_function</strong><strong>(</strong><strong>&quot;my_function&quot;</strong><strong>)</strong> (<em>with</em>) – # function code here
+pass</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor.get_timing_summary">
+<span class="sig-name descname"><span class="pre">get_timing_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor.get_timing_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor.get_timing_summary" title="Link to this definition"></a></dt>
+<dd><p>Get summary statistics for all timed functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor.reset_timings">
+<span class="sig-name descname"><span class="pre">reset_timings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor.reset_timings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor.reset_timings" title="Link to this definition"></a></dt>
+<dd><p>Clear all timing data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor.log_performance_summary">
+<span class="sig-name descname"><span class="pre">log_performance_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor.log_performance_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor.log_performance_summary" title="Link to this definition"></a></dt>
+<dd><p>Log performance summary to logger.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-homodyne.core.io_utils">
+<span id="homodyne-core-io-utils-module"></span><h2>homodyne.core.io_utils module<a class="headerlink" href="#module-homodyne.core.io_utils" title="Link to this heading"></a></h2>
+<section id="io-utilities-for-homodyne-scattering-analysis">
+<h3>IO Utilities for Homodyne Scattering Analysis<a class="headerlink" href="#io-utilities-for-homodyne-scattering-analysis" title="Link to this heading"></a></h3>
+<p>Comprehensive I/O utilities for safe data handling in XPCS analysis workflows.
+Provides robust file operations, intelligent data serialization, and structured
+result management with extensive error handling and logging.</p>
+<p>Key Features:
+- Thread-safe directory creation with race condition handling
+- Timestamped filename generation with configurable formatting
+- Multi-format data serialization (JSON, NumPy, Pickle, Matplotlib)
+- Custom JSON serializer for NumPy arrays and complex objects
+- Comprehensive error handling with detailed logging
+- Structured result saving for analysis workflows</p>
+<p>Data Formats Supported:
+- JSON: Configuration files, analysis results, metadata
+- NumPy (.npz): Correlation functions, parameter arrays, numerical data
+- Pickle (.pkl): Complex Python objects, MCMC traces, model instances
+- Matplotlib: Figures and plots with publication-quality settings</p>
+<p>Safety Features:
+- Atomic file operations where possible
+- Directory creation with appropriate permissions
+- Comprehensive exception handling for I/O errors
+- Logging of all operations for debugging and audit trails</p>
+<p>Authors: Wei Chen, Hongrui He
+Institution: Argonne National Laboratory &amp; University of Chicago</p>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.ensure_dir">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">ensure_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permissions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">493</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#ensure_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.ensure_dir" title="Link to this definition"></a></dt>
+<dd><p>Thread-safe recursive directory creation with comprehensive error handling.</p>
+<p>Creates directory hierarchies safely, handling race conditions that can occur
+in multi-process environments (e.g., parallel optimization runs). Uses atomic
+operations where possible and validates directory creation success.</p>
+<p>Features:
+- Race condition safety for concurrent directory creation
+- Recursive parent directory creation
+- Configurable permissions for security control
+- Path validation and type checking
+- Comprehensive error reporting</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Path</em><em>]</em>) – Directory path to create (absolute or relative)</p></li>
+<li><p><strong>permissions</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Unix-style permissions (default: 0o755 = rwxr-xr-x)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pathlib.Path object of the created/validated directory</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.13)"><strong>OSError</strong></a> – Directory creation failed, path exists but isn’t a directory,
+    or permissions issues</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ensure_dir</span><span class="p">(</span><span class="s2">&quot;./results/mcmc/traces&quot;</span><span class="p">)</span>
+<span class="go">PosixPath(&#39;./results/mcmc/traces&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ensure_dir</span><span class="p">(</span><span class="s2">&quot;/tmp/analysis&quot;</span><span class="p">,</span> <span class="n">permissions</span><span class="o">=</span><span class="mo">0o700</span><span class="p">)</span>  <span class="c1"># Owner-only access</span>
+<span class="go">PosixPath(&#39;/tmp/analysis&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.timestamped_filename">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">timestamped_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#timestamped_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.timestamped_filename" title="Link to this definition"></a></dt>
+<dd><p>Generate intelligently formatted filenames with timestamps and analysis metadata.</p>
+<p>Creates structured filenames that include temporal information and analysis
+quality metrics, facilitating result organization and identification. Supports
+configurable timestamp formats and optional inclusion of chi-squared values
+for quick quality assessment.</p>
+<p>Filename Components:
+- Base name: User-specified prefix (e.g., ‘analysis_results’)
+- Timestamp: Configurable format for temporal ordering
+- Chi-squared: Optional goodness-of-fit indicator
+- Config version: Optional configuration identification</p>
+<p>Configuration Options:
+- timestamp_format: strftime format string (default: “%Y%m%d_%H%M%S”)
+- include_chi_squared: Boolean flag for chi2 inclusion
+- include_config_name: Boolean flag for configuration version</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Base filename prefix (without extension)</p></li>
+<li><p><strong>chi2</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>]</em>) – Chi-squared value for quality indication</p></li>
+<li><p><strong>config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em>) – Configuration with output_settings/file_naming</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Structured filename string ready for file operations</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;output_settings&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;file_naming&quot;</span><span class="p">:</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;timestamp_format&quot;</span><span class="p">:</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;include_chi_squared&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;include_config_name&quot;</span><span class="p">:</span> <span class="kc">True</span>
+<span class="gp">... </span><span class="p">}}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">timestamped_filename</span><span class="p">(</span><span class="s2">&quot;mcmc_results&quot;</span><span class="p">,</span> <span class="mf">1.234e-3</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<span class="go">&#39;mcmc_results_20240315_143022_chi2_0.001234_v5.1&#39;</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">timestamped_filename</span><span class="p">(</span><span class="s2">&quot;quick_analysis&quot;</span><span class="p">)</span>  <span class="c1"># Minimal version</span>
+<span class="go">&#39;quick_analysis_20240315_143022&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.save_json">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_json" title="Link to this definition"></a></dt>
+<dd><p>Save data as JSON with robust error handling and NumPy support.</p>
+<p>Provides safe JSON serialization with automatic handling of scientific
+computing objects like NumPy arrays and scalars. Uses custom serializer
+to ensure compatibility with analysis results containing numerical data.</p>
+<p>Features:
+- Custom NumPy serializer for arrays and scalars
+- Automatic directory creation for output path
+- UTF-8 encoding for international character support
+- Comprehensive error handling with detailed logging
+- Configurable JSON formatting options</p>
+<p>Default JSON Parameters:
+- indent=2: Pretty formatting for readability
+- ensure_ascii=False: Support for Unicode characters
+- default=_json_serializer: NumPy and object handling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>) – Data structure to save (dicts, lists, arrays, etc.)</p></li>
+<li><p><strong>filepath</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Path</em><em>]</em>) – Output file path (directories created automatically)</p></li>
+<li><p><strong>**kwargs</strong> – Additional json.dump() arguments (override defaults)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if save successful, False if any error occurred</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">]),</span> <span class="s2">&quot;chi2&quot;</span><span class="p">:</span> <span class="mf">1.234e-5</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_json</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="s2">&quot;analysis_results.json&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">save_json</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;compact.json&quot;</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">))</span>
+<span class="go">True  # Compact JSON format</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.save_numpy">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compressed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_numpy" title="Link to this definition"></a></dt>
+<dd><p>Save NumPy arrays with optimal compression and format selection.</p>
+<p>Provides efficient storage of numerical data with automatic format selection
+based on file extension and compression preferences. Essential for saving
+correlation functions, parameter arrays, and other numerical results.</p>
+<p>Format Selection:
+- .npz extension or compressed=True: Uses np.savez_compressed (recommended)
+- Other extensions with compressed=False: Uses np.save (uncompressed)
+- Automatic directory creation for nested paths</p>
+<p>Compression Benefits:
+- Significantly reduced file sizes (typically 2-10x smaller)
+- Faster I/O for large arrays due to reduced data transfer
+- Standard NumPy format compatibility</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – NumPy array to save (any shape/dtype)</p></li>
+<li><p><strong>filepath</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Path</em><em>]</em>) – Output file path (.npz recommended)</p></li>
+<li><p><strong>compressed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Enable compression (default: True for efficiency)</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for np.savez_compressed/np.save</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if save successful, False if error occurred</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">correlation_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>  <span class="c1"># Large 3D array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_numpy</span><span class="p">(</span><span class="n">correlation_data</span><span class="p">,</span> <span class="s2">&quot;c2_experimental.npz&quot;</span><span class="p">)</span>
+<span class="go">True  # Compressed format, much smaller file</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">3.4e-3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_numpy</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="s2">&quot;optimized_params.npy&quot;</span><span class="p">,</span> <span class="n">compressed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">True  # Uncompressed for small arrays</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.save_pickle">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">protocol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_pickle" title="Link to this definition"></a></dt>
+<dd><p>Save data using pickle with error handling and logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>) – Data to pickle</p></li>
+<li><p><strong>filepath</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Path</em><em>]</em>) – Output file path</p></li>
+<li><p><strong>protocol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Pickle protocol version (default: highest available)</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments (reserved for future use)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if successful, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">some_complex_object</span><span class="p">,</span> <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_pickle</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;model_data.pkl&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.save_fig">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_fig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_fig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_fig" title="Link to this definition"></a></dt>
+<dd><p>Save matplotlib figure with error handling and logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>figure</strong> – Matplotlib figure object</p></li>
+<li><p><strong>filepath</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Path</em><em>]</em>) – Output file path</p></li>
+<li><p><strong>dpi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Resolution in dots per inch (default: 300)</p></li>
+<li><p><strong>format</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Figure format (inferred from extension if None)</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments passed to figure.savefig()</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if successful, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_fig</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="s2">&quot;plot.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.get_output_directory">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">get_output_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#get_output_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.get_output_directory" title="Link to this definition"></a></dt>
+<dd><p>Get the output directory from configuration, creating it if necessary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em>) – Configuration dictionary</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output directory path</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.io_utils.save_analysis_results">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_analysis_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'analysis_results'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_analysis_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_analysis_results" title="Link to this definition"></a></dt>
+<dd><p>Orchestrate comprehensive saving of analysis results in multiple formats.</p>
+<p>Intelligently saves analysis results using optimal formats for different
+data types: JSON for structured metadata, NumPy for numerical arrays,
+and Pickle for complex objects like MCMC traces. Creates organized
+output structure with consistent naming and timestamping.</p>
+<p>Save Strategy:
+- JSON: Main results, parameters, metadata (human-readable)
+- NumPy (.npz): Correlation data, large numerical arrays (efficient)
+- Pickle (.pkl): Complex objects, MCMC traces, model instances (complete)</p>
+<p>File Organization:
+- Timestamped base filename for chronological organization
+- Format-specific suffixes: .json, _data.npz, _full.pkl
+- Automatic directory creation and organization
+- Consistent naming across all output files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results</strong> (<em>Dict</em>) – Complete analysis results dictionary containing:
+- Optimization results and parameters
+- Correlation data arrays
+- MCMC traces and diagnostics
+- Configuration and metadata</p></li>
+<li><p><strong>config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em>) – Configuration for output directory and naming</p></li>
+<li><p><strong>base_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Prefix for all output files (default: “analysis_results”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Save status for each format:</dt><dd><ul class="simple">
+<li><p>”json”: JSON save status</p></li>
+<li><p>”numpy”: NumPy array save status (if applicable)</p></li>
+<li><p>”pickle”: Pickle save status (if applicable)</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a>]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">]},</span>
+<span class="gp">... </span>    <span class="s2">&quot;correlation_data&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="s2">&quot;mcmc_trace&quot;</span><span class="p">:</span> <span class="n">mcmc_trace_object</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;best_chi_squared&quot;</span><span class="p">:</span> <span class="mf">1.234e-5</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">status</span> <span class="o">=</span> <span class="n">save_analysis_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="s2">&quot;experiment_A&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+<span class="go">{&#39;json&#39;: True, &#39;numpy&#39;: True, &#39;pickle&#39;: True}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-homodyne.core.kernels">
+<span id="homodyne-core-kernels-module"></span><h2>homodyne.core.kernels module<a class="headerlink" href="#module-homodyne.core.kernels" title="Link to this heading"></a></h2>
+<p>High-Performance Computational Kernels for Homodyne Scattering Analysis</p>
+<p>This module provides Numba-accelerated computational kernels for the core
+mathematical operations in homodyne scattering calculations.</p>
+<p>Created for: Rheo-SAXS-XPCS Homodyne Analysis
+Authors: Wei Chen, Hongrui He
+Institution: Argonne National Laboratory &amp; University of Chicago</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.create_time_integral_matrix_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">create_time_integral_matrix_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_dependent_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#create_time_integral_matrix_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.create_time_integral_matrix_numba" title="Link to this definition"></a></dt>
+<dd><p>Create time integral matrix for correlation calculations.</p>
+<p>Computes matrix of time integrals I[i,j] = <a href="#id1"><span class="problematic" id="id2">|∫ᵗʲₜᵢ f(t)dt|</span></a>
+using cumulative sum for O(n) complexity instead of O(n²).
+Optimized with fastmath and memory-efficient layout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time_dependent_array</strong> (<em>np.ndarray</em>) – Time-dependent values f(t) at discrete points</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matrix where element [i,j] = integral from time i to j</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.calculate_diffusion_coefficient_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_diffusion_coefficient_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.calculate_diffusion_coefficient_numba" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent diffusion coefficient.</p>
+<p>Implements power-law model: D(t) = D₀(t/t₀)^α + D_offset</p>
+<p>This model captures various physical scenarios:
+1. Aging systems: D decreases with time (α &lt; 0) as structure develops
+2. Swelling/dissolution: D increases with time (α &gt; 0) as structure breaks down
+3. Stress relaxation: D changes as internal stresses redistribute
+4. Temperature effects: Time-dependent heating/cooling during measurement</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_array</strong> (<em>np.ndarray</em>) – Time points [seconds]</p></li>
+<li><p><strong>D0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Reference diffusion coefficient [Å²/s]</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Power-law exponent [dimensionless]
+α = 0: constant diffusion (equilibrium systems)
+α &gt; 0: enhanced diffusion (aging, structural relaxation)
+α &lt; 0: subdiffusion (crowded environments, viscoelastic media)</p></li>
+<li><p><strong>D_offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Baseline diffusion [Å²/s]
+Accounts for residual thermal motion or measurement artifacts</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>D(t) at each time point [Å²/s]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.calculate_shear_rate_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">calculate_shear_rate_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_shear_rate_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.calculate_shear_rate_numba" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent shear rate.</p>
+<p>Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset</p>
+<p>Common experimental scenarios:
+1. Creep tests: Applied constant stress → time-dependent strain rate</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Initially: γ̇(t) ~ t^(-n) as material yields</p></li>
+<li><p>Later: γ̇(t) ~ constant for steady-state flow</p></li>
+<li><p>Recovery: γ̇(t) → 0 with power-law or exponential decay</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><dl class="simple">
+<dt>Startup flows: Sudden application of shear</dt><dd><ul class="simple">
+<li><p>Acceleration phase: γ̇(t) increases toward steady state</p></li>
+<li><p>Overshoot possible in viscoelastic materials</p></li>
+<li><p>Eventually: γ̇(t) → constant</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Oscillatory flows: Time-varying shear rates</dt><dd><ul class="simple">
+<li><p>Can be captured by appropriate choice of β</p></li>
+<li><p>More complex forms may require Fourier series</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Stress relaxation: Removal of applied stress</dt><dd><ul class="simple">
+<li><p>Exponential or power-law decay: γ̇(t) ~ t^(-β)</p></li>
+<li><p>Long-time tail behavior depends on material properties</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_array</strong> (<em>np.ndarray</em>) – Time points [seconds]</p></li>
+<li><p><strong>gamma_dot_t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Reference shear rate [s⁻¹]</p></li>
+<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Power-law exponent [dimensionless]
+β = 0: constant shear rate (steady flow)
+β &gt; 0: accelerating flow (creep acceleration, startup transients)
+β &lt; 0: decelerating flow (stress relaxation, recovery)</p></li>
+<li><p><strong>gamma_dot_t_offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Baseline shear rate [s⁻¹]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>γ̇(t) at each time point [s⁻¹]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.compute_g1_correlation_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_g1_correlation_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffusion_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavevector_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_g1_correlation_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.compute_g1_correlation_numba" title="Link to this definition"></a></dt>
+<dd><p>Compute field correlation function g₁ from diffusion.</p>
+<p>Calculates the field correlation function arising from translational diffusion
+of scattering particles in the sample. This implements the core diffusion term
+from the homodyne scattering equations:</p>
+<blockquote>
+<div><p>g₁(q⃗, t₁, t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diffusion_integral_matrix</strong> (<em>np.ndarray</em>) – Matrix of diffusion integrals [Å²]</p></li>
+<li><p><strong>wavevector_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Pre-computed 0.5×q²×Δt [Å⁻²]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Field correlation g₁(t₁,t₂), values in [0,1]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.compute_sinc_squared_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_sinc_squared_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefactor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_sinc_squared_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.compute_sinc_squared_numba" title="Link to this definition"></a></dt>
+<dd><p>Compute sinc² function for shear flow contributions (Numba-optimized).</p>
+<p>Calculates the shear-induced decorrelation term appearing in homodyne
+scattering under flow conditions. This implements the sinc² term from
+the theoretical equations:</p>
+<blockquote>
+<div><p>sinc²(x) = [sin(πx)/(πx)]²</p>
+</div></blockquote>
+<p>where x = (1/2π) × q⃗·v̄ × ∫γ̇(t)dt</p>
+<p>Physical interpretation:
+- The sinc function arises from the Fourier transform of a rectangular</p>
+<blockquote>
+<div><p>velocity profile in laminar shear flow</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Shear flow creates a systematic velocity gradient perpendicular to the flow</p></li>
+<li><p>Particles at different heights have different velocities</p></li>
+<li><p>This creates a phase modulation of the scattered light</p></li>
+<li><p>The sinc² envelope reflects the coherent averaging over the velocity distribution</p></li>
+</ul>
+<p>Mathematical origin:
+In laminar flow between parallel plates with gap h:</p>
+<blockquote>
+<div><p>v(y) = γ̇ × y  (linear velocity profile)</p>
+</div></blockquote>
+<p>The scattering from particles at height y picks up phase φ = q⃗·v⃗(y)t
+Coherent averaging over y gives:</p>
+<blockquote>
+<div><p>⟨exp(iq⃗·v⃗(y)t)⟩ = ∫₀ʰ exp(iqy̲γ̇t)dy/h = sinc(qy̲γ̇th/2)</p>
+</div></blockquote>
+<p>Where qy̲ is the component of q⃗ perpendicular to flow direction.</p>
+<p>Flow geometry considerations:
+- For q⃗ parallel to flow: cos(φ) = ±1, maximum shear effect
+- For q⃗ perpendicular to flow: cos(φ) = 0, no shear contribution
+- Intermediate angles: cos(φ) determines the effective shear sensitivity</p>
+<p>Limiting behaviors:
+- Small argument (weak shear): sinc²(x) ≈ 1 - (πx)²/3
+- Large argument (strong shear): sinc²(x) ≈ 0 with oscillations
+- First zero at x = 1: complete destructive interference</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shear_integral_matrix</strong> (<em>np.ndarray</em>) – Matrix of shear rate integrals (strain)</p></li>
+<li><p><strong>prefactor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Geometric factor (1/2π)×q×h×cos(φ)×Δt</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>np.ndarray</em> – Sinc² values for shear contribution, in [0,1] with sinc²(0) = 1</p></li>
+<li><p><em>Special cases</em></p></li>
+<li><p><em>————–</em></p></li>
+<li><p><strong>- Zero shear (γ̇ = 0)</strong> (<em>sinc²(0) = 1 (no shear decorrelation)</em>)</p></li>
+<li><p><strong>- Perpendicular scattering (cos φ = 0)</strong> (<em>sinc²(0) = 1 (no sensitivity)</em>)</p></li>
+<li><p><strong>- Very small arguments</strong> (<em>use Taylor expansion to avoid 0/0 indeterminacy</em>)</p></li>
+<li><p><strong>- Very large arguments</strong> (<em>sinc² oscillates rapidly around small values</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.memory_efficient_cache">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">memory_efficient_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maxsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#memory_efficient_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.memory_efficient_cache" title="Link to this definition"></a></dt>
+<dd><p>Memory-efficient LRU cache with automatic cleanup.</p>
+<p>Features:
+- Least Recently Used eviction
+- Access frequency tracking
+- Configurable size limits
+- Cache statistics</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>maxsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Maximum cached items (0 disables caching)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Function decorator with cache_info() and cache_clear() methods</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decorator</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.create_symmetric_matrix_optimized">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">create_symmetric_matrix_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diagonal_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#create_symmetric_matrix_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.create_symmetric_matrix_optimized" title="Link to this definition"></a></dt>
+<dd><p>Create symmetric matrix with optimized memory layout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diagonal_values</strong> (<em>np.ndarray</em>) – Values for the diagonal</p></li>
+<li><p><strong>matrix_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Size of the square matrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Symmetric matrix with cache-friendly memory access</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.matrix_vector_multiply_optimized">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">matrix_vector_multiply_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#matrix_vector_multiply_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.matrix_vector_multiply_optimized" title="Link to this definition"></a></dt>
+<dd><p>Optimized matrix-vector multiplication for correlation calculations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix</strong> (<em>np.ndarray</em>) – 2D matrix</p></li>
+<li><p><strong>vector</strong> (<em>np.ndarray</em>) – 1D vector</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of matrix &#64; vector</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.apply_scaling_vectorized">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">apply_scaling_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#apply_scaling_vectorized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.apply_scaling_vectorized" title="Link to this definition"></a></dt>
+<dd><p>Apply per-angle scaling (contrast and offset) with vectorized operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – Input data array</p></li>
+<li><p><strong>contrast</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Scaling contrast factor</p></li>
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Additive offset</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Scaled data: contrast * data + offset</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.compute_chi_squared_fast">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_chi_squared_fast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_chi_squared_fast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.compute_chi_squared_fast" title="Link to this definition"></a></dt>
+<dd><p>Fast chi-squared calculation with optimized numerics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observed</strong> (<em>np.ndarray</em>) – Observed values</p></li>
+<li><p><strong>expected</strong> (<em>np.ndarray</em>) – Expected/theoretical values</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Chi-squared statistic</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.kernels.exp_negative_vectorized">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">exp_negative_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#exp_negative_vectorized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.exp_negative_vectorized" title="Link to this definition"></a></dt>
+<dd><p>Vectorized computation of exp(-scale_factor * input_array).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_array</strong> (<em>np.ndarray</em>) – Input values</p></li>
+<li><p><strong>scale_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Scaling factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>exp(-scale_factor * input_array)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-homodyne.core">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-homodyne.core" title="Link to this heading"></a></h2>
+<p>Core functionality for homodyne scattering analysis.</p>
+<p>This subpackage contains the fundamental building blocks:
+- Configuration management
+- High-performance computational kernels
+- Logging utilities</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">ConfigManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Centralized configuration manager for homodyne scattering analysis.</p>
+<p>This class orchestrates the entire configuration system for XPCS analysis,
+providing structured access to all analysis parameters with validation,
+caching, and runtime override capabilities.</p>
+<p>Core Responsibilities:
+- JSON configuration file loading with comprehensive error handling
+- Hierarchical parameter validation (physics, computation, file paths)
+- Performance-optimized configuration access through intelligent caching
+- Runtime configuration overrides for analysis mode switching
+- Logging system setup with rotation and appropriate formatting
+- Test configuration management for different experimental scenarios</p>
+<p>Configuration Hierarchy:
+- analyzer_parameters: Physics parameters (q-vector, time steps, gap size)
+- experimental_data: Data file paths, loading options, caching settings
+- analysis_settings: Mode selection (static/laminar flow), model descriptions
+- optimization_config: Method settings, angle filtering, hyperparameters
+- parameter_space: Physical parameter bounds, prior distributions
+- performance_settings: Parallelization, computational optimizations
+- validation_rules: Data quality checks and minimum requirements
+- advanced_settings: Fine-tuning options for specialized use cases</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>config_manager = ConfigManager(‘my_config.json’)
+is_static = config_manager.is_static_mode_enabled()
+angle_ranges = config_manager.get_target_angle_ranges()</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get" title="Link to this definition"></a></dt>
+<dd><p>Get nested configuration value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*keys</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Sequence of nested keys</p></li>
+<li><p><strong>default</strong> (<em>any</em>) – Default value if key not found</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configuration value or default</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_active_parameters">
+<span class="sig-name descname"><span class="pre">get_active_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_active_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_active_parameters" title="Link to this definition"></a></dt>
+<dd><p>Get list of active parameters from configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of parameter names to be optimized and displayed in plots.
+Falls back to all parameters if not specified in configuration.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_analysis_mode">
+<span class="sig-name descname"><span class="pre">get_analysis_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_analysis_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_analysis_mode" title="Link to this definition"></a></dt>
+<dd><p>Get the current analysis mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“static_isotropic”, “static_anisotropic”, or “laminar_flow”</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_analysis_settings">
+<span class="sig-name descname"><span class="pre">get_analysis_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_analysis_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_analysis_settings" title="Link to this definition"></a></dt>
+<dd><p>Get analysis settings with defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Analysis settings including static_mode flag and descriptions</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_angle_filtering_config">
+<span class="sig-name descname"><span class="pre">get_angle_filtering_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_angle_filtering_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_angle_filtering_config" title="Link to this definition"></a></dt>
+<dd><p>Get angle filtering configuration with defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Angle filtering configuration including:
+- enabled: bool, whether angle filtering is enabled
+- target_ranges: list of dicts with min_angle and max_angle
+- fallback_to_all_angles: bool, whether to use all angles if no targets found</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_effective_parameter_count">
+<span class="sig-name descname"><span class="pre">get_effective_parameter_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_effective_parameter_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_effective_parameter_count" title="Link to this definition"></a></dt>
+<dd><p>Get the effective number of model parameters based on active_parameters configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of parameters used in the analysis based on active_parameters.
+Falls back to mode-based logic if active_parameters not specified:
+- Static mode: 3 (only diffusion parameters)
+- Laminar flow mode: 7 (all parameters)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_static_submode">
+<span class="sig-name descname"><span class="pre">get_static_submode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_static_submode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_static_submode" title="Link to this definition"></a></dt>
+<dd><p>Get the static sub-mode for analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“isotropic”, “anisotropic”, or None if static mode is disabled</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_target_angle_ranges">
+<span class="sig-name descname"><span class="pre">get_target_angle_ranges</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_target_angle_ranges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_target_angle_ranges" title="Link to this definition"></a></dt>
+<dd><p>Get list of target angle ranges for optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of (min_angle, max_angle) tuples in degrees</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.get_test_config">
+<span class="sig-name descname"><span class="pre">get_test_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get_test_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get_test_config" title="Link to this definition"></a></dt>
+<dd><p>Get predefined test configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>test_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of test configuration</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Test-specific configuration</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.is_angle_filtering_enabled">
+<span class="sig-name descname"><span class="pre">is_angle_filtering_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_angle_filtering_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.is_angle_filtering_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if angle filtering is enabled in configuration.</p>
+<p>Automatically returns False for static isotropic mode, regardless of
+configuration setting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if angle filtering should be used, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.is_static_anisotropic_enabled">
+<span class="sig-name descname"><span class="pre">is_static_anisotropic_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_static_anisotropic_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.is_static_anisotropic_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if static anisotropic mode is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if analysis mode is static anisotropic, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.is_static_isotropic_enabled">
+<span class="sig-name descname"><span class="pre">is_static_isotropic_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_static_isotropic_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.is_static_isotropic_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if static isotropic mode is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if analysis mode is static isotropic, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.is_static_mode_enabled">
+<span class="sig-name descname"><span class="pre">is_static_mode_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.is_static_mode_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.is_static_mode_enabled" title="Link to this definition"></a></dt>
+<dd><p>Check if static mode is enabled in configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if static mode is enabled, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.load_config">
+<span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.load_config" title="Link to this definition"></a></dt>
+<dd><p>Load and parse JSON configuration file with comprehensive error handling.</p>
+<p>Implements performance-optimized loading with buffering, structure
+optimization for runtime access, and graceful fallback to default
+configuration if primary config fails.</p>
+<p>Error Handling:
+- FileNotFoundError: Missing configuration file
+- JSONDecodeError: Malformed JSON syntax
+- General exceptions: Unexpected loading issues</p>
+<p>Performance Optimizations:
+- 8KB buffering for efficient file I/O
+- Configuration structure caching for fast access
+- Timing instrumentation for performance monitoring</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.setup_logging">
+<span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.setup_logging" title="Link to this definition"></a></dt>
+<dd><p>Configure logging based on configuration using centralized configure_logging().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.13)"><em>Logger</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.should_fallback_to_all_angles">
+<span class="sig-name descname"><span class="pre">should_fallback_to_all_angles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.should_fallback_to_all_angles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.should_fallback_to_all_angles" title="Link to this definition"></a></dt>
+<dd><p>Check if system should fallback to all angles when no targets found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if should fallback to all angles, False to raise error</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.validate_config">
+<span class="sig-name descname"><span class="pre">validate_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.validate_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.validate_config" title="Link to this definition"></a></dt>
+<dd><p>Comprehensive validation of configuration parameters.</p>
+<p>Performs multi-level validation to ensure configuration integrity:</p>
+<p>Structural Validation:
+- Required sections presence (analyzer_parameters, experimental_data, etc.)
+- Configuration hierarchy completeness
+- Parameter type consistency</p>
+<p>Physical Parameter Validation:
+- Frame range consistency (start &lt; end, sufficient frames)
+- Wavevector positivity and reasonable magnitude
+- Time step positivity
+- Gap size physical reasonableness</p>
+<p>Data Validation:
+- Minimum frame count requirements
+- Parameter bounds consistency
+- File path accessibility (optional)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – Invalid configuration parameters or structure</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.13)"><strong>FileNotFoundError</strong></a> – Missing required data files (if validation enabled)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.configure_logging">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">configure_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#configure_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.configure_logging" title="Link to this definition"></a></dt>
+<dd><p>Configure centralized logging system with hierarchy and handlers.</p>
+<p>This function sets up a complete logging infrastructure:
+- Creates a logger hierarchy (root + module logger)
+- Sets up RotatingFileHandler with size-based rotation
+- Optionally creates StreamHandler for console output
+- Applies consistent formatting and log levels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Logging configuration dictionary with keys:
+- log_to_file: bool, enable file logging
+- log_to_console: bool, enable console logging
+- log_filename: str, log file path
+- level: str, logging level (‘DEBUG’, ‘INFO’, ‘WARNING’, ‘ERROR’)
+- format: str, log message format string
+- rotation: dict with ‘max_bytes’ and ‘backup_count’</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configured logger instance for reuse</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.13)">logging.Logger</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.create_time_integral_matrix_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">create_time_integral_matrix_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_dependent_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#create_time_integral_matrix_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.create_time_integral_matrix_numba" title="Link to this definition"></a></dt>
+<dd><p>Create time integral matrix for correlation calculations.</p>
+<p>Computes matrix of time integrals I[i,j] = <a href="#id3"><span class="problematic" id="id4">|∫ᵗʲₜᵢ f(t)dt|</span></a>
+using cumulative sum for O(n) complexity instead of O(n²).
+Optimized with fastmath and memory-efficient layout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time_dependent_array</strong> (<em>np.ndarray</em>) – Time-dependent values f(t) at discrete points</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matrix where element [i,j] = integral from time i to j</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.calculate_diffusion_coefficient_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_diffusion_coefficient_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.calculate_diffusion_coefficient_numba" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent diffusion coefficient.</p>
+<p>Implements power-law model: D(t) = D₀(t/t₀)^α + D_offset</p>
+<p>This model captures various physical scenarios:
+1. Aging systems: D decreases with time (α &lt; 0) as structure develops
+2. Swelling/dissolution: D increases with time (α &gt; 0) as structure breaks down
+3. Stress relaxation: D changes as internal stresses redistribute
+4. Temperature effects: Time-dependent heating/cooling during measurement</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_array</strong> (<em>np.ndarray</em>) – Time points [seconds]</p></li>
+<li><p><strong>D0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Reference diffusion coefficient [Å²/s]</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Power-law exponent [dimensionless]
+α = 0: constant diffusion (equilibrium systems)
+α &gt; 0: enhanced diffusion (aging, structural relaxation)
+α &lt; 0: subdiffusion (crowded environments, viscoelastic media)</p></li>
+<li><p><strong>D_offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Baseline diffusion [Å²/s]
+Accounts for residual thermal motion or measurement artifacts</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>D(t) at each time point [Å²/s]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.calculate_shear_rate_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">calculate_shear_rate_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_shear_rate_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.calculate_shear_rate_numba" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent shear rate.</p>
+<p>Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset</p>
+<p>Common experimental scenarios:
+1. Creep tests: Applied constant stress → time-dependent strain rate</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Initially: γ̇(t) ~ t^(-n) as material yields</p></li>
+<li><p>Later: γ̇(t) ~ constant for steady-state flow</p></li>
+<li><p>Recovery: γ̇(t) → 0 with power-law or exponential decay</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><dl class="simple">
+<dt>Startup flows: Sudden application of shear</dt><dd><ul class="simple">
+<li><p>Acceleration phase: γ̇(t) increases toward steady state</p></li>
+<li><p>Overshoot possible in viscoelastic materials</p></li>
+<li><p>Eventually: γ̇(t) → constant</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Oscillatory flows: Time-varying shear rates</dt><dd><ul class="simple">
+<li><p>Can be captured by appropriate choice of β</p></li>
+<li><p>More complex forms may require Fourier series</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Stress relaxation: Removal of applied stress</dt><dd><ul class="simple">
+<li><p>Exponential or power-law decay: γ̇(t) ~ t^(-β)</p></li>
+<li><p>Long-time tail behavior depends on material properties</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_array</strong> (<em>np.ndarray</em>) – Time points [seconds]</p></li>
+<li><p><strong>gamma_dot_t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Reference shear rate [s⁻¹]</p></li>
+<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Power-law exponent [dimensionless]
+β = 0: constant shear rate (steady flow)
+β &gt; 0: accelerating flow (creep acceleration, startup transients)
+β &lt; 0: decelerating flow (stress relaxation, recovery)</p></li>
+<li><p><strong>gamma_dot_t_offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Baseline shear rate [s⁻¹]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>γ̇(t) at each time point [s⁻¹]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.compute_g1_correlation_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">compute_g1_correlation_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffusion_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavevector_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_g1_correlation_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.compute_g1_correlation_numba" title="Link to this definition"></a></dt>
+<dd><p>Compute field correlation function g₁ from diffusion.</p>
+<p>Calculates the field correlation function arising from translational diffusion
+of scattering particles in the sample. This implements the core diffusion term
+from the homodyne scattering equations:</p>
+<blockquote>
+<div><p>g₁(q⃗, t₁, t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diffusion_integral_matrix</strong> (<em>np.ndarray</em>) – Matrix of diffusion integrals [Å²]</p></li>
+<li><p><strong>wavevector_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Pre-computed 0.5×q²×Δt [Å⁻²]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Field correlation g₁(t₁,t₂), values in [0,1]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.compute_sinc_squared_numba">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">compute_sinc_squared_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefactor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_sinc_squared_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.compute_sinc_squared_numba" title="Link to this definition"></a></dt>
+<dd><p>Compute sinc² function for shear flow contributions (Numba-optimized).</p>
+<p>Calculates the shear-induced decorrelation term appearing in homodyne
+scattering under flow conditions. This implements the sinc² term from
+the theoretical equations:</p>
+<blockquote>
+<div><p>sinc²(x) = [sin(πx)/(πx)]²</p>
+</div></blockquote>
+<p>where x = (1/2π) × q⃗·v̄ × ∫γ̇(t)dt</p>
+<p>Physical interpretation:
+- The sinc function arises from the Fourier transform of a rectangular</p>
+<blockquote>
+<div><p>velocity profile in laminar shear flow</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Shear flow creates a systematic velocity gradient perpendicular to the flow</p></li>
+<li><p>Particles at different heights have different velocities</p></li>
+<li><p>This creates a phase modulation of the scattered light</p></li>
+<li><p>The sinc² envelope reflects the coherent averaging over the velocity distribution</p></li>
+</ul>
+<p>Mathematical origin:
+In laminar flow between parallel plates with gap h:</p>
+<blockquote>
+<div><p>v(y) = γ̇ × y  (linear velocity profile)</p>
+</div></blockquote>
+<p>The scattering from particles at height y picks up phase φ = q⃗·v⃗(y)t
+Coherent averaging over y gives:</p>
+<blockquote>
+<div><p>⟨exp(iq⃗·v⃗(y)t)⟩ = ∫₀ʰ exp(iqy̲γ̇t)dy/h = sinc(qy̲γ̇th/2)</p>
+</div></blockquote>
+<p>Where qy̲ is the component of q⃗ perpendicular to flow direction.</p>
+<p>Flow geometry considerations:
+- For q⃗ parallel to flow: cos(φ) = ±1, maximum shear effect
+- For q⃗ perpendicular to flow: cos(φ) = 0, no shear contribution
+- Intermediate angles: cos(φ) determines the effective shear sensitivity</p>
+<p>Limiting behaviors:
+- Small argument (weak shear): sinc²(x) ≈ 1 - (πx)²/3
+- Large argument (strong shear): sinc²(x) ≈ 0 with oscillations
+- First zero at x = 1: complete destructive interference</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shear_integral_matrix</strong> (<em>np.ndarray</em>) – Matrix of shear rate integrals (strain)</p></li>
+<li><p><strong>prefactor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Geometric factor (1/2π)×q×h×cos(φ)×Δt</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>np.ndarray</em> – Sinc² values for shear contribution, in [0,1] with sinc²(0) = 1</p></li>
+<li><p><em>Special cases</em></p></li>
+<li><p><em>————–</em></p></li>
+<li><p><strong>- Zero shear (γ̇ = 0)</strong> (<em>sinc²(0) = 1 (no shear decorrelation)</em>)</p></li>
+<li><p><strong>- Perpendicular scattering (cos φ = 0)</strong> (<em>sinc²(0) = 1 (no sensitivity)</em>)</p></li>
+<li><p><strong>- Very small arguments</strong> (<em>use Taylor expansion to avoid 0/0 indeterminacy</em>)</p></li>
+<li><p><strong>- Very large arguments</strong> (<em>sinc² oscillates rapidly around small values</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="homodyne.core.memory_efficient_cache">
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">memory_efficient_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maxsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#memory_efficient_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.memory_efficient_cache" title="Link to this definition"></a></dt>
+<dd><p>Memory-efficient LRU cache with automatic cleanup.</p>
+<p>Features:
+- Least Recently Used eviction
+- Access frequency tracking
+- Configurable size limits
+- Cache statistics</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>maxsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Maximum cached items (0 disables caching)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Function decorator with cache_info() and cache_clear() methods</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decorator</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="homodyne.analysis.html" class="btn btn-neutral float-left" title="homodyne.analysis package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="homodyne.optimization.html" class="btn btn-neutral float-right" title="homodyne.optimization package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

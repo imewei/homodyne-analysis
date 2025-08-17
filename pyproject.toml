@@ -1,0 +1,204 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "homodyne-analysis"
+dynamic = ["version"]
+description = "Comprehensive Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Wei Chen", email = "wchen@anl.gov"},
+    {name = "Hongrui He"},
+]
+maintainers = [
+    {name = "Wei Chen", email = "wchen@anl.gov"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+keywords = [
+    "xpcs",
+    "homodyne", 
+    "scattering",
+    "correlation spectroscopy",
+    "soft matter",
+    "nonequilibrium dynamics",
+    "transport coefficients",
+    "Bayesian analysis",
+    "MCMC",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.19.0",
+    "scipy>=1.7.0",
+    "matplotlib>=3.3.0",
+]
+
+[project.optional-dependencies]
+performance = [
+    "numba>=0.56.0",
+]
+mcmc = [
+    "pymc>=5.0.0",
+    "arviz>=0.12.0",
+    "pytensor>=2.8.0",
+]
+docs = [
+    "sphinx>=4.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "myst-parser>=0.17.0",
+    "sphinx-autodoc-typehints>=1.12.0",
+    "numpydoc>=1.2.0",
+]
+dev = [
+    "pytest>=6.2.0",
+    "pytest-cov>=2.12.0",
+    "pytest-xdist>=2.3.0",
+    "black>=21.0.0",
+    "flake8>=3.9.0",
+    "mypy>=0.910",
+    "sphinx>=4.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "myst-parser>=0.17.0",
+    "sphinx-autodoc-typehints>=1.12.0",
+    "numpydoc>=1.2.0",
+]
+all = [
+    "numba>=0.56.0",
+    "pymc>=5.0.0",
+    "arviz>=0.12.0",
+    "pytensor>=2.8.0",
+    "sphinx>=4.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "myst-parser>=0.17.0",
+    "sphinx-autodoc-typehints>=1.12.0",
+    "numpydoc>=1.2.0",
+    "pytest>=6.2.0",
+    "pytest-cov>=2.12.0",
+    "pytest-xdist>=2.3.0",
+    "black>=21.0.0",
+    "flake8>=3.9.0",
+    "mypy>=0.910",
+]
+
+[project.urls]
+Homepage = "https://github.com/AdvancedPhotonSource/homodyne-analysis"
+Documentation = "https://advancedphotonsource.github.io/homodyne-analysis/"
+Repository = "https://github.com/AdvancedPhotonSource/homodyne-analysis"
+Issues = "https://github.com/AdvancedPhotonSource/homodyne-analysis/issues"
+Changelog = "https://github.com/AdvancedPhotonSource/homodyne-analysis/blob/main/CHANGELOG.md"
+
+[project.scripts]
+homodyne = "homodyne.cli:main"
+homodyne-config = "homodyne.config_cli:main"
+
+[tool.setuptools]
+packages = ["homodyne"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+homodyne = ["config_*.json", "templates/*.json"]
+
+[tool.setuptools.dynamic]
+version = {attr = "homodyne.__version__"}
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+    "--color=yes",
+    "-v",
+]
+testpaths = ["homodyne/tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "mcmc: marks tests requiring MCMC dependencies",
+    "performance: marks performance-related tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "numpy.*",
+    "scipy.*",
+    "matplotlib.*",
+    "numba.*",
+    "pymc.*",
+    "arviz.*",
+    "pytensor.*",
+]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["homodyne"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

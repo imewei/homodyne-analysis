@@ -1,0 +1,557 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.tests.test_mcmc_config_reading &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.tests.test_mcmc_config_reading</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.tests.test_mcmc_config_reading</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Test MCMC Configuration Reading</span>
+<span class="sd">==============================</span>
+
+<span class="sd">Tests to ensure MCMC configuration is read correctly from the JSON configuration file.</span>
+<span class="sd">This addresses the issue where MCMC parameters (chains, draws, tune) were not being</span>
+<span class="sd">read from the proper configuration section.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCMCSampler</span>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestMCMCConfigurationReading</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test MCMC configuration reading from JSON files.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_mcmc_config_reading_correct_path">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_mcmc_config_reading_correct_path">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_config_reading_correct_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC configuration is read from the correct path in the config.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Create a test configuration with MCMC settings</span>
+        <span class="n">test_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">2000</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                    <span class="s2">&quot;target_accept&quot;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
+                    <span class="s2">&quot;cores&quot;</span><span class="p">:</span> <span class="mi">4</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test configuration access pattern</span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimization_config&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        
+        <span class="c1"># Verify correct values are read</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5000</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2000</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_accept&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.85</span>
+        
+        <span class="c1"># Test that old (incorrect) access pattern would fail</span>
+        <span class="k">assert</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1000</span>  <span class="c1"># Default value</span>
+        <span class="k">assert</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>      <span class="c1"># Default value</span>
+        <span class="k">assert</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="o">==</span> <span class="mi">500</span>    <span class="c1"># Default value</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_mcmc_sampler_reads_config_correctly">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_mcmc_sampler_reads_config_correctly">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_sampler_reads_config_correctly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMCSampler class reads configuration correctly.&quot;&quot;&quot;</span>
+        
+        <span class="n">test_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">8000</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">1500</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                    <span class="s2">&quot;target_accept&quot;</span><span class="p">:</span> <span class="mf">0.92</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Create mock core object</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+        <span class="n">mock_core</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_core</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="mi">4</span>
+        
+        <span class="c1"># Create MCMCSampler instance</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">MCMCSampler</span><span class="p">(</span><span class="n">mock_core</span><span class="p">,</span> <span class="n">test_config</span><span class="p">)</span>
+        
+        <span class="c1"># Verify it reads the configuration correctly</span>
+        <span class="k">assert</span> <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8000</span>
+        <span class="k">assert</span> <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1500</span>
+        <span class="k">assert</span> <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+        <span class="k">assert</span> <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_accept&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.92</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_mcmc_config_defaults_when_missing">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_mcmc_config_defaults_when_missing">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_config_defaults_when_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that proper defaults are used when MCMC configuration is missing.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Configuration without MCMC settings</span>
+        <span class="n">test_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test configuration access with missing section</span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimization_config&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        
+        <span class="c1"># Should get default values</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1000</span>     <span class="c1"># Default</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="o">==</span> <span class="mi">500</span>        <span class="c1"># Default</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>          <span class="c1"># Default</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_accept&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.9</span>  <span class="c1"># Default</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_real_config_file_structure">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_real_config_file_structure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_real_config_file_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test with a realistic configuration file structure.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Create a realistic config structure matching the project&#39;s format</span>
+        <span class="n">realistic_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;analysis_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;static_isotropic&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="s2">&quot;NUTS&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> 
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                    <span class="s2">&quot;cores&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                    <span class="s2">&quot;target_accept&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
+                    <span class="s2">&quot;max_treedepth&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;return_inferencedata&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;phi0&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">18000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.59</span><span class="p">,</span> <span class="mf">3.10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">20000</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;log-uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.6</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;phi0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test that values are read correctly</span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">realistic_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimization_config&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10000</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1000</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_accept&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.95</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sampler&quot;</span><span class="p">,</span> <span class="s2">&quot;NUTS&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;NUTS&quot;</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_treedepth&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_config_validation_with_correct_keys">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_config_validation_with_correct_keys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_config_validation_with_correct_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that configuration validation works with the correct key names.&quot;&quot;&quot;</span>
+        
+        <span class="n">test_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">2000</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;target_accept&quot;</span><span class="p">:</span> <span class="mf">0.88</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Create mock core object</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+        <span class="n">mock_core</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_core</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="mi">4</span>
+        
+        <span class="c1"># Create MCMCSampler instance and test validation</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">MCMCSampler</span><span class="p">(</span><span class="n">mock_core</span><span class="p">,</span> <span class="n">test_config</span><span class="p">)</span>
+        
+        <span class="c1"># This should not raise an exception if validation works correctly</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">_validate_mcmc_config</span><span class="p">()</span>
+            <span class="n">validation_passed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">validation_passed</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation failed with error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">assert</span> <span class="n">validation_passed</span><span class="p">,</span> <span class="s2">&quot;Configuration validation should pass with correct key names&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_configuration_key_mismatch_detection">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_configuration_key_mismatch_detection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_configuration_key_mismatch_detection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that demonstrates the key mismatch issue that was fixed.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Configuration with correct structure but test access patterns</span>
+        <span class="n">config_with_wrong_keys</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;mcmc_draws&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>     <span class="c1"># Wrong location - at root level</span>
+            <span class="s2">&quot;mcmc_chains&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>        <span class="c1"># Wrong location - at root level</span>
+            <span class="s2">&quot;mcmc_tune&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>       <span class="c1"># Wrong location - at root level</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>       <span class="c1"># Correct location with correct key name</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>         <span class="c1"># Correct location with correct key name</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">2000</span>         <span class="c1"># Correct location with correct key name</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test old (incorrect) access pattern</span>
+        <span class="n">old_draws</span> <span class="o">=</span> <span class="n">config_with_wrong_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">old_chains</span> <span class="o">=</span> <span class="n">config_with_wrong_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">old_tune</span> <span class="o">=</span> <span class="n">config_with_wrong_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+        
+        <span class="c1"># Test new (correct) access pattern </span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">config_with_wrong_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimization_config&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">new_draws</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;draws&quot;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">new_chains</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chains&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">new_tune</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tune&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+        
+        <span class="c1"># The old pattern would read the wrong values</span>
+        <span class="k">assert</span> <span class="n">old_draws</span> <span class="o">==</span> <span class="mi">10000</span>
+        <span class="k">assert</span> <span class="n">old_chains</span> <span class="o">==</span> <span class="mi">8</span>
+        <span class="k">assert</span> <span class="n">old_tune</span> <span class="o">==</span> <span class="mi">1000</span>
+        
+        <span class="c1"># The new pattern reads the correct values</span>
+        <span class="k">assert</span> <span class="n">new_draws</span> <span class="o">==</span> <span class="mi">5000</span>
+        <span class="k">assert</span> <span class="n">new_chains</span> <span class="o">==</span> <span class="mi">4</span>
+        <span class="k">assert</span> <span class="n">new_tune</span> <span class="o">==</span> <span class="mi">2000</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_mcmc_parameter_bounds_usage">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_mcmc_parameter_bounds_usage">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_parameter_bounds_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC module uses parameter bounds correctly for PyMC priors.&quot;&quot;&quot;</span>
+        
+        <span class="n">test_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">18000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.59</span><span class="p">,</span> <span class="mf">3.10</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">20000</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;log-uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.6</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Create mock core object</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+        <span class="n">mock_core</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_core</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="mi">4</span>
+        
+        <span class="c1"># Create MCMCSampler instance</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">MCMCSampler</span><span class="p">(</span><span class="n">mock_core</span><span class="p">,</span> <span class="n">test_config</span><span class="p">)</span>
+        
+        <span class="c1"># Test that parameter bounds are accessed correctly</span>
+        <span class="n">param_bounds</span> <span class="o">=</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parameter_space&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_bounds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+        
+        <span class="c1"># Verify bounds values match configuration</span>
+        <span class="n">d0_bound</span> <span class="o">=</span> <span class="n">param_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">d0_bound</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;D0&quot;</span>
+        <span class="k">assert</span> <span class="n">d0_bound</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">15000</span>
+        <span class="k">assert</span> <span class="n">d0_bound</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">20000</span>
+        <span class="k">assert</span> <span class="n">d0_bound</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;log-uniform&quot;</span>
+        
+        <span class="n">alpha_bound</span> <span class="o">=</span> <span class="n">param_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">alpha_bound</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;alpha&quot;</span>
+        <span class="k">assert</span> <span class="n">alpha_bound</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.6</span>
+        <span class="k">assert</span> <span class="n">alpha_bound</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.5</span>
+        <span class="k">assert</span> <span class="n">alpha_bound</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span>
+        
+        <span class="n">d_offset_bound</span> <span class="o">=</span> <span class="n">param_bounds</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">d_offset_bound</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;D_offset&quot;</span>
+        <span class="k">assert</span> <span class="n">d_offset_bound</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">d_offset_bound</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">5</span>
+        <span class="k">assert</span> <span class="n">d_offset_bound</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_mcmc_parameter_bounds_with_missing_bounds">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_mcmc_parameter_bounds_with_missing_bounds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_parameter_bounds_with_missing_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test MCMC parameter bounds handling when bounds are missing.&quot;&quot;&quot;</span>
+        
+        <span class="n">test_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+            <span class="c1"># Missing parameter_space section</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Create mock core object</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+        <span class="n">mock_core</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_core</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="mi">4</span>
+        
+        <span class="c1"># Create MCMCSampler instance - should not crash</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">MCMCSampler</span><span class="p">(</span><span class="n">mock_core</span><span class="p">,</span> <span class="n">test_config</span><span class="p">)</span>
+        
+        <span class="c1"># Test graceful handling of missing bounds</span>
+        <span class="n">param_bounds</span> <span class="o">=</span> <span class="n">test_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parameter_space&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">assert</span> <span class="n">param_bounds</span> <span class="o">==</span> <span class="p">[]</span>  <span class="c1"># Should get empty list as default</span>
+        
+        <span class="c1"># MCMC sampler should still be created successfully</span>
+        <span class="k">assert</span> <span class="n">sampler</span><span class="o">.</span><span class="n">config</span> <span class="o">==</span> <span class="n">test_config</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConfigurationReading.test_mcmc_real_config_parameter_bounds_compatibility">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_config_reading.TestMCMCConfigurationReading.test_mcmc_real_config_parameter_bounds_compatibility">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_real_config_parameter_bounds_compatibility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test with realistic parameter bounds matching the project configuration.&quot;&quot;&quot;</span>
+        
+        <span class="n">realistic_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                    <span class="s2">&quot;target_accept&quot;</span><span class="p">:</span> <span class="mf">0.95</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;phi0&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">18000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.59</span><span class="p">,</span> <span class="mf">3.10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">20000</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;log-uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.6</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;phi0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fixed&quot;</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;static_submode&quot;</span><span class="p">:</span> <span class="s2">&quot;isotropic&quot;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Create mock core object</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+        <span class="n">mock_core</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_core</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="mi">4</span>
+        
+        <span class="c1"># Create MCMCSampler instance</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">MCMCSampler</span><span class="p">(</span><span class="n">mock_core</span><span class="p">,</span> <span class="n">realistic_config</span><span class="p">)</span>
+        
+        <span class="c1"># Test that all parameter bounds are accessible</span>
+        <span class="n">param_bounds</span> <span class="o">=</span> <span class="n">realistic_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parameter_space&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_bounds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">7</span>
+        
+        <span class="c1"># Test active parameters bounds (first 3 for static mode)</span>
+        <span class="n">active_bounds</span> <span class="o">=</span> <span class="n">param_bounds</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+        
+        <span class="c1"># Verify values match expected configuration exactly</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;D0&quot;</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">15000</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">20000</span>
+        
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;alpha&quot;</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.6</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.5</span>
+        
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;D_offset&quot;</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">active_bounds</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">5</span>
+        
+        <span class="c1"># Test that MCMC configuration is also correct</span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_config</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;draws&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10000</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chains&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
+        <span class="k">assert</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tune&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1000</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

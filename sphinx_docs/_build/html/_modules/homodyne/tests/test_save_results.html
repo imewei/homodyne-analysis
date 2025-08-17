@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.tests.test_save_results &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.tests.test_save_results</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.tests.test_save_results</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tests for save_results_with_config method and related functionality.</span>
+
+<span class="sd">This module tests the save_results_with_config method implementation,</span>
+<span class="sd">including proper handling of None configurations, timezone-aware timestamps,</span>
+<span class="sd">and uncertainty field preservation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span><span class="p">,</span> <span class="n">mock_open</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">))</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.analysis.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">HomodyneAnalysisCore</span>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestSaveResultsWithConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test the save_results_with_config method implementation.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.mock_analyzer">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.mock_analyzer">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mock_analyzer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a minimal analyzer instance for testing.&quot;&quot;&quot;</span>
+        <span class="n">analyzer</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">HomodyneAnalysisCore</span><span class="p">)</span>
+        <span class="n">analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;output_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;file_formats&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;results_format&quot;</span><span class="p">:</span> <span class="s2">&quot;json&quot;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;advanced_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;chi_squared_calculation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;_scaling_optimization_note&quot;</span><span class="p">:</span> <span class="s2">&quot;Scaling optimization is always enabled: g₂ = offset + contrast × g₁&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;uncertainty_calculation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enable_uncertainty&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;report_uncertainty&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">analyzer</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.sample_results_with_uncertainty">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.sample_results_with_uncertainty">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_results_with_uncertainty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample results dictionary including uncertainty fields.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="s2">&quot;reduced_chi_squared&quot;</span><span class="p">:</span> <span class="mf">3.2</span><span class="p">,</span>
+                <span class="s2">&quot;reduced_chi_squared_uncertainty&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+                <span class="s2">&quot;reduced_chi_squared_std&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+                <span class="s2">&quot;n_optimization_angles&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                <span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">:</span> <span class="mi">1234</span><span class="p">,</span>
+                <span class="s2">&quot;convergence&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">},</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_save_with_valid_config">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_save_with_valid_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_save_with_valid_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">sample_results_with_uncertainty</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test saving results with a valid configuration.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">temp_dir</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">())</span> <span class="k">as</span> <span class="n">mock_file</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_json</span><span class="p">:</span>
+                    <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">sample_results_with_uncertainty</span><span class="p">)</span>
+                    
+                    <span class="c1"># Verify json.dump was called</span>
+                    <span class="k">assert</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">called</span>
+                    <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">call_args</span>
+                    <span class="n">saved_data</span> <span class="o">=</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># First argument to json.dump</span>
+                    
+                    <span class="c1"># Check structure</span>
+                    <span class="k">assert</span> <span class="s2">&quot;timestamp&quot;</span> <span class="ow">in</span> <span class="n">saved_data</span>
+                    <span class="k">assert</span> <span class="s2">&quot;config&quot;</span> <span class="ow">in</span> <span class="n">saved_data</span>
+                    <span class="k">assert</span> <span class="s2">&quot;results&quot;</span> <span class="ow">in</span> <span class="n">saved_data</span>
+                    <span class="k">assert</span> <span class="s2">&quot;execution_metadata&quot;</span> <span class="ow">in</span> <span class="n">saved_data</span>
+                    
+                    <span class="c1"># Check results preservation</span>
+                    <span class="k">assert</span> <span class="n">saved_data</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">sample_results_with_uncertainty</span>
+                    
+                    <span class="c1"># Check uncertainty fields are preserved</span>
+                    <span class="n">classical_results</span> <span class="o">=</span> <span class="n">saved_data</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;classical_optimization&quot;</span><span class="p">]</span>
+                    <span class="k">assert</span> <span class="s2">&quot;reduced_chi_squared_uncertainty&quot;</span> <span class="ow">in</span> <span class="n">classical_results</span>
+                    <span class="k">assert</span> <span class="s2">&quot;reduced_chi_squared_std&quot;</span> <span class="ow">in</span> <span class="n">classical_results</span>
+                    <span class="k">assert</span> <span class="s2">&quot;n_optimization_angles&quot;</span> <span class="ow">in</span> <span class="n">classical_results</span>
+                    <span class="k">assert</span> <span class="s2">&quot;degrees_of_freedom&quot;</span> <span class="ow">in</span> <span class="n">classical_results</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_save_with_none_config">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_save_with_none_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_save_with_none_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_results_with_uncertainty</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test saving results when config is None.&quot;&quot;&quot;</span>
+        <span class="n">analyzer</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">HomodyneAnalysisCore</span><span class="p">)</span>
+        <span class="n">analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Explicitly set to None</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">())</span> <span class="k">as</span> <span class="n">mock_file</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_json</span><span class="p">:</span>
+                <span class="c1"># This should not raise an exception</span>
+                <span class="n">analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">sample_results_with_uncertainty</span><span class="p">)</span>
+                
+                <span class="c1"># Verify it was called (meaning no exception was raised)</span>
+                <span class="k">assert</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">called</span>
+                <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">call_args</span>
+                <span class="n">saved_data</span> <span class="o">=</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="c1"># Config should be None but structure should still be valid</span>
+                <span class="k">assert</span> <span class="n">saved_data</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="k">assert</span> <span class="s2">&quot;timestamp&quot;</span> <span class="ow">in</span> <span class="n">saved_data</span>
+                <span class="k">assert</span> <span class="s2">&quot;results&quot;</span> <span class="ow">in</span> <span class="n">saved_data</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_timezone_aware_timestamps">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_timezone_aware_timestamps">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_timezone_aware_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">sample_results_with_uncertainty</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that timestamps are timezone-aware and properly formatted.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">()):</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_json</span><span class="p">:</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">sample_results_with_uncertainty</span><span class="p">)</span>
+                
+                <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">call_args</span>
+                <span class="n">saved_data</span> <span class="o">=</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="c1"># Check timestamp format</span>
+                <span class="n">timestamp_str</span> <span class="o">=</span> <span class="n">saved_data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
+                
+                <span class="c1"># Should be able to parse as ISO format with timezone</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parsed_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">timestamp_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;+00:00&#39;</span><span class="p">))</span>
+                    <span class="c1"># Should have timezone info</span>
+                    <span class="k">assert</span> <span class="n">parsed_time</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">pytest</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timestamp </span><span class="si">{</span><span class="n">timestamp_str</span><span class="si">}</span><span class="s2"> is not in valid ISO format&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_different_result_formats">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_different_result_formats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_different_result_formats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test saving with different output format configurations.&quot;&quot;&quot;</span>
+        <span class="c1"># Test JSON format</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_settings&quot;</span><span class="p">][</span><span class="s2">&quot;file_formats&quot;</span><span class="p">][</span><span class="s2">&quot;results_format&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;json&quot;</span>
+        <span class="n">test_results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">}</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">())</span> <span class="k">as</span> <span class="n">mock_file</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">):</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">test_results</span><span class="p">)</span>
+                <span class="c1"># Check that file was opened with correct name</span>
+                <span class="n">mock_file</span><span class="o">.</span><span class="n">assert_called</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_execution_metadata_structure">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_execution_metadata_structure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_execution_metadata_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">sample_results_with_uncertainty</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that execution metadata has correct structure.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">()):</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_json</span><span class="p">:</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">sample_results_with_uncertainty</span><span class="p">)</span>
+                
+                <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">call_args</span>
+                <span class="n">saved_data</span> <span class="o">=</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="n">exec_metadata</span> <span class="o">=</span> <span class="n">saved_data</span><span class="p">[</span><span class="s2">&quot;execution_metadata&quot;</span><span class="p">]</span>
+                <span class="k">assert</span> <span class="s2">&quot;analysis_success&quot;</span> <span class="ow">in</span> <span class="n">exec_metadata</span>
+                <span class="k">assert</span> <span class="s2">&quot;timestamp&quot;</span> <span class="ow">in</span> <span class="n">exec_metadata</span>
+                <span class="k">assert</span> <span class="n">exec_metadata</span><span class="p">[</span><span class="s2">&quot;analysis_success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_uncertainty_fields_preservation">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_uncertainty_fields_preservation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_uncertainty_fields_preservation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that all uncertainty-related fields are properly preserved.&quot;&quot;&quot;</span>
+        <span class="n">test_results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;method_test&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;reduced_chi_squared&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+                <span class="s2">&quot;reduced_chi_squared_uncertainty&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                <span class="s2">&quot;reduced_chi_squared_std&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+                <span class="s2">&quot;n_optimization_angles&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                <span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="s2">&quot;angle_chi_squared_reduced&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2.1</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">,</span> <span class="mf">2.8</span><span class="p">,</span> <span class="mf">2.7</span><span class="p">],</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">()):</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_json</span><span class="p">:</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">test_results</span><span class="p">)</span>
+                
+                <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">call_args</span>
+                <span class="n">saved_data</span> <span class="o">=</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="n">method_results</span> <span class="o">=</span> <span class="n">saved_data</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;method_test&quot;</span><span class="p">]</span>
+                
+                <span class="c1"># Check all uncertainty fields are preserved</span>
+                <span class="n">expected_fields</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;reduced_chi_squared&quot;</span><span class="p">,</span> <span class="s2">&quot;reduced_chi_squared_uncertainty&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;reduced_chi_squared_std&quot;</span><span class="p">,</span> <span class="s2">&quot;n_optimization_angles&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">,</span> <span class="s2">&quot;angle_chi_squared_reduced&quot;</span>
+                <span class="p">]</span>
+                
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">expected_fields</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">method_results</span>
+                    <span class="k">assert</span> <span class="n">method_results</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">==</span> <span class="n">test_results</span><span class="p">[</span><span class="s2">&quot;method_test&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_file_creation_and_backup">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_file_creation_and_backup">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_file_creation_and_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">sample_results_with_uncertainty</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test file creation and backup directory logic.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;os.path.exists&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_exists</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">())</span> <span class="k">as</span> <span class="n">mock_file</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">):</span>
+                    <span class="c1"># Test when results directory exists</span>
+                    <span class="n">mock_exists</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">sample_results_with_uncertainty</span><span class="p">)</span>
+                    
+                    <span class="c1"># Should be called twice - once for main file, once for backup</span>
+                    <span class="k">assert</span> <span class="n">mock_file</span><span class="o">.</span><span class="n">call_count</span> <span class="o">&gt;=</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_error_handling">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_error_handling">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_error_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">sample_results_with_uncertainty</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test error handling in save_results_with_config.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="ne">PermissionError</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)):</span>
+            <span class="c1"># Should raise the PermissionError</span>
+            <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">PermissionError</span><span class="p">):</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">sample_results_with_uncertainty</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestSaveResultsWithConfig.test_json_serialization_compatibility">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_save_results.TestSaveResultsWithConfig.test_json_serialization_compatibility">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_json_serialization_compatibility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that results are JSON serializable.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+        
+        <span class="c1"># Test with numpy types that need conversion</span>
+        <span class="n">test_results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;reduced_chi_squared&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">2.5</span><span class="p">),</span>
+                <span class="s2">&quot;reduced_chi_squared_uncertainty&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
+                <span class="s2">&quot;n_optimization_angles&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">])</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;builtins.open&#39;</span><span class="p">,</span> <span class="n">mock_open</span><span class="p">()):</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;json.dump&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_json</span><span class="p">:</span>
+                <span class="c1"># Should not raise an exception due to numpy types</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">save_results_with_config</span><span class="p">(</span><span class="n">test_results</span><span class="p">)</span>
+                
+                <span class="c1"># Check that json.dump was called with default=str for numpy compatibility</span>
+                <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_json</span><span class="o">.</span><span class="n">call_args</span>
+                <span class="n">call_kwargs</span> <span class="o">=</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">assert</span> <span class="s1">&#39;default&#39;</span> <span class="ow">in</span> <span class="n">call_kwargs</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

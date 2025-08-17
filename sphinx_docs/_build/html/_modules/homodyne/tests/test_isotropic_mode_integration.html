@@ -1,0 +1,729 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.tests.test_isotropic_mode_integration &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.tests.test_isotropic_mode_integration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.tests.test_isotropic_mode_integration</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Integration Tests for Static Isotropic Mode</span>
+<span class="sd">==========================================</span>
+
+<span class="sd">Comprehensive integration tests that verify the isotropic static mode works </span>
+<span class="sd">end-to-end including data loading, analysis, and plotting with dummy phi angles.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span><span class="p">,</span> <span class="n">MagicMock</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.analysis.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">HomodyneAnalysisCore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigManager</span>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestIsotropicModeIntegration</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Integration tests for static isotropic mode functionality.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.isotropic_config">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.isotropic_config">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isotropic_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for static isotropic mode.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">},</span>
+                <span class="s2">&quot;scattering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;wavevector_q&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
+                <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;stator_rotor_gap&quot;</span><span class="p">:</span> <span class="mi">2000000</span><span class="p">},</span>
+                <span class="s2">&quot;computational&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;num_threads&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;auto_detect_cores&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;data_file_name&quot;</span><span class="p">:</span> <span class="s2">&quot;test.hdf&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;phi_angles_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;phi_angles_file&quot;</span><span class="p">:</span> <span class="s2">&quot;phi_list.txt&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;exchange_key&quot;</span><span class="p">:</span> <span class="s2">&quot;exchange&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cache_file_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cache_filename_template&quot;</span><span class="p">:</span> <span class="s2">&quot;test_isotropic_</span><span class="si">{start_frame}</span><span class="s2">_</span><span class="si">{end_frame}</span><span class="s2">.npz&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;angle_filtering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>  <span class="c1"># Should be automatically disabled</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;phi0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">15.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">15.0</span><span class="p">},</span>
+                <span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]},</span>
+            <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;static_submode&quot;</span><span class="p">:</span> <span class="s2">&quot;isotropic&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;advanced_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;data_loading&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;use_diagonal_correction&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;chi_squared_calculation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;_scaling_optimization_note&quot;</span><span class="p">:</span> <span class="s2">&quot;Scaling optimization is always enabled: g₂ = offset + contrast × g₁&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;validity_check&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;check_positive_D0&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;check_positive_gamma_dot_t0&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;performance_settings&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;parallel_execution&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.temp_directory">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.temp_directory">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">temp_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create temporary directory for test files.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_config_manager_isotropic_mode_detection">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_config_manager_isotropic_mode_detection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_config_manager_isotropic_mode_detection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that ConfigManager correctly detects isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Test mode detection</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_static_mode_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_static_submode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;isotropic&quot;</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_static_isotropic_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_static_anisotropic_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_isotropic&quot;</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_effective_parameter_count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>
+
+        <span class="c1"># Test angle filtering is automatically disabled</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_core_initialization">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_core_initialization">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_core_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test HomodyneAnalysisCore initialization with isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Test mode detection</span>
+        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">is_static_mode</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">is_static_isotropic_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">get_effective_parameter_count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>
+
+        <span class="c1"># Test that angle filtering is disabled</span>
+        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_data_loading_skips_phi_angles">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_data_loading_skips_phi_angles">[docs]</a>
+    <span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.np.savez_compressed&#39;</span><span class="p">)</span>
+    <span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.np.load&#39;</span><span class="p">)</span>
+    <span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.os.path.exists&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_data_loading_skips_phi_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_exists</span><span class="p">,</span> <span class="n">mock_load</span><span class="p">,</span> <span class="n">mock_savez</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that isotropic mode skips loading phi_angles_file.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># Mock file existence checks</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">exists_side_effect</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="c1"># Config file exists</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;isotropic_config.json&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="c1"># Data files don&#39;t exist (cache miss scenario)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">mock_exists</span><span class="o">.</span><span class="n">side_effect</span> <span class="o">=</span> <span class="n">exists_side_effect</span>
+
+        <span class="c1"># Create mock experimental data</span>
+        <span class="n">mock_c2_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">49</span><span class="p">)</span>  <span class="c1"># Single angle for isotropic mode</span>
+        <span class="n">mock_load</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c2_exp&#39;</span><span class="p">:</span> <span class="n">mock_c2_data</span><span class="p">}</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s1">&#39;_load_raw_data&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_load_raw</span><span class="p">:</span>
+            <span class="n">mock_load_raw</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_c2_data</span>
+            
+            <span class="c1"># Load data - should use dummy angles</span>
+            <span class="n">c2_data</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">num_angles</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">load_experimental_data</span><span class="p">()</span>
+            
+            <span class="c1"># Verify dummy angles are used</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">phi_angles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="k">assert</span> <span class="n">phi_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+            <span class="k">assert</span> <span class="n">num_angles</span> <span class="o">==</span> <span class="mi">1</span>
+            
+            <span class="c1"># Verify data structure</span>
+            <span class="k">assert</span> <span class="n">c2_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>  <span class="c1"># Single angle</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_optimization_workflow">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_optimization_workflow">[docs]</a>
+    <span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.np.savez_compressed&#39;</span><span class="p">)</span>
+    <span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.np.load&#39;</span><span class="p">)</span>  
+    <span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.os.path.exists&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_optimization_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_exists</span><span class="p">,</span> <span class="n">mock_load</span><span class="p">,</span> <span class="n">mock_savez</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test complete optimization workflow in isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># Mock file existence - cache miss scenario</span>
+        <span class="n">mock_exists</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Create realistic mock data for single angle (isotropic mode)</span>
+        <span class="n">n_times</span> <span class="o">=</span> <span class="mi">49</span>
+        <span class="n">mock_c2_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">n_times</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_times</span><span class="p">)</span>
+        <span class="n">mock_load</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c2_exp&#39;</span><span class="p">:</span> <span class="n">mock_c2_data</span><span class="p">}</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+
+        <span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s1">&#39;_load_raw_data&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_load_raw</span><span class="p">:</span>
+            <span class="n">mock_load_raw</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_c2_data</span>
+            
+            <span class="c1"># Test parameter processing</span>
+            <span class="n">test_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1200.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">150.0</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
+            <span class="n">effective_params</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">get_effective_parameters</span><span class="p">(</span><span class="n">test_params</span><span class="p">)</span>
+            
+            <span class="c1"># In isotropic static mode, last 4 parameters should be zeroed</span>
+            <span class="n">expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1200.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">150.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">effective_params</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span>
+
+            <span class="c1"># Test basic analysis functions</span>
+            <span class="n">c2_data</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">num_angles</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">load_experimental_data</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">num_angles</span> <span class="o">==</span> <span class="mi">1</span>  <span class="c1"># Isotropic mode uses single angle</span>
+            <span class="k">assert</span> <span class="n">phi_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>  <span class="c1"># Dummy angle</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_correlation_calculation">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_correlation_calculation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_correlation_calculation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test C2 correlation calculation in isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Test parameters - only first 3 should matter</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">999.0</span><span class="p">,</span> <span class="mf">999.0</span><span class="p">,</span> <span class="mf">999.0</span><span class="p">,</span> <span class="mf">999.0</span><span class="p">])</span>  <span class="c1"># Large values for last 4</span>
+        <span class="n">phi_angle</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># Dummy angle</span>
+
+        <span class="c1"># Calculate C2 - should ignore last 4 parameters</span>
+        <span class="n">c2_result</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">calculate_c2_single_angle_optimized</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">phi_angle</span><span class="p">)</span>
+        
+        <span class="c1"># Should return valid correlation function</span>
+        <span class="k">assert</span> <span class="n">c2_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">c2_result</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># C2 should be non-negative</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">c2_result</span> <span class="o">&lt;=</span> <span class="mf">2.0</span><span class="p">)</span>  <span class="c1"># Reasonable upper bound for normalized C2</span>
+        
+        <span class="c1"># Test that result is same regardless of last 4 parameters</span>
+        <span class="n">params_different_flow</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+        <span class="n">c2_result_2</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">calculate_c2_single_angle_optimized</span><span class="p">(</span><span class="n">params_different_flow</span><span class="p">,</span> <span class="n">phi_angle</span><span class="p">)</span>
+        
+        <span class="c1"># Results should be identical (within numerical precision)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span><span class="n">c2_result</span><span class="p">,</span> <span class="n">c2_result_2</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_chi_squared_calculation">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_chi_squared_calculation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_chi_squared_calculation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test chi-squared calculation supports dummy angles in isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Mock experimental data for single angle</span>
+        <span class="n">mock_exp_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s1">&#39;cached_experimental_data&#39;</span><span class="p">,</span> <span class="n">mock_exp_data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s1">&#39;cached_phi_angles&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])):</span>
+                <span class="c1"># Test parameters</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+                
+                <span class="c1"># Test that correlation calculation works with dummy angle</span>
+                <span class="n">c2_result</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">calculate_c2_single_angle_optimized</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                
+                <span class="c1"># Should return finite, positive values</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2_result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">c2_result</span><span class="p">))</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">c2_result</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># C2 should be non-negative</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_caching_behavior">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_caching_behavior">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_caching_behavior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test caching behavior with dummy angles in isotropic mode.&quot;&quot;&quot;</span>
+        <span class="c1"># Reset any global state that might interfere with this test</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">homodyne.analysis.core</span>
+        <span class="n">homodyne</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">OPTIMIZATION_COUNTER</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1"># Clear any potential module-level imports that might interfere</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+        <span class="n">importlib</span><span class="o">.</span><span class="n">reload</span><span class="p">(</span><span class="n">homodyne</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">core</span><span class="p">)</span>
+        
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        
+        <span class="c1"># Create the cache directory that the config references</span>
+        <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span>
+        <span class="n">cache_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Update config to use the temp directory</span>
+        <span class="n">isotropic_config</span><span class="p">[</span><span class="s2">&quot;experimental_data&quot;</span><span class="p">][</span><span class="s2">&quot;cache_file_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span>
+        
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Mock experimental data for single angle</span>
+        <span class="n">mock_c2_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">49</span><span class="p">,</span> <span class="mi">49</span><span class="p">)</span>  <span class="c1"># Single angle, 49x49 correlation matrix</span>
+        
+        <span class="c1"># Test that data is cached in memory after loading</span>
+        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">cached_experimental_data</span> <span class="ow">is</span> <span class="kc">None</span>  <span class="c1"># Initially None</span>
+        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">cached_phi_angles</span> <span class="ow">is</span> <span class="kc">None</span>  <span class="c1"># Initially None</span>
+        
+        <span class="c1"># Use more specific and safer mocking approach</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s1">&#39;_load_raw_data&#39;</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">mock_c2_data</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_load_raw</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;os.path.isfile&#39;</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_isfile</span><span class="p">:</span>
+                <span class="c1"># Ensure instance cache is cleared before test</span>
+                <span class="n">core</span><span class="o">.</span><span class="n">cached_experimental_data</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">core</span><span class="o">.</span><span class="n">cached_phi_angles</span> <span class="o">=</span> <span class="kc">None</span>
+                
+                <span class="c1"># Load data - should trigger internal caching</span>
+                <span class="n">c2_data</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">num_angles</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">load_experimental_data</span><span class="p">()</span>
+                
+                <span class="c1"># Verify isotropic mode characteristics</span>
+                <span class="k">assert</span> <span class="n">num_angles</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">phi_angles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">assert</span> <span class="n">phi_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+                
+                <span class="c1"># Verify internal memory caching occurred</span>
+                <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">cached_experimental_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Cache not populated! Actual: </span><span class="si">{</span><span class="n">core</span><span class="o">.</span><span class="n">cached_experimental_data</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">cached_phi_angles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Phi angles cache not populated! Actual: </span><span class="si">{</span><span class="n">core</span><span class="o">.</span><span class="n">cached_phi_angles</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">cached_phi_angles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">cached_phi_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+                
+                <span class="c1"># Verify second call uses cache (raw data load should not be called again)</span>
+                <span class="n">mock_load_raw</span><span class="o">.</span><span class="n">reset_mock</span><span class="p">()</span>
+                <span class="n">c2_data_2</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">phi_angles_2</span><span class="p">,</span> <span class="n">num_angles_2</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">load_experimental_data</span><span class="p">()</span>
+                
+                <span class="c1"># Should return same data from cache</span>
+                <span class="k">assert</span> <span class="n">num_angles_2</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">assert</span> <span class="n">phi_angles_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">c2_data</span><span class="p">,</span> <span class="n">c2_data_2</span><span class="p">)</span>
+                
+                <span class="c1"># Raw data loading should not have been called again</span>
+                <span class="n">mock_load_raw</span><span class="o">.</span><span class="n">assert_not_called</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_parameter_validation">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_parameter_validation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_parameter_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test parameter validation in isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Test parameter processing - should zero out flow parameters</span>
+        <span class="n">original_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">])</span>
+        <span class="n">processed_params</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">get_effective_parameters</span><span class="p">(</span><span class="n">original_params</span><span class="p">)</span>
+        
+        <span class="c1"># First 3 should be preserved</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1000.0</span>  <span class="c1"># D0</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">0.1</span>    <span class="c1"># alpha</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mf">100.0</span>   <span class="c1"># D_offset</span>
+        
+        <span class="c1"># Last 4 should be zeroed</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>     <span class="c1"># gamma_dot_t0</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>     <span class="c1"># beta</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>     <span class="c1"># gamma_dot_t_offset</span>
+        <span class="k">assert</span> <span class="n">processed_params</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>     <span class="c1"># phi0</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_vs_anisotropic_mode_comparison">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_vs_anisotropic_mode_comparison">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_vs_anisotropic_mode_comparison</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that isotropic and anisotropic modes produce different behavior.&quot;&quot;&quot;</span>
+        <span class="n">base_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">},</span>
+                <span class="s2">&quot;scattering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;wavevector_q&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
+                <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;stator_rotor_gap&quot;</span><span class="p">:</span> <span class="mi">2000000</span><span class="p">},</span>
+                <span class="s2">&quot;computational&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;num_threads&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;auto_detect_cores&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;data_file_name&quot;</span><span class="p">:</span> <span class="s2">&quot;test.hdf&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;phi_angles_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;phi_angles_file&quot;</span><span class="p">:</span> <span class="s2">&quot;phi_list.txt&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;exchange_key&quot;</span><span class="p">:</span> <span class="s2">&quot;exchange&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cache_file_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cache_filename_template&quot;</span><span class="p">:</span> <span class="s2">&quot;test_cache_</span><span class="si">{start_frame}</span><span class="s2">_</span><span class="si">{end_frame}</span><span class="s2">.npz&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;angle_filtering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]},</span>
+            <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="s2">&quot;advanced_settings&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;data_loading&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;use_diagonal_correction&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}},</span>
+            <span class="s2">&quot;performance_settings&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;parallel_execution&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test isotropic mode</span>
+        <span class="n">iso_config</span> <span class="o">=</span> <span class="n">base_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">iso_config</span><span class="p">[</span><span class="s2">&quot;analysis_settings&quot;</span><span class="p">][</span><span class="s2">&quot;static_submode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;isotropic&quot;</span>
+        
+        <span class="n">iso_config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;iso_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">iso_config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">iso_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        
+        <span class="n">iso_manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">iso_config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Test anisotropic mode</span>
+        <span class="n">aniso_config</span> <span class="o">=</span> <span class="n">base_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">aniso_config</span><span class="p">[</span><span class="s2">&quot;analysis_settings&quot;</span><span class="p">][</span><span class="s2">&quot;static_submode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;anisotropic&quot;</span>
+        
+        <span class="n">aniso_config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;aniso_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">aniso_config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">aniso_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            
+        <span class="n">aniso_manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">aniso_config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Test mode detection differences</span>
+        <span class="k">assert</span> <span class="n">iso_manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_isotropic&quot;</span>
+        <span class="k">assert</span> <span class="n">aniso_manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_anisotropic&quot;</span>
+        
+        <span class="c1"># Test angle filtering differences</span>
+        <span class="k">assert</span> <span class="n">iso_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span>    <span class="c1"># Disabled in isotropic</span>
+        <span class="k">assert</span> <span class="n">aniso_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>   <span class="c1"># Enabled in anisotropic</span>
+        
+        <span class="c1"># Both should be static mode with 3 parameters</span>
+        <span class="k">assert</span> <span class="n">iso_manager</span><span class="o">.</span><span class="n">is_static_mode_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">aniso_manager</span><span class="o">.</span><span class="n">is_static_mode_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">iso_manager</span><span class="o">.</span><span class="n">get_effective_parameter_count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>
+        <span class="k">assert</span> <span class="n">aniso_manager</span><span class="o">.</span><span class="n">get_effective_parameter_count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeIntegration.test_isotropic_mode_end_to_end_workflow">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeIntegration.test_isotropic_mode_end_to_end_workflow">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_end_to_end_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">,</span> <span class="n">isotropic_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test complete end-to-end workflow for isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;isotropic_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">isotropic_config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># Mock all file operations and data loading</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.os.path.exists&#39;</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.np.load&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_load</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.analysis.core.np.savez_compressed&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_savez</span><span class="p">:</span>
+                    
+                    <span class="c1"># Setup mock data for single angle</span>
+                    <span class="n">n_times</span> <span class="o">=</span> <span class="mi">49</span>
+                    <span class="n">mock_c2_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">n_times</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_times</span><span class="p">)</span>
+                    <span class="n">mock_load</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c2_exp&#39;</span><span class="p">:</span> <span class="n">mock_c2_data</span><span class="p">}</span>
+                    
+                    <span class="c1"># Initialize core</span>
+                    <span class="n">core</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+                    
+                    <span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s1">&#39;_load_raw_data&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_load_raw</span><span class="p">:</span>
+                        <span class="n">mock_load_raw</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_c2_data</span>
+                        
+                        <span class="c1"># Test data loading</span>
+                        <span class="n">c2_data</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">num_angles</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">load_experimental_data</span><span class="p">()</span>
+                        
+                        <span class="c1"># Verify isotropic mode characteristics</span>
+                        <span class="k">assert</span> <span class="n">num_angles</span> <span class="o">==</span> <span class="mi">1</span>
+                        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">phi_angles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                        <span class="k">assert</span> <span class="n">phi_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+                        <span class="k">assert</span> <span class="n">c2_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>  <span class="c1"># Single angle</span>
+                        
+                        <span class="c1"># Test basic analysis functions work</span>
+                        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+                        
+                        <span class="c1"># Test correlation calculation</span>
+                        <span class="n">c2_result</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">calculate_c2_single_angle_optimized</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2_result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">c2_result</span><span class="p">))</span>
+                        
+                        <span class="c1"># Test configuration is correctly applied</span>
+                        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">is_static_isotropic_enabled</span><span class="p">()</span>
+                        <span class="k">assert</span> <span class="ow">not</span> <span class="n">core</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span>
+                        <span class="k">assert</span> <span class="n">core</span><span class="o">.</span><span class="n">get_effective_parameter_count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TestIsotropicModeEdgeCases">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeEdgeCases">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestIsotropicModeEdgeCases</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test edge cases and error conditions for isotropic mode.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestIsotropicModeEdgeCases.temp_directory">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeEdgeCases.temp_directory">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">temp_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create temporary directory for test files.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeEdgeCases.test_isotropic_mode_with_invalid_submode">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeEdgeCases.test_isotropic_mode_with_invalid_submode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_with_invalid_submode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test handling of invalid static_submode values.&quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]}},</span>
+            <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;static_submode&quot;</span><span class="p">:</span> <span class="s2">&quot;invalid_mode&quot;</span>  <span class="c1"># Invalid submode</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;invalid_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Should default to anisotropic for invalid submode</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_static_submode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;anisotropic&quot;</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_anisotropic&quot;</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_static_isotropic_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeEdgeCases.test_isotropic_mode_case_insensitive_submode">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeEdgeCases.test_isotropic_mode_case_insensitive_submode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_case_insensitive_submode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that static_submode is case-insensitive.&quot;&quot;&quot;</span>
+        <span class="n">test_cases</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;isotropic&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Isotropic&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;ISOTROPIC&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;ISO&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;iso&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;anisotropic&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;ANISOTROPIC&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;aniso&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">submode</span><span class="p">,</span> <span class="n">expected_isotropic</span> <span class="ow">in</span> <span class="n">test_cases</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]}},</span>
+                <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;static_submode&quot;</span><span class="p">:</span> <span class="n">submode</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            
+            <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;test_</span><span class="si">{</span><span class="n">submode</span><span class="si">}</span><span class="s2">_config.json&quot;</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+            <span class="n">manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">expected_isotropic</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_static_isotropic_enabled</span><span class="p">()</span>
+                <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_isotropic&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_static_isotropic_enabled</span><span class="p">()</span>
+                <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_anisotropic&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeEdgeCases.test_isotropic_mode_with_none_submode">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeEdgeCases.test_isotropic_mode_with_none_submode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_with_none_submode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test handling when static_submode is None or missing.&quot;&quot;&quot;</span> 
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]}},</span>
+            <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;static_submode&quot;</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># Explicitly None</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;none_submode_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Should default to anisotropic when None</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_static_submode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;anisotropic&quot;</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;static_anisotropic&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestIsotropicModeEdgeCases.test_isotropic_mode_angle_filtering_override_warning">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_isotropic_mode_integration.TestIsotropicModeEdgeCases.test_isotropic_mode_angle_filtering_override_warning">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_isotropic_mode_angle_filtering_override_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that angle filtering configuration is properly overridden in isotropic mode.&quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.0&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./data/test/&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;angle_filtering&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># Explicitly enabled but should be ignored</span>
+                    <span class="s2">&quot;target_ranges&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;min_angle&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;max_angle&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">}]</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;analysis_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;static_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;static_submode&quot;</span><span class="p">:</span> <span class="s2">&quot;isotropic&quot;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">temp_directory</span> <span class="o">/</span> <span class="s2">&quot;angle_filtering_config.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">manager</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>
+        
+        <span class="c1"># Angle filtering should be disabled despite configuration</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span>
+        
+        <span class="c1"># Original configuration should still be accessible</span>
+        <span class="n">angle_config</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_angle_filtering_config</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">angle_config</span><span class="p">[</span><span class="s2">&quot;enabled&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span>  <span class="c1"># Original setting preserved</span>
+        
+        <span class="c1"># But the effective setting should be False due to isotropic mode</span>
+        <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

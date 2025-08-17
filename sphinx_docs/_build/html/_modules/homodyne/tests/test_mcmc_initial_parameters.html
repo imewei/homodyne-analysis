@@ -1,0 +1,637 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.tests.test_mcmc_initial_parameters &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.tests.test_mcmc_initial_parameters</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.tests.test_mcmc_initial_parameters</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Test MCMC Initial Parameter Handling</span>
+<span class="sd">===================================</span>
+
+<span class="sd">Tests to ensure MCMC optimization properly uses classical results when available</span>
+<span class="sd">or falls back to initial parameters. This addresses the issue where --method all</span>
+<span class="sd">did not properly chain classical and MCMC optimization.</span>
+
+<span class="sd">Test Coverage:</span>
+<span class="sd">- MCMC using classical optimization results as initial parameters</span>
+<span class="sd">- MCMC falling back to initial parameters when no classical results available</span>
+<span class="sd">- Parameter chaining in run_all_methods function</span>
+<span class="sd">- Classical results storage on analyzer core object</span>
+<span class="sd">- Proper logging for parameter initialization scenarios</span>
+<span class="sd">- Graceful handling of classical optimization failures</span>
+<span class="sd">- Parameter array consistency and validation</span>
+
+<span class="sd">These tests ensure the fix for the issue: &quot;For --method all in run_homodyne.py, </span>
+<span class="sd">no mcmc initiated after the classical method. Please fix the issue and make sure </span>
+<span class="sd">that --method all will use the &#39;initial parameters&#39; if no &#39;classical&#39; best-fit </span>
+<span class="sd">results are available, otherwise --method mcmc will use the &#39;classical&#39; </span>
+<span class="sd">best-fit results.&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span><span class="p">,</span> <span class="n">patch</span><span class="p">,</span> <span class="n">MagicMock</span>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestMCMCInitialParameterHandling</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test MCMC initial parameter handling from classical results and fallbacks.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_mcmc_uses_classical_results_when_available">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_mcmc_uses_classical_results_when_available">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_uses_classical_results_when_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC uses classical optimization results when available.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer with classical results stored</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">50</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Set classical results on analyzer</span>
+        <span class="n">classical_best_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">=</span> <span class="n">classical_best_params</span>
+        
+        <span class="c1"># Mock the MCMC sampler creation and initialization detection</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.optimization.mcmc.create_mcmc_sampler&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_create_sampler</span><span class="p">:</span>
+            <span class="n">mock_sampler</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;posterior_means&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;D0&#39;</span><span class="p">:</span> <span class="mi">5100</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.15</span><span class="p">,</span> <span class="s1">&#39;D_offset&#39;</span><span class="p">:</span> <span class="mi">480</span><span class="p">},</span>
+                <span class="s1">&#39;trace&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;diagnostics&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;converged&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;max_rhat&#39;</span><span class="p">:</span> <span class="mf">1.01</span><span class="p">,</span> <span class="s1">&#39;min_ess&#39;</span><span class="p">:</span> <span class="mi">400</span><span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">mock_create_sampler</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_sampler</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_mcmc_optimization</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>  <span class="c1"># Should be overridden by classical results</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run MCMC optimization</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_mcmc_optimization</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify that the analyzer has classical results stored</span>
+            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">==</span> <span class="n">classical_best_params</span>
+            
+            <span class="c1"># Verify MCMC was called</span>
+            <span class="n">mock_create_sampler</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">mock_sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+            
+            <span class="c1"># Verify results returned</span>
+            <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="s1">&#39;mcmc_summary&#39;</span> <span class="ow">in</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_mcmc_falls_back_to_initial_parameters">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_mcmc_falls_back_to_initial_parameters">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_falls_back_to_initial_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC uses initial parameters when no classical results available.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer without classical results</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">50</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># No classical results - explicitly set to None or delete if exists</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">):</span>
+            <span class="nb">delattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Mock the MCMC sampler creation</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.optimization.mcmc.create_mcmc_sampler&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_create_sampler</span><span class="p">:</span>
+            <span class="n">mock_sampler</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;posterior_means&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;D0&#39;</span><span class="p">:</span> <span class="mi">1100</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="s1">&#39;D_offset&#39;</span><span class="p">:</span> <span class="mi">120</span><span class="p">},</span>
+                <span class="s1">&#39;trace&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;diagnostics&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;converged&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;max_rhat&#39;</span><span class="p">:</span> <span class="mf">1.02</span><span class="p">,</span> <span class="s1">&#39;min_ess&#39;</span><span class="p">:</span> <span class="mi">350</span><span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">mock_create_sampler</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_sampler</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_mcmc_optimization</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run MCMC optimization</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_mcmc_optimization</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify that initial parameters were set as fallback</span>
+            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">==</span> <span class="n">initial_params</span>
+            
+            <span class="c1"># Verify MCMC was called</span>
+            <span class="n">mock_create_sampler</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">mock_sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+            
+            <span class="c1"># Verify results returned</span>
+            <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="s1">&#39;mcmc_summary&#39;</span> <span class="ow">in</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_run_all_methods_parameter_chaining">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_run_all_methods_parameter_chaining">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_run_all_methods_parameter_chaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that run_all_methods properly chains classical results to MCMC.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">50</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Mock classical optimization results</span>
+        <span class="n">classical_best_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
+        <span class="n">mock_classical_results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">classical_best_params</span><span class="p">,</span>
+                <span class="s2">&quot;chi_squared&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;classical_summary&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">classical_best_params</span><span class="p">,</span>
+                <span class="s2">&quot;chi_squared&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;Classical&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;methods_used&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Classical&quot;</span><span class="p">]</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Mock MCMC results</span>
+        <span class="n">mock_mcmc_results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;mcmc_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5100</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.15</span><span class="p">,</span> <span class="mi">480</span><span class="p">],</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;mcmc_summary&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5100</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.15</span><span class="p">,</span> <span class="mi">480</span><span class="p">],</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;MCMC&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;methods_used&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;MCMC&quot;</span><span class="p">]</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Mock the optimization functions</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;run_homodyne.run_classical_optimization&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_classical</span><span class="p">,</span> \
+             <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;run_homodyne.run_mcmc_optimization&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_mcmc</span><span class="p">:</span>
+            
+            <span class="n">mock_classical</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_classical_results</span>
+            <span class="n">mock_mcmc</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_mcmc_results</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_all_methods</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run all methods</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_all_methods</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify classical was called with initial parameters</span>
+            <span class="n">mock_classical</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify MCMC was called with classical results as initial parameters</span>
+            <span class="n">mock_mcmc</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">classical_best_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            
+            <span class="c1"># Verify combined results</span>
+            <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="s2">&quot;Classical&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;methods_used&quot;</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="s2">&quot;MCMC&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;methods_used&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_classical_results_storage_on_analyzer">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_classical_results_storage_on_analyzer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_classical_results_storage_on_analyzer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that classical optimization results are properly stored on analyzer.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer and classical optimizer</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Mock classical optimizer with best_params_classical attribute</span>
+        <span class="n">mock_optimizer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">classical_best_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
+        <span class="n">mock_optimizer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">=</span> <span class="n">classical_best_params</span>
+        
+        <span class="c1"># Mock optimization result</span>
+        <span class="n">mock_result</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_result</span><span class="o">.</span><span class="n">fun</span> <span class="o">=</span> <span class="mf">1.5</span>
+        <span class="n">mock_result</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">mock_result</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;Nelder-Mead&quot;</span>
+        
+        <span class="n">mock_optimizer</span><span class="o">.</span><span class="n">run_classical_optimization_optimized</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">(</span><span class="n">classical_best_params</span><span class="p">,</span> <span class="n">mock_result</span><span class="p">)</span>
+        
+        <span class="c1"># Mock ClassicalOptimizer class</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;run_homodyne.ClassicalOptimizer&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_optimizer_class</span><span class="p">:</span>
+            <span class="n">mock_optimizer_class</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_optimizer</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_classical_optimization</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run classical optimization</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_classical_optimization</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify optimizer was created and called</span>
+            <span class="n">mock_optimizer_class</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">mock_optimizer</span><span class="o">.</span><span class="n">run_classical_optimization_optimized</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+            
+            <span class="c1"># Verify that classical results were stored on analyzer</span>
+            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">==</span> <span class="n">classical_best_params</span>
+            
+            <span class="c1"># Verify result structure</span>
+            <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="s2">&quot;classical_optimization&quot;</span> <span class="ow">in</span> <span class="n">result</span>
+            <span class="k">assert</span> <span class="s2">&quot;classical_summary&quot;</span> <span class="ow">in</span> <span class="n">result</span>
+            <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;classical_summary&quot;</span><span class="p">][</span><span class="s2">&quot;parameters&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">classical_best_params</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_mcmc_parameter_initialization_logging">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_mcmc_parameter_initialization_logging">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_parameter_initialization_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that proper logging occurs for MCMC parameter initialization.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer with classical results</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">50</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test with classical results available</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.optimization.mcmc.create_mcmc_sampler&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_create_sampler</span><span class="p">,</span> \
+             <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;logging.getLogger&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_logger</span><span class="p">:</span>
+            
+            <span class="n">mock_sampler</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;trace&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;diagnostics&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+            <span class="n">mock_create_sampler</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_sampler</span>
+            
+            <span class="n">mock_log</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_logger</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_log</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_mcmc_optimization</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run MCMC optimization</span>
+            <span class="n">run_mcmc_optimization</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify appropriate logging occurred</span>
+            <span class="n">log_calls</span> <span class="o">=</span> <span class="p">[</span><span class="n">call</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">mock_log</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Using stored classical results&quot;</span> <span class="ow">in</span> <span class="n">call</span> <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">log_calls</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_mcmc_fallback_parameter_initialization_logging">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_mcmc_fallback_parameter_initialization_logging">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_fallback_parameter_initialization_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test logging when MCMC falls back to initial parameters.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer without classical results</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">50</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># No classical results available - explicitly ensure it&#39;s not set</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">):</span>
+            <span class="nb">delattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s1">&#39;best_params_classical&#39;</span><span class="p">)</span>
+        
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;homodyne.optimization.mcmc.create_mcmc_sampler&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_create_sampler</span><span class="p">,</span> \
+             <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;logging.getLogger&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_logger</span><span class="p">:</span>
+            
+            <span class="n">mock_sampler</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;trace&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;diagnostics&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+            <span class="n">mock_create_sampler</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_sampler</span>
+            
+            <span class="n">mock_log</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_logger</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_log</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_mcmc_optimization</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run MCMC optimization</span>
+            <span class="n">run_mcmc_optimization</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify fallback logging occurred</span>
+            <span class="n">log_calls</span> <span class="o">=</span> <span class="p">[</span><span class="n">call</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">mock_log</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Using provided initial parameters&quot;</span> <span class="ow">in</span> <span class="n">call</span> <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">log_calls</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_run_all_methods_with_classical_failure">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_run_all_methods_with_classical_failure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_run_all_methods_with_classical_failure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that run_all_methods handles classical optimization failure gracefully.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Mock analyzer</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;tune&quot;</span><span class="p">:</span> <span class="mi">50</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Mock MCMC results</span>
+        <span class="n">mock_mcmc_results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;mcmc_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1100</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="mi">120</span><span class="p">],</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;mcmc_summary&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1100</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="mi">120</span><span class="p">],</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;MCMC&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;methods_used&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;MCMC&quot;</span><span class="p">]</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Mock the optimization functions - classical fails, MCMC succeeds</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;run_homodyne.run_classical_optimization&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_classical</span><span class="p">,</span> \
+             <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;run_homodyne.run_mcmc_optimization&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_mcmc</span><span class="p">:</span>
+            
+            <span class="n">mock_classical</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Classical fails</span>
+            <span class="n">mock_mcmc</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_mcmc_results</span>
+            
+            <span class="c1"># Import and run the function</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_all_methods</span>
+            
+            <span class="c1"># Test parameters</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">c2_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+            
+            <span class="c1"># Run all methods</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_all_methods</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify classical was called with initial parameters</span>
+            <span class="n">mock_classical</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">)</span>
+            
+            <span class="c1"># Verify MCMC was called with original initial parameters (fallback)</span>
+            <span class="n">mock_mcmc</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_exp</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            
+            <span class="c1"># Verify only MCMC results are included</span>
+            <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="s2">&quot;MCMC&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;methods_used&quot;</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="s2">&quot;Classical&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;methods_used&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCInitialParameterHandling.test_parameter_array_consistency">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_initial_parameters.TestMCMCInitialParameterHandling.test_parameter_array_consistency">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_parameter_array_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that parameter arrays maintain consistency between classical and MCMC.&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Test with realistic parameter values</span>
+        <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">18000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.59</span><span class="p">,</span> <span class="mf">3.10</span><span class="p">]</span>
+        <span class="n">classical_params</span> <span class="o">=</span> <span class="p">[</span><span class="mi">17500</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.55</span><span class="p">,</span> <span class="mf">2.95</span><span class="p">]</span>
+        
+        <span class="c1"># Mock analyzer</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">initial_params</span><span class="p">,</span>
+                <span class="s2">&quot;active_parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Test classical result storage</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span> <span class="o">=</span> <span class="n">classical_params</span>
+        
+        <span class="c1"># Verify parameter consistency</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_params</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        
+        <span class="c1"># Test parameter value ranges are reasonable</span>
+        <span class="k">assert</span> <span class="mi">10000</span> <span class="o">&lt;=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">25000</span>  <span class="c1"># D0</span>
+        <span class="k">assert</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">&lt;=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="mf">1.0</span>      <span class="c1"># alpha</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">best_params_classical</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">10</span>           <span class="c1"># D_offset</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

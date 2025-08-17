@@ -1,0 +1,489 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.tests.test_mcmc_convergence_diagnostics &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.tests.test_mcmc_convergence_diagnostics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.tests.test_mcmc_convergence_diagnostics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tests for MCMC convergence diagnostics and quality assessment.</span>
+
+<span class="sd">This module tests the MCMC convergence validation that replaces chi-squared</span>
+<span class="sd">analysis for Bayesian methods, including:</span>
+<span class="sd">- R-hat (potential scale reduction factor) validation</span>
+<span class="sd">- Effective Sample Size (ESS) assessment</span>
+<span class="sd">- Divergence diagnostics</span>
+<span class="sd">- Quality categorization based on convergence criteria</span>
+<span class="sd">- Configuration-driven validation thresholds</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span><span class="p">,</span> <span class="n">patch</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">))</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">run_homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">run_homodyne_main</span>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestMCMCConvergenceDiagnostics</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test MCMC convergence diagnostics and quality assessment.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.mock_config_with_mcmc_thresholds">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.mock_config_with_mcmc_thresholds">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mock_config_with_mcmc_thresholds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration with MCMC convergence thresholds.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+                <span class="s2">&quot;scattering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;wavevector_q&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">},</span>
+                <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;stator_rotor_gap&quot;</span><span class="p">:</span> <span class="mi">2000000</span><span class="p">},</span>
+                <span class="s2">&quot;computational&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;num_threads&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;validation_rules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mcmc_convergence&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;excellent_threshold&quot;</span><span class="p">:</span> <span class="mf">1.01</span><span class="p">,</span>
+                        <span class="s2">&quot;good_threshold&quot;</span><span class="p">:</span> <span class="mf">1.05</span><span class="p">,</span>
+                        <span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+                        <span class="s2">&quot;critical_threshold&quot;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;ess_thresholds&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;excellent_threshold&quot;</span><span class="p">:</span> <span class="mi">400</span><span class="p">,</span>
+                        <span class="s2">&quot;good_threshold&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+                        <span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                        <span class="s2">&quot;minimum_threshold&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;divergence_thresholds&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;max_divergences_fraction&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                        <span class="s2">&quot;warning_divergences_fraction&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;quality_assessment&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;excellent_criteria&quot;</span><span class="p">:</span> <span class="s2">&quot;R̂ &lt; 1.01 AND ESS &gt; 400 AND divergences &lt; 1%&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;good_criteria&quot;</span><span class="p">:</span> <span class="s2">&quot;R̂ &lt; 1.05 AND ESS &gt; 200 AND divergences &lt; 3%&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;acceptable_criteria&quot;</span><span class="p">:</span> <span class="s2">&quot;R̂ &lt; 1.1 AND ESS &gt; 100 AND divergences &lt; 5%&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;poor_criteria&quot;</span><span class="p">:</span> <span class="s2">&quot;Any criterion fails to meet acceptable threshold&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.mock_mcmc_results">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.mock_mcmc_results">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mock_mcmc_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mock MCMC results with convergence diagnostics.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;mcmc_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">],</span>  <span class="c1"># Static isotropic example</span>
+                <span class="s2">&quot;trace&quot;</span><span class="p">:</span> <span class="n">Mock</span><span class="p">(),</span>  <span class="c1"># Mock trace object</span>
+                <span class="s2">&quot;diagnostics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;rhat&quot;</span><span class="p">:</span> <span class="n">Mock</span><span class="p">(),</span>
+                    <span class="s2">&quot;ess&quot;</span><span class="p">:</span> <span class="n">Mock</span><span class="p">(),</span>
+                    <span class="s2">&quot;mcse&quot;</span><span class="p">:</span> <span class="n">Mock</span><span class="p">(),</span>
+                    <span class="s2">&quot;max_rhat&quot;</span><span class="p">:</span> <span class="mf">1.03</span><span class="p">,</span>
+                    <span class="s2">&quot;min_ess&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+                    <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;assessment&quot;</span><span class="p">:</span> <span class="s2">&quot;Converged&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;MCMC&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_excellent">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_excellent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_quality_assessment_excellent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test MCMC quality assessment for excellent convergence.&quot;&quot;&quot;</span>
+        <span class="c1"># Mock excellent convergence metrics</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;max_rhat&quot;</span><span class="p">:</span> <span class="mf">1.005</span><span class="p">,</span>
+            <span class="s2">&quot;min_ess&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;assessment&quot;</span><span class="p">:</span> <span class="s2">&quot;Converged&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Test quality assessment logic (extracted from run_homodyne.py)</span>
+        <span class="n">rhat_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">]</span>
+        <span class="n">ess_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;ess_thresholds&quot;</span><span class="p">]</span>
+
+        <span class="n">max_rhat</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;max_rhat&quot;</span><span class="p">]</span>
+        <span class="n">min_ess</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;min_ess&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">excellent_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">excellent_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;excellent&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">good_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">good_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;good&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">acceptable_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">acceptable_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;acceptable&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;poor&quot;</span>
+
+        <span class="k">assert</span> <span class="n">quality</span> <span class="o">==</span> <span class="s2">&quot;excellent&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_good">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_good">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_quality_assessment_good</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test MCMC quality assessment for good convergence.&quot;&quot;&quot;</span>
+        <span class="c1"># Mock good convergence metrics</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;max_rhat&quot;</span><span class="p">:</span> <span class="mf">1.03</span><span class="p">,</span>
+            <span class="s2">&quot;min_ess&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+            <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;assessment&quot;</span><span class="p">:</span> <span class="s2">&quot;Converged&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Test quality assessment logic</span>
+        <span class="n">rhat_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">]</span>
+        <span class="n">ess_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;ess_thresholds&quot;</span><span class="p">]</span>
+
+        <span class="n">max_rhat</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;max_rhat&quot;</span><span class="p">]</span>
+        <span class="n">min_ess</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;min_ess&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">excellent_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">excellent_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;excellent&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">good_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">good_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;good&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">acceptable_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">acceptable_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;acceptable&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;poor&quot;</span>
+
+        <span class="k">assert</span> <span class="n">quality</span> <span class="o">==</span> <span class="s2">&quot;good&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_acceptable">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_acceptable">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_quality_assessment_acceptable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test MCMC quality assessment for acceptable convergence.&quot;&quot;&quot;</span>
+        <span class="c1"># Mock acceptable convergence metrics</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;max_rhat&quot;</span><span class="p">:</span> <span class="mf">1.08</span><span class="p">,</span>
+            <span class="s2">&quot;min_ess&quot;</span><span class="p">:</span> <span class="mi">120</span><span class="p">,</span>
+            <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;assessment&quot;</span><span class="p">:</span> <span class="s2">&quot;Converged&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Test quality assessment logic</span>
+        <span class="n">rhat_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">]</span>
+        <span class="n">ess_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;ess_thresholds&quot;</span><span class="p">]</span>
+
+        <span class="n">max_rhat</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;max_rhat&quot;</span><span class="p">]</span>
+        <span class="n">min_ess</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;min_ess&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">excellent_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">excellent_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;excellent&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">good_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">good_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;good&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">acceptable_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">acceptable_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;acceptable&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;poor&quot;</span>
+
+        <span class="k">assert</span> <span class="n">quality</span> <span class="o">==</span> <span class="s2">&quot;acceptable&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_poor">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_quality_assessment_poor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_quality_assessment_poor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test MCMC quality assessment for poor convergence.&quot;&quot;&quot;</span>
+        <span class="c1"># Mock poor convergence metrics</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;max_rhat&quot;</span><span class="p">:</span> <span class="mf">1.15</span><span class="p">,</span>
+            <span class="s2">&quot;min_ess&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+            <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;assessment&quot;</span><span class="p">:</span> <span class="s2">&quot;Not converged&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Test quality assessment logic</span>
+        <span class="n">rhat_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">]</span>
+        <span class="n">ess_thresholds</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;ess_thresholds&quot;</span><span class="p">]</span>
+
+        <span class="n">max_rhat</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;max_rhat&quot;</span><span class="p">]</span>
+        <span class="n">min_ess</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;min_ess&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_rhat</span> <span class="o">=</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="n">excellent_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span>
+        <span class="n">good_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="n">acceptable_ess</span> <span class="o">=</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">excellent_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">excellent_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;excellent&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">good_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">good_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;good&quot;</span>
+        <span class="k">elif</span> <span class="n">max_rhat</span> <span class="o">&lt;</span> <span class="n">acceptable_rhat</span> <span class="ow">and</span> <span class="n">min_ess</span> <span class="o">&gt;</span> <span class="n">acceptable_ess</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;acceptable&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">quality</span> <span class="o">=</span> <span class="s2">&quot;poor&quot;</span>
+
+        <span class="k">assert</span> <span class="n">quality</span> <span class="o">==</span> <span class="s2">&quot;poor&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_no_chi_squared_analysis">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_no_chi_squared_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_no_chi_squared_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_mcmc_results</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC results don&#39;t trigger chi-squared analysis.&quot;&quot;&quot;</span>
+        <span class="c1"># This test verifies that MCMC results bypass chi-squared calculation</span>
+        <span class="c1"># and instead use convergence diagnostics</span>
+
+        <span class="n">mcmc_result</span> <span class="o">=</span> <span class="n">mock_mcmc_results</span><span class="p">[</span><span class="s2">&quot;mcmc_optimization&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Verify that the method is MCMC</span>
+        <span class="k">assert</span> <span class="n">mcmc_result</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;MCMC&quot;</span>
+
+        <span class="c1"># Verify that diagnostics are available</span>
+        <span class="k">assert</span> <span class="s2">&quot;diagnostics&quot;</span> <span class="ow">in</span> <span class="n">mcmc_result</span>
+        <span class="k">assert</span> <span class="s2">&quot;max_rhat&quot;</span> <span class="ow">in</span> <span class="n">mcmc_result</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="s2">&quot;min_ess&quot;</span> <span class="ow">in</span> <span class="n">mcmc_result</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="s2">&quot;assessment&quot;</span> <span class="ow">in</span> <span class="n">mcmc_result</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Verify that convergence status is meaningful</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">mcmc_result</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;assessment&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Converged&quot;</span><span class="p">,</span> <span class="s2">&quot;Not converged&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;max_rhat&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">[</span><span class="s2">&quot;min_ess&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_config_validation_thresholds">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_config_validation_thresholds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_config_validation_thresholds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC configuration contains proper validation thresholds.&quot;&quot;&quot;</span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">mock_config_with_mcmc_thresholds</span><span class="p">[</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;mcmc_convergence&quot;</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Verify R-hat thresholds</span>
+        <span class="n">rhat_thresholds</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="p">[</span><span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+            <span class="o">&lt;</span> <span class="n">rhat_thresholds</span><span class="p">[</span><span class="s2">&quot;critical_threshold&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Verify ESS thresholds</span>
+        <span class="n">ess_thresholds</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="p">[</span><span class="s2">&quot;ess_thresholds&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ess_thresholds</span><span class="p">[</span><span class="s2">&quot;minimum_threshold&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Verify divergence thresholds</span>
+        <span class="n">div_thresholds</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="p">[</span><span class="s2">&quot;divergence_thresholds&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">div_thresholds</span><span class="p">[</span><span class="s2">&quot;warning_divergences_fraction&quot;</span><span class="p">]</span>
+            <span class="o">&lt;</span> <span class="n">div_thresholds</span><span class="p">[</span><span class="s2">&quot;max_divergences_fraction&quot;</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_mcmc_logging_format">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_mcmc_logging_format">[docs]</a>
+    <span class="nd">@patch</span><span class="p">(</span><span class="s2">&quot;builtins.print&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_logging_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_print</span><span class="p">,</span> <span class="n">mock_mcmc_results</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC convergence diagnostics are logged in the correct format.&quot;&quot;&quot;</span>
+        <span class="c1"># Simulate the logging behavior from run_homodyne.py</span>
+        <span class="n">mcmc_result</span> <span class="o">=</span> <span class="n">mock_mcmc_results</span><span class="p">[</span><span class="s2">&quot;mcmc_optimization&quot;</span><span class="p">]</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">mcmc_result</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Mock the logger calls that would happen in run_homodyne.py</span>
+        <span class="n">expected_log_calls</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;MCMC convergence diagnostics [MCMC]:&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;  Convergence status: </span><span class="si">{</span><span class="n">diagnostics</span><span class="p">[</span><span class="s1">&#39;assessment&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;  Maximum R̂ (R-hat): </span><span class="si">{</span><span class="n">diagnostics</span><span class="p">[</span><span class="s1">&#39;max_rhat&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;  Minimum ESS: </span><span class="si">{</span><span class="n">diagnostics</span><span class="p">[</span><span class="s1">&#39;min_ess&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;  MCMC quality: GOOD&quot;</span><span class="p">,</span>  <span class="c1"># Based on the mock values</span>
+            <span class="sa">f</span><span class="s2">&quot;  Sampling completed with posterior analysis available&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># This test verifies the expected log format structure</span>
+        <span class="c1"># In actual usage, these would be logger.info() calls</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">call</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">expected_log_calls</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestMCMCConvergenceDiagnostics.test_default_mcmc_thresholds">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_mcmc_convergence_diagnostics.TestMCMCConvergenceDiagnostics.test_default_mcmc_thresholds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_default_mcmc_thresholds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that default MCMC thresholds are used when config is missing.&quot;&quot;&quot;</span>
+        <span class="c1"># Test the fallback behavior when configuration is incomplete</span>
+        <span class="n">empty_config</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Default values from run_homodyne.py</span>
+        <span class="n">excellent_rhat</span> <span class="o">=</span> <span class="mf">1.01</span>
+        <span class="n">good_rhat</span> <span class="o">=</span> <span class="mf">1.05</span>
+        <span class="n">acceptable_rhat</span> <span class="o">=</span> <span class="mf">1.1</span>
+
+        <span class="n">excellent_ess</span> <span class="o">=</span> <span class="mi">400</span>
+        <span class="n">good_ess</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">acceptable_ess</span> <span class="o">=</span> <span class="mi">100</span>
+
+        <span class="c1"># Simulate the config lookup with empty config</span>
+        <span class="n">validation_config</span> <span class="o">=</span> <span class="n">empty_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;validation_rules&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">validation_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcmc_convergence&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">rhat_thresholds</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rhat_thresholds&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">ess_thresholds</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ess_thresholds&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="c1"># Test that defaults are used</span>
+        <span class="k">assert</span> <span class="n">rhat_thresholds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">,</span> <span class="mf">1.01</span><span class="p">)</span> <span class="o">==</span> <span class="n">excellent_rhat</span>
+        <span class="k">assert</span> <span class="n">rhat_thresholds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">)</span> <span class="o">==</span> <span class="n">good_rhat</span>
+        <span class="k">assert</span> <span class="n">rhat_thresholds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span> <span class="o">==</span> <span class="n">acceptable_rhat</span>
+
+        <span class="k">assert</span> <span class="n">ess_thresholds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;excellent_threshold&quot;</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span> <span class="o">==</span> <span class="n">excellent_ess</span>
+        <span class="k">assert</span> <span class="n">ess_thresholds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;good_threshold&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span> <span class="o">==</span> <span class="n">good_ess</span>
+        <span class="k">assert</span> <span class="n">ess_thresholds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;acceptable_threshold&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span> <span class="o">==</span> <span class="n">acceptable_ess</span></div>
+</div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">pytest</span><span class="o">.</span><span class="n">main</span><span class="p">([</span><span class="vm">__file__</span><span class="p">])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

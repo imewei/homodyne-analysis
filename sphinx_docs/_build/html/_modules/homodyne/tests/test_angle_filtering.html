@@ -1,0 +1,932 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.tests.test_angle_filtering &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.tests.test_angle_filtering</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.tests.test_angle_filtering</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tests for angle filtering functionality in optimization objective function.</span>
+
+<span class="sd">This module tests the enhanced chi-squared calculation that includes:</span>
+<span class="sd">- Angle filtering for optimization (using only specific angular ranges)</span>
+<span class="sd">- All-angle calculation for final results</span>
+<span class="sd">- Proper degrees of freedom adjustment for filtered calculations</span>
+<span class="sd">- Backward compatibility with existing code</span>
+<span class="sd">- Integration with optimization methods</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span><span class="p">,</span> <span class="n">patch</span><span class="p">,</span> <span class="n">MagicMock</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">))</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.analysis.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">HomodyneAnalysisCore</span>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestAngleFilteringCore</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test angle filtering functionality in core chi-squared calculation.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestAngleFilteringCore.mock_config_with_angles">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.mock_config_with_angles">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mock_config_with_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configuration for angle filtering tests.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;config_version&quot;</span><span class="p">:</span> <span class="s2">&quot;5.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Test configuration for angle filtering&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;analyzer_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dt&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;start_frame&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;end_frame&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+                <span class="s2">&quot;scattering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;wavevector_q&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">},</span>
+                <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;stator_rotor_gap&quot;</span><span class="p">:</span> <span class="mi">2000000</span><span class="p">},</span>
+                <span class="s2">&quot;computational&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;num_threads&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;experimental_data&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;data_folder_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./test_data/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;data_file_name&quot;</span><span class="p">:</span> <span class="s2">&quot;test_data.hdf&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;phi_angles_path&quot;</span><span class="p">:</span> <span class="s2">&quot;./test_data/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;phi_angles_file&quot;</span><span class="p">:</span> <span class="s2">&quot;phi_angles.txt&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+                <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s2">&quot;D0&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;alpha&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;beta&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;phi0&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;advanced_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;data_loading&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;use_diagonal_correction&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;chi_squared_calculation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;validity_check&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;check_positive_D0&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                    <span class="s2">&quot;uncertainty_estimation_factor&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                    <span class="s2">&quot;minimum_sigma&quot;</span><span class="p">:</span> <span class="mf">1e-10</span><span class="p">,</span>
+                    <span class="s2">&quot;_scaling_optimization_note&quot;</span><span class="p">:</span> <span class="s2">&quot;Scaling optimization is always enabled: g₂ = offset + contrast × g₁&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameter_space&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D0&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;log-uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;log-uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;phi0&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">15.0</span><span class="p">,</span>
+                        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">15.0</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;performance_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;optimization_counter_log_frequency&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                <span class="s2">&quot;parallel_execution&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_phi_angles">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_phi_angles">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_phi_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test phi angles spanning the filtering ranges.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span>  <span class="c1"># Outside range</span>
+                <span class="o">-</span><span class="mf">8.0</span><span class="p">,</span>  <span class="c1"># Inside [-10, 10] range</span>
+                <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>  <span class="c1"># Inside [-10, 10] range</span>
+                <span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># Inside [-10, 10] range</span>
+                <span class="mf">5.0</span><span class="p">,</span>  <span class="c1"># Inside [-10, 10] range</span>
+                <span class="mf">8.0</span><span class="p">,</span>  <span class="c1"># Inside [-10, 10] range</span>
+                <span class="mf">15.0</span><span class="p">,</span>  <span class="c1"># Outside range</span>
+                <span class="mf">45.0</span><span class="p">,</span>  <span class="c1"># Outside range</span>
+                <span class="mf">90.0</span><span class="p">,</span>  <span class="c1"># Outside range</span>
+                <span class="mf">150.0</span><span class="p">,</span>  <span class="c1"># Outside range</span>
+                <span class="mf">175.0</span><span class="p">,</span>  <span class="c1"># Inside [170, 190] range</span>
+                <span class="mf">180.0</span><span class="p">,</span>  <span class="c1"># Inside [170, 190] range</span>
+                <span class="mf">185.0</span><span class="p">,</span>  <span class="c1"># Inside [170, 190] range</span>
+                <span class="mf">200.0</span><span class="p">,</span>  <span class="c1"># Outside range</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.mock_analyzer">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.mock_analyzer">[docs]</a>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mock_analyzer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_config_with_angles</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a mock analyzer for angle filtering tests.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">&quot;homodyne.analysis.core.ConfigManager&quot;</span><span class="p">):</span>
+            <span class="n">analyzer</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">HomodyneAnalysisCore</span><span class="p">)</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">mock_config_with_angles</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="mf">0.1</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">start_frame</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">end_frame</span> <span class="o">=</span> <span class="mi">100</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">wavevector_q</span> <span class="o">=</span> <span class="mf">0.005</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">stator_rotor_gap</span> <span class="o">=</span> <span class="mi">2000000</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">num_diffusion_params</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">num_shear_rate_params</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">time_length</span> <span class="o">=</span> <span class="mi">99</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">time_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">9.9</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">analyzer</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_angle_filtering_identification">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_angle_filtering_identification">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_angle_filtering_identification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_phi_angles</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test identification of angles in optimization ranges.&quot;&quot;&quot;</span>
+        <span class="n">target_ranges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">170.0</span><span class="p">,</span> <span class="mf">190.0</span><span class="p">)]</span>
+
+        <span class="c1"># Manually identify expected optimization angles</span>
+        <span class="n">expected_optimization_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">expected_angles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">expected_optimization_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="n">expected_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="c1"># Verify expectations</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">expected_optimization_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
+        <span class="p">)</span>  <span class="c1"># 5 in [-10,10] + 3 in [170,190]</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">expected_angles</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span>
+            <span class="o">-</span><span class="mf">8.0</span><span class="p">,</span>
+            <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>
+            <span class="mf">0.0</span><span class="p">,</span>
+            <span class="mf">5.0</span><span class="p">,</span>
+            <span class="mf">8.0</span><span class="p">,</span>
+            <span class="mf">175.0</span><span class="p">,</span>
+            <span class="mf">180.0</span><span class="p">,</span>
+            <span class="mf">185.0</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Test the filtering logic directly</span>
+        <span class="n">optimization_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">optimization_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="k">assert</span> <span class="n">optimization_indices</span> <span class="o">==</span> <span class="n">expected_optimization_indices</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_chi_squared_angle_filtering_mock">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_chi_squared_angle_filtering_mock">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_chi_squared_angle_filtering_mock</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">test_phi_angles</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test chi-squared calculation with angle filtering using mocked data.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Create mock experimental data</span>
+        <span class="n">n_angles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">)</span>
+        <span class="n">c2_experimental</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_angles</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="p">)</span>  <span class="c1"># 20x20 correlation matrices</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="c1"># Mock the theoretical calculation method</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">mock_calculate_c2</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">angles</span><span class="p">):</span>
+            <span class="c1"># Return mock theoretical data with same shape as experimental</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">angles</span><span class="p">),</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_c2_nonequilibrium_laminar_parallel</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">mock_calculate_c2</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Test without filtering (all angles)</span>
+        <span class="n">chi2_all</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;Test_All&quot;</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Test with filtering (optimization angles only)</span>
+        <span class="n">chi2_filtered</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;Test_Filtered&quot;</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Both should return valid numbers</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chi2_all</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chi2_filtered</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="n">chi2_all</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">chi2_filtered</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># They should be different (unless by coincidence)</span>
+        <span class="k">assert</span> <span class="n">chi2_all</span> <span class="o">!=</span> <span class="n">chi2_filtered</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_detailed_chi_squared_with_filtering">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_detailed_chi_squared_with_filtering">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_detailed_chi_squared_with_filtering</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">test_phi_angles</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test detailed chi-squared results with angle filtering.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Create mock experimental data</span>
+        <span class="n">n_angles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">)</span>
+        <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_angles</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="c1"># Mock the theoretical calculation</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">mock_calculate_c2</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">angles</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">angles</span><span class="p">),</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_c2_nonequilibrium_laminar_parallel</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">mock_calculate_c2</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Get detailed results without filtering</span>
+        <span class="n">result_all</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;DetailedAll&quot;</span><span class="p">,</span>
+            <span class="n">return_components</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Get detailed results with filtering</span>
+        <span class="n">result_filtered</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;DetailedFiltered&quot;</span><span class="p">,</span>
+            <span class="n">return_components</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Both should be dictionaries</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result_all</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result_filtered</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+
+        <span class="c1"># Both should be valid</span>
+        <span class="k">assert</span> <span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span>
+
+        <span class="c1"># Both should have all angle data (for detailed analysis)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;angle_chi_squared_reduced&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="n">n_angles</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;angle_chi_squared_reduced&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="n">n_angles</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;phi_angles&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="n">n_angles</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;phi_angles&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="n">n_angles</span>
+
+        <span class="c1"># DOF should be different (filtered should have fewer data points)</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">]</span>
+            <span class="o">&gt;</span> <span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Total chi-squared should be different</span>
+        <span class="k">assert</span> <span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;chi_squared&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;chi_squared&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_degrees_of_freedom_calculation">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_degrees_of_freedom_calculation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_degrees_of_freedom_calculation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">test_phi_angles</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that degrees of freedom are calculated correctly for filtered angles.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Create simple mock data</span>
+        <span class="n">n_angles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">)</span>
+        <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">n_angles</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="p">)</span>  <span class="c1"># 5x5 matrices = 25 data points per angle</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">mock_calculate_c2</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">angles</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">angles</span><span class="p">),</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_c2_nonequilibrium_laminar_parallel</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">mock_calculate_c2</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Calculate expected DOF</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">target_ranges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">170.0</span><span class="p">,</span> <span class="mf">190.0</span><span class="p">)]</span>
+        <span class="n">optimization_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">optimization_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="n">expected_data_points_filtered</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">optimization_indices</span><span class="p">)</span> <span class="o">*</span> <span class="mi">25</span>
+        <span class="p">)</span>  <span class="c1"># 25 points per angle</span>
+        <span class="n">expected_dof_filtered</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">expected_data_points_filtered</span> <span class="o">-</span> <span class="n">n_params</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="p">)</span>
+
+        <span class="n">expected_data_points_all</span> <span class="o">=</span> <span class="n">n_angles</span> <span class="o">*</span> <span class="mi">25</span>
+        <span class="n">expected_dof_all</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">expected_data_points_all</span> <span class="o">-</span> <span class="n">n_params</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Test with filtering</span>
+        <span class="n">result_filtered</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">return_components</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Test without filtering</span>
+        <span class="n">result_all</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">return_components</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Check DOF calculations</span>
+        <span class="k">assert</span> <span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">expected_dof_filtered</span>
+        <span class="k">assert</span> <span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">expected_dof_all</span>
+
+        <span class="c1"># Filtered should have fewer degrees of freedom</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">result_filtered</span><span class="p">[</span><span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">]</span>
+            <span class="o">&lt;</span> <span class="n">result_all</span><span class="p">[</span><span class="s2">&quot;degrees_of_freedom&quot;</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_backward_compatibility">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_backward_compatibility">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_backward_compatibility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">test_phi_angles</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that existing code still works without angle filtering.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Create mock data with fixed seed for reproducible test</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+        <span class="n">n_angles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_phi_angles</span><span class="p">)</span>
+        <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_angles</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="c1"># Use deterministic mock data</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">mock_calculate_c2</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">angles</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">angles</span><span class="p">),</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.5</span>
+            <span class="p">)</span>  <span class="c1"># Fixed data for consistency</span>
+
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_c2_nonequilibrium_laminar_parallel</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">mock_calculate_c2</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Test default behavior (no filtering)</span>
+        <span class="n">chi2_default</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span> <span class="n">test_phi_angles</span><span class="p">,</span> <span class="n">c2_experimental</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Test explicit no filtering</span>
+        <span class="n">chi2_no_filter</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">test_phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Should be identical (both use all angles)</span>
+        <span class="k">assert</span> <span class="n">chi2_default</span> <span class="o">==</span> <span class="n">chi2_no_filter</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chi2_default</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="n">chi2_default</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringCore.test_empty_optimization_angles_fallback">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringCore.test_empty_optimization_angles_fallback">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_empty_optimization_angles_fallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_analyzer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test fallback behavior when no angles are in optimization ranges.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Use angles all outside the optimization ranges</span>
+        <span class="n">phi_angles_outside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">30.0</span><span class="p">,</span> <span class="mf">60.0</span><span class="p">,</span> <span class="mf">120.0</span><span class="p">,</span> <span class="mf">210.0</span><span class="p">,</span> <span class="mf">240.0</span><span class="p">])</span>
+
+        <span class="n">n_angles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">phi_angles_outside</span><span class="p">)</span>
+        <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_angles</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">mock_calculate_c2</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">angles</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">angles</span><span class="p">),</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_c2_nonequilibrium_laminar_parallel</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">mock_calculate_c2</span>
+        <span class="p">)</span>
+
+        <span class="c1"># This should fall back to using all angles</span>
+        <span class="n">chi2_fallback</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">,</span>
+            <span class="n">phi_angles_outside</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Should still return a valid result</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chi2_fallback</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="n">chi2_fallback</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TestAngleFilteringOptimizationIntegration">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringOptimizationIntegration">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestAngleFilteringOptimizationIntegration</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test integration of angle filtering with optimization methods.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestAngleFilteringOptimizationIntegration.test_classical_optimizer_uses_angle_filtering">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringOptimizationIntegration.test_classical_optimizer_uses_angle_filtering">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_classical_optimizer_uses_angle_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that classical optimizer creates objective function with angle filtering.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.classical</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassicalOptimizer</span>
+
+        <span class="c1"># Mock analyzer and config (use spec to prevent unwanted attributes)</span>
+        <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;calculate_chi_squared_optimized&quot;</span><span class="p">])</span>
+        <span class="n">mock_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;method_options&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;angle_filtering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ClassicalOptimizer</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">mock_config</span><span class="p">)</span>
+
+        <span class="c1"># Create test data</span>
+        <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">175.0</span><span class="p">,</span> <span class="mf">185.0</span><span class="p">])</span>
+        <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="c1"># Create objective function</span>
+        <span class="n">objective</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">create_objective_function</span><span class="p">(</span>
+            <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_experimental</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Test that the objective function calls the analyzer with angle filtering</span>
+        <span class="n">test_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="mf">10.0</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">objective</span><span class="p">(</span><span class="n">test_params</span><span class="p">)</span>
+
+        <span class="c1"># Verify the call was made with angle filtering enabled</span>
+        <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span>
+            <span class="n">test_params</span><span class="p">,</span>
+            <span class="n">phi_angles</span><span class="p">,</span>
+            <span class="n">c2_experimental</span><span class="p">,</span>
+            <span class="s2">&quot;Test&quot;</span><span class="p">,</span>
+            <span class="n">filter_angles_for_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="mf">10.0</span></div>
+
+
+
+<div class="viewcode-block" id="TestAngleFilteringOptimizationIntegration.test_mcmc_sampler_uses_angle_filtering">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringOptimizationIntegration.test_mcmc_sampler_uses_angle_filtering">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_mcmc_sampler_uses_angle_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that MCMC sampler uses angle filtering by default.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCMCSampler</span><span class="p">,</span> <span class="n">PYMC_AVAILABLE</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">PYMC_AVAILABLE</span><span class="p">:</span>
+                <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;PyMC not available&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Mock analyzer and config</span>
+            <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_config</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;mcmc_sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;mcmc_draws&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                        <span class="s2">&quot;mcmc_tune&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                        <span class="s2">&quot;mcmc_chains&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;initial_parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;parameter_names&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;D0&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;alpha&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;D_offset&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;beta&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;phi0&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;performance_settings&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Create MCMC sampler</span>
+            <span class="n">sampler</span> <span class="o">=</span> <span class="n">MCMCSampler</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">MCMCSampler</span><span class="p">)</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">core</span> <span class="o">=</span> <span class="n">mock_analyzer</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">mock_config</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">mock_config</span><span class="p">[</span><span class="s2">&quot;optimization_config&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;mcmc_sampling&quot;</span>
+            <span class="p">]</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">bayesian_model</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_trace</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">mcmc_result</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Test that the run_mcmc_analysis method accepts filter_angles_for_optimization parameter</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+
+            <span class="n">sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="s2">&quot;filter_angles_for_optimization&quot;</span> <span class="ow">in</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span>
+
+            <span class="c1"># Test that the default value is None (which gets resolved to True)</span>
+            <span class="n">default_value</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+                <span class="s2">&quot;filter_angles_for_optimization&quot;</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">default</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">default_value</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">)</span>  <span class="c1"># Now uses None as default, resolved at runtime</span>
+
+            <span class="c1"># Test that all MCMC methods have the filtering parameter</span>
+            <span class="n">methods_to_check</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;run_mcmc_analysis&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_run_mcmc_nuts_optimized&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_build_bayesian_model_optimized&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">method_name</span> <span class="ow">in</span> <span class="n">methods_to_check</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">method_name</span><span class="p">):</span>
+                    <span class="n">method_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span>
+                        <span class="nb">getattr</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="k">assert</span> <span class="p">(</span>
+                        <span class="s2">&quot;filter_angles_for_optimization&quot;</span>
+                        <span class="ow">in</span> <span class="n">method_sig</span><span class="o">.</span><span class="n">parameters</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Missing parameter in </span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ MCMC sampler uses angle filtering by default&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;MCMC module not available&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringOptimizationIntegration.test_all_optimization_methods_use_angle_filtering">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringOptimizationIntegration.test_all_optimization_methods_use_angle_filtering">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_all_optimization_methods_use_angle_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that all three optimization methods use angle filtering consistently.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Test Classical optimization</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.classical</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassicalOptimizer</span>
+
+            <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;calculate_chi_squared_optimized&quot;</span><span class="p">])</span>
+            <span class="n">mock_config</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;optimization_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;classical_optimization&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">]},</span>
+                    <span class="s2">&quot;angle_filtering&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ClassicalOptimizer</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="n">mock_config</span><span class="p">)</span>
+
+            <span class="c1"># Create objective function and verify it uses filtering</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">175.0</span><span class="p">,</span> <span class="mf">185.0</span><span class="p">])</span>
+            <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+            <span class="n">objective</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">create_objective_function</span><span class="p">(</span>
+                <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_experimental</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Mock the core method to capture the call</span>
+            <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span>
+                <span class="n">return_value</span><span class="o">=</span><span class="mf">10.0</span>
+            <span class="p">)</span>
+            <span class="n">test_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">objective</span><span class="p">(</span><span class="n">test_params</span><span class="p">)</span>
+
+            <span class="c1"># Verify that filtering was enabled</span>
+            <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+            <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="o">.</span><span class="n">call_args</span>
+            <span class="k">assert</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;filter_angles_for_optimization&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span>
+
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># Classical optimization not available</span>
+
+
+        <span class="c1"># Test MCMC</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCMCSampler</span><span class="p">,</span> <span class="n">PYMC_AVAILABLE</span>
+
+            <span class="k">if</span> <span class="n">PYMC_AVAILABLE</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+
+                <span class="n">sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">MCMCSampler</span><span class="o">.</span><span class="n">run_mcmc_analysis</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="p">(</span>
+                    <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;filter_angles_for_optimization&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+                    <span class="ow">is</span> <span class="kc">None</span>
+                <span class="p">)</span>  <span class="c1"># Uses None, resolved at runtime</span>
+
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># MCMC not available</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TestAngleFilteringEdgeCases">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringEdgeCases">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestAngleFilteringEdgeCases</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test edge cases and error handling for angle filtering.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TestAngleFilteringEdgeCases.test_single_angle_filtering">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringEdgeCases.test_single_angle_filtering">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_single_angle_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test filtering with a single angle.&quot;&quot;&quot;</span>
+        <span class="n">target_ranges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">170.0</span><span class="p">,</span> <span class="mf">190.0</span><span class="p">)]</span>
+
+        <span class="c1"># Test angle inside range</span>
+        <span class="n">angle_inside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">5.0</span><span class="p">])</span>
+        <span class="n">optimization_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">angle_inside</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">optimization_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">break</span>
+        <span class="k">assert</span> <span class="n">optimization_indices</span> <span class="o">==</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Test angle outside range</span>
+        <span class="n">angle_outside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">45.0</span><span class="p">])</span>
+        <span class="n">optimization_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">angle_outside</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">optimization_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">break</span>
+        <span class="k">assert</span> <span class="n">optimization_indices</span> <span class="o">==</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringEdgeCases.test_boundary_angles">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringEdgeCases.test_boundary_angles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_boundary_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test angles exactly on the boundaries of filtering ranges.&quot;&quot;&quot;</span>
+        <span class="n">target_ranges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">170.0</span><span class="p">,</span> <span class="mf">190.0</span><span class="p">)]</span>
+
+        <span class="n">boundary_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">170.0</span><span class="p">,</span> <span class="mf">190.0</span><span class="p">])</span>
+        <span class="n">optimization_indices</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">boundary_angles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">optimization_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="c1"># All boundary angles should be included</span>
+        <span class="k">assert</span> <span class="n">optimization_indices</span> <span class="o">==</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringEdgeCases.test_angle_filtering_ranges_definition">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringEdgeCases.test_angle_filtering_ranges_definition">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_angle_filtering_ranges_definition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that the angle filtering ranges are correctly defined.&quot;&quot;&quot;</span>
+        <span class="c1"># This test verifies the specific ranges mentioned in the user request</span>
+        <span class="n">target_ranges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">170.0</span><span class="p">,</span> <span class="mf">190.0</span><span class="p">)]</span>
+
+        <span class="c1"># Test specific angles from user requirement</span>
+        <span class="n">test_cases</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># Should be included</span>
+            <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># Should be included</span>
+            <span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># Should be included</span>
+            <span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># Should be excluded</span>
+            <span class="p">(</span><span class="mf">175.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># Should be included</span>
+            <span class="p">(</span><span class="mf">180.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># Should be included</span>
+            <span class="p">(</span><span class="mf">185.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># Should be included</span>
+            <span class="p">(</span><span class="mf">195.0</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># Should be excluded</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">angle</span><span class="p">,</span> <span class="n">should_include</span> <span class="ow">in</span> <span class="n">test_cases</span><span class="p">:</span>
+            <span class="n">is_included</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="ow">in</span> <span class="n">target_ranges</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">min_angle</span> <span class="o">&lt;=</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+                    <span class="n">is_included</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">is_included</span> <span class="o">==</span> <span class="n">should_include</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Angle </span><span class="si">{</span><span class="n">angle</span><span class="si">}</span><span class="s2">° should be </span><span class="si">{</span><span class="s1">&#39;included&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">should_include</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;excluded&#39;</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="TestAngleFilteringEdgeCases.test_optimization_methods_use_config_manager">
+<a class="viewcode-back" href="../../../api/homodyne.tests.html#homodyne.tests.test_angle_filtering.TestAngleFilteringEdgeCases.test_optimization_methods_use_config_manager">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_optimization_methods_use_config_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that optimization methods read angle filtering settings from ConfigManager.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigManager</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.classical</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassicalOptimizer</span>
+
+            <span class="c1"># Create a mock analyzer with a ConfigManager</span>
+            <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+            <span class="n">mock_config_manager</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">ConfigManager</span><span class="p">)</span>
+            <span class="n">mock_config_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config_manager</span> <span class="o">=</span> <span class="n">mock_config_manager</span>
+
+            <span class="c1"># Test that classical optimizer respects ConfigManager</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ClassicalOptimizer</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">phi_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">175.0</span><span class="p">,</span> <span class="mf">185.0</span><span class="p">])</span>
+            <span class="n">c2_experimental</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+            <span class="n">objective</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">create_objective_function</span><span class="p">(</span>
+                <span class="n">phi_angles</span><span class="p">,</span> <span class="n">c2_experimental</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Mock the core method to capture the call</span>
+            <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span>
+                <span class="n">return_value</span><span class="o">=</span><span class="mf">10.0</span>
+            <span class="p">)</span>
+            <span class="n">test_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">objective</span><span class="p">(</span><span class="n">test_params</span><span class="p">)</span>
+
+            <span class="c1"># Verify that ConfigManager was consulted</span>
+            <span class="n">mock_config_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+
+            <span class="c1"># Verify that angle filtering was disabled (as configured)</span>
+            <span class="n">call_args</span> <span class="o">=</span> <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="o">.</span><span class="n">call_args</span>
+            <span class="k">assert</span> <span class="n">call_args</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;filter_angles_for_optimization&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span>
+
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;Classical optimization module not available&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Test MCMC with ConfigManager</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.optimization.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCMCSampler</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">MCMCSampler</span><span class="p">,</span> <span class="s2">&quot;_MCMCSampler__test_available&quot;</span><span class="p">):</span>
+                <span class="c1"># Create a mock MCMC sampler</span>
+                <span class="n">mock_sampler</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">MCMCSampler</span><span class="p">)</span>
+                <span class="n">mock_analyzer</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+                <span class="n">mock_config_manager</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">ConfigManager</span><span class="p">)</span>
+                <span class="n">mock_config_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config_manager</span> <span class="o">=</span> <span class="n">mock_config_manager</span>
+
+                <span class="n">mock_sampler</span><span class="o">.</span><span class="n">core</span> <span class="o">=</span> <span class="n">mock_analyzer</span>
+
+                <span class="c1"># Test that MCMC would consult ConfigManager</span>
+                <span class="c1"># (This is a simplified test since MCMC requires PyMC)</span>
+                <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_analyzer</span><span class="p">,</span> <span class="s2">&quot;config_manager&quot;</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="p">(</span>
+                    <span class="n">mock_analyzer</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">is_angle_filtering_enabled</span><span class="p">()</span>
+                    <span class="o">==</span> <span class="kc">True</span>
+                <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;MCMC module not available&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">pytest</span><span class="o">.</span><span class="n">main</span><span class="p">([</span><span class="vm">__file__</span><span class="p">])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1059 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.analysis package &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="homodyne.core package" href="homodyne.core.html" />
+    <link rel="prev" title="homodyne package" href="homodyne.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">homodyne</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="homodyne.html">homodyne package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="homodyne.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">homodyne.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="homodyne.core.html">homodyne.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="homodyne.optimization.html">homodyne.optimization package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="homodyne.tests.html">homodyne.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.plotting">homodyne.plotting module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.run_tests">homodyne.run_tests module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">homodyne</a></li>
+          <li class="breadcrumb-item"><a href="homodyne.html">homodyne package</a></li>
+      <li class="breadcrumb-item active">homodyne.analysis package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/homodyne.analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="homodyne-analysis-package">
+<h1>homodyne.analysis package<a class="headerlink" href="#homodyne-analysis-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-homodyne.analysis.core">
+<span id="homodyne-analysis-core-module"></span><h2>homodyne.analysis.core module<a class="headerlink" href="#module-homodyne.analysis.core" title="Link to this heading"></a></h2>
+<section id="core-analysis-engine-for-homodyne-scattering-analysis">
+<h3>Core Analysis Engine for Homodyne Scattering Analysis<a class="headerlink" href="#core-analysis-engine-for-homodyne-scattering-analysis" title="Link to this heading"></a></h3>
+<p>High-performance homodyne scattering analysis with configuration management.</p>
+<p>This module implements the complete analysis pipeline for XPCS data in
+nonequilibrium laminar flow systems, based on He et al. (2024).</p>
+<section id="physical-theory">
+<h4>Physical Theory<a class="headerlink" href="#physical-theory" title="Link to this heading"></a></h4>
+<p>The theoretical framework describes the time-dependent intensity correlation function
+g2(φ,t₁,t₂) for X-ray photon correlation spectroscopy (XPCS) measurements of fluids
+under nonequilibrium laminar flow conditions. The model captures the interplay between
+Brownian diffusion and advective shear flow in the two-time correlation dynamics.</p>
+<dl class="simple">
+<dt>The correlation function has the form:</dt><dd><p>g2(φ,t₁,t₂) = 1 + contrast × [g1(φ,t₁,t₂)]²</p>
+</dd>
+<dt>where g1 is the field correlation function with separable contributions:</dt><dd><p>g1(φ,t₁,t₂) = g1_diff(t₁,t₂) × g1_shear(φ,t₁,t₂)</p>
+</dd>
+<dt>Diffusion Contribution:</dt><dd><p>g1_diff(t₁,t₂) = exp[-q²/2 ∫|t₂-t₁| D(t’)dt’]</p>
+</dd>
+<dt>Shear Contribution:</dt><dd><p>g1_shear(φ,t₁,t₂) = [sinc(Φ(φ,t₁,t₂))]²
+Φ(φ,t₁,t₂) = (1/2π) q L cos(φ₀-φ) ∫|t₂-t₁| γ̇(t’)dt’</p>
+</dd>
+<dt>Time-Dependent Transport Coefficients:</dt><dd><p>D(t) = D₀ t^α + D_offset    (anomalous diffusion)
+γ̇(t) = γ̇₀ t^β + γ̇_offset   (time-dependent shear rate)</p>
+</dd>
+</dl>
+<p>Parameter Models:
+Static Mode (3 parameters):
+- D₀: Reference diffusion coefficient [Å²/s]
+- α: Diffusion time-dependence exponent [-]
+- D_offset: Baseline diffusion [Å²/s]
+(γ̇₀, β, γ̇_offset, φ₀ = 0 - automatically set and irrelevant)</p>
+<p>Laminar Flow Mode (7 parameters):
+- D₀: Reference diffusion coefficient [Å²/s]
+- α: Diffusion time-dependence exponent [-]
+- D_offset: Baseline diffusion [Å²/s]
+- γ̇₀: Reference shear rate [s⁻¹]
+- β: Shear rate time-dependence exponent [-]
+- γ̇_offset: Baseline shear rate [s⁻¹]
+- φ₀: Angular offset parameter [degrees]</p>
+<p>Experimental Parameters:
+- q: Scattering wavevector magnitude [Å⁻¹]
+- L: Characteristic length scale (gap size) [Å]
+- φ: Scattering angle [degrees]
+- dt: Time step between frames [s/frame]</p>
+</section>
+<section id="features">
+<h4>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>JSON-based configuration management</p></li>
+<li><p>Experimental data loading with intelligent caching</p></li>
+<li><p>Parallel processing for multi-angle calculations</p></li>
+<li><p>Performance optimization with Numba JIT compilation</p></li>
+<li><p>Comprehensive parameter validation and bounds checking</p></li>
+<li><p>Memory-efficient matrix operations and caching</p></li>
+</ul>
+</section>
+<section id="usage">
+<h4>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h4>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.analysis.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">HomodyneAnalysisCore</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">load_experimental_data</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chi2</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">calculate_chi_squared_optimized</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">phi_angles</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<p>He, H., Chen, W., et al. (2024). “Time-dependent dynamics in nonequilibrium
+laminar flow systems via X-ray photon correlation spectroscopy.”</p>
+<p>Authors: Wei Chen, Hongrui He
+Institution: Argonne National Laboratory &amp; University of Chicago</p>
+</section>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">homodyne.analysis.core.</span></span><span class="sig-name descname"><span class="pre">HomodyneAnalysisCore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_override</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Core analysis engine for homodyne scattering data.</p>
+<p>This class provides the fundamental analysis capabilities including:
+- Configuration-driven parameter management
+- Experimental data loading with intelligent caching
+- Correlation function calculations with performance optimizations
+- Time-dependent diffusion and shear rate modeling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>config_override</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.is_static_mode">
+<span class="sig-name descname"><span class="pre">is_static_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.is_static_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.is_static_mode" title="Link to this definition"></a></dt>
+<dd><p>Check if the analysis is configured for static (no-flow) mode.</p>
+<p>In static mode:
+- Shear rate γ̇ = 0
+- Shear exponent β = 0
+- Shear offset γ̇_offset = 0
+- sinc² function = 1 (no shear decorrelation)
+- Only diffusion contribution g₁_diff remains</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if static mode is enabled in configuration</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.is_static_parameters">
+<span class="sig-name descname"><span class="pre">is_static_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.is_static_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.is_static_parameters" title="Link to this definition"></a></dt>
+<dd><p>Check if shear parameters correspond to static conditions.</p>
+<p>In static conditions:
+- gamma_dot_t0 (shear_params[0]) ≈ 0
+- beta (shear_params[1]) = 0 (no time dependence)
+- gamma_dot_offset (shear_params[2]) ≈ 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>shear_params</strong> (<em>np.ndarray</em>) – Shear rate parameters [gamma_dot_t0, beta, gamma_dot_offset]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if parameters indicate static conditions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.get_effective_parameter_count">
+<span class="sig-name descname"><span class="pre">get_effective_parameter_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.get_effective_parameter_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.get_effective_parameter_count" title="Link to this definition"></a></dt>
+<dd><p>Get the effective number of parameters based on analysis mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of parameters actually used in the analysis:
+- Static mode: 3 (only diffusion parameters: D₀, α, D_offset)
+- Laminar flow mode: 7 (all parameters including shear and φ₀)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.get_effective_parameters">
+<span class="sig-name descname"><span class="pre">get_effective_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.get_effective_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.get_effective_parameters" title="Link to this definition"></a></dt>
+<dd><p>Extract only the effective parameters based on analysis mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parameters</strong> (<em>np.ndarray</em>) – Full parameter array [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Effective parameters based on mode:
+- Static mode: [D0, alpha, D_offset] (shear params set to 0, phi0 ignored)
+- Laminar flow mode: all parameters as provided</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data">
+<span class="sig-name descname"><span class="pre">load_experimental_data</span></span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.load_experimental_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data" title="Link to this definition"></a></dt>
+<dd><p>Load experimental correlation data with caching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(c2_experimental, time_length, phi_angles, num_angles)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.calculate_diffusion_coefficient_optimized">
+<span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_diffusion_coefficient_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.calculate_diffusion_coefficient_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent diffusion coefficient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.calculate_shear_rate_optimized">
+<span class="sig-name descname"><span class="pre">calculate_shear_rate_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_shear_rate_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.calculate_shear_rate_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent shear rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.update_frame_range">
+<span class="sig-name descname"><span class="pre">update_frame_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.update_frame_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.update_frame_range" title="Link to this definition"></a></dt>
+<dd><p>Update frame range with validation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_frame</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – New start frame</p></li>
+<li><p><strong>end_frame</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – New end frame</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.create_time_integral_matrix_cached">
+<span class="sig-name descname"><span class="pre">create_time_integral_matrix_cached</span></span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.create_time_integral_matrix_cached"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.create_time_integral_matrix_cached" title="Link to this definition"></a></dt>
+<dd><p>Create cached time integral matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.calculate_c2_single_angle_optimized">
+<span class="sig-name descname"><span class="pre">calculate_c2_single_angle_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angle</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_c2_single_angle_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.calculate_c2_single_angle_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate correlation function for a single angle.</p>
+<p>Supports both laminar flow and static (no-flow) cases:
+- Laminar flow: Full 7-parameter model with diffusion and shear contributions
+- Static case: Only diffusion contribution (sinc² = 1), φ₀ irrelevant and set to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]
+In static mode: only first 3 diffusion parameters are used, others ignored/set to 0</p></li>
+<li><p><strong>phi_angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Scattering angle in degrees</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Correlation matrix c2(t1, t2)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.calculate_c2_nonequilibrium_laminar_parallel">
+<span class="sig-name descname"><span class="pre">calculate_c2_nonequilibrium_laminar_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_c2_nonequilibrium_laminar_parallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.calculate_c2_nonequilibrium_laminar_parallel" title="Link to this definition"></a></dt>
+<dd><p>Calculate correlation function for all angles with parallel processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Model parameters</p></li>
+<li><p><strong>phi_angles</strong> (<em>np.ndarray</em>) – Array of scattering angles</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>3D array of correlation matrices [angles, time, time]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.calculate_chi_squared_optimized">
+<span class="sig-name descname"><span class="pre">calculate_chi_squared_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2_experimental</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_components</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_angles_for_optimization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_chi_squared_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.calculate_chi_squared_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate chi-squared goodness of fit with per-angle analysis and uncertainty estimation.</p>
+<p>This method computes the reduced chi-squared statistic for model validation, with optional
+detailed per-angle analysis and uncertainty quantification. The uncertainty in reduced
+chi-squared provides insight into the consistency of fit quality across different angles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]</p></li>
+<li><p><strong>phi_angles</strong> (<em>np.ndarray</em>) – Scattering angles in degrees</p></li>
+<li><p><strong>c2_experimental</strong> (<em>np.ndarray</em>) – Experimental correlation data with shape (n_angles, delay_frames, lag_frames)</p></li>
+<li><p><strong>method_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Name of optimization method for logging purposes</p></li>
+<li><p><strong>return_components</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, return detailed results dictionary with per-angle analysis</p></li>
+<li><p><strong>filter_angles_for_optimization</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, only include angles in optimization ranges [-10°, 10°] and [170°, 190°]
+for chi-squared calculation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>If return_components=False: Reduced chi-squared value (float)
+If return_components=True: Dictionary containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>chi_squared<span class="classifier">float</span></dt><dd><p>Total chi-squared value</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared<span class="classifier">float</span></dt><dd><p>Averaged reduced chi-squared from optimization angles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared_uncertainty<span class="classifier">float</span></dt><dd><p>Standard error of reduced chi-squared across angles (uncertainty estimate)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared_std<span class="classifier">float</span></dt><dd><p>Standard deviation of reduced chi-squared across angles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>n_optimization_angles<span class="classifier">int</span></dt><dd><p>Number of angles used for optimization</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>degrees_of_freedom<span class="classifier">int</span></dt><dd><p>Degrees of freedom for statistical testing (data_points - n_parameters)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_chi_squared<span class="classifier">list</span></dt><dd><p>Chi-squared values for each angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_chi_squared_reduced<span class="classifier">list</span></dt><dd><p>Reduced chi-squared values for each angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_data_points<span class="classifier">list</span></dt><dd><p>Number of data points per angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>phi_angles<span class="classifier">list</span></dt><dd><p>Scattering angles used</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>scaling_solutions<span class="classifier">list</span></dt><dd><p>Contrast and offset parameters for each angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>valid<span class="classifier">bool</span></dt><dd><p>Whether calculation was successful</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The uncertainty calculation follows standard error of the mean:</p>
+<p>reduced_chi2_uncertainty = std(angle_chi2_reduced) / sqrt(n_angles)</p>
+<p>Interpretation of uncertainty:
+- Small uncertainty (&lt; 0.1 * reduced_chi2): Consistent fit across angles
+- Large uncertainty (&gt; 0.5 * reduced_chi2): High angle variability, potential</p>
+<blockquote>
+<div><p>systematic issues or model inadequacy</p>
+</div></blockquote>
+<p>The method uses averaged (not summed) chi-squared for better angle weighting:
+reduced_chi2 = mean(chi2_reduced_per_angle) for optimization angles only</p>
+<p>Quality assessment guidelines:
+- Excellent: reduced_chi2 ≤ 2.0
+- Acceptable: 2.0 &lt; reduced_chi2 ≤ 5.0
+- Warning: 5.0 &lt; reduced_chi2 ≤ 10.0
+- Poor/Critical: reduced_chi2 &gt; 10.0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.analyze_per_angle_chi_squared">
+<span class="sig-name descname"><span class="pre">analyze_per_angle_chi_squared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2_experimental</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Final'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.analyze_per_angle_chi_squared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.analyze_per_angle_chi_squared" title="Link to this definition"></a></dt>
+<dd><p>Comprehensive per-angle reduced chi-squared analysis with quality assessment.</p>
+<p>This method performs detailed analysis of chi-squared values across different
+scattering angles, providing quality metrics, uncertainty estimation, and
+angle categorization to identify systematic fitting issues.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Optimized model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]</p></li>
+<li><p><strong>phi_angles</strong> (<em>np.ndarray</em>) – Scattering angles in degrees</p></li>
+<li><p><strong>c2_experimental</strong> (<em>np.ndarray</em>) – Experimental correlation data with shape (n_angles, delay_frames, lag_frames)</p></li>
+<li><p><strong>method_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the analysis method for file naming and logging</p></li>
+<li><p><strong>save_to_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to save detailed results to JSON file</p></li>
+<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Output directory for saved results (defaults to current directory)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Comprehensive analysis results containing:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>method<span class="classifier">str</span></dt><dd><p>Analysis method name</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>overall_reduced_chi_squared<span class="classifier">float</span></dt><dd><p>Average reduced chi-squared across optimization angles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared_uncertainty<span class="classifier">float</span></dt><dd><p>Standard error of reduced chi-squared (uncertainty measure)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>quality_assessment<span class="classifier">dict</span></dt><dd><p>Overall and per-angle quality evaluation with thresholds</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_categorization<span class="classifier">dict</span></dt><dd><p>Classification of angles into good, unacceptable, and outlier groups</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>per_angle_analysis<span class="classifier">dict</span></dt><dd><p>Detailed per-angle chi-squared values and statistics</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>statistical_summary<span class="classifier">dict</span></dt><dd><p>Summary statistics including means, medians, and percentiles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>recommendations<span class="classifier">list</span></dt><dd><p>Specific recommendations based on quality assessment</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, Any]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Quality Assessment Criteria:
+- Overall reduced chi-squared uncertainty indicates fit consistency:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Small uncertainty (&lt; 10% of chi2): Consistent across angles</p></li>
+<li><p>Large uncertainty (&gt; 50% of chi2): High variability, investigate systematically</p></li>
+</ul>
+</div></blockquote>
+<p>Angle Classification:
+- Good angles: reduced_chi2 ≤ acceptable_threshold (default 5.0)
+- Unacceptable angles: reduced_chi2 &gt; acceptable_threshold
+- Statistical outliers: reduced_chi2 &gt; mean + 2.5*std</p>
+<p>The method uses configuration-driven thresholds from validation_rules.fit_quality
+for consistent quality assessment across the package.</p>
+<p>Files saved (if save_to_file=True):
+- per_angle_chi_squared_{method_name.lower()}.json: Detailed analysis results</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#homodyne.analysis.core.HomodyneAnalysisCore.calculate_chi_squared_optimized" title="homodyne.analysis.core.HomodyneAnalysisCore.calculate_chi_squared_optimized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_chi_squared_optimized</span></code></a></dt><dd><p>Underlying chi-squared calculation</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.save_results_with_config">
+<span class="sig-name descname"><span class="pre">save_results_with_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.save_results_with_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.save_results_with_config" title="Link to this definition"></a></dt>
+<dd><p>Save optimization results along with configuration to JSON file.</p>
+<p>This method ensures all results including uncertainty fields are properly
+saved with the configuration for reproducibility.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>results</strong> (<em>Dict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – Results dictionary from optimization methods</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-homodyne.analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-homodyne.analysis" title="Link to this heading"></a></h2>
+<p>Analysis engines for homodyne scattering data.</p>
+<p>This subpackage contains the main analysis functionality for processing
+experimental homodyne scattering data and computing correlation functions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">homodyne.analysis.</span></span><span class="sig-name descname"><span class="pre">HomodyneAnalysisCore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_override</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Core analysis engine for homodyne scattering data.</p>
+<p>This class provides the fundamental analysis capabilities including:
+- Configuration-driven parameter management
+- Experimental data loading with intelligent caching
+- Correlation function calculations with performance optimizations
+- Time-dependent diffusion and shear rate modeling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>config_override</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.analyze_per_angle_chi_squared">
+<span class="sig-name descname"><span class="pre">analyze_per_angle_chi_squared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2_experimental</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Final'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.analyze_per_angle_chi_squared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.analyze_per_angle_chi_squared" title="Link to this definition"></a></dt>
+<dd><p>Comprehensive per-angle reduced chi-squared analysis with quality assessment.</p>
+<p>This method performs detailed analysis of chi-squared values across different
+scattering angles, providing quality metrics, uncertainty estimation, and
+angle categorization to identify systematic fitting issues.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Optimized model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]</p></li>
+<li><p><strong>phi_angles</strong> (<em>np.ndarray</em>) – Scattering angles in degrees</p></li>
+<li><p><strong>c2_experimental</strong> (<em>np.ndarray</em>) – Experimental correlation data with shape (n_angles, delay_frames, lag_frames)</p></li>
+<li><p><strong>method_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the analysis method for file naming and logging</p></li>
+<li><p><strong>save_to_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to save detailed results to JSON file</p></li>
+<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Output directory for saved results (defaults to current directory)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Comprehensive analysis results containing:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>method<span class="classifier">str</span></dt><dd><p>Analysis method name</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>overall_reduced_chi_squared<span class="classifier">float</span></dt><dd><p>Average reduced chi-squared across optimization angles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared_uncertainty<span class="classifier">float</span></dt><dd><p>Standard error of reduced chi-squared (uncertainty measure)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>quality_assessment<span class="classifier">dict</span></dt><dd><p>Overall and per-angle quality evaluation with thresholds</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_categorization<span class="classifier">dict</span></dt><dd><p>Classification of angles into good, unacceptable, and outlier groups</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>per_angle_analysis<span class="classifier">dict</span></dt><dd><p>Detailed per-angle chi-squared values and statistics</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>statistical_summary<span class="classifier">dict</span></dt><dd><p>Summary statistics including means, medians, and percentiles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>recommendations<span class="classifier">list</span></dt><dd><p>Specific recommendations based on quality assessment</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, Any]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Quality Assessment Criteria:
+- Overall reduced chi-squared uncertainty indicates fit consistency:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Small uncertainty (&lt; 10% of chi2): Consistent across angles</p></li>
+<li><p>Large uncertainty (&gt; 50% of chi2): High variability, investigate systematically</p></li>
+</ul>
+</div></blockquote>
+<p>Angle Classification:
+- Good angles: reduced_chi2 ≤ acceptable_threshold (default 5.0)
+- Unacceptable angles: reduced_chi2 &gt; acceptable_threshold
+- Statistical outliers: reduced_chi2 &gt; mean + 2.5*std</p>
+<p>The method uses configuration-driven thresholds from validation_rules.fit_quality
+for consistent quality assessment across the package.</p>
+<p>Files saved (if save_to_file=True):
+- per_angle_chi_squared_{method_name.lower()}.json: Detailed analysis results</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#homodyne.analysis.HomodyneAnalysisCore.calculate_chi_squared_optimized" title="homodyne.analysis.HomodyneAnalysisCore.calculate_chi_squared_optimized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_chi_squared_optimized</span></code></a></dt><dd><p>Underlying chi-squared calculation</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.calculate_c2_nonequilibrium_laminar_parallel">
+<span class="sig-name descname"><span class="pre">calculate_c2_nonequilibrium_laminar_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_c2_nonequilibrium_laminar_parallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.calculate_c2_nonequilibrium_laminar_parallel" title="Link to this definition"></a></dt>
+<dd><p>Calculate correlation function for all angles with parallel processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Model parameters</p></li>
+<li><p><strong>phi_angles</strong> (<em>np.ndarray</em>) – Array of scattering angles</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>3D array of correlation matrices [angles, time, time]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.calculate_c2_single_angle_optimized">
+<span class="sig-name descname"><span class="pre">calculate_c2_single_angle_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angle</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_c2_single_angle_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.calculate_c2_single_angle_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate correlation function for a single angle.</p>
+<p>Supports both laminar flow and static (no-flow) cases:
+- Laminar flow: Full 7-parameter model with diffusion and shear contributions
+- Static case: Only diffusion contribution (sinc² = 1), φ₀ irrelevant and set to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]
+In static mode: only first 3 diffusion parameters are used, others ignored/set to 0</p></li>
+<li><p><strong>phi_angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Scattering angle in degrees</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Correlation matrix c2(t1, t2)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.calculate_chi_squared_optimized">
+<span class="sig-name descname"><span class="pre">calculate_chi_squared_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2_experimental</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_components</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_angles_for_optimization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_chi_squared_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.calculate_chi_squared_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate chi-squared goodness of fit with per-angle analysis and uncertainty estimation.</p>
+<p>This method computes the reduced chi-squared statistic for model validation, with optional
+detailed per-angle analysis and uncertainty quantification. The uncertainty in reduced
+chi-squared provides insight into the consistency of fit quality across different angles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>np.ndarray</em>) – Model parameters [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]</p></li>
+<li><p><strong>phi_angles</strong> (<em>np.ndarray</em>) – Scattering angles in degrees</p></li>
+<li><p><strong>c2_experimental</strong> (<em>np.ndarray</em>) – Experimental correlation data with shape (n_angles, delay_frames, lag_frames)</p></li>
+<li><p><strong>method_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Name of optimization method for logging purposes</p></li>
+<li><p><strong>return_components</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, return detailed results dictionary with per-angle analysis</p></li>
+<li><p><strong>filter_angles_for_optimization</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, only include angles in optimization ranges [-10°, 10°] and [170°, 190°]
+for chi-squared calculation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>If return_components=False: Reduced chi-squared value (float)
+If return_components=True: Dictionary containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>chi_squared<span class="classifier">float</span></dt><dd><p>Total chi-squared value</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared<span class="classifier">float</span></dt><dd><p>Averaged reduced chi-squared from optimization angles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared_uncertainty<span class="classifier">float</span></dt><dd><p>Standard error of reduced chi-squared across angles (uncertainty estimate)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reduced_chi_squared_std<span class="classifier">float</span></dt><dd><p>Standard deviation of reduced chi-squared across angles</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>n_optimization_angles<span class="classifier">int</span></dt><dd><p>Number of angles used for optimization</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>degrees_of_freedom<span class="classifier">int</span></dt><dd><p>Degrees of freedom for statistical testing (data_points - n_parameters)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_chi_squared<span class="classifier">list</span></dt><dd><p>Chi-squared values for each angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_chi_squared_reduced<span class="classifier">list</span></dt><dd><p>Reduced chi-squared values for each angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>angle_data_points<span class="classifier">list</span></dt><dd><p>Number of data points per angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>phi_angles<span class="classifier">list</span></dt><dd><p>Scattering angles used</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>scaling_solutions<span class="classifier">list</span></dt><dd><p>Contrast and offset parameters for each angle</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>valid<span class="classifier">bool</span></dt><dd><p>Whether calculation was successful</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The uncertainty calculation follows standard error of the mean:</p>
+<p>reduced_chi2_uncertainty = std(angle_chi2_reduced) / sqrt(n_angles)</p>
+<p>Interpretation of uncertainty:
+- Small uncertainty (&lt; 0.1 * reduced_chi2): Consistent fit across angles
+- Large uncertainty (&gt; 0.5 * reduced_chi2): High angle variability, potential</p>
+<blockquote>
+<div><p>systematic issues or model inadequacy</p>
+</div></blockquote>
+<p>The method uses averaged (not summed) chi-squared for better angle weighting:
+reduced_chi2 = mean(chi2_reduced_per_angle) for optimization angles only</p>
+<p>Quality assessment guidelines:
+- Excellent: reduced_chi2 ≤ 2.0
+- Acceptable: 2.0 &lt; reduced_chi2 ≤ 5.0
+- Warning: 5.0 &lt; reduced_chi2 ≤ 10.0
+- Poor/Critical: reduced_chi2 &gt; 10.0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.calculate_diffusion_coefficient_optimized">
+<span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_diffusion_coefficient_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.calculate_diffusion_coefficient_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent diffusion coefficient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.calculate_shear_rate_optimized">
+<span class="sig-name descname"><span class="pre">calculate_shear_rate_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.calculate_shear_rate_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.calculate_shear_rate_optimized" title="Link to this definition"></a></dt>
+<dd><p>Calculate time-dependent shear rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.create_time_integral_matrix_cached">
+<span class="sig-name descname"><span class="pre">create_time_integral_matrix_cached</span></span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.create_time_integral_matrix_cached"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.create_time_integral_matrix_cached" title="Link to this definition"></a></dt>
+<dd><p>Create cached time integral matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.get_effective_parameter_count">
+<span class="sig-name descname"><span class="pre">get_effective_parameter_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.get_effective_parameter_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.get_effective_parameter_count" title="Link to this definition"></a></dt>
+<dd><p>Get the effective number of parameters based on analysis mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of parameters actually used in the analysis:
+- Static mode: 3 (only diffusion parameters: D₀, α, D_offset)
+- Laminar flow mode: 7 (all parameters including shear and φ₀)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.get_effective_parameters">
+<span class="sig-name descname"><span class="pre">get_effective_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.get_effective_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.get_effective_parameters" title="Link to this definition"></a></dt>
+<dd><p>Extract only the effective parameters based on analysis mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parameters</strong> (<em>np.ndarray</em>) – Full parameter array [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Effective parameters based on mode:
+- Static mode: [D0, alpha, D_offset] (shear params set to 0, phi0 ignored)
+- Laminar flow mode: all parameters as provided</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.is_static_mode">
+<span class="sig-name descname"><span class="pre">is_static_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.is_static_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.is_static_mode" title="Link to this definition"></a></dt>
+<dd><p>Check if the analysis is configured for static (no-flow) mode.</p>
+<p>In static mode:
+- Shear rate γ̇ = 0
+- Shear exponent β = 0
+- Shear offset γ̇_offset = 0
+- sinc² function = 1 (no shear decorrelation)
+- Only diffusion contribution g₁_diff remains</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if static mode is enabled in configuration</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.is_static_parameters">
+<span class="sig-name descname"><span class="pre">is_static_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.is_static_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.is_static_parameters" title="Link to this definition"></a></dt>
+<dd><p>Check if shear parameters correspond to static conditions.</p>
+<p>In static conditions:
+- gamma_dot_t0 (shear_params[0]) ≈ 0
+- beta (shear_params[1]) = 0 (no time dependence)
+- gamma_dot_offset (shear_params[2]) ≈ 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>shear_params</strong> (<em>np.ndarray</em>) – Shear rate parameters [gamma_dot_t0, beta, gamma_dot_offset]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if parameters indicate static conditions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.load_experimental_data">
+<span class="sig-name descname"><span class="pre">load_experimental_data</span></span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.load_experimental_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.load_experimental_data" title="Link to this definition"></a></dt>
+<dd><p>Load experimental correlation data with caching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(c2_experimental, time_length, phi_angles, num_angles)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.save_results_with_config">
+<span class="sig-name descname"><span class="pre">save_results_with_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.save_results_with_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.save_results_with_config" title="Link to this definition"></a></dt>
+<dd><p>Save optimization results along with configuration to JSON file.</p>
+<p>This method ensures all results including uncertainty fields are properly
+saved with the configuration for reproducibility.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>results</strong> (<em>Dict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – Results dictionary from optimization methods</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.update_frame_range">
+<span class="sig-name descname"><span class="pre">update_frame_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.update_frame_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.update_frame_range" title="Link to this definition"></a></dt>
+<dd><p>Update frame range with validation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_frame</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – New start frame</p></li>
+<li><p><strong>end_frame</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – New end frame</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="homodyne.html" class="btn btn-neutral float-left" title="homodyne package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="homodyne.core.html" class="btn btn-neutral float-right" title="homodyne.core package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

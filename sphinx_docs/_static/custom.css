@@ -1,0 +1,45 @@
+/* Custom CSS for Homodyne Analysis Documentation */
+
+/* Improve code block styling */
+.highlight {
+    background-color: #f8f9fa;
+    border-left: 3px solid #007acc;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* Style for mathematical equations */
+.math {
+    color: #333;
+    font-size: 1.1em;
+}
+
+/* Better table styling */
+.rst-content table.docutils {
+    border: 1px solid #e1e4e5;
+    border-collapse: collapse;
+}
+
+.rst-content table.docutils th {
+    background-color: #f1f2f3;
+    border-bottom: 2px solid #e1e4e5;
+}
+
+/* Custom admonition styling */
+.rst-content .admonition.tip {
+    background-color: #e7f3ff;
+    border-left: 3px solid #007acc;
+}
+
+.rst-content .admonition.warning {
+    background-color: #fff3cd;
+    border-left: 3px solid #ffc107;
+}
+
+/* Better inline code styling */
+code {
+    background-color: #f1f2f3;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.95em;
+}

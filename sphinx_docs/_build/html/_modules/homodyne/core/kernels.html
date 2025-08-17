@@ -1,0 +1,676 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>homodyne.core.kernels &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=66ead900" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">homodyne</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">homodyne.core.kernels</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for homodyne.core.kernels</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">High-Performance Computational Kernels for Homodyne Scattering Analysis</span>
+
+<span class="sd">This module provides Numba-accelerated computational kernels for the core</span>
+<span class="sd">mathematical operations in homodyne scattering calculations.</span>
+
+<span class="sd">Created for: Rheo-SAXS-XPCS Homodyne Analysis</span>
+<span class="sd">Authors: Wei Chen, Hongrui He</span>
+<span class="sd">Institution: Argonne National Laboratory &amp; University of Chicago</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="c1"># Numba imports with fallbacks</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">int64</span>
+
+    <span class="n">NUMBA_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">NUMBA_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Fallback decorators when Numba is unavailable</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">jit</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">njit</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span>
+
+    <span class="n">prange</span> <span class="o">=</span> <span class="nb">range</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">DummyType</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="n">float64</span> <span class="o">=</span> <span class="n">int64</span> <span class="o">=</span> <span class="n">DummyType</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="create_time_integral_matrix_numba">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.create_time_integral_matrix_numba">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:]),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_time_integral_matrix_numba</span><span class="p">(</span><span class="n">time_dependent_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create time integral matrix for correlation calculations.</span>
+
+<span class="sd">    Computes matrix of time integrals I[i,j] = |∫ᵗʲₜᵢ f(t)dt|</span>
+<span class="sd">    using cumulative sum for O(n) complexity instead of O(n²).</span>
+<span class="sd">    Optimized with fastmath and memory-efficient layout.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_dependent_array : np.ndarray</span>
+<span class="sd">        Time-dependent values f(t) at discrete points</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Matrix where element [i,j] = integral from time i to j</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_dependent_array</span><span class="p">)</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>  <span class="c1"># Use empty for faster allocation</span>
+
+    <span class="c1"># Compute cumulative sum using built-in cumsum for better optimization</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">time_dependent_array</span><span class="p">)</span>
+    
+    <span class="c1"># Optimized loop with cache-friendly memory access pattern</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumsum</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">cumsum</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumsum</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">cumsum</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="n">cumsum</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">matrix</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_diffusion_coefficient_numba">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.calculate_diffusion_coefficient_numba">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_diffusion_coefficient_numba</span><span class="p">(</span><span class="n">time_array</span><span class="p">,</span> <span class="n">D0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">D_offset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate time-dependent diffusion coefficient.</span>
+
+<span class="sd">    Implements power-law model: D(t) = D₀(t/t₀)^α + D_offset</span>
+
+<span class="sd">    This model captures various physical scenarios:</span>
+<span class="sd">    1. Aging systems: D decreases with time (α &lt; 0) as structure develops</span>
+<span class="sd">    2. Swelling/dissolution: D increases with time (α &gt; 0) as structure breaks down</span>
+<span class="sd">    3. Stress relaxation: D changes as internal stresses redistribute</span>
+<span class="sd">    4. Temperature effects: Time-dependent heating/cooling during measurement</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_array : np.ndarray</span>
+<span class="sd">        Time points [seconds]</span>
+<span class="sd">    D0 : float</span>
+<span class="sd">        Reference diffusion coefficient [Å²/s]</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Power-law exponent [dimensionless]</span>
+<span class="sd">        α = 0: constant diffusion (equilibrium systems)</span>
+<span class="sd">        α &gt; 0: enhanced diffusion (aging, structural relaxation)</span>
+<span class="sd">        α &lt; 0: subdiffusion (crowded environments, viscoelastic media)</span>
+<span class="sd">    D_offset : float</span>
+<span class="sd">        Baseline diffusion [Å²/s]</span>
+<span class="sd">        Accounts for residual thermal motion or measurement artifacts</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        D(t) at each time point [Å²/s]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">D_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">time_array</span><span class="p">)</span>
+    <span class="c1"># Vectorized computation with parallel execution</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_array</span><span class="p">)):</span>
+        <span class="n">D_t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">D0</span> <span class="o">*</span> <span class="p">(</span><span class="n">time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">D_offset</span>
+    <span class="k">return</span> <span class="n">D_t</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_shear_rate_numba">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.calculate_shear_rate_numba">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_shear_rate_numba</span><span class="p">(</span><span class="n">time_array</span><span class="p">,</span> <span class="n">gamma_dot_t0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma_dot_t_offset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate time-dependent shear rate.</span>
+
+<span class="sd">    Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset</span>
+
+<span class="sd">    Common experimental scenarios:</span>
+<span class="sd">    1. Creep tests: Applied constant stress → time-dependent strain rate</span>
+<span class="sd">        - Initially: γ̇(t) ~ t^(-n) as material yields</span>
+<span class="sd">        - Later: γ̇(t) ~ constant for steady-state flow</span>
+<span class="sd">        - Recovery: γ̇(t) → 0 with power-law or exponential decay</span>
+
+<span class="sd">    2. Startup flows: Sudden application of shear</span>
+<span class="sd">        - Acceleration phase: γ̇(t) increases toward steady state</span>
+<span class="sd">        - Overshoot possible in viscoelastic materials</span>
+<span class="sd">        - Eventually: γ̇(t) → constant</span>
+
+<span class="sd">    3. Oscillatory flows: Time-varying shear rates</span>
+<span class="sd">        - Can be captured by appropriate choice of β</span>
+<span class="sd">        - More complex forms may require Fourier series</span>
+
+<span class="sd">    4. Stress relaxation: Removal of applied stress</span>
+<span class="sd">        - Exponential or power-law decay: γ̇(t) ~ t^(-β)</span>
+<span class="sd">        - Long-time tail behavior depends on material properties</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_array : np.ndarray</span>
+<span class="sd">        Time points [seconds]</span>
+<span class="sd">    gamma_dot_t0 : float</span>
+<span class="sd">        Reference shear rate [s⁻¹]</span>
+<span class="sd">    beta : float</span>
+<span class="sd">        Power-law exponent [dimensionless]</span>
+<span class="sd">        β = 0: constant shear rate (steady flow)</span>
+<span class="sd">        β &gt; 0: accelerating flow (creep acceleration, startup transients)</span>
+<span class="sd">        β &lt; 0: decelerating flow (stress relaxation, recovery)</span>
+<span class="sd">    gamma_dot_t_offset : float</span>
+<span class="sd">        Baseline shear rate [s⁻¹]</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        γ̇(t) at each time point [s⁻¹]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gamma_dot_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">time_array</span><span class="p">)</span>
+    <span class="c1"># Vectorized computation with parallel execution</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_array</span><span class="p">)):</span>
+        <span class="n">gamma_dot_t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma_dot_t0</span> <span class="o">*</span> <span class="p">(</span><span class="n">time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma_dot_t_offset</span>
+    <span class="k">return</span> <span class="n">gamma_dot_t</span></div>
+
+
+
+<div class="viewcode-block" id="compute_g1_correlation_numba">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.compute_g1_correlation_numba">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_g1_correlation_numba</span><span class="p">(</span><span class="n">diffusion_integral_matrix</span><span class="p">,</span> <span class="n">wavevector_factor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute field correlation function g₁ from diffusion.</span>
+
+<span class="sd">    Calculates the field correlation function arising from translational diffusion</span>
+<span class="sd">    of scattering particles in the sample. This implements the core diffusion term</span>
+<span class="sd">    from the homodyne scattering equations:</span>
+
+<span class="sd">        g₁(q⃗, t₁, t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    diffusion_integral_matrix : np.ndarray</span>
+<span class="sd">        Matrix of diffusion integrals [Å²]</span>
+<span class="sd">    wavevector_factor : float</span>
+<span class="sd">        Pre-computed 0.5×q²×Δt [Å⁻²]</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Field correlation g₁(t₁,t₂), values in [0,1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">diffusion_integral_matrix</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">g1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Optimized computation with fastmath and cache-friendly access</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">exponent</span> <span class="o">=</span> <span class="o">-</span><span class="n">wavevector_factor</span> <span class="o">*</span> <span class="n">diffusion_integral_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="n">g1</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exponent</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">g1</span></div>
+
+
+
+<div class="viewcode-block" id="compute_sinc_squared_numba">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.compute_sinc_squared_numba">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_sinc_squared_numba</span><span class="p">(</span><span class="n">shear_integral_matrix</span><span class="p">,</span> <span class="n">prefactor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute sinc² function for shear flow contributions (Numba-optimized).</span>
+
+<span class="sd">    Calculates the shear-induced decorrelation term appearing in homodyne</span>
+<span class="sd">    scattering under flow conditions. This implements the sinc² term from</span>
+<span class="sd">    the theoretical equations:</span>
+
+<span class="sd">        sinc²(x) = [sin(πx)/(πx)]²</span>
+
+<span class="sd">    where x = (1/2π) × q⃗·v̄ × ∫γ̇(t)dt</span>
+
+<span class="sd">    Physical interpretation:</span>
+<span class="sd">    - The sinc function arises from the Fourier transform of a rectangular</span>
+<span class="sd">      velocity profile in laminar shear flow</span>
+<span class="sd">    - Shear flow creates a systematic velocity gradient perpendicular to the flow</span>
+<span class="sd">    - Particles at different heights have different velocities</span>
+<span class="sd">    - This creates a phase modulation of the scattered light</span>
+<span class="sd">    - The sinc² envelope reflects the coherent averaging over the velocity distribution</span>
+
+<span class="sd">    Mathematical origin:</span>
+<span class="sd">    In laminar flow between parallel plates with gap h:</span>
+<span class="sd">        v(y) = γ̇ × y  (linear velocity profile)</span>
+
+<span class="sd">    The scattering from particles at height y picks up phase φ = q⃗·v⃗(y)t</span>
+<span class="sd">    Coherent averaging over y gives:</span>
+<span class="sd">        ⟨exp(iq⃗·v⃗(y)t)⟩ = ∫₀ʰ exp(iqy̲γ̇t)dy/h = sinc(qy̲γ̇th/2)</span>
+
+<span class="sd">    Where qy̲ is the component of q⃗ perpendicular to flow direction.</span>
+
+<span class="sd">    Flow geometry considerations:</span>
+<span class="sd">    - For q⃗ parallel to flow: cos(φ) = ±1, maximum shear effect</span>
+<span class="sd">    - For q⃗ perpendicular to flow: cos(φ) = 0, no shear contribution</span>
+<span class="sd">    - Intermediate angles: cos(φ) determines the effective shear sensitivity</span>
+
+<span class="sd">    Limiting behaviors:</span>
+<span class="sd">    - Small argument (weak shear): sinc²(x) ≈ 1 - (πx)²/3</span>
+<span class="sd">    - Large argument (strong shear): sinc²(x) ≈ 0 with oscillations</span>
+<span class="sd">    - First zero at x = 1: complete destructive interference</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shear_integral_matrix : np.ndarray</span>
+<span class="sd">        Matrix of shear rate integrals (strain)</span>
+<span class="sd">    prefactor : float</span>
+<span class="sd">        Geometric factor (1/2π)×q×h×cos(φ)×Δt</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Sinc² values for shear contribution, in [0,1] with sinc²(0) = 1</span>
+
+<span class="sd">    Special cases:</span>
+<span class="sd">    --------------</span>
+<span class="sd">    - Zero shear (γ̇ = 0): sinc²(0) = 1 (no shear decorrelation)</span>
+<span class="sd">    - Perpendicular scattering (cos φ = 0): sinc²(0) = 1 (no sensitivity)</span>
+<span class="sd">    - Very small arguments: use Taylor expansion to avoid 0/0 indeterminacy</span>
+<span class="sd">    - Very large arguments: sinc² oscillates rapidly around small values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">shear_integral_matrix</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">sinc_squared</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Pre-compute pi for efficiency</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">argument</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">shear_integral_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+            <span class="c1"># Optimized small argument handling with Taylor expansion</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">argument</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-8</span><span class="p">:</span>  <span class="c1"># Slightly larger threshold for better performance</span>
+                <span class="c1"># Taylor expansion: sinc²(x) ≈ 1 - (πx)²/3 + O(x⁴)</span>
+                <span class="n">pi_arg_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">pi</span> <span class="o">*</span> <span class="n">argument</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="n">sinc_squared</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">pi_arg_sq</span> <span class="o">/</span> <span class="mf">3.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pi_arg</span> <span class="o">=</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">argument</span>
+                <span class="n">sinc_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pi_arg</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi_arg</span>
+                <span class="n">sinc_squared</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">sinc_value</span> <span class="o">*</span> <span class="n">sinc_value</span>
+
+    <span class="k">return</span> <span class="n">sinc_squared</span></div>
+
+
+
+<div class="viewcode-block" id="memory_efficient_cache">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.memory_efficient_cache">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">memory_efficient_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">128</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Memory-efficient LRU cache with automatic cleanup.</span>
+
+<span class="sd">    Features:</span>
+<span class="sd">    - Least Recently Used eviction</span>
+<span class="sd">    - Access frequency tracking</span>
+<span class="sd">    - Configurable size limits</span>
+<span class="sd">    - Cache statistics</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    maxsize : int</span>
+<span class="sd">        Maximum cached items (0 disables caching)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    decorator</span>
+<span class="sd">        Function decorator with cache_info() and cache_clear() methods</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">access_count</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="c1"># Create hashable cache key</span>
+            <span class="n">key_parts</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="c1"># Convert bytes to hex string to avoid joining bytes with strings</span>
+                    <span class="n">key_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">key_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="n">key_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">cache_key</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">key_parts</span><span class="p">)</span>
+
+            <span class="c1"># Check cache hit</span>
+            <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
+                <span class="n">access_count</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">access_count</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
+
+            <span class="c1"># Compute on cache miss</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="c1"># Manage cache size</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">maxsize</span> <span class="ow">and</span> <span class="n">maxsize</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Remove 25% of least-accessed items</span>
+                <span class="n">items_to_remove</span> <span class="o">=</span> <span class="n">maxsize</span> <span class="o">//</span> <span class="mi">4</span>
+                <span class="n">sorted_items</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">access_count</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">sorted_items</span><span class="p">[:</span><span class="n">items_to_remove</span><span class="p">]:</span>
+                    <span class="n">cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">access_count</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="c1"># Store result</span>
+            <span class="k">if</span> <span class="n">maxsize</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+                <span class="n">access_count</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">cache_info</span><span class="p">():</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Return cache statistics.&quot;&quot;&quot;</span>
+            <span class="n">hit_rate</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="n">access_count</span><span class="p">:</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">access_count</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="n">unique</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">access_count</span><span class="p">)</span>
+                <span class="n">hit_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">total</span> <span class="o">-</span> <span class="n">unique</span><span class="p">)</span> <span class="o">/</span> <span class="n">total</span> <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Cache: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">maxsize</span><span class="si">}</span><span class="s2">, Hit rate: </span><span class="si">{</span><span class="n">hit_rate</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">cache_clear</span><span class="p">():</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Clear all cached data.&quot;&quot;&quot;</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="n">access_count</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="k">class</span><span class="w"> </span><span class="nc">CachedFunction</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_func</span> <span class="o">=</span> <span class="n">func</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache_info</span> <span class="o">=</span> <span class="n">cache_info</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache_clear</span> <span class="o">=</span> <span class="n">cache_clear</span>
+                <span class="c1"># Copy function attributes for proper method binding</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="s2">&quot;cached_function&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__doc__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Support instance methods by implementing descriptor protocol.&quot;&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Return a bound method</span>
+                    <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">CachedFunction</span><span class="p">(</span><span class="n">wrapper</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+
+<span class="c1"># Additional optimized kernels for improved performance</span>
+
+<div class="viewcode-block" id="create_symmetric_matrix_optimized">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.create_symmetric_matrix_optimized">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">int64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_symmetric_matrix_optimized</span><span class="p">(</span><span class="n">diagonal_values</span><span class="p">,</span> <span class="n">matrix_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create symmetric matrix with optimized memory layout.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    diagonal_values : np.ndarray</span>
+<span class="sd">        Values for the diagonal</span>
+<span class="sd">    matrix_size : int</span>
+<span class="sd">        Size of the square matrix</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Symmetric matrix with cache-friendly memory access</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">matrix_size</span><span class="p">,</span> <span class="n">matrix_size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    
+    <span class="c1"># Fill diagonal first for cache efficiency</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">matrix_size</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">diagonal_values</span><span class="p">):</span>
+            <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">diagonal_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    
+    <span class="c1"># Fill off-diagonal elements symmetrically</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">matrix_size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">matrix_size</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">matrix</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+            <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">matrix</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">return</span> <span class="n">matrix</span></div>
+
+
+
+<div class="viewcode-block" id="matrix_vector_multiply_optimized">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.matrix_vector_multiply_optimized">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float64</span><span class="p">[:]),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">matrix_vector_multiply_optimized</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Optimized matrix-vector multiplication for correlation calculations.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    matrix : np.ndarray</span>
+<span class="sd">        2D matrix</span>
+<span class="sd">    vector : np.ndarray</span>
+<span class="sd">        1D vector</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Result of matrix @ vector</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_rows</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">n_cols</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">n_rows</span><span class="p">):</span>
+        <span class="n">temp_sum</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_cols</span><span class="p">):</span>
+            <span class="n">temp_sum</span> <span class="o">+=</span> <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">vector</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_sum</span>
+    
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="apply_scaling_vectorized">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.apply_scaling_vectorized">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_scaling_vectorized</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply per-angle scaling (contrast and offset) with vectorized operations.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : np.ndarray</span>
+<span class="sd">        Input data array</span>
+<span class="sd">    contrast : float</span>
+<span class="sd">        Scaling contrast factor</span>
+<span class="sd">    offset : float</span>
+<span class="sd">        Additive offset</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Scaled data: contrast * data + offset</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">contrast</span> <span class="o">*</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span>
+    
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="compute_chi_squared_fast">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.compute_chi_squared_fast">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">(</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">[:]),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_chi_squared_fast</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fast chi-squared calculation with optimized numerics.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    observed : np.ndarray</span>
+<span class="sd">        Observed values</span>
+<span class="sd">    expected : np.ndarray</span>
+<span class="sd">        Expected/theoretical values</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Chi-squared statistic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">observed</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">expected</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># Use expected value as variance estimate (Poisson-like)</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">expected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mf">1e-12</span><span class="p">)</span>  <span class="c1"># Avoid division by zero</span>
+        <span class="n">chi2</span> <span class="o">+=</span> <span class="p">(</span><span class="n">diff</span> <span class="o">*</span> <span class="n">diff</span><span class="p">)</span> <span class="o">/</span> <span class="n">variance</span>
+    
+    <span class="k">return</span> <span class="n">chi2</span></div>
+
+
+
+<div class="viewcode-block" id="exp_negative_vectorized">
+<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.exp_negative_vectorized">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">exp_negative_vectorized</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Vectorized computation of exp(-scale_factor * input_array).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_array : np.ndarray</span>
+<span class="sd">        Input values</span>
+<span class="sd">    scale_factor : float</span>
+<span class="sd">        Scaling factor</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        exp(-scale_factor * input_array)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_array</span><span class="p">)):</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">scale_factor</span> <span class="o">*</span> <span class="n">input_array</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

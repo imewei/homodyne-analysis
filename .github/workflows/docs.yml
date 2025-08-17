@@ -1,0 +1,88 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs,performance]
+        # Don't require MCMC dependencies for docs build
+    
+    - name: Build documentation
+      run: |
+        cd sphinx_docs
+        make html
+    
+    - name: Upload documentation artifacts
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: sphinx_docs/_build/html
+  
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+
+  test-docs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs,performance]
+    
+    - name: Test documentation build
+      run: |
+        cd sphinx_docs
+        make html
+        # Check for critical errors that would prevent deployment
+        if [ -f _build/html/index.html ]; then
+          echo "✅ Documentation built successfully"
+        else
+          echo "❌ Documentation build failed - index.html not found"
+          exit 1
+        fi
