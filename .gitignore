@@ -3,6 +3,7 @@ data/
 homodyne_analysis_results/
 homodyne_results/
 homodyne_analysis_results.json
+WARP.md
 
 # Benchmark
 .benchmarks
