@@ -155,8 +155,8 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 15000,
-        "max": 20000,
+        "min": 1e-3,
+        "max": 1e6,
         "type": "log-uniform",
         "prior_mu": 4.6,
         "prior_sigma": 0.5,
@@ -166,8 +166,8 @@
       },
       {
         "name": "alpha",
-        "min": -1.8,
-        "max": -1.2,
+        "min": -2.0,
+        "max": 2.0,
         "type": "uniform",
         "prior_mu": 0.0,
         "prior_sigma": 0.5,
@@ -177,8 +177,8 @@
       },
       {
         "name": "D_offset",
-        "min": 0,
-        "max": 5,
+        "min": -5000,
+        "max": 5000,
         "type": "uniform",
         "prior_mu": 0.0,
         "prior_sigma": 500.0,
@@ -296,9 +296,10 @@
       "backend": "threading"
     },
     "noise_model": {
-      "use_simple_forward_model": true,
+      "use_simple_forward_model": false,
       "sigma_prior": 0.1,
-      "_isotropic_note": "Simple forward model appropriate for isotropic case"
+      "_isotropic_note": "Full forward model with scaling optimization enabled for MCMC consistency",
+      "_mcmc_note": "MCMC ALWAYS uses scaling optimization to match classical/Bayesian optimization results"
     }
   },
   "output_settings": {
