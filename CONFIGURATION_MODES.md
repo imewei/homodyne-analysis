@@ -102,7 +102,7 @@ To specify the analysis mode in your configuration file:
 | **phi_angles_file loading** | ❌ Skipped | ✅ Loaded | ✅ Required |
 | **Angle filtering** | ❌ Auto-disabled | ✅ Enabled | ✅ Recommended |
 | **Active parameters** | 3 (D0, α, D_offset) | 3 (D0, α, D_offset) | 7 (all parameters) |
-| **Scaling optimization** | ❌ Disabled | ✅ Enabled | ✅ Enabled |
+| **Scaling optimization** | ✅ Always enabled | ✅ Always enabled | ✅ Always enabled |
 | **MCMC draws (suggested)** | 8,000 | 8,000 | 10,000+ |
 | **Optimization iterations** | 3,000 | 3,000 | 5,000 |
 
@@ -255,6 +255,52 @@ If you have existing configurations with just `"static_mode": true`:
 - Start with static isotropic mode to verify basic functionality
 - Use anisotropic mode with angle filtering before full flow analysis
 - Limit MCMC draws for initial testing
+
+## Configuration Reference
+
+### active_parameters Setting
+
+The `active_parameters` field in the configuration allows you to specify which parameters should be optimized and displayed in plots. This is automatically set in the mode-specific configuration templates but can be customized:
+
+**Configuration Location**:
+```json
+{
+  "initial_parameters": {
+    "active_parameters": ["D0", "alpha", "D_offset"]
+  }
+}
+```
+
+**Mode-Specific Defaults**:
+- **Static Isotropic/Anisotropic**: `["D0", "alpha", "D_offset"]` (3 parameters)
+- **Laminar Flow**: `["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]` (7 parameters)
+
+**Effects on Analysis**:
+- **Plotting**: Parameter evolution plots, MCMC corner plots, and diagnostic plots only show active parameters
+- **Optimization**: Focuses computational resources on relevant parameters  
+- **MCMC**: Reduces parameter space complexity for better convergence
+- **Visualization**: Creates cleaner, more meaningful plots
+
+**Custom Configuration Example**:
+```json
+{
+  "initial_parameters": {
+    "active_parameters": ["D0", "alpha"],
+    "_note": "Focus only on diffusion coefficient and time dependence"
+  }
+}
+```
+
+**Backward Compatibility**: If `active_parameters` is not specified, all parameters are used (legacy behavior).
+
+### Scaling Optimization
+
+**Important Update**: Scaling optimization (`g₂ = offset + contrast × g₁`) is now **always enabled** in all modes for proper chi-squared calculation, regardless of configuration settings. This ensures:
+
+- Accurate fit quality assessment across all modes
+- Proper handling of instrumental effects
+- Consistent results between different analysis modes
+- Meaningful comparison between theory and experiment
 
 ## Advanced Topics
 

@@ -226,6 +226,14 @@
       "beta": "Start with 0 (steady flow) for constant shear rate systems",
       "gamma_dot_t_offset": "Often small or zero for controlled shear experiments",
       "phi0": "Start near 0, represents alignment between flow and scattering geometry"
+    },
+    
+    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+    "_active_parameters_note": "OPTIONAL: List of parameters to optimize. If not specified, all parameters are used. For static modes, use only ['D0', 'alpha', 'D_offset']. For flow modes, use all 7 parameters. This affects plotting and optimization focus.",
+    "_active_parameters_examples": {
+      "static_mode": ["D0", "alpha", "D_offset"],
+      "laminar_flow_mode": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+      "note": "Remove or comment out 'active_parameters' to use all parameters (default behavior)"
     }
   },
 

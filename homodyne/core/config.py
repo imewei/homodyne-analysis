@@ -694,14 +694,39 @@ class ConfigManager:
         else:
             return "static_anisotropic"
 
+    def get_active_parameters(self) -> List[str]:
+        """
+        Get list of active parameters from configuration.
+
+        Returns
+        -------
+        List[str]
+            List of parameter names to be optimized and displayed in plots.
+            Falls back to all parameters if not specified in configuration.
+        """
+        initial_params = self.get("initial_parameters", default={})
+        active_params = initial_params.get("active_parameters", [])
+        
+        # If no active_parameters specified, use all parameter names
+        if not active_params:
+            param_names = initial_params.get("parameter_names", [])
+            if param_names:
+                active_params = param_names
+            else:
+                # Ultimate fallback to standard parameter names
+                active_params = ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
+        
+        return active_params
+
     def get_effective_parameter_count(self) -> int:
         """
-        Get the effective number of model parameters based on analysis mode.
+        Get the effective number of model parameters based on active_parameters configuration.
 
         Returns
         -------
         int
-            Number of parameters used in the analysis:
+            Number of parameters used in the analysis based on active_parameters.
+            Falls back to mode-based logic if active_parameters not specified:
             - Static mode: 3 (only diffusion parameters)
             - Laminar flow mode: 7 (all parameters)
         """
@@ -709,7 +734,21 @@ class ConfigManager:
         if hasattr(self, '_cached_values') and 'effective_param_count' in self._cached_values:
             return self._cached_values['effective_param_count']
         
-        return 3 if self.is_static_mode_enabled() else 7
+        # Get active parameters from configuration
+        active_params = self.get_active_parameters()
+        
+        # Use active_parameters if specified, otherwise fall back to mode-based logic
+        if active_params:
+            count = len(active_params)
+        else:
+            count = 3 if self.is_static_mode_enabled() else 7
+        
+        # Cache the result for performance
+        if not hasattr(self, '_cached_values'):
+            self._cached_values = {}
+        self._cached_values['effective_param_count'] = count
+        
+        return count
 
     def get_analysis_settings(self) -> Dict[str, Any]:
         """
