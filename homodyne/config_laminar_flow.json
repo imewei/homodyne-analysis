@@ -426,6 +426,8 @@
     "_comment": "Enhanced validation for laminar flow analysis",
     
     "fit_quality": {
+      "_comment": "Classical optimization fit quality validation for laminar flow",
+      "_applies_to": "Classical optimization methods only (Nelder-Mead, etc.)",
       "overall_chi_squared": {
         "excellent_threshold": 2.0,
         "acceptable_threshold": 5.0,
@@ -442,6 +444,53 @@
         "max_outlier_fraction": 0.25,
         "min_good_angles": 3,
         "_angle_validation_note": "Per-angle validation critical for flow analysis quality"
+      }
+    },
+    
+    "mcmc_convergence": {
+      "_comment": "MCMC convergence validation for 7-parameter laminar flow analysis",
+      "_applies_to": "MCMC/NUTS sampling methods only",
+      "_note": "Flow analysis uses MCMC convergence diagnostics instead of chi-squared",
+      
+      "rhat_thresholds": {
+        "_comment": "R-hat thresholds for complex 7-parameter flow models",
+        "excellent_threshold": 1.01,
+        "_excellent_threshold_note": "R̂ ≤ 1.01 indicates excellent convergence for flow parameters",
+        "good_threshold": 1.05,
+        "_good_threshold_note": "R̂ ≤ 1.05 indicates good convergence for complex flow model",
+        "acceptable_threshold": 1.1,
+        "_acceptable_threshold_note": "R̂ ≤ 1.1 indicates acceptable convergence",
+        "critical_threshold": 1.2,
+        "_critical_threshold_note": "R̂ > 1.2 indicates poor convergence - increase sampling"
+      },
+      
+      "ess_thresholds": {
+        "_comment": "ESS thresholds adjusted for 7-parameter complexity",
+        "excellent_threshold": 500,
+        "_excellent_threshold_note": "ESS ≥ 500 excellent for complex flow parameter space",
+        "good_threshold": 300,
+        "_good_threshold_note": "ESS ≥ 300 good for 7-parameter flow analysis",
+        "acceptable_threshold": 150,
+        "_acceptable_threshold_note": "ESS ≥ 150 acceptable minimum for flow parameters",
+        "minimum_threshold": 100,
+        "_minimum_threshold_note": "ESS < 100 inadequate for reliable flow estimates"
+      },
+      
+      "divergence_thresholds": {
+        "_comment": "Divergence criteria for complex flow geometry",
+        "max_divergences_fraction": 0.03,
+        "_max_divergences_fraction_note": "3% max divergences acceptable for complex flow model",
+        "warning_divergences_fraction": 0.01,
+        "_warning_divergences_fraction_note": "1% divergences warrants investigation"
+      },
+      
+      "quality_assessment": {
+        "_comment": "Flow-specific MCMC quality criteria",
+        "excellent_criteria": "R̂ < 1.01 AND ESS > 500 AND divergences < 1%",
+        "good_criteria": "R̂ < 1.05 AND ESS > 300 AND divergences < 2%",
+        "acceptable_criteria": "R̂ < 1.1 AND ESS > 150 AND divergences < 3%",
+        "poor_criteria": "Any criterion fails to meet acceptable threshold",
+        "_flow_note": "Complex 7-parameter flow models may need higher ESS for reliable estimates"
       }
     },
     

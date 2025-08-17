@@ -428,5 +428,91 @@
       "No angle filtering computational cost",
       "Simpler parameter space for MCMC"
     ]
+  },
+  
+  "validation_rules": {
+    "_comment": "Validation rules for static isotropic mode",
+    
+    "fit_quality": {
+      "_comment": "Classical optimization fit quality for 3-parameter isotropic analysis",
+      "_applies_to": "Classical optimization methods only (Nelder-Mead, etc.)",
+      "overall_chi_squared": {
+        "excellent_threshold": 2.0,
+        "acceptable_threshold": 5.0,
+        "warning_threshold": 10.0,
+        "critical_threshold": 20.0,
+        "_isotropic_note": "Isotropic averaging may improve fit quality vs anisotropic"
+      },
+      
+      "per_angle_chi_squared": {
+        "excellent_threshold": 2.0,
+        "acceptable_threshold": 5.0,
+        "warning_threshold": 10.0,
+        "outlier_threshold_multiplier": 2.5,
+        "max_outlier_fraction": 0.25,
+        "min_good_angles": 1,
+        "_min_good_angles_note": "Only 1 angle minimum for isotropic (single dummy angle)"
+      }
+    },
+    
+    "mcmc_convergence": {
+      "_comment": "MCMC convergence validation for 3-parameter static isotropic analysis",
+      "_applies_to": "MCMC/NUTS sampling methods only",
+      "_note": "Isotropic mode uses MCMC convergence diagnostics instead of chi-squared",
+      
+      "rhat_thresholds": {
+        "_comment": "R-hat thresholds for simplified 3-parameter isotropic model",
+        "excellent_threshold": 1.01,
+        "_excellent_threshold_note": "R̂ ≤ 1.01 indicates excellent convergence",
+        "good_threshold": 1.05,
+        "_good_threshold_note": "R̂ ≤ 1.05 indicates good convergence for isotropic model",
+        "acceptable_threshold": 1.1,
+        "_acceptable_threshold_note": "R̂ ≤ 1.1 indicates acceptable convergence",
+        "critical_threshold": 1.15,
+        "_critical_threshold_note": "R̂ > 1.15 indicates poor convergence"
+      },
+      
+      "ess_thresholds": {
+        "_comment": "ESS thresholds for 3-parameter isotropic space",
+        "excellent_threshold": 400,
+        "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space",
+        "good_threshold": 200,
+        "_good_threshold_note": "ESS ≥ 200 good for isotropic analysis",
+        "acceptable_threshold": 100,
+        "_acceptable_threshold_note": "ESS ≥ 100 acceptable for static isotropic",
+        "minimum_threshold": 50,
+        "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates"
+      },
+      
+      "divergence_thresholds": {
+        "_comment": "Divergence criteria for simple isotropic geometry",
+        "max_divergences_fraction": 0.01,
+        "_max_divergences_fraction_note": "1% max divergences for simple isotropic model",
+        "warning_divergences_fraction": 0.005,
+        "_warning_divergences_fraction_note": "0.5% divergences warrants investigation"
+      },
+      
+      "quality_assessment": {
+        "_comment": "Isotropic-specific MCMC quality criteria",
+        "excellent_criteria": "R̂ < 1.01 AND ESS > 400 AND divergences < 0.5%",
+        "good_criteria": "R̂ < 1.05 AND ESS > 200 AND divergences < 1%",
+        "acceptable_criteria": "R̂ < 1.1 AND ESS > 100 AND divergences < 1%",
+        "poor_criteria": "Any criterion fails to meet acceptable threshold",
+        "_isotropic_note": "3-parameter isotropic model should converge efficiently"
+      }
+    },
+    
+    "parameter_validation": {
+      "_comment": "Parameter validation for static isotropic mode",
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true,
+      "_isotropic_constraints": [
+        "D0 must be positive (physical diffusion)",
+        "Only D0, alpha, D_offset are optimized",
+        "Flow parameters automatically set to 0",
+        "phi0 automatically set to 0 (irrelevant in isotropic mode)"
+      ]
+    }
   }
 }

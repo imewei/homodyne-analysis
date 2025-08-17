@@ -285,18 +285,68 @@ def run_analysis(args: argparse.Namespace) -> None:
                 if method_key in results and "parameters" in results[method_key]:
                     method_params = results[method_key]["parameters"]
                     if method_params is not None:
-                        try:
-                            analyzer.analyze_per_angle_chi_squared(
-                                np.array(method_params),
-                                phi_angles,
-                                c2_exp,
-                                method_name=method,
-                                save_to_file=True,
-                                output_dir=args.output_dir
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                f"Per-angle analysis failed for {method}: {e}")
+                        if method.upper() == "MCMC":
+                            # For MCMC, log convergence diagnostics instead of chi-squared
+                            try:
+                                mcmc_results = results[method_key]
+                                if "diagnostics" in mcmc_results:
+                                    diag = mcmc_results["diagnostics"]
+                                    logger.info(f"MCMC convergence diagnostics [{method}]:")
+                                    logger.info(f"  Convergence status: {diag.get('assessment', 'Unknown')}")
+                                    logger.info(f"  Maximum R̂ (R-hat): {diag.get('max_rhat', 'N/A'):.4f}")
+                                    logger.info(f"  Minimum ESS: {diag.get('min_ess', 'N/A'):.0f}")
+                                    
+                                    # Quality assessment based on convergence criteria from config
+                                    max_rhat = diag.get('max_rhat', float('inf'))
+                                    min_ess = diag.get('min_ess', 0)
+                                    
+                                    # Get thresholds from config or use defaults
+                                    config = getattr(analyzer, 'config', {})
+                                    validation_config = config.get("validation_rules", {})
+                                    mcmc_config = validation_config.get("mcmc_convergence", {})
+                                    rhat_thresholds = mcmc_config.get("rhat_thresholds", {})
+                                    ess_thresholds = mcmc_config.get("ess_thresholds", {})
+                                    
+                                    excellent_rhat = rhat_thresholds.get("excellent_threshold", 1.01)
+                                    good_rhat = rhat_thresholds.get("good_threshold", 1.05)
+                                    acceptable_rhat = rhat_thresholds.get("acceptable_threshold", 1.1)
+                                    
+                                    excellent_ess = ess_thresholds.get("excellent_threshold", 400)
+                                    good_ess = ess_thresholds.get("good_threshold", 200)
+                                    acceptable_ess = ess_thresholds.get("acceptable_threshold", 100)
+                                    
+                                    if max_rhat < excellent_rhat and min_ess > excellent_ess:
+                                        quality = "excellent"
+                                    elif max_rhat < good_rhat and min_ess > good_ess:
+                                        quality = "good"
+                                    elif max_rhat < acceptable_rhat and min_ess > acceptable_ess:
+                                        quality = "acceptable"
+                                    else:
+                                        quality = "poor"
+                                    
+                                    logger.info(f"  MCMC quality: {quality.upper()}")
+                                    
+                                    # Additional metrics if available
+                                    if "trace" in mcmc_results:
+                                        logger.info(f"  Sampling completed with posterior analysis available")
+                                else:
+                                    logger.warning(f"No convergence diagnostics available for {method}")
+                            except Exception as e:
+                                logger.warning(f"Failed to log MCMC diagnostics for {method}: {e}")
+                        else:
+                            # For classical optimization methods, use chi-squared analysis
+                            try:
+                                analyzer.analyze_per_angle_chi_squared(
+                                    np.array(method_params),
+                                    phi_angles,
+                                    c2_exp,
+                                    method_name=method,
+                                    save_to_file=True,
+                                    output_dir=args.output_dir
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Per-angle analysis failed for {method}: {e}")
 
             logger.info("✓ Analysis completed successfully!")
             logger.info(f"Successful methods: {', '.join(successful_methods)}")
@@ -401,8 +451,6 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         logger.error(error_msg)
         logger.error("❌ Please check your data files and configuration")
         return None
-
-
 
 
 def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
@@ -702,10 +750,10 @@ Examples:
   %(prog)s --method all --verbose             # Run all methods with debug logging
   %(prog)s --config my_config.json            # Use custom config file
   %(prog)s --output-dir ./results --verbose   # Custom output directory with verbose logging
-  %(prog)s --static                           # Force static mode (zero shear, 3 parameters)
+  %(prog)s --static-isotropic                 # Force static mode (zero shear, 3 parameters)
   %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
-  %(prog)s --static --method all              # Run all methods in static mode
-        """
+  %(prog)s --static-isotropic --method all    # Run all methods in static mode
+        """,
     )
 
     parser.add_argument(
@@ -780,7 +828,7 @@ Examples:
     logger.info(f"Configuration file: {args.config}")
     logger.info(f"Output directory: {args.output_dir}")
     logger.info(f"Log file: {args.output_dir / 'run.log'}")
-    
+
     # Log analysis mode selection
     if args.static:
         logger.info("Command-line mode: static anisotropic (3 parameters, with angle selection)")

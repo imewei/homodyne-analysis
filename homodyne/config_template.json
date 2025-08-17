@@ -740,7 +740,8 @@
     },
     
     "fit_quality": {
-      "_comment": "Reduced chi-squared fit quality validation with updated thresholds",
+      "_comment": "Classical optimization fit quality validation with reduced chi-squared thresholds",
+      "_applies_to": "Classical optimization methods only (Nelder-Mead, etc.)",
       "overall_chi_squared": {
         "excellent_threshold": 2.0,
         "_excellent_threshold_note": "Overall reduced chi-squared ≤2.0 indicates excellent fit",
@@ -765,6 +766,53 @@
         "_max_outlier_fraction_note": "Maximum acceptable fraction of outlier angles (0.0-1.0)",
         "min_good_angles": 3,
         "_min_good_angles_note": "Minimum number of angles with acceptable fit required"
+      }
+    },
+    
+    "mcmc_convergence": {
+      "_comment": "MCMC convergence validation criteria for Bayesian analysis quality assessment",
+      "_applies_to": "MCMC/NUTS sampling methods only",
+      "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment",
+      
+      "rhat_thresholds": {
+        "_comment": "R-hat (potential scale reduction factor) convergence criteria",
+        "excellent_threshold": 1.01,
+        "_excellent_threshold_note": "R̂ ≤ 1.01 indicates excellent chain convergence",
+        "good_threshold": 1.05,
+        "_good_threshold_note": "R̂ ≤ 1.05 indicates good chain convergence",
+        "acceptable_threshold": 1.1,
+        "_acceptable_threshold_note": "R̂ ≤ 1.1 indicates acceptable chain convergence",
+        "critical_threshold": 1.2,
+        "_critical_threshold_note": "R̂ > 1.2 indicates poor convergence requiring attention"
+      },
+      
+      "ess_thresholds": {
+        "_comment": "Effective Sample Size thresholds for sampling efficiency",
+        "excellent_threshold": 400,
+        "_excellent_threshold_note": "ESS ≥ 400 indicates excellent sampling efficiency",
+        "good_threshold": 200,
+        "_good_threshold_note": "ESS ≥ 200 indicates good sampling efficiency",
+        "acceptable_threshold": 100,
+        "_acceptable_threshold_note": "ESS ≥ 100 indicates acceptable sampling efficiency",
+        "minimum_threshold": 50,
+        "_minimum_threshold_note": "ESS < 50 indicates inadequate sampling"
+      },
+      
+      "divergence_thresholds": {
+        "_comment": "NUTS divergence diagnostics (if available)",
+        "max_divergences_fraction": 0.05,
+        "_max_divergences_fraction_note": "Maximum acceptable fraction of divergent transitions",
+        "warning_divergences_fraction": 0.01,
+        "_warning_divergences_fraction_note": "Issue warning if divergences exceed this fraction"
+      },
+      
+      "quality_assessment": {
+        "_comment": "Combined quality assessment criteria for MCMC",
+        "excellent_criteria": "R̂ < 1.01 AND ESS > 400 AND divergences < 1%",
+        "good_criteria": "R̂ < 1.05 AND ESS > 200 AND divergences < 3%", 
+        "acceptable_criteria": "R̂ < 1.1 AND ESS > 100 AND divergences < 5%",
+        "poor_criteria": "Any criterion fails to meet acceptable threshold",
+        "_interpretation_note": "MCMC quality based on convergence diagnostics, not chi-squared"
       }
     },
     
