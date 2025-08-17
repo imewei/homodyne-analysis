@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "_comment": "Project metadata and version information",
+    "_comment": "Project metadata for static isotropic analysis",
     "config_version": "6.0",
-    "description": "Configuration for Homodyne Scattering Analysis - XPCS under Nonequilibrium Laminar Flow",
-    "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
+    "description": "Static Isotropic Scattering Analysis - No flow, no angular dependence",
+    "analysis_mode": "static_isotropic",
     "created_date": "2025-08-16",
     "updated_date": "2025-08-16",
     "authors": [
@@ -15,98 +15,65 @@
     "script_compatibility": "homodyne.py"
   },
   "experimental_data": {
-    "_comment": "Data source and loading configuration",
-    "description": "Data source and loading configuration",
+    "_comment": "Data configuration for isotropic static mode",
+    "description": "Data source configuration - phi_angles_file ignored in isotropic mode",
     "data_folder_path": "./data/Simon/",
-    "_data_folder_path_note": "Path to directory containing experimental data files",
     "data_file_name": "your_data_file.hdf",
-    "_data_file_name_note": "Main experimental data file (HDF5 format recommended)",
     "phi_angles_path": "./data/Simon/",
-    "_phi_angles_path_note": "Directory containing scattering angle information",
+    "_phi_angles_path_note": "Path ignored in isotropic mode - dummy angles used instead",
     "phi_angles_file": "phi_list.txt",
-    "_phi_angles_file_note": "File containing phi angles (one angle per line)",
+    "_phi_angles_file_note": "File ignored in isotropic mode - single dummy angle used",
     "exchange_key": "exchange",
-    "_exchange_key_note": "HDF5 dataset key for correlation data",
     "cache_file_path": "./data/Simon/",
-    "_cache_file_path_note": "Directory for cached processed data",
-    "cache_filename_template": "twotime_plot_100pa_fig2c.npz",
-    "_cache_filename_template_note": "Template for cache filenames with frame range",
+    "cache_filename_template": "cached_c2_isotropic_frames_{start_frame}_{end_frame}.npz",
     "cache_compression": true,
-    "_cache_compression_note": "Enable compression for cache files (saves disk space)",
     "data_type": "float64",
-    "_data_type_note": "Data precision: float32 (faster) or float64 (more precise)",
     "file_format": "NPZ",
-    "_file_format_note": "Supported formats: HDF5, NPZ (NPZ recommended for better compatibility)",
     "preprocessing": {
-      "_comment": "Data preprocessing options",
+      "_comment": "Optimized for isotropic mode",
       "apply_diagonal_correction": true,
-      "_apply_diagonal_correction_note": "Remove diagonal artifacts from correlation matrices",
       "vectorized_correction": true,
-      "_vectorized_correction_note": "Use vectorized operations for speed",
       "cache_processed_data": true,
-      "_cache_processed_data_note": "Save processed data to avoid recomputation",
       "normalize_data": true,
-      "_normalize_data_note": "Apply data normalization",
-      "normalization_method": "baseline",
-      "_normalization_method_note": "Options: baseline, zscore, minmax"
+      "normalization_method": "baseline"
     }
   },
   "analyzer_parameters": {
-    "_comment": "Core analysis parameters and experimental geometry",
-    "description": "Core analysis parameters and experimental geometry",
+    "_comment": "Analysis parameters optimized for static isotropic mode",
     "temporal": {
-      "_comment": "Time-related parameters",
       "dt": 0.5,
-      "_dt_note": "Time step between correlation frames (adjust based on your acquisition)",
+      "_dt_note": "Time step - same importance as other modes",
       "dt_unit": "seconds",
       "start_frame": 400,
-      "_start_frame_note": "First frame to analyze (skip initial equilibration)",
-      "end_frame": 1000,
-      "_end_frame_note": "Last frame to analyze (or null for all frames)",
-      "frame_description": "Analysis window within experimental data"
+      "end_frame": 1000
     },
     "scattering": {
-      "_comment": "Scattering geometry parameters",
       "wavevector_q": 0.0237,
-      "_wavevector_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "q_description": "Scattering wavevector magnitude (q = 4π sin(θ/2)/λ)",
-      "typical_range": [
-        0.001,
-        0.1
-      ],
-      "_typical_range_note": "Typical q-range for XPCS experiments"
+      "_wavevector_q_note": "q-vector magnitude - isotropic so angular averaging applied",
+      "q_unit": "Å⁻¹"
     },
     "geometry": {
-      "_comment": "Sample geometry parameters",
+      "_comment": "Geometry parameters - gap still relevant for potential future use",
       "stator_rotor_gap": 2000000,
-      "_stator_rotor_gap_note": "Gap between stator and rotor in Angstroms",
       "gap_unit": "Å",
-      "gap_description": "Shear cell gap between stator and rotor",
-      "gap_in_microns": 200,
-      "_gap_in_microns_note": "Same gap in microns for reference"
+      "_gap_note": "Gap parameter kept for consistency but not used in static mode"
     },
     "computational": {
-      "_comment": "Performance and resource settings",
       "num_threads": 8,
-      "_num_threads_note": "Number of CPU threads to use (or 'auto' for automatic)",
       "auto_detect_cores": true,
-      "_auto_detect_cores_note": "Automatically detect available CPU cores",
       "max_threads_limit": 16,
-      "_max_threads_limit_note": "Maximum number of threads even with auto-detection",
-      "memory_limit_gb": 8,
-      "_memory_limit_gb_note": "Memory limit in GB (adjust based on available RAM)"
+      "memory_limit_gb": 8
     }
   },
   "initial_parameters": {
-    "_comment": "Starting values for optimization - CRITICAL: Adjust these for your system",
-    "description": "Starting values for optimization based on physical model",
+    "_comment": "Initial parameters for static isotropic mode - only diffusion parameters matter",
+    "description": "Only D0, alpha, D_offset are physically meaningful in static isotropic mode",
     "values": [
       1.80E+04,
       -1.59E+00,
       3.10E+00
     ],
-    "_values_note": "Order: [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
+    "_values_note": "Last 4 parameters (shear + phi0) automatically set to 0 in static mode",
     "parameter_names": [
       "D0",
       "alpha",
@@ -126,117 +93,72 @@
       "degrees"
     ],
     "physical_meaning": {
-      "D0": "Reference diffusion coefficient",
-      "alpha": "Power-law exponent for D(t) evolution (0=constant, <0=subdiffusion)",
-      "D_offset": "Baseline diffusion coefficient",
-      "gamma_dot_t0": "Reference shear rate",
-      "beta": "Power-law exponent for γ̇(t) evolution (0=steady flow)",
-      "gamma_dot_t_offset": "Baseline shear rate",
-      "phi0": "Angular offset between flow direction and scattering vector"
+      "D0": "Reference diffusion coefficient - PRIMARY PARAMETER",
+      "alpha": "Power-law exponent for D(t) evolution - PRIMARY PARAMETER",
+      "D_offset": "Baseline diffusion coefficient - PRIMARY PARAMETER",
+      "gamma_dot_t0": "Ignored in static mode (automatically set to 0)",
+      "beta": "Ignored in static mode (automatically set to 0)",
+      "gamma_dot_t_offset": "Ignored in static mode (automatically set to 0)",
+      "phi0": "Irrelevant in isotropic mode (automatically set to 0)"
     },
-    "model_equations": {
-      "_comment": "Mathematical model equations",
-      "diffusion": "D(t) = D₀(t/t₀)^α + D_offset",
-      "shear_rate": "γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset",
-      "correlation": "c₂ = 1 + β[exp(-q²∫D(t)dt)] × sinc²[(qh/2π)∫γ̇(t)cos(φ)dt]"
-    },
-    "parameter_estimation_tips": {
-      "_comment": "Guidelines for estimating initial parameters",
-      "D0": "Estimate from single-particle diffusion measurements or literature values",
-      "alpha": "Start with 0 (constant diffusion) and adjust based on system behavior",
-      "D_offset": "Small positive value, often order of magnitude smaller than D0",
-      "gamma_dot_t0": "Estimate from rheology measurements or applied shear conditions",
-      "beta": "Start with 0 (steady flow) for constant shear rate systems",
-      "gamma_dot_t_offset": "Often small or zero for controlled shear experiments",
-      "phi0": "Start near 0, represents alignment between flow and scattering geometry"
-    }
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
+    "_active_parameters_note": "Only these 3 parameters are optimized in static isotropic mode"
   },
   "optimization_config": {
-    "_comment": "Configuration for optimization methods",
-    "description": "Configuration for optimization methods",
+    "_comment": "Optimization for static isotropic mode",
     "angle_filtering": {
-      "_comment": "Angle filtering settings for optimization",
-      "enabled": true,
-      "_enabled_note": "Enable angle filtering to focus optimization on specific angular ranges",
-      "target_ranges": [
-        {
-          "min_angle": -10.0,
-          "max_angle": 10.0,
-          "_note": "First angular range for optimization (around 0 degrees)"
-        }
-      ],
-      "_target_ranges_note": "Angular ranges in degrees where optimization focuses",
+      "_comment": "Angle filtering automatically disabled in isotropic mode",
+      "enabled": false,
+      "_enabled_note": "Automatically disabled in static isotropic mode regardless of setting",
+      "target_ranges": [],
+      "_target_ranges_note": "Empty - no angle filtering in isotropic mode",
       "fallback_to_all_angles": true,
-      "_fallback_to_all_angles_note": "Use all angles if no angles found in target ranges",
-      "performance_impact": {
-        "_comment": "Expected performance improvements",
-        "typical_data_reduction": "80-90% fewer data points",
-        "expected_speedup": "3-5x faster optimization",
-        "memory_savings": "Significant reduction in memory usage"
-      }
+      "_isotropic_mode_note": "Angle filtering is automatically disabled for static isotropic mode"
     },
     "classical_optimization": {
-      "_comment": "Traditional optimization algorithms",
       "methods": [
         "Nelder-Mead"
       ],
-      "_methods_note": "Optimized to use only Nelder-Mead for best performance",
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 5000,
-          "_maxiter_note": "Maximum iterations (increased for better convergence)",
+          "maxiter": 3000,
+          "_maxiter_note": "Reduced iterations since only 3 parameters to optimize",
           "xatol": 1e-08,
-          "_xatol_note": "Absolute error in parameters (balanced precision vs speed)",
           "fatol": 1e-08,
-          "_fatol_note": "Absolute error in function value",
-          "adaptive": true,
-          "_adaptive_note": "Use adaptive algorithm variant"
+          "adaptive": true
         }
-      },
-      "selection_strategy": "best_chi_squared",
-      "_selection_strategy_note": "How to choose best result: best_chi_squared, consensus, first_success"
+      }
     },
     "mcmc_sampling": {
-      "_comment": "Markov Chain Monte Carlo sampling",
       "enabled": true,
-      "_enabled_note": "Enable MCMC sampling (requires PyMC)",
       "sampler": "NUTS",
-      "_sampler_note": "Sampling algorithm: NUTS (recommended), Metropolis, HamiltonianMC",
-      "draws": 10000,
-      "_draws_note": "Number of MCMC samples to draw",
+      "draws": 8000,
+      "_draws_note": "Fewer draws needed with only 3 parameters",
       "tune": 1000,
-      "_tune_note": "Number of tuning steps before sampling",
       "chains": 4,
-      "_chains_note": "Number of parallel MCMC chains",
       "cores": 4,
-      "_cores_note": "CPU cores for parallel sampling",
       "target_accept": 0.95,
-      "_target_accept_note": "Target acceptance rate for NUTS sampler (increased for better convergence)",
       "max_treedepth": 10,
-      "_max_treedepth_note": "Maximum tree depth for NUTS",
-      "return_inferencedata": true,
-      "_return_inferencedata_note": "Return ArviZ InferenceData object"
+      "return_inferencedata": true
     }
   },
   "parameter_space": {
-    "_comment": "Parameter bounds and priors for optimization",
-    "description": "Parameter bounds and prior distributions",
+    "_comment": "Parameter bounds - only first 3 are used in static isotropic mode",
     "bounds": [
       {
         "name": "D0",
         "min": 0.001,
-        "_min_note": "Lower bound - adjust based on expected diffusion rates",
         "max": 1000000.0,
-        "_max_note": "Upper bound - should encompass reasonable values",
         "type": "log-uniform",
-        "_type_note": "Distribution type: uniform, log-uniform, normal",
         "prior_mu": 4.6,
-        "_prior_mu_note": "Prior mean (log scale for log-uniform)",
         "prior_sigma": 0.5,
-        "_prior_sigma_note": "Prior standard deviation",
         "unit": "Å²/s",
         "physical_constraint": "positive",
-        "_physical_constraint_note": "Physical constraints: positive, negative, none"
+        "_note": "PRIMARY PARAMETER - reference diffusion coefficient"
       },
       {
         "name": "alpha",
@@ -246,7 +168,8 @@
         "prior_mu": 0.0,
         "prior_sigma": 0.5,
         "unit": "dimensionless",
-        "physical_constraint": "none"
+        "physical_constraint": "none",
+        "_note": "PRIMARY PARAMETER - diffusion time dependence exponent"
       },
       {
         "name": "D_offset",
@@ -256,671 +179,203 @@
         "prior_mu": 0.0,
         "prior_sigma": 500.0,
         "unit": "Å²/s",
-        "physical_constraint": "none"
+        "physical_constraint": "none",
+        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient"
       },
       {
         "name": "gamma_dot_t0",
-        "min": 1e-06,
-        "max": 1.0,
-        "type": "log-uniform",
-        "prior_mu": -4.60517,
-        "prior_sigma": 0.5,
+        "min": 0.0,
+        "max": 0.0,
+        "_bounds_note": "Fixed at 0 in static mode",
+        "type": "fixed",
         "unit": "s⁻¹",
-        "physical_constraint": "positive"
+        "physical_constraint": "fixed_zero"
       },
       {
         "name": "beta",
-        "min": -2.0,
-        "max": 2.0,
-        "type": "uniform",
-        "prior_mu": 0.0,
-        "prior_sigma": 0.5,
+        "min": 0.0,
+        "max": 0.0,
+        "_bounds_note": "Fixed at 0 in static mode",
+        "type": "fixed",
         "unit": "dimensionless",
-        "physical_constraint": "none"
+        "physical_constraint": "fixed_zero"
       },
       {
         "name": "gamma_dot_t_offset",
-        "min": -0.1,
-        "max": 0.1,
-        "type": "uniform",
-        "prior_mu": 0.0,
-        "prior_sigma": 0.05,
+        "min": 0.0,
+        "max": 0.0,
+        "_bounds_note": "Fixed at 0 in static mode",
+        "type": "fixed",
         "unit": "s⁻¹",
-        "physical_constraint": "none"
+        "physical_constraint": "fixed_zero"
       },
       {
         "name": "phi0",
-        "min": -15.0,
-        "max": 15.0,
-        "type": "uniform",
-        "prior_mu": 0.0,
-        "prior_sigma": 15.0,
+        "min": 0.0,
+        "max": 0.0,
+        "_bounds_note": "Fixed at 0 - irrelevant in isotropic mode",
+        "type": "fixed",
         "unit": "degrees",
-        "physical_constraint": "angular"
+        "physical_constraint": "fixed_zero"
       }
     ]
   },
   "analysis_settings": {
-    "_comment": "Analysis mode and model configuration",
-    "description": "Configure the analysis mode for different experimental conditions",
+    "_comment": "Static isotropic mode configuration",
     "static_mode": true,
-    "_static_mode_note": "Set to true for static (no-flow) analysis where γ̇=0, β=0, γ̇_offset=0, φ₀=0",
-    "_static_mode_description": "In static mode, sinc²(0)=1 and only diffusion contribution g₁_diff remains: g₂(t₁,t₂) ~ [exp(-q²/2 ∫|t₂-t₁| D(t')dt')]². Angular offset φ₀ is irrelevant and automatically set to 0.",
+    "_static_mode_note": "REQUIRED: Must be true for static analysis",
+    "static_submode": "isotropic",
+    "_static_submode_note": "REQUIRED: Must be 'isotropic' for this template",
     "model_description": {
-      "static_case": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) = g₁_diff(t₁,t₂), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
-      "laminar_flow_case": "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂) where g₁_shear = [sinc(Φ)]² and Φ = (1/2π)qL cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
-    }
-  },
-  "workflow_integration": {
-    "_comment": "Analysis workflow and plotting integration settings",
-    "description": "Configure integration between analysis workflow and plotting/visualization",
-    "analysis_workflow": {
-      "_comment": "Core analysis workflow settings",
-      "auto_generate_plots": true,
-      "_auto_generate_plots_note": "Automatically generate plots after analysis completion",
-      "plot_integration_enabled": true,
-      "_plot_integration_enabled_note": "Enable plotting integration in analysis workflow",
-      "cache_plot_data": true,
-      "_cache_plot_data_note": "Cache experimental and theoretical data for plotting",
-      "save_intermediate_plots": false,
-      "_save_intermediate_plots_note": "Save plots during intermediate analysis steps"
-    },
-    "mcmc_integration": {
-      "_comment": "MCMC workflow integration settings",
-      "auto_save_traces": true,
-      "_auto_save_traces_note": "Automatically save MCMC trace data to NetCDF files",
-      "trace_file_format": "netcdf",
-      "_trace_file_format_note": "Format for MCMC trace files: netcdf, pickle, json",
-      "include_warmup_in_traces": false,
-      "_include_warmup_in_traces_note": "Include warmup samples in saved traces",
-      "convergence_diagnostics_auto": true,
-      "_convergence_diagnostics_auto_note": "Automatically compute convergence diagnostics",
-      "plot_mcmc_results": true,
-      "_plot_mcmc_results_note": "Generate MCMC plots automatically after sampling"
-    },
-    "data_management": {
-      "_comment": "Data caching and management for workflow integration",
-      "experimental_data_cache": true,
-      "_experimental_data_cache_note": "Cache experimental data for plotting and analysis",
-      "theoretical_data_cache": true,
-      "_theoretical_data_cache_note": "Cache generated theoretical data",
-      "cache_directory": "./cache",
-      "_cache_directory_note": "Directory for workflow data caching",
-      "auto_cleanup_cache": false,
-      "_auto_cleanup_cache_note": "Automatically clean old cache files",
-      "cache_retention_days": 30,
-      "_cache_retention_days_note": "Number of days to retain cache files"
-    },
-    "error_handling": {
-      "_comment": "Error handling during workflow integration",
-      "continue_on_plot_errors": true,
-      "_continue_on_plot_errors_note": "Continue analysis if plotting fails",
-      "log_plot_errors": true,
-      "_log_plot_errors_note": "Log detailed error information for plotting failures",
-      "fallback_plotting": true,
-      "_fallback_plotting_note": "Use simplified plotting if advanced features fail",
-      "validate_plot_data": true,
-      "_validate_plot_data_note": "Validate data before attempting to plot"
+      "current_mode": "static_isotropic_case",
+      "equation": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
+      "description": "Pure diffusion with no angular dependence",
+      "key_features": [
+        "No flow effects (γ̇ = 0)",
+        "No angular dependence (isotropic)",
+        "Only diffusion dynamics D(t) = D₀(t/t₀)^α + D_offset",
+        "3 active parameters: D0, alpha, D_offset"
+      ]
     }
   },
   "advanced_settings": {
-    "_comment": "Advanced configuration options",
-    "description": "Advanced analysis and computational settings",
     "data_loading": {
-      "_comment": "Data loading and preprocessing parameters",
       "use_diagonal_correction": true,
-      "_use_diagonal_correction_note": "Apply diagonal correction to correlation matrices",
-      "vectorized_diagonal_fix": true,
-      "_vectorized_diagonal_fix_note": "Use vectorized operations for diagonal correction"
+      "vectorized_diagonal_fix": true
     },
     "chi_squared_calculation": {
-      "_comment": "Chi-squared calculation parameters",
       "method": "standard",
-      "_method_note": "Options: standard, weighted, robust",
       "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
       "_scaling_details": {
         "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
-        "_accounts_for": ["instrumental response", "background signals", "detector variations", "normalization differences"],
+        "_accounts_for": [
+          "instrumental response",
+          "background signals",
+          "detector variations",
+          "normalization differences"
+        ],
         "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
-        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]"
+        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]",
+        "_isotropic_mode_benefits": [
+          "Single scaling relationship applied (no angular dependence)",
+          "Faster computation due to simplified geometry",
+          "Robust fitting with isotropic averaging",
+          "Consistent results independent of sample orientation"
+        ],
+        "_typical_values_isotropic": {
+          "contrast": "0.5-2.0 (narrower range due to isotropic averaging)",
+          "offset": "0.01-0.05 (typically smaller due to reduced background anisotropy)"
+        }
       },
       "uncertainty_estimation_factor": 0.1,
-      "_uncertainty_estimation_factor_note": "Factor for estimating measurement uncertainties",
       "minimum_sigma": 1e-10,
-      "_minimum_sigma_note": "Minimum uncertainty to prevent division by zero",
       "fast_computation": true,
-      "_fast_computation_note": "Use optimized chi-squared kernels for performance",
-      "uncertainty_calculation": {
-        "_comment": "Reduced chi-squared uncertainty calculation settings",
-        "enable_uncertainty": true,
-        "_enable_uncertainty_note": "Calculate uncertainty in reduced chi-squared from per-angle variation",
-        "report_uncertainty": true,
-        "_report_uncertainty_note": "Include uncertainty in log output and results",
-        "minimum_angles_for_uncertainty": 2,
-        "_minimum_angles_for_uncertainty_note": "Minimum number of angles required for uncertainty calculation",
-        "_interpretation_note": "Uncertainty in reduced chi-squared from per-angle variation: Small uncertainty (< 10% of χ²_red) = consistent fit across angles; Large uncertainty (> 50% of χ²_red) = high angle variability, potential systematic issues or model inadequacy. Use for quality assessment: consistent uncertainty indicates reliable optimization."
-      },
       "validity_check": {
-        "_comment": "Parameter validation settings",
         "check_positive_D0": true,
-        "_check_positive_D0_note": "Validate that D0 parameter is positive",
-        "check_positive_gamma_dot_t0": true,
-        "_check_positive_gamma_dot_t0_note": "Validate that gamma_dot_t0 parameter is positive",
+        "check_positive_gamma_dot_t0": false,
+        "_check_positive_gamma_dot_t0_note": "Disabled - parameter fixed at 0",
         "check_positive_time_dependent": true,
-        "_check_positive_time_dependent_note": "Validate time-dependent parameters",
-        "check_parameter_bounds": true,
-        "_check_parameter_bounds_note": "Validate parameters are within specified bounds"
+        "check_parameter_bounds": true
       }
-    },
-    "numerical_integration": {
-      "_comment": "Numerical integration settings",
-      "method": "simpson",
-      "_method_note": "Integration method: simpson, trapezoid, romberg",
-      "relative_tolerance": 1e-08,
-      "_relative_tolerance_note": "Relative tolerance for integration",
-      "absolute_tolerance": 1e-12,
-      "_absolute_tolerance_note": "Absolute tolerance for integration"
-    },
-    "optimization_controls": {
-      "_comment": "Optimization control parameters",
-      "convergence_tolerance": 1e-08,
-      "_convergence_tolerance_note": "Convergence criterion for optimization",
-      "max_function_evaluations": 10000,
-      "_max_function_evaluations_note": "Maximum function evaluations per optimization",
-      "parameter_scaling": "auto",
-      "_parameter_scaling_note": "Parameter scaling: auto, manual, none",
-      "finite_difference_step": 1e-08,
-      "_finite_difference_step_note": "Step size for numerical gradients"
     }
   },
   "performance_settings": {
-    "_comment": "Performance and resource management",
-    "description": "Performance optimization settings",
     "caching": {
-      "_comment": "Data caching configuration",
       "enable_memory_cache": true,
-      "_enable_memory_cache_note": "Cache frequently used data in memory",
       "enable_disk_cache": true,
-      "_enable_disk_cache_note": "Cache processed data to disk",
       "cache_size_limit_mb": 1000,
-      "_cache_size_limit_mb_note": "Maximum memory cache size in MB",
-      "auto_cleanup": true,
-      "_auto_cleanup_note": "Automatically clean old cache files"
+      "auto_cleanup": true
     },
     "parallel_processing": {
-      "_comment": "Parallel processing settings",
       "enable_multiprocessing": true,
-      "_enable_multiprocessing_note": "Use multiple CPU cores",
       "chunk_size": "auto",
-      "_chunk_size_note": "Data chunk size for parallel processing",
-      "backend": "threading",
-      "_backend_note": "Parallel backend: threading, multiprocessing, joblib"
-    },
-    "memory_management": {
-      "_comment": "Memory usage optimization",
-      "low_memory_mode": false,
-      "_low_memory_mode_note": "Reduce memory usage at cost of speed",
-      "garbage_collection_frequency": 10,
-      "_garbage_collection_frequency_note": "How often to run garbage collection",
-      "memory_monitoring": false,
-      "_memory_monitoring_note": "Monitor memory usage during analysis"
-    },
-    "numba_optimization": {
-      "_comment": "Numba JIT compilation settings",
-      "enable_numba": true,
-      "_enable_numba_note": "Use Numba JIT compilation for speed",
-      "warmup_numba": true,
-      "_warmup_numba_note": "Pre-compile Numba functions on startup",
-      "parallel_numba": true,
-      "_parallel_numba_note": "Enable Numba parallel processing",
-      "cache_numba": true,
-      "_cache_numba_note": "Cache compiled Numba functions"
+      "backend": "threading"
     },
     "noise_model": {
-      "_comment": "MCMC noise model and forward model settings",
       "use_simple_forward_model": true,
-      "_use_simple_forward_model_note": "If True, uses simplified MCMC likelihood (faster but inconsistent with scaling optimization). If False, uses full forward model with per-angle contrast/offset parameters (slower but consistent with chi-squared calculation)",
       "sigma_prior": 0.1,
-      "_sigma_prior_note": "Prior standard deviation for noise parameter in MCMC likelihood",
-      "_scaling_consistency_note": "IMPORTANT: If scaling_optimization is enabled in chi_squared_calculation and use_simple_forward_model=True, MCMC results may not be comparable to classical optimization due to different treatment of per-angle scaling"
-    }
-  },
-  "validation_rules": {
-    "_comment": "Data validation and quality control",
-    "description": "Validation rules and quality checks",
-    "data_quality": {
-      "_comment": "Data quality validation",
-      "check_data_range": true,
-      "_check_data_range_note": "Validate data is within expected range",
-      "correlation_minimum": 0.0,
-      "_correlation_minimum_note": "Minimum allowed correlation value",
-      "correlation_maximum": 10.0,
-      "_correlation_maximum_note": "Maximum allowed correlation value",
-      "check_nan_values": true,
-      "_check_nan_values_note": "Check for NaN values in data",
-      "nan_handling": "raise",
-      "_nan_handling_note": "How to handle NaN: raise, skip, interpolate"
-    },
-    "parameter_validation": {
-      "_comment": "Parameter validation rules",
-      "check_bounds": true,
-      "_check_bounds_note": "Enforce parameter bounds during optimization",
-      "physics_constraints": true,
-      "_physics_constraints_note": "Apply physical constraint checks",
-      "correlation_checks": true,
-      "_correlation_checks_note": "Check for highly correlated parameters"
-    },
-    "fit_quality": {
-      "_comment": "Reduced chi-squared fit quality validation with updated thresholds",
-      "overall_chi_squared": {
-        "excellent_threshold": 2.0,
-        "_excellent_threshold_note": "Overall reduced chi-squared ≤2.0 indicates excellent fit",
-        "acceptable_threshold": 5.0,
-        "_acceptable_threshold_note": "Overall reduced chi-squared ≤5.0 indicates acceptable fit",
-        "warning_threshold": 10.0,
-        "_warning_threshold_note": "Issue warning if overall chi-squared exceeds this",
-        "critical_threshold": 20.0,
-        "_critical_threshold_note": "Flag as critical if chi-squared exceeds this value"
-      },
-      "per_angle_chi_squared": {
-        "excellent_threshold": 2.0,
-        "_excellent_threshold_note": "Per-angle reduced chi-squared ≤2.0 indicates excellent fit",
-        "acceptable_threshold": 5.0,
-        "_acceptable_threshold_note": "Per-angle reduced chi-squared ≤5.0 indicates acceptable fit",
-        "warning_threshold": 10.0,
-        "_warning_threshold_note": "Per-angle reduced chi-squared >5.0 but ≤10.0 indicates warning level",
-        "outlier_threshold_multiplier": 2.5,
-        "_outlier_threshold_multiplier_note": "Angles with chi2_red > mean + multiplier*std are outliers",
-        "max_outlier_fraction": 0.25,
-        "_max_outlier_fraction_note": "Maximum acceptable fraction of outlier angles (0.0-1.0)",
-        "min_good_angles": 3,
-        "_min_good_angles_note": "Minimum number of angles with acceptable fit required"
-      }
-    },
-    "frame_range": {
-      "_comment": "Frame range validation",
-      "minimum_frames": 10,
-      "_minimum_frames_note": "Minimum number of frames required for analysis",
-      "maximum_frames": null,
-      "_maximum_frames_note": "Maximum frames to process (null = no limit)",
-      "check_continuity": true,
-      "_check_continuity_note": "Check for gaps in frame sequence"
+      "_isotropic_note": "Simple forward model appropriate for isotropic case"
     }
   },
   "output_settings": {
-    "_comment": "Output and reporting configuration",
-    "description": "Output formatting and saving options",
-    "file_formats": {
-      "_comment": "Output file format preferences",
-      "results_format": "json",
-      "_results_format_note": "Primary results format: json, hdf5, npz",
-      "save_intermediate": false,
-      "_save_intermediate_note": "Save intermediate optimization steps",
-      "compression": true,
-      "_compression_note": "Compress output files",
-      "precision": "float64",
-      "_precision_note": "Numerical precision for output: float32, float64"
-    },
     "reporting": {
-      "_comment": "Analysis reporting options",
       "generate_plots": true,
-      "_generate_plots_note": "Generate analysis plots automatically",
       "plot_formats": [
         "png",
         "pdf"
       ],
-      "_plot_formats_note": "Output plot formats: png, pdf, svg, eps",
-      "detailed_summary": true,
-      "_detailed_summary_note": "Include detailed parameter summary",
-      "convergence_diagnostics": true,
-      "_convergence_diagnostics_note": "Include optimization convergence information"
+      "detailed_summary": true
     },
     "plotting": {
-      "_comment": "Comprehensive plotting configuration for analysis visualization",
-      "description": "Configuration for C2 heatmaps, parameter evolution, and MCMC plots",
       "general": {
-        "_comment": "General plotting settings",
         "create_plots": true,
-        "_create_plots_note": "Enable automatic plot generation",
         "plot_format": "png",
-        "_plot_format_note": "Default plot format: png, pdf, svg, eps",
         "dpi": 300,
-        "_dpi_note": "Resolution for raster formats (dots per inch)",
         "figure_size": [
           10,
           8
         ],
-        "_figure_size_note": "Default figure size in inches [width, height]",
-        "style": "publication",
-        "_style_note": "Plot style: publication, presentation, notebook",
-        "save_plots": true,
-        "_save_plots_note": "Save plots to files",
-        "show_plots": false,
-        "_show_plots_note": "Display plots interactively (use false for batch processing)"
+        "style": "publication"
       },
       "c2_heatmaps": {
-        "_comment": "C2 correlation function heatmap settings",
         "enabled": true,
-        "_enabled_note": "Generate C2 correlation function heatmaps",
+        "_enabled_note": "Single angle heatmaps for isotropic mode",
         "layout": "single_row",
-        "_layout_note": "Layout style: single_row (1x3), stacked (3x1), compact (2x2)",
         "include_experimental": true,
-        "_include_experimental_note": "Show experimental data heatmap",
         "include_theoretical": true,
-        "_include_theoretical_note": "Show theoretical model heatmap",
         "include_residuals": true,
-        "_include_residuals_note": "Show residuals (experimental - theoretical) heatmap",
-        "colormap": "viridis",
-        "_colormap_note": "Colormap for heatmaps: viridis, plasma, inferno, magma, RdYlBu",
-        "colorbar_position": "right",
-        "_colorbar_position_note": "Colorbar position: right, bottom, separate",
-        "title_prefix": "C2 Correlation Function",
-        "_title_prefix_note": "Prefix for heatmap titles",
-        "figsize": [
-          15,
-          5
-        ],
-        "_figsize_note": "Figure size for C2 heatmaps [width, height]"
+        "title_prefix": "C2 Isotropic Static Mode"
       },
       "parameter_evolution": {
-        "_comment": "Parameter evolution and optimization history plots",
         "enabled": true,
-        "_enabled_note": "Generate parameter evolution plots",
         "show_bounds": true,
-        "_show_bounds_note": "Display parameter bounds as shaded regions",
-        "show_initial": true,
-        "_show_initial_note": "Mark initial parameter values",
-        "show_final": true,
-        "_show_final_note": "Mark final optimized values",
         "log_scale_params": [
-          "D0",
-          "gamma_dot_t0"
+          "D0"
         ],
-        "_log_scale_params_note": "Parameters to plot on log scale",
-        "subplot_layout": "auto",
-        "_subplot_layout_note": "Subplot arrangement: auto, grid, vertical, horizontal"
+        "_log_scale_note": "Only D0 needs log scale in static isotropic mode"
       },
       "mcmc_plots": {
-        "_comment": "MCMC analysis visualization settings",
         "enabled": true,
-        "_enabled_note": "Generate MCMC analysis plots (requires ArviZ)",
         "corner_plots": {
-          "_comment": "Corner plot settings for posterior distributions",
           "enabled": true,
-          "_enabled_note": "Generate corner plots showing parameter correlations",
-          "show_titles": true,
-          "_show_titles_note": "Show parameter names as subplot titles",
-          "quantiles": [
-            0.16,
-            0.5,
-            0.84
-          ],
-          "_quantiles_note": "Quantile lines to show (16th, 50th, 84th percentiles)",
-          "show_truths": false,
-          "_show_truths_note": "Show true parameter values if known",
-          "use_arviz": true,
-          "_use_arviz_note": "Use ArviZ for corner plots (recommended)",
           "figsize": [
-            12,
-            12
-          ],
-          "_figsize_note": "Figure size for corner plots"
-        },
-        "trace_plots": {
-          "_comment": "MCMC trace plot settings",
-          "enabled": true,
-          "_enabled_note": "Generate trace plots showing parameter evolution",
-          "show_chains": true,
-          "_show_chains_note": "Show individual chain traces",
-          "show_warmup": false,
-          "_show_warmup_note": "Include warmup/tuning period in plots",
-          "compact_layout": false,
-          "_compact_layout_note": "Use compact subplot layout",
-          "figsize": [
-            12,
+            8,
             8
           ],
-          "_figsize_note": "Figure size for trace plots"
+          "_figsize_note": "Smaller size for 3x3 parameter space"
         },
-        "convergence_diagnostics": {
-          "_comment": "MCMC convergence diagnostic plots",
+        "trace_plots": {
           "enabled": true,
-          "_enabled_note": "Generate convergence diagnostic plots",
-          "show_rhat": true,
-          "_show_rhat_note": "Show R-hat convergence diagnostic",
-          "show_ess": true,
-          "_show_ess_note": "Show effective sample size diagnostic",
-          "show_mcse": true,
-          "_show_mcse_note": "Show Monte Carlo standard error",
-          "show_energy": true,
-          "_show_energy_note": "Show energy plots for HMC/NUTS diagnostics",
-          "rhat_threshold": 1.1,
-          "_rhat_threshold_note": "R-hat threshold for convergence warning",
-          "ess_threshold": 100,
-          "_ess_threshold_note": "Minimum effective sample size threshold"
+          "figsize": [
+            10,
+            6
+          ],
+          "_figsize_note": "Compact layout for 3 parameters"
         }
-      },
-      "diagnostic_plots": {
-        "_comment": "General diagnostic and quality assessment plots",
-        "enabled": true,
-        "_enabled_note": "Generate diagnostic plots",
-        "chi_squared_summary": true,
-        "_chi_squared_summary_note": "Plot chi-squared fit quality summary",
-        "parameter_correlations": true,
-        "_parameter_correlations_note": "Show parameter correlation matrix",
-        "residual_analysis": true,
-        "_residual_analysis_note": "Generate residual analysis plots",
-        "convergence_history": true,
-        "_convergence_history_note": "Plot optimization convergence history"
-      },
-      "output": {
-        "_comment": "Plot output and file management",
-        "base_directory": "./plots",
-        "_base_directory_note": "Base directory for saving plots",
-        "subdirectories": {
-          "c2_heatmaps": "c2_correlation",
-          "parameter_plots": "parameters",
-          "mcmc_plots": "mcmc_analysis",
-          "diagnostics": "diagnostics"
-        },
-        "_subdirectories_note": "Organize plots into subdirectories by type",
-        "filename_template": "{analysis_type}_{timestamp}_{method}",
-        "_filename_template_note": "Template for plot filenames",
-        "include_timestamp": true,
-        "_include_timestamp_note": "Include timestamp in filenames",
-        "overwrite_existing": false,
-        "_overwrite_existing_note": "Overwrite existing plot files"
-      }
-    },
-    "logging": {
-      "_comment": "Logging configuration",
-      "log_level": "INFO",
-      "_log_level_note": "Logging level: DEBUG, INFO, WARNING, ERROR",
-      "log_to_file": true,
-      "_log_to_file_note": "Save logs to file",
-      "log_to_console": true,
-      "_log_to_console_note": "Display logs in console",
-      "log_filename": "homodyne_analysis.log",
-      "_log_filename_note": "Log file name",
-      "rotation": {
-        "max_bytes": 10485760,
-        "_max_bytes_note": "Maximum log file size (10MB)",
-        "backup_count": 3,
-        "_backup_count_note": "Number of backup log files to keep"
       }
     }
   },
-  "_usage_examples": {
-    "_comment": "Examples of common configuration patterns",
-    "description": "Common usage patterns and examples",
-    "quick_start": {
-      "description": "Minimal configuration for getting started",
-      "required_changes": [
-        "Update experimental_data.data_folder_path with your data directory",
-        "Update experimental_data.data_file_name with your data file",
-        "Adjust analyzer_parameters.temporal.dt to match your acquisition time",
-        "Set analyzer_parameters.scattering.wavevector_q for your geometry",
-        "Estimate initial_parameters.values based on your system"
-      ]
-    },
-    "high_performance": {
-      "description": "Configuration for high-performance computing",
-      "settings": {
-        "analyzer_parameters.computational.num_threads": "auto",
-        "performance_settings.caching.enable_memory_cache": true,
-        "performance_settings.parallel_processing.enable_multiprocessing": true,
-        "performance_settings.numba_optimization.enable_numba": true,
-        "optimization_config.mcmc_sampling.cores": 8,
-        "output_settings.plotting.general.dpi": 150
-      }
-    },
-    "low_memory": {
-      "description": "Configuration for memory-constrained systems",
-      "settings": {
-        "performance_settings.memory_management.low_memory_mode": true,
-        "performance_settings.caching.cache_size_limit_mb": 100,
-        "experimental_data.data_type": "float32",
-        "output_settings.plotting.general.dpi": 150,
-        "optimization_config.mcmc_sampling.draws": 5000
-      }
-    },
-    "reproducible_research": {
-      "description": "Settings for reproducible results",
-      "settings": {
-        "optimization_config.mcmc_sampling.chains": 4,
-        "output_settings.save_intermediate": true,
-        "output_settings.detailed_summary": true,
-        "workflow_integration.mcmc_integration.auto_save_traces": true,
-        "output_settings.plotting.general.create_plots": true
-      }
-    },
-    "comprehensive_plotting": {
-      "description": "Full plotting and visualization configuration",
-      "settings": {
-        "output_settings.plotting.c2_heatmaps.enabled": true,
-        "output_settings.plotting.mcmc_plots.enabled": true,
-        "output_settings.plotting.parameter_evolution.enabled": true,
-        "output_settings.plotting.diagnostic_plots.enabled": true,
-        "workflow_integration.analysis_workflow.auto_generate_plots": true,
-        "output_settings.plotting.general.plot_format": "pdf",
-        "output_settings.plotting.general.dpi": 300
-      }
-    },
-    "mcmc_focused": {
-      "description": "Configuration optimized for MCMC analysis",
-      "settings": {
-        "optimization_config.mcmc_sampling.enabled": true,
-        "optimization_config.mcmc_sampling.draws": 15000,
-        "optimization_config.mcmc_sampling.tune": 2000,
-        "optimization_config.mcmc_sampling.chains": 6,
-        "optimization_config.mcmc_sampling.target_accept": 0.95,
-        "output_settings.plotting.mcmc_plots.corner_plots.enabled": true,
-        "output_settings.plotting.mcmc_plots.trace_plots.enabled": true,
-        "output_settings.plotting.mcmc_plots.convergence_diagnostics.enabled": true,
-        "workflow_integration.mcmc_integration.auto_save_traces": true
-      }
-    },
-    "publication_quality": {
-      "description": "Settings for publication-quality figures",
-      "settings": {
-        "output_settings.plotting.general.dpi": 300,
-        "output_settings.plotting.general.plot_format": "pdf",
-        "output_settings.plotting.general.style": "publication",
-        "output_settings.plotting.c2_heatmaps.figsize": [
-          12,
-          4
-        ],
-        "output_settings.plotting.mcmc_plots.corner_plots.figsize": [
-          10,
-          10
-        ],
-        "output_settings.reporting.plot_formats": [
-          "pdf",
-          "svg"
-        ],
-        "output_settings.plotting.general.show_plots": false
-      }
-    }
-  },
-  "_troubleshooting": {
-    "_comment": "Common issues and solutions",
-    "description": "Troubleshooting guide for common problems",
-    "optimization_not_converging": {
-      "problem": "Optimization fails to converge or gives poor results",
-      "solutions": [
-        "Check initial_parameters.values - they should be reasonable estimates",
-        "Adjust parameter_space.bounds to be physically meaningful",
-        "Increase optimization_config.classical_optimization.method_options.maxiter",
-        "Increase maxiter if using complex parameter spaces",
-        "Check data quality and preprocessing settings"
-      ]
-    },
-    "memory_errors": {
-      "problem": "Out of memory errors during analysis",
-      "solutions": [
-        "Enable performance_settings.memory_management.low_memory_mode",
-        "Reduce performance_settings.caching.cache_size_limit_mb",
-        "Use experimental_data.data_type: 'float32'",
-        "Reduce analyzer_parameters.temporal frame range",
-        "Decrease analyzer_parameters.computational.num_threads"
-      ]
-    },
-    "slow_performance": {
-      "problem": "Analysis runs very slowly",
-      "solutions": [
-        "Enable performance_settings.numba_optimization.enable_numba",
-        "Increase analyzer_parameters.computational.num_threads",
-        "Enable performance_settings.caching.enable_memory_cache",
-        "Use experimental_data.cache_compression: true",
-        "Consider reducing precision with data_type: 'float32'",
-        "Reduce plotting resolution: output_settings.plotting.general.dpi: 150"
-      ]
-    },
-    "plotting_errors": {
-      "problem": "Plotting functions fail or produce errors",
-      "solutions": [
-        "Check that matplotlib is installed: pip install matplotlib",
-        "For MCMC plots, install ArviZ: pip install arviz",
-        "For enhanced corner plots, install corner: pip install corner",
-        "Set output_settings.plotting.general.show_plots: false for headless systems",
-        "Enable workflow_integration.error_handling.continue_on_plot_errors: true",
-        "Check output_settings.plotting.output.base_directory permissions",
-        "Reduce figure complexity: disable some plot types in plotting config"
-      ]
-    },
-    "mcmc_convergence_issues": {
-      "problem": "MCMC sampling does not converge properly",
-      "solutions": [
-        "Increase optimization_config.mcmc_sampling.tune (try 3000-5000)",
-        "Increase optimization_config.mcmc_sampling.target_accept to 0.95",
-        "Add more chains: optimization_config.mcmc_sampling.chains: 6 or 8",
-        "Increase draws: optimization_config.mcmc_sampling.draws: 15000+",
-        "Check parameter bounds are reasonable in parameter_space.bounds",
-        "Use better initial parameter estimates from classical optimization",
-        "Enable output_settings.plotting.mcmc_plots.convergence_diagnostics to diagnose issues"
-      ]
-    },
-    "missing_dependencies": {
-      "problem": "ImportError for optional plotting or MCMC packages",
-      "solutions": [
-        "Install complete plotting suite: pip install matplotlib seaborn arviz corner",
-        "For MCMC functionality: pip install pymc arviz",
-        "For enhanced plotting: pip install corner",
-        "Check package versions are compatible",
-        "Set plotting.mcmc_plots.enabled: false if MCMC plotting not needed",
-        "Use plotting.general.fallback_plotting: true for basic plots only"
-      ]
-    },
-    "large_data_plotting": {
-      "problem": "Plotting fails with large datasets or out of memory errors",
-      "solutions": [
-        "Reduce plotting resolution: plotting.general.dpi: 150",
-        "Use plotting.c2_heatmaps.layout: 'compact' instead of 'single_row'",
-        "Enable workflow_integration.data_management.auto_cleanup_cache: true",
-        "Reduce MCMC sample size for plotting: use subset of traces",
-        "Set plotting.general.figure_size to smaller values",
-        "Enable experimental_data.cache_compression: true"
-      ]
-    }
+  "_usage_notes": {
+    "description": "Specific usage notes for static isotropic mode",
+    "key_differences": [
+      "phi_angles_file is not loaded - dummy angles used automatically",
+      "Angle filtering is disabled regardless of configuration",
+      "Only 3 parameters (D0, alpha, D_offset) are optimized",
+      "Shear and phi0 parameters are automatically set to 0",
+      "Results are independent of scattering angle",
+      "Faster optimization due to fewer parameters and no angle selection"
+    ],
+    "when_to_use": [
+      "Static samples with no applied flow or rotation",
+      "Isotropic scattering where results don't depend on angle",
+      "Quick analysis focusing only on diffusion dynamics",
+      "Systems where angular anisotropy is not expected or relevant"
+    ],
+    "performance_benefits": [
+      "Faster optimization (3 vs 7 parameters)",
+      "No angle file loading overhead",
+      "No angle filtering computational cost",
+      "Simpler parameter space for MCMC"
+    ]
   }
 }
