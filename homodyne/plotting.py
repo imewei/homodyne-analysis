@@ -878,6 +878,21 @@ def plot_mcmc_convergence_diagnostics(
             logger.error("Unsupported trace data format for convergence diagnostics")
             return False
 
+        # Get active parameters from config to filter out inactive ones
+        active_param_names = None
+        if config and "initial_parameters" in config and "active_parameters" in config["initial_parameters"]:
+            active_param_names = config["initial_parameters"]["active_parameters"]
+            logger.debug(f"Using active parameters from config: {active_param_names}")
+        
+        # Use active parameters if available, otherwise use param_names
+        if active_param_names:
+            param_names = active_param_names
+            logger.debug(f"Filtered to active parameters: {param_names}")
+        elif param_names:
+            logger.debug(f"Using provided parameter names: {param_names}")
+        else:
+            logger.debug("No parameter names provided, will use all available parameters")
+
         # Create figure with multiple subplots
         fig = plt.figure(
             figsize=(
@@ -890,32 +905,42 @@ def plot_mcmc_convergence_diagnostics(
         # Plot 1: R-hat values
         ax1 = fig.add_subplot(gs[0, 0])
         r_hat_dict = diagnostics.get("r_hat", {})
+        logger.debug(f"R-hat from diagnostics: {r_hat_dict}")
         
         # If r_hat dict is missing or empty, compute from trace data
         if not r_hat_dict and hasattr(trace_data, "posterior"):
             try:
                 r_hat_summary = az.rhat(trace_data)
+                logger.debug(f"Computed R-hat summary: {r_hat_summary}")
                 if hasattr(r_hat_summary, 'to_dict'):
                     r_hat_dict = r_hat_summary.to_dict() # type: ignore
                 else:
                     # Convert DataArray to dict
                     r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()} # type: ignore
+                logger.debug(f"Converted R-hat dict: {r_hat_dict}")
             except Exception as e:
                 logger.warning(f"Could not compute R-hat from trace data: {e}")
         
         if r_hat_dict:
+            logger.debug(f"Processing R-hat dict with {len(r_hat_dict)} entries")
             # Filter for active parameters if available in config
             if param_names is None:
                 param_names_plot = list(r_hat_dict.keys())
+                logger.debug(f"Using all R-hat parameters: {param_names_plot}")
             else:
                 param_names_plot = param_names
+                logger.debug(f"Using filtered parameter names: {param_names_plot}")
                 
             # Further filter to only include parameters that actually exist in r_hat_dict
-            param_names_plot = [name for name in param_names_plot if name in r_hat_dict]
+            available_params = [name for name in param_names_plot if name in r_hat_dict]
+            logger.debug(f"Parameters available in R-hat data: {available_params}")
+            param_names_plot = available_params
             r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names_plot]
+            logger.debug(f"R-hat values for plotting: {dict(zip(param_names_plot, r_hat_values))}")
 
             # Only plot if we have data
             if param_names_plot and r_hat_values:
+                logger.debug(f"Creating R-hat plot with {len(param_names_plot)} parameters")
                 colors = [
                     "green" if r < 1.1 else "orange" if r < 1.2 else "red"
                     for r in r_hat_values
