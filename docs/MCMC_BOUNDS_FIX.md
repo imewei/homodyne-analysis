@@ -30,7 +30,12 @@ The problem arose from:
    - Distance from both boundaries: 0.3 units
    - Gives PyMC ample room for initialization jittering
 
-3. **Updated documentation**: Added explanatory notes in configuration
+3. **Fixed forward model**: Changed `use_simple_forward_model` from `true` to `false`
+   - MCMC now ALWAYS uses scaling optimization (g₂ = offset + contrast × g₁)
+   - Ensures consistent results with classical/Bayesian optimization methods
+   - Eliminates "simplified model without scaling optimization" warnings
+
+4. **Updated documentation**: Added explanatory notes in configuration
 
 ### File Changes
 
@@ -51,6 +56,8 @@ The fix was validated by:
 - ✅ Sampling starts properly with jitter+adapt_diag strategy  
 - ✅ No more "Initial evaluation failed" errors
 - ✅ Parameter exploration has adequate space for convergence
+- ✅ MCMC uses full forward model with scaling optimization
+- ✅ Consistent results across MCMC, classical, and Bayesian methods
 - ✅ Regression tests ensure the fix remains stable
 
 ## Technical Details
@@ -76,3 +83,19 @@ PyMC's NUTS sampler requires some parameter space around initial values for:
 - Numerical stability during warmup
 
 The fix ensures these requirements are met for robust MCMC initialization.
+
+### Forward Model Consistency
+
+**Before (Inconsistent)**:
+- MCMC used simplified forward model without scaling optimization
+- Classical methods used full forward model with scaling (g₂ = offset + contrast × g₁)
+- Results were not directly comparable between methods
+- Warning messages about simplified model usage
+
+**After (Consistent)**:
+- All methods (MCMC, classical, Bayesian) use full forward model
+- Scaling optimization accounts for instrumental response and background
+- Results are directly comparable across optimization methods
+- No more warnings about model inconsistencies
+
+This ensures that MCMC provides results that can be meaningfully compared with classical optimization techniques.
