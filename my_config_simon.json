@@ -136,11 +136,11 @@
     "mcmc_sampling": {
       "enabled": true,
       "sampler": "NUTS",
-      "draws": 30000,
+      "draws": 10000,
       "_draws_note": "Fewer draws needed with only 3 parameters",
       "tune": 1000,
-      "chains": 4,
-      "cores": 4,
+      "chains": 8,
+      "cores": 8,
       "target_accept": 0.95,
       "max_treedepth": 10,
       "return_inferencedata": true
@@ -151,33 +151,33 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 0.001,
-        "max": 1000000.0,
+        "min": 15000,
+        "max": 20000,
         "type": "log-uniform",
         "prior_mu": 4.6,
-        "prior_sigma": 0.5,
+        "prior_sigma": 5.0,
         "unit": "Å²/s",
         "physical_constraint": "positive",
         "_note": "PRIMARY PARAMETER - reference diffusion coefficient"
       },
       {
         "name": "alpha",
-        "min": -2.0,
-        "max": 2.0,
+        "min": -1.6,
+        "max": -1.5,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 0.5,
+        "prior_sigma": 0.05,
         "unit": "dimensionless",
         "physical_constraint": "none",
         "_note": "PRIMARY PARAMETER - diffusion time dependence exponent"
       },
       {
         "name": "D_offset",
-        "min": -5000,
-        "max": 5000,
+        "min": 0,
+        "max": 5,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 500.0,
+        "prior_sigma": 1.0,
         "unit": "Å²/s",
         "physical_constraint": "none",
         "_note": "PRIMARY PARAMETER - baseline diffusion coefficient"
