@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Union, Any, Tuple
 from homodyne.core.io_utils import ensure_dir, save_fig
 
 # Set up logging
@@ -396,16 +396,16 @@ def plot_parameter_evolution(
                 plot_config["figure_size"][1] * 1.2,
             ),
         )
-        # Ensure axes is always iterable
-        if not isinstance(axes, (list, tuple, np.ndarray)):
-            axes = [axes]
-        
-        # Handle both single and multiple subplot cases
-        if len(axes) >= 2:
-            ax1, ax2 = axes[0], axes[1]
+        # Handle matplotlib's return type (axes can be single or array)
+        if hasattr(axes, '__len__') and len(axes) >= 2:
+            ax1, ax2 = axes[0], axes[1]  # type: ignore[index]
+        elif hasattr(axes, '__len__') and len(axes) == 1:
+            ax1 = axes[0]  # type: ignore[index]
+            ax2 = plt.subplot(2, 1, 2)
         else:
-            ax1 = axes[0] if len(axes) > 0 else plt.gca()
-            ax2 = plt.subplot(2, 1, 2) if len(axes) == 1 else plt.gca()
+            # Single axis case (shouldn't happen with 2 subplots, but handle it)
+            ax1 = axes  # type: ignore[assignment]
+            ax2 = plt.subplot(2, 1, 2)
 
         # Plot 1: Parameter comparison bar chart
         x_pos = np.arange(len(param_names))
@@ -478,7 +478,7 @@ def plot_parameter_evolution(
         ax1.grid(True, alpha=0.3)
 
         # Add value labels on bars
-        def add_value_labels(bars, values):
+        def add_value_labels(bars, values) -> None:
             for bar, value in zip(bars, values):
                 height = bar.get_height()
                 # Avoid division by zero if bar width is zero
@@ -634,7 +634,7 @@ def plot_mcmc_corner(
                 if not ARVIZ_AVAILABLE:
                     logger.error("Pandas not available for DataFrame conversion")
                     return False
-                import pandas as pd
+                import pandas as pd  # type: ignore[import]
                 samples = pd.DataFrame(trace_data)
             except Exception as conversion_error:
                 logger.error(f"Unsupported trace data format for corner plot: {type(trace_data)}, error: {conversion_error}")
@@ -660,7 +660,7 @@ def plot_mcmc_corner(
         if hasattr(stacked_samples, 'to_numpy'):
             # xarray Dataset - use to_numpy() method
             try:
-                sample_data = stacked_samples.to_numpy()
+                sample_data = stacked_samples.to_numpy() # type: ignore
                 ranges = []
                 for i in range(sample_data.shape[-1]):
                     param_data = sample_data[..., i].flatten()
@@ -668,7 +668,7 @@ def plot_mcmc_corner(
                     if param_range == 0 or param_range < 1e-10:
                         # Constant parameter - add small range around the value
                         center = np.mean(param_data)
-                        delta = max(abs(center) * 0.01, 1e-6)
+                        delta = max(abs(center) * 0.01, 1e-6) # type: ignore
                         ranges.append((center - delta, center + delta))
                     else:
                         ranges.append(None)  # Let corner determine automatically
@@ -678,8 +678,8 @@ def plot_mcmc_corner(
                 try:
                     if hasattr(stacked_samples, 'data_vars'):
                         ranges = []
-                        for var_name in list(stacked_samples.data_vars):
-                            var_data = stacked_samples[var_name].values.flatten()
+                        for var_name in list(stacked_samples.data_vars): # type: ignore
+                            var_data = stacked_samples[var_name].values.flatten() # type: ignore
                             param_range = np.max(var_data) - np.min(var_data)
                             if param_range == 0 or param_range < 1e-10:
                                 center = np.mean(var_data)
@@ -703,13 +703,13 @@ def plot_mcmc_corner(
                     sample_data = np.array(stacked_samples)
                 
                 ranges = []
-                for i in range(sample_data.shape[-1]):
-                    param_data = sample_data[..., i].flatten()
+                for i in range(sample_data.shape[-1]): # type: ignore
+                    param_data = sample_data[..., i].flatten() # type: ignore
                     param_range = np.max(param_data) - np.min(param_data)
                     if param_range == 0 or param_range < 1e-10:
                         # Constant parameter - add small range around the value
                         center = np.mean(param_data)
-                        delta = max(abs(center) * 0.01, 1e-6)
+                        delta = max(abs(center) * 0.01, 1e-6) # type: ignore
                         ranges.append((center - delta, center + delta))
                     else:
                         ranges.append(None)  # Let corner determine automatically
@@ -729,16 +729,19 @@ def plot_mcmc_corner(
             
             # Try to convert ArviZ data to numpy for corner plot
             try:
+                # Initialize corner_data variable
+                corner_data: np.ndarray
+                
                 # Handle xarray Dataset conversion properly
                 if hasattr(stacked_samples, 'data_vars'):
                     # This is an xarray Dataset - need to extract data from each variable
-                    var_names = list(stacked_samples.data_vars.keys())
+                    var_names = list(stacked_samples.data_vars.keys()) # type: ignore
                     logger.debug(f"Extracting data from variables: {var_names}")
                     
                     # Extract data arrays for each parameter and stack them
                     param_arrays = []
                     for var_name in var_names:
-                        var_data = stacked_samples[var_name].values.flatten()
+                        var_data = stacked_samples[var_name].values.flatten() # type: ignore
                         param_arrays.append(var_data)
                         logger.debug(f"Variable {var_name} shape after flatten: {var_data.shape}")
                     
@@ -747,14 +750,14 @@ def plot_mcmc_corner(
                     logger.debug(f"Stacked corner data shape: {corner_data.shape}")
                     
                 elif hasattr(stacked_samples, 'to_numpy'):
-                    corner_data = stacked_samples.to_numpy()
+                    corner_data = stacked_samples.to_numpy() # type: ignore
                     logger.debug(f"Converted to numpy shape: {corner_data.shape}")
-                elif hasattr(stacked_samples, 'values') and not callable(stacked_samples.values):
+                elif hasattr(stacked_samples, 'values') and not callable(stacked_samples.values): # type: ignore
                     # .values is a property, not a method - access it correctly
-                    corner_data = stacked_samples.values
+                    corner_data = stacked_samples.values # type: ignore
                     logger.debug(f"Using .values property shape: {corner_data.shape}")
                 else:
-                    corner_data = stacked_samples
+                    corner_data = stacked_samples # type: ignore
                     
                 # Ensure we have 2D data (samples x parameters)
                 if hasattr(corner_data, 'ndim') and corner_data.ndim > 2:
@@ -765,27 +768,33 @@ def plot_mcmc_corner(
                     # For remaining objects without ndim, try to convert to numpy
                     try:
                         if hasattr(corner_data, 'to_numpy'):
-                            corner_data = corner_data.to_numpy()
+                            corner_data = corner_data.to_numpy() # type: ignore
                             logger.debug(f"Converted Dataset to numpy with shape: {corner_data.shape}")
                         else:
                             # Convert using pandas if possible
-                            corner_data = corner_data.to_pandas().values
+                            corner_data = corner_data.to_pandas().values # type: ignore
                             logger.debug(f"Converted via pandas with shape: {corner_data.shape}")
                     except Exception as conversion_error:
                         logger.debug(f"Failed to convert corner_data: {conversion_error}")
                         raise
                     
+                # Determine number of parameters
+                n_params = corner_data.shape[1] if hasattr(corner_data, 'shape') else (len(ranges) if ranges else 3)
+                
+                # Create parameter labels with safe indexing
+                labels = []
+                for i in range(n_params):
+                    if param_names and i < len(param_names):
+                        if param_units and i < len(param_units):
+                            labels.append(f"{param_names[i]}\n[{param_units[i]}]")
+                        else:
+                            labels.append(param_names[i])
+                    else:
+                        labels.append(f"Param {i}")
+                
                 fig = corner.corner(
                     corner_data,
-                    labels=[
-                        (
-                            f"{param_names[i]}\n[{param_units[i]}]"
-                            if param_names and param_units and i < len(param_names) and i < len(param_units)
-                            else param_names[i] if param_names and i < len(param_names)
-                            else f"Param {i}"
-                        )
-                        for i in range(corner_data.shape[1] if hasattr(corner_data, 'shape') else (len(ranges) if ranges else 3))
-                    ],
+                    labels=labels,
                     range=ranges,
                     show_titles=True,
                     title_kwargs={"fontsize": 12},
@@ -1517,7 +1526,7 @@ def plot_experimental_c2_data(
             # 1. Full heatmap
             ax1 = fig.add_subplot(gs[i, 0])
             im1 = ax1.imshow(angle_data, aspect='auto', origin='lower',
-                           extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]],
+                           extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]], # type: ignore
                            cmap='viridis')
             ax1.set_xlabel('Time t₁ (s)')
             ax1.set_ylabel('Time t₂ (s)')
