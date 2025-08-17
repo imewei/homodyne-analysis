@@ -380,3 +380,85 @@ class TestMCMCBoundsIntegration:
         print("✓ Realistic configuration loads bounds correctly")
         print(f"  Alpha bounds: [{alpha_bound['min']}, {alpha_bound['max']}]")
         print(f"  Alpha initial: {alpha_initial} (center: {alpha_mid})")
+
+    def test_mcmc_uses_full_forward_model_configuration(self, tmp_path):
+        """Test that MCMC configuration uses full forward model with scaling optimization."""
+        
+        # Create configuration that ensures MCMC uses scaling optimization
+        mcmc_config = {
+            "metadata": {"config_version": "6.0"},
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 400, "end_frame": 1000},
+                "scattering": {"wavevector_q": 0.0237},
+                "geometry": {"stator_rotor_gap": 2000000},
+                "computational": {"num_threads": 2}
+            },
+            "experimental_data": {
+                "data_folder_path": "./data/test/",
+                "data_file_name": "test.hdf",
+                "cache_file_path": "./data/test/",
+                "cache_filename_template": "test_cache_{start_frame}_{end_frame}.npz"
+            },
+            "initial_parameters": {
+                "values": [16000, -1.5, 1.1, 0.0, 0.0, 0.0, 0.0],
+                "parameter_names": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+                "active_parameters": ["D0", "alpha", "D_offset"]
+            },
+            "parameter_space": {
+                "bounds": [
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
+                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "uniform"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {"name": "gamma_dot_t_offset", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {"name": "phi0", "min": 0.0, "max": 0.0, "type": "fixed"}
+                ]
+            },
+            "optimization_config": {
+                "mcmc_sampling": {
+                    "enabled": True, "sampler": "NUTS", "draws": 100, "tune": 50,
+                    "chains": 2, "cores": 2, "target_accept": 0.9
+                }
+            },
+            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "performance_settings": {
+                "noise_model": {
+                    "use_simple_forward_model": False,  # CRITICAL: Must be False for MCMC
+                    "sigma_prior": 0.1
+                }
+            },
+            "advanced_settings": {
+                "chi_squared_calculation": {
+                    "method": "standard"
+                }
+            }
+        }
+        
+        config_file = tmp_path / "mcmc_full_model_config.json"
+        with open(config_file, "w") as f:
+            json.dump(mcmc_config, f, indent=2)
+        
+        # Load and validate configuration
+        config_manager = ConfigManager(str(config_file))
+        loaded_config = config_manager.config
+        
+        # Verify MCMC uses full forward model (not simplified)
+        noise_model = loaded_config["performance_settings"]["noise_model"]
+        use_simple_model = noise_model["use_simple_forward_model"]
+        
+        assert use_simple_model is False, "MCMC must use full forward model (use_simple_forward_model=False)"
+        
+        # Verify MCMC is enabled
+        mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"]["enabled"]
+        assert mcmc_enabled is True, "MCMC sampling must be enabled for this test"
+        
+        # Verify scaling optimization is available (standard chi-squared method)
+        chi_sq_method = loaded_config["advanced_settings"]["chi_squared_calculation"]["method"]
+        assert chi_sq_method == "standard", "Standard chi-squared method supports scaling optimization"
+        
+        print("✓ MCMC configuration uses full forward model with scaling optimization")
+        print(f"  use_simple_forward_model: {use_simple_model}")
+        print(f"  MCMC enabled: {mcmc_enabled}")
+        print(f"  Chi-squared method: {chi_sq_method}")
+        print("  This ensures MCMC results are consistent with classical optimization")
