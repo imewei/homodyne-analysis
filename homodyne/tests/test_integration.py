@@ -795,6 +795,11 @@ class TestAnalysisWorkflowIntegration:
                         'max_rhat': 1.05,
                         'min_ess': 200,
                         'converged': True,
+                        # Updated to match actual MCMC module output format
+                        'rhat': {'D0': 1.02, 'alpha': 1.03, 'D_offset': 1.01},
+                        'ess': {'D0': 400, 'alpha': 350, 'D_offset': 450},
+                        'mcse': {'D0': 0.001, 'alpha': 0.002, 'D_offset': 0.0015},
+                        # Keep backward compatibility with old format too
                         'r_hat': {'D0': 1.02, 'alpha': 1.03, 'D_offset': 1.01},
                         'ess_bulk': {'D0': 400, 'alpha': 350, 'D_offset': 450},
                         'mcse_mean': {'D0': 0.001, 'alpha': 0.002, 'D_offset': 0.0015}

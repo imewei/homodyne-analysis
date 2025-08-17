@@ -8,8 +8,8 @@ designed for characterizing transport properties in flowing soft matter systems.
 
 Physical Framework:
 ------------------
-This package implements the theoretical framework for analyzing time-dependent 
-intensity correlation functions g₂(φ,t₁,t₂) that capture the interplay between 
+This package implements the theoretical framework for analyzing time-dependent
+intensity correlation functions g₂(φ,t₁,t₂) that capture the interplay between
 Brownian diffusion and advective shear flow in complex fluids.
 
 Reference:
@@ -108,7 +108,7 @@ __all__ = [
 ]
 
 # Version information
-__version__ = "5.1"
+__version__ = "6.0"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory & University of Chicago"

@@ -283,6 +283,113 @@ class TestDiagnosticPlots:
 
         assert success is True
 
+    def test_plot_diagnostic_summary_comprehensive_all_subplots(
+        self, temp_directory, dummy_config
+    ):
+        """Test diagnostic summary plot with all subplot types populated.
+        
+        This test verifies that all 4 subplots in the diagnostic summary are
+        properly populated with realistic data, addressing the empty subplots issue.
+        """
+        try:
+            import arviz as az
+            
+            # Create realistic MCMC trace data
+            n_chains, n_draws = 2, 100
+            param_names = ["D0", "alpha", "D_offset"]
+            
+            posterior_dict = {}
+            for param in param_names:
+                if param == "D0":
+                    posterior_dict[param] = np.random.lognormal(5, 0.5, (n_chains, n_draws))
+                else:
+                    posterior_dict[param] = np.random.normal(0, 0.1, (n_chains, n_draws))
+            
+            trace_data = az.from_dict({"posterior": posterior_dict})
+            
+            # Compute diagnostics using ArviZ (matching actual MCMC module format)
+            rhat_data = az.rhat(trace_data)
+            ess_data = az.ess(trace_data)
+            mcse_data = az.mcse(trace_data)
+            
+            # Create comprehensive results dictionary with all required data
+            results = {
+                # For Plot 1: Chi-squared comparison (multiple methods)
+                "classical_chi_squared": 2.5,
+                "mcmc_chi_squared": 2.3,
+                "best_chi_squared": 2.3,
+                
+                # For Plot 2: Parameter uncertainties (computed from MCMC trace)
+                "mcmc_trace": trace_data,
+                
+                # For Plot 3: MCMC convergence diagnostics (ArviZ Dataset format)
+                "mcmc_diagnostics": {
+                    "rhat": rhat_data,  # ArviZ Dataset format
+                    "ess": ess_data,    # ArviZ Dataset format  
+                    "mcse": mcse_data,  # ArviZ Dataset format
+                    "max_rhat": 1.05,
+                    "min_ess": 200,
+                    "converged": True
+                },
+                
+                # For Plot 4: Residuals (computed from exp - theory data)
+                "experimental_data": np.random.exponential(1.0, (3, 20, 20)),
+                "theoretical_data": np.random.exponential(1.1, (3, 20, 20)),
+                
+                # Additional metadata
+                "method": "Comprehensive Test",
+                "parameter_names": param_names,
+                "parameter_units": ["Å²/s", "dimensionless", "Å²/s"]
+            }
+            
+            # Configuration with active parameters
+            config = dummy_config.copy()
+            config["initial_parameters"] = {
+                "parameter_names": param_names,
+                "active_parameters": param_names  # All parameters active
+            }
+            
+            # Test the diagnostic summary plot
+            success = plot_diagnostic_summary(results, temp_directory, config)
+            assert success is True
+            
+            # Check that the plot file exists and has substantial size
+            plot_files = list(temp_directory.glob("diagnostic_summary.png"))
+            assert len(plot_files) == 1
+            
+            plot_file = plot_files[0]
+            file_size = plot_file.stat().st_size
+            
+            # Should be substantial for a 4-subplot figure with real data
+            assert file_size > 50000, f"Plot file size {file_size} is too small - may have empty subplots"
+            
+        except ImportError:
+            # Skip test if ArviZ is not available
+            import pytest
+            pytest.skip("ArviZ not available for comprehensive diagnostic test")
+
+    def test_plot_diagnostic_summary_minimal_data_with_placeholders(
+        self, temp_directory, dummy_config
+    ):
+        """Test diagnostic summary plot with minimal data shows appropriate placeholders."""
+        # Minimal results with only basic chi-squared data
+        minimal_results = {
+            "best_chi_squared": 5.0,
+            "method": "Minimal Test"
+        }
+        
+        success = plot_diagnostic_summary(minimal_results, temp_directory, dummy_config)
+        assert success is True
+        
+        # Check that plot file exists (should show placeholder messages)
+        plot_files = list(temp_directory.glob("diagnostic_summary.png"))
+        assert len(plot_files) == 1
+        
+        # File should still be reasonably sized even with placeholders
+        plot_file = plot_files[0]
+        file_size = plot_file.stat().st_size
+        assert file_size > 10000, "Plot file should contain placeholder messages"
+
 
 class TestMCMCPlots:
     """Test MCMC plotting functions."""
@@ -469,6 +576,65 @@ class TestMCMCPlots:
             
             plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
             assert len(plot_files) == 1
+
+        except ImportError:
+            pytest.skip("ArviZ not available")
+
+    def test_plot_mcmc_convergence_diagnostics_arviz_format(self, temp_directory, dummy_config):
+        """Test MCMC convergence diagnostics with actual ArviZ Dataset format from MCMC module."""
+        try:
+            import arviz as az
+            
+            # Create mock trace data with realistic parameter names for static isotropic mode
+            n_chains, n_draws = 4, 1000
+            param_names = ["D0", "alpha", "D_offset"]
+            
+            posterior_dict = {}
+            # Use realistic parameter values
+            base_values = {"D0": 1000.0, "alpha": -0.5, "D_offset": 100.0}
+            for param in param_names:
+                base_val = base_values[param]
+                posterior_dict[param] = np.random.normal(
+                    base_val, abs(base_val) * 0.1, (n_chains, n_draws)
+                )
+            
+            trace_data = az.from_dict(posterior_dict)
+            
+            # Create diagnostics in the format that the actual MCMC module produces
+            # (ArviZ Dataset objects, not dictionaries, and with "rhat", "ess", "mcse" keys)
+            diagnostics = {
+                "rhat": az.rhat(trace_data),      # ArviZ Dataset object
+                "ess": az.ess(trace_data),        # ArviZ Dataset object  
+                "mcse": az.mcse(trace_data),      # ArviZ Dataset object
+                "max_rhat": 1.01,
+                "min_ess": 400,
+                "converged": True,
+                "assessment": "Converged"
+            }
+            
+            # Test with active parameter filtering config
+            config_with_active_params = {
+                **dummy_config,
+                "initial_parameters": {
+                    "active_parameters": param_names,
+                    "parameter_names": param_names + ["gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
+                }
+            }
+
+            success = plot_mcmc_convergence_diagnostics(
+                trace_data,
+                diagnostics,
+                temp_directory,
+                config_with_active_params,
+                param_names=param_names,
+            )
+
+            assert success is True
+            
+            # Check that plot file was created
+            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            assert len(plot_files) == 1
+            assert plot_files[0].stat().st_size > 20000  # Should be a substantial plot file
 
         except ImportError:
             pytest.skip("ArviZ not available")

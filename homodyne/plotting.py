@@ -247,7 +247,7 @@ def plot_c2_heatmaps(
             # Calculate appropriate vmin for this angle's data
             angle_data_min = min(np.min(exp[i]), np.min(fitted[i]))
             angle_vmin = 1.0 if angle_data_min >= 1.0 else angle_data_min
-            
+
             # Experimental data heatmap
             ax1 = fig.add_subplot(gs[0, 0])
             im1 = ax1.imshow(
@@ -300,7 +300,7 @@ def plot_c2_heatmaps(
                 ),
                 cmap="RdBu_r",
             )
-            ax3.set_title(f"Residuals (Exp - Theory)\nφ = {phi:.1f}°")
+            ax3.set_title(f"Residuals (Exp - Fit)\nφ = {phi:.1f}°")
             ax3.set_xlabel("t₁")
             ax3.set_ylabel("t₂")
 
@@ -359,7 +359,6 @@ def plot_c2_heatmaps(
     return success_count == len(phi_angles)
 
 
-
 def plot_mcmc_corner(
     trace_data: Any,
     outdir: Union[str, Path],
@@ -398,7 +397,11 @@ def plot_mcmc_corner(
     try:
         # Get active parameters from config to filter out inactive ones
         active_param_names = None
-        if config and "initial_parameters" in config and "active_parameters" in config["initial_parameters"]:
+        if (
+            config
+            and "initial_parameters" in config
+            and "active_parameters" in config["initial_parameters"]
+        ):
             active_param_names = config["initial_parameters"]["active_parameters"]
             logger.debug(f"Active parameters for corner plot: {active_param_names}")
 
@@ -413,23 +416,34 @@ def plot_mcmc_corner(
         if hasattr(trace_data, "posterior"):
             # ArviZ InferenceData
             samples = trace_data.posterior
-            
+
             # Filter to only active parameters if specified
             if active_param_names and hasattr(samples, "data_vars"):
-                filtered_vars = {var: samples[var] for var in active_param_names if var in samples.data_vars}
+                filtered_vars = {
+                    var: samples[var]
+                    for var in active_param_names
+                    if var in samples.data_vars
+                }
                 if filtered_vars:
                     import xarray as xr
+
                     samples = xr.Dataset(filtered_vars)
-                    logger.debug(f"Filtered to active parameters: {list(samples.data_vars)}")
-                    
+                    logger.debug(
+                        f"Filtered to active parameters: {list(samples.data_vars)}"
+                    )
+
         elif isinstance(trace_data, dict):
             # Dictionary of samples
             samples = trace_data
-            
+
             # Filter to only active parameters if specified
             if active_param_names:
-                samples = {var: samples[var] for var in active_param_names if var in samples}
-                logger.debug(f"Filtered dict to active parameters: {list(samples.keys())}")
+                samples = {
+                    var: samples[var] for var in active_param_names if var in samples
+                }
+                logger.debug(
+                    f"Filtered dict to active parameters: {list(samples.keys())}"
+                )
         elif isinstance(trace_data, np.ndarray):
             # NumPy array - use directly
             samples = trace_data
@@ -606,18 +620,24 @@ def plot_mcmc_corner(
                 # Filter parameter names and units to match active parameters
                 filtered_param_names = param_names
                 filtered_param_units = param_units
-                
+
                 if active_param_names and param_names:
                     # Create mapping from original param names to their indices
                     param_name_to_idx = {name: i for i, name in enumerate(param_names)}
-                    
+
                     # Filter param_names and param_units to only include active parameters
-                    filtered_param_names = [name for name in active_param_names if name in param_name_to_idx]
+                    filtered_param_names = [
+                        name for name in active_param_names if name in param_name_to_idx
+                    ]
                     if param_units:
-                        filtered_param_units = [param_units[param_name_to_idx[name]] for name in filtered_param_names if name in param_name_to_idx]
+                        filtered_param_units = [
+                            param_units[param_name_to_idx[name]]
+                            for name in filtered_param_names
+                            if name in param_name_to_idx
+                        ]
                     else:
                         filtered_param_units = None
-                    
+
                     logger.debug(f"Filtered param names: {filtered_param_names}")
                     logger.debug(f"Filtered param units: {filtered_param_units}")
 
@@ -626,7 +646,9 @@ def plot_mcmc_corner(
                 for i in range(n_params):
                     if filtered_param_names and i < len(filtered_param_names):
                         if filtered_param_units and i < len(filtered_param_units):
-                            labels.append(f"{filtered_param_names[i]}\n[{filtered_param_units[i]}]")
+                            labels.append(
+                                f"{filtered_param_names[i]}\n[{filtered_param_units[i]}]"
+                            )
                         else:
                             labels.append(filtered_param_names[i])
                     else:
@@ -880,10 +902,14 @@ def plot_mcmc_convergence_diagnostics(
 
         # Get active parameters from config to filter out inactive ones
         active_param_names = None
-        if config and "initial_parameters" in config and "active_parameters" in config["initial_parameters"]:
+        if (
+            config
+            and "initial_parameters" in config
+            and "active_parameters" in config["initial_parameters"]
+        ):
             active_param_names = config["initial_parameters"]["active_parameters"]
             logger.debug(f"Using active parameters from config: {active_param_names}")
-        
+
         # Use active parameters if available, otherwise use param_names
         if active_param_names:
             param_names = active_param_names
@@ -891,7 +917,9 @@ def plot_mcmc_convergence_diagnostics(
         elif param_names:
             logger.debug(f"Using provided parameter names: {param_names}")
         else:
-            logger.debug("No parameter names provided, will use all available parameters")
+            logger.debug(
+                "No parameter names provided, will use all available parameters"
+            )
 
         # Create figure with multiple subplots
         fig = plt.figure(
@@ -904,23 +932,39 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 1: R-hat values
         ax1 = fig.add_subplot(gs[0, 0])
-        r_hat_dict = diagnostics.get("r_hat", {})
-        logger.debug(f"R-hat from diagnostics: {r_hat_dict}")
         
-        # If r_hat dict is missing or empty, compute from trace data
+        # Check for diagnostics with various key names (r_hat, rhat)
+        r_hat_data = diagnostics.get("r_hat") or diagnostics.get("rhat")
+        logger.debug(f"R-hat from diagnostics: {r_hat_data}")
+        
+        # Convert ArviZ Dataset to dict if needed
+        r_hat_dict = {}
+        if r_hat_data is not None:
+            try:
+                if hasattr(r_hat_data, "items"):
+                    # ArviZ Dataset object
+                    r_hat_dict = {str(k): float(v) for k, v in r_hat_data.items()}
+                elif isinstance(r_hat_data, dict):
+                    # Already a dictionary
+                    r_hat_dict = r_hat_data
+                logger.debug(f"Converted R-hat dict: {r_hat_dict}")
+            except Exception as e:
+                logger.warning(f"Could not convert R-hat data: {e}")
+
+        # If r_hat dict is still missing or empty, compute from trace data
         if not r_hat_dict and hasattr(trace_data, "posterior"):
             try:
                 r_hat_summary = az.rhat(trace_data)
                 logger.debug(f"Computed R-hat summary: {r_hat_summary}")
-                if hasattr(r_hat_summary, 'to_dict'):
-                    r_hat_dict = r_hat_summary.to_dict() # type: ignore
+                if hasattr(r_hat_summary, "to_dict"):
+                    r_hat_dict = r_hat_summary.to_dict()  # type: ignore
                 else:
                     # Convert DataArray to dict
-                    r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()} # type: ignore
-                logger.debug(f"Converted R-hat dict: {r_hat_dict}")
+                    r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()}  # type: ignore
+                logger.debug(f"Computed R-hat dict: {r_hat_dict}")
             except Exception as e:
                 logger.warning(f"Could not compute R-hat from trace data: {e}")
-        
+
         if r_hat_dict:
             logger.debug(f"Processing R-hat dict with {len(r_hat_dict)} entries")
             # Filter for active parameters if available in config
@@ -930,23 +974,27 @@ def plot_mcmc_convergence_diagnostics(
             else:
                 param_names_plot = param_names
                 logger.debug(f"Using filtered parameter names: {param_names_plot}")
-                
+
             # Further filter to only include parameters that actually exist in r_hat_dict
             available_params = [name for name in param_names_plot if name in r_hat_dict]
             logger.debug(f"Parameters available in R-hat data: {available_params}")
             param_names_plot = available_params
             r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names_plot]
-            logger.debug(f"R-hat values for plotting: {dict(zip(param_names_plot, r_hat_values))}")
+            logger.debug(
+                f"R-hat values for plotting: {dict(zip(param_names_plot, r_hat_values))}"
+            )
 
             # Only plot if we have data
             if param_names_plot and r_hat_values:
-                logger.debug(f"Creating R-hat plot with {len(param_names_plot)} parameters")
+                logger.debug(
+                    f"Creating R-hat plot with {len(param_names_plot)} parameters"
+                )
                 colors = [
                     "green" if r < 1.1 else "orange" if r < 1.2 else "red"
                     for r in r_hat_values
                 ]
                 bars = ax1.barh(param_names_plot, r_hat_values, color=colors, alpha=0.7)
-                
+
                 # Set appropriate axis limits
                 if max(r_hat_values) > 0:
                     ax1.set_xlim(0.9, max(max(r_hat_values) * 1.1, 1.3))
@@ -964,7 +1012,11 @@ def plot_mcmc_convergence_diagnostics(
                     )
 
                 ax1.axvline(
-                    x=1.1, color="red", linestyle="--", alpha=0.7, label="R̂ = 1.1 threshold"
+                    x=1.1,
+                    color="red",
+                    linestyle="--",
+                    alpha=0.7,
+                    label="R̂ = 1.1 threshold",
                 )
                 ax1.set_xlabel("R̂ (Gelman-Rubin statistic)")
                 ax1.set_title("Convergence: R̂ Values")
@@ -973,27 +1025,46 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 2: Effective Sample Size (ESS)
         ax2 = fig.add_subplot(gs[0, 1])
-        ess_dict = diagnostics.get("ess_bulk", {})
         
-        # If ess_bulk dict is missing or empty, compute from trace data
+        # Check for diagnostics with various key names (ess_bulk, ess)
+        ess_data = diagnostics.get("ess_bulk") or diagnostics.get("ess")
+        logger.debug(f"ESS from diagnostics: {ess_data}")
+        
+        # Convert ArviZ Dataset to dict if needed
+        ess_dict = {}
+        if ess_data is not None:
+            try:
+                if hasattr(ess_data, "items"):
+                    # ArviZ Dataset object
+                    ess_dict = {str(k): float(v) for k, v in ess_data.items()}
+                elif isinstance(ess_data, dict):
+                    # Already a dictionary
+                    ess_dict = ess_data
+                logger.debug(f"Converted ESS dict: {ess_dict}")
+            except Exception as e:
+                logger.warning(f"Could not convert ESS data: {e}")
+
+        # If ESS dict is still missing or empty, compute from trace data
         if not ess_dict and hasattr(trace_data, "posterior"):
             try:
                 ess_summary = az.ess(trace_data)
-                if hasattr(ess_summary, 'to_dict'):
+                logger.debug(f"Computed ESS summary: {ess_summary}")
+                if hasattr(ess_summary, "to_dict"):
                     ess_dict = ess_summary.to_dict()
                 else:
                     # Convert DataArray to dict
                     ess_dict = {str(k): float(v) for k, v in ess_summary.items()}
+                logger.debug(f"Computed ESS dict: {ess_dict}")
             except Exception as e:
                 logger.warning(f"Could not compute ESS from trace data: {e}")
-        
+
         if ess_dict:
             # Filter for active parameters if available in config
             if param_names is None:
                 param_names_plot = list(ess_dict.keys())
             else:
                 param_names_plot = param_names
-                
+
             # Further filter to only include parameters that actually exist in ess_dict
             param_names_plot = [name for name in param_names_plot if name in ess_dict]
             ess_values = [ess_dict.get(name, 0) for name in param_names_plot]
@@ -1044,34 +1115,55 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 3: Monte Carlo Standard Error
         ax3 = fig.add_subplot(gs[0, 2])
-        mcse_dict = diagnostics.get("mcse_mean", {})
         
-        # If mcse_mean dict is missing or empty, compute from trace data
+        # Check for diagnostics with various key names (mcse_mean, mcse)
+        mcse_data = diagnostics.get("mcse_mean") or diagnostics.get("mcse")
+        logger.debug(f"MCSE from diagnostics: {mcse_data}")
+        
+        # Convert ArviZ Dataset to dict if needed
+        mcse_dict = {}
+        if mcse_data is not None:
+            try:
+                if hasattr(mcse_data, "items"):
+                    # ArviZ Dataset object
+                    mcse_dict = {str(k): float(v) for k, v in mcse_data.items()}
+                elif isinstance(mcse_data, dict):
+                    # Already a dictionary
+                    mcse_dict = mcse_data
+                logger.debug(f"Converted MCSE dict: {mcse_dict}")
+            except Exception as e:
+                logger.warning(f"Could not convert MCSE data: {e}")
+
+        # If MCSE dict is still missing or empty, compute from trace data
         if not mcse_dict and hasattr(trace_data, "posterior"):
             try:
                 mcse_summary = az.mcse(trace_data)
-                if hasattr(mcse_summary, 'to_dict'):
+                logger.debug(f"Computed MCSE summary: {mcse_summary}")
+                if hasattr(mcse_summary, "to_dict"):
                     mcse_dict = mcse_summary.to_dict()
                 else:
                     # Convert DataArray to dict
                     mcse_dict = {str(k): float(v) for k, v in mcse_summary.items()}
+                logger.debug(f"Computed MCSE dict: {mcse_dict}")
             except Exception as e:
                 logger.warning(f"Could not compute MCSE from trace data: {e}")
-        
+
         if mcse_dict:
             # Filter for active parameters if available in config
             if param_names is None:
                 param_names_plot = list(mcse_dict.keys())
             else:
                 param_names_plot = param_names
-                
+
             # Further filter to only include parameters that actually exist in mcse_dict
             param_names_plot = [name for name in param_names_plot if name in mcse_dict]
             mcse_values = [mcse_dict.get(name, 0) for name in param_names_plot]
 
             # Only plot if we have data
             if param_names_plot and mcse_values:
-                bars = ax3.barh(param_names_plot, mcse_values, alpha=0.7, color="skyblue")
+                bars = ax3.barh(
+                    param_names_plot, mcse_values, alpha=0.7, color="skyblue"
+                )
 
                 # Set appropriate axis limits
                 if max(mcse_values) > 0:
@@ -1263,45 +1355,125 @@ def plot_diagnostic_summary(
 
         # Plot 2: Parameter uncertainty (if available)
         ax2 = fig.add_subplot(gs[0, 1])
-        if "parameter_uncertainties" in results:
-            uncertainties = results["parameter_uncertainties"]
-            if uncertainties:  # Check if not empty
-                param_names = list(uncertainties.keys())
-                uncertainty_values = list(uncertainties.values())
+        uncertainties = results.get("parameter_uncertainties", {})
+        
+        # Try to compute uncertainties from MCMC trace if not available
+        if not uncertainties and "mcmc_trace" in results and ARVIZ_AVAILABLE:
+            try:
+                import arviz as az
+                trace_data = results["mcmc_trace"]
+                if hasattr(trace_data, "posterior"):
+                    # Get parameter names from config or trace data
+                    param_names = None
+                    if (
+                        config
+                        and "initial_parameters" in config
+                        and "parameter_names" in config["initial_parameters"]
+                    ):
+                        param_names = config["initial_parameters"]["parameter_names"]
+                    elif hasattr(trace_data.posterior, "data_vars"):
+                        param_names = list(trace_data.posterior.data_vars.keys())
+                    
+                    if param_names:
+                        uncertainties = {}
+                        for param in param_names:
+                            if param in trace_data.posterior:
+                                samples = trace_data.posterior[param].values.flatten()
+                                uncertainties[param] = float(np.std(samples))
+                        logger.debug(f"Computed parameter uncertainties: {uncertainties}")
+            except Exception as e:
+                logger.warning(f"Could not compute parameter uncertainties: {e}")
+        
+        if uncertainties:
+            param_names = list(uncertainties.keys())
+            uncertainty_values = list(uncertainties.values())
+            
+            # Filter for active parameters if available
+            if (
+                config
+                and "initial_parameters" in config
+                and "active_parameters" in config["initial_parameters"]
+            ):
+                active_param_names = config["initial_parameters"]["active_parameters"]
+                param_names = [name for name in active_param_names if name in uncertainties]
+                uncertainty_values = [uncertainties[name] for name in param_names]
 
-                if param_names and uncertainty_values:  # Check if we have data
-                    ax2.barh(param_names, uncertainty_values, alpha=0.7)
-                    # Set appropriate axis limits
-                    if max(uncertainty_values) > 0:
-                        ax2.set_xlim(0, max(uncertainty_values) * 1.1)
-                    ax2.set_xlabel("Parameter Uncertainty")
-                    ax2.set_title("Parameter Uncertainties")
-                    ax2.grid(True, alpha=0.3)
+            if param_names and uncertainty_values:  # Check if we have data
+                ax2.barh(param_names, uncertainty_values, alpha=0.7)
+                # Set appropriate axis limits
+                if max(uncertainty_values) > 0:
+                    ax2.set_xlim(0, max(uncertainty_values) * 1.1)
+                ax2.set_xlabel("Parameter Uncertainty (σ)")
+                ax2.set_title("Parameter Uncertainties")
+                ax2.grid(True, alpha=0.3)
+        else:
+            # Show placeholder message if no uncertainties available
+            ax2.text(0.5, 0.5, "No uncertainty data\navailable", 
+                    ha='center', va='center', transform=ax2.transAxes,
+                    fontsize=12, color='gray')
+            ax2.set_title("Parameter Uncertainties")
+            ax2.set_xticks([])
+            ax2.set_yticks([])
 
         # Plot 3: Convergence diagnostics (if MCMC results available)
         ax3 = fig.add_subplot(gs[0, 2])
         if "mcmc_diagnostics" in results and ARVIZ_AVAILABLE:
             # Plot R-hat values
             diagnostics = results["mcmc_diagnostics"]
-            r_hat_dict = diagnostics.get("r_hat", {})
             
+            # Check for diagnostics with various key names (r_hat, rhat)
+            r_hat_data = diagnostics.get("r_hat") or diagnostics.get("rhat")
+            logger.debug(f"R-hat data for summary plot: {r_hat_data}")
+            
+            # Convert ArviZ Dataset to dict if needed
+            r_hat_dict = {}
+            if r_hat_data is not None:
+                try:
+                    if hasattr(r_hat_data, "items"):
+                        # ArviZ Dataset object
+                        r_hat_dict = {str(k): float(v) for k, v in r_hat_data.items()}
+                    elif isinstance(r_hat_data, dict):
+                        # Already a dictionary
+                        r_hat_dict = r_hat_data
+                    logger.debug(f"Converted R-hat dict for summary: {r_hat_dict}")
+                except Exception as e:
+                    logger.warning(f"Could not convert R-hat data for summary: {e}")
+
             # Try to compute R-hat from trace data if missing
             if not r_hat_dict and "mcmc_trace" in results:
                 try:
                     import arviz as az
+
                     trace_data = results["mcmc_trace"]
                     if hasattr(trace_data, "posterior"):
                         r_hat_summary = az.rhat(trace_data)
-                        if hasattr(r_hat_summary, 'to_dict'):
-                            r_hat_dict = r_hat_summary.to_dict() # type: ignore
+                        if hasattr(r_hat_summary, "to_dict"):
+                            r_hat_dict = r_hat_summary.to_dict()  # type: ignore
                         else:
-                            r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()} # type: ignore
+                            r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()}  # type: ignore
+                        logger.debug(f"Computed R-hat dict for summary: {r_hat_dict}")
                 except Exception as e:
                     logger.warning(f"Could not compute R-hat for summary plot: {e}")
-            
+
             if r_hat_dict:
-                param_names = list(r_hat_dict.keys())
-                r_hat_values = list(r_hat_dict.values())
+                # Get active parameters from config to filter out inactive ones
+                active_param_names = None
+                if (
+                    config
+                    and "initial_parameters" in config
+                    and "active_parameters" in config["initial_parameters"]
+                ):
+                    active_param_names = config["initial_parameters"]["active_parameters"]
+                    logger.debug(f"Using active parameters for summary: {active_param_names}")
+                
+                # Filter for active parameters if available
+                if active_param_names:
+                    param_names = [name for name in active_param_names if name in r_hat_dict]
+                else:
+                    param_names = list(r_hat_dict.keys())
+                
+                r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names]
+                logger.debug(f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values))}")
 
                 if param_names and r_hat_values:  # Check if we have data
                     colors = [
@@ -1323,58 +1495,90 @@ def plot_diagnostic_summary(
                     ax3.set_title("MCMC Convergence")
                     ax3.legend()
                     ax3.grid(True, alpha=0.3)
+        else:
+            # Show placeholder message if no MCMC diagnostics available
+            ax3.text(0.5, 0.5, "No MCMC convergence\ndiagnostics available", 
+                    ha='center', va='center', transform=ax3.transAxes,
+                    fontsize=12, color='gray')
+            ax3.set_title("MCMC Convergence")
+            ax3.set_xticks([])
+            ax3.set_yticks([])
 
         # Plot 4: Residuals analysis (if available)
         ax4 = fig.add_subplot(gs[1, :])
-        if "residuals" in results:
-            residuals = results["residuals"]
-            if isinstance(residuals, np.ndarray) and residuals.size > 0:
-                # Flatten residuals for histogram
-                flat_residuals = residuals.flatten()
-                
-                # Only plot if we have data
-                if len(flat_residuals) > 0:
-                    # Create histogram and Q-Q plot side by side
-                    ax4.hist(
-                        flat_residuals,
-                        bins=50,
-                        alpha=0.7,
-                        density=True,
-                        color="skyblue",
+        residuals = results.get("residuals")
+        
+        # Try to compute residuals from experimental and theoretical data if not available
+        if residuals is None:
+            exp_data = results.get("experimental_data")
+            theory_data = results.get("theoretical_data")
+            
+            if exp_data is not None and theory_data is not None:
+                try:
+                    if isinstance(exp_data, np.ndarray) and isinstance(theory_data, np.ndarray):
+                        if exp_data.shape == theory_data.shape:
+                            residuals = exp_data - theory_data
+                            logger.debug(f"Computed residuals from exp - theory data, shape: {residuals.shape}")
+                        else:
+                            logger.warning(f"Shape mismatch: exp_data {exp_data.shape} vs theory_data {theory_data.shape}")
+                except Exception as e:
+                    logger.warning(f"Could not compute residuals from data: {e}")
+        
+        if residuals is not None and isinstance(residuals, np.ndarray) and residuals.size > 0:
+            # Flatten residuals for histogram
+            flat_residuals = residuals.flatten()
+
+            # Only plot if we have data
+            if len(flat_residuals) > 0:
+                # Create histogram
+                ax4.hist(
+                    flat_residuals,
+                    bins=50,
+                    alpha=0.7,
+                    density=True,
+                    color="skyblue",
+                )
+
+                # Overlay normal distribution for comparison
+                mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
+
+                # Avoid division by zero if sigma is too small
+                if sigma > 1e-10:
+                    x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
+                    ax4.plot(
+                        x,
+                        (1 / (sigma * np.sqrt(2 * np.pi)))
+                        * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
+                        "r-",
+                        linewidth=2,
+                        label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
+                    )
+                else:
+                    # If sigma is effectively zero, just show the mean as a vertical line
+                    ax4.axvline(
+                        float(mu),
+                        color="red",
+                        linestyle="--",
+                        linewidth=2,
+                        label=f"Mean={mu:.3e} (σ≈0)",
+                    )
+                    logger.warning(
+                        "Standard deviation is very small, showing mean line instead of normal distribution"
                     )
 
-                    # Overlay normal distribution for comparison
-                    mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
-
-                    # Avoid division by zero if sigma is too small
-                    if sigma > 1e-10:
-                        x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
-                        ax4.plot(
-                            x,
-                            (1 / (sigma * np.sqrt(2 * np.pi)))
-                            * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
-                            "r-",
-                            linewidth=2,
-                            label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
-                        )
-                    else:
-                        # If sigma is effectively zero, just show the mean as a vertical line
-                        ax4.axvline(
-                            float(mu),
-                            color="red",
-                            linestyle="--",
-                            linewidth=2,
-                            label=f"Mean={mu:.3e} (σ≈0)",
-                        )
-                        logger.warning(
-                            "Standard deviation is very small, showing mean line instead of normal distribution"
-                        )
-
-                    ax4.set_xlabel("Residual Value")
-                    ax4.set_ylabel("Density")
-                    ax4.set_title("Residuals Distribution Analysis")
-                    ax4.legend()
-                    ax4.grid(True, alpha=0.3)
+                ax4.set_xlabel("Residual Value")
+                ax4.set_ylabel("Density")
+                ax4.set_title("Residuals Distribution Analysis")
+                ax4.legend()
+                ax4.grid(True, alpha=0.3)
+        else:
+            # Show placeholder message if no residuals available
+            ax4.text(0.5, 0.5, "No residuals data available\n(requires experimental and theoretical data)", 
+                    ha='center', va='center', transform=ax4.transAxes,
+                    fontsize=12, color='gray')
+            ax4.set_title("Residuals Distribution Analysis")
+            ax4.set_xticks([])
+            ax4.set_yticks([])
 
         # Add overall title
         fig.suptitle("Analysis Diagnostic Summary", fontsize=18, y=0.98)
