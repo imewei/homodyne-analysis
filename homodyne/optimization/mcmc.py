@@ -455,8 +455,9 @@ class MCMCSampler:
         assert pm is not None
         assert az is not None
 
-        # Extract MCMC settings from the correct configuration section
-        mcmc_config = config.get("optimization_config", {}).get("mcmc_sampling", {})
+        # Use the MCMC configuration from the sampler instance
+        mcmc_config = self.mcmc_config
+        
         draws = mcmc_config.get("draws", 1000)
         tune = mcmc_config.get("tune", 500)
         chains = mcmc_config.get("chains", 2)
