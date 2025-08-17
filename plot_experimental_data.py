@@ -102,7 +102,7 @@ def main():
         epilog="""
 Examples:
   %(prog)s                                    # Use default config file
-  %(prog)s --config my_config_simon.json     # Use specific config file
+  %(prog)s --config my_config_simon.json      # Use specific config file
   %(prog)s --verbose                          # Enable debug logging
         """,
     )

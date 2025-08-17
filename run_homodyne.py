@@ -422,10 +422,12 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
                 "iterations": getattr(result, 'nit', None),
                 "function_evaluations": getattr(result, 'nfev', None)
             },
-            "best_overall": {
+            "classical_summary": {
                 "parameters": best_params,
                 "chi_squared": result.fun,
-                "method": "Classical"
+                "method": "Classical",
+                "evaluation_metric": "chi_squared",
+                "_note": "Classical optimization uses chi-squared for quality assessment"
             },
             "methods_used": ["Classical"]
         }
@@ -601,23 +603,33 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
             best_params = [posterior_means.get(
                 name, 0.0) for name in param_names]
 
-        # Calculate chi-squared for best MCMC parameters
-        chi_squared = None
-        if best_params:
-            try:
-                chi_squared = analyzer.calculate_chi_squared_optimized(
-                    best_params, phi_angles, c2_exp, method_name="MCMC"
-                )
-                logger.info(f"MCMC posterior mean χ²_red: {chi_squared:.6e}")
-            except Exception as e:
-                logger.warning(
-                    f"Failed to calculate chi-squared for MCMC results: {e}")
+        # Extract convergence quality for MCMC summary (no chi-squared calculation)
+        convergence_quality = "unknown"
+        if 'diagnostics' in mcmc_results:
+            diag = mcmc_results['diagnostics']
+            max_rhat = diag.get('max_rhat', float('inf'))
+            min_ess = diag.get('min_ess', 0)
+            
+            # Use same thresholds as in per-angle analysis
+            if max_rhat < 1.01 and min_ess > 400:
+                convergence_quality = "excellent"
+            elif max_rhat < 1.05 and min_ess > 200:
+                convergence_quality = "good"
+            elif max_rhat < 1.1 and min_ess > 100:
+                convergence_quality = "acceptable"
+            else:
+                convergence_quality = "poor"
+            
+            logger.info(f"MCMC convergence quality: {convergence_quality.upper()}")
+            logger.info(f"MCMC posterior mean parameters: {best_params}")
+        else:
+            logger.warning("No convergence diagnostics available for MCMC results")
 
         # Format results for compatibility with main analysis framework
         return {
             "mcmc_optimization": {
                 "parameters": best_params,
-                "chi_squared": chi_squared,
+                "convergence_quality": convergence_quality,
                 "optimization_time": mcmc_execution_time,
                 "total_time": mcmc_execution_time,
                 "success": mcmc_results.get('diagnostics', {}).get('converged', True),
@@ -625,10 +637,14 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 "posterior_means": mcmc_results.get('posterior_means', {}),
                 "convergence_diagnostics": mcmc_results.get('diagnostics', {})
             },
-            "best_overall": {
+            "mcmc_summary": {
                 "parameters": best_params,
-                "chi_squared": chi_squared,
-                "method": "MCMC"
+                "convergence_quality": convergence_quality,
+                "max_rhat": mcmc_results.get('diagnostics', {}).get('max_rhat', None),
+                "min_ess": mcmc_results.get('diagnostics', {}).get('min_ess', None),
+                "method": "MCMC",
+                "evaluation_metric": "convergence_diagnostics",
+                "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment"
             },
             "methods_used": ["MCMC"]
         }
@@ -727,6 +743,36 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     if all_results:
         all_results["methods_used"] = methods_used
         all_results["methods_attempted"] = methods_attempted
+        
+        # Add method-appropriate summary information
+        methods_summary = {}
+        
+        if "Classical" in methods_used and "classical_summary" in all_results:
+            classical_summary = all_results["classical_summary"]
+            methods_summary["Classical"] = {
+                "evaluation_metric": "chi_squared",
+                "chi_squared": classical_summary.get("chi_squared"),
+                "parameters": classical_summary.get("parameters"),
+                "quality_note": "Lower chi-squared indicates better fit to experimental data"
+            }
+            
+        if "MCMC" in methods_used and "mcmc_summary" in all_results:
+            mcmc_summary = all_results["mcmc_summary"]
+            methods_summary["MCMC"] = {
+                "evaluation_metric": "convergence_diagnostics", 
+                "convergence_quality": mcmc_summary.get("convergence_quality"),
+                "max_rhat": mcmc_summary.get("max_rhat"),
+                "min_ess": mcmc_summary.get("min_ess"),
+                "parameters": mcmc_summary.get("parameters"),
+                "quality_note": "Convergence quality based on R̂ and ESS criteria"
+            }
+            
+        all_results["methods_comparison"] = {
+            "_note": "Methods use different evaluation criteria - do not directly compare chi-squared to convergence diagnostics",
+            "methods_summary": methods_summary,
+            "recommendation": "Use Classical for fast parameter estimates; use MCMC for uncertainty quantification"
+        }
+        
         return all_results
 
     logger.error("❌ All optimization methods failed")
@@ -747,12 +793,19 @@ def main():
         epilog="""
 Examples:
   %(prog)s                                    # Run with default classical method
-  %(prog)s --method all --verbose             # Run all methods with debug logging
+  %(prog)s --method all --verbose             # Run all methods with debug logging  
   %(prog)s --config my_config.json            # Use custom config file
   %(prog)s --output-dir ./results --verbose   # Custom output directory with verbose logging
   %(prog)s --static-isotropic                 # Force static mode (zero shear, 3 parameters)
   %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
   %(prog)s --static-isotropic --method all    # Run all methods in static mode
+
+Method Quality Assessment:
+  Classical: Uses chi-squared goodness-of-fit (lower is better)
+  MCMC:      Uses convergence diagnostics (R̂ < 1.1, ESS > 100 for acceptable quality)
+  
+  Note: When running --method all, results use different evaluation criteria.
+        Do not directly compare chi-squared values to convergence diagnostics.
         """,
     )
 
