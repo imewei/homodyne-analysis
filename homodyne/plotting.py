@@ -1717,11 +1717,11 @@ def plot_experimental_c2_data(
     phi_angles : np.ndarray
         Array of scattering angles in degrees
     outdir : Union[str, Path], optional
-        Output directory for saved plots (default: "./plots")
+        Output directory for saved plots
     config : Optional[Dict], optional
         Configuration dictionary for plotting settings
     dt : float, optional
-        Time step between frames in seconds (default: 1.0)
+        Time step between frames in seconds (default: 0.1)
     sample_description : str, optional
         Description of the sample for plot titles
 
