@@ -411,6 +411,11 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
             c2_experimental=c2_exp
         )
 
+        # Store best parameters on analyzer core for MCMC initialization
+        if hasattr(optimizer, 'best_params_classical') and optimizer.best_params_classical is not None:
+            analyzer.best_params_classical = optimizer.best_params_classical
+            logger.info("✓ Classical results stored for MCMC initialization")
+
         return {
             "classical_optimization": {
                 "parameters": best_params,
@@ -500,6 +505,13 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         return None
 
     try:
+        # Step 2.5: Set initial parameters for MCMC if not already set by classical optimization
+        if not hasattr(analyzer, 'best_params_classical') or analyzer.best_params_classical is None:
+            analyzer.best_params_classical = initial_params
+            logger.info("✓ Using provided initial parameters for MCMC initialization")
+        else:
+            logger.info("✓ Using stored classical results for MCMC initialization")
+
         # Step 3: Create MCMC sampler (this already validates)
         logger.info("Creating MCMC sampler...")
         sampler = create_mcmc_sampler(analyzer, analyzer.config)
@@ -727,8 +739,21 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     # Run MCMC sampling
     methods_attempted.append("MCMC")
     logger.info("Attempting MCMC sampling...")
+    
+    # Use classical results for MCMC initialization if available
+    mcmc_initial_params = initial_params
+    if classical_results and "classical_summary" in classical_results:
+        classical_best_params = classical_results["classical_summary"].get("parameters")
+        if classical_best_params is not None:
+            mcmc_initial_params = classical_best_params
+            logger.info("✓ Using classical optimization results for MCMC initialization")
+        else:
+            logger.info("⚠ Classical results available but no parameters found, using initial parameters for MCMC")
+    else:
+        logger.info("⚠ No classical results available, using initial parameters for MCMC")
+    
     mcmc_results = run_mcmc_optimization(
-        analyzer, initial_params, phi_angles, c2_exp, output_dir)
+        analyzer, mcmc_initial_params, phi_angles, c2_exp, output_dir)
     if mcmc_results:
         all_results.update(mcmc_results)
         methods_used.append("MCMC")
