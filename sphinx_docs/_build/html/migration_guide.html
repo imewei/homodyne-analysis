@@ -1,0 +1,659 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migration Guide &mdash; Homodyne Analysis 6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=66ead900" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing Guide" href="contributing.html" />
+    <link rel="prev" title="Troubleshooting Guide" href="troubleshooting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980b9" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Homodyne Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis_modes.html">Analysis Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration System</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="optimization_methods.html">Optimization Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scaling_optimization.html">Scaling Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_validation.html">Data Validation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">homodyne</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing and Quality Assurance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migration Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview-of-changes">Overview of Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#breaking-changes">Breaking Changes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scaling-optimization">Scaling Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mode-configuration-changes">Mode Configuration Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#command-line-interface-changes">Command Line Interface Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-migration">Configuration Migration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#automated-migration-tools">Automated Migration Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#manual-migration-steps">Manual Migration Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mode-specific-migration">Mode-Specific Migration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#migrating-to-static-isotropic-mode">Migrating to Static Isotropic Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#migrating-to-static-anisotropic-mode">Migrating to Static Anisotropic Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#migrating-to-laminar-flow-mode">Migrating to Laminar Flow Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-migration">Performance Migration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#numba-jit-acceleration">Numba JIT Acceleration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-angle-filtering">Smart Angle Filtering</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-validation-integration">Data Validation Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#new-data-validation-features">New Data Validation Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#workflow-migration">Workflow Migration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#analysis-workflow-updates">Analysis Workflow Updates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#progressive-analysis-strategy">Progressive Analysis Strategy</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#api-migration">API Migration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#python-api-changes">Python API Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#migration-validation">Migration Validation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#testing-migration-success">Testing Migration Success</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#migration-checklist">Migration Checklist</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pre-migration-checklist">Pre-Migration Checklist</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-migration-checklist">Configuration Migration Checklist</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#post-migration-checklist">Post-Migration Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting-migration-issues">Troubleshooting Migration Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#common-migration-problems">Common Migration Problems</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#migration-support">Migration Support</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#getting-help">Getting Help</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980b9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Homodyne Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Migration Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/migration_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migration-guide">
+<h1>Migration Guide<a class="headerlink" href="#migration-guide" title="Link to this heading"></a></h1>
+<p>This guide helps users migrate configurations and workflows from legacy versions of the homodyne package to the current version 6.0, ensuring smooth transitions and taking advantage of new features.</p>
+<section id="overview-of-changes">
+<h2>Overview of Changes<a class="headerlink" href="#overview-of-changes" title="Link to this heading"></a></h2>
+<p>Version 6.0 introduces several important changes:</p>
+<ul class="simple">
+<li><p><strong>Always-On Scaling Optimization</strong>: Scaling is now automatically enabled for all analyses</p></li>
+<li><p><strong>Enhanced Mode System</strong>: Explicit static isotropic, static anisotropic, and laminar flow modes</p></li>
+<li><p><strong>Improved Configuration Templates</strong>: Mode-specific templates with intelligent defaults</p></li>
+<li><p><strong>Enhanced Data Validation</strong>: Integrated experimental data validation workflows</p></li>
+<li><p><strong>Performance Optimizations</strong>: Numba JIT compilation and smart angle filtering</p></li>
+</ul>
+</section>
+<section id="breaking-changes">
+<h2>Breaking Changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h2>
+<section id="scaling-optimization">
+<h3>Scaling Optimization<a class="headerlink" href="#scaling-optimization" title="Link to this heading"></a></h3>
+<p><strong>Legacy Behavior</strong>: Scaling optimization was optional and controlled by configuration</p>
+<p><strong>Current Behavior</strong>: <strong>Scaling optimization is always enabled</strong> for scientific accuracy</p>
+<p><strong>Migration Required</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">REMOVE</span><span class="w"> </span><span class="kc">t</span><span class="err">his</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">co</span><span class="kc">nf</span><span class="err">igura</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="kc">f</span><span class="err">iles</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;chi_squared_calculation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;scaling_optimization&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">  </span><span class="c1">// Remove this entire section or line</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Impact</strong>:
+- All analyses now automatically apply proper g₁ to g₂ scaling
+- Chi-squared statistics are always scientifically meaningful
+- No computational penalty for this change</p>
+</section>
+<section id="mode-configuration-changes">
+<h3>Mode Configuration Changes<a class="headerlink" href="#mode-configuration-changes" title="Link to this heading"></a></h3>
+<p><strong>Legacy Mode Settings</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">Legacy</span><span class="w"> </span><span class="err">co</span><span class="kc">nf</span><span class="err">igura</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="err">(s</span><span class="kc">t</span><span class="err">ill</span><span class="w"> </span><span class="err">suppor</span><span class="kc">te</span><span class="err">d)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Current Mode Settings</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">Explici</span><span class="kc">t</span><span class="w"> </span><span class="err">mode</span><span class="w"> </span><span class="err">speci</span><span class="kc">f</span><span class="err">ica</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="err">(recomme</span><span class="kc">n</span><span class="err">ded)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;static_submode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anisotropic&quot;</span><span class="w">  </span><span class="c1">// New field</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Migration Path</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Automatic Migration</strong>: Legacy configurations automatically default to anisotropic mode</p></li>
+<li><p><strong>Explicit Migration</strong>: Update configurations to specify exact mode</p></li>
+</ol>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">For</span><span class="w"> </span><span class="err">iso</span><span class="kc">tr</span><span class="err">opic</span><span class="w"> </span><span class="err">a</span><span class="kc">nal</span><span class="err">ysis</span><span class="w"> </span><span class="err">(</span><span class="kc">ne</span><span class="err">w</span><span class="p">,</span><span class="w"> </span><span class="kc">fastest</span><span class="err">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;static_submode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;isotropic&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="err">#</span><span class="w"> </span><span class="err">For</span><span class="w"> </span><span class="err">a</span><span class="kc">n</span><span class="err">iso</span><span class="kc">tr</span><span class="err">opic</span><span class="w"> </span><span class="err">a</span><span class="kc">nal</span><span class="err">ysis</span><span class="w"> </span><span class="err">(de</span><span class="kc">fault</span><span class="w"> </span><span class="kc">f</span><span class="err">or</span><span class="w"> </span><span class="err">legacy</span><span class="w"> </span><span class="err">co</span><span class="kc">nf</span><span class="err">igs)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;static_submode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anisotropic&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="err">#</span><span class="w"> </span><span class="err">For</span><span class="w"> </span><span class="kc">fl</span><span class="err">ow</span><span class="w"> </span><span class="err">a</span><span class="kc">nal</span><span class="err">ysis</span><span class="w"> </span><span class="err">(u</span><span class="kc">n</span><span class="err">cha</span><span class="kc">n</span><span class="err">ged)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="command-line-interface-changes">
+<h3>Command Line Interface Changes<a class="headerlink" href="#command-line-interface-changes" title="Link to this heading"></a></h3>
+<p><strong>New Command Line Flags</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># New explicit mode flags</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-isotropic<span class="w">     </span><span class="c1"># New fastest mode</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-anisotropic<span class="w">   </span><span class="c1"># Explicit anisotropic</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--laminar-flow<span class="w">         </span><span class="c1"># Explicit flow mode</span>
+</pre></div>
+</div>
+<p><strong>Legacy Compatibility</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Legacy flag (still works but deprecated)</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static<span class="w">              </span><span class="c1"># Maps to --static-anisotropic</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration-migration">
+<h2>Configuration Migration<a class="headerlink" href="#configuration-migration" title="Link to this heading"></a></h2>
+<section id="automated-migration-tools">
+<h3>Automated Migration Tools<a class="headerlink" href="#automated-migration-tools" title="Link to this heading"></a></h3>
+<p>Use the enhanced configuration generator for new-style configurations:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create mode-specific configurations</span>
+python<span class="w"> </span>create_config.py<span class="w"> </span>--mode<span class="w"> </span>static_isotropic<span class="w"> </span>--sample<span class="w"> </span>my_sample
+python<span class="w"> </span>create_config.py<span class="w"> </span>--mode<span class="w"> </span>static_anisotropic<span class="w"> </span>--sample<span class="w"> </span>my_sample
+python<span class="w"> </span>create_config.py<span class="w"> </span>--mode<span class="w"> </span>laminar_flow<span class="w"> </span>--sample<span class="w"> </span>my_sample
+</pre></div>
+</div>
+</section>
+<section id="manual-migration-steps">
+<h3>Manual Migration Steps<a class="headerlink" href="#manual-migration-steps" title="Link to this heading"></a></h3>
+<p><strong>Step 1: Remove Obsolete Settings</strong></p>
+<p>Remove scaling optimization settings (now always enabled):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;chi_squared_calculation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Remove this entire section or just the scaling_optimization line</span>
+<span class="w">    </span><span class="nt">&quot;scaling_optimization&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">  </span><span class="c1">// Remove this</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Step 2: Specify Analysis Mode Explicitly</strong></p>
+<p>Add explicit mode specification:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;static_submode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anisotropic&quot;</span><span class="w">  </span><span class="c1">// Add this line</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Step 3: Update Active Parameters (Optional)</strong></p>
+<p>Ensure active parameters are explicitly specified:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;initial_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;active_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;D_offset&quot;</span><span class="p">],</span><span class="w">  </span><span class="c1">// Explicit list</span>
+<span class="w">    </span><span class="nt">&quot;D0&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;alpha&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;D_offset&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Step 4: Add Performance Settings (Recommended)</strong></p>
+<p>Take advantage of new performance features:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;performance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;use_numba_jit&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">         </span><span class="c1">// Enable JIT acceleration</span>
+<span class="w">    </span><span class="nt">&quot;num_threads&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w">              </span><span class="c1">// Optimize threading</span>
+<span class="w">    </span><span class="nt">&quot;enable_angle_filtering&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">  </span><span class="c1">// For large datasets</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="mode-specific-migration">
+<h2>Mode-Specific Migration<a class="headerlink" href="#mode-specific-migration" title="Link to this heading"></a></h2>
+<section id="migrating-to-static-isotropic-mode">
+<h3>Migrating to Static Isotropic Mode<a class="headerlink" href="#migrating-to-static-isotropic-mode" title="Link to this heading"></a></h3>
+<p><strong>When to Use</strong>: Systems with no angular dependence, need for maximum speed</p>
+<p><strong>Configuration Changes</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;static_submode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;isotropic&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">// angle filtering automatically disabled</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;initial_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;active_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;D_offset&quot;</span><span class="p">]</span><span class="w">  </span><span class="c1">// 3 parameters</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Expected Behavior Changes</strong>:
+- No phi_angles_file loading (uses dummy angle)
+- Angle filtering automatically disabled
+- Significant speed improvement
+- Single angle computation</p>
+</section>
+<section id="migrating-to-static-anisotropic-mode">
+<h3>Migrating to Static Anisotropic Mode<a class="headerlink" href="#migrating-to-static-anisotropic-mode" title="Link to this heading"></a></h3>
+<p><strong>When to Use</strong>: Default for legacy static configurations, systems with angular dependence</p>
+<p><strong>Configuration Changes</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;static_submode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anisotropic&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enable_angle_filtering&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">  </span><span class="c1">// Recommended for performance</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;initial_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;active_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;D0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;D_offset&quot;</span><span class="p">]</span><span class="w">  </span><span class="c1">// 3 parameters</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Expected Behavior Changes</strong>:
+- phi_angles_file loaded for angle information
+- Angle filtering can be enabled for performance
+- Per-angle scaling optimization</p>
+</section>
+<section id="migrating-to-laminar-flow-mode">
+<h3>Migrating to Laminar Flow Mode<a class="headerlink" href="#migrating-to-laminar-flow-mode" title="Link to this heading"></a></h3>
+<p><strong>When to Use</strong>: Systems under flow or shear</p>
+<p><strong>Configuration Changes</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;static_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enable_angle_filtering&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">  </span><span class="c1">// Highly recommended for performance</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;initial_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;active_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;D0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;D_offset&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;gamma_dot_t0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;beta&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gamma_dot_t_offset&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;phi0&quot;</span>
+<span class="w">    </span><span class="p">]</span><span class="w">  </span><span class="c1">// All 7 parameters</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Expected Behavior Changes</strong>:
+- All flow parameters active
+- Angle filtering recommended for performance
+- Complex parameter space optimization</p>
+</section>
+</section>
+<section id="performance-migration">
+<h2>Performance Migration<a class="headerlink" href="#performance-migration" title="Link to this heading"></a></h2>
+<section id="numba-jit-acceleration">
+<h3>Numba JIT Acceleration<a class="headerlink" href="#numba-jit-acceleration" title="Link to this heading"></a></h3>
+<p><strong>New Feature</strong>: Numba JIT compilation for 3-5x speedup</p>
+<p><strong>Migration</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;performance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;use_numba_jit&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="c1">// Enable JIT compilation</span>
+<span class="w">    </span><span class="nt">&quot;numba_cache&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">     </span><span class="c1">// Cache compiled functions</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Environment Setup</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install Numba if not already installed</span>
+pip<span class="w"> </span>install<span class="w"> </span>numba
+
+<span class="c1"># Set environment variable for compatibility</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">NUMBA_DISABLE_INTEL_SVML</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+</section>
+<section id="smart-angle-filtering">
+<h3>Smart Angle Filtering<a class="headerlink" href="#smart-angle-filtering" title="Link to this heading"></a></h3>
+<p><strong>New Feature</strong>: Intelligent angle filtering for performance without accuracy loss</p>
+<p><strong>Migration</strong>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;enable_angle_filtering&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;angle_filter_ranges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mi">-10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">170</span><span class="p">,</span><span class="w"> </span><span class="mi">190</span><span class="p">]]</span><span class="w">  </span><span class="c1">// Default ranges</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Benefits</strong>:
+- 3-5x speedup for large datasets
+- Minimal accuracy impact
+- Automatic for isotropic mode</p>
+</section>
+</section>
+<section id="data-validation-integration">
+<h2>Data Validation Integration<a class="headerlink" href="#data-validation-integration" title="Link to this heading"></a></h2>
+<section id="new-data-validation-features">
+<h3>New Data Validation Features<a class="headerlink" href="#new-data-validation-features" title="Link to this heading"></a></h3>
+<p><strong>Enhanced Workflow</strong>: Integrated experimental data validation</p>
+<p><strong>Migration Options</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Command Line Integration</strong>:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add data validation to existing workflows</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--plot-experimental-data<span class="w"> </span>--config<span class="w"> </span>my_config.json
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Configuration Integration</strong>:</p></li>
+</ol>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;workflow_integration&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;analysis_workflow&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;plot_experimental_data_on_load&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;validate_data_quality&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;save_validation_plots&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Benefits</strong>:
+- Early problem detection
+- Comprehensive quality assessment
+- Visual diagnostics</p>
+</section>
+</section>
+<section id="workflow-migration">
+<h2>Workflow Migration<a class="headerlink" href="#workflow-migration" title="Link to this heading"></a></h2>
+<section id="analysis-workflow-updates">
+<h3>Analysis Workflow Updates<a class="headerlink" href="#analysis-workflow-updates" title="Link to this heading"></a></h3>
+<p><strong>Legacy Workflow</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Legacy approach</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static<span class="w"> </span>--method<span class="w"> </span>classical
+</pre></div>
+</div>
+<p><strong>Current Recommended Workflow</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Data validation (new)</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--plot-experimental-data<span class="w"> </span>--config<span class="w"> </span>my_config.json
+
+<span class="c1"># 2. Choose appropriate mode</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-isotropic<span class="w"> </span>--method<span class="w"> </span>classical<span class="w">     </span><span class="c1"># Fastest</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-anisotropic<span class="w"> </span>--method<span class="w"> </span>classical<span class="w">   </span><span class="c1"># Default</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--laminar-flow<span class="w"> </span>--method<span class="w"> </span>classical<span class="w">         </span><span class="c1"># Full physics</span>
+
+<span class="c1"># 3. Comprehensive analysis (unchanged)</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-anisotropic<span class="w"> </span>--method<span class="w"> </span>all<span class="w">         </span><span class="c1"># Classical + MCMC</span>
+</pre></div>
+</div>
+</section>
+<section id="progressive-analysis-strategy">
+<h3>Progressive Analysis Strategy<a class="headerlink" href="#progressive-analysis-strategy" title="Link to this heading"></a></h3>
+<p><strong>New Recommendation</strong>: Use progressive complexity approach</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start simple for exploration</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-isotropic<span class="w"> </span>--method<span class="w"> </span>classical
+
+<span class="c1"># Add complexity if needed</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-anisotropic<span class="w"> </span>--method<span class="w"> </span>classical
+
+<span class="c1"># Full analysis for nonequilibrium systems</span>
+python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--laminar-flow<span class="w"> </span>--method<span class="w"> </span>all
+</pre></div>
+</div>
+</section>
+</section>
+<section id="api-migration">
+<h2>API Migration<a class="headerlink" href="#api-migration" title="Link to this heading"></a></h2>
+<section id="python-api-changes">
+<h3>Python API Changes<a class="headerlink" href="#python-api-changes" title="Link to this heading"></a></h3>
+<p><strong>No Breaking Changes</strong>: The Python API remains fully compatible</p>
+<p><strong>New Recommendations</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">homodyne</span><span class="w"> </span><span class="kn">import</span> <span class="n">HomodyneAnalysisCore</span><span class="p">,</span> <span class="n">ConfigManager</span>
+
+<span class="c1"># Enhanced configuration loading</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="s2">&quot;my_config.json&quot;</span><span class="p">)</span>
+
+<span class="c1"># Runtime parameter override (enhanced)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">override_parameters</span><span class="p">({</span>
+    <span class="s2">&quot;D0&quot;</span><span class="p">:</span> <span class="mf">1.5e-12</span><span class="p">,</span>
+    <span class="s2">&quot;use_numba_jit&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;enable_angle_filtering&quot;</span><span class="p">:</span> <span class="kc">True</span>
+<span class="p">})</span>
+
+<span class="c1"># Analysis execution (unchanged)</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">HomodyneAnalysisCore</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">optimize_classical</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="migration-validation">
+<h2>Migration Validation<a class="headerlink" href="#migration-validation" title="Link to this heading"></a></h2>
+<section id="testing-migration-success">
+<h3>Testing Migration Success<a class="headerlink" href="#testing-migration-success" title="Link to this heading"></a></h3>
+<p><strong>Verify Configuration Loading</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">homodyne.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigManager</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="s2">&quot;migrated_config.json&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Migration successful&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Analysis mode: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migration issue: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Compare Results</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run with legacy and new configurations</span>
+<span class="n">legacy_results</span> <span class="o">=</span> <span class="n">run_analysis</span><span class="p">(</span><span class="s2">&quot;legacy_config.json&quot;</span><span class="p">)</span>
+<span class="n">new_results</span> <span class="o">=</span> <span class="n">run_analysis</span><span class="p">(</span><span class="s2">&quot;migrated_config.json&quot;</span><span class="p">)</span>
+
+<span class="c1"># Results should be similar (scaling now always enabled)</span>
+<span class="n">parameter_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">legacy_results</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">new_results</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter differences: </span><span class="si">{</span><span class="n">parameter_diff</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Validation</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test performance improvements</span>
+python<span class="w"> </span>benchmark_performance.py<span class="w"> </span>--config<span class="w"> </span>migrated_config.json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="migration-checklist">
+<h2>Migration Checklist<a class="headerlink" href="#migration-checklist" title="Link to this heading"></a></h2>
+<section id="pre-migration-checklist">
+<h3>Pre-Migration Checklist<a class="headerlink" href="#pre-migration-checklist" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[ ] <strong>Backup existing configurations</strong> and results</p></li>
+<li><p>[ ] <strong>Install updated dependencies</strong> (especially Numba)</p></li>
+<li><p>[ ] <strong>Review analysis modes</strong> needed for your systems</p></li>
+<li><p>[ ] <strong>Test migration on non-critical data</strong> first</p></li>
+</ul>
+</section>
+<section id="configuration-migration-checklist">
+<h3>Configuration Migration Checklist<a class="headerlink" href="#configuration-migration-checklist" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[ ] <strong>Remove scaling_optimization settings</strong> (now always enabled)</p></li>
+<li><p>[ ] <strong>Add explicit static_submode specification</strong></p></li>
+<li><p>[ ] <strong>Add performance settings</strong> (Numba, threading, angle filtering)</p></li>
+<li><p>[ ] <strong>Add data validation settings</strong> (optional but recommended)</p></li>
+<li><p>[ ] <strong>Update active_parameters lists</strong> (explicitly specify)</p></li>
+</ul>
+</section>
+<section id="post-migration-checklist">
+<h3>Post-Migration Checklist<a class="headerlink" href="#post-migration-checklist" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[ ] <strong>Validate configuration loading</strong> without errors</p></li>
+<li><p>[ ] <strong>Test analysis execution</strong> on known datasets</p></li>
+<li><p>[ ] <strong>Compare results</strong> with legacy version (should be similar)</p></li>
+<li><p>[ ] <strong>Verify performance improvements</strong> (should be faster)</p></li>
+<li><p>[ ] <strong>Test new features</strong> (data validation, mode selection)</p></li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting-migration-issues">
+<h2>Troubleshooting Migration Issues<a class="headerlink" href="#troubleshooting-migration-issues" title="Link to this heading"></a></h2>
+<section id="common-migration-problems">
+<h3>Common Migration Problems<a class="headerlink" href="#common-migration-problems" title="Link to this heading"></a></h3>
+<p><strong>Configuration Loading Errors</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Validate migrated configuration</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">json</span><span class="o">.</span><span class="n">tool</span> <span class="n">migrated_config</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p><strong>Mode Detection Issues</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="s2">&quot;migrated_config.json&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detected mode: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">get_analysis_mode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Issues</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify Numba installation</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import numba; print(numba.__version__)&quot;</span>
+
+<span class="c1"># Set environment variables</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">NUMBA_DISABLE_INTEL_SVML</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+<p><strong>Result Differences</strong>:
+- Small differences expected due to always-on scaling optimization
+- Large differences may indicate configuration issues
+- Use comparison tools to validate migrations</p>
+</section>
+</section>
+<section id="migration-support">
+<h2>Migration Support<a class="headerlink" href="#migration-support" title="Link to this heading"></a></h2>
+<section id="getting-help">
+<h3>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading"></a></h3>
+<p><strong>Documentation</strong>: Refer to mode-specific documentation for detailed configuration options</p>
+<p><strong>Examples</strong>: Use the enhanced create_config.py tool to generate reference configurations</p>
+<p><strong>Validation</strong>: Use built-in validation tools to verify migrations</p>
+<p><strong>Support</strong>: File issues with specific migration problems and include:
+- Legacy configuration (sanitized)
+- Attempted migration configuration
+- Error messages or unexpected behavior
+- System information</p>
+<p>This comprehensive migration guide ensures smooth transitions to the enhanced homodyne package while taking advantage of significant performance and usability improvements.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="troubleshooting.html" class="btn btn-neutral float-left" title="Troubleshooting Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wei Chen, Hongrui He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
