@@ -17,6 +17,74 @@ H. He, H. Liang, M. Chu, Z. Jiang, J.J. de Pablo, M.V. Tirrell, S. Narayanan,
 & W. Chen, "Transport coefficient approach for characterizing nonequilibrium
 dynamics in soft matter", Proc. Natl. Acad. Sci. U.S.A. 121 (31) e2401162121 (2024).
 
+THEORETICAL FOUNDATION:
+----------------------
+The module implements three key equations that describe correlation functions in
+nonequilibrium laminar flow systems:
+
+    Equation 13 - Full Nonequilibrium Laminar Flow Expression:
+    ----------------------------------------------------------
+    c₂(q⃗, t₁, t₂) = 1 + β[e^(-q²∫J(t)dt)] × sinc²[1/(2π) qh ∫γ̇(t)cos(φ(t))dt]
+
+    This is the most general form describing intensity correlation functions in
+    nonequilibrium systems where both diffusion and shear rate are time-dependent.
+    - β: contrast parameter (depends on experimental setup and sample properties)
+    - J(t): time-dependent diffusion integral accounting for non-stationary diffusion
+    - ∫γ̇(t)cos(φ(t))dt: shear contribution integral with angular dependence
+
+    Equation S-75 - Equilibrium Condition Under Constant Shear:
+    -----------------------------------------------------------
+    c₂(q⃗, t₁, t₂) = 1 + β[e^(-6q²D(t₂-t₁))] sinc²[1/(2π) qh cos(φ)γ̇(t₂-t₁)]
+
+    Simplified form for systems where diffusion coefficient D and shear rate γ̇
+    are constant over the measurement time window. The factor of 6 comes from
+    three-dimensional diffusion in the small-angle scattering limit.
+
+    Equation S-76 - One-time Correlation Function (Siegert Relation):
+    ----------------------------------------------------------------
+    g₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
+
+    Single-time correlation function relating intensity correlations g₂ to the
+    field correlation function g₁ through the Siegert relation: g₂ = 1 + β|g₁|².
+
+PHYSICAL PARAMETERS:
+===================
+    - q⃗: scattering wavevector [units: Å⁻¹]
+        Magnitude: q = 4π sin(θ/2)/λ, where θ is scattering angle, λ is wavelength
+        Direction: determines the spatial scale and orientation of measured fluctuations
+
+    - h: gap between stator and rotor [units: Å]
+        Geometric parameter defining the shear cell dimensions
+        Critical for determining shear flow velocity profile
+
+    - φ(t): angle between shear/flow direction and q⃗ [units: degrees]
+        Time-dependent angle that determines the relative orientation between
+        the measured fluctuations and the applied shear flow
+        cos(φ) = 0: perpendicular to flow (no shear contribution)
+        cos(φ) = ±1: parallel/anti-parallel to flow (maximum shear effect)
+
+    - γ̇(t): time-dependent shear rate [units: s⁻¹]
+        Instantaneous shear rate that may vary during the measurement
+        For steady shear: γ̇(t) = constant
+        For creep/recovery: γ̇(t) = γ̇₀(t/t₀)^β + offset
+
+    - D(t): time-dependent diffusion coefficient [units: Å²/s]
+        Measures the rate of thermal motion and structural relaxation
+        May depend on time due to aging, restructuring, or stress effects
+        Typical form: D(t) = D₀(t/t₀)^α + D_offset
+
+    - β: contrast parameter [dimensionless]
+        Experimental parameter depending on:
+        - Coherence properties of the X-ray beam
+        - Sample thickness and scattering strength
+        - Detector properties and geometry
+        Theoretical maximum: β = 1 (fully coherent scattering)
+
+    - J(t): diffusion integral function [units: Å²]
+        Accumulated diffusion contribution: J(t) = ∫₀ᵗ D(t')dt'
+        For constant D: J(t) = D·t
+        For time-dependent D: requires numerical integration
+
 Key Capabilities:
 ----------------
 - Dual Analysis Modes: Static (3 parameters) and Laminar Flow (7 parameters)
