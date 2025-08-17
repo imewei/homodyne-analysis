@@ -234,28 +234,47 @@ class MCMCSampler:
         # Create PyMC model
         with pm.Model() as model:
             # Define priors based on parameter bounds from configuration
-            bounds = self.config.get("parameter_space", {}).get(
-                "bounds", []
-            )  # noqa: F841
+            bounds = self.config.get("parameter_space", {}).get("bounds", [])
 
-            # Parameter priors - mode-aware construction
+            # Parameter priors - mode-aware construction using configured bounds
             print(f"   Building {effective_param_count}-parameter model for {('static' if is_static_mode else 'laminar flow')} mode")
             
-            # Always include diffusion parameters (first 3)
-            D0 = pm.LogNormal("D0", mu=np.log(1000), sigma=2.0)
-            alpha = pm.Normal("alpha", mu=0.0, sigma=1.0)  # Power-law exponent
-            D_offset = pm.Normal("D_offset", mu=0.0, sigma=1000.0)  # Diffusion offset
+            # Helper function to create priors from bounds
+            def create_prior_from_bounds(param_name, param_index, default_lower, default_upper, default_type="uniform"):
+                """Create PyMC prior from configuration bounds."""
+                if param_index < len(bounds):
+                    bound = bounds[param_index]
+                    if bound.get("name") == param_name:
+                        min_val = bound.get("min", default_lower)
+                        max_val = bound.get("max", default_upper)
+                        prior_type = bound.get("type", default_type)
+                        
+                        print(f"   Using configured bounds for {param_name}: [{min_val}, {max_val}] ({prior_type})")
+                        
+                        if prior_type == "log-uniform" and min_val > 0 and max_val > min_val:
+                            # For log-uniform: use Uniform on log scale or constrained LogNormal
+                            return pm.Uniform(param_name, lower=min_val, upper=max_val)
+                        else:
+                            # For uniform or other types: use Uniform
+                            return pm.Uniform(param_name, lower=min_val, upper=max_val)
+                    else:
+                        logger.warning(f"Parameter name mismatch: expected {param_name}, got {bound.get('name')}")
+                
+                # Fallback to default if bounds not available
+                print(f"   Using default prior for {param_name}: [{default_lower}, {default_upper}]")
+                return pm.Uniform(param_name, lower=default_lower, upper=default_upper)
+            
+            # Always include diffusion parameters (first 3) with configured bounds
+            D0 = create_prior_from_bounds("D0", 0, 100.0, 10000.0, "log-uniform")
+            alpha = create_prior_from_bounds("alpha", 1, -2.0, 0.0, "uniform")
+            D_offset = create_prior_from_bounds("D_offset", 2, 0.0, 1000.0, "uniform")
             
             if not is_static_mode and effective_param_count > 3:
-                # Laminar flow mode: include shear and angular parameters
-                gamma_dot_t0 = pm.LogNormal(
-                    "gamma_dot_t0", mu=np.log(0.01), sigma=2.0
-                )  # Shear rate
-                beta = pm.Normal("beta", mu=0.0, sigma=1.0)  # Shear power-law exponent
-                gamma_dot_t_offset = pm.Normal(
-                    "gamma_dot_t_offset", mu=0.0, sigma=0.01
-                )  # Shear offset
-                phi0 = pm.Normal("phi0", mu=0.0, sigma=10.0)  # Angular offset
+                # Laminar flow mode: include shear and angular parameters with configured bounds
+                gamma_dot_t0 = create_prior_from_bounds("gamma_dot_t0", 3, 0.001, 0.1, "log-uniform")
+                beta = create_prior_from_bounds("beta", 4, -1.0, 1.0, "uniform")
+                gamma_dot_t_offset = create_prior_from_bounds("gamma_dot_t_offset", 5, 0.0, 0.01, "uniform")
+                phi0 = create_prior_from_bounds("phi0", 6, 0.0, 360.0, "uniform")
             else:
                 # Static mode: shear parameters are fixed at zero (not used)
                 print("   Static mode: shear and angular parameters excluded from model")
@@ -436,11 +455,12 @@ class MCMCSampler:
         assert pm is not None
         assert az is not None
 
-        # Extract MCMC settings
-        draws = config.get("mcmc_draws", 1000)
-        tune = config.get("mcmc_tune", 500)
-        chains = config.get("mcmc_chains", 2)
-        target_accept = config.get("target_accept", 0.9)
+        # Extract MCMC settings from the correct configuration section
+        mcmc_config = config.get("optimization_config", {}).get("mcmc_sampling", {})
+        draws = mcmc_config.get("draws", 1000)
+        tune = mcmc_config.get("tune", 500)
+        chains = mcmc_config.get("chains", 2)
+        target_accept = mcmc_config.get("target_accept", 0.9)
         cores = min(chains, getattr(self.core, "num_threads", 1))
 
         print(f"   Running MCMC (NUTS) Sampling...")
@@ -938,18 +958,18 @@ class MCMCSampler:
             raise ValueError("Missing 'parameter_names' in initial_parameters")
 
         # Validate MCMC-specific settings
-        mcmc_draws = self.mcmc_config.get("mcmc_draws", 1000)
+        mcmc_draws = self.mcmc_config.get("draws", 1000)
         if not isinstance(mcmc_draws, int) or mcmc_draws < 1:
-            raise ValueError(f"mcmc_draws must be a positive integer, got {mcmc_draws}")
+            raise ValueError(f"draws must be a positive integer, got {mcmc_draws}")
 
-        mcmc_tune = self.mcmc_config.get("mcmc_tune", 500)
+        mcmc_tune = self.mcmc_config.get("tune", 500)
         if not isinstance(mcmc_tune, int) or mcmc_tune < 1:
-            raise ValueError(f"mcmc_tune must be a positive integer, got {mcmc_tune}")
+            raise ValueError(f"tune must be a positive integer, got {mcmc_tune}")
 
-        mcmc_chains = self.mcmc_config.get("mcmc_chains", 2)
+        mcmc_chains = self.mcmc_config.get("chains", 2)
         if not isinstance(mcmc_chains, int) or mcmc_chains < 1:
             raise ValueError(
-                f"mcmc_chains must be a positive integer, got {mcmc_chains}"
+                f"chains must be a positive integer, got {mcmc_chains}"
             )
 
         target_accept = self.mcmc_config.get("target_accept", 0.9)
@@ -1070,8 +1090,8 @@ class MCMCSampler:
             )
 
         # MCMC settings validation
-        draws = self.mcmc_config.get("mcmc_draws", 1000)
-        chains = self.mcmc_config.get("mcmc_chains", 2)
+        draws = self.mcmc_config.get("draws", 1000)
+        chains = self.mcmc_config.get("chains", 2)
 
         if draws < 1000:
             validation_results["warnings"].append(
