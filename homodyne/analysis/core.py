@@ -1800,7 +1800,7 @@ class HomodyneAnalysisCore:
                 
                 # 1. Full heatmap
                 ax1 = fig.add_subplot(gs[i, 0])
-                im1 = ax1.imshow(angle_data, aspect='auto', origin='lower',
+                im1 = ax1.imshow(angle_data, aspect='equal', origin='lower',
                                extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]], # type: ignore
                                cmap='viridis')
                 ax1.set_xlabel('Time t₁ (s)')
@@ -2145,27 +2145,43 @@ Validation:
                 if "posterior_means" in mcmc_results:
                     plot_data["posterior_means"] = mcmc_results["posterior_means"]
                     
-                # Try to load MCMC trace data from file if available
-                try:
-                    from pathlib import Path
-                    mcmc_results_dir = Path("homodyne_results") / "mcmc_results"
-                    trace_file = mcmc_results_dir / "mcmc_trace.nc"
-                    
-                    if trace_file.exists():
-                        try:
-                            import arviz as az
-                            trace_data = az.from_netcdf(str(trace_file))
-                            plot_data["mcmc_trace"] = trace_data
-                            logger.debug(f"Loaded MCMC trace data from {trace_file}")
-                        except ImportError:
-                            logger.warning("ArviZ not available - cannot load MCMC trace for plotting")
-                        except Exception as e:
-                            logger.warning(f"Failed to load MCMC trace data: {e}")
-                    else:
-                        logger.debug("MCMC trace file not found - trace plots will be skipped")
+                # Try to get MCMC trace data from live results first
+                trace_data = None
+                if "trace" in mcmc_results and mcmc_results["trace"] is not None:
+                    trace_data = mcmc_results["trace"]
+                    logger.debug("Using live MCMC trace data for plotting")
+                elif "trace" in results and results["trace"] is not None:
+                    # Check top-level trace data as fallback
+                    trace_data = results["trace"]
+                    logger.debug("Using top-level MCMC trace data for plotting")
+                else:
+                    # Final fallback: try to load from NetCDF file
+                    try:
+                        from pathlib import Path
+                        mcmc_results_dir = Path("homodyne_results") / "mcmc_results"
+                        trace_file = mcmc_results_dir / "mcmc_trace.nc"
                         
-                except Exception as e:
-                    logger.warning(f"Error checking for MCMC trace file: {e}")
+                        if trace_file.exists():
+                            try:
+                                import arviz as az
+                                trace_data = az.from_netcdf(str(trace_file))
+                                logger.debug(f"Loaded MCMC trace data from {trace_file}")
+                            except ImportError:
+                                logger.warning("ArviZ not available - cannot load MCMC trace for plotting")
+                            except Exception as e:
+                                logger.warning(f"Failed to load MCMC trace data: {e}")
+                        else:
+                            logger.debug("MCMC trace file not found")
+                            
+                    except Exception as e:
+                        logger.warning(f"Error checking for MCMC trace file: {e}")
+                
+                # Add trace data to plot_data if found
+                if trace_data is not None:
+                    plot_data["mcmc_trace"] = trace_data
+                    logger.info("✓ MCMC trace data available for plotting")
+                else:
+                    logger.debug("MCMC trace data not available - trace plots will be skipped")
             
             # Add other plot data
             plot_data["chi_squared"] = best_chi2

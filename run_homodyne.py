@@ -647,7 +647,11 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 "success": mcmc_results.get('diagnostics', {}).get('converged', True),
                 "method": "MCMC_NUTS",
                 "posterior_means": mcmc_results.get('posterior_means', {}),
-                "convergence_diagnostics": mcmc_results.get('diagnostics', {})
+                "convergence_diagnostics": mcmc_results.get('diagnostics', {}),
+                # Include trace data for plotting
+                "trace": mcmc_results.get('trace'),
+                # Include chi_squared for plotting method selection
+                "chi_squared": mcmc_results.get('chi_squared', np.inf)
             },
             "mcmc_summary": {
                 "parameters": best_params,
@@ -658,7 +662,10 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 "evaluation_metric": "convergence_diagnostics",
                 "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment"
             },
-            "methods_used": ["MCMC"]
+            "methods_used": ["MCMC"],
+            # Include trace and diagnostics at top level for plotting functions
+            "trace": mcmc_results.get('trace'),
+            "diagnostics": mcmc_results.get('diagnostics')
         }
 
     except ImportError as e:

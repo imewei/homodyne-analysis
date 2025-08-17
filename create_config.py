@@ -235,7 +235,7 @@ Examples:
   python create_config.py --output my_flow_config.json
   
   # Create isotropic static configuration  
-  python create_config.py --mode static_isotropic --sample protein_01
+  py create_config.py --mode static_isotropic --sample protein_01
   
   # Create anisotropic static configuration with metadata
   python create_config.py --mode static_anisotropic --sample collagen \

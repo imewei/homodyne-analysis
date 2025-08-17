@@ -248,13 +248,13 @@ Generate comprehensive validation plots of experimental C2 correlation data:
 
 ```bash
 # Basic data validation
-python plot_experimental_data.py --config my_config.json
+python run_homodyne.py --plot-experimental-data --config my_config.json
 
 # Verbose validation with debug logging
-python plot_experimental_data.py --config my_config.json --verbose
+python run_homodyne.py --plot-experimental-data --config my_config.json --verbose
 ```
 
-**Output**: Creates validation plots in `./homodyne_results/experimental_data_validation/` including:
+**Output**: Creates validation plots in `./plots/data_validation/` including:
 - Full 2D correlation function heatmaps g₂(t₁,t₂) for each angle
 - Diagonal slices g₂(t,t) showing temporal decay
 - Cross-sectional profiles at different time points
@@ -316,11 +316,17 @@ Enable experimental data plotting within the main analysis workflow:
 python run_homodyne.py --plot-experimental-data --verbose
 ```
 
-#### Standalone Validation
-Use the dedicated script for data quality assessment:
+#### Alternative: Config-based Validation
+Enable experimental data plotting via configuration file:
 
-```bash
-python plot_experimental_data.py --config my_config.json --verbose
+```json
+{
+  "workflow_integration": {
+    "analysis_workflow": {
+      "plot_experimental_data_on_load": true
+    }
+  }
+}
 ```
 
 **Quality indicators to look for:**
@@ -526,8 +532,7 @@ python homodyne/run_tests.py --parallel 4
 
 ```
 homodyne/
-├── run_homodyne.py              # Main CLI entry point
-├── plot_experimental_data.py    # Standalone C2 data validation script
+├── run_homodyne.py              # Main CLI entry point with integrated data validation
 ├── create_config.py            # Enhanced configuration generator with mode selection
 ├── benchmark_performance.py    # Performance benchmarking suite
 ├── CONFIGURATION_MODES.md      # Detailed mode comparison documentation

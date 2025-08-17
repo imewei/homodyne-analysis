@@ -551,11 +551,32 @@ class MCMCSampler:
                     posterior[var_name].mean()  # type: ignore[attr-defined]
                 )
 
+        # Calculate chi-squared for the posterior mean parameters
+        chi_squared = None
+        try:
+            # Extract posterior mean parameters as array
+            param_array = np.array([posterior_means.get(name, 0.0) for name in param_names_effective])
+            
+            # Calculate chi-squared using the core method
+            chi_squared = self.core.calculate_chi_squared_optimized(
+                param_array,
+                phi_angles,
+                c2_experimental,
+                "MCMC",
+                filter_angles_for_optimization=filter_angles_for_optimization,
+            )
+            print(f"     ✓ Chi-squared calculated: {chi_squared:.3f}")
+        except Exception as e:
+            print(f"     ⚠ Chi-squared calculation failed: {e}")
+            logger.warning(f"MCMC chi-squared calculation failed: {e}")
+            chi_squared = np.inf
+
         results = {
             "trace": trace,
             "time": mcmc_time,
             "posterior_means": posterior_means,
             "config": config,
+            "chi_squared": chi_squared,
         }
 
         self.mcmc_result = results
