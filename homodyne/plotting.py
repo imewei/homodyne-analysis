@@ -244,6 +244,10 @@ def plot_c2_heatmaps(
                 wspace=0.3,
             )
 
+            # Calculate appropriate vmin for this angle's data
+            angle_data_min = min(np.min(exp[i]), np.min(fitted[i]))
+            angle_vmin = 1.0 if angle_data_min >= 1.0 else angle_data_min
+            
             # Experimental data heatmap
             ax1 = fig.add_subplot(gs[0, 0])
             im1 = ax1.imshow(
@@ -257,7 +261,7 @@ def plot_c2_heatmaps(
                     float(t2[-1]),
                 ),
                 cmap="viridis",
-                vmin=1.0,
+                vmin=angle_vmin,
             )
             ax1.set_title(f"Experimental C₂\nφ = {phi:.1f}°")
             ax1.set_xlabel("t₁")
@@ -276,7 +280,7 @@ def plot_c2_heatmaps(
                     float(t2[-1]),
                 ),
                 cmap="viridis",
-                vmin=1.0,
+                vmin=angle_vmin,
             )
             ax2.set_title(f"Theoretical C₂\nφ = {phi:.1f}°")
             ax2.set_xlabel("t₁")
@@ -302,8 +306,11 @@ def plot_c2_heatmaps(
 
             # Shared colorbar for exp and theory
             cbar_ax1 = fig.add_subplot(gs[0, 3])
-            vmin = min(np.min(exp[i]), np.min(theory[i]))
-            vmax = max(np.max(exp[i]), np.max(theory[i]))
+            data_min = min(np.min(exp[i]), np.min(theory[i]))
+            data_max = max(np.max(exp[i]), np.max(theory[i]))
+            # Only set vmin=1.0 if data actually has values >= 1.0, otherwise use data minimum
+            vmin = 1.0 if data_min >= 1.0 else data_min
+            vmax = data_max
             im1.set_clim(vmin, vmax)
             im2.set_clim(vmin, vmax)
             plt.colorbar(im1, cax=cbar_ax1, label="C₂")
@@ -384,11 +391,25 @@ def plot_parameter_evolution(
     outdir = ensure_dir(outdir)
 
     try:
-        # Extract parameter information
-        param_names = [bound["name"] for bound in bounds]
-        param_units = [bound.get("unit", "") for bound in bounds]
-        lower_bounds = [bound["min"] for bound in bounds]
-        upper_bounds = [bound["max"] for bound in bounds]
+        # Get active parameters from config to filter out inactive ones
+        active_param_names = None
+        if config and "initial_parameters" in config and "active_parameters" in config["initial_parameters"]:
+            active_param_names = config["initial_parameters"]["active_parameters"]
+        
+        # Extract parameter information, filtering for active parameters only
+        if active_param_names:
+            # Filter bounds to only include active parameters
+            active_bounds = [bound for bound in bounds if bound["name"] in active_param_names]
+            param_names = [bound["name"] for bound in active_bounds]
+            param_units = [bound.get("unit", "") for bound in active_bounds]
+            lower_bounds = [bound["min"] for bound in active_bounds]
+            upper_bounds = [bound["max"] for bound in active_bounds]
+        else:
+            # Fallback to all parameters if active_parameters not specified
+            param_names = [bound["name"] for bound in bounds]
+            param_units = [bound.get("unit", "") for bound in bounds]
+            lower_bounds = [bound["min"] for bound in bounds]
+            upper_bounds = [bound["max"] for bound in bounds]
 
         # Get parameter values
         best_values = [best_params.get(name, 0) for name in param_names]
@@ -426,7 +447,9 @@ def plot_parameter_evolution(
         normalized_lower = []
         normalized_upper = []
 
-        for i, bound in enumerate(bounds):
+        # Use the filtered bounds if active parameters were specified
+        bounds_to_use = active_bounds if active_param_names else bounds # type: ignore
+        for i, bound in enumerate(bounds_to_use):
             if bound.get("type") == "log-uniform":
                 # Use log scale for log-uniform parameters
                 normalized_best.append(np.log10(max(abs(best_values[i]), 1e-10)))
@@ -627,6 +650,12 @@ def plot_mcmc_corner(
     outdir = ensure_dir(outdir)
 
     try:
+        # Get active parameters from config to filter out inactive ones
+        active_param_names = None
+        if config and "initial_parameters" in config and "active_parameters" in config["initial_parameters"]:
+            active_param_names = config["initial_parameters"]["active_parameters"]
+            logger.debug(f"Active parameters for corner plot: {active_param_names}")
+
         # Validate trace data format first
         if callable(trace_data):
             logger.error(
@@ -638,9 +667,23 @@ def plot_mcmc_corner(
         if hasattr(trace_data, "posterior"):
             # ArviZ InferenceData
             samples = trace_data.posterior
+            
+            # Filter to only active parameters if specified
+            if active_param_names and hasattr(samples, "data_vars"):
+                filtered_vars = {var: samples[var] for var in active_param_names if var in samples.data_vars}
+                if filtered_vars:
+                    import xarray as xr
+                    samples = xr.Dataset(filtered_vars)
+                    logger.debug(f"Filtered to active parameters: {list(samples.data_vars)}")
+                    
         elif isinstance(trace_data, dict):
             # Dictionary of samples
             samples = trace_data
+            
+            # Filter to only active parameters if specified
+            if active_param_names:
+                samples = {var: samples[var] for var in active_param_names if var in samples}
+                logger.debug(f"Filtered dict to active parameters: {list(samples.keys())}")
         elif isinstance(trace_data, np.ndarray):
             # NumPy array - use directly
             samples = trace_data
@@ -814,14 +857,32 @@ def plot_mcmc_corner(
                     else (len(ranges) if ranges else 3)
                 )
 
+                # Filter parameter names and units to match active parameters
+                filtered_param_names = param_names
+                filtered_param_units = param_units
+                
+                if active_param_names and param_names:
+                    # Create mapping from original param names to their indices
+                    param_name_to_idx = {name: i for i, name in enumerate(param_names)}
+                    
+                    # Filter param_names and param_units to only include active parameters
+                    filtered_param_names = [name for name in active_param_names if name in param_name_to_idx]
+                    if param_units:
+                        filtered_param_units = [param_units[param_name_to_idx[name]] for name in filtered_param_names if name in param_name_to_idx]
+                    else:
+                        filtered_param_units = None
+                    
+                    logger.debug(f"Filtered param names: {filtered_param_names}")
+                    logger.debug(f"Filtered param units: {filtered_param_units}")
+
                 # Create parameter labels with safe indexing
                 labels = []
                 for i in range(n_params):
-                    if param_names and i < len(param_names):
-                        if param_units and i < len(param_units):
-                            labels.append(f"{param_names[i]}\n[{param_units[i]}]")
+                    if filtered_param_names and i < len(filtered_param_names):
+                        if filtered_param_units and i < len(filtered_param_units):
+                            labels.append(f"{filtered_param_names[i]}\n[{filtered_param_units[i]}]")
                         else:
-                            labels.append(param_names[i])
+                            labels.append(filtered_param_names[i])
                     else:
                         labels.append(f"Param {i}")
 
@@ -1082,112 +1143,184 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 1: R-hat values
         ax1 = fig.add_subplot(gs[0, 0])
-        if "r_hat" in diagnostics and diagnostics["r_hat"]:
-            r_hat_dict = diagnostics["r_hat"]
-            param_names_plot = (
-                list(r_hat_dict.keys()) if param_names is None else param_names
-            )
+        r_hat_dict = diagnostics.get("r_hat", {})
+        
+        # If r_hat dict is missing or empty, compute from trace data
+        if not r_hat_dict and hasattr(trace_data, "posterior"):
+            try:
+                r_hat_summary = az.rhat(trace_data)
+                if hasattr(r_hat_summary, 'to_dict'):
+                    r_hat_dict = r_hat_summary.to_dict() # type: ignore
+                else:
+                    # Convert DataArray to dict
+                    r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()} # type: ignore
+            except Exception as e:
+                logger.warning(f"Could not compute R-hat from trace data: {e}")
+        
+        if r_hat_dict:
+            # Filter for active parameters if available in config
+            if param_names is None:
+                param_names_plot = list(r_hat_dict.keys())
+            else:
+                param_names_plot = param_names
+                
+            # Further filter to only include parameters that actually exist in r_hat_dict
+            param_names_plot = [name for name in param_names_plot if name in r_hat_dict]
             r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names_plot]
 
-            colors = [
-                "green" if r < 1.1 else "orange" if r < 1.2 else "red"
-                for r in r_hat_values
-            ]
-            bars = ax1.barh(param_names_plot, r_hat_values, color=colors, alpha=0.7)
+            # Only plot if we have data
+            if param_names_plot and r_hat_values:
+                colors = [
+                    "green" if r < 1.1 else "orange" if r < 1.2 else "red"
+                    for r in r_hat_values
+                ]
+                bars = ax1.barh(param_names_plot, r_hat_values, color=colors, alpha=0.7)
+                
+                # Set appropriate axis limits
+                if max(r_hat_values) > 0:
+                    ax1.set_xlim(0.9, max(max(r_hat_values) * 1.1, 1.3))
 
-            # Add value labels
-            for bar, value in zip(bars, r_hat_values):
-                width = bar.get_width()
-                ax1.text(
-                    width + 0.01,
-                    bar.get_y() + bar.get_height() / 2,
-                    f"{value:.3f}",
-                    ha="left",
-                    va="center",
-                    fontsize=10,
+                # Add value labels
+                for bar, value in zip(bars, r_hat_values):
+                    width = bar.get_width()
+                    ax1.text(
+                        width + 0.01,
+                        bar.get_y() + bar.get_height() / 2,
+                        f"{value:.3f}",
+                        ha="left",
+                        va="center",
+                        fontsize=10,
+                    )
+
+                ax1.axvline(
+                    x=1.1, color="red", linestyle="--", alpha=0.7, label="R̂ = 1.1 threshold"
                 )
-
-            ax1.axvline(
-                x=1.1, color="red", linestyle="--", alpha=0.7, label="R̂ = 1.1 threshold"
-            )
-            ax1.set_xlabel("R̂ (Gelman-Rubin statistic)")
-            ax1.set_title("Convergence: R̂ Values")
-            ax1.legend()
-            ax1.grid(True, alpha=0.3)
+                ax1.set_xlabel("R̂ (Gelman-Rubin statistic)")
+                ax1.set_title("Convergence: R̂ Values")
+                ax1.legend()
+                ax1.grid(True, alpha=0.3)
 
         # Plot 2: Effective Sample Size (ESS)
         ax2 = fig.add_subplot(gs[0, 1])
-        if "ess_bulk" in diagnostics and diagnostics["ess_bulk"]:
-            ess_dict = diagnostics["ess_bulk"]
-            param_names_plot = (
-                list(ess_dict.keys()) if param_names is None else param_names
-            )
+        ess_dict = diagnostics.get("ess_bulk", {})
+        
+        # If ess_bulk dict is missing or empty, compute from trace data
+        if not ess_dict and hasattr(trace_data, "posterior"):
+            try:
+                ess_summary = az.ess(trace_data)
+                if hasattr(ess_summary, 'to_dict'):
+                    ess_dict = ess_summary.to_dict()
+                else:
+                    # Convert DataArray to dict
+                    ess_dict = {str(k): float(v) for k, v in ess_summary.items()}
+            except Exception as e:
+                logger.warning(f"Could not compute ESS from trace data: {e}")
+        
+        if ess_dict:
+            # Filter for active parameters if available in config
+            if param_names is None:
+                param_names_plot = list(ess_dict.keys())
+            else:
+                param_names_plot = param_names
+                
+            # Further filter to only include parameters that actually exist in ess_dict
+            param_names_plot = [name for name in param_names_plot if name in ess_dict]
             ess_values = [ess_dict.get(name, 0) for name in param_names_plot]
 
-            # Color based on ESS quality (>400 good, >100 okay, <100 poor)
-            colors = [
-                "green" if ess > 400 else "orange" if ess > 100 else "red"
-                for ess in ess_values
-            ]
-            bars = ax2.barh(param_names_plot, ess_values, color=colors, alpha=0.7)
+            # Only plot if we have data
+            if param_names_plot and ess_values:
+                # Color based on ESS quality (>400 good, >100 okay, <100 poor)
+                colors = [
+                    "green" if ess > 400 else "orange" if ess > 100 else "red"
+                    for ess in ess_values
+                ]
+                bars = ax2.barh(param_names_plot, ess_values, color=colors, alpha=0.7)
 
-            # Add value labels
-            for bar, value in zip(bars, ess_values):
-                width = bar.get_width()
-                ax2.text(
-                    width + max(ess_values) * 0.01,
-                    bar.get_y() + bar.get_height() / 2,
-                    f"{int(value)}",
-                    ha="left",
-                    va="center",
-                    fontsize=10,
+                # Set appropriate axis limits
+                if max(ess_values) > 0:
+                    ax2.set_xlim(0, max(ess_values) * 1.1)
+
+                # Add value labels
+                for bar, value in zip(bars, ess_values):
+                    width = bar.get_width()
+                    ax2.text(
+                        width + max(ess_values) * 0.01,
+                        bar.get_y() + bar.get_height() / 2,
+                        f"{int(value)}",
+                        ha="left",
+                        va="center",
+                        fontsize=10,
+                    )
+
+                ax2.axvline(
+                    x=400,
+                    color="green",
+                    linestyle="--",
+                    alpha=0.7,
+                    label="ESS = 400 (good)",
                 )
-
-            ax2.axvline(
-                x=400,
-                color="green",
-                linestyle="--",
-                alpha=0.7,
-                label="ESS = 400 (good)",
-            )
-            ax2.axvline(
-                x=100,
-                color="orange",
-                linestyle="--",
-                alpha=0.7,
-                label="ESS = 100 (minimum)",
-            )
-            ax2.set_xlabel("Effective Sample Size")
-            ax2.set_title("Sampling Efficiency: ESS")
-            ax2.legend()
-            ax2.grid(True, alpha=0.3)
+                ax2.axvline(
+                    x=100,
+                    color="orange",
+                    linestyle="--",
+                    alpha=0.7,
+                    label="ESS = 100 (minimum)",
+                )
+                ax2.set_xlabel("Effective Sample Size")
+                ax2.set_title("Sampling Efficiency: ESS")
+                ax2.legend()
+                ax2.grid(True, alpha=0.3)
 
         # Plot 3: Monte Carlo Standard Error
         ax3 = fig.add_subplot(gs[0, 2])
-        if "mcse_mean" in diagnostics and diagnostics["mcse_mean"]:
-            mcse_dict = diagnostics["mcse_mean"]
-            param_names_plot = (
-                list(mcse_dict.keys()) if param_names is None else param_names
-            )
+        mcse_dict = diagnostics.get("mcse_mean", {})
+        
+        # If mcse_mean dict is missing or empty, compute from trace data
+        if not mcse_dict and hasattr(trace_data, "posterior"):
+            try:
+                mcse_summary = az.mcse(trace_data)
+                if hasattr(mcse_summary, 'to_dict'):
+                    mcse_dict = mcse_summary.to_dict()
+                else:
+                    # Convert DataArray to dict
+                    mcse_dict = {str(k): float(v) for k, v in mcse_summary.items()}
+            except Exception as e:
+                logger.warning(f"Could not compute MCSE from trace data: {e}")
+        
+        if mcse_dict:
+            # Filter for active parameters if available in config
+            if param_names is None:
+                param_names_plot = list(mcse_dict.keys())
+            else:
+                param_names_plot = param_names
+                
+            # Further filter to only include parameters that actually exist in mcse_dict
+            param_names_plot = [name for name in param_names_plot if name in mcse_dict]
             mcse_values = [mcse_dict.get(name, 0) for name in param_names_plot]
 
-            bars = ax3.barh(param_names_plot, mcse_values, alpha=0.7, color="skyblue")
+            # Only plot if we have data
+            if param_names_plot and mcse_values:
+                bars = ax3.barh(param_names_plot, mcse_values, alpha=0.7, color="skyblue")
 
-            # Add value labels
-            for bar, value in zip(bars, mcse_values):
-                width = bar.get_width()
-                ax3.text(
-                    width + max(mcse_values) * 0.01,
-                    bar.get_y() + bar.get_height() / 2,
-                    f"{value:.2e}",
-                    ha="left",
-                    va="center",
-                    fontsize=9,
-                )
+                # Set appropriate axis limits
+                if max(mcse_values) > 0:
+                    ax3.set_xlim(0, max(mcse_values) * 1.1)
 
-            ax3.set_xlabel("Monte Carlo Standard Error")
-            ax3.set_title("Uncertainty: MCSE")
-            ax3.grid(True, alpha=0.3)
+                # Add value labels
+                for bar, value in zip(bars, mcse_values):
+                    width = bar.get_width()
+                    ax3.text(
+                        width + max(mcse_values) * 0.01,
+                        bar.get_y() + bar.get_height() / 2,
+                        f"{value:.2e}",
+                        ha="left",
+                        va="center",
+                        fontsize=9,
+                    )
+
+                ax3.set_xlabel("Monte Carlo Standard Error")
+                ax3.set_title("Uncertainty: MCSE")
+                ax3.grid(True, alpha=0.3)
 
         # Plot 4: Energy plot (if available)
         ax4 = fig.add_subplot(gs[1, :2])
@@ -1361,87 +1494,116 @@ def plot_diagnostic_summary(
         ax2 = fig.add_subplot(gs[0, 1])
         if "parameter_uncertainties" in results:
             uncertainties = results["parameter_uncertainties"]
-            param_names = list(uncertainties.keys())
-            uncertainty_values = list(uncertainties.values())
+            if uncertainties:  # Check if not empty
+                param_names = list(uncertainties.keys())
+                uncertainty_values = list(uncertainties.values())
 
-            ax2.barh(param_names, uncertainty_values, alpha=0.7)
-            ax2.set_xlabel("Parameter Uncertainty")
-            ax2.set_title("Parameter Uncertainties")
+                if param_names and uncertainty_values:  # Check if we have data
+                    ax2.barh(param_names, uncertainty_values, alpha=0.7)
+                    # Set appropriate axis limits
+                    if max(uncertainty_values) > 0:
+                        ax2.set_xlim(0, max(uncertainty_values) * 1.1)
+                    ax2.set_xlabel("Parameter Uncertainty")
+                    ax2.set_title("Parameter Uncertainties")
+                    ax2.grid(True, alpha=0.3)
 
         # Plot 3: Convergence diagnostics (if MCMC results available)
         ax3 = fig.add_subplot(gs[0, 2])
         if "mcmc_diagnostics" in results and ARVIZ_AVAILABLE:
             # Plot R-hat values
             diagnostics = results["mcmc_diagnostics"]
-            if "r_hat" in diagnostics:
-                param_names = list(diagnostics["r_hat"].keys())
-                r_hat_values = list(diagnostics["r_hat"].values())
+            r_hat_dict = diagnostics.get("r_hat", {})
+            
+            # Try to compute R-hat from trace data if missing
+            if not r_hat_dict and "mcmc_trace" in results:
+                try:
+                    import arviz as az
+                    trace_data = results["mcmc_trace"]
+                    if hasattr(trace_data, "posterior"):
+                        r_hat_summary = az.rhat(trace_data)
+                        if hasattr(r_hat_summary, 'to_dict'):
+                            r_hat_dict = r_hat_summary.to_dict() # type: ignore
+                        else:
+                            r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()} # type: ignore
+                except Exception as e:
+                    logger.warning(f"Could not compute R-hat for summary plot: {e}")
+            
+            if r_hat_dict:
+                param_names = list(r_hat_dict.keys())
+                r_hat_values = list(r_hat_dict.values())
 
-                colors = [
-                    "green" if r < 1.1 else "orange" if r < 1.2 else "red"
-                    for r in r_hat_values
-                ]
-                ax3.barh(param_names, r_hat_values, color=colors, alpha=0.7)
-                ax3.axvline(
-                    x=1.1,
-                    color="red",
-                    linestyle="--",
-                    alpha=0.7,
-                    label="R̂ = 1.1",
-                )
-                ax3.set_xlabel("R̂ (Convergence)")
-                ax3.set_title("MCMC Convergence")
-                ax3.legend()
+                if param_names and r_hat_values:  # Check if we have data
+                    colors = [
+                        "green" if r < 1.1 else "orange" if r < 1.2 else "red"
+                        for r in r_hat_values
+                    ]
+                    ax3.barh(param_names, r_hat_values, color=colors, alpha=0.7)
+                    # Set appropriate axis limits
+                    if max(r_hat_values) > 0:
+                        ax3.set_xlim(0.9, max(max(r_hat_values) * 1.1, 1.3))
+                    ax3.axvline(
+                        x=1.1,
+                        color="red",
+                        linestyle="--",
+                        alpha=0.7,
+                        label="R̂ = 1.1",
+                    )
+                    ax3.set_xlabel("R̂ (Convergence)")
+                    ax3.set_title("MCMC Convergence")
+                    ax3.legend()
+                    ax3.grid(True, alpha=0.3)
 
         # Plot 4: Residuals analysis (if available)
         ax4 = fig.add_subplot(gs[1, :])
         if "residuals" in results:
             residuals = results["residuals"]
-            if isinstance(residuals, np.ndarray):
+            if isinstance(residuals, np.ndarray) and residuals.size > 0:
                 # Flatten residuals for histogram
                 flat_residuals = residuals.flatten()
-
-                # Create histogram and Q-Q plot side by side
-                ax4.hist(
-                    flat_residuals,
-                    bins=50,
-                    alpha=0.7,
-                    density=True,
-                    color="skyblue",
-                )
-
-                # Overlay normal distribution for comparison
-                mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
-
-                # Avoid division by zero if sigma is too small
-                if sigma > 1e-10:
-                    x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
-                    ax4.plot(
-                        x,
-                        (1 / (sigma * np.sqrt(2 * np.pi)))
-                        * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
-                        "r-",
-                        linewidth=2,
-                        label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
-                    )
-                else:
-                    # If sigma is effectively zero, just show the mean as a vertical line
-                    ax4.axvline(
-                        float(mu),
-                        color="red",
-                        linestyle="--",
-                        linewidth=2,
-                        label=f"Mean={mu:.3e} (σ≈0)",
-                    )
-                    logger.warning(
-                        "Standard deviation is very small, showing mean line instead of normal distribution"
+                
+                # Only plot if we have data
+                if len(flat_residuals) > 0:
+                    # Create histogram and Q-Q plot side by side
+                    ax4.hist(
+                        flat_residuals,
+                        bins=50,
+                        alpha=0.7,
+                        density=True,
+                        color="skyblue",
                     )
 
-                ax4.set_xlabel("Residual Value")
-                ax4.set_ylabel("Density")
-                ax4.set_title("Residuals Distribution Analysis")
-                ax4.legend()
-                ax4.grid(True, alpha=0.3)
+                    # Overlay normal distribution for comparison
+                    mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
+
+                    # Avoid division by zero if sigma is too small
+                    if sigma > 1e-10:
+                        x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
+                        ax4.plot(
+                            x,
+                            (1 / (sigma * np.sqrt(2 * np.pi)))
+                            * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
+                            "r-",
+                            linewidth=2,
+                            label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
+                        )
+                    else:
+                        # If sigma is effectively zero, just show the mean as a vertical line
+                        ax4.axvline(
+                            float(mu),
+                            color="red",
+                            linestyle="--",
+                            linewidth=2,
+                            label=f"Mean={mu:.3e} (σ≈0)",
+                        )
+                        logger.warning(
+                            "Standard deviation is very small, showing mean line instead of normal distribution"
+                        )
+
+                    ax4.set_xlabel("Residual Value")
+                    ax4.set_ylabel("Density")
+                    ax4.set_title("Residuals Distribution Analysis")
+                    ax4.legend()
+                    ax4.grid(True, alpha=0.3)
 
         # Add overall title
         fig.suptitle("Analysis Diagnostic Summary", fontsize=18, y=0.98)
@@ -1661,7 +1823,7 @@ def plot_experimental_c2_data(
             if angle_idx >= n_angles:
                 angle_idx = n_angles - 1
 
-            angle_data = c2_experimental[angle_idx, :, :]
+            angle_data = c2_experimental[angle_idx, ::-1, :]
             phi_deg = phi_angles[angle_idx] if len(phi_angles) > angle_idx else 0.0
 
             # 1. Full heatmap
