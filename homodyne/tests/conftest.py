@@ -94,6 +94,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "io: marks tests that involve file I/O operations"
     )
+    config.addinivalue_line(
+        "markers", "mcmc_integration: marks tests as MCMC integration tests"
+    )
     
     # Configure warnings filters
     config.addinivalue_line(
