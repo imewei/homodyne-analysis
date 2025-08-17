@@ -166,14 +166,14 @@
       },
       {
         "name": "alpha",
-        "min": -1.6,
-        "max": -1.5,
+        "min": -1.8,
+        "max": -1.2,
         "type": "uniform",
         "prior_mu": 0.0,
         "prior_sigma": 0.5,
         "unit": "dimensionless",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - diffusion time dependence exponent"
+        "_note": "PRIMARY PARAMETER - diffusion time dependence exponent. Bounds widened to avoid initialization at hard boundary."
       },
       {
         "name": "D_offset",
