@@ -8,11 +8,13 @@ on:
   # Allow manual workflow dispatch for testing
   workflow_dispatch:
 
+# Ensure the GITHUB_TOKEN has necessary permissions
 permissions:
   contents: read
   pages: write
   id-token: write
   actions: read
+  security-events: write
 
 # Allow one concurrent deployment
 concurrency:

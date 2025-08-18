@@ -1,0 +1,65 @@
+name: Deploy Documentation (peaceiris)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Minimal permissions needed for this approach
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme myst-parser numpydoc sphinx-autodoc-typehints linkify-it-py
+        pip install -e .
+        
+    - name: Build documentation
+      run: |
+        cd docs
+        make clean
+        make html
+        
+        # Verify build
+        if [ ! -f _build/html/index.html ]; then
+          echo "❌ Build failed"
+          exit 1
+        fi
+        echo "✅ Documentation built successfully"
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/_build/html
+        force_orphan: true
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        commit_message: 'Deploy documentation ${{ github.sha }}'
+        
+    - name: Deployment info
+      run: |
+        echo "🎉 Documentation deployed!"
+        echo "📖 URL: https://${{ github.repository_owner }}.github.io/$(echo '${{ github.repository }}' | cut -d'/' -f2)/"
+        echo ""
+        echo "⚠️ If the site doesn't appear immediately:"
+        echo "1. Wait a few minutes for GitHub Pages to update"
+        echo "2. Check Settings → Pages to ensure source is set to 'gh-pages' branch"
