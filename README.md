@@ -164,33 +164,40 @@ python run_homodyne.py --static-isotropic --method classical
 python run_homodyne.py --static-anisotropic --method mcmc
 python run_homodyne.py --laminar-flow --method all
 
-# Use custom configuration
+# Use custom configuration and output directory
 python run_homodyne.py --config my_experiment.json --output-dir ./results
 
-# Generate experimental data validation plots
+# Generate experimental data validation plots only (no fitting)
 python run_homodyne.py --plot-experimental-data --verbose
 
-# Combine validation with analysis
-python run_homodyne.py --plot-experimental-data --method all --verbose
+# Classical method with C2 heatmaps (saves to ./homodyne_results/classical/)
+python run_homodyne.py --method classical --plot-c2-heatmaps
+
+# Note: --plot-experimental-data now skips all fitting and saves plots to ./homodyne_results/exp_data/
 ```
 
 #### Data Validation
 
-Generate comprehensive validation plots of experimental C2 correlation data:
+Generate comprehensive validation plots of experimental C2 correlation data without performing any fitting:
 
 ```bash
-# Basic data validation
+# Basic data validation (plots only, no fitting)
 python run_homodyne.py --plot-experimental-data --config my_config.json
 
 # Verbose validation with debug logging
 python run_homodyne.py --plot-experimental-data --config my_config.json --verbose
 ```
 
-**Output**: Creates validation plots in `./plots/data_validation/` including:
+**Output**: Creates validation plots in `./homodyne_results/exp_data/` including:
 - Full 2D correlation function heatmaps g₂(t₁,t₂) for each angle
 - Diagonal slices g₂(t,t) showing temporal decay
 - Cross-sectional profiles at different time points
 - Statistical summaries with data quality metrics
+
+**Note**: The `--plot-experimental-data` flag now:
+- **Skips all fitting procedures** (classical and MCMC)
+- **Saves plots to `./homodyne_results/exp_data/`** instead of `./plots/data_validation/`
+- **Exits immediately** after generating experimental data plots
 
 ### Configuration Management
 
@@ -339,6 +346,33 @@ This provides meaningful chi-squared statistics: `χ² = Σ(experimental - fitte
 - **Command**: `--method all` (runs both methods sequentially)
 
 **Note**: Scaling optimization (g₂ = offset + contrast × g₁) is always enabled in all methods for consistent and scientifically accurate chi-squared calculations.
+
+## Output Directory Structure
+
+The analysis results are now organized into method-specific subdirectories for better organization:
+
+### Default Output Structure
+```
+./homodyne_results/
+├── homodyne_analysis_results.json    # Main results file (moved from root)
+├── per_angle_chi_squared_classical.json
+├── run.log                           # Analysis log file
+├── exp_data/                         # Experimental data plots (--plot-experimental-data)
+│   ├── data_validation_phi_*.png
+│   └── summary_statistics.txt
+└── classical/                       # Classical method outputs (--method classical)
+    ├── experimental_data.npz         # Original experimental correlation data
+    ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
+    ├── residuals_data.npz           # Residuals (experimental - fitted)
+    └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+```
+
+### Key Changes
+- **Main results file**: `homodyne_analysis_results.json` now saved in output directory instead of current directory
+- **Classical method**: Results organized in `./homodyne_results/classical/` subdirectory
+- **Experimental data plots**: Saved to `./homodyne_results/exp_data/` when using `--plot-experimental-data`
+- **Data files**: Classical fitting saves experimental, fitted, and residuals data as `.npz` files
+- **Diagnostic plots**: Skipped for classical methods to avoid unnecessary output
 
 ## Performance Optimization
 

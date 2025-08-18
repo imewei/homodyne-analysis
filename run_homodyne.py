@@ -234,6 +234,16 @@ def run_analysis(args: argparse.Namespace) -> None:
             if "analysis_workflow" not in config_override["workflow_integration"]:
                 config_override["workflow_integration"]["analysis_workflow"] = {}  # type: ignore
             config_override["workflow_integration"]["analysis_workflow"]["plot_experimental_data_on_load"] = True  # type: ignore
+            
+            # Set the output directory for experimental data plots
+            if "output_settings" not in config_override:
+                config_override["output_settings"] = {}
+            if "plotting" not in config_override["output_settings"]:
+                config_override["output_settings"]["plotting"] = {}
+            if "output" not in config_override["output_settings"]["plotting"]:
+                config_override["output_settings"]["plotting"]["output"] = {}
+            config_override["output_settings"]["plotting"]["output"]["base_directory"] = str(args.output_dir / "exp_data")
+            
             logger.info(
                 "Using command-line override: experimental data plotting enabled"
             )
@@ -264,6 +274,12 @@ def run_analysis(args: argparse.Namespace) -> None:
     logger.info("Loading experimental data...")
     c2_exp, time_length, phi_angles, num_angles = analyzer.load_experimental_data()
 
+    # If only plotting experimental data, exit after loading and plotting
+    if args.plot_experimental_data:
+        logger.info("✓ Experimental data plotted successfully")
+        logger.info("Analysis completed (plotting only mode - no fitting performed)")
+        return
+
     # Get initial parameters from config
     if analyzer.config is None:
         logger.error(
@@ -292,7 +308,7 @@ def run_analysis(args: argparse.Namespace) -> None:
         if args.method == "classical":
             methods_attempted = ["Classical"]
             results = run_classical_optimization(
-                analyzer, initial_params, phi_angles, c2_exp
+                analyzer, initial_params, phi_angles, c2_exp, args.output_dir
             )
         elif args.method == "mcmc":
             methods_attempted = ["MCMC"]
@@ -306,8 +322,9 @@ def run_analysis(args: argparse.Namespace) -> None:
             )
 
         if results:
-            # Save results
-            analyzer.save_results_with_config(results)
+            # Save results - skip default plots for classical-only methods
+            skip_plots = args.method == "classical"
+            analyzer.save_results_with_config(results, skip_plots=skip_plots, output_dir=str(args.output_dir))
 
             # Perform per-angle chi-squared analysis for each successful method
             successful_methods = results.get("methods_used", [])
@@ -446,7 +463,7 @@ def run_analysis(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
-def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
+def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
     """
     Execute classical optimization using Nelder-Mead simplex method.
 
@@ -464,6 +481,8 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         Angular coordinates for the scattering data
     c2_exp : ndarray
         Experimental correlation function data
+    output_dir : Path, optional
+        Directory for saving classical results and fitted data
 
     Returns
     -------
@@ -496,6 +515,12 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         ):
             analyzer.best_params_classical = optimizer.best_params_classical
             logger.info("✓ Classical results stored for MCMC initialization")
+
+        # Save experimental and fitted data to classical directory
+        if output_dir is not None and best_params is not None:
+            _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir)
+            # Generate classical-specific plots
+            _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_dir)
 
         return {
             "classical_optimization": {
@@ -830,7 +855,7 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     methods_attempted.append("Classical")
     logger.info("Attempting Classical optimization...")
     classical_results = run_classical_optimization(
-        analyzer, initial_params, phi_angles, c2_exp
+        analyzer, initial_params, phi_angles, c2_exp, output_dir
     )
     if classical_results:
         all_results.update(classical_results)
@@ -912,6 +937,189 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
 
     logger.error("❌ All optimization methods failed")
     return None
+
+
+def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_dir):
+    """
+    Generate plots specifically for classical optimization results.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    best_params : np.ndarray
+        Optimized parameters from classical optimization
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving classical results
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from pathlib import Path
+        import numpy as np
+        
+        # Create classical subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+        
+        classical_dir = output_dir / "classical"
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Check if plotting is enabled
+        config = analyzer.config
+        output_settings = config.get("output_settings", {})
+        reporting = output_settings.get("reporting", {})
+        if not reporting.get("generate_plots", True):
+            logger.info("Plotting disabled in configuration - skipping classical plot generation")
+            return
+            
+        logger.info("Generating classical optimization plots...")
+        
+        # Calculate theoretical data with optimized parameters
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
+        
+        # Generate C2 heatmaps in classical directory
+        try:
+            from homodyne.plotting import plot_c2_heatmaps
+            
+            # Create time arrays for plotting
+            dt = analyzer.dt
+            n_angles, n_t2, n_t1 = c2_exp.shape
+            t2 = np.arange(n_t2) * dt
+            t1 = np.arange(n_t1) * dt
+            
+            logger.info("Generating C2 correlation heatmaps for classical results...")
+            success = plot_c2_heatmaps(
+                c2_exp,
+                c2_theory,
+                phi_angles,
+                classical_dir,
+                config,
+                t2=t2,
+                t1=t1,
+            )
+            
+            if success:
+                logger.info("✓ Classical C2 heatmaps generated successfully")
+            else:
+                logger.warning("⚠ Some classical C2 heatmaps failed to generate")
+                
+        except Exception as e:
+            logger.error(f"Failed to generate classical C2 heatmaps: {e}")
+            import traceback
+            logger.debug(f"Full traceback: {traceback.format_exc()}")
+        
+    except Exception as e:
+        logger.error(f"Failed to generate classical plots: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
+def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
+    """
+    Calculate fitted data and save experimental and fitted data to classical directory.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    best_params : np.ndarray
+        Optimized parameters from classical optimization
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving classical results
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from pathlib import Path
+        import numpy as np
+        
+        # Create classical subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+        
+        classical_dir = output_dir / "classical"
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        
+        logger.info(f"Calculating fitted data for classical optimization results...")
+        
+        # Calculate theoretical data with optimized parameters
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
+        
+        # Calculate fitted data for each angle using scaling optimization
+        n_angles, n_t2, n_t1 = c2_exp.shape
+        c2_fitted = np.zeros_like(c2_exp)
+        
+        uncertainty_factor = analyzer.config.get("advanced_settings", {}).get("chi_squared_calculation", {}).get("uncertainty_estimation_factor", 0.1)
+        min_sigma = analyzer.config.get("advanced_settings", {}).get("chi_squared_calculation", {}).get("minimum_sigma", 1e-10)
+        
+        for i in range(n_angles):
+            # Flatten the 2D correlation data for least squares fitting
+            exp_flat = c2_exp[i].flatten()
+            theory_flat = c2_theory[i].flatten()
+            
+            # Perform scaling optimization: fitted = theory * contrast + offset
+            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
+            try:
+                scaling, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+                if len(scaling) == 2:
+                    contrast, offset = scaling
+                    c2_fitted[i] = c2_theory[i] * contrast + offset
+                    logger.debug(f"Angle {i} (φ={phi_angles[i]:.1f}°): contrast={contrast:.3f}, offset={offset:.4f}")
+                else:
+                    c2_fitted[i] = c2_theory[i]
+                    logger.debug(f"Angle {i} (φ={phi_angles[i]:.1f}°): using unscaled theory (no scaling solution)")
+            except np.linalg.LinAlgError:
+                c2_fitted[i] = c2_theory[i]
+                logger.warning(f"Scaling optimization failed for angle {i}, using unscaled theory")
+        
+        # Calculate residuals: experimental - fitted
+        c2_residuals = c2_exp - c2_fitted
+        
+        # Save data files
+        exp_file = classical_dir / "experimental_data.npz"
+        fitted_file = classical_dir / "fitted_data.npz"
+        residuals_file = classical_dir / "residuals_data.npz"
+        
+        np.savez_compressed(exp_file, 
+                           c2_experimental=c2_exp, 
+                           phi_angles=phi_angles,
+                           parameters=best_params,
+                           parameter_names=analyzer.config.get("initial_parameters", {}).get("parameter_names", []))
+        
+        np.savez_compressed(fitted_file,
+                           c2_fitted=c2_fitted,
+                           phi_angles=phi_angles,
+                           parameters=best_params,
+                           parameter_names=analyzer.config.get("initial_parameters", {}).get("parameter_names", []))
+        
+        np.savez_compressed(residuals_file,
+                           c2_residuals=c2_residuals,
+                           phi_angles=phi_angles,
+                           parameters=best_params,
+                           parameter_names=analyzer.config.get("initial_parameters", {}).get("parameter_names", []))
+        
+        logger.info(f"✓ Classical fitting data saved to {classical_dir}/")
+        logger.info(f"  - Experimental data: {exp_file}")
+        logger.info(f"  - Fitted data: {fitted_file}")
+        logger.info(f"  - Residuals data: {residuals_file}")
+        
+    except Exception as e:
+        logger.error(f"Failed to save classical fitted data: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
 def main():

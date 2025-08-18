@@ -1726,7 +1726,7 @@ class HomodyneAnalysisCore:
 
         return per_angle_results
 
-    def save_results_with_config(self, results: Dict[str, Any]) -> None:
+    def save_results_with_config(self, results: Dict[str, Any], skip_plots: bool = False, output_dir: str = None) -> None:
         """
         Save optimization results along with configuration to JSON file.
 
@@ -1737,6 +1737,10 @@ class HomodyneAnalysisCore:
         ----------
         results : Dict[str, Any]
             Results dictionary from optimization methods
+        skip_plots : bool, optional
+            If True, skip generating analysis plots (default: False)
+        output_dir : str, optional
+            Output directory for saving results file (default: current directory)
         """
         import json
         from datetime import datetime
@@ -1767,10 +1771,20 @@ class HomodyneAnalysisCore:
         else:
             results_format = "json"
 
-        if results_format == "json":
-            output_file = "homodyne_analysis_results.json"
+        # Determine output file path
+        if output_dir:
+            from pathlib import Path
+            output_dir_path = Path(output_dir)
+            output_dir_path.mkdir(parents=True, exist_ok=True)
+            if results_format == "json":
+                output_file = output_dir_path / "homodyne_analysis_results.json"
+            else:
+                output_file = output_dir_path / f"homodyne_analysis_results.{results_format}"
         else:
-            output_file = f"homodyne_analysis_results.{results_format}"
+            if results_format == "json":
+                output_file = "homodyne_analysis_results.json"
+            else:
+                output_file = f"homodyne_analysis_results.{results_format}"
 
         try:
             # Save to JSON format regardless of specified format for compatibility
@@ -1791,8 +1805,9 @@ class HomodyneAnalysisCore:
             logger.error(f"Failed to save results: {e}")
             raise
 
-        # Generate plots if enabled in configuration
-        self._generate_analysis_plots(results, output_data)
+        # Generate plots if enabled in configuration and not skipped
+        if not skip_plots:
+            self._generate_analysis_plots(results, output_data)
 
     def _plot_experimental_data_validation(
         self, c2_experimental: np.ndarray, phi_angles: np.ndarray
@@ -1951,7 +1966,7 @@ Validation:
 
             # Save the validation plot
             plots_base_dir = self.config.get("output_settings", {}).get("plotting", {}).get("output", {}).get("base_directory", "./plots")  # type: ignore
-            plots_dir = Path(plots_base_dir) / "data_validation"
+            plots_dir = Path(plots_base_dir)
             plots_dir.mkdir(parents=True, exist_ok=True)
 
             output_file = plots_dir / "experimental_data_validation.png"

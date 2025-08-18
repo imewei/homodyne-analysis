@@ -24,16 +24,19 @@ Ensure your experimental data is in the correct format:
 
 .. code-block:: bash
 
-   # Basic analysis (fastest)
+   # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
+   python run_homodyne.py --config my_sample_config.json --plot-experimental-data
+   
+   # Basic analysis (fastest, saves results to ./homodyne_results/)
    python run_homodyne.py --config my_sample_config.json --method classical
 
 **Step 4: View Results**
 
-Results are saved to the ``homodyne_results/`` directory with:
+Results are saved to the ``homodyne_results/`` directory with organized subdirectories:
 
-- **Parameter estimates**: Optimized values with uncertainties
-- **Fit quality**: Chi-squared values and residuals  
-- **Plots**: Data validation and fit visualization
+- **Main results**: ``homodyne_analysis_results.json`` with parameter estimates and fit quality
+- **Classical output**: ``./classical/`` subdirectory with ``.npz`` data files and C2 heatmaps
+- **Experimental plots**: ``./exp_data/`` subdirectory with validation plots (if using ``--plot-experimental-data``)
 
 Python API Example
 -------------------

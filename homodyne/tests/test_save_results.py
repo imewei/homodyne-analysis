@@ -244,3 +244,52 @@ class TestSaveResultsWithConfig:
                 call_args = mock_json.call_args
                 call_kwargs = call_args[1]
                 assert "default" in call_kwargs
+
+    def test_save_with_output_dir_parameter(
+        self, mock_analyzer, sample_results_with_uncertainty
+    ):
+        """Test saving results with custom output directory parameter."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            custom_output_dir = temp_dir
+            
+            with patch("builtins.open", mock_open()) as mock_file:
+                with patch("json.dump") as mock_json:
+                    # Test with output_dir parameter
+                    mock_analyzer.save_results_with_config(
+                        sample_results_with_uncertainty, 
+                        output_dir=custom_output_dir
+                    )
+
+                    # Verify json.dump was called
+                    assert mock_json.called
+                    call_args = mock_json.call_args
+                    saved_data = call_args[0][0]
+
+                    # Check structure is preserved
+                    assert "timestamp" in saved_data
+                    assert "config" in saved_data
+                    assert "results" in saved_data
+                    assert "execution_metadata" in saved_data
+                    
+                    # Results should be preserved
+                    assert saved_data["results"] == sample_results_with_uncertainty
+
+    def test_save_without_output_dir_parameter(
+        self, mock_analyzer, sample_results_with_uncertainty
+    ):
+        """Test saving results without output directory parameter (default behavior)."""
+        with patch("builtins.open", mock_open()) as mock_file:
+            with patch("json.dump") as mock_json:
+                # Test without output_dir parameter (backward compatibility)
+                mock_analyzer.save_results_with_config(
+                    sample_results_with_uncertainty
+                )
+
+                # Should work the same as before
+                assert mock_json.called
+                call_args = mock_json.call_args
+                saved_data = call_args[0][0]
+
+                assert "timestamp" in saved_data
+                assert "config" in saved_data
+                assert "results" in saved_data

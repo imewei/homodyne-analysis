@@ -33,7 +33,11 @@ Example 1: Basic Isotropic Analysis
 
 .. code-block:: bash
 
+   # Run classical analysis (results saved to ./homodyne_results/)
    python run_homodyne.py --config isotropic_example.json --method classical
+   
+   # Generate data validation plots only (saved to ./homodyne_results/exp_data/)
+   python run_homodyne.py --config isotropic_example.json --plot-experimental-data
 
 **Expected Output**:
 
@@ -90,10 +94,13 @@ Example 2: Flow Analysis with MCMC
 
 .. code-block:: bash
 
-   # Step 1: Classical optimization for initial estimates
+   # Step 1: Data validation (optional, saves to ./homodyne_results/exp_data/)
+   python run_homodyne.py --config flow_mcmc_example.json --plot-experimental-data
+   
+   # Step 2: Classical optimization for initial estimates (saves to ./homodyne_results/)
    python run_homodyne.py --config flow_mcmc_example.json --method classical
    
-   # Step 2: MCMC sampling for uncertainty quantification  
+   # Step 3: MCMC sampling for uncertainty quantification  
    python run_homodyne.py --config flow_mcmc_example.json --method mcmc
 
 **Expected Output**:
@@ -378,6 +385,34 @@ Common Patterns
            print("⚠️ Modest improvement") 
        else:
            print("❌ No significant improvement")
+
+Output Directory Structure
+---------------------------
+
+Starting from version 6.0, the analysis results are organized into method-specific subdirectories:
+
+.. code-block:: text
+
+   ./homodyne_results/
+   ├── homodyne_analysis_results.json    # Main results file (moved from root directory)
+   ├── per_angle_chi_squared_classical.json
+   ├── run.log                           # Analysis log file
+   ├── exp_data/                         # Experimental data plots (--plot-experimental-data)
+   │   ├── data_validation_phi_*.png
+   │   └── summary_statistics.txt
+   └── classical/                       # Classical method outputs (--method classical)
+       ├── experimental_data.npz         # Original experimental correlation data
+       ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
+       ├── residuals_data.npz           # Residuals (experimental - fitted)
+       └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+
+**Key Changes**:
+
+- **Main results file**: Now saved in output directory instead of current directory
+- **Classical method**: Results organized in dedicated ``./homodyne_results/classical/`` subdirectory
+- **Experimental data plots**: Saved to ``./homodyne_results/exp_data/`` when using ``--plot-experimental-data``
+- **Data files**: Classical fitting saves experimental, fitted, and residuals data as ``.npz`` files
+- **Plotting behavior**: The ``--plot-experimental-data`` flag now skips all fitting and exits immediately after plotting
 
 Next Steps
 ----------
