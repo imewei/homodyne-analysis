@@ -14,7 +14,7 @@ Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in c
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
 - **High performance**: Numba JIT compilation with 3-5x speedup and smart angle filtering
-- **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper chi-squared calculations
+- **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper $\chi^2$ calculations
 
 
 ## Table of Contents
@@ -89,19 +89,19 @@ The homodyne analysis package supports three distinct analysis modes, each optim
 ### Static Isotropic Mode (3 parameters)
 - **Physical Context**: Analysis of systems at equilibrium with isotropic scattering where results don't depend on scattering angle
 - **Parameters**: 
-  - D₀: Effective diffusion coefficient
-  - α: Time exponent characterizing dynamic scaling
-  - D_offset: Baseline diffusion component
+  - $D_0$: Effective diffusion coefficient
+  - $\alpha$: Time exponent characterizing dynamic scaling
+  - $D_{\text{offset}}$: Baseline diffusion component
 - **Key Features**:
   - No angle filtering (automatically disabled)
   - No phi_angles_file loading (uses single dummy angle)
   - Fastest analysis mode
 - **When to Use**: Isotropic samples, quick validation runs, preliminary analysis
-- **Model**: `g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt)` with no angular dependence
+- **Model**: $g_1(t_1,t_2) = \exp(-q^2 \int_{t_1}^{t_2} D(t)dt)$ with no angular dependence
 
 ### Static Anisotropic Mode (3 parameters)
 - **Physical Context**: Analysis of systems at equilibrium with angular dependence but no flow effects
-- **Parameters**: D₀, α, D_offset (same as isotropic mode)
+- **Parameters**: $D_0$, $\alpha$, $D_{\text{offset}}$ (same as isotropic mode)
 - **Key Features**:
   - Angle filtering enabled for optimization efficiency
   - phi_angles_file loaded for angle information
@@ -112,17 +112,17 @@ The homodyne analysis package supports three distinct analysis modes, each optim
 ### Laminar Flow Mode (7 parameters) 
 - **Physical Context**: Analysis of systems under controlled shear flow conditions with full physics model
 - **Parameters**: 
-  - D₀, α, D_offset: Same as static modes
-  - γ̇₀: Characteristic shear rate
-  - β: Shear rate exponent for flow scaling
-  - γ̇_offset: Baseline shear component
-  - φ₀: Angular offset parameter for flow geometry
+  - $D_0$, $\alpha$, $D_{\text{offset}}$: Same as static modes
+  - $\dot{\gamma}_0$: Characteristic shear rate
+  - $\beta$: Shear rate exponent for flow scaling
+  - $\dot{\gamma}_{\text{offset}}$: Baseline shear component
+  - $\phi_0$: Angular offset parameter for flow geometry
 - **Key Features**:
   - All flow and diffusion effects included
   - phi_angles_file required for angle-dependent flow effects
   - Complex parameter space with potential correlations
 - **When to Use**: Systems under shear, nonequilibrium conditions, transport coefficient analysis
-- **Model**: `g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂)` where shear effects are `sinc²(Φ)`
+- **Model**: $g_1(t_1,t_2) = g_{1,\text{diff}}(t_1,t_2) \times g_{1,\text{shear}}(t_1,t_2)$ where shear effects are $\text{sinc}^2(\Phi)$
 
 ## Usage Examples
 

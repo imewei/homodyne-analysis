@@ -18,12 +18,12 @@ A high-performance Python package for analyzing homodyne scattering in X-ray Pho
 Overview
 --------
 
-This package analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow. The implementation provides:
+This package analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow. The implementation provides:
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
 - **High performance**: Numba JIT compilation with 3-5x speedup and smart angle filtering
-- **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
+- **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper $\chi^2$ calculations
 
 Quick Start
 -----------
@@ -141,22 +141,22 @@ Theoretical Background
 The package implements three key equations describing correlation functions in nonequilibrium laminar flow systems:
 
 **Equation 13 - Full Nonequilibrium Laminar Flow:**
-   c₂(q⃗, t₁, t₂) = 1 + β[e^(-q²∫J(t)dt)] × sinc²[1/(2π) qh ∫γ̇(t)cos(φ(t))dt]
+   $c_2(\vec{q}, t_1, t_2) = 1 + \beta[e^{-q^2\int J(t)dt}] \times \text{sinc}^2[\frac{1}{2\pi} qh \int\dot{\gamma}(t)\cos(\phi(t))dt]$
 
 **Equation S-75 - Equilibrium Under Constant Shear:**
-   c₂(q⃗, t₁, t₂) = 1 + β[e^(-6q²D(t₂-t₁))] sinc²[1/(2π) qh cos(φ)γ̇(t₂-t₁)]
+   $c_2(\vec{q}, t_1, t_2) = 1 + \beta[e^{-6q^2D(t_2-t_1)}] \text{sinc}^2[\frac{1}{2\pi} qh \cos(\phi)\dot{\gamma}(t_2-t_1)]$
 
 **Equation S-76 - One-time Correlation (Siegert Relation):**
-   g₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
+   $g_2(\vec{q}, \tau) = 1 + \beta[e^{-6q^2D\tau}] \text{sinc}^2[\frac{1}{2\pi} qh \cos(\phi)\dot{\gamma}\tau]$
 
 **Key Parameters:**
 
-- q⃗: scattering wavevector [Å⁻¹]
-- h: gap between stator and rotor [Å]  
-- φ(t): angle between shear/flow direction and q⃗ [degrees]
-- γ̇(t): time-dependent shear rate [s⁻¹]
-- D(t): time-dependent diffusion coefficient [Å²/s]
-- β: contrast parameter [dimensionless]
+- $\vec{q}$: scattering wavevector [Å⁻¹]
+- $h$: gap between stator and rotor [Å]  
+- $\phi(t)$: angle between shear/flow direction and $\vec{q}$ [degrees]
+- $\dot{\gamma}(t)$: time-dependent shear rate [s⁻¹]
+- $D(t)$: time-dependent diffusion coefficient [Å²/s]
+- $\beta$: contrast parameter [dimensionless]
 
 Citation
 --------

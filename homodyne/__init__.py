@@ -7,7 +7,7 @@ Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the
 theoretical framework from He et al. PNAS 2024 for characterizing transport
 properties in flowing soft matter systems.
 
-Analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) capturing
+Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ capturing
 the interplay between Brownian diffusion and advective shear flow.
 
 Reference:
@@ -20,7 +20,7 @@ Key Features:
   Laminar Flow (7 params)
 - Dual optimization: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
 - High performance: Numba JIT compilation with 3-5x speedup and smart angle filtering
-- Scientific accuracy: Automatic g₂ = offset + contrast × g₁ fitting
+- Scientific accuracy: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting
 
 Core Modules:
 - core.config: Configuration management with template system
