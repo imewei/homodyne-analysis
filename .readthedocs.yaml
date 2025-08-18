@@ -36,7 +36,6 @@ python:
       extra_requirements:
         - docs
     - requirements: requirements.txt
-  system_packages: false
 
 # Specify which files/directories to include in the build
 # This helps reduce build time by excluding unnecessary files
