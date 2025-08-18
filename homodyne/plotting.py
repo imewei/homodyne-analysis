@@ -263,9 +263,9 @@ def plot_c2_heatmaps(
                 cmap="viridis",
                 vmin=angle_vmin,
             )
-            ax1.set_title(f"Experimental C₂\nφ = {phi:.1f}°")
-            ax1.set_xlabel("t₁")
-            ax1.set_ylabel("t₂")
+            ax1.set_title(f"Experimental $C_2$\nφ = {phi:.1f}°")
+            ax1.set_xlabel(r"$t_1$")
+            ax1.set_ylabel(r"$t_2$")
 
             # Fitted data heatmap
             ax2 = fig.add_subplot(gs[0, 1])
@@ -282,9 +282,9 @@ def plot_c2_heatmaps(
                 cmap="viridis",
                 vmin=angle_vmin,
             )
-            ax2.set_title(f"Theoretical C₂\nφ = {phi:.1f}°")
-            ax2.set_xlabel("t₁")
-            ax2.set_ylabel("t₂")
+            ax2.set_title(f"Theoretical $C_2$\nφ = {phi:.1f}°")
+            ax2.set_xlabel(r"$t_1$")
+            ax2.set_ylabel(r"$t_2$")
 
             # Residuals heatmap
             ax3 = fig.add_subplot(gs[0, 2])
@@ -301,8 +301,8 @@ def plot_c2_heatmaps(
                 cmap="RdBu_r",
             )
             ax3.set_title(f"Residuals (Exp - Fit)\nφ = {phi:.1f}°")
-            ax3.set_xlabel("t₁")
-            ax3.set_ylabel("t₂")
+            ax3.set_xlabel(r"$t_1$")
+            ax3.set_ylabel(r"$t_2$")
 
             # Shared colorbar for exp and theory
             cbar_ax1 = fig.add_subplot(gs[0, 3])
@@ -1859,9 +1859,9 @@ def plot_experimental_c2_data(
                 ],  # type: ignore
                 cmap="viridis",
             )
-            ax1.set_xlabel("Time t₁ (s)")
-            ax1.set_ylabel("Time t₂ (s)")
-            ax1.set_title(f"g₂(t₁,t₂) at φ={phi_deg:.1f}°")
+            ax1.set_xlabel(r"Time $t_1$ (s)")
+            ax1.set_ylabel(r"Time $t_2$ (s)")
+            ax1.set_title(f"$g_2(t_1,t_2)$ at φ={phi_deg:.1f}°")
             plt.colorbar(im1, ax=ax1, shrink=0.6)
 
             # 2. Statistics
@@ -2125,20 +2125,20 @@ def plot_3d_surface(
                 antialiased=True
             )
             
-            title1 = f'Experimental C2 Data with {confidence_level*100:.0f}% CI\nφ = {phi_angle:.1f}°'
+            title1 = f'Experimental $C_2$ Data with {confidence_level*100:.0f}% CI\nφ = {phi_angle:.1f}°'
         else:
-            title1 = f'Experimental C2 Data\nφ = {phi_angle:.1f}°'
+            title1 = f'Experimental $C_2$ Data\nφ = {phi_angle:.1f}°'
             
         # Customize first subplot
-        ax1.set_xlabel('t₁ (time units)', fontsize=12, labelpad=10)
-        ax1.set_ylabel('t₂ (time units)', fontsize=12, labelpad=10) 
-        ax1.set_zlabel('C₂ (correlation)', fontsize=12, labelpad=8)
+        ax1.set_xlabel(r'$t_1$ (time units)', fontsize=12, labelpad=10)
+        ax1.set_ylabel(r'$t_2$ (time units)', fontsize=12, labelpad=10) 
+        ax1.set_zlabel(r'$C_2$ (correlation)', fontsize=12, labelpad=8)
         ax1.set_title(title1, fontsize=14, pad=20)
         ax1.view_init(elev=20, azim=120)
         
         # Add colorbar for experimental data
         cbar1 = fig.colorbar(surf1, ax=ax1, shrink=0.5, aspect=20, pad=0.1)
-        cbar1.set_label('C₂ (experimental)', fontsize=10)
+        cbar1.set_label(r'$C_2$ (experimental)', fontsize=10)
         
         # =================================================================
         # Right subplot: Fitted data comparison
@@ -2164,15 +2164,15 @@ def plot_3d_surface(
         )
         
         # Customize second subplot
-        ax2.set_xlabel('t₁ (time units)', fontsize=12, labelpad=10)
-        ax2.set_ylabel('t₂ (time units)', fontsize=12, labelpad=10)
-        ax2.set_zlabel('C₂ (correlation)', fontsize=12, labelpad=8) 
+        ax2.set_xlabel(r'$t_1$ (time units)', fontsize=12, labelpad=10)
+        ax2.set_ylabel(r'$t_2$ (time units)', fontsize=12, labelpad=10)
+        ax2.set_zlabel(r'$C_2$ (correlation)', fontsize=12, labelpad=8) 
         ax2.set_title(f'Fitted vs Experimental Data\nφ = {phi_angle:.1f}°', fontsize=14, pad=20)
         ax2.view_init(elev=20, azim=120)
         
         # Add colorbar for fitted data
         cbar2 = fig.colorbar(surf2, ax=ax2, shrink=0.5, aspect=20, pad=0.1)
-        cbar2.set_label('C₂ (fitted)', fontsize=10)
+        cbar2.set_label(r'$C_2$ (fitted)', fontsize=10)
         
         # =================================================================
         # Additional plot enhancements
@@ -2248,8 +2248,8 @@ def plot_3d_surface(
             )
             
             # Customize residuals plot
-            ax_res.set_xlabel('t₁ (time units)', fontsize=12, labelpad=10)
-            ax_res.set_ylabel('t₂ (time units)', fontsize=12, labelpad=10)
+            ax_res.set_xlabel(r'$t_1$ (time units)', fontsize=12, labelpad=10)
+            ax_res.set_ylabel(r'$t_2$ (time units)', fontsize=12, labelpad=10)
             ax_res.set_zlabel('Residuals (exp - fitted)', fontsize=12, labelpad=8)
             ax_res.set_title(f'Residuals (Experimental - Fitted)\nφ = {phi_angle:.1f}°', fontsize=14, pad=20)
             ax_res.view_init(elev=20, azim=120)
@@ -2385,16 +2385,16 @@ def plot_3d_surface_comparison(
                 vmin=vmin, vmax=vmax
             )
             
-            ax.set_xlabel('t₁', fontsize=10)
-            ax.set_ylabel('t₂', fontsize=10)
-            ax.set_zlabel('C₂', fontsize=10)
+            ax.set_xlabel(r'$t_1$', fontsize=10)
+            ax.set_ylabel(r'$t_2$', fontsize=10)
+            ax.set_zlabel(r'$C_2$', fontsize=10)
             ax.set_title(f'{name.capitalize()}\nφ = {phi_angle:.1f}°', fontsize=12)
             ax.view_init(elev=20, azim=120)
             ax.grid(True, alpha=0.3)
             
             # Add colorbar
             cbar = fig.colorbar(surf, ax=ax, shrink=0.6, aspect=15)
-            cbar.set_label(f'C₂ ({name})', fontsize=8)
+            cbar.set_label(f'$C_2$ ({name})', fontsize=8)
         
         plt.tight_layout()
         

@@ -1877,9 +1877,9 @@ class HomodyneAnalysisCore:
                     extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]],  # type: ignore
                     cmap="viridis",
                 )
-                ax1.set_xlabel("Time t₁ (s)")
-                ax1.set_ylabel("Time t₂ (s)")
-                ax1.set_title(f"g₂(t₁,t₂) at φ={phi_deg:.1f}°")
+                ax1.set_xlabel(r"Time $t_1$ (s)")
+                ax1.set_ylabel(r"Time $t_2$ (s)")
+                ax1.set_title(f"$g_2(t_1,t_2)$ at φ={phi_deg:.1f}°")
                 plt.colorbar(im1, ax=ax1, shrink=0.8)
 
                 # 2. Diagonal slice
@@ -1906,11 +1906,11 @@ class HomodyneAnalysisCore:
                             color=color,
                             linewidth=1.5,
                             alpha=0.8,
-                            label=f"t₂={time_t2[idx]:.1f}s",
+                            label=f"$t_2$={time_t2[idx]:.1f}s",
                         )
 
-                ax3.set_xlabel("Time t₁ (s)")
-                ax3.set_ylabel("g₂(t₁,t₂)")
+                ax3.set_xlabel(r"Time $t_1$ (s)")
+                ax3.set_ylabel(r"$g_2(t_1,t_2)$")
                 ax3.set_title(f"Cross-sections at φ={phi_deg:.1f}°")
                 ax3.legend(fontsize=9)
                 ax3.grid(True, alpha=0.3)
