@@ -5,6 +5,10 @@ include CHANGELOG.md
 include requirements.txt
 include pyproject.toml
 
+# Include CLI scripts
+include run_homodyne.py
+include create_config.py
+
 # Include configuration templates and data files
 recursive-include homodyne *.json
 recursive-include homodyne/templates *.json
@@ -35,7 +39,5 @@ exclude .github
 exclude .benchmarks
 exclude .claude
 exclude benchmark_performance.py
-exclude create_config.py
-exclude run_homodyne.py
 exclude my_config*.json
 exclude WARP.md

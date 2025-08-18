@@ -104,7 +104,7 @@ setup(
         "Source": "https://github.com/imewei/homodyne",
         "Tracker": "https://github.com/imewei/homodyne/issues",
     },
-    packages=find_packages(exclude=["tests*", "docs*", "examples*"]),
+    packages=find_packages(exclude=["tests*", "docs*", "examples*", "homodyne.tests*"]),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
@@ -133,13 +133,12 @@ setup(
             "templates/*.json",
         ],
     },
-    # Entry points removed - main CLI is run_homodyne.py
-    # entry_points={
-    #     "console_scripts": [
-    #         "homodyne=homodyne.cli:main",
-    #         "homodyne-config=homodyne.config_cli:main",
-    #     ],
-    # },
+    entry_points={
+        "console_scripts": [
+            "homodyne=homodyne.run_homodyne:main",
+            "homodyne-config=homodyne.create_config:main",
+        ],
+    },
     keywords=[
         "xpcs",
         "homodyne",

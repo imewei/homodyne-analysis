@@ -34,9 +34,18 @@ The package analyzes time-dependent intensity correlation functions c₂(φ,t₁
 
 ## Installation
 
+### PyPI Installation (Recommended)
+
+Install the complete package with all features from PyPI:
+
+```bash
+# Full installation with all features (MCMC, performance, data handling)
+pip install homodyne-analysis[all]
+```
+
 ### Development Installation
 
-Since the package is not yet published to PyPI, install directly from the repository:
+For development or latest features, install directly from the repository:
 
 ```bash
 # Clone the repository
@@ -51,20 +60,8 @@ source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 mamba create -n homodyne python>=3.12
 mamba activate homodyne
 
-# Install core dependencies
-pip install numpy scipy matplotlib
-
-# For XPCS data handling (recommended)
-pip install xpcs-viewer
-
-# For enhanced performance (recommended)
-pip install numba
-
-# For Bayesian MCMC analysis
-pip install pymc arviz pytensor
-
-# Install the package in development mode
-pip install -e .
+# Install the package in development mode with all features
+pip install -e .[all]
 ```
 
 ### Dependencies
@@ -77,6 +74,18 @@ pip install -e .
 **Optional Documentation Dependencies**: `sphinx`, `sphinx-rtd-theme`, `myst-parser`, `sphinx-autodoc-typehints`, `numpydoc`
 
 ## Quick Start
+
+After installing via PyPI (`pip install homodyne-analysis[all]`), use the command line tools:
+
+```bash
+# Create a configuration file
+homodyne-config --mode laminar_flow --sample my_sample --output my_config.json
+
+# Run analysis
+homodyne --config my_config.json --method all
+```
+
+Or use the Python API:
 
 ```python
 from homodyne import HomodyneAnalysisCore, ConfigManager
@@ -94,14 +103,14 @@ results = analysis.optimize_classical()
 results = analysis.optimize_all()
 ```
 
-Or from the command line:
+Command line examples:
 
 ```bash
 # Basic analysis with isotropic mode (fastest)
-python run_homodyne.py --static-isotropic --method classical
+homodyne --static-isotropic --method classical
 
 # Full flow analysis with uncertainty quantification
-python run_homodyne.py --laminar-flow --method mcmc
+homodyne --laminar-flow --method mcmc
 ```
 
 ## Analysis Modes
@@ -154,30 +163,42 @@ The homodyne analysis package supports three distinct analysis modes, each optim
 
 ## Usage
 
+### Console Scripts (PyPI Installation)
+
+After installing via PyPI, use the convenient console scripts:
+
+```bash
+# Main analysis command
+homodyne --help
+
+# Configuration creator
+homodyne-config --help
+```
+
 ### Command Line Interface
 
 #### Main Analysis Runner
 
 ```bash
 # Basic classical optimization with mode specification
-python run_homodyne.py --static-isotropic --method classical
-python run_homodyne.py --static-anisotropic --method mcmc
-python run_homodyne.py --laminar-flow --method all
+homodyne --static-isotropic --method classical
+homodyne --static-anisotropic --method mcmc
+homodyne --laminar-flow --method all
 
 # Use custom configuration and output directory
-python run_homodyne.py --config my_experiment.json --output-dir ./results
+homodyne --config my_experiment.json --output-dir ./results
 
 # Generate experimental data validation plots only (no fitting)
-python run_homodyne.py --plot-experimental-data --verbose
+homodyne --plot-experimental-data --verbose
 
 # Classical method with C2 heatmaps (saves to ./homodyne_results/classical/)
-python run_homodyne.py --method classical --plot-c2-heatmaps
+homodyne --method classical --plot-c2-heatmaps
 
 # MCMC method with comprehensive uncertainty analysis (saves to ./homodyne_results/mcmc/)
-python run_homodyne.py --method mcmc --config my_experiment.json
+homodyne --method mcmc --config my_experiment.json
 
 # MCMC method with C2 heatmaps using posterior means (saves to ./homodyne_results/mcmc/)
-python run_homodyne.py --method mcmc --plot-c2-heatmaps
+homodyne --method mcmc --plot-c2-heatmaps
 
 # Note: --plot-experimental-data now skips all fitting and saves plots to ./homodyne_results/exp_data/
 ```
@@ -188,10 +209,10 @@ Generate comprehensive validation plots of experimental C2 correlation data with
 
 ```bash
 # Basic data validation (plots only, no fitting)
-python run_homodyne.py --plot-experimental-data --config my_config.json
+homodyne --plot-experimental-data --config my_config.json
 
 # Verbose validation with debug logging
-python run_homodyne.py --plot-experimental-data --config my_config.json --verbose
+homodyne --plot-experimental-data --config my_config.json --verbose
 ```
 
 **Output**: Creates validation plots in `./homodyne_results/exp_data/` including:
@@ -216,22 +237,22 @@ The package provides mode-specific configuration templates optimized for differe
 - **`config_template.json`**: Master template with comprehensive documentation
 
 #### Configuration Creation
-Generate analysis configurations using the enhanced `create_config.py`:
+Generate analysis configurations using the `homodyne-config` command:
 
 ```bash
 # Create isotropic static configuration (fastest)
-python create_config.py --mode static_isotropic --sample protein_01
+homodyne-config --mode static_isotropic --sample protein_01
 
 # Create anisotropic static configuration with metadata
-python create_config.py --mode static_anisotropic --sample collagen \
+homodyne-config --mode static_anisotropic --sample collagen \
                         --author "Your Name" --experiment "Static analysis"
 
 # Create flow analysis configuration
-python create_config.py --mode laminar_flow --sample microgel \
+homodyne-config --mode laminar_flow --sample microgel \
                         --experiment "Microgel dynamics under shear"
 
 # Create with custom output file
-python create_config.py --mode static_isotropic --output my_isotropic_config.json
+homodyne-config --mode static_isotropic --output my_isotropic_config.json
 ```
 
 #### Mode Selection Logic
@@ -273,7 +294,7 @@ Specify which parameters to optimize and display in plots:
 Enable experimental data plotting within the main analysis workflow:
 
 ```bash
-python run_homodyne.py --plot-experimental-data --verbose
+homodyne --plot-experimental-data --verbose
 ```
 
 #### Config-based Validation
@@ -360,34 +381,34 @@ This provides meaningful chi-squared statistics: `χ² = Σ(experimental - fitte
 #### 1. **Data Validation Workflow**
 ```bash
 # Step 1: Validate experimental data quality
-python run_homodyne.py --plot-experimental-data --config my_config.json
+homodyne --plot-experimental-data --config my_config.json
 # Output: ./homodyne_results/exp_data/ with validation plots and statistics
 ```
 
 #### 2. **Exploratory Analysis Workflow** 
 ```bash
 # Step 2: Fast parameter estimation with classical optimization
-python run_homodyne.py --method classical --config my_config.json
+homodyne --method classical --config my_config.json
 # Output: ./homodyne_results/classical/ with point estimates and C2 heatmaps
 
 # Optional: Generate C2 heatmaps for visual validation
-python run_homodyne.py --method classical --plot-c2-heatmaps --config my_config.json
+homodyne --method classical --plot-c2-heatmaps --config my_config.json
 ```
 
 #### 3. **Comprehensive Analysis Workflow**
 ```bash
 # Step 3: Full uncertainty quantification with MCMC
-python run_homodyne.py --method mcmc --config my_config.json
+homodyne --method mcmc --config my_config.json
 # Output: ./homodyne_results/mcmc/ with posterior distributions, trace data, and diagnostics
 
 # Optional: Generate C2 heatmaps using posterior means
-python run_homodyne.py --method mcmc --plot-c2-heatmaps --config my_config.json
+homodyne --method mcmc --plot-c2-heatmaps --config my_config.json
 ```
 
 #### 4. **Complete Pipeline Workflow**
 ```bash
 # Step 4: Run all methods in sequence (recommended for publication)
-python run_homodyne.py --method all --config my_config.json
+homodyne --method all --config my_config.json
 # Output: Both ./homodyne_results/classical/ and ./homodyne_results/mcmc/ directories
 ```
 
@@ -422,7 +443,7 @@ python run_homodyne.py --method all --config my_config.json
 #### Quality Assessment
 ```bash
 # Check experimental data quality first
-python run_homodyne.py --plot-experimental-data --config my_config.json
+homodyne --plot-experimental-data --config my_config.json
 
 # Review output in ./homodyne_results/exp_data/summary_statistics.txt
 # Ensure reasonable g2 values (typically 1.0 + small contrast)
@@ -431,11 +452,11 @@ python run_homodyne.py --plot-experimental-data --config my_config.json
 #### Parameter Initialization
 ```bash
 # Use classical results to initialize MCMC (automatic when using --method all)
-python run_homodyne.py --method all --config my_config.json
+homodyne --method all --config my_config.json
 
 # Or run sequentially for more control:
-python run_homodyne.py --method classical --config my_config.json
-python run_homodyne.py --method mcmc --config my_config.json  # Uses classical results automatically
+homodyne --method classical --config my_config.json
+homodyne --method mcmc --config my_config.json  # Uses classical results automatically
 ```
 
 #### Results Interpretation
