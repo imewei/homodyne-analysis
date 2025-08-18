@@ -60,5 +60,5 @@ jobs:
     - name: Success message
       run: |
         echo "🎉 Deployment successful!"
-        echo "📖 URL: https://imewei.github.io/homodyne/"
+        echo "📖 URL: https://homodyne.readthedocs.io/"
         echo "⏰ Note: GitHub Pages may take 5-10 minutes to update"

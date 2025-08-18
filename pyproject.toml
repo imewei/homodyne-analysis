@@ -100,7 +100,7 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/imewei/homodyne"
-Documentation = "https://imewei.github.io/homodyne/"
+Documentation = "https://homodyne.readthedocs.io/"
 Repository = "https://github.com/imewei/homodyne"
 Issues = "https://github.com/imewei/homodyne/issues"
 

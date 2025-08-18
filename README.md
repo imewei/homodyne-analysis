@@ -818,7 +818,7 @@ This work was supported by the U.S. Department of Energy, Office of Science, Bas
 
 ## Documentation
 
-📚 **Complete Documentation**: https://imewei.github.io/homodyne/
+📚 **Complete Documentation**: https://homodyne.readthedocs.io/
 
 The documentation includes:
 - **User Guide**: Installation, quickstart, configuration, and examples
