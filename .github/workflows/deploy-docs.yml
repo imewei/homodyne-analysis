@@ -1,17 +1,18 @@
-name: Deploy Documentation
+name: Test Documentation Build
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  deploy:
+  test-docs:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     steps:
     - name: Checkout
@@ -29,7 +30,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .[docs]  # Use the package's doc dependencies
         
-    - name: Build documentation
+    - name: Test documentation build
       run: |
         cd docs
         make clean
@@ -47,18 +48,8 @@ jobs:
         echo "  Total HTML files: $(find _build/html -name "*.html" | wc -l)"
         echo "  Total size: $(du -sh _build/html | cut -f1)"
         
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/_build/html
-        force_orphan: true
-        user_name: 'github-actions[bot]'
-        user_email: 'github-actions[bot]@users.noreply.github.com'
-        commit_message: 'Deploy documentation ${{ github.sha }}'
-        
     - name: Success message
       run: |
-        echo "🎉 Deployment successful!"
-        echo "📖 URL: https://homodyne.readthedocs.io/"
-        echo "⏰ Note: GitHub Pages may take 5-10 minutes to update"
+        echo "🎉 Documentation build test successful!"
+        echo "📖 Documentation will be deployed automatically via ReadTheDocs: https://homodyne.readthedocs.io/"
+        echo "ℹ️  ReadTheDocs builds are triggered automatically on push to main branch"

@@ -4,18 +4,19 @@ This directory contains GitHub Actions workflows for the homodyne repository.
 
 ## 🚀 Active Workflows
 
-### [`deploy-docs.yml`](./deploy-docs.yml) - Documentation Deployment
-- **Purpose**: Deploy documentation to GitHub Pages
+### [`deploy-docs.yml`](./deploy-docs.yml) - Documentation Build Testing
+- **Purpose**: Test documentation builds to ensure ReadTheDocs deployment will succeed
 - **Trigger**: 
   - Push to `main` branch
+  - Pull requests to `main`
   - Manual workflow dispatch
-- **Method**: Uses `peaceiris/actions-gh-pages@v4` for reliable deployment
-- **Output**: https://homodyne.readthedocs.io/
+- **Method**: Build-only testing (no deployment - handled by ReadTheDocs)
+- **Output**: Documentation available at https://homodyne.readthedocs.io/
 - **Features**:
   - Builds documentation with Sphinx
-  - Deploys to `gh-pages` branch
   - Comprehensive build verification
   - Performance statistics
+  - Validates compatibility before ReadTheDocs deployment
 
 ### [`docs.yml`](./docs.yml) - Documentation Testing
 - **Purpose**: Test documentation builds on PRs and feature branches
@@ -32,25 +33,24 @@ This directory contains GitHub Actions workflows for the homodyne repository.
 
 ## 📋 Workflow Strategy
 
-1. **Production Deployment**: `deploy-docs.yml` handles all main branch deployments
-2. **Quality Assurance**: `docs.yml` validates changes before merging
-3. **Single Responsibility**: Each workflow has a clear, focused purpose
-4. **Reliability**: Uses proven peaceiris action for GitHub Pages deployment
+1. **ReadTheDocs Deployment**: Documentation is automatically deployed via ReadTheDocs on push to `main`
+2. **Build Validation**: `deploy-docs.yml` validates builds will succeed before ReadTheDocs attempts deployment
+3. **Quality Assurance**: `docs.yml` validates changes before merging
+4. **Single Responsibility**: Each workflow has a clear, focused purpose
 
 ## 🛠️ Setup Requirements
 
-### GitHub Pages Configuration
-1. Go to: https://github.com/imewei/homodyne/settings/pages
-2. Under "Source": Select "Deploy from a branch"  
-3. Branch: "gh-pages"
-4. Path: "/ (root)"
-5. Click "Save"
+### ReadTheDocs Configuration
+1. Documentation is automatically built and deployed via ReadTheDocs
+2. Configuration file: `.readthedocs.yaml`
+3. Builds triggered automatically on push to `main` branch
+4. Live documentation: https://homodyne.readthedocs.io/
 
 ### Repository Requirements
-- Repository must be public or have GitHub Pages enabled
 - GitHub Actions must be enabled
 - Python 3.12+ required
 - Sphinx documentation dependencies in `pyproject.toml`
+- ReadTheDocs webhook configured (automatic)
 
 ## 📖 Documentation Build Process
 
@@ -73,27 +73,30 @@ The build process:
 
 If documentation deployment fails:
 
-1. **Check GitHub Pages Settings**:
-   - Source should be "Deploy from a branch" → "gh-pages"
-   - NOT "GitHub Actions"
+1. **Check ReadTheDocs Build Logs**:
+   - Visit https://readthedocs.org/projects/homodyne/builds/
+   - Look for build errors and warnings
+   - Verify all dependencies are correctly specified
 
 2. **Verify Repository Status**:
-   - Repository is public or has Pages enabled
-   - No branch protection blocking deployments
+   - Ensure `.readthedocs.yaml` configuration is correct
+   - Check that all required files are committed to `main`
+   - Verify webhook is properly configured
 
-3. **Check Workflow Logs**:
+3. **Check GitHub Actions Logs**:
    - Look for build errors in the workflow runs
    - Verify all dependencies install correctly
+   - Use workflow to validate builds before ReadTheDocs attempts
 
-4. **Manual Deployment**:
-   - Use "Run workflow" button on `deploy-docs.yml`
+4. **Manual Build Testing**:
+   - Use "Run workflow" button on `deploy-docs.yml` to test builds
    - Check Actions tab for detailed error messages
 
 ## 📊 Performance
 
 - **Testing workflow** (`docs.yml`): ~2-3 minutes
-- **Deployment workflow** (`deploy-docs.yml`): ~3-5 minutes  
-- **GitHub Pages propagation**: 5-10 minutes after deployment
+- **Build validation** (`deploy-docs.yml`): ~3-5 minutes  
+- **ReadTheDocs deployment**: ~5-10 minutes after push to main
 
 ## 🎯 Best Practices
 
