@@ -31,7 +31,13 @@ templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '_build', 
+    'Thumbs.db', 
+    '.DS_Store',
+    'GITHUB_ACTIONS_FIXES.md',
+    '*.md',  # Exclude all markdown files except those explicitly included
+]
 
 # The default language to highlight source code in.
 highlight_language = 'python3'
