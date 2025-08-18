@@ -103,16 +103,6 @@ results = analysis.optimize_classical()
 results = analysis.optimize_all()
 ```
 
-Command line examples:
-
-```bash
-# Basic analysis with isotropic mode (fastest)
-homodyne --static-isotropic --method classical
-
-# Full flow analysis with uncertainty quantification
-homodyne --laminar-flow --method mcmc
-```
-
 ## Analysis Modes
 
 The homodyne analysis package supports three distinct analysis modes, each optimized for different experimental scenarios:
