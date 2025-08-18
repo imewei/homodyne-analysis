@@ -442,6 +442,7 @@ homodyne/
 │   ├── conf.py                # Sphinx configuration
 │   ├── index.rst              # Main documentation index
 │   ├── _static/               # Static documentation assets
+│   │   └── .gitkeep          # Git keep file for empty directory
 │   ├── user-guide/            # User documentation
 │   │   ├── installation.rst   # Installation guide
 │   │   ├── quickstart.rst     # Quick start guide
@@ -455,6 +456,11 @@ homodyne/
 │   │   ├── models.rst         # Models API documentation
 │   │   ├── utilities.rst      # Utilities API documentation
 │   │   └── _autosummary/      # Auto-generated API docs
+│   │       ├── homodyne.config.rst     # Config module docs
+│   │       ├── homodyne.core.rst       # Core module docs
+│   │       ├── homodyne.models.rst     # Models module docs
+│   │       ├── homodyne.optimization.mcmc.rst  # MCMC docs
+│   │       └── homodyne.utils.rst      # Utils module docs
 │   └── developer-guide/       # Developer documentation
 │       ├── index.rst          # Developer guide index
 │       ├── architecture.rst   # System architecture
@@ -487,16 +493,29 @@ homodyne/
 │       ├── __init__.py
 │       ├── conftest.py        # Pytest configuration
 │       ├── fixtures.py        # Test fixtures and utilities
-│       ├── test_static_mode.py          # Static mode functionality
-│       ├── test_isotropic_mode_integration.py  # Isotropic mode integration
 │       ├── test_angle_filtering.py      # Angle filtering functionality
-│       ├── test_config*.py              # Configuration testing
-│       ├── test_mcmc_*.py              # MCMC-specific test files
-│       ├── test_integration.py         # Integration testing
-│       ├── test_plotting.py            # Plotting functionality tests
-│       └── [additional test files]     # Comprehensive coverage
-├── my_config.json              # Example configuration file
-└── my_config_simon.json        # Example configuration file
+│       ├── test_classical_config_reading.py  # Classical config tests
+│       ├── test_config.py               # Configuration management tests
+│       ├── test_config_integration.py   # Config integration tests
+│       ├── test_config_json.py          # JSON configuration tests
+│       ├── test_integration.py          # Integration testing
+│       ├── test_io_utils.py             # I/O utilities tests
+│       ├── test_isotropic_mode_integration.py  # Isotropic mode integration
+│       ├── test_mcmc_angle_filtering.py # MCMC angle filtering tests
+│       ├── test_mcmc_config_reading.py  # MCMC config tests
+│       ├── test_mcmc_config_regression.py # MCMC regression tests
+│       ├── test_mcmc_config_validation.py # MCMC validation tests
+│       ├── test_mcmc_convergence_diagnostics.py # MCMC convergence tests
+│       ├── test_mcmc_initial_parameters.py # MCMC parameter tests
+│       ├── test_mcmc_parameter_bounds_regression.py # MCMC bounds tests
+│       ├── test_mcmc_scaling_consistency.py # MCMC scaling tests
+│       ├── test_per_angle_chi_squared.py # Per-angle analysis tests
+│       ├── test_plotting.py             # Plotting functionality tests
+│       ├── test_save_results.py         # Results saving tests
+│       ├── test_static_mode.py          # Static mode functionality
+│       ├── test_targeted_mcmc_features.py # Targeted MCMC tests
+│       └── test_utils_mcmc.py           # MCMC utilities tests
+└── my_config.json              # Example configuration file
 ```
 
 ## Troubleshooting
