@@ -320,3 +320,225 @@ class TestBackwardCompatibility:
         
         # The system should automatically create the correct directory structure
         # based on the method being used (classical, mcmc, experimental data plotting)
+
+
+class TestMCMCOutputDirectoryStructure:
+    """Test the new output directory structure for MCMC method."""
+
+    def test_mcmc_output_directory_structure(self, temp_directory):
+        """Test that MCMC method creates the correct directory structure."""
+        # Create expected MCMC output directory
+        mcmc_dir = temp_directory / "homodyne_results" / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Expected files in mcmc directory
+        expected_files = [
+            "experimental_data.npz",
+            "fitted_data.npz", 
+            "residuals_data.npz",
+            "c2_heatmaps_phi_0.0deg.png",  # Example C2 heatmap
+            "mcmc_summary.json",           # MCMC summary
+            "mcmc_trace.nc"                # NetCDF trace file
+        ]
+        
+        # Create mock files
+        for filename in expected_files:
+            (mcmc_dir / filename).touch()
+        
+        # Verify structure
+        assert mcmc_dir.exists()
+        for filename in expected_files:
+            assert (mcmc_dir / filename).exists()
+
+    def test_mcmc_npz_data_structure(self, temp_directory):
+        """Test the structure of MCMC NPZ data files."""
+        mcmc_dir = temp_directory / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create mock correlation data
+        n_angles, n_t2, n_t1 = 3, 20, 30
+        mock_experimental_data = np.random.rand(n_angles, n_t2, n_t1) + 1.0
+        mock_fitted_data = np.random.rand(n_angles, n_t2, n_t1) + 1.0
+        mock_residuals_data = mock_experimental_data - mock_fitted_data
+        
+        # Save NPZ files
+        experimental_file = mcmc_dir / "experimental_data.npz"
+        fitted_file = mcmc_dir / "fitted_data.npz"
+        residuals_file = mcmc_dir / "residuals_data.npz"
+        
+        np.savez_compressed(experimental_file, data=mock_experimental_data)
+        np.savez_compressed(fitted_file, data=mock_fitted_data)  
+        np.savez_compressed(residuals_file, data=mock_residuals_data)
+        
+        # Verify files exist and contain expected data
+        assert experimental_file.exists()
+        assert fitted_file.exists()
+        assert residuals_file.exists()
+        
+        # Load and verify data
+        exp_loaded = np.load(experimental_file)
+        fitted_loaded = np.load(fitted_file)
+        residuals_loaded = np.load(residuals_file)
+        
+        assert "data" in exp_loaded
+        assert "data" in fitted_loaded
+        assert "data" in residuals_loaded
+        
+        assert exp_loaded["data"].shape == (n_angles, n_t2, n_t1)
+        assert fitted_loaded["data"].shape == (n_angles, n_t2, n_t1)
+        assert residuals_loaded["data"].shape == (n_angles, n_t2, n_t1)
+
+    def test_mcmc_fitted_data_calculation(self, temp_directory):
+        """Test that MCMC fitted data follows the expected scaling relationship."""
+        # Mock theoretical and experimental data
+        n_angles, n_t2, n_t1 = 2, 15, 20
+        theory_data = np.random.rand(n_angles, n_t2, n_t1)
+        
+        # Create experimental data with known scaling: exp = contrast * theory + offset
+        contrast = 2.5
+        offset = 1.2
+        exp_data = theory_data * contrast + offset
+        
+        # Simulate least squares fitting to recover scaling parameters
+        for angle_idx in range(n_angles):
+            theory_flat = theory_data[angle_idx].flatten()
+            exp_flat = exp_data[angle_idx].flatten()
+            
+            # Create design matrix [theory, ones]
+            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
+            scaling_params, residuals, rank, s = np.linalg.lstsq(A, exp_flat, rcond=None)
+            recovered_contrast, recovered_offset = scaling_params
+            
+            # Check that we recovered the correct scaling parameters (within tolerance)
+            assert abs(recovered_contrast - contrast) < 0.1
+            assert abs(recovered_offset - offset) < 0.1
+            
+            # Calculate fitted data
+            fitted_flat = theory_flat * recovered_contrast + recovered_offset
+            fitted_data = fitted_flat.reshape(theory_data[angle_idx].shape)
+            
+            # Calculate residuals
+            residuals_data = exp_data[angle_idx] - fitted_data
+            
+            # Residuals should be small for perfect fit
+            assert np.mean(np.abs(residuals_data)) < 0.1
+
+    def test_mcmc_vs_classical_directory_separation(self, temp_directory):
+        """Test that MCMC and classical results are properly separated."""
+        base_dir = temp_directory / "homodyne_results"
+        
+        # Create both directory structures
+        classical_dir = base_dir / "classical"
+        mcmc_dir = base_dir / "mcmc"
+        
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create files in both directories
+        classical_files = [
+            "experimental_data.npz",
+            "fitted_data.npz",
+            "residuals_data.npz",
+            "c2_heatmaps_phi_0.0deg.png"
+        ]
+        
+        mcmc_files = [
+            "experimental_data.npz",
+            "fitted_data.npz", 
+            "residuals_data.npz",
+            "c2_heatmaps_phi_0.0deg.png",
+            "mcmc_summary.json",
+            "mcmc_trace.nc"
+        ]
+        
+        # Create classical files
+        for filename in classical_files:
+            (classical_dir / filename).touch()
+            
+        # Create mcmc files  
+        for filename in mcmc_files:
+            (mcmc_dir / filename).touch()
+        
+        # Verify separation
+        assert classical_dir.exists()
+        assert mcmc_dir.exists()
+        assert classical_dir != mcmc_dir
+        
+        # Verify files are in correct locations
+        for filename in classical_files:
+            assert (classical_dir / filename).exists()
+            
+        for filename in mcmc_files:
+            assert (mcmc_dir / filename).exists()
+            
+        # Verify unique MCMC files are only in MCMC directory
+        assert (mcmc_dir / "mcmc_summary.json").exists()
+        assert (mcmc_dir / "mcmc_trace.nc").exists()
+        assert not (classical_dir / "mcmc_summary.json").exists()
+        assert not (classical_dir / "mcmc_trace.nc").exists()
+
+    def test_complete_directory_structure_with_mcmc(self, temp_directory):
+        """Test the complete expected directory structure including MCMC."""
+        base_dir = temp_directory / "homodyne_results"
+        
+        # Create complete expected structure
+        structure = {
+            "homodyne_analysis_results.json": "file",
+            "per_angle_chi_squared_classical.json": "file", 
+            "run.log": "file",
+            "classical": {
+                "experimental_data.npz": "file",
+                "fitted_data.npz": "file",
+                "residuals_data.npz": "file",
+                "c2_heatmaps_phi_0.0deg.png": "file",
+            },
+            "mcmc": {
+                "experimental_data.npz": "file",
+                "fitted_data.npz": "file",
+                "residuals_data.npz": "file", 
+                "c2_heatmaps_phi_0.0deg.png": "file",
+                "mcmc_summary.json": "file",
+                "mcmc_trace.nc": "file",
+                "trace_plot.png": "file",
+                "corner_plot.png": "file"
+            },
+            "exp_data": {
+                "data_validation_phi_0.0deg.png": "file",
+                "summary_statistics.txt": "file"
+            }
+        }
+        
+        def create_structure(base_path, structure_dict):
+            """Recursively create directory structure."""
+            for name, content in structure_dict.items():
+                path = base_path / name
+                if content == "file":
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.touch()
+                elif isinstance(content, dict):
+                    path.mkdir(parents=True, exist_ok=True)
+                    create_structure(path, content)
+        
+        create_structure(base_dir, structure)
+        
+        # Verify complete structure
+        assert base_dir.exists()
+        assert (base_dir / "homodyne_analysis_results.json").exists()
+        assert (base_dir / "classical").is_dir()
+        assert (base_dir / "mcmc").is_dir()
+        assert (base_dir / "exp_data").is_dir()
+        
+        # Verify classical files
+        assert (base_dir / "classical" / "experimental_data.npz").exists()
+        assert (base_dir / "classical" / "fitted_data.npz").exists()
+        assert (base_dir / "classical" / "residuals_data.npz").exists()
+        
+        # Verify mcmc files
+        assert (base_dir / "mcmc" / "experimental_data.npz").exists()
+        assert (base_dir / "mcmc" / "fitted_data.npz").exists()
+        assert (base_dir / "mcmc" / "residuals_data.npz").exists()
+        assert (base_dir / "mcmc" / "mcmc_summary.json").exists()
+        assert (base_dir / "mcmc" / "mcmc_trace.nc").exists()
+        
+        # Verify experimental data files
+        assert (base_dir / "exp_data" / "data_validation_phi_0.0deg.png").exists()

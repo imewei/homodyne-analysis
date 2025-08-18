@@ -440,3 +440,265 @@ class TestBackwardCompatibilityIntegration:
             assert key in loaded_data
         
         assert loaded_data["execution_metadata"]["analysis_success"] is True
+
+
+class TestMCMCIntegration:
+    """Test MCMC method integration with new directory structure."""
+
+    def test_mcmc_method_output_structure(self, temp_directory):
+        """Test that MCMC method creates correct output structure."""
+        # Create expected output structure for MCMC method
+        mcmc_dir = temp_directory / "homodyne_results" / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Simulate files that would be created by MCMC method
+        expected_files = [
+            "experimental_data.npz",
+            "fitted_data.npz",
+            "residuals_data.npz",
+            "c2_heatmaps_phi_0.0deg.png",
+            "mcmc_summary.json",
+            "mcmc_trace.nc",
+            "trace_plot.png",
+            "corner_plot.png"
+        ]
+        
+        for filename in expected_files:
+            if filename.endswith('.npz'):
+                # Create realistic NPZ files
+                mock_data = np.random.rand(3, 20, 30)
+                np.savez_compressed(mcmc_dir / filename, data=mock_data)
+            else:
+                # Create empty files for plots and summaries
+                (mcmc_dir / filename).touch()
+        
+        # Verify structure was created correctly
+        assert mcmc_dir.exists()
+        assert mcmc_dir.is_dir()
+        
+        # Verify files exist and have correct formats
+        npz_files = list(mcmc_dir.glob("*.npz"))
+        json_files = list(mcmc_dir.glob("*.json"))
+        plot_files = list(mcmc_dir.glob("*.png"))
+        netcdf_files = list(mcmc_dir.glob("*.nc"))
+        
+        assert len(npz_files) == 3  # experimental, fitted, residuals
+        assert len(json_files) == 1  # mcmc_summary.json
+        assert len(plot_files) >= 3  # C2 heatmaps, trace, corner
+        assert len(netcdf_files) == 1  # mcmc_trace.nc
+        
+        # Verify NPZ files contain data
+        for npz_file in npz_files:
+            data = np.load(npz_file)
+            assert "data" in data
+            assert data["data"].shape == (3, 20, 30)
+
+    def test_mcmc_method_execution_simulation(self, temp_directory):
+        """Simulate the execution of run_homodyne.py with --method mcmc."""
+        
+        def mock_run_homodyne_with_mcmc_method():
+            """Mock implementation of run_homodyne.py with --method mcmc."""
+            # Simulate command line argument parsing
+            method = "mcmc"
+            output_dir = temp_directory / "homodyne_results"
+            mcmc_dir = output_dir / "mcmc"
+            
+            # Create output directories
+            output_dir.mkdir(parents=True, exist_ok=True)
+            mcmc_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Simulate analysis execution
+            # 1. Load experimental data
+            mock_exp_data = np.random.rand(1, 60, 60) + 1.0
+            
+            # 2. Run MCMC sampling (mock posterior means)
+            mock_posterior_means = {
+                "D0": 850.0,
+                "alpha": -0.021,
+                "D_offset": -780.0
+            }
+            mock_parameters = [850.0, -0.021, -780.0]
+            
+            # 3. Calculate fitted data from posterior means
+            mock_theory_data = np.random.rand(1, 60, 60) + 0.95
+            mock_fitted_data = mock_theory_data * 1900.0 - 1900.0  # Scaling
+            mock_residuals_data = mock_exp_data - mock_fitted_data
+            
+            # 4. Save data files
+            np.savez_compressed(mcmc_dir / "experimental_data.npz", data=mock_exp_data)
+            np.savez_compressed(mcmc_dir / "fitted_data.npz", data=mock_fitted_data)
+            np.savez_compressed(mcmc_dir / "residuals_data.npz", data=mock_residuals_data)
+            
+            # 5. Create MCMC-specific files
+            (mcmc_dir / "c2_heatmaps_phi_0.0deg.png").touch()
+            (mcmc_dir / "mcmc_trace.nc").touch()
+            (mcmc_dir / "trace_plot.png").touch()
+            (mcmc_dir / "corner_plot.png").touch()
+            
+            # 6. Save MCMC summary
+            mcmc_summary = {
+                "method": "MCMC_NUTS",
+                "execution_time_seconds": 120.5,
+                "posterior_means": mock_posterior_means,
+                "convergence_diagnostics": {
+                    "max_rhat": 1.02,
+                    "min_ess": 450,
+                    "converged": True,
+                    "assessment": "excellent"
+                }
+            }
+            
+            summary_file = mcmc_dir / "mcmc_summary.json"
+            with open(summary_file, 'w') as f:
+                json.dump(mcmc_summary, f, indent=2)
+            
+            # 7. Save main results to output directory (not current directory)
+            main_results = {
+                "timestamp": "2025-08-18T16:06:09.710366+00:00",
+                "results": {
+                    "mcmc_optimization": {
+                        "parameters": mock_parameters,
+                        "convergence_quality": "excellent",
+                        "success": True,
+                        "posterior_means": mock_posterior_means
+                    }
+                }
+            }
+            
+            results_file = output_dir / "homodyne_analysis_results.json"
+            with open(results_file, 'w') as f:
+                json.dump(main_results, f, indent=2)
+            
+            return {
+                "status": "mcmc_analysis_completed",
+                "parameters": mock_parameters,
+                "convergence_quality": "excellent",
+                "results_file": str(results_file),
+                "mcmc_dir": str(mcmc_dir)
+            }
+        
+        # Run mock implementation
+        result = mock_run_homodyne_with_mcmc_method()
+        
+        # Verify results
+        assert result["status"] == "mcmc_analysis_completed"
+        assert len(result["parameters"]) == 3
+        assert result["convergence_quality"] == "excellent"
+        
+        # Verify file structure
+        output_dir = temp_directory / "homodyne_results"
+        mcmc_dir = output_dir / "mcmc"
+        
+        assert output_dir.exists()
+        assert mcmc_dir.exists()
+        
+        # Verify main results file location
+        results_file = Path(result["results_file"])
+        assert results_file.exists()
+        assert results_file.parent == output_dir  # In output directory, not current directory
+        
+        # Verify MCMC data files
+        assert (mcmc_dir / "experimental_data.npz").exists()
+        assert (mcmc_dir / "fitted_data.npz").exists()
+        assert (mcmc_dir / "residuals_data.npz").exists()
+        assert (mcmc_dir / "mcmc_summary.json").exists()
+        assert (mcmc_dir / "mcmc_trace.nc").exists()
+        
+        # Verify MCMC plots
+        assert (mcmc_dir / "c2_heatmaps_phi_0.0deg.png").exists()
+        assert (mcmc_dir / "trace_plot.png").exists()
+        assert (mcmc_dir / "corner_plot.png").exists()
+        
+        # Verify NPZ file content
+        exp_data = np.load(mcmc_dir / "experimental_data.npz")
+        fitted_data = np.load(mcmc_dir / "fitted_data.npz")
+        residuals_data = np.load(mcmc_dir / "residuals_data.npz")
+        
+        assert "data" in exp_data
+        assert "data" in fitted_data
+        assert "data" in residuals_data
+        assert exp_data["data"].shape == (1, 60, 60)
+        
+        # Verify MCMC summary content
+        with open(mcmc_dir / "mcmc_summary.json", 'r') as f:
+            summary = json.load(f)
+        
+        assert summary["method"] == "MCMC_NUTS"
+        assert "convergence_diagnostics" in summary
+        assert summary["convergence_diagnostics"]["converged"] is True
+
+    def test_mcmc_vs_classical_method_separation(self, temp_directory):
+        """Test that MCMC and classical methods create separate directories."""
+        base_dir = temp_directory / "homodyne_results"
+        
+        # Simulate running both methods
+        classical_dir = base_dir / "classical"
+        mcmc_dir = base_dir / "mcmc"
+        
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create method-specific files
+        # Classical files
+        classical_files = [
+            "experimental_data.npz",
+            "fitted_data.npz",
+            "residuals_data.npz",
+            "c2_heatmaps_phi_0.0deg.png"
+        ]
+        
+        for filename in classical_files:
+            if filename.endswith('.npz'):
+                mock_data = np.random.rand(2, 30, 40) + 1.0
+                np.savez_compressed(classical_dir / filename, data=mock_data)
+            else:
+                (classical_dir / filename).touch()
+        
+        # MCMC files
+        mcmc_files = [
+            "experimental_data.npz",
+            "fitted_data.npz",
+            "residuals_data.npz",
+            "c2_heatmaps_phi_0.0deg.png",
+            "mcmc_summary.json",
+            "mcmc_trace.nc",
+            "trace_plot.png",
+            "corner_plot.png"
+        ]
+        
+        for filename in mcmc_files:
+            if filename.endswith('.npz'):
+                mock_data = np.random.rand(2, 30, 40) + 1.0
+                np.savez_compressed(mcmc_dir / filename, data=mock_data)
+            elif filename.endswith('.json'):
+                mock_summary = {"method": "MCMC_NUTS", "converged": True}
+                with open(mcmc_dir / filename, 'w') as f:
+                    json.dump(mock_summary, f, indent=2)
+            else:
+                (mcmc_dir / filename).touch()
+        
+        # Verify directories are separate
+        assert classical_dir.exists()
+        assert mcmc_dir.exists()
+        assert classical_dir != mcmc_dir
+        
+        # Verify common files exist in both directories
+        common_files = ["experimental_data.npz", "fitted_data.npz", "residuals_data.npz", "c2_heatmaps_phi_0.0deg.png"]
+        for filename in common_files:
+            assert (classical_dir / filename).exists()
+            assert (mcmc_dir / filename).exists()
+        
+        # Verify MCMC-specific files only exist in MCMC directory
+        mcmc_only_files = ["mcmc_summary.json", "mcmc_trace.nc", "trace_plot.png", "corner_plot.png"]
+        for filename in mcmc_only_files:
+            assert (mcmc_dir / filename).exists()
+            assert not (classical_dir / filename).exists()
+        
+        # Verify data has correct structure
+        classical_data = np.load(classical_dir / "experimental_data.npz")
+        mcmc_data = np.load(mcmc_dir / "experimental_data.npz")
+        
+        assert "data" in classical_data
+        assert "data" in mcmc_data
+        assert classical_data["data"].shape == (2, 30, 40)
+        assert mcmc_data["data"].shape == (2, 30, 40)

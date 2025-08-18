@@ -655,8 +655,8 @@ def run_mcmc_optimization(
         else:
             output_dir = Path(output_dir)
 
-        # Create mcmc_results subdirectory
-        mcmc_output_dir = output_dir / "mcmc_results"
+        # Create mcmc subdirectory
+        mcmc_output_dir = output_dir / "mcmc"
         mcmc_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Save inference data (NetCDF via arviz.to_netcdf) if trace is available
@@ -717,7 +717,7 @@ def run_mcmc_optimization(
             except Exception as e:
                 logger.warning(f"Failed to extract posterior statistics: {e}")
 
-        # Save summary JSON to output_dir/mcmc_results
+        # Save summary JSON to output_dir/mcmc
         summary_json_path = mcmc_output_dir / "mcmc_summary.json"
         try:
             with open(summary_json_path, "w") as f:
@@ -734,6 +734,12 @@ def run_mcmc_optimization(
             )
             posterior_means = mcmc_results["posterior_means"]
             best_params = [posterior_means.get(name, 0.0) for name in param_names]
+            
+        # Save experimental and fitted data to mcmc directory
+        if output_dir is not None and best_params is not None:
+            _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir)
+            # Generate mcmc-specific plots
+            _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results)
 
         # Extract convergence quality for MCMC summary (no chi-squared calculation)
         convergence_quality = "unknown"
@@ -1118,6 +1124,208 @@ def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, outpu
         
     except Exception as e:
         logger.error(f"Failed to save classical fitted data: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
+def _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
+    """
+    Calculate fitted data and save experimental and fitted data to mcmc directory.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Analysis engine with loaded configuration
+    best_params : np.ndarray
+        Optimized parameters from MCMC posterior means
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving MCMC results
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from pathlib import Path
+        import numpy as np
+        
+        # Create mcmc subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+        
+        mcmc_dir = output_dir / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        logger.info("Calculating fitted data for MCMC optimization results...")
+        
+        # Calculate theoretical data with optimized parameters
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
+        
+        # Calculate fitted data using least squares scaling for each angle
+        # fitted = contrast * theory + offset
+        c2_fitted = np.zeros_like(c2_exp)
+        c2_residuals = np.zeros_like(c2_exp)
+        
+        for angle_idx in range(c2_exp.shape[0]):
+            # Flatten data for least squares
+            theory_flat = c2_theory[angle_idx].flatten()
+            exp_flat = c2_exp[angle_idx].flatten()
+            
+            # Create design matrix for least squares: [theory, ones]
+            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
+            
+            try:
+                # Solve for scaling parameters
+                scaling_params, residuals, rank, s = np.linalg.lstsq(A, exp_flat, rcond=None)
+                contrast, offset = scaling_params
+                
+                # Calculate fitted data
+                fitted_flat = theory_flat * contrast + offset
+                c2_fitted[angle_idx] = fitted_flat.reshape(c2_theory[angle_idx].shape)
+                
+                # Calculate residuals
+                c2_residuals[angle_idx] = c2_exp[angle_idx] - c2_fitted[angle_idx]
+                
+            except np.linalg.LinAlgError as e:
+                logger.warning(f"Least squares failed for angle {angle_idx}: {e}")
+                # Fallback: use theory as fitted data
+                c2_fitted[angle_idx] = c2_theory[angle_idx]
+                c2_residuals[angle_idx] = c2_exp[angle_idx] - c2_theory[angle_idx]
+        
+        # Save data as compressed NPZ files
+        experimental_file = mcmc_dir / "experimental_data.npz"
+        fitted_file = mcmc_dir / "fitted_data.npz"
+        residuals_file = mcmc_dir / "residuals_data.npz"
+        
+        np.savez_compressed(experimental_file, data=c2_exp)
+        np.savez_compressed(fitted_file, data=c2_fitted)
+        np.savez_compressed(residuals_file, data=c2_residuals)
+        
+        logger.info("✓ MCMC fitting data saved to homodyne_results/mcmc/")
+        logger.info(f"  - Experimental data: {experimental_file}")
+        logger.info(f"  - Fitted data: {fitted_file}")
+        logger.info(f"  - Residuals data: {residuals_file}")
+        
+    except Exception as e:
+        logger.error(f"Failed to save MCMC fitted data: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
+def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results):
+    """
+    Generate plots specifically for MCMC optimization results.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Analysis engine with loaded configuration
+    best_params : np.ndarray
+        Optimized parameters from MCMC posterior means
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving MCMC results
+    mcmc_results : dict
+        Complete MCMC results including trace data
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from pathlib import Path
+        import numpy as np
+        
+        # Create mcmc subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+        
+        mcmc_dir = output_dir / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Check if plotting is enabled
+        config = analyzer.config
+        output_settings = config.get("output_settings", {})
+        reporting = output_settings.get("reporting", {})
+        if not reporting.get("generate_plots", True):
+            logger.info("Plotting disabled in configuration - skipping MCMC plot generation")
+            return
+            
+        logger.info("Generating MCMC optimization plots...")
+        
+        # Calculate theoretical data with optimized parameters
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
+        
+        # Generate C2 heatmaps in mcmc directory
+        try:
+            from homodyne.plotting import plot_c2_heatmaps
+            
+            # Create time arrays for plotting
+            dt = analyzer.dt
+            n_angles, n_t2, n_t1 = c2_exp.shape
+            t2 = np.arange(n_t2) * dt
+            t1 = np.arange(n_t1) * dt
+            
+            logger.info("Generating C2 correlation heatmaps for MCMC results...")
+            success = plot_c2_heatmaps(
+                c2_exp,
+                c2_theory,
+                phi_angles,
+                mcmc_dir,
+                config,
+                t2=t2,
+                t1=t1,
+            )
+            
+            if success:
+                logger.info("✓ MCMC C2 heatmaps generated successfully")
+            else:
+                logger.warning("⚠ Some MCMC C2 heatmaps failed to generate")
+                
+        except Exception as e:
+            logger.error(f"Failed to generate MCMC C2 heatmaps: {e}")
+        
+        # Generate MCMC-specific plots (trace plots, corner plots, etc.)
+        try:
+            from homodyne.plotting import create_all_plots
+            
+            # Prepare results data for plotting
+            plot_data = {
+                "experimental_data": c2_exp,
+                "theoretical_data": c2_theory,
+                "phi_angles": phi_angles,
+                "best_parameters": dict(zip(
+                    config.get("initial_parameters", {}).get("parameter_names", []),
+                    best_params
+                )),
+                "parameter_names": config.get("initial_parameters", {}).get("parameter_names", []),
+                "parameter_units": config.get("initial_parameters", {}).get("units", []),
+                "mcmc_trace": mcmc_results.get("trace"),
+                "mcmc_diagnostics": mcmc_results.get("diagnostics", {}),
+                "method": "MCMC",
+            }
+            
+            logger.info("Generating MCMC-specific plots (trace, corner, etc.)...")
+            plot_status = create_all_plots(plot_data, mcmc_dir, config)
+            
+            successful_plots = sum(1 for status in plot_status.values() if status)
+            if successful_plots > 0:
+                logger.info(f"✓ Generated {successful_plots} MCMC plots successfully")
+            else:
+                logger.warning("⚠ No MCMC plots were generated successfully")
+                
+        except Exception as e:
+            logger.error(f"Failed to generate MCMC-specific plots: {e}")
+        
+    except Exception as e:
+        logger.error(f"Failed to generate MCMC plots: {e}")
         import traceback
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
