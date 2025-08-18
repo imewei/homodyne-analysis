@@ -462,7 +462,7 @@ Continuous Integration
        runs-on: ubuntu-latest
        strategy:
          matrix:
-           python-version: [3.8, 3.9, "3.10"]
+           python-version: ["3.12", "3.13"]
        
        steps:
          - uses: actions/checkout@v3

@@ -1,6 +1,9 @@
-﻿homodyne.utils
-==============
+﻿homodyne.core.io_utils
+======================
 
-.. currentmodule:: homodyne
+.. currentmodule:: homodyne.core
 
-.. automodule:: utils
+.. automodule:: homodyne.core.io_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:

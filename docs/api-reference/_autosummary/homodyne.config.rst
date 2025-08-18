@@ -1,6 +1,9 @@
-﻿homodyne.config
-===============
+﻿homodyne.core.config
+====================
 
-.. currentmodule:: homodyne
+.. currentmodule:: homodyne.core
 
-.. automodule:: config
+.. automodule:: homodyne.core.config
+   :members:
+   :undoc-members:
+   :show-inheritance:

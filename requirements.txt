@@ -1,16 +1,34 @@
 # Core requirements for the Homodyne Scattering Analysis Package
-numpy>=1.19.0
-scipy>=1.7.0
-matplotlib>=3.3.0
+numpy>=1.19.0           # Numerical computing
+scipy>=1.7.0            # Scientific computing
+matplotlib>=3.3.0       # Plotting and visualization
 
 # Performance enhancement (recommended)
-numba>=0.56.0
+numba>=0.56.0           # Just-In-Time compiler for Python
 
 # Data handling and manipulation
-xpcs-viewer>=1.0.4
+xpcs-viewer>=1.0.4      # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
 
 # Optional MCMC dependencies (for Bayesian analysis)
 # Uncomment these lines if you want full MCMC functionality:
-pymc>=5.0.0
-arviz>=0.12.0
-pytensor>=2.8.0
+pymc>=5.0.0             # Bayesian modeling framework
+arviz>=0.12.0           # Bayesian data analysis
+pytensor>=2.8.0         # Mathematical expressions compiler
+
+# Optional Test Dependencies
+pytest>=6.2.0           # Testing framework
+pytest-cov>=2.12.0      # Coverage reporting
+pytest-xdist>=2.3.0     # Parallel testing
+pytest-benchmark>=3.0   # Performance testing
+pytest-mock>=3.0        # Mocking utilities
+hypothesis>=6.0         # Property-based testing
+black>=21.0.0           # Code formatting
+flake8>=3.9.0           # Linting
+mypy>=0.910             # Type checking
+
+# Optional Documentation Dependencies
+sphinx>=4.0.0           # Documentation generator
+sphinx-rtd-theme>=1.0.0 # Read the Docs theme for Sphinx
+myst-parser>=0.17.0     # MyST Markdown parser for Sphinx (allows Markdown in .rst files)
+sphinx-autodoc-typehints>=1.12.0 # Automatic type hints documentation
+numpydoc>=1.2.0         # NumPy-style docstring support

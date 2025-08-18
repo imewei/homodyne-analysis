@@ -4,7 +4,7 @@ Installation Guide
 System Requirements
 -------------------
 
-- **Python**: 3.8 or higher
+- **Python**: 3.12 or higher
 - **Operating System**: Windows, macOS, or Linux
 - **Memory**: Minimum 4GB RAM (8GB+ recommended for MCMC)
 - **Storage**: ~500MB for full installation with dependencies
@@ -29,8 +29,8 @@ Core Installation
 .. code-block:: bash
 
    # From source (recommended for development)
-   git clone https://github.com/AdvancedPhotonSource/homodyne-analysis.git
-   cd homodyne-analysis
+   git clone https://github.com/imewei/homodyne.git
+   cd homodyne
    pip install -e .
 
 Optional Dependencies
@@ -117,5 +117,5 @@ Getting Help
 If you encounter installation issues:
 
 1. Check the `troubleshooting guide <../developer-guide/troubleshooting.html>`_
-2. Search existing `GitHub issues <https://github.com/AdvancedPhotonSource/homodyne-analysis/issues>`_
+2. Search existing `GitHub issues <https://github.com/imewei/homodyne/issues>`_
 3. Create a new issue with your system details and error messages

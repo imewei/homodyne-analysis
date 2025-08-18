@@ -6,56 +6,56 @@ This module contains the physical model functions used in homodyne analysis.
 Correlation Models
 ------------------
 
-.. autofunction:: homodyne.models.compute_g1_correlation
+.. autofunction:: homodyne.core.kernels.compute_g1_correlation_numba
 
    Computes the normalized first-order correlation function g₁(τ).
 
-.. autofunction:: homodyne.models.static_isotropic_model
+.. autofunction:: homodyne.analysis.core.static_isotropic_analysis
 
    Model for isotropic systems at equilibrium.
 
-.. autofunction:: homodyne.models.static_anisotropic_model
+.. autofunction:: homodyne.analysis.core.static_anisotropic_analysis
 
    Model for anisotropic systems at equilibrium.
 
-.. autofunction:: homodyne.models.laminar_flow_model
+.. autofunction:: homodyne.analysis.core.laminar_flow_analysis
 
    Complete model for systems under laminar flow conditions.
 
 Diffusion Functions
 -------------------
 
-.. autofunction:: homodyne.models.diffusion_component
+.. autofunction:: homodyne.core.kernels.calculate_diffusion_coefficient_numba
 
    Computes the diffusive contribution to correlation decay.
 
-.. autofunction:: homodyne.models.time_dependent_diffusion
+.. autofunction:: homodyne.core.kernels.calculate_diffusion_coefficient_numba
 
    Time-dependent diffusion coefficient D(t).
 
 Shear Flow Functions
 --------------------
 
-.. autofunction:: homodyne.models.shear_component
+.. autofunction:: homodyne.core.kernels.compute_sinc_squared_numba
 
    Computes shear contribution using sinc² functions.
 
-.. autofunction:: homodyne.models.phase_factor
+.. autofunction:: homodyne.core.kernels.compute_sinc_squared_numba
 
    Angular phase factor for flow direction.
 
-.. autofunction:: homodyne.models.shear_rate_profile
+.. autofunction:: homodyne.core.kernels.calculate_shear_rate_numba
 
    Time-dependent shear rate γ̇(t).
 
 Utility Functions
 -----------------
 
-.. autofunction:: homodyne.models.validate_parameters
+.. autofunction:: homodyne.analysis.core.validate_parameters
 
    Validates parameter values are physically reasonable.
 
-.. autofunction:: homodyne.models.compute_chi_squared
+.. autofunction:: homodyne.analysis.core.compute_chi_squared_with_validation
 
    Computes chi-squared goodness of fit.
 

@@ -154,9 +154,9 @@ If you use this package in your research, please cite:
 Support
 -------
 
-- **Documentation**: https://advancedphotonsource.github.io/homodyne-analysis/
-- **Issues**: https://github.com/AdvancedPhotonSource/homodyne-analysis/issues
-- **Source Code**: https://github.com/AdvancedPhotonSource/homodyne-analysis
+- **Documentation**: https://imewei.github.io/homodyne/
+- **Issues**: https://github.com/imewei/homodyne/issues
+- **Source Code**: https://github.com/imewei/homodyne
 - **License**: MIT License
 
 Indices and Tables

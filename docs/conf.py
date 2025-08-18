@@ -2,7 +2,14 @@
 
 import os
 import sys
+
+# Add the parent directory (containing homodyne package) to Python path
 sys.path.insert(0, os.path.abspath('..'))
+
+# Also add the homodyne package directory itself
+homodyne_path = os.path.join(os.path.abspath('..'), 'homodyne')
+if os.path.exists(homodyne_path):
+    sys.path.insert(0, homodyne_path)
 
 # -- Project information -----------------------------------------------------
 project = 'Homodyne Analysis'
@@ -28,11 +35,10 @@ suppress_warnings = [
     'autosummary',
 ]
 
-# Performance optimizations
+# Performance optimizations - mock heavy dependencies
 autodoc_mock_imports = [
     'numba', 'pymc', 'arviz', 'pytensor',
-    'homodyne.core', 'homodyne.config', 'homodyne.models',
-    'homodyne.optimization', 'homodyne.utils'
+    # Don't mock homodyne submodules - they should be importable
 ]
 autodoc_preserve_defaults = True
 

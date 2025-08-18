@@ -11,18 +11,18 @@ Getting Started
 .. code-block:: bash
 
    # Fork the repository on GitHub, then:
-   git clone https://github.com/YOUR_USERNAME/homodyne-analysis.git
-   cd homodyne-analysis
+   git clone https://github.com/YOUR_USERNAME/homodyne.git
+   cd homodyne
    
    # Add upstream remote
-   git remote add upstream https://github.com/AdvancedPhotonSource/homodyne-analysis.git
+   git remote add upstream https://github.com/imewei/homodyne.git
 
 **2. Development Setup**
 
 .. code-block:: bash
 
    # Create development environment
-   conda create -n homodyne-dev python=3.9
+   conda create -n homodyne-dev python=3.12
    conda activate homodyne-dev
    
    # Install in development mode

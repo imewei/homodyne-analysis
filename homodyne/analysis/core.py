@@ -1049,8 +1049,7 @@ class HomodyneAnalysisCore:
                     param_max = bound.get("max", np.inf)
 
                     if not (param_min <= param_val <= param_max):
-                        reason = f'Parameter {bound.get("name", f"p{i}")
-                                                        } out of bounds'
+                        reason = f'Parameter {bound.get("name", f"p{i}")} out of bounds'
                         return (
                             np.inf
                             if not return_components

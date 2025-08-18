@@ -6,49 +6,49 @@ Utility functions for data handling, validation, and common operations.
 Data Handling
 -------------
 
-.. autofunction:: homodyne.utils.load_data_file
+.. autofunction:: homodyne.core.io_utils.load_data_file
 
    Load correlation data from HDF5 or NPZ files.
 
-.. autofunction:: homodyne.utils.save_results
+.. autofunction:: homodyne.core.io_utils.save_results
 
    Save analysis results in multiple formats.
 
-.. autofunction:: homodyne.utils.validate_data_format
+.. autofunction:: homodyne.core.io_utils.validate_data_format
 
    Validate experimental data structure and content.
 
 Angle Processing
 ----------------
 
-.. autofunction:: homodyne.utils.load_angles
+.. autofunction:: homodyne.core.io_utils.load_angles
 
    Load scattering angles from text files.
 
-.. autofunction:: homodyne.utils.validate_angles
+.. autofunction:: homodyne.core.io_utils.validate_angles
 
    Validate angle data and ranges.
 
-.. autofunction:: homodyne.utils.apply_angle_filtering
+.. autofunction:: homodyne.analysis.core.apply_angle_filtering
 
    Apply angle filtering for performance optimization.
 
-.. autofunction:: homodyne.utils.convert_angle_units
+.. autofunction:: homodyne.core.io_utils.convert_angle_units
 
    Convert between degrees and radians.
 
 Configuration Utilities
 ------------------------
 
-.. autofunction:: homodyne.utils.validate_config
+.. autofunction:: homodyne.core.config.validate_config
 
    Comprehensive configuration validation.
 
-.. autofunction:: homodyne.utils.merge_configs
+.. autofunction:: homodyne.core.config.merge_configs
 
    Merge multiple configuration dictionaries.
 
-.. autofunction:: homodyne.utils.expand_env_vars
+.. autofunction:: homodyne.core.config.expand_env_vars
 
    Expand environment variables in file paths.
 

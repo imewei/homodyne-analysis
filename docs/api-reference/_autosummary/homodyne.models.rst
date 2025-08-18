@@ -1,6 +1,9 @@
-﻿homodyne.models
-===============
+﻿homodyne.analysis.core
+======================
 
-.. currentmodule:: homodyne
+.. currentmodule:: homodyne.analysis
 
-.. automodule:: models
+.. automodule:: homodyne.analysis.core
+   :members:
+   :undoc-members:
+   :show-inheritance:

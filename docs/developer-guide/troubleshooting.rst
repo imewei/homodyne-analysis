@@ -37,7 +37,7 @@ Installation Issues
 .. code-block:: bash
 
    # Create fresh environment
-   conda create -n homodyne-env python=3.9
+   conda create -n homodyne-env python=3.12
    conda activate homodyne-env
    
    # Install dependencies step by step
@@ -556,6 +556,6 @@ When seeking help, include:
 
 **Resources**
 
-- **GitHub Issues**: https://github.com/AdvancedPhotonSource/homodyne-analysis/issues
+- **GitHub Issues**: https://github.com/imewei/homodyne/issues
 - **Documentation**: This documentation site
 - **Examples**: Check the examples directory in the repository

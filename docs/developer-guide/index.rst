@@ -20,8 +20,8 @@ Quick Developer Setup
 
 .. code-block:: bash
 
-   git clone https://github.com/AdvancedPhotonSource/homodyne-analysis.git
-   cd homodyne-analysis
+   git clone https://github.com/imewei/homodyne.git
+   cd homodyne
    pip install -e .[dev]
 
 **Run Tests**:
