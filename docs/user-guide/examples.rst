@@ -97,11 +97,14 @@ Example 2: Flow Analysis with MCMC
    # Step 1: Data validation (optional, saves to ./homodyne_results/exp_data/)
    python run_homodyne.py --config flow_mcmc_example.json --plot-experimental-data
    
-   # Step 2: Classical optimization for initial estimates (saves to ./homodyne_results/)
+   # Step 2: Classical optimization for initial estimates (saves to ./homodyne_results/classical/)
    python run_homodyne.py --config flow_mcmc_example.json --method classical
    
-   # Step 3: MCMC sampling for uncertainty quantification  
+   # Step 3: MCMC sampling for uncertainty quantification (saves to ./homodyne_results/mcmc/)
    python run_homodyne.py --config flow_mcmc_example.json --method mcmc
+   
+   # Step 4: Complete analysis with both methods (recommended)
+   python run_homodyne.py --config flow_mcmc_example.json --method all
 
 **Expected Output**:
 
@@ -400,18 +403,35 @@ Starting from version 6.0, the analysis results are organized into method-specif
    ├── exp_data/                         # Experimental data plots (--plot-experimental-data)
    │   ├── data_validation_phi_*.png
    │   └── summary_statistics.txt
-   └── classical/                       # Classical method outputs (--method classical)
+   ├── classical/                       # Classical method outputs (--method classical)
+   │   ├── experimental_data.npz         # Original experimental correlation data
+   │   ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
+   │   ├── residuals_data.npz           # Residuals (experimental - fitted)
+   │   └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+   └── mcmc/                            # MCMC method outputs (--method mcmc)
        ├── experimental_data.npz         # Original experimental correlation data
-       ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
+       ├── fitted_data.npz              # Fitted data (contrast * posterior_means + offset)
        ├── residuals_data.npz           # Residuals (experimental - fitted)
-       └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+       ├── mcmc_summary.json            # MCMC convergence diagnostics and posterior statistics
+       ├── mcmc_trace.nc                # NetCDF trace data (ArviZ format)
+       ├── c2_heatmaps_phi_*.png        # C2 correlation heatmaps using posterior means
+       ├── 3d_surface_phi_*.png         # 3D surface plots with 95% confidence intervals
+       ├── 3d_surface_residuals_phi_*.png # 3D residuals plots for quality assessment
+       ├── trace_plot.png               # MCMC trace plots
+       └── corner_plot.png              # Parameter posterior distributions
 
 **Key Changes**:
 
 - **Main results file**: Now saved in output directory instead of current directory
 - **Classical method**: Results organized in dedicated ``./homodyne_results/classical/`` subdirectory
+- **MCMC method**: Results organized in dedicated ``./homodyne_results/mcmc/`` subdirectory  
 - **Experimental data plots**: Saved to ``./homodyne_results/exp_data/`` when using ``--plot-experimental-data``
-- **Data files**: Classical fitting saves experimental, fitted, and residuals data as ``.npz`` files
+- **Data files**: Both classical and MCMC methods save experimental, fitted, and residuals data as ``.npz`` files
+- **Method-specific outputs**:
+  - **Classical**: Point estimates with C2 heatmaps (diagnostic plots skipped)
+  - **MCMC**: Posterior distributions with trace data, convergence diagnostics, specialized plots, and 3D surface visualizations
+- **3D visualization**: MCMC method automatically generates publication-quality 3D surface plots with confidence intervals
+- **Fitted data calculation**: Both methods use least squares scaling optimization (``fitted = contrast * theory + offset``)
 - **Plotting behavior**: The ``--plot-experimental-data`` flag now skips all fitting and exits immediately after plotting
 
 Next Steps

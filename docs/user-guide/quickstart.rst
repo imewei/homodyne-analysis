@@ -36,7 +36,14 @@ Results are saved to the ``homodyne_results/`` directory with organized subdirec
 
 - **Main results**: ``homodyne_analysis_results.json`` with parameter estimates and fit quality
 - **Classical output**: ``./classical/`` subdirectory with ``.npz`` data files and C2 heatmaps
+- **MCMC output**: ``./mcmc/`` subdirectory with posterior distributions, trace data, diagnostics, and 3D visualizations
 - **Experimental plots**: ``./exp_data/`` subdirectory with validation plots (if using ``--plot-experimental-data``)
+
+**Method-Specific Outputs**:
+
+- **Classical** (``./classical/``): Fast point estimates, fitted data files, residuals analysis
+- **MCMC** (``./mcmc/``): Full posterior distributions, convergence diagnostics, trace plots, corner plots, 3D surface plots  
+- **Both methods**: Save experimental, fitted, and residuals data as compressed ``.npz`` files for further analysis
 
 Python API Example
 -------------------

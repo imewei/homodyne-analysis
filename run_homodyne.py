@@ -1292,6 +1292,146 @@ def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, 
         except Exception as e:
             logger.error(f"Failed to generate MCMC C2 heatmaps: {e}")
         
+        # Generate 3D surface plots with confidence intervals
+        try:
+            from homodyne.plotting import plot_3d_surface
+            
+            # Extract posterior samples from trace for confidence intervals  
+            trace = mcmc_results.get("trace")
+            if trace is not None:
+                logger.info("Generating 3D surface plots with MCMC confidence intervals...")
+                
+                # Get parameter samples from the trace
+                try:
+                    import arviz as az
+                    
+                    # Extract posterior samples - convert InferenceData to numpy array
+                    if hasattr(trace, 'posterior'):
+                        # Get parameter names from config
+                        param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+                        
+                        # Extract samples for each parameter and stack them
+                        param_samples = []
+                        for param_name in param_names:
+                            if param_name in trace.posterior:
+                                # Get all chains and draws for this parameter
+                                param_data = trace.posterior[param_name].values
+                                # Reshape from (chains, draws) to (chains*draws,)
+                                param_samples.append(param_data.reshape(-1))
+                        
+                        if param_samples:
+                            # Stack to get shape (n_samples, n_parameters) 
+                            param_samples_array = np.column_stack(param_samples)
+                            n_samples = min(500, param_samples_array.shape[0])  # Limit for performance
+                            
+                            # Subsample for performance
+                            indices = np.linspace(0, param_samples_array.shape[0]-1, n_samples, dtype=int)
+                            param_samples_subset = param_samples_array[indices]
+                            
+                            logger.info(f"Using {n_samples} posterior samples for 3D confidence intervals")
+                            
+                            # Generate C2 samples for each parameter sample
+                            c2_posterior_samples = []
+                            for i, params in enumerate(param_samples_subset):
+                                if i % 50 == 0:  # Log progress every 50 samples
+                                    logger.debug(f"Processing posterior sample {i+1}/{n_samples}")
+                                
+                                # Calculate theoretical C2 for this parameter sample
+                                c2_sample = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+                                
+                                # Apply least squares scaling to match experimental data structure
+                                for j in range(c2_exp.shape[0]):  # For each angle
+                                    exp_data = c2_exp[j].flatten()
+                                    theory_data = c2_sample[j].flatten()
+                                    
+                                    # Least squares scaling: fitted = contrast * theory + offset
+                                    A = np.vstack([theory_data, np.ones(len(theory_data))]).T
+                                    scaling, residuals, rank, s = np.linalg.lstsq(A, exp_data, rcond=None)
+                                    contrast, offset = scaling
+                                    
+                                    # Apply scaling to this angle slice
+                                    c2_sample[j] = theory_data.reshape(c2_exp[j].shape) * contrast + offset
+                                
+                                c2_posterior_samples.append(c2_sample)
+                            
+                            # Convert to numpy array: (n_samples, n_angles, n_t2, n_t1)
+                            c2_posterior_samples = np.array(c2_posterior_samples)
+                            
+                            # Generate 3D plots for a subset of angles (to avoid too many plots)
+                            n_angles = c2_exp.shape[0]
+                            angle_indices = np.linspace(0, n_angles-1, min(5, n_angles), dtype=int)
+                            
+                            successful_3d_plots = 0
+                            for angle_idx in angle_indices:
+                                angle_deg = phi_angles[angle_idx] if angle_idx < len(phi_angles) else angle_idx
+                                
+                                # Extract data for this angle
+                                c2_exp_angle = c2_exp[angle_idx]  # Shape: (n_t2, n_t1)
+                                c2_fitted_angle = c2_theory[angle_idx]  # Shape: (n_t2, n_t1)  
+                                c2_samples_angle = c2_posterior_samples[:, angle_idx, :, :]  # Shape: (n_samples, n_t2, n_t1)
+                                
+                                # Create 3D surface plot with confidence intervals
+                                success = plot_3d_surface(
+                                    c2_experimental=c2_exp_angle,
+                                    c2_fitted=c2_fitted_angle,
+                                    posterior_samples=c2_samples_angle,
+                                    phi_angle=angle_deg,
+                                    outdir=mcmc_dir,
+                                    config=config,
+                                    t2=t2,
+                                    t1=t1,
+                                    confidence_level=0.95
+                                )
+                                
+                                if success:
+                                    successful_3d_plots += 1
+                            
+                            if successful_3d_plots > 0:
+                                logger.info(f"✓ Generated {successful_3d_plots} 3D surface plots with confidence intervals")
+                            else:
+                                logger.warning("⚠ No 3D surface plots were generated successfully")
+                        
+                        else:
+                            logger.warning("No parameter samples found in MCMC trace")
+                    
+                    else:
+                        logger.warning("MCMC trace does not contain posterior data")
+                        
+                except ImportError:
+                    logger.warning("ArviZ not available - skipping 3D plots with confidence intervals")
+                except Exception as e:
+                    logger.warning(f"Failed to process MCMC samples for 3D plotting: {e}")
+                    
+            else:
+                logger.info("No MCMC trace available - generating 3D plots without confidence intervals")
+                # Generate basic 3D plots without confidence intervals
+                n_angles = c2_exp.shape[0]
+                angle_indices = np.linspace(0, n_angles-1, min(3, n_angles), dtype=int)
+                
+                successful_3d_plots = 0
+                for angle_idx in angle_indices:
+                    angle_deg = phi_angles[angle_idx] if angle_idx < len(phi_angles) else angle_idx
+                    
+                    success = plot_3d_surface(
+                        c2_experimental=c2_exp[angle_idx],
+                        c2_fitted=c2_theory[angle_idx],
+                        posterior_samples=None,  # No confidence intervals
+                        phi_angle=angle_deg,
+                        outdir=mcmc_dir,
+                        config=config,
+                        t2=t2,
+                        t1=t1
+                    )
+                    
+                    if success:
+                        successful_3d_plots += 1
+                
+                if successful_3d_plots > 0:
+                    logger.info(f"✓ Generated {successful_3d_plots} basic 3D surface plots")
+                        
+        except Exception as e:
+            logger.error(f"Failed to generate 3D surface plots: {e}")
+
         # Generate MCMC-specific plots (trace plots, corner plots, etc.)
         try:
             from homodyne.plotting import create_all_plots

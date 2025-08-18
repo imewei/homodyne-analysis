@@ -337,8 +337,12 @@ class TestMCMCOutputDirectoryStructure:
             "fitted_data.npz", 
             "residuals_data.npz",
             "c2_heatmaps_phi_0.0deg.png",  # Example C2 heatmap
+            "3d_surface_phi_0.0deg.png",   # 3D surface plot
+            "3d_surface_residuals_phi_0.0deg.png",  # 3D residuals plot
             "mcmc_summary.json",           # MCMC summary
-            "mcmc_trace.nc"                # NetCDF trace file
+            "mcmc_trace.nc",               # NetCDF trace file
+            "trace_plot.png",              # MCMC trace plots
+            "corner_plot.png"              # Parameter posterior distributions
         ]
         
         # Create mock files
@@ -349,6 +353,31 @@ class TestMCMCOutputDirectoryStructure:
         assert mcmc_dir.exists()
         for filename in expected_files:
             assert (mcmc_dir / filename).exists()
+
+    def test_mcmc_3d_plotting_files(self, temp_directory):
+        """Test that MCMC method creates 3D surface plotting files."""
+        # Create expected MCMC output directory
+        mcmc_dir = temp_directory / "homodyne_results" / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Expected 3D plotting files
+        expected_3d_files = [
+            "3d_surface_phi_0.0deg.png",           # 3D surface plot for angle 0°
+            "3d_surface_phi_45.0deg.png",          # 3D surface plot for angle 45°
+            "3d_surface_residuals_phi_0.0deg.png", # 3D residuals plot for angle 0°
+            "3d_surface_residuals_phi_45.0deg.png" # 3D residuals plot for angle 45°
+        ]
+        
+        # Create mock 3D plotting files
+        for filename in expected_3d_files:
+            (mcmc_dir / filename).touch()
+        
+        # Verify 3D plotting files exist
+        for filename in expected_3d_files:
+            assert (mcmc_dir / filename).exists()
+            
+        # Verify they are in the correct MCMC directory
+        assert all((mcmc_dir / f).parent == mcmc_dir for f in expected_3d_files)
 
     def test_mcmc_npz_data_structure(self, temp_directory):
         """Test the structure of MCMC NPZ data files."""
@@ -497,6 +526,8 @@ class TestMCMCOutputDirectoryStructure:
                 "fitted_data.npz": "file",
                 "residuals_data.npz": "file", 
                 "c2_heatmaps_phi_0.0deg.png": "file",
+                "3d_surface_phi_0.0deg.png": "file",        # 3D surface plot
+                "3d_surface_residuals_phi_0.0deg.png": "file",  # 3D residuals plot
                 "mcmc_summary.json": "file",
                 "mcmc_trace.nc": "file",
                 "trace_plot.png": "file",

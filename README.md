@@ -173,6 +173,12 @@ python run_homodyne.py --plot-experimental-data --verbose
 # Classical method with C2 heatmaps (saves to ./homodyne_results/classical/)
 python run_homodyne.py --method classical --plot-c2-heatmaps
 
+# MCMC method with comprehensive uncertainty analysis (saves to ./homodyne_results/mcmc/)
+python run_homodyne.py --method mcmc --config my_experiment.json
+
+# MCMC method with C2 heatmaps using posterior means (saves to ./homodyne_results/mcmc/)
+python run_homodyne.py --method mcmc --plot-c2-heatmaps
+
 # Note: --plot-experimental-data now skips all fitting and saves plots to ./homodyne_results/exp_data/
 ```
 
@@ -336,7 +342,7 @@ This provides meaningful chi-squared statistics: `χ² = Σ(experimental - fitte
 ### Bayesian MCMC Sampling
 - **Algorithm**: NUTS (No-U-Turn Sampler) via PyMC
 - **Performance**: Comprehensive but slower (~hours depending on data size)
-- **Output**: Full posterior distributions, uncertainty quantification, convergence diagnostics
+- **Output**: Full posterior distributions, uncertainty quantification, convergence diagnostics, 3D surface plots
 - **Best For**: Robust parameter estimation, uncertainty analysis, publication-quality results
 - **Command**: `--method mcmc`
 - **Additional Requirements**: `pip install pymc arviz pytensor`
@@ -346,6 +352,98 @@ This provides meaningful chi-squared statistics: `χ² = Σ(experimental - fitte
 - **Command**: `--method all` (runs both methods sequentially)
 
 **Note**: Scaling optimization (g₂ = offset + contrast × g₁) is always enabled in all methods for consistent and scientifically accurate chi-squared calculations.
+
+## Analysis Workflows
+
+### Recommended Analysis Pipeline
+
+#### 1. **Data Validation Workflow**
+```bash
+# Step 1: Validate experimental data quality
+python run_homodyne.py --plot-experimental-data --config my_config.json
+# Output: ./homodyne_results/exp_data/ with validation plots and statistics
+```
+
+#### 2. **Exploratory Analysis Workflow** 
+```bash
+# Step 2: Fast parameter estimation with classical optimization
+python run_homodyne.py --method classical --config my_config.json
+# Output: ./homodyne_results/classical/ with point estimates and C2 heatmaps
+
+# Optional: Generate C2 heatmaps for visual validation
+python run_homodyne.py --method classical --plot-c2-heatmaps --config my_config.json
+```
+
+#### 3. **Comprehensive Analysis Workflow**
+```bash
+# Step 3: Full uncertainty quantification with MCMC
+python run_homodyne.py --method mcmc --config my_config.json
+# Output: ./homodyne_results/mcmc/ with posterior distributions, trace data, and diagnostics
+
+# Optional: Generate C2 heatmaps using posterior means
+python run_homodyne.py --method mcmc --plot-c2-heatmaps --config my_config.json
+```
+
+#### 4. **Complete Pipeline Workflow**
+```bash
+# Step 4: Run all methods in sequence (recommended for publication)
+python run_homodyne.py --method all --config my_config.json
+# Output: Both ./homodyne_results/classical/ and ./homodyne_results/mcmc/ directories
+```
+
+### Method-Specific Outputs
+
+#### Classical Method Results (`./homodyne_results/classical/`)
+- **Speed**: Fast execution (~minutes)
+- **Best for**: Parameter screening, model validation, computational efficiency
+- **Output files**:
+  - `experimental_data.npz`: Original correlation data
+  - `fitted_data.npz`: Optimally scaled theoretical predictions  
+  - `residuals_data.npz`: Fit residuals for quality assessment
+  - `c2_heatmaps_phi_*.png`: Visual comparison plots (if requested)
+
+#### MCMC Method Results (`./homodyne_results/mcmc/`)
+- **Speed**: Comprehensive but slower (~hours)
+- **Best for**: Uncertainty quantification, publication-quality analysis, parameter correlations
+- **Output files**:
+  - `experimental_data.npz`: Original correlation data
+  - `fitted_data.npz`: Scaled predictions using posterior means
+  - `residuals_data.npz`: Residuals from posterior mean fit
+  - `mcmc_summary.json`: Convergence diagnostics and posterior statistics
+  - `mcmc_trace.nc`: Full trace data in NetCDF format (ArviZ compatible)
+  - `c2_heatmaps_phi_*.png`: Heatmaps using posterior means (if requested)
+  - `3d_surface_phi_*.png`: 3D surface plots with 95% confidence intervals
+  - `3d_surface_residuals_phi_*.png`: 3D residuals plots for quality assessment
+  - `trace_plot.png`: MCMC chain diagnostics
+  - `corner_plot.png`: Parameter posterior distributions
+
+### Data Analysis Best Practices
+
+#### Quality Assessment
+```bash
+# Check experimental data quality first
+python run_homodyne.py --plot-experimental-data --config my_config.json
+
+# Review output in ./homodyne_results/exp_data/summary_statistics.txt
+# Ensure reasonable g2 values (typically 1.0 + small contrast)
+```
+
+#### Parameter Initialization
+```bash
+# Use classical results to initialize MCMC (automatic when using --method all)
+python run_homodyne.py --method all --config my_config.json
+
+# Or run sequentially for more control:
+python run_homodyne.py --method classical --config my_config.json
+python run_homodyne.py --method mcmc --config my_config.json  # Uses classical results automatically
+```
+
+#### Results Interpretation
+- **Classical χ² values**: Lower values indicate better fit quality (χ²_red < 2.0 excellent, < 5.0 acceptable)
+- **MCMC convergence**: Check R̂ < 1.1 and ESS > 100 for reliable results
+- **Visual validation**: Use C2 heatmaps to assess systematic deviations between experimental and fitted data
+- **3D visualization**: MCMC method automatically generates 3D surface plots with confidence intervals for publication-quality figures
+- **Residuals analysis**: Check `residuals_data.npz` for systematic patterns indicating model inadequacies
 
 ## Output Directory Structure
 
@@ -360,19 +458,35 @@ The analysis results are now organized into method-specific subdirectories for b
 ├── exp_data/                         # Experimental data plots (--plot-experimental-data)
 │   ├── data_validation_phi_*.png
 │   └── summary_statistics.txt
-└── classical/                       # Classical method outputs (--method classical)
+├── classical/                       # Classical method outputs (--method classical)
+│   ├── experimental_data.npz         # Original experimental correlation data
+│   ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
+│   ├── residuals_data.npz           # Residuals (experimental - fitted)
+│   └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+└── mcmc/                            # MCMC method outputs (--method mcmc)
     ├── experimental_data.npz         # Original experimental correlation data
-    ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
+    ├── fitted_data.npz              # Fitted data (contrast * posterior_means + offset)
     ├── residuals_data.npz           # Residuals (experimental - fitted)
-    └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+    ├── mcmc_summary.json            # MCMC convergence diagnostics and posterior statistics
+    ├── mcmc_trace.nc                # NetCDF trace data (ArviZ format)
+    ├── c2_heatmaps_phi_*.png        # C2 correlation heatmaps using posterior means
+    ├── 3d_surface_phi_*.png         # 3D surface plots with 95% confidence intervals
+    ├── 3d_surface_residuals_phi_*.png # 3D residuals plots for quality assessment
+    ├── trace_plot.png               # MCMC trace plots
+    └── corner_plot.png              # Parameter posterior distributions
 ```
 
 ### Key Changes
 - **Main results file**: `homodyne_analysis_results.json` now saved in output directory instead of current directory
 - **Classical method**: Results organized in `./homodyne_results/classical/` subdirectory
+- **MCMC method**: Results organized in `./homodyne_results/mcmc/` subdirectory
 - **Experimental data plots**: Saved to `./homodyne_results/exp_data/` when using `--plot-experimental-data`
-- **Data files**: Classical fitting saves experimental, fitted, and residuals data as `.npz` files
-- **Diagnostic plots**: Skipped for classical methods to avoid unnecessary output
+- **Data files**: Both classical and MCMC methods save experimental, fitted, and residuals data as `.npz` files
+- **Method-specific files**:
+  - **Classical**: C2 heatmaps only (diagnostic plots skipped)
+  - **MCMC**: C2 heatmaps, 3D surface plots with confidence intervals, trace data (NetCDF), convergence diagnostics, trace plots, corner plots
+- **Fitted data calculation**: Both methods use least squares scaling optimization (`fitted = contrast * theory + offset`)
+- **Directory separation**: Each method maintains its own isolated output directory for clear organization
 
 ## Performance Optimization
 
