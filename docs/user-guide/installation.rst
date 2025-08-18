@@ -9,62 +9,89 @@ System Requirements
 - **Memory**: Minimum 4GB RAM (8GB+ recommended for MCMC)
 - **Storage**: ~500MB for full installation with dependencies
 
-Core Installation
-------------------
+Quick Installation (Recommended)
+--------------------------------
 
-**Step 1: Install Core Dependencies**
+The easiest way to install the Homodyne Analysis package is from PyPI using pip:
 
-.. code-block:: bash
-
-   pip install numpy scipy matplotlib
-
-**Step 2: Install Performance Dependencies** 
+**Basic Installation**
 
 .. code-block:: bash
 
-   pip install numba
+   pip install homodyne-analysis
 
-**Step 3: Install the Package**
+This installs the core dependencies (numpy, scipy, matplotlib) along with the main package.
+
+**Full Installation with All Features**
 
 .. code-block:: bash
 
-   # From source (recommended for development)
-   git clone https://github.com/imewei/homodyne.git
-   cd homodyne
-   pip install -e .
+   pip install homodyne-analysis[all]
 
-Optional Dependencies
----------------------
+This includes all optional dependencies: performance acceleration (numba), MCMC analysis (pymc, arviz, pytensor), documentation tools, and development utilities.
+
+Optional Installation Extras
+-----------------------------
+
+You can install specific feature sets using pip extras:
+
+**For Enhanced Performance (Numba JIT acceleration):**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[performance]
 
 **For MCMC Bayesian Analysis:**
 
 .. code-block:: bash
 
-   pip install pymc arviz pytensor
+   pip install homodyne-analysis[mcmc]
 
-**For Enhanced Performance:**
+**For XPCS Data Handling:**
 
 .. code-block:: bash
 
-   pip install -e .[performance]
+   pip install homodyne-analysis[data]
+
+**For Documentation Building:**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[docs]
 
 **For Development:**
 
 .. code-block:: bash
 
-   pip install -e .[dev]
-
-**For Documentation:**
-
-.. code-block:: bash
-
-   pip install -e .[docs]
+   pip install homodyne-analysis[dev]
 
 **All Dependencies:**
 
 .. code-block:: bash
 
+   pip install homodyne-analysis[all]
+
+Development Installation
+------------------------
+
+For development, contributing, or accessing the latest unreleased features:
+
+**Step 1: Clone the Repository**
+
+.. code-block:: bash
+
+   git clone https://github.com/imewei/homodyne.git
+   cd homodyne
+
+**Step 2: Install in Development Mode**
+
+.. code-block:: bash
+
+   # Install with all development dependencies
    pip install -e .[all]
+   
+   # Or install minimal development setup
+   pip install -e .[dev]
 
 Verification
 ------------
@@ -86,30 +113,43 @@ Common Issues
 
 **Import Errors:**
 
-If you encounter import errors, ensure all dependencies are installed:
+If you encounter import errors, try reinstalling the package:
 
 .. code-block:: bash
 
-   pip install --upgrade numpy scipy matplotlib numba
+   pip install --upgrade homodyne-analysis
+   
+   # Or with all dependencies
+   pip install --upgrade homodyne-analysis[all]
 
 **MCMC Issues:**
 
-For MCMC functionality, ensure PyMC is properly installed:
+For MCMC functionality, ensure the mcmc extras are installed:
 
 .. code-block:: bash
 
-   pip install pymc arviz pytensor
+   pip install homodyne-analysis[mcmc]
    
    # Test MCMC availability
    python -c "import pymc; print('PyMC available')"
 
 **Performance Issues:**
 
-For optimal performance, ensure Numba is working:
+For optimal performance, install the performance extras:
 
 .. code-block:: bash
 
+   pip install homodyne-analysis[performance]
    python -c "import numba; print(f'Numba version: {numba.__version__}')"
+
+**Package Not Found:**
+
+If pip cannot find the package, ensure you're using the correct name:
+
+.. code-block:: bash
+
+   pip install homodyne-analysis  # Correct package name
+   # NOT: pip install homodyne    # This won't work
 
 Getting Help
 ------------
