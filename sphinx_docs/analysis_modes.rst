@@ -52,7 +52,7 @@ Analysis of systems at equilibrium with isotropic scattering where results don't
 where there is no angular dependence in the correlation function.
 
 Parameters (3 total)
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 - **D₀**: Effective diffusion coefficient
 - **α**: Time exponent characterizing dynamic scaling
@@ -75,7 +75,7 @@ When to Use
 - Computational efficiency is critical
 
 Example Configuration
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: json
 
@@ -117,7 +117,7 @@ Analysis of systems at equilibrium with angular dependence but no flow effects. 
 Same as isotropic mode but with angle filtering to focus optimization on specific angular ranges.
 
 Parameters (3 total)
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 - **D₀**: Effective diffusion coefficient (same as isotropic)
 - **α**: Time exponent characterizing dynamic scaling  
@@ -150,7 +150,7 @@ The anisotropic mode typically focuses on two angular ranges:
 This provides 3-5x speedup while maintaining high accuracy.
 
 Example Configuration
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: json
 
@@ -198,7 +198,7 @@ where the shear effects are modeled as:
    g_{1,\text{shear}}(t_1,t_2) = \text{sinc}^2(\Phi)
 
 Parameters (7 total)
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 **Diffusion Parameters**:
 - **D₀**: Effective diffusion coefficient
@@ -228,7 +228,7 @@ When to Use
 - Publication-quality results with full uncertainty quantification
 
 Physical Interpretation
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The laminar flow mode captures:
 
@@ -238,7 +238,7 @@ The laminar flow mode captures:
 - **Scaling relationships**: Time-dependent behavior in both diffusion and flow
 
 Example Configuration
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: json
 
@@ -293,7 +293,7 @@ Choosing the Right Mode
 - You have sufficient computational resources
 
 Progressive Analysis Strategy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A recommended approach is to use progressive complexity:
 
@@ -354,7 +354,7 @@ Mode-Specific Troubleshooting
 ------------------------------
 
 Static Isotropic Issues
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 **"Angle filtering enabled but static_isotropic mode detected"**:
 This is expected behavior - angle filtering is automatically disabled in isotropic mode.
@@ -363,7 +363,7 @@ This is expected behavior - angle filtering is automatically disabled in isotrop
 This is normal - phi_angles_file is not used in isotropic mode.
 
 Static Anisotropic Issues
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Poor convergence with angle filtering**:
 Try adjusting ``angle_filter_ranges`` or disabling filtering temporarily.
@@ -372,7 +372,7 @@ Try adjusting ``angle_filter_ranges`` or disabling filtering temporarily.
 Your system may indeed be isotropic - compare chi-squared values.
 
 Laminar Flow Issues
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 **Slow optimization**:
 Enable angle filtering for 3-5x speedup with minimal accuracy loss.

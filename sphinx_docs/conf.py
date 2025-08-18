@@ -23,8 +23,19 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
+    'sphinx.ext.autosummary',  # For better API documentation
     'myst_parser',
 ]
+
+# Suppress specific warnings to reduce noise
+suppress_warnings = [
+    'misc.highlighting_failure',  # Suppress JSON highlighting warnings
+    'autosummary',  # Suppress autosummary warnings
+]
+
+# Performance optimizations
+autodoc_mock_imports = ['numba', 'pymc', 'arviz', 'pytensor']  # Mock heavy dependencies
+autodoc_preserve_defaults = True  # Preserve default values in signatures
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -47,7 +58,18 @@ highlight_language = 'python3'
 # autodoc configuration
 autodoc_typehints = 'description'
 autodoc_member_order = 'bysource'
-autodoc_default_flags = ['members', 'undoc-members']
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'show-inheritance': True,
+    'special-members': '__init__',
+    'exclude-members': '__weakref__',
+}
+
+# Optimize autodoc performance
+autodoc_class_signature = 'mixed'  # Show both class and __init__ signatures
+autodoc_inherit_docstrings = True  # Inherit docstrings from parent classes
+autodoc_typehints_format = 'short'  # Use short form for type hints
 
 # napoleon configuration
 napoleon_google_docstring = True
@@ -87,6 +109,21 @@ myst_enable_extensions = [
     'tasklist',
 ]
 
+# Configure MyST parser for better performance
+myst_heading_anchors = 2  # Generate anchors for h1 and h2 headings
+myst_footnote_transition = True  # Add transition before footnotes
+myst_dmath_double_inline = True  # Support $$ for inline math
+
+# Add substitutions for common mathematical symbols
+myst_substitutions = {
+    "g1": r"$g_1$",
+    "g2": r"$g_2$",
+    "chi2": r"$\chi^2$",
+    "alpha": r"$\alpha$",
+    "beta": r"$\beta$",
+    "gamma": r"$\gamma$",
+}
+
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
@@ -98,10 +135,16 @@ html_theme_options = {
     'style_nav_header_background': '#2980b9',
     'collapse_navigation': True,
     'sticky_navigation': True,
-    'navigation_depth': 4,
+    'navigation_depth': 3,  # Reduced depth for performance
     'includehidden': True,
     'titles_only': False
 }
+
+# Optimize HTML output
+html_copy_source = False  # Don't copy source files to save space
+html_show_sourcelink = False  # Don't show source links
+html_compact_lists = True  # Use compact lists
+html_secnumber_suffix = '. '  # Add period after section numbers
 
 html_static_path = ['_static']
 html_css_files = [

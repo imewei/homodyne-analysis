@@ -340,11 +340,11 @@ MCMC Convergence Problems
 
 1. **Increase sample count**:
 
-.. code-block:: json
+.. code-block:: javascript
 
    {
      "mcmc": {
-       "n_samples": 4000,  # Increased sample size
+       "n_samples": 4000,  // Increased sample size
        "tune": 2000
      }
    }
@@ -463,12 +463,12 @@ Poor Experimental Data
 
 2. **Adjust analysis parameters**:
 
-.. code-block:: json
+.. code-block:: javascript
 
    {
      "analysis_settings": {
        "enable_angle_filtering": true,
-       "angle_filter_ranges": [[-5, 5], [175, 185]]  # Narrower ranges
+       "angle_filter_ranges": [[-5, 5], [175, 185]]  // Narrower ranges
      }
    }
 
@@ -529,13 +529,13 @@ Memory Exhaustion
 
 1. **Reduce memory usage**:
 
-.. code-block:: json
+.. code-block:: javascript
 
    {
      "performance": {
-       "data_type": "float32",    # 50% memory reduction
-       "memory_limit_gb": 8,      # Set appropriate limit
-       "chunked_processing": true # Process in chunks
+       "data_type": "float32",    // 50% memory reduction
+       "memory_limit_gb": 8,      // Set appropriate limit
+       "chunked_processing": true // Process in chunks
      }
    }
 
@@ -663,11 +663,11 @@ Operating System Issues
 
 1. **Use forward slashes** in file paths:
 
-.. code-block:: json
+.. code-block:: javascript
 
    {
      "file_paths": {
-       "c2_data_file": "C:/data/correlation_data.h5"  # Not C:\\data\\...
+       "c2_data_file": "C:/data/correlation_data.h5"  // Not C:\\data\\...
      }
    }
 

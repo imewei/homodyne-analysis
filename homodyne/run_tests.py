@@ -1,6 +1,6 @@
 """
 Test Runner for Homodyne Scattering Analysis
-===========================================
+=============================================
 
 Advanced test execution framework for comprehensive validation of XPCS
 analysis components. Provides flexible test selection, performance profiling,

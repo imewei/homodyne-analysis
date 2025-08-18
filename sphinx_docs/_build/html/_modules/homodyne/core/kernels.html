@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../../../_static/documentation_options.js?v=54d05895"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -133,8 +133,6 @@
     <span class="n">float64</span> <span class="o">=</span> <span class="n">int64</span> <span class="o">=</span> <span class="n">DummyType</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="create_time_integral_matrix_numba">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.create_time_integral_matrix_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:]),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_time_integral_matrix_numba</span><span class="p">(</span><span class="n">time_dependent_array</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -168,12 +166,9 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumsum</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">cumsum</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="n">cumsum</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">matrix</span></div>
+    <span class="k">return</span> <span class="n">matrix</span>
 
 
-
-<div class="viewcode-block" id="calculate_diffusion_coefficient_numba">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.calculate_diffusion_coefficient_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_diffusion_coefficient_numba</span><span class="p">(</span><span class="n">time_array</span><span class="p">,</span> <span class="n">D0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">D_offset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -211,12 +206,9 @@
     <span class="c1"># Vectorized computation with parallel execution</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_array</span><span class="p">)):</span>
         <span class="n">D_t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">D0</span> <span class="o">*</span> <span class="p">(</span><span class="n">time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">D_offset</span>
-    <span class="k">return</span> <span class="n">D_t</span></div>
+    <span class="k">return</span> <span class="n">D_t</span>
 
 
-
-<div class="viewcode-block" id="calculate_shear_rate_numba">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.calculate_shear_rate_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_shear_rate_numba</span><span class="p">(</span><span class="n">time_array</span><span class="p">,</span> <span class="n">gamma_dot_t0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma_dot_t_offset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -266,12 +258,9 @@
     <span class="c1"># Vectorized computation with parallel execution</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_array</span><span class="p">)):</span>
         <span class="n">gamma_dot_t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma_dot_t0</span> <span class="o">*</span> <span class="p">(</span><span class="n">time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma_dot_t_offset</span>
-    <span class="k">return</span> <span class="n">gamma_dot_t</span></div>
+    <span class="k">return</span> <span class="n">gamma_dot_t</span>
 
 
-
-<div class="viewcode-block" id="compute_g1_correlation_numba">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.compute_g1_correlation_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_g1_correlation_numba</span><span class="p">(</span><span class="n">diffusion_integral_matrix</span><span class="p">,</span> <span class="n">wavevector_factor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -304,12 +293,9 @@
             <span class="n">exponent</span> <span class="o">=</span> <span class="o">-</span><span class="n">wavevector_factor</span> <span class="o">*</span> <span class="n">diffusion_integral_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
             <span class="n">g1</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exponent</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">g1</span></div>
+    <span class="k">return</span> <span class="n">g1</span>
 
 
-
-<div class="viewcode-block" id="compute_sinc_squared_numba">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.compute_sinc_squared_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_sinc_squared_numba</span><span class="p">(</span><span class="n">shear_integral_matrix</span><span class="p">,</span> <span class="n">prefactor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -390,8 +376,7 @@
                 <span class="n">sinc_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pi_arg</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi_arg</span>
                 <span class="n">sinc_squared</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">sinc_value</span> <span class="o">*</span> <span class="n">sinc_value</span>
 
-    <span class="k">return</span> <span class="n">sinc_squared</span></div>
-
+    <span class="k">return</span> <span class="n">sinc_squared</span>
 
 
 <div class="viewcode-block" id="memory_efficient_cache">
@@ -506,8 +491,6 @@
 
 <span class="c1"># Additional optimized kernels for improved performance</span>
 
-<div class="viewcode-block" id="create_symmetric_matrix_optimized">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.create_symmetric_matrix_optimized">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">int64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_symmetric_matrix_optimized</span><span class="p">(</span><span class="n">diagonal_values</span><span class="p">,</span> <span class="n">matrix_size</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -541,12 +524,9 @@
             <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
             <span class="n">matrix</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
     
-    <span class="k">return</span> <span class="n">matrix</span></div>
+    <span class="k">return</span> <span class="n">matrix</span>
 
 
-
-<div class="viewcode-block" id="matrix_vector_multiply_optimized">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.matrix_vector_multiply_optimized">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">float64</span><span class="p">[:]),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">matrix_vector_multiply_optimized</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -574,12 +554,9 @@
             <span class="n">temp_sum</span> <span class="o">+=</span> <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">vector</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
         <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_sum</span>
     
-    <span class="k">return</span> <span class="n">result</span></div>
+    <span class="k">return</span> <span class="n">result</span>
 
 
-
-<div class="viewcode-block" id="apply_scaling_vectorized">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.apply_scaling_vectorized">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_scaling_vectorized</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -604,12 +581,9 @@
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
         <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">contrast</span> <span class="o">*</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span>
     
-    <span class="k">return</span> <span class="n">result</span></div>
+    <span class="k">return</span> <span class="n">result</span>
 
 
-
-<div class="viewcode-block" id="compute_chi_squared_fast">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.compute_chi_squared_fast">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">(</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">[:]),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_chi_squared_fast</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -636,12 +610,9 @@
         <span class="n">variance</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">expected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mf">1e-12</span><span class="p">)</span>  <span class="c1"># Avoid division by zero</span>
         <span class="n">chi2</span> <span class="o">+=</span> <span class="p">(</span><span class="n">diff</span> <span class="o">*</span> <span class="n">diff</span><span class="p">)</span> <span class="o">/</span> <span class="n">variance</span>
     
-    <span class="k">return</span> <span class="n">chi2</span></div>
+    <span class="k">return</span> <span class="n">chi2</span>
 
 
-
-<div class="viewcode-block" id="exp_negative_vectorized">
-<a class="viewcode-back" href="../../../api/homodyne.core.html#homodyne.exp_negative_vectorized">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">float64</span><span class="p">[:](</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">float64</span><span class="p">),</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">exp_negative_vectorized</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -664,8 +635,7 @@
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_array</span><span class="p">)):</span>
         <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">scale_factor</span> <span class="o">*</span> <span class="n">input_array</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
     
-    <span class="k">return</span> <span class="n">result</span></div>
-
+    <span class="k">return</span> <span class="n">result</span>
 </pre></div>
 
            </div>

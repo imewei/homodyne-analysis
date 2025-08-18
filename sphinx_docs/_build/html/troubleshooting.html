@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="_static/documentation_options.js?v=54d05895"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -132,7 +132,6 @@
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Troubleshooting Guide</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/troubleshooting.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -429,10 +428,10 @@ python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--method<sp
 <ol class="arabic simple">
 <li><p><strong>Increase sample count</strong>:</p></li>
 </ol>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;mcmc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;n_samples&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4000</span><span class="p">,</span><span class="w">  </span><span class="err">#</span><span class="w"> </span><span class="err">I</span><span class="kc">n</span><span class="err">creased</span><span class="w"> </span><span class="err">sample</span><span class="w"> </span><span class="err">size</span>
-<span class="w">    </span><span class="nt">&quot;tune&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2000</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="s2">&quot;mcmc&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;n_samples&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">4000</span><span class="p">,</span><span class="w">  </span><span class="c1">// Increased sample size</span>
+<span class="w">    </span><span class="s2">&quot;tune&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">2000</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -534,10 +533,10 @@ python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--plot-expe
 - Verify instrumental setup</p></li>
 <li><p><strong>Adjust analysis parameters</strong>:</p></li>
 </ol>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;analysis_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;enable_angle_filtering&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;angle_filter_ranges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mi">-5</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">175</span><span class="p">,</span><span class="w"> </span><span class="mi">185</span><span class="p">]]</span><span class="w">  </span><span class="err">#</span><span class="w"> </span><span class="err">Narrower</span><span class="w"> </span><span class="err">ra</span><span class="kc">n</span><span class="err">ges</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="s2">&quot;analysis_settings&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;enable_angle_filtering&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;angle_filter_ranges&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[[</span><span class="o">-</span><span class="mf">5</span><span class="p">,</span><span class="w"> </span><span class="mf">5</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mf">175</span><span class="p">,</span><span class="w"> </span><span class="mf">185</span><span class="p">]]</span><span class="w">  </span><span class="c1">// Narrower ranges</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -594,11 +593,11 @@ python<span class="w"> </span>run_homodyne.py<span class="w"> </span>--static-is
 <ol class="arabic simple">
 <li><p><strong>Reduce memory usage</strong>:</p></li>
 </ol>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;performance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;data_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float32&quot;</span><span class="p">,</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="mi">50</span><span class="err">%</span><span class="w"> </span><span class="err">memory</span><span class="w"> </span><span class="err">reduc</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span>
-<span class="w">    </span><span class="nt">&quot;memory_limit_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="err">Se</span><span class="kc">t</span><span class="w"> </span><span class="err">appropria</span><span class="kc">te</span><span class="w"> </span><span class="err">limi</span><span class="kc">t</span>
-<span class="w">    </span><span class="nt">&quot;chunked_processing&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Process</span><span class="w"> </span><span class="err">i</span><span class="kc">n</span><span class="w"> </span><span class="err">chu</span><span class="kc">n</span><span class="err">ks</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="s2">&quot;performance&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;data_type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;float32&quot;</span><span class="p">,</span><span class="w">    </span><span class="c1">// 50% memory reduction</span>
+<span class="w">    </span><span class="s2">&quot;memory_limit_gb&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">8</span><span class="p">,</span><span class="w">      </span><span class="c1">// Set appropriate limit</span>
+<span class="w">    </span><span class="s2">&quot;chunked_processing&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c1">// Process in chunks</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -709,9 +708,9 @@ pip<span class="w"> </span>install<span class="w"> </span>pymc<span class="w"> <
 <ol class="arabic simple">
 <li><p><strong>Use forward slashes</strong> in file paths:</p></li>
 </ol>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;file_paths&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;c2_data_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;C:/data/correlation_data.h5&quot;</span><span class="w">  </span><span class="err">#</span><span class="w"> </span><span class="err">No</span><span class="kc">t</span><span class="w"> </span><span class="err">C</span><span class="p">:</span><span class="err">\\da</span><span class="kc">ta</span><span class="err">\\...</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="s2">&quot;file_paths&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;c2_data_file&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;C:/data/correlation_data.h5&quot;</span><span class="w">  </span><span class="c1">// Not C:\\data\\...</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>

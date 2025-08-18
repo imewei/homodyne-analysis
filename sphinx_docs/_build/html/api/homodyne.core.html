@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../_static/documentation_options.js?v=54d05895"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -62,13 +62,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">homodyne</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="homodyne.html">homodyne package</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="homodyne.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="homodyne.analysis.html">homodyne.analysis package</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">homodyne.core package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="homodyne.optimization.html">homodyne.optimization package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="homodyne.tests.html">homodyne.tests package</a></li>
-</ul>
-</li>
+<li class="toctree-l3 current"><a class="reference internal" href="homodyne.html#subpackages">Subpackages</a></li>
 <li class="toctree-l3"><a class="reference internal" href="homodyne.html#submodules">Submodules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.plotting">homodyne.plotting module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.run_tests">homodyne.run_tests module</a></li>
@@ -104,7 +98,6 @@
           <li class="breadcrumb-item"><a href="homodyne.html">homodyne package</a></li>
       <li class="breadcrumb-item active">homodyne.core package</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/homodyne.core.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -205,6 +198,17 @@ angle_ranges = config_manager.get_target_angle_ranges()</p>
 <dd class="field-odd"><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize configuration manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to JSON configuration file</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="homodyne.core.config.ConfigManager.load_config">
 <span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.ConfigManager.load_config" title="Link to this definition"></a></dt>
@@ -482,6 +486,11 @@ Falls back to mode-based logic if active_parameters not specified:
 <p>Provides lightweight profiling and memory monitoring
 for optimization of computational kernels.</p>
 <dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="homodyne.core.config.PerformanceMonitor.time_function">
 <span class="sig-name descname"><span class="pre">time_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#PerformanceMonitor.time_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.config.PerformanceMonitor.time_function" title="Link to this definition"></a></dt>
 <dd><p>Context manager for timing function execution.</p>
@@ -553,7 +562,7 @@ Institution: Argonne National Laboratory &amp; University of Chicago</p>
 </section>
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.io_utils.ensure_dir">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">ensure_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permissions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">493</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#ensure_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.ensure_dir" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">ensure_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permissions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0o755</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#ensure_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.ensure_dir" title="Link to this definition"></a></dt>
 <dd><p>Thread-safe recursive directory creation with comprehensive error handling.</p>
 <p>Creates directory hierarchies safely, handling race conditions that can occur
 in multi-process environments (e.g., parallel optimization runs). Uses atomic
@@ -731,7 +740,7 @@ correlation functions, parameter arrays, and other numerical results.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.io_utils.save_pickle">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">protocol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_pickle" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.io_utils.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">protocol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">pickle.HIGHEST_PROTOCOL</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/io_utils.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.io_utils.save_pickle" title="Link to this definition"></a></dt>
 <dd><p>Save data using pickle with error handling and logging.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -874,7 +883,7 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory &amp; University of Chicago</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.create_time_integral_matrix_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">create_time_integral_matrix_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_dependent_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#create_time_integral_matrix_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.create_time_integral_matrix_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">create_time_integral_matrix_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_dependent_array</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.create_time_integral_matrix_numba" title="Link to this definition"></a></dt>
 <dd><p>Create time integral matrix for correlation calculations.</p>
 <p>Computes matrix of time integrals I[i,j] = <a href="#id1"><span class="problematic" id="id2">|∫ᵗʲₜᵢ f(t)dt|</span></a>
 using cumulative sum for O(n) complexity instead of O(n²).
@@ -894,7 +903,7 @@ Optimized with fastmath and memory-efficient layout.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.calculate_diffusion_coefficient_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_diffusion_coefficient_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.calculate_diffusion_coefficient_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.calculate_diffusion_coefficient_numba" title="Link to this definition"></a></dt>
 <dd><p>Calculate time-dependent diffusion coefficient.</p>
 <p>Implements power-law model: D(t) = D₀(t/t₀)^α + D_offset</p>
 <p>This model captures various physical scenarios:
@@ -926,7 +935,7 @@ Accounts for residual thermal motion or measurement artifacts</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.calculate_shear_rate_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">calculate_shear_rate_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_shear_rate_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.calculate_shear_rate_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">calculate_shear_rate_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t_offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.calculate_shear_rate_numba" title="Link to this definition"></a></dt>
 <dd><p>Calculate time-dependent shear rate.</p>
 <p>Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset</p>
 <p>Common experimental scenarios:
@@ -988,7 +997,7 @@ Accounts for residual thermal motion or measurement artifacts</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.compute_g1_correlation_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_g1_correlation_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffusion_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavevector_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_g1_correlation_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.compute_g1_correlation_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_g1_correlation_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffusion_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavevector_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.compute_g1_correlation_numba" title="Link to this definition"></a></dt>
 <dd><p>Compute field correlation function g₁ from diffusion.</p>
 <p>Calculates the field correlation function arising from translational diffusion
 of scattering particles in the sample. This implements the core diffusion term
@@ -1014,7 +1023,7 @@ from the homodyne scattering equations:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.compute_sinc_squared_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_sinc_squared_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefactor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_sinc_squared_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.compute_sinc_squared_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_sinc_squared_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefactor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.compute_sinc_squared_numba" title="Link to this definition"></a></dt>
 <dd><p>Compute sinc² function for shear flow contributions (Numba-optimized).</p>
 <p>Calculates the shear-induced decorrelation term appearing in homodyne
 scattering under flow conditions. This implements the sinc² term from
@@ -1099,7 +1108,7 @@ Coherent averaging over y gives:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.create_symmetric_matrix_optimized">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">create_symmetric_matrix_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diagonal_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#create_symmetric_matrix_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.create_symmetric_matrix_optimized" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">create_symmetric_matrix_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diagonal_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.create_symmetric_matrix_optimized" title="Link to this definition"></a></dt>
 <dd><p>Create symmetric matrix with optimized memory layout.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1119,7 +1128,7 @@ Coherent averaging over y gives:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.matrix_vector_multiply_optimized">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">matrix_vector_multiply_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#matrix_vector_multiply_optimized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.matrix_vector_multiply_optimized" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">matrix_vector_multiply_optimized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.matrix_vector_multiply_optimized" title="Link to this definition"></a></dt>
 <dd><p>Optimized matrix-vector multiplication for correlation calculations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1139,7 +1148,7 @@ Coherent averaging over y gives:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.apply_scaling_vectorized">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">apply_scaling_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#apply_scaling_vectorized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.apply_scaling_vectorized" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">apply_scaling_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.apply_scaling_vectorized" title="Link to this definition"></a></dt>
 <dd><p>Apply per-angle scaling (contrast and offset) with vectorized operations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1160,7 +1169,7 @@ Coherent averaging over y gives:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.compute_chi_squared_fast">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_chi_squared_fast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_chi_squared_fast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.compute_chi_squared_fast" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">compute_chi_squared_fast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.compute_chi_squared_fast" title="Link to this definition"></a></dt>
 <dd><p>Fast chi-squared calculation with optimized numerics.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1180,7 +1189,7 @@ Coherent averaging over y gives:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.kernels.exp_negative_vectorized">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">exp_negative_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#exp_negative_vectorized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.kernels.exp_negative_vectorized" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.kernels.</span></span><span class="sig-name descname"><span class="pre">exp_negative_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.kernels.exp_negative_vectorized" title="Link to this definition"></a></dt>
 <dd><p>Vectorized computation of exp(-scale_factor * input_array).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1241,6 +1250,17 @@ angle_ranges = config_manager.get_target_angle_ranges()</p>
 <dd class="field-odd"><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.core.ConfigManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize configuration manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to JSON configuration file</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="homodyne.core.ConfigManager.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/config.html#ConfigManager.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.ConfigManager.get" title="Link to this definition"></a></dt>
@@ -1540,7 +1560,7 @@ configuration if primary config fails.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.create_time_integral_matrix_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">create_time_integral_matrix_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_dependent_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#create_time_integral_matrix_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.create_time_integral_matrix_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">create_time_integral_matrix_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_dependent_array</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.create_time_integral_matrix_numba" title="Link to this definition"></a></dt>
 <dd><p>Create time integral matrix for correlation calculations.</p>
 <p>Computes matrix of time integrals I[i,j] = <a href="#id3"><span class="problematic" id="id4">|∫ᵗʲₜᵢ f(t)dt|</span></a>
 using cumulative sum for O(n) complexity instead of O(n²).
@@ -1560,7 +1580,7 @@ Optimized with fastmath and memory-efficient layout.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.calculate_diffusion_coefficient_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_diffusion_coefficient_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.calculate_diffusion_coefficient_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">calculate_diffusion_coefficient_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.calculate_diffusion_coefficient_numba" title="Link to this definition"></a></dt>
 <dd><p>Calculate time-dependent diffusion coefficient.</p>
 <p>Implements power-law model: D(t) = D₀(t/t₀)^α + D_offset</p>
 <p>This model captures various physical scenarios:
@@ -1592,7 +1612,7 @@ Accounts for residual thermal motion or measurement artifacts</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.calculate_shear_rate_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">calculate_shear_rate_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#calculate_shear_rate_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.calculate_shear_rate_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">calculate_shear_rate_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_dot_t_offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.calculate_shear_rate_numba" title="Link to this definition"></a></dt>
 <dd><p>Calculate time-dependent shear rate.</p>
 <p>Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset</p>
 <p>Common experimental scenarios:
@@ -1654,7 +1674,7 @@ Accounts for residual thermal motion or measurement artifacts</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.compute_g1_correlation_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">compute_g1_correlation_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffusion_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavevector_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_g1_correlation_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.compute_g1_correlation_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">compute_g1_correlation_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffusion_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavevector_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.compute_g1_correlation_numba" title="Link to this definition"></a></dt>
 <dd><p>Compute field correlation function g₁ from diffusion.</p>
 <p>Calculates the field correlation function arising from translational diffusion
 of scattering particles in the sample. This implements the core diffusion term
@@ -1680,7 +1700,7 @@ from the homodyne scattering equations:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="homodyne.core.compute_sinc_squared_numba">
-<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">compute_sinc_squared_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefactor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/core/kernels.html#compute_sinc_squared_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.core.compute_sinc_squared_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">homodyne.core.</span></span><span class="sig-name descname"><span class="pre">compute_sinc_squared_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shear_integral_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefactor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#homodyne.core.compute_sinc_squared_numba" title="Link to this definition"></a></dt>
 <dd><p>Compute sinc² function for shear flow contributions (Numba-optimized).</p>
 <p>Calculates the shear-induced decorrelation term appearing in homodyne
 scattering under flow conditions. This implements the sinc² term from

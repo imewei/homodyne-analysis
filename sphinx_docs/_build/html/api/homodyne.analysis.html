@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=7cffc26f"></script>
+      <script src="../_static/documentation_options.js?v=54d05895"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -62,13 +62,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">homodyne</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="homodyne.html">homodyne package</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="homodyne.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l4 current"><a class="current reference internal" href="#">homodyne.analysis package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="homodyne.core.html">homodyne.core package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="homodyne.optimization.html">homodyne.optimization package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="homodyne.tests.html">homodyne.tests package</a></li>
-</ul>
-</li>
+<li class="toctree-l3 current"><a class="reference internal" href="homodyne.html#subpackages">Subpackages</a></li>
 <li class="toctree-l3"><a class="reference internal" href="homodyne.html#submodules">Submodules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.plotting">homodyne.plotting module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="homodyne.html#module-homodyne.run_tests">homodyne.run_tests module</a></li>
@@ -104,7 +98,6 @@
           <li class="breadcrumb-item"><a href="homodyne.html">homodyne package</a></li>
       <li class="breadcrumb-item active">homodyne.analysis package</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/homodyne.analysis.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -208,6 +201,20 @@ Institution: Argonne National Laboratory &amp; University of Chicago</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_override</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the core analysis system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to JSON configuration file</p></li>
+<li><p><strong>config_override</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>, </em><em>optional</em>) – Runtime configuration overrides</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="homodyne.analysis.core.HomodyneAnalysisCore.is_static_mode">
 <span class="sig-name descname"><span class="pre">is_static_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.is_static_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.core.HomodyneAnalysisCore.is_static_mode" title="Link to this definition"></a></dt>
@@ -638,6 +645,20 @@ experimental homodyne scattering data and computing correlation functions.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'homodyne_config.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_override</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the core analysis system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to JSON configuration file</p></li>
+<li><p><strong>config_override</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>, </em><em>optional</em>) – Runtime configuration overrides</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="homodyne.analysis.HomodyneAnalysisCore.analyze_per_angle_chi_squared">
 <span class="sig-name descname"><span class="pre">analyze_per_angle_chi_squared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2_experimental</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Final'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/homodyne/analysis/core.html#HomodyneAnalysisCore.analyze_per_angle_chi_squared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#homodyne.analysis.HomodyneAnalysisCore.analyze_per_angle_chi_squared" title="Link to this definition"></a></dt>
