@@ -236,9 +236,9 @@ class TestMCMCInitialParameterHandling:
             # Run all methods
             result = run_all_methods(mock_analyzer, initial_params, phi_angles, c2_exp)
 
-            # Verify classical was called with initial parameters
+            # Verify classical was called with initial parameters (including output_dir)
             mock_classical.assert_called_once_with(
-                mock_analyzer, initial_params, phi_angles, c2_exp
+                mock_analyzer, initial_params, phi_angles, c2_exp, None
             )
 
             # Verify MCMC was called with classical results as initial parameters
@@ -472,9 +472,9 @@ class TestMCMCInitialParameterHandling:
             # Run all methods
             result = run_all_methods(mock_analyzer, initial_params, phi_angles, c2_exp)
 
-            # Verify classical was called with initial parameters
+            # Verify classical was called with initial parameters (including output_dir)
             mock_classical.assert_called_once_with(
-                mock_analyzer, initial_params, phi_angles, c2_exp
+                mock_analyzer, initial_params, phi_angles, c2_exp, None
             )
 
             # Verify MCMC was called with original initial parameters (fallback)
