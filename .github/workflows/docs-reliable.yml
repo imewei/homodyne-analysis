@@ -1,0 +1,49 @@
+name: Deploy Docs (Reliable)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Install and build
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme myst-parser numpydoc sphinx-autodoc-typehints linkify-it-py
+        pip install -e .
+        cd docs
+        make html
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/_build/html
+        force_orphan: true
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        commit_message: 'Deploy documentation ${{ github.sha }}'
+        
+    - name: Success message
+      run: |
+        echo "🎉 Deployment successful!"
+        echo "📖 URL: https://imewei.github.io/homodyne/"
+        echo "⏰ Note: GitHub Pages may take 5-10 minutes to update"
