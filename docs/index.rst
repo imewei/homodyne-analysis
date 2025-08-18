@@ -48,11 +48,19 @@ Quick Start
 
 .. code-block:: bash
 
-   # Fast analysis (3 parameters)
-   python run_homodyne.py --static-isotropic --method classical
-   
-   # Full analysis (7 parameters + uncertainty)
-   python run_homodyne.py --laminar-flow --method mcmc
+   # Basic analysis
+   homodyne --static-isotropic --method classical
+   homodyne --static-anisotropic --method mcmc
+   homodyne --laminar-flow --method all
+
+   # Data validation only
+   homodyne --plot-experimental-data --config my_config.json
+
+   # Custom configuration and output
+   homodyne --config my_experiment.json --output-dir ./results
+
+   # Generate C2 heatmaps
+   homodyne --method classical --plot-c2-heatmaps
 
 Analysis Modes
 --------------
