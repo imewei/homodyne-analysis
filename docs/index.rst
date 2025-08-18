@@ -1,5 +1,5 @@
-Homodyne Analysis Documentation
-================================
+Homodyne Scattering Analysis Package
+====================================
 
 .. image:: https://img.shields.io/badge/License-MIT-yellow.svg
    :target: https://opensource.org/licenses/MIT
@@ -13,7 +13,17 @@ Homodyne Analysis Documentation
    :target: https://numba.pydata.org/
    :alt: Numba
 
-A comprehensive Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions. This package implements the theoretical framework described in `He et al. PNAS 2024 <https://doi.org/10.1073/pnas.2401162121>`_ for characterizing nonequilibrium dynamics in soft matter systems.
+A high-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the theoretical framework from `He et al. PNAS 2024 <https://doi.org/10.1073/pnas.2401162121>`_ for characterizing transport properties in flowing soft matter systems.
+
+Overview
+--------
+
+This package analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow. The implementation provides:
+
+- **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
+- **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
+- **High performance**: Numba JIT compilation with 3-5x speedup and smart angle filtering
+- **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
 
 Quick Start
 -----------
@@ -22,32 +32,26 @@ Quick Start
 
 .. code-block:: bash
 
-   # Full installation with all features (MCMC, performance, data handling)
    pip install homodyne-analysis[all]
 
-**Basic Usage:**
+**Python API:**
 
 .. code-block:: python
 
    from homodyne import HomodyneAnalysisCore, ConfigManager
    
-   # Load configuration
-   config = ConfigManager("my_experiment.json")
-   
-   # Initialize analysis
+   config = ConfigManager("config.json")
    analysis = HomodyneAnalysisCore(config)
-   
-   # Run analysis
    results = analysis.optimize_classical()
 
 **Command Line:**
 
 .. code-block:: bash
 
-   # Basic analysis with isotropic mode (fastest)
+   # Fast analysis (3 parameters)
    python run_homodyne.py --static-isotropic --method classical
    
-   # Full flow analysis with uncertainty quantification
+   # Full analysis (7 parameters + uncertainty)
    python run_homodyne.py --laminar-flow --method mcmc
 
 Analysis Modes
@@ -81,22 +85,22 @@ Analysis Modes
 Key Features
 ------------
 
-🎯 **Multiple Analysis Modes**
+**Multiple Analysis Modes**
    Static Isotropic (3 parameters), Static Anisotropic (3 parameters), and Laminar Flow (7 parameters)
 
-⚡ **High Performance**
+**High Performance**
    Numba JIT compilation, smart angle filtering, and optimized computational kernels
 
-🔬 **Scientific Accuracy**
+**Scientific Accuracy**
    Automatic g₂ = offset + contrast × g₁ fitting for accurate chi-squared calculations
 
-📊 **Dual Optimization**
+**Dual Optimization**
    Fast classical optimization (Nelder-Mead) and robust Bayesian MCMC (NUTS)
 
-🔍 **Comprehensive Validation**
+**Comprehensive Validation**
    Experimental data validation plots and quality control
 
-📈 **Visualization Tools**
+**Visualization Tools**
    Parameter evolution tracking, MCMC diagnostics, and corner plots
 
 User Guide
@@ -130,6 +134,29 @@ Developer Guide
    developer-guide/contributing
    developer-guide/testing
    developer-guide/performance
+
+Theoretical Background
+----------------------
+
+The package implements three key equations describing correlation functions in nonequilibrium laminar flow systems:
+
+**Equation 13 - Full Nonequilibrium Laminar Flow:**
+   c₂(q⃗, t₁, t₂) = 1 + β[e^(-q²∫J(t)dt)] × sinc²[1/(2π) qh ∫γ̇(t)cos(φ(t))dt]
+
+**Equation S-75 - Equilibrium Under Constant Shear:**
+   c₂(q⃗, t₁, t₂) = 1 + β[e^(-6q²D(t₂-t₁))] sinc²[1/(2π) qh cos(φ)γ̇(t₂-t₁)]
+
+**Equation S-76 - One-time Correlation (Siegert Relation):**
+   g₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
+
+**Key Parameters:**
+
+- q⃗: scattering wavevector [Å⁻¹]
+- h: gap between stator and rotor [Å]  
+- φ(t): angle between shear/flow direction and q⃗ [degrees]
+- γ̇(t): time-dependent shear rate [s⁻¹]
+- D(t): time-dependent diffusion coefficient [Å²/s]
+- β: contrast parameter [dimensionless]
 
 Citation
 --------
