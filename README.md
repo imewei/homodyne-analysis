@@ -10,18 +10,7 @@ A comprehensive Python package for analyzing homodyne scattering in X-ray Photon
 
 ### Physical Context
 
-The package analyzes time-dependent intensity correlation functions g₂(φ,t₁,t₂) for complex fluids under nonequilibrium laminar flow conditions. It captures the interplay between Brownian diffusion and advective shear flow, enabling quantitative characterization of transport properties in flowing soft matter systems.
-
-### Key Features
-
-- **📊 Triple Analysis Modes**: Static Isotropic (3 parameters), Static Anisotropic (3 parameters), and Laminar Flow (7 parameters) for comprehensive experimental coverage
-- **⚡ Always-On Scaling Optimization**: Automatic g₂ = offset + contrast × g₁ fitting for scientifically accurate chi-squared calculations  
-- **🔍 Comprehensive Data Validation**: Experimental C2 data validation plots with standalone plotting capabilities
-- **⚙️ Enhanced Configuration System**: Mode-specific templates with intelligent defaults and metadata injection
-- **🎯 Multiple Optimization Approaches**: Fast classical optimization (Nelder-Mead) for point estimates and robust Bayesian MCMC (NUTS) for full posterior distributions with uncertainty quantification
-- **🚀 Performance Optimizations**: Numba JIT compilation for computational kernels, smart angle filtering, and memory-efficient data handling
-- **📈 Integrated Visualization**: Experimental data validation plots, parameter evolution tracking, MCMC convergence diagnostics, and corner plots for uncertainty visualization
-- **✅ Quality Assurance**: Extensive test coverage with pytest framework and performance benchmarking tools
+The package analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) for complex fluids under nonequilibrium laminar flow conditions. It captures the interplay between Brownian diffusion and advective shear flow, enabling quantitative characterization of transport properties in flowing soft matter systems.
 
 ## Table of Contents
 
@@ -52,6 +41,10 @@ The package analyzes time-dependent intensity correlation functions g₂(φ,t₁
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 
+# Set up Miniforge3 Python environment
+mamba create -n homodyne python
+mamba activate homodyne
+
 # Install core dependencies
 pip install numpy scipy matplotlib
 
@@ -67,7 +60,10 @@ pip install pymc arviz pytensor
 **Core Requirements**: `numpy`, `scipy`, `matplotlib`  
 **Performance Enhancement**: `numba` (provides 3-5x speedup via JIT compilation)  
 **Bayesian Analysis**: `pymc`, `arviz`, `pytensor` (for MCMC sampling and diagnostics)  
-**Optional**: `pyxpcsviewer` (specialized XPCS data loading)
+**Data handling and manipulation**: `xpcs-viewer (pyXpcsViewer)` (specialized XPCS data loading)
+**Optional MCMC dependencies (for Bayesian analysis)**: `pymc`, `arviz`, `pytensor`
+**Optional Test Dependencies**: `pytest`, `pytest-cov`, `pytest-xdist`, `pytest-benchmark`, `pytest-mock`, `hypothesis`, `black`, `flake8`, `mypy`
+**Optional Documentation Dependencies**: `sphinx`, `sphinx-rtd-theme`, `myst-parser`, `sphinx-autodoc-typehints`, `numpydoc`
 
 ## Quick Start
 
