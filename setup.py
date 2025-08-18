@@ -127,12 +127,13 @@ setup(
             "templates/*.json",
         ],
     },
-    entry_points={
-        "console_scripts": [
-            "homodyne=homodyne.cli:main",
-            "homodyne-config=homodyne.config_cli:main",
-        ],
-    },
+    # Entry points removed - main CLI is run_homodyne.py
+    # entry_points={
+    #     "console_scripts": [
+    #         "homodyne=homodyne.cli:main",
+    #         "homodyne-config=homodyne.config_cli:main",
+    #     ],
+    # },
     keywords=[
         "xpcs",
         "homodyne",

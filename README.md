@@ -421,38 +421,70 @@ homodyne/
 ├── benchmark_performance.py     # Performance benchmarking suite
 ├── README.md                    # This comprehensive guide
 ├── LICENSE                      # MIT License
-├── docs/                        # Documentation
-│   ├── CONFIGURATION_MODES.md   # Detailed mode comparison documentation
-│   └── SCALING_OPTIMIZATION_DOCUMENTATION.md  # Scaling mathematics
-├── homodyne/                    # Main package
-│   ├── __init__.py             # Package exports and version (v6.0)
+├── setup.py                     # Package setup configuration
+├── pyproject.toml              # Modern Python packaging configuration
+├── requirements.txt            # Package dependencies
+├── MANIFEST.in                 # Package manifest
+├── .gitignore                  # Git ignore patterns
+├── docs/                       # Sphinx documentation
+│   ├── Makefile               # Documentation build configuration
+│   ├── conf.py                # Sphinx configuration
+│   ├── index.rst              # Main documentation index
+│   ├── _static/               # Static documentation assets
+│   ├── user-guide/            # User documentation
+│   │   ├── installation.rst   # Installation guide
+│   │   ├── quickstart.rst     # Quick start guide
+│   │   ├── configuration.rst  # Configuration documentation
+│   │   ├── analysis-modes.rst # Analysis modes documentation
+│   │   └── examples.rst       # Usage examples
+│   ├── api-reference/         # API documentation
+│   │   ├── index.rst          # API reference index
+│   │   ├── core.rst           # Core API documentation
+│   │   ├── mcmc.rst           # MCMC API documentation
+│   │   ├── models.rst         # Models API documentation
+│   │   ├── utilities.rst      # Utilities API documentation
+│   │   └── _autosummary/      # Auto-generated API docs
+│   └── developer-guide/       # Developer documentation
+│       ├── index.rst          # Developer guide index
+│       ├── architecture.rst   # System architecture
+│       ├── contributing.rst   # Contributing guidelines
+│       ├── testing.rst        # Testing documentation
+│       ├── performance.rst    # Performance optimization
+│       └── troubleshooting.rst # Troubleshooting guide
+├── homodyne/                   # Main package
+│   ├── __init__.py            # Package exports and version (v6.0)
+│   ├── .coveragerc            # Test coverage configuration
 │   ├── config_static_isotropic.json   # Template for isotropic analysis
 │   ├── config_static_anisotropic.json # Template for anisotropic analysis
 │   ├── config_laminar_flow.json       # Template for flow analysis
-│   ├── config_template.json    # Master template with comprehensive documentation
+│   ├── config_template.json   # Master template with comprehensive documentation
 │   ├── run_tests.py           # Enhanced test runner with coverage and parallel options
 │   ├── plotting.py            # Comprehensive visualization utilities
 │   ├── core/                  # Core functionality
 │   │   ├── __init__.py
-│   │   ├── config.py         # Configuration management with mode detection
-│   │   ├── kernels.py        # Computational kernels (enhanced with optimized functions)
-│   │   └── io_utils.py       # Data I/O utilities
-│   ├── analysis/             # Analysis engines
+│   │   ├── config.py          # Configuration management with mode detection
+│   │   ├── kernels.py         # Computational kernels (enhanced with optimized functions)
+│   │   └── io_utils.py        # Data I/O utilities
+│   ├── analysis/              # Analysis engines
 │   │   ├── __init__.py
-│   │   └── core.py          # Main analysis class with mode-specific behavior
-│   ├── optimization/         # Optimization methods
+│   │   └── core.py            # Main analysis class with mode-specific behavior
+│   ├── optimization/          # Optimization methods
 │   │   ├── __init__.py
-│   │   ├── classical.py     # Scipy-based optimization
-│   │   └── mcmc.py          # PyMC Bayesian sampling
-│   └── tests/               # Expanded test suite
+│   │   ├── classical.py       # Scipy-based optimization
+│   │   └── mcmc.py            # PyMC Bayesian sampling
+│   └── tests/                 # Comprehensive test suite
 │       ├── __init__.py
-│       ├── conftest.py      # Pytest configuration
-│       ├── fixtures.py      # Test fixtures
+│       ├── conftest.py        # Pytest configuration
+│       ├── fixtures.py        # Test fixtures and utilities
 │       ├── test_static_mode.py          # Static mode functionality
 │       ├── test_isotropic_mode_integration.py  # Isotropic mode integration
 │       ├── test_angle_filtering.py      # Angle filtering functionality
+│       ├── test_config*.py              # Configuration testing
 │       ├── test_mcmc_*.py              # MCMC-specific test files
+│       ├── test_integration.py         # Integration testing
+│       ├── test_plotting.py            # Plotting functionality tests
 │       └── [additional test files]     # Comprehensive coverage
+├── my_config.json              # Example configuration file
 └── my_config_simon.json        # Example configuration file
 ```
 
@@ -588,10 +620,18 @@ We welcome contributions! Please feel free to submit issues, feature requests, a
 
 ### Authors
 
-- **Wei Chen** - *Argonne National Laboratory & University of Chicago* - wchen@anl.gov
-- **Hongrui He** - *Argonne National Laboratory & University of Chicago*
+- **Wei Chen** - *Argonne National Laboratory* - wchen@anl.gov
+- **Hongrui He** - *Argonne National Laboratory*
 
 ### Acknowledgments
 
 This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences under contract DE-AC02-06CH11357. Use of the Advanced Photon Source, an Office of Science User Facility operated for the U.S. Department of Energy (DOE) Office of Science by Argonne National Laboratory.
-# Comprehensive GitHub Pages Deployment Solution Complete
+
+## Documentation
+
+📚 **Complete Documentation**: https://imewei.github.io/homodyne/
+
+The documentation includes:
+- **User Guide**: Installation, quickstart, configuration, and examples
+- **API Reference**: Complete API documentation with auto-generated reference
+- **Developer Guide**: Architecture, contributing guidelines, and troubleshooting

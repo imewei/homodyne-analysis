@@ -100,9 +100,10 @@ Documentation = "https://imewei.github.io/homodyne/"
 Repository = "https://github.com/imewei/homodyne"
 Issues = "https://github.com/imewei/homodyne/issues"
 
-[project.scripts]
-homodyne = "homodyne.cli:main"
-homodyne-config = "homodyne.config_cli:main"
+# Console scripts removed - main CLI is run_homodyne.py
+# [project.scripts]
+# homodyne = "homodyne.cli:main"
+# homodyne-config = "homodyne.config_cli:main"
 
 [tool.setuptools]
 packages = ["homodyne"]
