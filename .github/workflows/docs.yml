@@ -36,15 +36,20 @@ jobs:
     - name: Build documentation
       run: |
         cd sphinx_docs
+        make clean
         make html
         # Check if build was successful
         if [ ! -f _build/html/index.html ]; then
           echo "❌ Documentation build failed - index.html not found"
+          ls -la _build/html/ || echo "No _build/html directory"
           exit 1
         fi
         echo "✅ Documentation built successfully"
         echo "📁 Generated files:"
         find _build/html -name "*.html" | head -10
+        echo "📊 Build statistics:"
+        echo "  Total HTML files: $(find _build/html -name "*.html" | wc -l)"
+        echo "  Total size: $(du -sh _build/html)"
     
     - name: Upload documentation artifacts
       uses: actions/upload-pages-artifact@v3
@@ -61,6 +66,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
+      
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
