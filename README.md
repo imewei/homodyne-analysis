@@ -8,13 +8,13 @@ A high-performance Python package for analyzing homodyne scattering in X-ray Pho
 
 ## Overview
 
-Analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow.
+Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow.
 
 **Key Features:**
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
 - **High performance**: Numba JIT compilation with 3-5x speedup and smart angle filtering
-- **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
+- **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper chi-squared calculations
 
 
 ## Table of Contents
@@ -153,8 +153,8 @@ homodyne --plot-experimental-data --config my_config.json --verbose
 ```
 
 **Output**: Creates plots in `./homodyne_results/exp_data/`:
-- 2D correlation function heatmaps g₂(t₁,t₂)
-- Diagonal slices g₂(t,t) showing decay
+- 2D correlation function heatmaps $g_2(t_1,t_2)$
+- Diagonal slices $g_2(t,t)$ showing decay
 - Statistical summaries and quality metrics
 
 ## Configuration
@@ -194,7 +194,7 @@ homodyne --plot-experimental-data --verbose
 ```
 
 **Look for**:
-- Mean values around 1.0 (g₂ correlation functions)
+- Mean values around 1.0 ($g_2$ correlation functions)
 - Enhanced diagonal values
 - Sufficient contrast (> 0.001)
 
@@ -221,9 +221,8 @@ homodyne --plot-experimental-data --verbose
 ### Scaling Optimization
 
 Always enabled for scientific accuracy:
-```
-g₂ = offset + contrast × g₁
-```
+
+$$g_2 = \text{offset} + \text{contrast} \times g_1$$
 
 Accounts for instrumental effects, background, and normalization differences.
 
@@ -267,27 +266,24 @@ python homodyne/run_tests.py --coverage   # With coverage
 The package implements three key equations describing correlation functions in nonequilibrium laminar flow systems:
 
 **Equation 13 - Full Nonequilibrium Laminar Flow:**
-```
-c₂(q⃗, t₁, t₂) = 1 + β[e^(-q²∫J(t)dt)] × sinc²[1/(2π) qh ∫γ̇(t)cos(φ(t))dt]
-```
+
+$$c_2(\vec{q}, t_1, t_2) = 1 + \beta\left[e^{-q^2\int J(t)dt}\right] \times \text{sinc}^2\left[\frac{1}{2\pi} qh \int\dot{\gamma}(t)\cos(\phi(t))dt\right]$$
 
 **Equation S-75 - Equilibrium Under Constant Shear:**
-```
-c₂(q⃗, t₁, t₂) = 1 + β[e^(-6q²D(t₂-t₁))] sinc²[1/(2π) qh cos(φ)γ̇(t₂-t₁)]
-```
+
+$$c_2(\vec{q}, t_1, t_2) = 1 + \beta\left[e^{-6q^2D(t_2-t_1)}\right] \text{sinc}^2\left[\frac{1}{2\pi} qh \cos(\phi)\dot{\gamma}(t_2-t_1)\right]$$
 
 **Equation S-76 - One-time Correlation (Siegert Relation):**
-```
-g₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
-```
+
+$$g_2(\vec{q}, \tau) = 1 + \beta\left[e^{-6q^2D\tau}\right] \text{sinc}^2\left[\frac{1}{2\pi} qh \cos(\phi)\dot{\gamma}\tau\right]$$
 
 **Key Parameters:**
-- q⃗: scattering wavevector [Å⁻¹]  
-- h: gap between stator and rotor [Å]
-- φ(t): angle between shear/flow direction and q⃗ [degrees]
-- γ̇(t): time-dependent shear rate [s⁻¹]
-- D(t): time-dependent diffusion coefficient [Å²/s]
-- β: contrast parameter [dimensionless]
+- $\vec{q}$: scattering wavevector [Å⁻¹]  
+- $h$: gap between stator and rotor [Å]
+- $\phi(t)$: angle between shear/flow direction and $\vec{q}$ [degrees]
+- $\dot{\gamma}(t)$: time-dependent shear rate [s⁻¹]
+- $D(t)$: time-dependent diffusion coefficient [Å²/s]
+- $\beta$: contrast parameter [dimensionless]
 
 ## Citation
 
