@@ -129,18 +129,18 @@ def test_config_manager_validates_parameters():
 ### Building Documentation
 
 ```bash
-cd sphinx_docs
+cd docs
 make html
 ```
 
-The documentation will be built in `sphinx_docs/_build/html/`.
+The documentation will be built in `docs/_build/html/`.
 
 ### Writing Documentation
 
 - Use NumPy-style docstrings for all public functions
 - Include examples in docstrings when helpful
 - Update README.md for user-facing changes
-- Add new pages to `sphinx_docs/` for major features
+- Add new pages to `docs/` for major features
 
 ### Docstring Format
 

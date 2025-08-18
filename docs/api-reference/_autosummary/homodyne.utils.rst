@@ -1,6 +1,6 @@
 ﻿homodyne.utils
 ==============
 
-.. currentmodule:: homodyne.utils
+.. currentmodule:: homodyne
 
-.. automodule:: homodyne.utils
+.. automodule:: utils

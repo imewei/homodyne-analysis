@@ -35,7 +35,7 @@ jobs:
     
     - name: Build documentation
       run: |
-        cd sphinx_docs
+        cd docs
         make clean
         make html
         # Check if build was successful
@@ -54,7 +54,7 @@ jobs:
     - name: Upload documentation artifacts
       uses: actions/upload-pages-artifact@v3
       with:
-        path: sphinx_docs/_build/html
+        path: docs/_build/html
   
   deploy:
     needs: build
@@ -111,7 +111,7 @@ jobs:
     
     - name: Test documentation build
       run: |
-        cd sphinx_docs
+        cd docs
         make html
         # Check for critical errors that would prevent deployment
         if [ -f _build/html/index.html ]; then
