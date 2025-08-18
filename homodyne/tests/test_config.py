@@ -26,9 +26,7 @@ class TestConfigManager:
             "optimization_config": {"method": "test"},
         }
 
-    def test_config_manager_init_with_file(
-        self, temp_directory, minimal_config
-    ):
+    def test_config_manager_init_with_file(self, temp_directory, minimal_config):
         """Test initialization with config file."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -48,14 +46,10 @@ class TestConfigManager:
 
         manager = ConfigManager(str(config_file))
         assert manager.get("analyzer_parameters", "nested", "value") == "test"
-        assert manager.get("analyzer_parameters", "nested") == {
-            "value": "test"
-        }
+        assert manager.get("analyzer_parameters", "nested") == {"value": "test"}
         assert manager.get("nonexistent", default="default") == "default"
 
-    def test_config_manager_get_with_default(
-        self, temp_directory, minimal_config
-    ):
+    def test_config_manager_get_with_default(self, temp_directory, minimal_config):
         """Test getting values with default fallback."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -97,14 +91,10 @@ class TestConfigManager:
         with pytest.raises(ValueError, match="Missing required sections"):
             ConfigManager(str(config_file))
 
-    def test_config_manager_invalid_frame_range(
-        self, temp_directory, minimal_config
-    ):
+    def test_config_manager_invalid_frame_range(self, temp_directory, minimal_config):
         """Test validation with invalid frame range."""
         minimal_config["analyzer_parameters"]["start_frame"] = 100
-        minimal_config["analyzer_parameters"][
-            "end_frame"
-        ] = 50  # Invalid: start > end
+        minimal_config["analyzer_parameters"]["end_frame"] = 50  # Invalid: start > end
 
         config_file = temp_directory / "invalid_range.json"
         with open(config_file, "w") as f:
@@ -569,7 +559,7 @@ class TestConfigManagerAngleFiltering:
 
 class TestPlottingConfigurationConsistency:
     """Test plotting configuration consistency and validation."""
-    
+
     @pytest.fixture
     def plotting_config(self):
         """Configuration with plotting settings."""
@@ -579,8 +569,16 @@ class TestPlottingConfigurationConsistency:
             "experimental_data": {"data_directory": "test"},
             "optimization_config": {"method": "test"},
             "initial_parameters": {
-                "parameter_names": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
-                "values": [1000, -0.5, 100, 0.001, 0.2, 0.0001, 5.0]
+                "parameter_names": [
+                    "D0",
+                    "alpha",
+                    "D_offset",
+                    "gamma_dot_t0",
+                    "beta",
+                    "gamma_dot_t_offset",
+                    "phi0",
+                ],
+                "values": [1000, -0.5, 100, 0.001, 0.2, 0.0001, 5.0],
             },
             "parameter_space": {
                 "bounds": [
@@ -589,77 +587,75 @@ class TestPlottingConfigurationConsistency:
                     {"name": "D_offset", "min": 0.0, "max": 1000.0, "unit": "Å²/s"},
                     {"name": "gamma_dot_t0", "min": 1e-5, "max": 0.1, "unit": "s⁻¹"},
                     {"name": "beta", "min": -1.0, "max": 1.0, "unit": "dimensionless"},
-                    {"name": "gamma_dot_t_offset", "min": 0.0, "max": 0.01, "unit": "s⁻¹"},
-                    {"name": "phi0", "min": 0.0, "max": 360.0, "unit": "degrees"}
+                    {
+                        "name": "gamma_dot_t_offset",
+                        "min": 0.0,
+                        "max": 0.01,
+                        "unit": "s⁻¹",
+                    },
+                    {"name": "phi0", "min": 0.0, "max": 360.0, "unit": "degrees"},
                 ]
             },
             "output_settings": {
-                "reporting": {
-                    "generate_plots": True,
-                    "plot_formats": ["png", "pdf"]
-                },
-                "plotting": {
-                    "plot_format": "png",
-                    "dpi": 150,
-                    "figure_size": [8, 6]
-                }
-            }
+                "reporting": {"generate_plots": True, "plot_formats": ["png", "pdf"]},
+                "plotting": {"plot_format": "png", "dpi": 150, "figure_size": [8, 6]},
+            },
         }
-    
+
     def test_parameter_name_consistency(self, temp_directory, plotting_config):
         """Test that parameter names are consistent across configuration sections."""
         config_file = temp_directory / "plotting_test.json"
         with open(config_file, "w") as f:
             json.dump(plotting_config, f)
-        
+
         manager = ConfigManager(str(config_file))
-        
+
         # Get parameter names from different sections
         param_names = manager.get("initial_parameters", "parameter_names")
         bounds = manager.get("parameter_space", "bounds")
         bound_names = [bound["name"] for bound in bounds]
-        
+
         # Should be identical
         assert param_names == bound_names
         assert len(param_names) == len(bound_names) == 7
-    
+
     def test_parameter_count_consistency(self, temp_directory, plotting_config):
         """Test that parameter counts are consistent across all sections."""
         config_file = temp_directory / "count_test.json"
         with open(config_file, "w") as f:
             json.dump(plotting_config, f)
-        
+
         manager = ConfigManager(str(config_file))
-        
+
         # Get counts from different sections
         param_names = manager.get("initial_parameters", "parameter_names")
         param_values = manager.get("initial_parameters", "values")
         bounds = manager.get("parameter_space", "bounds")
-        
+
         # All should have same count
         assert len(param_names) == len(param_values) == len(bounds)
-        
+
         # Should match effective parameter count
         effective_count = manager.get_effective_parameter_count()
         assert len(param_names) == effective_count
-    
+
     def test_plotting_configuration_validation(self, temp_directory, plotting_config):
         """Test plotting configuration validation."""
         config_file = temp_directory / "plot_config_test.json"
         with open(config_file, "w") as f:
             json.dump(plotting_config, f)
-        
+
         manager = ConfigManager(str(config_file))
-        
+
         # Test plotting settings
         generate_plots = manager.get("output_settings", "reporting", "generate_plots")
         plot_formats = manager.get("output_settings", "reporting", "plot_formats")
         plot_format = manager.get("output_settings", "plotting", "plot_format")
-        
+
         assert isinstance(generate_plots, bool)
         assert isinstance(plot_formats, list)
         assert isinstance(plot_format, str)
-        
+
         # Validate format consistency
         valid_formats = ["png", "pdf", "svg", "eps"]
         assert plot_format in valid_formats

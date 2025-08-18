@@ -147,7 +147,7 @@ class MCMCSampler:
         ------
         ImportError
             If PyMC is not available
-        
+
         Notes
         -----
         Configuration options:
@@ -237,10 +237,18 @@ class MCMCSampler:
             bounds = self.config.get("parameter_space", {}).get("bounds", [])
 
             # Parameter priors - mode-aware construction using configured bounds
-            print(f"   Building {effective_param_count}-parameter model for {('static' if is_static_mode else 'laminar flow')} mode")
-            
+            print(
+                f"   Building {effective_param_count}-parameter model for {('static' if is_static_mode else 'laminar flow')} mode"
+            )
+
             # Helper function to create priors from bounds
-            def create_prior_from_bounds(param_name, param_index, default_lower, default_upper, default_type="uniform"):
+            def create_prior_from_bounds(
+                param_name,
+                param_index,
+                default_lower,
+                default_upper,
+                default_type="uniform",
+            ):
                 """Create PyMC prior from configuration bounds."""
                 if param_index < len(bounds):
                     bound = bounds[param_index]
@@ -248,39 +256,55 @@ class MCMCSampler:
                         min_val = bound.get("min", default_lower)
                         max_val = bound.get("max", default_upper)
                         prior_type = bound.get("type", default_type)
-                        
-                        print(f"   Using configured bounds for {param_name}: [{min_val}, {max_val}] ({prior_type})")
-                        
-                        if prior_type == "log-uniform" and min_val > 0 and max_val > min_val:
+
+                        print(
+                            f"   Using configured bounds for {param_name}: [{min_val}, {max_val}] ({prior_type})"
+                        )
+
+                        if (
+                            prior_type == "log-uniform"
+                            and min_val > 0
+                            and max_val > min_val
+                        ):
                             # For log-uniform: use Uniform on log scale or constrained LogNormal
                             return pm.Uniform(param_name, lower=min_val, upper=max_val)
                         else:
                             # For uniform or other types: use Uniform
                             return pm.Uniform(param_name, lower=min_val, upper=max_val)
                     else:
-                        logger.warning(f"Parameter name mismatch: expected {param_name}, got {bound.get('name')}")
-                
+                        logger.warning(
+                            f"Parameter name mismatch: expected {param_name}, got {bound.get('name')}"
+                        )
+
                 # Fallback to default if bounds not available
-                print(f"   Using default prior for {param_name}: [{default_lower}, {default_upper}]")
+                print(
+                    f"   Using default prior for {param_name}: [{default_lower}, {default_upper}]"
+                )
                 return pm.Uniform(param_name, lower=default_lower, upper=default_upper)
-            
+
             # Always include diffusion parameters (first 3) with configured bounds
             D0 = create_prior_from_bounds("D0", 0, 100.0, 10000.0, "log-uniform")
             alpha = create_prior_from_bounds("alpha", 1, -2.0, 0.0, "uniform")
             D_offset = create_prior_from_bounds("D_offset", 2, 0.0, 1000.0, "uniform")
-            
+
             if not is_static_mode and effective_param_count > 3:
                 # Laminar flow mode: include shear and angular parameters with configured bounds
-                gamma_dot_t0 = create_prior_from_bounds("gamma_dot_t0", 3, 0.001, 0.1, "log-uniform")
+                gamma_dot_t0 = create_prior_from_bounds(
+                    "gamma_dot_t0", 3, 0.001, 0.1, "log-uniform"
+                )
                 beta = create_prior_from_bounds("beta", 4, -1.0, 1.0, "uniform")
-                gamma_dot_t_offset = create_prior_from_bounds("gamma_dot_t_offset", 5, 0.0, 0.01, "uniform")
+                gamma_dot_t_offset = create_prior_from_bounds(
+                    "gamma_dot_t_offset", 5, 0.0, 0.01, "uniform"
+                )
                 phi0 = create_prior_from_bounds("phi0", 6, 0.0, 360.0, "uniform")
             else:
                 # Static mode: shear parameters are fixed at zero (not used)
-                print("   Static mode: shear and angular parameters excluded from model")
+                print(
+                    "   Static mode: shear and angular parameters excluded from model"
+                )
                 # Define dummy variables for static mode to avoid unbound variable errors
                 gamma_dot_t0 = pt.constant(0.0, name="gamma_dot_t0")
-                beta = pt.constant(0.0, name="beta") 
+                beta = pt.constant(0.0, name="beta")
                 gamma_dot_t_offset = pt.constant(0.0, name="gamma_dot_t_offset")
                 phi0 = pt.constant(0.0, name="phi0")
 
@@ -334,7 +358,7 @@ class MCMCSampler:
                 logger.warning(
                     "MCMC using simplified model without scaling optimization - results may be inconsistent"
                 )
-                
+
                 # Create simplified deterministic relationship
                 mu = pm.Deterministic("mu", D0 * 0.001)  # Placeholder scaling
 
@@ -344,49 +368,51 @@ class MCMCSampler:
                     "likelihood", mu=mu, sigma=sigma, observed=c2_mean
                 )
             else:
-                print(
-                    "   Using full forward model with scaling optimization"
-                )
+                print("   Using full forward model with scaling optimization")
                 # Scaling optimization is always enabled: g₂ = offset + contrast × g₁
                 # This is essential for proper chi-squared calculation regardless of mode or number of angles
                 print(
                     "   Properly accounting for per-angle contrast and offset scaling"
                 )
-                print(
-                    "   Consistent with chi-squared calculation methodology"
-                )
-                
+                print("   Consistent with chi-squared calculation methodology")
+
                 # For each angle, implement scaling optimization in the likelihood
                 # This is a simplified but more consistent approach
                 likelihood_components = []
-                
+
                 for angle_idx in range(n_angles):
                     # Get experimental data for this angle using PyTensor tensor operations
                     c2_exp_angle = c2_data_shared[angle_idx]  # type: ignore[index]
-                    
+
                     # Theoretical calculation would go here (simplified placeholder)
                     # In reality, this should call the homodyne theory calculation
-                    c2_theory_angle = D0 * 0.001 * pt.ones_like(c2_exp_angle)  # Placeholder
-                    
+                    c2_theory_angle = (
+                        D0 * 0.001 * pt.ones_like(c2_exp_angle)
+                    )  # Placeholder
+
                     # Implement scaling optimization: fitted = theory * contrast + offset
                     # These would be fitted per-angle in the full implementation
                     contrast = pm.Normal(f"contrast_{angle_idx}", mu=1.0, sigma=0.5)
                     offset = pm.Normal(f"offset_{angle_idx}", mu=0.0, sigma=0.1)
-                    
+
                     # Apply scaling
                     c2_fitted_angle = c2_theory_angle * contrast + offset
-                    
-                    # Per-angle likelihood 
+
+                    # Per-angle likelihood
                     angle_likelihood = pm.Normal(
-                        f"likelihood_{angle_idx}", 
-                        mu=c2_fitted_angle, 
-                        sigma=sigma, 
-                        observed=c2_exp_angle
+                        f"likelihood_{angle_idx}",
+                        mu=c2_fitted_angle,
+                        sigma=sigma,
+                        observed=c2_exp_angle,
                     )
                     likelihood_components.append(angle_likelihood)
-                
-                print(f"   Created {len(likelihood_components)} per-angle likelihood components")
-                logger.info(f"MCMC using full forward model with {len(likelihood_components)} angle-specific scaling parameters")
+
+                print(
+                    f"   Created {len(likelihood_components)} per-angle likelihood components"
+                )
+                logger.info(
+                    f"MCMC using full forward model with {len(likelihood_components)} angle-specific scaling parameters"
+                )
 
             # Add validation checks
             D_positive = pm.Deterministic("D_positive", D0 > 0)  # noqa: F841
@@ -457,7 +483,7 @@ class MCMCSampler:
 
         # Use the MCMC configuration from the sampler instance
         mcmc_config = self.mcmc_config
-        
+
         draws = mcmc_config.get("draws", 1000)
         tune = mcmc_config.get("tune", 500)
         chains = mcmc_config.get("chains", 2)
@@ -496,25 +522,32 @@ class MCMCSampler:
 
         if init_params is not None:
             param_names = self.config["initial_parameters"]["parameter_names"]
-            
+
             # Adjust initialization parameters based on mode
             if is_static_mode and len(init_params) > effective_param_count:
                 # Use only diffusion parameters for static mode
                 init_params_adjusted = init_params[:effective_param_count]
                 param_names_adjusted = param_names[:effective_param_count]
-                print(f"     Using {effective_param_count} diffusion parameters for static mode initialization")
+                print(
+                    f"     Using {effective_param_count} diffusion parameters for static mode initialization"
+                )
             elif not is_static_mode and len(init_params) < effective_param_count:
                 # Extend for laminar flow mode
                 init_params_adjusted = np.zeros(effective_param_count)
-                init_params_adjusted[:len(init_params)] = init_params
+                init_params_adjusted[: len(init_params)] = init_params
                 param_names_adjusted = param_names[:effective_param_count]
-                print(f"     Extended to {effective_param_count} parameters for laminar flow initialization")
+                print(
+                    f"     Extended to {effective_param_count} parameters for laminar flow initialization"
+                )
             else:
                 init_params_adjusted = init_params[:effective_param_count]
                 param_names_adjusted = param_names[:effective_param_count]
-            
+
             initvals = [
-                {name: init_params_adjusted[i] for i, name in enumerate(param_names_adjusted)}
+                {
+                    name: init_params_adjusted[i]
+                    for i, name in enumerate(param_names_adjusted)
+                }
                 for _ in range(chains)
             ]
             # Add small random perturbations for different chains
@@ -555,8 +588,10 @@ class MCMCSampler:
         chi_squared = None
         try:
             # Extract posterior mean parameters as array
-            param_array = np.array([posterior_means.get(name, 0.0) for name in param_names_effective])
-            
+            param_array = np.array(
+                [posterior_means.get(name, 0.0) for name in param_names_effective]
+            )
+
             # Calculate chi-squared using the core method
             chi_squared = self.core.calculate_chi_squared_optimized(
                 param_array,
@@ -617,18 +652,22 @@ class MCMCSampler:
         print("\n═══ MCMC/NUTS Sampling ═══")
 
         # Determine analysis mode and effective parameter count
-        if hasattr(self.core, 'config_manager') and self.core.config_manager:
+        if hasattr(self.core, "config_manager") and self.core.config_manager:
             is_static_mode = self.core.config_manager.is_static_mode_enabled()
             analysis_mode = self.core.config_manager.get_analysis_mode()
-            effective_param_count = self.core.config_manager.get_effective_parameter_count()
+            effective_param_count = (
+                self.core.config_manager.get_effective_parameter_count()
+            )
         else:
             # Fallback to core method
-            is_static_mode = getattr(self.core, 'is_static_mode', lambda: False)()
+            is_static_mode = getattr(self.core, "is_static_mode", lambda: False)()
             analysis_mode = "static" if is_static_mode else "laminar_flow"
             effective_param_count = 3 if is_static_mode else 7
 
         print(f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
-        logger.info(f"MCMC sampling using {analysis_mode} mode with {effective_param_count} parameters")
+        logger.info(
+            f"MCMC sampling using {analysis_mode} mode with {effective_param_count} parameters"
+        )
 
         # Load data if needed
         if c2_experimental is None or phi_angles is None:
@@ -990,9 +1029,7 @@ class MCMCSampler:
 
         mcmc_chains = self.mcmc_config.get("chains", 2)
         if not isinstance(mcmc_chains, int) or mcmc_chains < 1:
-            raise ValueError(
-                f"chains must be a positive integer, got {mcmc_chains}"
-            )
+            raise ValueError(f"chains must be a positive integer, got {mcmc_chains}")
 
         target_accept = self.mcmc_config.get("target_accept", 0.9)
         if not isinstance(target_accept, (int, float)) or not 0 < target_accept < 1:

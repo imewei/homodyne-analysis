@@ -71,7 +71,7 @@ def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
     Example:
         >>> ensure_dir("./results/mcmc/traces")
         PosixPath('./results/mcmc/traces')
-        
+
         >>> ensure_dir("/tmp/analysis", permissions=0o700)  # Owner-only access
         PosixPath('/tmp/analysis')
     """
@@ -130,7 +130,7 @@ def timestamped_filename(
         ... }}}
         >>> timestamped_filename("mcmc_results", 1.234e-3, config)
         'mcmc_results_20240315_143022_chi2_0.001234_v5.1'
-        
+
         >>> timestamped_filename("quick_analysis")  # Minimal version
         'quick_analysis_20240315_143022'
     """
@@ -181,23 +181,23 @@ def timestamped_filename(
 def _json_serializer(obj):
     """
     Custom JSON serializer for scientific computing objects.
-    
+
     Handles NumPy arrays, scalars, and complex Python objects that are not
     natively JSON-serializable. Essential for saving analysis results that
     contain numerical arrays and computed parameters.
-    
+
     Supported Object Types:
     - NumPy arrays: Converted to Python lists
     - NumPy scalars: Extracted as native Python types
     - Complex objects: String representation fallback
     - Other types: Safe string conversion
-    
+
     Args:
         obj: Object to serialize
-        
+
     Returns:
         JSON-serializable representation of the object
-        
+
     Raises:
         TypeError: For truly non-serializable objects that should fail
     """
@@ -205,10 +205,10 @@ def _json_serializer(obj):
         return obj.tolist()
     elif isinstance(obj, (np.integer, np.floating)):
         return obj.item()
-    elif isinstance(obj, (np.complex64, np.complex128, complex)): # type: ignore
+    elif isinstance(obj, (np.complex64, np.complex128, complex)):  # type: ignore
         # Don't serialize complex numbers - let them fail for testing
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-    elif hasattr(obj, '__dict__'):
+    elif hasattr(obj, "__dict__"):
         return str(obj)  # Convert complex objects to string
     else:
         return str(obj)
@@ -246,7 +246,7 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
         >>> results = {"parameters": np.array([1.2, 3.4]), "chi2": 1.234e-5}
         >>> save_json(results, "analysis_results.json")
         True
-        
+
         >>> save_json(data, "compact.json", indent=None, separators=(',', ':'))
         True  # Compact JSON format
     """
@@ -314,7 +314,7 @@ def save_numpy(
         >>> correlation_data = np.random.rand(1000, 50, 50)  # Large 3D array
         >>> save_numpy(correlation_data, "c2_experimental.npz")
         True  # Compressed format, much smaller file
-        
+
         >>> parameters = np.array([1.2, -0.5, 3.4e-3, 0.1])
         >>> save_numpy(parameters, "optimized_params.npy", compressed=False)
         True  # Uncompressed for small arrays

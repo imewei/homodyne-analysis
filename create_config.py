@@ -75,7 +75,7 @@ def create_config_from_template(
         Author name for configuration attribution
     mode : str
         Analysis mode: "static_isotropic", "static_anisotropic", or "laminar_flow"
-        
+
     Raises
     ------
     FileNotFoundError
@@ -91,26 +91,26 @@ def create_config_from_template(
     # Validate and select appropriate template
     valid_modes = {
         "static_isotropic": "config_static_isotropic.json",
-        "static_anisotropic": "config_static_anisotropic.json", 
+        "static_anisotropic": "config_static_anisotropic.json",
         "laminar_flow": "config_laminar_flow.json",
-        "template": "config_template.json"  # Fallback to master template
+        "template": "config_template.json",  # Fallback to master template
     }
-    
+
     if mode not in valid_modes:
         raise ValueError(
             f"Invalid mode '{mode}'. Valid modes: {list(valid_modes.keys())[:-1]}"
         )
-    
+
     # Get template path
     template_dir = Path(__file__).parent / "homodyne"
     template_file = template_dir / valid_modes[mode]
-    
+
     # Fallback to master template if mode-specific template doesn't exist
     if not template_file.exists() and mode != "template":
         print(f"Warning: Mode-specific template not found: {template_file}")
         print("Falling back to master template...")
         template_file = template_dir / "config_template.json"
-    
+
     if not template_file.exists():
         raise FileNotFoundError(f"Template not found: {template_file}")
 
@@ -128,7 +128,7 @@ def create_config_from_template(
     if "metadata" in config:
         config["metadata"]["created_date"] = current_date
         config["metadata"]["updated_date"] = current_date
-        
+
         # Update analysis mode in metadata
         config["metadata"]["analysis_mode"] = mode
 
@@ -138,8 +138,8 @@ def create_config_from_template(
             # Customize description based on mode
             mode_descriptions = {
                 "static_isotropic": "Static Isotropic Scattering Analysis - No flow, no angular dependence",
-                "static_anisotropic": "Static Anisotropic Scattering Analysis - No flow, with angular dependence", 
-                "laminar_flow": "Laminar Flow Scattering Analysis - Full flow and diffusion model"
+                "static_anisotropic": "Static Anisotropic Scattering Analysis - No flow, with angular dependence",
+                "laminar_flow": "Laminar Flow Scattering Analysis - Full flow and diffusion model",
             }
             if mode in mode_descriptions:
                 config["metadata"]["description"] = mode_descriptions[mode]
@@ -152,15 +152,17 @@ def create_config_from_template(
         config["experimental_data"]["data_folder_path"] = f"./data/{sample_name}/"
         if "cache_file_path" in config["experimental_data"]:
             config["experimental_data"]["cache_file_path"] = f"./data/{sample_name}/"
-        
+
         # Update cache filename template based on mode
         cache_templates = {
             "static_isotropic": f"cached_c2_isotropic_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
             "static_anisotropic": f"cached_c2_anisotropic_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
-            "laminar_flow": f"cached_c2_flow_{sample_name}_{{start_frame}}_{{end_frame}}.npz"
+            "laminar_flow": f"cached_c2_flow_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
         }
         if mode in cache_templates:
-            config["experimental_data"]["cache_filename_template"] = cache_templates[mode]
+            config["experimental_data"]["cache_filename_template"] = cache_templates[
+                mode
+            ]
 
     # Save configuration
     output_path = Path(output_file)
@@ -173,26 +175,26 @@ def create_config_from_template(
 
     print(f"✓ Configuration created: {output_path.absolute()}")
     print(f"✓ Analysis mode: {mode}")
-    
+
     # Print mode-specific information
     mode_info = {
         "static_isotropic": {
             "description": "Fastest analysis with single dummy angle",
             "parameters": "3 active parameters (D0, alpha, D_offset)",
-            "features": "No angle filtering, no phi_angles_file loading"
+            "features": "No angle filtering, no phi_angles_file loading",
         },
         "static_anisotropic": {
             "description": "Static analysis with angle filtering optimization",
-            "parameters": "3 active parameters (D0, alpha, D_offset)", 
-            "features": "Angle filtering enabled, phi_angles_file required"
+            "parameters": "3 active parameters (D0, alpha, D_offset)",
+            "features": "Angle filtering enabled, phi_angles_file required",
         },
         "laminar_flow": {
             "description": "Full physics model with flow effects",
             "parameters": "7 active parameters (all parameters)",
-            "features": "Full flow analysis, phi_angles_file required"
-        }
+            "features": "Full flow analysis, phi_angles_file required",
+        },
     }
-    
+
     if mode in mode_info:
         info = mode_info[mode]
         print(f"  • {info['description']}")
@@ -205,7 +207,9 @@ def create_config_from_template(
     print("2. Replace placeholder values (YOUR_*) with actual values")
     print("3. Adjust initial_parameters.values based on your system")
     if mode == "static_isotropic":
-        print("4. Note: phi_angles_file will be automatically skipped in isotropic mode")
+        print(
+            "4. Note: phi_angles_file will be automatically skipped in isotropic mode"
+        )
         print(f"5. Run analysis with: python run_homodyne.py --config {output_path}")
     elif mode == "static_anisotropic":
         print("4. Ensure phi_angles_file exists and contains your scattering angles")
@@ -214,7 +218,7 @@ def create_config_from_template(
         print("4. Ensure phi_angles_file exists and contains your scattering angles")
         print("5. Verify initial parameter estimates for all 7 parameters")
         print(f"6. Run analysis with: python run_homodyne.py --config {output_path}")
-    
+
     print(f"\nDocumentation: CONFIGURATION_MODES.md")
     print(f"Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
 
@@ -249,12 +253,12 @@ Examples:
 
     parser.add_argument(
         "--mode",
-        "-m", 
+        "-m",
         choices=["static_isotropic", "static_anisotropic", "laminar_flow"],
         default="laminar_flow",
-        help="Analysis mode (default: laminar_flow)"
+        help="Analysis mode (default: laminar_flow)",
     )
-    
+
     parser.add_argument(
         "--output",
         "-o",

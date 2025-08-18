@@ -60,6 +60,7 @@ except ImportError:
     def create_all_plots(*args, **kwargs):
         return {}
 
+
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
 
@@ -95,9 +96,7 @@ class TestCompleteWorkflow:
         assert save_status["json"] is True
 
         # Step 3: Create plots
-        plot_status = create_all_plots(
-            dummy_analysis_results, output_dir, dummy_config
-        )
+        plot_status = create_all_plots(dummy_analysis_results, output_dir, dummy_config)
         successful_plots = sum(1 for status in plot_status.values() if status)
         assert successful_plots >= 1
 
@@ -231,14 +230,10 @@ class TestMockedHeavyComputation:
 
             # Verify mock was used and data is correct shape
             mock_load.assert_called_once_with("mock_file.npz")
-            assert (
-                data["experimental_data"].shape == mock_correlation_data.shape
-            )
+            assert data["experimental_data"].shape == mock_correlation_data.shape
             assert np.array_equal(data["phi_angles"], mock_phi_angles)
 
-    @pytest.mark.skipif(
-        not PLOTTING_AVAILABLE, reason="Plotting module not available"
-    )
+    @pytest.mark.skipif(not PLOTTING_AVAILABLE, reason="Plotting module not available")
     def test_plotting_workflow_integration(self, temp_directory, dummy_config):
         """Test plotting workflow integration without parameter evolution."""
 
@@ -281,9 +276,7 @@ class TestErrorHandlingIntegration:
 
         # Save should succeed
         if IO_UTILS_AVAILABLE:
-            save_status = save_analysis_results(
-                partial_results, config, "partial_test"
-            )
+            save_status = save_analysis_results(partial_results, config, "partial_test")
             assert save_status["json"] is True
 
         # Plotting should handle missing data gracefully
@@ -339,13 +332,9 @@ class TestErrorHandlingIntegration:
             # Attempt to save results should fail gracefully
             if IO_UTILS_AVAILABLE:
                 results = {"test": "data"}
-                config = {
-                    "output_settings": {"results_directory": str(readonly_dir)}
-                }
+                config = {"output_settings": {"results_directory": str(readonly_dir)}}
 
-                save_status = save_analysis_results(
-                    results, config, "permission_test"
-                )
+                save_status = save_analysis_results(results, config, "permission_test")
 
                 # Should handle permission error gracefully
                 assert save_status["json"] is False
@@ -362,22 +351,16 @@ class TestDataValidation:
         """Test validation of correlation data shapes and values."""
 
         # Valid data
-        valid_data = np.random.rand(
-            3, 20, 30
-        )  # angles x t2 x t1
+        valid_data = np.random.rand(3, 20, 30)  # angles x t2 x t1
         assert valid_data.shape[0] == len(dummy_phi_angles)
         assert not np.any(np.isnan(valid_data))
-        assert np.all(
-            valid_data >= 0
-        )  # Correlation data should be non-negative
+        assert np.all(valid_data >= 0)  # Correlation data should be non-negative
 
         # Invalid data shapes
         wrong_angles = np.random.rand(5, 20, 30)  # Too many angles
         assert wrong_angles.shape[0] != len(dummy_phi_angles)
 
-        wrong_dimensions = np.random.rand(
-            3, 20
-        )  # Missing delay time dimension
+        wrong_dimensions = np.random.rand(3, 20)  # Missing delay time dimension
         assert len(wrong_dimensions.shape) != 3
 
         # Invalid data values
@@ -402,9 +385,7 @@ class TestDataValidation:
 
             # Check physical constraints for specific parameters
             if bound["name"] in ["D0", "gamma_dot_t0"]:
-                assert (
-                    bound["min"] > 0
-                ), f"{bound['name']} must have positive minimum"
+                assert bound["min"] > 0, f"{bound['name']} must have positive minimum"
 
             # Check that bounds are reasonable
             assert not np.isinf(bound["min"])
@@ -531,9 +512,7 @@ class TestPerAngleAnalysisIntegration:
         }
 
         # Mock analyzer with per-angle analysis capability
-        with patch(
-            "homodyne.analysis.core.HomodyneAnalysisCore"
-        ) as MockAnalyzer:
+        with patch("homodyne.analysis.core.HomodyneAnalysisCore") as MockAnalyzer:
             mock_instance = Mock()
             MockAnalyzer.return_value = mock_instance
             mock_instance.config = dummy_config
@@ -549,9 +528,7 @@ class TestPerAngleAnalysisIntegration:
                     "overall_quality": "warning",
                     "per_angle_quality": "acceptable",
                     "combined_quality": "warning",
-                    "quality_issues": [
-                        "Overall chi-squared above warning threshold"
-                    ],
+                    "quality_issues": ["Overall chi-squared above warning threshold"],
                 },
                 "angle_categorization": {
                     "good_angles": {"count": 8, "fraction": 0.8},
@@ -581,13 +558,9 @@ class TestPerAngleAnalysisIntegration:
             # Verify quality assessment structure
             assert "quality_assessment" in result
             assert "angle_categorization" in result
-            assert (
-                result["quality_assessment"]["combined_quality"] == "warning"
-            )
+            assert result["quality_assessment"]["combined_quality"] == "warning"
 
-    def test_per_angle_file_output_integration(
-        self, temp_directory, dummy_config
-    ):
+    def test_per_angle_file_output_integration(self, temp_directory, dummy_config):
         """Test that per-angle results are properly saved to files."""
         from pathlib import Path
         import json
@@ -618,9 +591,7 @@ class TestPerAngleAnalysisIntegration:
         }
 
         # Mock file saving by creating the expected file manually
-        results_file = (
-            Path(temp_directory) / "per_angle_chi_squared_classical.json"
-        )
+        results_file = Path(temp_directory) / "per_angle_chi_squared_classical.json"
         with open(results_file, "w") as f:
             json.dump(mock_results, f, indent=2)
 
@@ -662,9 +633,7 @@ class TestConcurrencyAndRaceConditions:
         subdirs = [f"subdir_{i}" for i in range(5)]
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [
-                executor.submit(create_directory, subdir) for subdir in subdirs
-            ]
+            futures = [executor.submit(create_directory, subdir) for subdir in subdirs]
 
             # Wait for all to complete
             for future in futures:
@@ -696,9 +665,7 @@ class TestConcurrencyAndRaceConditions:
         file_ids = list(range(5))
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [
-                executor.submit(save_test_file, fid) for fid in file_ids
-            ]
+            futures = [executor.submit(save_test_file, fid) for fid in file_ids]
             results = [future.result() for future in futures]
 
         # All saves should succeed
@@ -720,42 +687,42 @@ class TestAnalysisWorkflowIntegration:
     """Test integration of analysis workflow with plotting."""
 
     @pytest.mark.skipif(
-        not CORE_ANALYSIS_AVAILABLE,
-        reason="Core analysis module not available"
+        not CORE_ANALYSIS_AVAILABLE, reason="Core analysis module not available"
     )
     def test_analysis_plotting_integration(self, temp_directory):
         """Test that analysis workflow integrates properly with plotting."""
         from homodyne.tests.fixtures import create_minimal_config_file
+
         config_file = create_minimal_config_file(temp_directory / "test_config.json")
-        
+
         try:
             # Initialize analyzer
             analyzer = HomodyneAnalysisCore(str(config_file))
-            
+
             # Check that analyzer has plotting methods
-            assert hasattr(analyzer, '_generate_analysis_plots')
-            assert hasattr(analyzer, '_prepare_plot_data')
-            assert hasattr(analyzer, '_generate_theoretical_data')
-            
+            assert hasattr(analyzer, "_generate_analysis_plots")
+            assert hasattr(analyzer, "_prepare_plot_data")
+            assert hasattr(analyzer, "_generate_theoretical_data")
+
             # Check cache variables are initialized
-            assert hasattr(analyzer, '_last_experimental_data')
-            assert hasattr(analyzer, '_last_phi_angles')
-            
+            assert hasattr(analyzer, "_last_experimental_data")
+            assert hasattr(analyzer, "_last_phi_angles")
+
             # Simulate analysis results
             mock_results = {
-                'classical_optimization': {
-                    'parameters': [1000, -0.5, 100],
-                    'chi_squared': 2.5,
-                    'success': True
+                "classical_optimization": {
+                    "parameters": [1000, -0.5, 100],
+                    "chi_squared": 2.5,
+                    "success": True,
                 }
             }
-            
+
             # Test plot data preparation
             plot_data = analyzer._prepare_plot_data(mock_results, analyzer.config)
             assert plot_data is not None
-            assert 'best_parameters' in plot_data
-            assert 'parameter_bounds' in plot_data
-            
+            assert "best_parameters" in plot_data
+            assert "parameter_bounds" in plot_data
+
         except Exception as e:
             if "Configuration file not found" in str(e):
                 pytest.skip("Could not create valid config file for test")
@@ -764,96 +731,106 @@ class TestAnalysisWorkflowIntegration:
 
     @pytest.mark.skipif(
         not (CORE_ANALYSIS_AVAILABLE and PLOTTING_AVAILABLE),
-        reason="Core analysis or plotting not available"
+        reason="Core analysis or plotting not available",
     )
     def test_mcmc_results_plotting_integration(self, temp_directory):
         """Test MCMC results integration with plotting workflow."""
         from homodyne.tests.fixtures import create_minimal_config_file
-        config_file = create_minimal_config_file(temp_directory / "mcmc_test_config.json")
-        
+
+        config_file = create_minimal_config_file(
+            temp_directory / "mcmc_test_config.json"
+        )
+
         try:
             import arviz as az
-            
+
             analyzer = HomodyneAnalysisCore(str(config_file))
-            
+
             # Create mock MCMC results with trace data
             n_chains, n_draws = 2, 100
             param_names = ["D0", "alpha", "D_offset"]
-            
+
             posterior_dict = {}
             for param in param_names:
                 posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
-            
+
             trace_data = az.from_dict({"posterior": posterior_dict})
-            
+
             mcmc_results = {
-                'mcmc_optimization': {
-                    'parameters': [1000, -0.5, 100],
-                    'chi_squared': 2.3,
-                    'success': True,
-                    'convergence_diagnostics': {
-                        'max_rhat': 1.05,
-                        'min_ess': 200,
-                        'converged': True,
+                "mcmc_optimization": {
+                    "parameters": [1000, -0.5, 100],
+                    "chi_squared": 2.3,
+                    "success": True,
+                    "convergence_diagnostics": {
+                        "max_rhat": 1.05,
+                        "min_ess": 200,
+                        "converged": True,
                         # Updated to match actual MCMC module output format
-                        'rhat': {'D0': 1.02, 'alpha': 1.03, 'D_offset': 1.01},
-                        'ess': {'D0': 400, 'alpha': 350, 'D_offset': 450},
-                        'mcse': {'D0': 0.001, 'alpha': 0.002, 'D_offset': 0.0015},
+                        "rhat": {"D0": 1.02, "alpha": 1.03, "D_offset": 1.01},
+                        "ess": {"D0": 400, "alpha": 350, "D_offset": 450},
+                        "mcse": {"D0": 0.001, "alpha": 0.002, "D_offset": 0.0015},
                         # Keep backward compatibility with old format too
-                        'r_hat': {'D0': 1.02, 'alpha': 1.03, 'D_offset': 1.01},
-                        'ess_bulk': {'D0': 400, 'alpha': 350, 'D_offset': 450},
-                        'mcse_mean': {'D0': 0.001, 'alpha': 0.002, 'D_offset': 0.0015}
-                    }
+                        "r_hat": {"D0": 1.02, "alpha": 1.03, "D_offset": 1.01},
+                        "ess_bulk": {"D0": 400, "alpha": 350, "D_offset": 450},
+                        "mcse_mean": {"D0": 0.001, "alpha": 0.002, "D_offset": 0.0015},
+                    },
                 }
             }
-            
+
             # Test MCMC plot data preparation
             plot_data = analyzer._prepare_plot_data(mcmc_results, analyzer.config)
             assert plot_data is not None
-            assert 'mcmc_diagnostics' in plot_data
-            assert 'parameter_names' in plot_data
-            assert 'parameter_units' in plot_data
-            
+            assert "mcmc_diagnostics" in plot_data
+            assert "parameter_names" in plot_data
+            assert "parameter_units" in plot_data
+
             # Add mock trace data to plot_data and test plotting
-            plot_data['mcmc_trace'] = trace_data
-            
+            plot_data["mcmc_trace"] = trace_data
+
             # Test individual MCMC plotting functions
             from homodyne.plotting import (
-                plot_mcmc_corner, plot_mcmc_trace, plot_mcmc_convergence_diagnostics
+                plot_mcmc_corner,
+                plot_mcmc_trace,
+                plot_mcmc_convergence_diagnostics,
             )
-            
+
             plots_dir = temp_directory / "mcmc_plots"
             plots_dir.mkdir(exist_ok=True)
-            
+
             # Test corner plot
             corner_success = plot_mcmc_corner(
-                trace_data, plots_dir, analyzer.config,
+                trace_data,
+                plots_dir,
+                analyzer.config,
                 param_names=param_names,
-                param_units=["Å²/s", "dimensionless", "Å²/s"]
+                param_units=["Å²/s", "dimensionless", "Å²/s"],
             )
-            
+
             # Test trace plot
             trace_success = plot_mcmc_trace(
-                trace_data, plots_dir, analyzer.config,
+                trace_data,
+                plots_dir,
+                analyzer.config,
                 param_names=param_names,
-                param_units=["Å²/s", "dimensionless", "Å²/s"]
+                param_units=["Å²/s", "dimensionless", "Å²/s"],
             )
-            
+
             # Test convergence diagnostics
             diag_success = plot_mcmc_convergence_diagnostics(
-                trace_data, 
-                mcmc_results['mcmc_optimization']['convergence_diagnostics'],
-                plots_dir, analyzer.config,
-                param_names=param_names
+                trace_data,
+                mcmc_results["mcmc_optimization"]["convergence_diagnostics"],
+                plots_dir,
+                analyzer.config,
+                param_names=param_names,
             )
-            
+
             # At least one plot should succeed (depending on available packages)
             assert any([corner_success, trace_success, diag_success])
-            
+
             # Check for created files
             plot_files = list(plots_dir.glob("*.png"))
             assert len(plot_files) >= 1
-            
+
         except ImportError:
             pytest.skip("ArviZ not available for MCMC integration test")
         except Exception as e:
@@ -863,46 +840,52 @@ class TestAnalysisWorkflowIntegration:
                 raise
 
     @pytest.mark.skipif(
-        not CORE_ANALYSIS_AVAILABLE,
-        reason="Core analysis module not available"
+        not CORE_ANALYSIS_AVAILABLE, reason="Core analysis module not available"
     )
     def test_configuration_consistency_integration(self, temp_directory):
         """Test that configuration is consistent across analysis workflow."""
         from homodyne.tests.fixtures import create_minimal_config_file
-        config_file = create_minimal_config_file(temp_directory / "consistency_test_config.json")
-        
+
+        config_file = create_minimal_config_file(
+            temp_directory / "consistency_test_config.json"
+        )
+
         try:
             analyzer = HomodyneAnalysisCore(str(config_file))
-            
+
             # Check parameter consistency
-            param_names = analyzer.config.get('initial_parameters', {}).get('parameter_names', [])
-            param_values = analyzer.config.get('initial_parameters', {}).get('values', [])
-            bounds = analyzer.config.get('parameter_space', {}).get('bounds', [])
-            
+            param_names = analyzer.config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            )
+            param_values = analyzer.config.get("initial_parameters", {}).get(
+                "values", []
+            )
+            bounds = analyzer.config.get("parameter_space", {}).get("bounds", [])
+
             # All should have same count
             assert len(param_names) == len(param_values) == len(bounds)
-            
+
             # Parameter names should match between initial parameters and bounds
-            bound_names = [bound.get('name', '') for bound in bounds]
+            bound_names = [bound.get("name", "") for bound in bounds]
             assert param_names == bound_names
-            
+
             # Check plotting configuration
-            output_settings = analyzer.config.get('output_settings', {})
-            reporting = output_settings.get('reporting', {})
-            plotting_enabled = reporting.get('generate_plots', False)
-            
+            output_settings = analyzer.config.get("output_settings", {})
+            reporting = output_settings.get("reporting", {})
+            plotting_enabled = reporting.get("generate_plots", False)
+
             # Should have valid plotting configuration
             assert isinstance(plotting_enabled, bool)
-            
+
             if plotting_enabled:
-                plot_formats = reporting.get('plot_formats', [])
+                plot_formats = reporting.get("plot_formats", [])
                 assert isinstance(plot_formats, list)
                 assert len(plot_formats) > 0
-                
+
                 # All formats should be valid
-                valid_formats = ['png', 'pdf', 'svg', 'eps']
+                valid_formats = ["png", "pdf", "svg", "eps"]
                 assert all(fmt in valid_formats for fmt in plot_formats)
-                
+
         except Exception as e:
             if "Configuration file not found" in str(e):
                 pytest.skip("Could not create valid config file for test")
@@ -923,67 +906,96 @@ class TestAnalysisWorkflowIntegration:
                 "gamma_dot_t0": 0.001,
                 "beta": 0.2,
                 "gamma_dot_t_offset": 0.0001,
-                "phi0": 5.0
+                "phi0": 5.0,
             },
             "parameter_bounds": dummy_config["parameter_space"]["bounds"],
-            "parameter_names": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
-            "parameter_units": ["Å²/s", "dimensionless", "Å²/s", "s⁻¹", "dimensionless", "s⁻¹", "degrees"],
+            "parameter_names": [
+                "D0",
+                "alpha",
+                "D_offset",
+                "gamma_dot_t0",
+                "beta",
+                "gamma_dot_t_offset",
+                "phi0",
+            ],
+            "parameter_units": [
+                "Å²/s",
+                "dimensionless",
+                "Å²/s",
+                "s⁻¹",
+                "dimensionless",
+                "s⁻¹",
+                "degrees",
+            ],
             "chi_squared": 2.5,
-            "method": "Comprehensive Test"
+            "method": "Comprehensive Test",
         }
-        
+
         # Add MCMC data if ArviZ is available
         try:
             import arviz as az
-            
+
             n_chains, n_draws = 2, 200
             param_names = comprehensive_results["parameter_names"]
-            
+
             posterior_dict = {}
             for param in param_names:
                 if param == "D0":
-                    posterior_dict[param] = np.random.lognormal(5, 0.5, (n_chains, n_draws))
+                    posterior_dict[param] = np.random.lognormal(
+                        5, 0.5, (n_chains, n_draws)
+                    )
                 else:
-                    posterior_dict[param] = np.random.normal(0, 0.1, (n_chains, n_draws))
+                    posterior_dict[param] = np.random.normal(
+                        0, 0.1, (n_chains, n_draws)
+                    )
 
             trace_data = az.from_dict({"posterior": posterior_dict})
-            
-            comprehensive_results.update({
-                "mcmc_trace": trace_data,
-                "mcmc_diagnostics": {
-                    "r_hat": {name: np.random.uniform(1.0, 1.1) for name in param_names},
-                    "ess_bulk": {name: np.random.randint(150, 400) for name in param_names},
-                    "mcse_mean": {name: np.random.uniform(0.001, 0.005) for name in param_names},
-                    "max_rhat": 1.08,
-                    "min_ess": 180,
-                    "converged": True,
-                    "assessment": "Good"
+
+            comprehensive_results.update(
+                {
+                    "mcmc_trace": trace_data,
+                    "mcmc_diagnostics": {
+                        "r_hat": {
+                            name: np.random.uniform(1.0, 1.1) for name in param_names
+                        },
+                        "ess_bulk": {
+                            name: np.random.randint(150, 400) for name in param_names
+                        },
+                        "mcse_mean": {
+                            name: np.random.uniform(0.001, 0.005)
+                            for name in param_names
+                        },
+                        "max_rhat": 1.08,
+                        "min_ess": 180,
+                        "converged": True,
+                        "assessment": "Good",
+                    },
                 }
-            })
-            
+            )
+
         except ImportError:
             pass  # Skip MCMC parts if ArviZ not available
-        
+
         # Test plotting workflow
         plots_dir = temp_directory / "comprehensive_plots"
         plots_dir.mkdir(exist_ok=True)
-        
+
         plot_status = create_all_plots(comprehensive_results, plots_dir, dummy_config)
-        
+
         # Check results
         assert isinstance(plot_status, dict)
-        
+
         # Should have attempted multiple plot types
         expected_basic_plots = ["c2_heatmaps", "diagnostic_summary"]
         # parameter_evolution has been removed due to persistent issues
         for plot_type in expected_basic_plots:
             if plot_type in plot_status:
                 assert isinstance(plot_status[plot_type], bool)
-        
+
         # Check that files were created
         all_plot_files = list(plots_dir.glob("*.png"))
         assert len(all_plot_files) >= 2  # Should create multiple plots
-        
+
         # Verify file sizes (should contain actual plot data)
         for plot_file in all_plot_files:
             assert plot_file.stat().st_size > 5000  # Reasonable minimum for plot file

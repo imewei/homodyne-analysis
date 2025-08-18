@@ -99,9 +99,7 @@ class TestPerAngleChiSquaredCalculation:
             analyzer.num_shear_rate_params = 3
             return analyzer
 
-    def test_calculate_chi_squared_with_per_angle_components(
-        self, mock_analyzer
-    ):
+    def test_calculate_chi_squared_with_per_angle_components(self, mock_analyzer):
         """Test that chi-squared calculation returns per-angle components."""
         # Create test data: 5 angles, each with 20 data points
         n_angles = 5
@@ -170,20 +168,18 @@ class TestPerAngleChiSquaredCalculation:
 
         # All per-angle chi-squared values should be positive
         assert all(chi2 > 0 for chi2 in result["angle_chi_squared_reduced"])
-        
+
         # Verify uncertainty fields
         assert result["reduced_chi_squared_uncertainty"] >= 0  # Should be non-negative
         assert result["reduced_chi_squared_std"] >= 0  # Should be non-negative
         assert result["n_optimization_angles"] > 0  # Should have at least one angle
-        
+
         # For multiple angles, uncertainty should be calculated
         if result["n_optimization_angles"] > 1:
             assert result["reduced_chi_squared_uncertainty"] >= 0
             assert result["reduced_chi_squared_std"] >= 0
 
-    def test_analyze_per_angle_chi_squared_quality_assessment(
-        self, mock_analyzer
-    ):
+    def test_analyze_per_angle_chi_squared_quality_assessment(self, mock_analyzer):
         """Test comprehensive per-angle quality assessment."""
 
         # Manually create the analyze_per_angle_chi_squared method for the mock
@@ -212,20 +208,16 @@ class TestPerAngleChiSquaredCalculation:
             }
 
             # Use the actual configuration from the mock analyzer
-            validation_config = mock_analyzer.config.get(
-                "validation_rules", {}
-            )
+            validation_config = mock_analyzer.config.get("validation_rules", {})
             fit_quality_config = validation_config.get("fit_quality", {})
             overall_config = fit_quality_config.get("overall_chi_squared", {})
-            per_angle_config = fit_quality_config.get(
-                "per_angle_chi_squared", {}
-            )
+            per_angle_config = fit_quality_config.get("per_angle_chi_squared", {})
 
             # Get thresholds (updated for new quality system)
             excellent_threshold = overall_config.get("excellent_threshold", 2.0)
             acceptable_overall = overall_config.get("acceptable_threshold", 5.0)
             warning_overall = overall_config.get("warning_threshold", 10.0)
-            
+
             excellent_per_angle = per_angle_config.get("excellent_threshold", 2.0)
             acceptable_per_angle = per_angle_config.get("acceptable_threshold", 5.0)
             warning_per_angle = per_angle_config.get("warning_threshold", 10.0)
@@ -260,9 +252,7 @@ class TestPerAngleChiSquaredCalculation:
             # Mean and std for outlier detection
             mean_chi2 = np.mean(angle_chi2_reduced)
             std_chi2 = np.std(angle_chi2_reduced)
-            outlier_threshold = (
-                mean_chi2 + 2.5 * std_chi2
-            )  # Using the config threshold
+            outlier_threshold = mean_chi2 + 2.5 * std_chi2  # Using the config threshold
             outlier_angles = [
                 angles[i]
                 for i, chi2 in enumerate(angle_chi2_reduced)
@@ -321,15 +311,13 @@ class TestPerAngleChiSquaredCalculation:
 
             # Test per-angle categorization
             good_angles = result["angle_categorization"]["good_angles"]
-            unacceptable_angles = result["angle_categorization"][
-                "unacceptable_angles"
-            ]
+            unacceptable_angles = result["angle_categorization"]["unacceptable_angles"]
 
             # Good angles: chi2 ≤ 5.0 (updated acceptable threshold)
             assert good_angles["count"] == 2  # 2.0, 4.0
             assert set(good_angles["angles_deg"]) == {10.0, 20.0}
 
-            # Unacceptable angles: chi2 > 5.0 (updated threshold)  
+            # Unacceptable angles: chi2 > 5.0 (updated threshold)
             assert unacceptable_angles["count"] == 3  # 12.0, 25.0, 30.0
             assert set(unacceptable_angles["angles_deg"]) == {30.0, 40.0, 50.0}
 
@@ -338,7 +326,7 @@ class TestPerAngleChiSquaredCalculation:
         test_cases = [
             # (overall_chi2, expected_overall_quality) - updated for new thresholds
             (1.5, "excellent"),  # <= 2.0
-            (3.0, "acceptable"),  # 2.0 < chi2 <= 5.0  
+            (3.0, "acceptable"),  # 2.0 < chi2 <= 5.0
             (7.0, "warning"),  # 5.0 < chi2 <= 10.0
             (15.0, "poor"),  # 10.0 < chi2 <= 25.0 (test config critical_threshold)
             (30.0, "critical"),  # > 25.0 (test config critical_threshold)
@@ -361,9 +349,7 @@ class TestPerAngleChiSquaredCalculation:
                     "scaling_solutions": [[1.0, 0.0]] * 3,
                 }
 
-                parameters = np.array(
-                    [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0]
-                )
+                parameters = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
                 phi_angles = np.array([10.0, 20.0, 30.0])
                 c2_exp = np.random.rand(3, 4, 5)
 
@@ -372,14 +358,13 @@ class TestPerAngleChiSquaredCalculation:
                 )
 
                 assert (
-                    result["quality_assessment"]["overall_quality"]
-                    == expected_quality
+                    result["quality_assessment"]["overall_quality"] == expected_quality
                 )
 
     def test_insufficient_good_angles_detection(self, mock_analyzer):
         """Test detection when insufficient good angles are available."""
         # Test the logic directly without complex mocking
-        angle_chi2_reduced = [2.0, 3.0, 7.0, 15.0, 20.0]  # Only 2 good (≤5.0) 
+        angle_chi2_reduced = [2.0, 3.0, 7.0, 15.0, 20.0]  # Only 2 good (≤5.0)
         acceptable_threshold = 5.0  # Updated threshold
         min_good_angles = 3
 
@@ -393,9 +378,7 @@ class TestPerAngleChiSquaredCalculation:
         assert good_count < min_good_angles  # Insufficient
 
         # This would trigger per_angle_quality = "critical"
-        per_angle_quality = (
-            "critical" if good_count < min_good_angles else "acceptable"
-        )
+        per_angle_quality = "critical" if good_count < min_good_angles else "acceptable"
         assert per_angle_quality == "critical"
 
     def test_outlier_fraction_threshold(self, mock_analyzer):
@@ -435,9 +418,7 @@ class TestPerAngleChiSquaredCalculation:
                 return "poor"
             elif overall_qual == "warning" or per_angle_qual == "warning":
                 return "warning"
-            elif (
-                overall_qual == "acceptable" or per_angle_qual == "acceptable"
-            ):
+            elif overall_qual == "acceptable" or per_angle_qual == "acceptable":
                 return "acceptable"
             else:
                 return "excellent"
@@ -484,7 +465,7 @@ class TestPerAngleChiSquaredCalculation:
         excellent_threshold = overall_config.get("excellent_threshold", 2.0)
         acceptable_overall = overall_config.get("acceptable_threshold", 5.0)
         warning_overall = overall_config.get("warning_threshold", 10.0)
-        
+
         excellent_per_angle = per_angle_config.get("excellent_threshold", 2.0)
         acceptable_per_angle = per_angle_config.get("acceptable_threshold", 5.0)
         warning_per_angle = per_angle_config.get("warning_threshold", 10.0)
@@ -495,7 +476,7 @@ class TestPerAngleChiSquaredCalculation:
         assert acceptable_overall == 5.0  # Updated default
         assert warning_overall == 10.0  # Updated default
         assert excellent_per_angle == 2.0  # New default
-        assert acceptable_per_angle == 5.0  # Updated default  
+        assert acceptable_per_angle == 5.0  # Updated default
         assert warning_per_angle == 10.0  # New default
         assert outlier_multiplier == 2.5  # Updated default
 
@@ -522,9 +503,7 @@ class TestPerAngleChiSquaredCalculation:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Test file saving
-            expected_file = (
-                Path(temp_dir) / "per_angle_chi_squared_testsave.json"
-            )
+            expected_file = Path(temp_dir) / "per_angle_chi_squared_testsave.json"
 
             with open(expected_file, "w") as f:
                 json.dump(mock_results, f, indent=2)
@@ -540,10 +519,7 @@ class TestPerAngleChiSquaredCalculation:
             assert saved_data["overall_reduced_chi_squared"] == 8.0
             assert "quality_assessment" in saved_data
             assert "angle_categorization" in saved_data
-            assert (
-                len(saved_data["per_angle_analysis"]["chi_squared_reduced"])
-                == 3
-            )
+            assert len(saved_data["per_angle_analysis"]["chi_squared_reduced"]) == 3
 
 
 class TestQualityAssessmentIntegration:

@@ -2,7 +2,7 @@
 Homodyne Analysis Runner
 ========================
 
-Command-line interface for running homodyne scattering analysis in X-ray Photon 
+Command-line interface for running homodyne scattering analysis in X-ray Photon
 Correlation Spectroscopy (XPCS) under nonequilibrium conditions.
 
 This script provides a unified interface for:
@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 
 # Add the homodyne package to the path for local development
-sys.path.insert(0, './homodyne')
+sys.path.insert(0, "./homodyne")
 
 # Import core analysis components with graceful error handling
 # This allows the script to provide informative error messages if dependencies are missing
@@ -38,6 +38,7 @@ except ImportError:
 # Import MCMC components - these require additional dependencies (PyMC, ArviZ)
 try:
     from homodyne.optimization.mcmc import create_mcmc_sampler
+
     MCMC_AVAILABLE = True
 except ImportError:
     create_mcmc_sampler = None
@@ -47,10 +48,10 @@ except ImportError:
 def setup_logging(verbose: bool, output_dir: Path) -> None:
     """
     Configure comprehensive logging for the analysis session.
-    
+
     Sets up both console and file logging with appropriate formatting.
     Debug level provides detailed execution information for troubleshooting.
-    
+
     Parameters
     ----------
     verbose : bool
@@ -66,8 +67,8 @@ def setup_logging(verbose: bool, output_dir: Path) -> None:
 
     # Create formatter
     formatter = logging.Formatter(
-        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     # Configure root logger
@@ -84,7 +85,7 @@ def setup_logging(verbose: bool, output_dir: Path) -> None:
     root_logger.addHandler(console_handler)
 
     # 3. Add file handler that writes to output_dir/run.log
-    log_file_path = output_dir / 'run.log'
+    log_file_path = output_dir / "run.log"
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
@@ -94,10 +95,10 @@ def setup_logging(verbose: bool, output_dir: Path) -> None:
 def print_banner(args: argparse.Namespace) -> None:
     """
     Display analysis configuration and session information.
-    
+
     Provides a clear overview of the selected analysis parameters,
     methods, and output settings before starting the computation.
-    
+
     Parameters
     ----------
     args : argparse.Namespace
@@ -111,20 +112,25 @@ def print_banner(args: argparse.Namespace) -> None:
     print(f"Config file:      {args.config}")
     print(f"Output directory: {args.output_dir}")
     print(
-        f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}")
-    
+        f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}"
+    )
+
     # Show analysis mode
     if args.static:
-        print(f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)")
+        print(
+            f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)"
+        )
     elif args.static_isotropic:
         print(f"Analysis mode:    Static isotropic (3 parameters, no angle selection)")
     elif args.static_anisotropic:
-        print(f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)")
+        print(
+            f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)"
+        )
     elif args.laminar_flow:
         print(f"Analysis mode:    Laminar flow (7 parameters)")
     else:
         print(f"Analysis mode:    From configuration file")
-    
+
     print()
     print("Starting analysis...")
     print("-" * 60)
@@ -133,14 +139,14 @@ def print_banner(args: argparse.Namespace) -> None:
 def run_analysis(args: argparse.Namespace) -> None:
     """
     Execute the complete homodyne scattering analysis workflow.
-    
+
     This is the main analysis orchestrator that:
     1. Loads and validates configuration
     2. Initializes the analysis engine
     3. Loads experimental data with optional validation plots
     4. Runs selected optimization method(s)
     5. Saves results and generates diagnostic output
-    
+
     Parameters
     ----------
     args : argparse.Namespace
@@ -153,15 +159,14 @@ def run_analysis(args: argparse.Namespace) -> None:
     # 1. Verify the config file exists; exit with clear error if not
     config_path = Path(args.config)
     if not config_path.exists():
+        logger.error(f"❌ Configuration file not found: {config_path.absolute()}")
         logger.error(
-            f"❌ Configuration file not found: {config_path.absolute()}")
-        logger.error(
-            "Please check the file path and ensure the configuration file exists.")
+            "Please check the file path and ensure the configuration file exists."
+        )
         sys.exit(1)
 
     if not config_path.is_file():
-        logger.error(
-            f"❌ Configuration path is not a file: {config_path.absolute()}")
+        logger.error(f"❌ Configuration path is not a file: {config_path.absolute()}")
         sys.exit(1)
 
     logger.info(f"✓ Configuration file found: {config_path.absolute()}")
@@ -169,35 +174,57 @@ def run_analysis(args: argparse.Namespace) -> None:
     # 2. Import HomodyneAnalysisCore and create instance
     try:
         from homodyne.analysis.core import HomodyneAnalysisCore
+
         logger.info("✓ Successfully imported HomodyneAnalysisCore")
     except ImportError as e:
         logger.error(f"❌ Failed to import HomodyneAnalysisCore: {e}")
-        logger.error(
-            "Please ensure the homodyne package is properly installed.")
+        logger.error("Please ensure the homodyne package is properly installed.")
         sys.exit(1)
 
     # 3. Create analysis core instance with error handling
     try:
-        logger.info(
-            f"Initializing Homodyne Analysis with config: {config_path}")
-        
+        logger.info(f"Initializing Homodyne Analysis with config: {config_path}")
+
         # Apply mode override if specified
         config_override = None
         if args.static:
             # Keep backward compatibility: --static maps to static anisotropic
-            config_override = {"analysis_settings": {"static_mode": True, "static_submode": "anisotropic"}}
-            logger.info("Using command-line override: static anisotropic mode (3 parameters, with angle selection)")
-            logger.warning("Note: --static is deprecated, use --static-anisotropic instead")
+            config_override = {
+                "analysis_settings": {
+                    "static_mode": True,
+                    "static_submode": "anisotropic",
+                }
+            }
+            logger.info(
+                "Using command-line override: static anisotropic mode (3 parameters, with angle selection)"
+            )
+            logger.warning(
+                "Note: --static is deprecated, use --static-anisotropic instead"
+            )
         elif args.static_isotropic:
-            config_override = {"analysis_settings": {"static_mode": True, "static_submode": "isotropic"}}
-            logger.info("Using command-line override: static isotropic mode (3 parameters, no angle selection)")
+            config_override = {
+                "analysis_settings": {
+                    "static_mode": True,
+                    "static_submode": "isotropic",
+                }
+            }
+            logger.info(
+                "Using command-line override: static isotropic mode (3 parameters, no angle selection)"
+            )
         elif args.static_anisotropic:
-            config_override = {"analysis_settings": {"static_mode": True, "static_submode": "anisotropic"}}
-            logger.info("Using command-line override: static anisotropic mode (3 parameters, with angle selection)")
+            config_override = {
+                "analysis_settings": {
+                    "static_mode": True,
+                    "static_submode": "anisotropic",
+                }
+            }
+            logger.info(
+                "Using command-line override: static anisotropic mode (3 parameters, with angle selection)"
+            )
         elif args.laminar_flow:
             config_override = {"analysis_settings": {"static_mode": False}}
             logger.info("Using command-line override: laminar flow mode (7 parameters)")
-        
+
         # Add experimental data plotting override if specified
         if args.plot_experimental_data:
             if config_override is None:
@@ -205,26 +232,28 @@ def run_analysis(args: argparse.Namespace) -> None:
             if "workflow_integration" not in config_override:
                 config_override["workflow_integration"] = {}
             if "analysis_workflow" not in config_override["workflow_integration"]:
-                config_override["workflow_integration"]["analysis_workflow"] = {} # type: ignore
-            config_override["workflow_integration"]["analysis_workflow"]["plot_experimental_data_on_load"] = True # type: ignore
-            logger.info("Using command-line override: experimental data plotting enabled")
-        
-        analyzer = HomodyneAnalysisCore(config_file=str(config_path), config_override=config_override)
+                config_override["workflow_integration"]["analysis_workflow"] = {}  # type: ignore
+            config_override["workflow_integration"]["analysis_workflow"]["plot_experimental_data_on_load"] = True  # type: ignore
+            logger.info(
+                "Using command-line override: experimental data plotting enabled"
+            )
+
+        analyzer = HomodyneAnalysisCore(
+            config_file=str(config_path), config_override=config_override
+        )
         logger.info("✓ HomodyneAnalysisCore initialized successfully")
-        
+
         # Log the actual analysis mode being used
         analysis_mode = analyzer.config_manager.get_analysis_mode()
         param_count = analyzer.config_manager.get_effective_parameter_count()
         logger.info(f"Analysis mode: {analysis_mode} ({param_count} parameters)")
     except (ImportError, ModuleNotFoundError) as e:
-        logger.error(
-            f"❌ Import error while creating HomodyneAnalysisCore: {e}")
+        logger.error(f"❌ Import error while creating HomodyneAnalysisCore: {e}")
         logger.error("Please ensure all required dependencies are installed.")
         sys.exit(1)
     except (ValueError, KeyError, FileNotFoundError) as e:
         logger.error(f"❌ JSON configuration error: {e}")
-        logger.error(
-            "Please check your configuration file format and content.")
+        logger.error("Please check your configuration file format and content.")
         sys.exit(1)
     except Exception as e:
         logger.error(f"❌ Unexpected error initializing analysis core: {e}")
@@ -237,14 +266,16 @@ def run_analysis(args: argparse.Namespace) -> None:
 
     # Get initial parameters from config
     if analyzer.config is None:
-        logger.error("❌ Analyzer configuration is None. Please check your configuration file and "
-                     "ensure it is loaded correctly.")
+        logger.error(
+            "❌ Analyzer configuration is None. Please check your configuration file and "
+            "ensure it is loaded correctly."
+        )
         sys.exit(1)
-    initial_params = analyzer.config.get(
-        "initial_parameters", {}).get("values", None)
+    initial_params = analyzer.config.get("initial_parameters", {}).get("values", None)
     if initial_params is None:
         logger.error(
-            "❌ Initial parameters not found in configuration. Please check your configuration file format.")
+            "❌ Initial parameters not found in configuration. Please check your configuration file format."
+        )
         sys.exit(1)
 
     # Calculate chi-squared for initial parameters
@@ -258,18 +289,21 @@ def run_analysis(args: argparse.Namespace) -> None:
     methods_attempted = []
 
     try:
-        if args.method == 'classical':
-            methods_attempted = ['Classical']
+        if args.method == "classical":
+            methods_attempted = ["Classical"]
             results = run_classical_optimization(
-                analyzer, initial_params, phi_angles, c2_exp)
-        elif args.method == 'mcmc':
-            methods_attempted = ['MCMC']
+                analyzer, initial_params, phi_angles, c2_exp
+            )
+        elif args.method == "mcmc":
+            methods_attempted = ["MCMC"]
             results = run_mcmc_optimization(
-                analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
-        elif args.method == 'all':
-            methods_attempted = ['Classical', 'MCMC']
+                analyzer, initial_params, phi_angles, c2_exp, args.output_dir
+            )
+        elif args.method == "all":
+            methods_attempted = ["Classical", "MCMC"]
             results = run_all_methods(
-                analyzer, initial_params, phi_angles, c2_exp, args.output_dir)
+                analyzer, initial_params, phi_angles, c2_exp, args.output_dir
+            )
 
         if results:
             # Save results
@@ -278,7 +312,8 @@ def run_analysis(args: argparse.Namespace) -> None:
             # Perform per-angle chi-squared analysis for each successful method
             successful_methods = results.get("methods_used", [])
             logger.info(
-                f"Running per-angle chi-squared analysis for methods: {', '.join(successful_methods)}")
+                f"Running per-angle chi-squared analysis for methods: {', '.join(successful_methods)}"
+            )
 
             for method in successful_methods:
                 method_key = f"{method.lower()}_optimization"
@@ -291,48 +326,86 @@ def run_analysis(args: argparse.Namespace) -> None:
                                 mcmc_results = results[method_key]
                                 if "diagnostics" in mcmc_results:
                                     diag = mcmc_results["diagnostics"]
-                                    logger.info(f"MCMC convergence diagnostics [{method}]:")
-                                    logger.info(f"  Convergence status: {diag.get('assessment', 'Unknown')}")
-                                    logger.info(f"  Maximum R̂ (R-hat): {diag.get('max_rhat', 'N/A'):.4f}")
-                                    logger.info(f"  Minimum ESS: {diag.get('min_ess', 'N/A'):.0f}")
-                                    
+                                    logger.info(
+                                        f"MCMC convergence diagnostics [{method}]:"
+                                    )
+                                    logger.info(
+                                        f"  Convergence status: {diag.get('assessment', 'Unknown')}"
+                                    )
+                                    logger.info(
+                                        f"  Maximum R̂ (R-hat): {diag.get('max_rhat', 'N/A'):.4f}"
+                                    )
+                                    logger.info(
+                                        f"  Minimum ESS: {diag.get('min_ess', 'N/A'):.0f}"
+                                    )
+
                                     # Quality assessment based on convergence criteria from config
-                                    max_rhat = diag.get('max_rhat', float('inf'))
-                                    min_ess = diag.get('min_ess', 0)
-                                    
+                                    max_rhat = diag.get("max_rhat", float("inf"))
+                                    min_ess = diag.get("min_ess", 0)
+
                                     # Get thresholds from config or use defaults
-                                    config = getattr(analyzer, 'config', {})
-                                    validation_config = config.get("validation_rules", {})
-                                    mcmc_config = validation_config.get("mcmc_convergence", {})
-                                    rhat_thresholds = mcmc_config.get("rhat_thresholds", {})
-                                    ess_thresholds = mcmc_config.get("ess_thresholds", {})
-                                    
-                                    excellent_rhat = rhat_thresholds.get("excellent_threshold", 1.01)
-                                    good_rhat = rhat_thresholds.get("good_threshold", 1.05)
-                                    acceptable_rhat = rhat_thresholds.get("acceptable_threshold", 1.1)
-                                    
-                                    excellent_ess = ess_thresholds.get("excellent_threshold", 400)
+                                    config = getattr(analyzer, "config", {})
+                                    validation_config = config.get(
+                                        "validation_rules", {}
+                                    )
+                                    mcmc_config = validation_config.get(
+                                        "mcmc_convergence", {}
+                                    )
+                                    rhat_thresholds = mcmc_config.get(
+                                        "rhat_thresholds", {}
+                                    )
+                                    ess_thresholds = mcmc_config.get(
+                                        "ess_thresholds", {}
+                                    )
+
+                                    excellent_rhat = rhat_thresholds.get(
+                                        "excellent_threshold", 1.01
+                                    )
+                                    good_rhat = rhat_thresholds.get(
+                                        "good_threshold", 1.05
+                                    )
+                                    acceptable_rhat = rhat_thresholds.get(
+                                        "acceptable_threshold", 1.1
+                                    )
+
+                                    excellent_ess = ess_thresholds.get(
+                                        "excellent_threshold", 400
+                                    )
                                     good_ess = ess_thresholds.get("good_threshold", 200)
-                                    acceptable_ess = ess_thresholds.get("acceptable_threshold", 100)
-                                    
-                                    if max_rhat < excellent_rhat and min_ess > excellent_ess:
+                                    acceptable_ess = ess_thresholds.get(
+                                        "acceptable_threshold", 100
+                                    )
+
+                                    if (
+                                        max_rhat < excellent_rhat
+                                        and min_ess > excellent_ess
+                                    ):
                                         quality = "excellent"
                                     elif max_rhat < good_rhat and min_ess > good_ess:
                                         quality = "good"
-                                    elif max_rhat < acceptable_rhat and min_ess > acceptable_ess:
+                                    elif (
+                                        max_rhat < acceptable_rhat
+                                        and min_ess > acceptable_ess
+                                    ):
                                         quality = "acceptable"
                                     else:
                                         quality = "poor"
-                                    
+
                                     logger.info(f"  MCMC quality: {quality.upper()}")
-                                    
+
                                     # Additional metrics if available
                                     if "trace" in mcmc_results:
-                                        logger.info(f"  Sampling completed with posterior analysis available")
+                                        logger.info(
+                                            f"  Sampling completed with posterior analysis available"
+                                        )
                                 else:
-                                    logger.warning(f"No convergence diagnostics available for {method}")
+                                    logger.warning(
+                                        f"No convergence diagnostics available for {method}"
+                                    )
                             except Exception as e:
-                                logger.warning(f"Failed to log MCMC diagnostics for {method}: {e}")
+                                logger.warning(
+                                    f"Failed to log MCMC diagnostics for {method}: {e}"
+                                )
                         else:
                             # For classical optimization methods, use chi-squared analysis
                             try:
@@ -342,11 +415,12 @@ def run_analysis(args: argparse.Namespace) -> None:
                                     c2_exp,
                                     method_name=method,
                                     save_to_file=True,
-                                    output_dir=args.output_dir
+                                    output_dir=args.output_dir,
                                 )
                             except Exception as e:
                                 logger.warning(
-                                    f"Per-angle analysis failed for {method}: {e}")
+                                    f"Per-angle analysis failed for {method}: {e}"
+                                )
 
             logger.info("✓ Analysis completed successfully!")
             logger.info(f"Successful methods: {', '.join(successful_methods)}")
@@ -355,7 +429,8 @@ def run_analysis(args: argparse.Namespace) -> None:
             if len(methods_attempted) == 1:
                 # Single method failed - this is a hard failure
                 logger.error(
-                    f"The only requested method ({args.method}) failed to complete")
+                    f"The only requested method ({args.method}) failed to complete"
+                )
                 sys.exit(1)
             else:
                 # Multiple methods attempted - check if any succeeded
@@ -366,6 +441,7 @@ def run_analysis(args: argparse.Namespace) -> None:
         logger.error(f"❌ Unexpected error during optimization: {e}")
         logger.error("Please check your configuration and data files")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         sys.exit(1)
 
@@ -373,11 +449,11 @@ def run_analysis(args: argparse.Namespace) -> None:
 def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
     """
     Execute classical optimization using Nelder-Mead simplex method.
-    
+
     Provides fast parameter estimation with point estimates and goodness-of-fit
     statistics. Uses scipy.optimize for robust convergence with intelligent
     angle filtering for performance on large datasets.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -388,7 +464,7 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         Angular coordinates for the scattering data
     c2_exp : ndarray
         Experimental correlation function data
-        
+
     Returns
     -------
     dict or None
@@ -400,19 +476,24 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
 
     try:
         if ClassicalOptimizer is None:
-            logger.error("❌ ClassicalOptimizer is not available. Please ensure the "
-                         "homodyne.optimization.classical module is installed and accessible.")
+            logger.error(
+                "❌ ClassicalOptimizer is not available. Please ensure the "
+                "homodyne.optimization.classical module is installed and accessible."
+            )
             return None
 
         optimizer = ClassicalOptimizer(analyzer, analyzer.config)
         best_params, result = optimizer.run_classical_optimization_optimized(
             initial_parameters=initial_params,
             phi_angles=phi_angles,
-            c2_experimental=c2_exp
+            c2_experimental=c2_exp,
         )
 
         # Store best parameters on analyzer core for MCMC initialization
-        if hasattr(optimizer, 'best_params_classical') and optimizer.best_params_classical is not None:
+        if (
+            hasattr(optimizer, "best_params_classical")
+            and optimizer.best_params_classical is not None
+        ):
             analyzer.best_params_classical = optimizer.best_params_classical
             logger.info("✓ Classical results stored for MCMC initialization")
 
@@ -420,21 +501,21 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
             "classical_optimization": {
                 "parameters": best_params,
                 "chi_squared": result.fun,
-                "optimization_time": getattr(result, 'execution_time', 0),
+                "optimization_time": getattr(result, "execution_time", 0),
                 "total_time": 0,
                 "success": result.success,
-                "method": getattr(result, 'method', 'unknown'),
-                "iterations": getattr(result, 'nit', None),
-                "function_evaluations": getattr(result, 'nfev', None)
+                "method": getattr(result, "method", "unknown"),
+                "iterations": getattr(result, "nit", None),
+                "function_evaluations": getattr(result, "nfev", None),
             },
             "classical_summary": {
                 "parameters": best_params,
                 "chi_squared": result.fun,
                 "method": "Classical",
                 "evaluation_metric": "chi_squared",
-                "_note": "Classical optimization uses chi-squared for quality assessment"
+                "_note": "Classical optimization uses chi-squared for quality assessment",
             },
-            "methods_used": ["Classical"]
+            "methods_used": ["Classical"],
         }
     except ImportError as e:
         error_msg = f"Classical optimization failed - missing dependencies: {e}"
@@ -444,14 +525,14 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         elif "numpy" in str(e).lower():
             logger.error("❌ Install numpy: pip install numpy")
         else:
-            logger.error(
-                "❌ Install required dependencies: pip install scipy numpy")
+            logger.error("❌ Install required dependencies: pip install scipy numpy")
         return None
     except (ValueError, KeyError) as e:
         error_msg = f"Classical optimization failed - configuration error: {e}"
         logger.error(error_msg)
         logger.error(
-            "❌ Please check your configuration file format and parameter bounds")
+            "❌ Please check your configuration file format and parameter bounds"
+        )
         return None
     except Exception as e:
         error_msg = f"Classical optimization failed - unexpected error: {e}"
@@ -460,14 +541,16 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp):
         return None
 
 
-def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
+def run_mcmc_optimization(
+    analyzer, initial_params, phi_angles, c2_exp, output_dir=None
+):
     """
     Execute Bayesian MCMC sampling using NUTS (No-U-Turn Sampler).
-    
+
     Provides full posterior distributions with uncertainty quantification.
     Uses PyMC for robust sampling with convergence diagnostics (R-hat, ESS).
     Results include parameter uncertainties and correlation analysis.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -480,7 +563,7 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         Experimental correlation function data
     output_dir : Path, optional
         Directory for saving MCMC traces and diagnostics
-        
+
     Returns
     -------
     dict or None
@@ -493,20 +576,30 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
     # Step 1: Attempt to import create_mcmc_sampler
     try:
         from homodyne.optimization.mcmc import create_mcmc_sampler
+
         logger.info("✓ Successfully imported create_mcmc_sampler")
     except ImportError as e:
         logger.error(f"❌ Failed to import MCMC module: {e}")
-        if "pymc" in str(e).lower() or "pytensor" in str(e).lower() or "arviz" in str(e).lower():
+        if (
+            "pymc" in str(e).lower()
+            or "pytensor" in str(e).lower()
+            or "arviz" in str(e).lower()
+        ):
             logger.error(
-                "❌ MCMC sampling requires PyMC and ArviZ: pip install pymc arviz")
+                "❌ MCMC sampling requires PyMC and ArviZ: pip install pymc arviz"
+            )
         else:
             logger.error(
-                "❌ Install required dependencies: pip install pymc arviz pytensor")
+                "❌ Install required dependencies: pip install pymc arviz pytensor"
+            )
         return None
 
     try:
         # Step 2.5: Set initial parameters for MCMC if not already set by classical optimization
-        if not hasattr(analyzer, 'best_params_classical') or analyzer.best_params_classical is None:
+        if (
+            not hasattr(analyzer, "best_params_classical")
+            or analyzer.best_params_classical is None
+        ):
             analyzer.best_params_classical = initial_params
             logger.info("✓ Using provided initial parameters for MCMC initialization")
         else:
@@ -525,33 +618,32 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         mcmc_results = sampler.run_mcmc_analysis(
             c2_experimental=c2_exp,
             phi_angles=phi_angles,
-            filter_angles_for_optimization=True  # Use angle filtering by default
+            filter_angles_for_optimization=True,  # Use angle filtering by default
         )
 
         mcmc_execution_time = time.time() - mcmc_start_time
-        logger.info(
-            f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
+        logger.info(f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
 
         # Step 5 & 6: Save inference data and write convergence diagnostics
         if output_dir is None:
-            output_dir = Path('./homodyne_results')
+            output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
 
         # Create mcmc_results subdirectory
-        mcmc_output_dir = output_dir / 'mcmc_results'
+        mcmc_output_dir = output_dir / "mcmc_results"
         mcmc_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Save inference data (NetCDF via arviz.to_netcdf) if trace is available
-        if 'trace' in mcmc_results and mcmc_results['trace'] is not None:
+        if "trace" in mcmc_results and mcmc_results["trace"] is not None:
             try:
                 import arviz as az
-                netcdf_path = mcmc_output_dir / 'mcmc_trace.nc'
-                az.to_netcdf(mcmc_results['trace'], str(netcdf_path))
+
+                netcdf_path = mcmc_output_dir / "mcmc_trace.nc"
+                az.to_netcdf(mcmc_results["trace"], str(netcdf_path))
                 logger.info(f"✓ MCMC trace saved to NetCDF: {netcdf_path}")
             except ImportError as import_err:
-                logger.error(
-                    f"❌ ArviZ not available for saving trace: {import_err}")
+                logger.error(f"❌ ArviZ not available for saving trace: {import_err}")
                 logger.error("❌ Install ArviZ: pip install arviz")
             except Exception as e:
                 logger.error(f"❌ Failed to save NetCDF trace: {e}")
@@ -560,19 +652,19 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
         summary_results = {
             "method": "MCMC_NUTS",
             "execution_time_seconds": mcmc_execution_time,
-            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
-            "posterior_means": mcmc_results.get('posterior_means', {}),
-            "mcmc_config": mcmc_results.get('config', {})
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "posterior_means": mcmc_results.get("posterior_means", {}),
+            "mcmc_config": mcmc_results.get("config", {}),
         }
 
         # Add convergence diagnostics to summary
-        if 'diagnostics' in mcmc_results:
-            diagnostics = mcmc_results['diagnostics']
-            summary_results['convergence_diagnostics'] = {
-                "max_rhat": diagnostics.get('max_rhat'),
-                "min_ess": diagnostics.get('min_ess'),
-                "converged": diagnostics.get('converged', False),
-                "assessment": diagnostics.get('assessment', 'Unknown')
+        if "diagnostics" in mcmc_results:
+            diagnostics = mcmc_results["diagnostics"]
+            summary_results["convergence_diagnostics"] = {
+                "max_rhat": diagnostics.get("max_rhat"),
+                "min_ess": diagnostics.get("min_ess"),
+                "converged": diagnostics.get("converged", False),
+                "assessment": diagnostics.get("assessment", "Unknown"),
             }
 
             # Write convergence diagnostics to log (Step 6)
@@ -580,27 +672,30 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
             logger.info(f"  Max R-hat: {diagnostics.get('max_rhat', 'N/A')}")
             logger.info(f"  Min ESS: {diagnostics.get('min_ess', 'N/A')}")
             logger.info(f"  Converged: {diagnostics.get('converged', False)}")
-            logger.info(
-                f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
+            logger.info(f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
 
-            if not diagnostics.get('converged', False):
+            if not diagnostics.get("converged", False):
                 logger.warning(
-                    "⚠ MCMC chains may not have converged - check diagnostics!")
+                    "⚠ MCMC chains may not have converged - check diagnostics!"
+                )
 
         # Add posterior statistics if available
-        if hasattr(sampler, 'extract_posterior_statistics'):
+        if hasattr(sampler, "extract_posterior_statistics"):
             try:
                 posterior_stats = sampler.extract_posterior_statistics(
-                    mcmc_results.get('trace'))
-                if posterior_stats and 'parameter_statistics' in posterior_stats:
-                    summary_results['parameter_statistics'] = posterior_stats['parameter_statistics']
+                    mcmc_results.get("trace")
+                )
+                if posterior_stats and "parameter_statistics" in posterior_stats:
+                    summary_results["parameter_statistics"] = posterior_stats[
+                        "parameter_statistics"
+                    ]
             except Exception as e:
                 logger.warning(f"Failed to extract posterior statistics: {e}")
 
         # Save summary JSON to output_dir/mcmc_results
-        summary_json_path = mcmc_output_dir / 'mcmc_summary.json'
+        summary_json_path = mcmc_output_dir / "mcmc_summary.json"
         try:
-            with open(summary_json_path, 'w') as f:
+            with open(summary_json_path, "w") as f:
                 json.dump(summary_results, f, indent=2, default=str)
             logger.info(f"✓ MCMC summary saved to: {summary_json_path}")
         except Exception as e:
@@ -608,20 +703,20 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
 
         # Extract best parameters from posterior means for compatibility with other methods
         best_params = None
-        if 'posterior_means' in mcmc_results:
-            param_names = analyzer.config.get(
-                'initial_parameters', {}).get('parameter_names', [])
-            posterior_means = mcmc_results['posterior_means']
-            best_params = [posterior_means.get(
-                name, 0.0) for name in param_names]
+        if "posterior_means" in mcmc_results:
+            param_names = analyzer.config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            )
+            posterior_means = mcmc_results["posterior_means"]
+            best_params = [posterior_means.get(name, 0.0) for name in param_names]
 
         # Extract convergence quality for MCMC summary (no chi-squared calculation)
         convergence_quality = "unknown"
-        if 'diagnostics' in mcmc_results:
-            diag = mcmc_results['diagnostics']
-            max_rhat = diag.get('max_rhat', float('inf'))
-            min_ess = diag.get('min_ess', 0)
-            
+        if "diagnostics" in mcmc_results:
+            diag = mcmc_results["diagnostics"]
+            max_rhat = diag.get("max_rhat", float("inf"))
+            min_ess = diag.get("min_ess", 0)
+
             # Use same thresholds as in per-angle analysis
             if max_rhat < 1.01 and min_ess > 400:
                 convergence_quality = "excellent"
@@ -631,7 +726,7 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 convergence_quality = "acceptable"
             else:
                 convergence_quality = "poor"
-            
+
             logger.info(f"MCMC convergence quality: {convergence_quality.upper()}")
             logger.info(f"MCMC posterior mean parameters: {best_params}")
         else:
@@ -644,28 +739,28 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
                 "convergence_quality": convergence_quality,
                 "optimization_time": mcmc_execution_time,
                 "total_time": mcmc_execution_time,
-                "success": mcmc_results.get('diagnostics', {}).get('converged', True),
+                "success": mcmc_results.get("diagnostics", {}).get("converged", True),
                 "method": "MCMC_NUTS",
-                "posterior_means": mcmc_results.get('posterior_means', {}),
-                "convergence_diagnostics": mcmc_results.get('diagnostics', {}),
+                "posterior_means": mcmc_results.get("posterior_means", {}),
+                "convergence_diagnostics": mcmc_results.get("diagnostics", {}),
                 # Include trace data for plotting
-                "trace": mcmc_results.get('trace'),
+                "trace": mcmc_results.get("trace"),
                 # Include chi_squared for plotting method selection
-                "chi_squared": mcmc_results.get('chi_squared', np.inf)
+                "chi_squared": mcmc_results.get("chi_squared", np.inf),
             },
             "mcmc_summary": {
                 "parameters": best_params,
                 "convergence_quality": convergence_quality,
-                "max_rhat": mcmc_results.get('diagnostics', {}).get('max_rhat', None),
-                "min_ess": mcmc_results.get('diagnostics', {}).get('min_ess', None),
+                "max_rhat": mcmc_results.get("diagnostics", {}).get("max_rhat", None),
+                "min_ess": mcmc_results.get("diagnostics", {}).get("min_ess", None),
                 "method": "MCMC",
                 "evaluation_metric": "convergence_diagnostics",
-                "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment"
+                "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment",
             },
             "methods_used": ["MCMC"],
             # Include trace and diagnostics at top level for plotting functions
-            "trace": mcmc_results.get('trace'),
-            "diagnostics": mcmc_results.get('diagnostics')
+            "trace": mcmc_results.get("trace"),
+            "diagnostics": mcmc_results.get("diagnostics"),
         }
 
     except ImportError as e:
@@ -679,19 +774,20 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
             logger.error("❌ Install PyTensor: pip install pytensor")
         else:
             logger.error(
-                "❌ Install required dependencies: pip install pymc arviz pytensor")
+                "❌ Install required dependencies: pip install pymc arviz pytensor"
+            )
         return None
     except (ValueError, KeyError) as e:
         error_msg = f"MCMC optimization failed - configuration error: {e}"
         logger.error(error_msg)
-        logger.error(
-            "❌ Please check your MCMC configuration and parameter priors")
+        logger.error("❌ Please check your MCMC configuration and parameter priors")
         return None
     except Exception as e:
         error_msg = f"MCMC optimization failed - unexpected error: {e}"
         logger.error(error_msg)
         logger.error("❌ Please check your data files and MCMC configuration")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         return None
 
@@ -699,11 +795,11 @@ def run_mcmc_optimization(analyzer, initial_params, phi_angles, c2_exp, output_d
 def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
     """
     Execute both classical and MCMC optimization methods sequentially.
-    
+
     Recommended workflow that combines fast classical optimization for initial
     parameter estimates with comprehensive MCMC sampling for full uncertainty
     analysis. Gracefully handles failures in individual methods.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -716,7 +812,7 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
         Experimental correlation function data
     output_dir : Path, optional
         Directory for saving results and diagnostics
-        
+
     Returns
     -------
     dict or None
@@ -734,7 +830,8 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     methods_attempted.append("Classical")
     logger.info("Attempting Classical optimization...")
     classical_results = run_classical_optimization(
-        analyzer, initial_params, phi_angles, c2_exp)
+        analyzer, initial_params, phi_angles, c2_exp
+    )
     if classical_results:
         all_results.update(classical_results)
         methods_used.append("Classical")
@@ -742,25 +839,31 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     else:
         logger.warning("⚠ Classical optimization failed")
 
-
     # Run MCMC sampling
     methods_attempted.append("MCMC")
     logger.info("Attempting MCMC sampling...")
-    
+
     # Use classical results for MCMC initialization if available
     mcmc_initial_params = initial_params
     if classical_results and "classical_summary" in classical_results:
         classical_best_params = classical_results["classical_summary"].get("parameters")
         if classical_best_params is not None:
             mcmc_initial_params = classical_best_params
-            logger.info("✓ Using classical optimization results for MCMC initialization")
+            logger.info(
+                "✓ Using classical optimization results for MCMC initialization"
+            )
         else:
-            logger.info("⚠ Classical results available but no parameters found, using initial parameters for MCMC")
+            logger.info(
+                "⚠ Classical results available but no parameters found, using initial parameters for MCMC"
+            )
     else:
-        logger.info("⚠ No classical results available, using initial parameters for MCMC")
-    
+        logger.info(
+            "⚠ No classical results available, using initial parameters for MCMC"
+        )
+
     mcmc_results = run_mcmc_optimization(
-        analyzer, mcmc_initial_params, phi_angles, c2_exp, output_dir)
+        analyzer, mcmc_initial_params, phi_angles, c2_exp, output_dir
+    )
     if mcmc_results:
         all_results.update(mcmc_results)
         methods_used.append("MCMC")
@@ -775,36 +878,36 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     if all_results:
         all_results["methods_used"] = methods_used
         all_results["methods_attempted"] = methods_attempted
-        
+
         # Add method-appropriate summary information
         methods_summary = {}
-        
+
         if "Classical" in methods_used and "classical_summary" in all_results:
             classical_summary = all_results["classical_summary"]
             methods_summary["Classical"] = {
                 "evaluation_metric": "chi_squared",
                 "chi_squared": classical_summary.get("chi_squared"),
                 "parameters": classical_summary.get("parameters"),
-                "quality_note": "Lower chi-squared indicates better fit to experimental data"
+                "quality_note": "Lower chi-squared indicates better fit to experimental data",
             }
-            
+
         if "MCMC" in methods_used and "mcmc_summary" in all_results:
             mcmc_summary = all_results["mcmc_summary"]
             methods_summary["MCMC"] = {
-                "evaluation_metric": "convergence_diagnostics", 
+                "evaluation_metric": "convergence_diagnostics",
                 "convergence_quality": mcmc_summary.get("convergence_quality"),
                 "max_rhat": mcmc_summary.get("max_rhat"),
                 "min_ess": mcmc_summary.get("min_ess"),
                 "parameters": mcmc_summary.get("parameters"),
-                "quality_note": "Convergence quality based on R̂ and ESS criteria"
+                "quality_note": "Convergence quality based on R̂ and ESS criteria",
             }
-            
+
         all_results["methods_comparison"] = {
             "_note": "Methods use different evaluation criteria - do not directly compare chi-squared to convergence diagnostics",
             "methods_summary": methods_summary,
-            "recommendation": "Use Classical for fast parameter estimates; use MCMC for uncertainty quantification"
+            "recommendation": "Use Classical for fast parameter estimates; use MCMC for uncertainty quantification",
         }
-        
+
         return all_results
 
     logger.error("❌ All optimization methods failed")
@@ -814,7 +917,7 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
 def main():
     """
     Command-line entry point for homodyne scattering analysis.
-    
+
     Provides a complete interface for XPCS analysis under nonequilibrium
     conditions, supporting both static and laminar flow analysis modes
     with classical and Bayesian optimization approaches.
@@ -842,59 +945,57 @@ Method Quality Assessment:
     )
 
     parser.add_argument(
-        '--method',
-        choices=['classical', 'mcmc', 'all'],
-        default='classical',
-        help='Analysis method to use (default: %(default)s)'
+        "--method",
+        choices=["classical", "mcmc", "all"],
+        default="classical",
+        help="Analysis method to use (default: %(default)s)",
     )
 
     parser.add_argument(
-        '--config',
+        "--config",
         type=Path,
-        default='./homodyne_config.json',
-        help='Path to configuration file (default: %(default)s)'
+        default="./homodyne_config.json",
+        help="Path to configuration file (default: %(default)s)",
     )
 
     parser.add_argument(
-        '--output-dir',
+        "--output-dir",
         type=Path,
-        default='./homodyne_results',
-        help='Output directory for results (default: %(default)s)'
+        default="./homodyne_results",
+        help="Output directory for results (default: %(default)s)",
     )
 
     parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose DEBUG logging'
+        "--verbose", action="store_true", help="Enable verbose DEBUG logging"
     )
 
     # Add analysis mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
-        '--static',
-        action='store_true',
-        help='Force static anisotropic mode analysis (3 parameters, with angle selection) [deprecated: use --static-anisotropic]'
+        "--static",
+        action="store_true",
+        help="Force static anisotropic mode analysis (3 parameters, with angle selection) [deprecated: use --static-anisotropic]",
     )
     mode_group.add_argument(
-        '--static-isotropic',
-        action='store_true',
-        help='Force static isotropic mode analysis (3 parameters, no angle selection)'
+        "--static-isotropic",
+        action="store_true",
+        help="Force static isotropic mode analysis (3 parameters, no angle selection)",
     )
     mode_group.add_argument(
-        '--static-anisotropic',
-        action='store_true',
-        help='Force static anisotropic mode analysis (3 parameters, with angle selection)'
+        "--static-anisotropic",
+        action="store_true",
+        help="Force static anisotropic mode analysis (3 parameters, with angle selection)",
     )
     mode_group.add_argument(
-        '--laminar-flow',
-        action='store_true',
-        help='Force laminar flow mode analysis (7 parameters: all diffusion and shear parameters)'
+        "--laminar-flow",
+        action="store_true",
+        help="Force laminar flow mode analysis (7 parameters: all diffusion and shear parameters)",
     )
 
     parser.add_argument(
-        '--plot-experimental-data',
-        action='store_true',
-        help='Generate validation plots of experimental data after loading for quality checking'
+        "--plot-experimental-data",
+        action="store_true",
+        help="Generate validation plots of experimental data after loading for quality checking",
     )
 
     args = parser.parse_args()
@@ -916,12 +1017,18 @@ Method Quality Assessment:
 
     # Log analysis mode selection
     if args.static:
-        logger.info("Command-line mode: static anisotropic (3 parameters, with angle selection)")
+        logger.info(
+            "Command-line mode: static anisotropic (3 parameters, with angle selection)"
+        )
         logger.warning("Note: --static is deprecated, use --static-anisotropic instead")
     elif args.static_isotropic:
-        logger.info("Command-line mode: static isotropic (3 parameters, no angle selection)")
+        logger.info(
+            "Command-line mode: static isotropic (3 parameters, no angle selection)"
+        )
     elif args.static_anisotropic:
-        logger.info("Command-line mode: static anisotropic (3 parameters, with angle selection)")
+        logger.info(
+            "Command-line mode: static anisotropic (3 parameters, with angle selection)"
+        )
     elif args.laminar_flow:
         logger.info("Command-line mode: laminar flow (7 parameters)")
     else:
@@ -941,7 +1048,8 @@ Method Quality Assessment:
     except Exception as e:
         logger.error(f"❌ Analysis failed: {e}")
         logger.error(
-            "Please check your configuration and ensure all dependencies are installed")
+            "Please check your configuration and ensure all dependencies are installed"
+        )
         # Exit with non-zero code - failure
         sys.exit(1)
 

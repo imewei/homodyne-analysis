@@ -126,9 +126,7 @@ class TestMCMCFunctionBehavior:
         }
 
         # Simulate the _run_mcmc_nuts_optimized function behavior
-        def simulate_run_mcmc_nuts_optimized(
-            c2_experimental, phi_angles, config
-        ):
+        def simulate_run_mcmc_nuts_optimized(c2_experimental, phi_angles, config):
             """Simulate the MCMC function with mocked components."""
             # Check PyMC availability (would normally check PYMC_AVAILABLE)
             if not hasattr(sys.modules.get("pymc", None), "sample"):
@@ -162,9 +160,7 @@ class TestMCMCFunctionBehavior:
             posterior_means = {}
             for var_name in param_names:
                 if var_name in trace.posterior:
-                    posterior_means[var_name] = float(
-                        trace.posterior[var_name].mean()
-                    )
+                    posterior_means[var_name] = float(trace.posterior[var_name].mean())
 
             # Return expected dictionary structure
             return {
@@ -182,9 +178,7 @@ class TestMCMCFunctionBehavior:
         with patch.dict("sys.modules", {"pymc": mock_pm}):
 
             # Call the simulated function
-            result = simulate_run_mcmc_nuts_optimized(
-                c2_data, phi_angles, mcmc_config
-            )
+            result = simulate_run_mcmc_nuts_optimized(c2_data, phi_angles, mcmc_config)
 
             # Verify the result structure - this is the key requirement
             assert isinstance(result, dict), "Result must be a dictionary"
@@ -198,9 +192,7 @@ class TestMCMCFunctionBehavior:
             assert result["trace"] == mock_trace, "Trace should be preserved"
             assert isinstance(result["time"], float), "Time should be float"
             assert result["time"] >= 0, "Time should be non-negative"
-            assert (
-                result["config"] == mcmc_config
-            ), "Config should be preserved"
+            assert result["config"] == mcmc_config, "Config should be preserved"
 
             # Verify posterior means structure and content
             assert isinstance(
@@ -212,8 +204,7 @@ class TestMCMCFunctionBehavior:
                     param_name in result["posterior_means"]
                 ), f"Must have posterior mean for {param_name}"
                 assert (
-                    result["posterior_means"][param_name]
-                    == expected_means[param_name]
+                    result["posterior_means"][param_name] == expected_means[param_name]
                 ), f"Posterior mean for {param_name} should match expected value"
 
             # Verify that pm.sample was called with correct parameters
@@ -246,9 +237,7 @@ class TestChiSquaredRegression:
         # Fixed seed for reproducibility
         FIXED_SEED = 42
 
-        def calculate_mock_chi_squared(
-            params, phi_angles, c2_experimental, seed
-        ):
+        def calculate_mock_chi_squared(params, phi_angles, c2_experimental, seed):
             """Mock chi-squared calculation that's deterministic with seed."""
             np.random.seed(seed)
 
@@ -260,18 +249,14 @@ class TestChiSquaredRegression:
                 for j in range(n_time):
                     for k in range(n_time):
                         # Use params and data to compute deterministic result
-                        theoretical = params[0] * np.exp(
-                            -params[1] * abs(j - k)
-                        )
+                        theoretical = params[0] * np.exp(-params[1] * abs(j - k))
                         experimental = c2_experimental[i, j, k]
                         residual = (experimental - theoretical) ** 2
                         chi_squared += residual
 
             # Add deterministic component based on angles
             for i, phi in enumerate(phi_angles):
-                chi_squared += (
-                    np.cos(np.radians(phi)) * params[i % len(params)]
-                )
+                chi_squared += np.cos(np.radians(phi)) * params[i % len(params)]
 
             # Normalize
             chi_squared = chi_squared / (n_angles * n_time * n_time)
@@ -290,9 +275,7 @@ class TestChiSquaredRegression:
                 for k in range(n_time):
                     # Deterministic structure based on indices
                     value = (
-                        1.0
-                        + 0.5 * np.exp(-0.1 * abs(j - k))
-                        + 0.01 * np.sin(i + j + k)
+                        1.0 + 0.5 * np.exp(-0.1 * abs(j - k)) + 0.01 * np.sin(i + j + k)
                     )
                     c2_experimental[i, j, k] = value
 
@@ -417,8 +400,7 @@ class TestIntegrationScenarios:
                     "trace": mock_trace,
                     "time": 1.234,
                     "posterior_means": {
-                        name: 50.0 + i * 5.0
-                        for i, name in enumerate(param_names)
+                        name: 50.0 + i * 5.0 for i, name in enumerate(param_names)
                     },
                     "config": {"mcmc_draws": 100},
                 }
@@ -447,9 +429,7 @@ class TestIntegrationScenarios:
         assert "PyMC not available" in result_unavailable["error"]
 
         print("✓ Complete MCMC workflow test PASSED")
-        print(
-            f"  - Available scenario: {len(result_available)} keys in result"
-        )
+        print(f"  - Available scenario: {len(result_available)} keys in result")
         print(f"  - Unavailable scenario: proper error handling")
 
     def test_version_consistency_mock(self):

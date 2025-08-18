@@ -179,7 +179,7 @@ class ConfigManager:
     - performance_settings: Parallelization, computational optimizations
     - validation_rules: Data quality checks and minimum requirements
     - advanced_settings: Fine-tuning options for specialized use cases
-    
+
     Usage:
         config_manager = ConfigManager('my_config.json')
         is_static = config_manager.is_static_mode_enabled()
@@ -204,16 +204,16 @@ class ConfigManager:
     def load_config(self):
         """
         Load and parse JSON configuration file with comprehensive error handling.
-        
+
         Implements performance-optimized loading with buffering, structure
         optimization for runtime access, and graceful fallback to default
         configuration if primary config fails.
-        
+
         Error Handling:
         - FileNotFoundError: Missing configuration file
         - JSONDecodeError: Malformed JSON syntax
         - General exceptions: Unexpected loading issues
-        
+
         Performance Optimizations:
         - 8KB buffering for efficient file I/O
         - Configuration structure caching for fast access
@@ -250,15 +250,15 @@ class ConfigManager:
                 logger.exception("Full traceback for configuration loading failure:")
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
-    
+
     def _optimize_config_structure(self):
         """
         Pre-compute and cache frequently accessed configuration values.
-        
+
         This optimization reduces repeated nested dictionary lookups during
         analysis runtime, particularly for values accessed in tight loops
         such as angle filtering settings and parameter bounds.
-        
+
         Cached Values:
         - angle_filtering_enabled: Boolean flag for optimization filtering
         - target_angle_ranges: Pre-parsed angle ranges for filtering
@@ -268,25 +268,25 @@ class ConfigManager:
         """
         if not self.config:
             return
-            
+
         # Initialize cache dictionary for performance-critical values
         self._cached_values = {}
-        
+
         # Cache optimization config paths
         if "optimization_config" in self.config:
             opt_config = self.config["optimization_config"]
-            self._cached_values["angle_filtering_enabled"] = (
-                opt_config.get("angle_filtering", {}).get("enabled", True)
-            )
-            self._cached_values["target_angle_ranges"] = (
-                opt_config.get("angle_filtering", {}).get("target_ranges", [])
-            )
-        
+            self._cached_values["angle_filtering_enabled"] = opt_config.get(
+                "angle_filtering", {}
+            ).get("enabled", True)
+            self._cached_values["target_angle_ranges"] = opt_config.get(
+                "angle_filtering", {}
+            ).get("target_ranges", [])
+
         # Cache analysis settings
         if "analysis_settings" in self.config:
             analysis = self.config["analysis_settings"]
             self._cached_values["static_mode"] = analysis.get("static_mode", False)
-            
+
             # Cache static submode if static mode is enabled
             if self._cached_values["static_mode"]:
                 raw_submode = analysis.get("static_submode", "anisotropic")
@@ -303,12 +303,12 @@ class ConfigManager:
                 self._cached_values["static_submode"] = submode
             else:
                 self._cached_values["static_submode"] = None
-        
+
         # Cache parameter bounds for faster access
         if "parameter_space" in self.config:
             bounds = self.config["parameter_space"].get("bounds", [])
             self._cached_values["parameter_bounds"] = bounds
-            
+
         # Pre-compute effective parameter count
         self._cached_values["effective_param_count"] = (
             3 if self._cached_values.get("static_mode", False) else 7
@@ -319,23 +319,23 @@ class ConfigManager:
         Comprehensive validation of configuration parameters.
 
         Performs multi-level validation to ensure configuration integrity:
-        
+
         Structural Validation:
         - Required sections presence (analyzer_parameters, experimental_data, etc.)
         - Configuration hierarchy completeness
         - Parameter type consistency
-        
+
         Physical Parameter Validation:
         - Frame range consistency (start < end, sufficient frames)
         - Wavevector positivity and reasonable magnitude
         - Time step positivity
         - Gap size physical reasonableness
-        
+
         Data Validation:
         - Minimum frame count requirements
         - Parameter bounds consistency
         - File path accessibility (optional)
-        
+
         Raises
         ------
         ValueError
@@ -383,20 +383,20 @@ class ConfigManager:
     def _validate_physical_parameters(self):
         """
         Validate physical parameters for scientific and computational validity.
-        
+
         Performs detailed validation of core physics parameters to ensure
         they fall within physically meaningful and computationally stable ranges.
-        
+
         Parameter Checks:
         - Wavevector q: Must be positive, warns if outside typical XPCS range
         - Time step dt: Must be positive for temporal evolution
         - Gap size h: Must be positive for rheometer geometry
-        
+
         Typical Parameter Ranges:
         - q-vector: 0.001-0.1 Å⁻¹ (typical XPCS range)
         - Time step: 0.01-10 s (depending on dynamics)
         - Gap size: μm-mm range (rheometer geometry)
-        
+
         Raises
         ------
         ValueError
@@ -530,8 +530,8 @@ class ConfigManager:
     def is_angle_filtering_enabled(self) -> bool:
         """
         Check if angle filtering is enabled in configuration.
-        
-        Automatically returns False for static isotropic mode, regardless of 
+
+        Automatically returns False for static isotropic mode, regardless of
         configuration setting.
 
         Returns
@@ -549,7 +549,7 @@ class ConfigManager:
                     "(ignoring configuration setting)"
                 )
             return False
-            
+
         return self.get_angle_filtering_config().get("enabled", True)
 
     def get_target_angle_ranges(self) -> List[Tuple[float, float]]:
@@ -613,16 +613,16 @@ class ConfigManager:
             True if static mode is enabled, False otherwise
         """
         # Use cached value for performance
-        if hasattr(self, '_cached_values') and 'static_mode' in self._cached_values:
-            return self._cached_values['static_mode']
-        
+        if hasattr(self, "_cached_values") and "static_mode" in self._cached_values:
+            return self._cached_values["static_mode"]
+
         result = self.get("analysis_settings", "static_mode", default=False)
         return bool(result)
 
     def get_static_submode(self) -> Optional[str]:
         """
         Get the static sub-mode for analysis.
-        
+
         Returns
         -------
         Optional[str]
@@ -631,13 +631,15 @@ class ConfigManager:
         # Return None if static mode is not enabled
         if not self.is_static_mode_enabled():
             return None
-            
+
         # Use cached value for performance
-        if hasattr(self, '_cached_values') and 'static_submode' in self._cached_values:
-            return self._cached_values['static_submode']
-            
+        if hasattr(self, "_cached_values") and "static_submode" in self._cached_values:
+            return self._cached_values["static_submode"]
+
         # Get submode from configuration (case-insensitive)
-        raw_submode = self.get("analysis_settings", "static_submode", default="anisotropic")
+        raw_submode = self.get(
+            "analysis_settings", "static_submode", default="anisotropic"
+        )
         if raw_submode is None:
             submode = "anisotropic"  # Default for backward compatibility
         else:
@@ -651,30 +653,34 @@ class ConfigManager:
                     f"Invalid static_submode '{raw_submode}', defaulting to 'anisotropic'"
                 )
                 submode = "anisotropic"
-                
+
         return submode
-    
+
     def is_static_isotropic_enabled(self) -> bool:
         """
         Check if static isotropic mode is enabled.
-        
+
         Returns
         -------
         bool
             True if analysis mode is static isotropic, False otherwise
         """
-        return self.is_static_mode_enabled() and self.get_static_submode() == "isotropic"
-    
+        return (
+            self.is_static_mode_enabled() and self.get_static_submode() == "isotropic"
+        )
+
     def is_static_anisotropic_enabled(self) -> bool:
         """
         Check if static anisotropic mode is enabled.
-        
+
         Returns
         -------
         bool
             True if analysis mode is static anisotropic, False otherwise
         """
-        return self.is_static_mode_enabled() and self.get_static_submode() == "anisotropic"
+        return (
+            self.is_static_mode_enabled() and self.get_static_submode() == "anisotropic"
+        )
 
     def get_analysis_mode(self) -> str:
         """
@@ -687,7 +693,7 @@ class ConfigManager:
         """
         if not self.is_static_mode_enabled():
             return "laminar_flow"
-            
+
         submode = self.get_static_submode()
         if submode == "isotropic":
             return "static_isotropic"
@@ -706,7 +712,7 @@ class ConfigManager:
         """
         initial_params = self.get("initial_parameters", default={})
         active_params = initial_params.get("active_parameters", [])
-        
+
         # If no active_parameters specified, use all parameter names
         if not active_params:
             param_names = initial_params.get("parameter_names", [])
@@ -714,8 +720,16 @@ class ConfigManager:
                 active_params = param_names
             else:
                 # Ultimate fallback to standard parameter names
-                active_params = ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
-        
+                active_params = [
+                    "D0",
+                    "alpha",
+                    "D_offset",
+                    "gamma_dot_t0",
+                    "beta",
+                    "gamma_dot_t_offset",
+                    "phi0",
+                ]
+
         return active_params
 
     def get_effective_parameter_count(self) -> int:
@@ -731,23 +745,26 @@ class ConfigManager:
             - Laminar flow mode: 7 (all parameters)
         """
         # Use cached value for performance
-        if hasattr(self, '_cached_values') and 'effective_param_count' in self._cached_values:
-            return self._cached_values['effective_param_count']
-        
+        if (
+            hasattr(self, "_cached_values")
+            and "effective_param_count" in self._cached_values
+        ):
+            return self._cached_values["effective_param_count"]
+
         # Get active parameters from configuration
         active_params = self.get_active_parameters()
-        
+
         # Use active_parameters if specified, otherwise fall back to mode-based logic
         if active_params:
             count = len(active_params)
         else:
             count = 3 if self.is_static_mode_enabled() else 7
-        
+
         # Cache the result for performance
-        if not hasattr(self, '_cached_values'):
+        if not hasattr(self, "_cached_values"):
             self._cached_values = {}
-        self._cached_values['effective_param_count'] = count
-        
+        self._cached_values["effective_param_count"] = count
+
         return count
 
     def get_analysis_settings(self) -> Dict[str, Any]:
@@ -760,7 +777,7 @@ class ConfigManager:
             Analysis settings including static_mode flag and descriptions
         """
         analysis_settings = self.get("analysis_settings", default={})
-        
+
         # Ensure analysis_settings is a dictionary for type safety
         if not isinstance(analysis_settings, dict):
             analysis_settings = {}
@@ -941,24 +958,24 @@ class ConfigManager:
 class PerformanceMonitor:
     """
     Performance monitoring and profiling utilities.
-    
+
     Provides lightweight profiling and memory monitoring
     for optimization of computational kernels.
     """
-    
+
     def __init__(self):
         self.timings = {}
         self.memory_usage = {}
-        
+
     def time_function(self, func_name: str):
         """
         Context manager for timing function execution.
-        
+
         Parameters
         ----------
         func_name : str
             Name of function being timed
-            
+
         Usage
         -----
         with monitor.time_function("my_function"):
@@ -966,51 +983,51 @@ class PerformanceMonitor:
             pass
         """
         return self._TimingContext(self, func_name)
-    
+
     class _TimingContext:
         def __init__(self, monitor, func_name):
             self.monitor = monitor
             self.func_name = func_name
             self.start_time: Optional[float] = None
-            
+
         def __enter__(self):
             gc.collect()  # Clean memory before timing
             self.start_time = time.perf_counter()
             return self
-            
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             # Suppress unused parameter warnings
             _ = exc_type, exc_val, exc_tb
-            
+
             if self.start_time is not None:
                 elapsed = time.perf_counter() - self.start_time
                 if self.func_name not in self.monitor.timings:
                     self.monitor.timings[self.func_name] = []
                 self.monitor.timings[self.func_name].append(elapsed)
-    
+
     def get_timing_summary(self) -> Dict[str, Dict[str, float]]:
         """Get summary statistics for all timed functions."""
         summary = {}
         for func_name, times in self.timings.items():
             summary[func_name] = {
-                'mean': sum(times) / len(times),
-                'min': min(times),
-                'max': max(times),
-                'total': sum(times),
-                'calls': len(times)
+                "mean": sum(times) / len(times),
+                "min": min(times),
+                "max": max(times),
+                "total": sum(times),
+                "calls": len(times),
             }
         return summary
-    
+
     def reset_timings(self):
         """Clear all timing data."""
         self.timings.clear()
         self.memory_usage.clear()
-    
+
     def log_performance_summary(self, logger=None):
         """Log performance summary to logger."""
         if logger is None:
             logger = logging.getLogger(__name__)
-            
+
         summary = self.get_timing_summary()
         if summary:
             logger.info("=== Performance Summary ===")

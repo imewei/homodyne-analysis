@@ -22,10 +22,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
 ]
 keywords = [
@@ -39,7 +37,7 @@ keywords = [
     "Bayesian analysis",
     "MCMC",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 dependencies = [
     "numpy>=1.19.0",
     "scipy>=1.7.0",
@@ -97,11 +95,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/AdvancedPhotonSource/homodyne-analysis"
-Documentation = "https://advancedphotonsource.github.io/homodyne-analysis/"
-Repository = "https://github.com/AdvancedPhotonSource/homodyne-analysis"
-Issues = "https://github.com/AdvancedPhotonSource/homodyne-analysis/issues"
-Changelog = "https://github.com/AdvancedPhotonSource/homodyne-analysis/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/imewei/homodyne"
+Documentation = "https://imewei.github.io/homodyne/"
+Repository = "https://github.com/imewei/homodyne"
+Issues = "https://github.com/imewei/homodyne/issues"
 
 [project.scripts]
 homodyne = "homodyne.cli:main"
@@ -119,7 +116,7 @@ version = {attr = "homodyne.__version__"}
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -158,7 +155,7 @@ filterwarnings = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

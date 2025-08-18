@@ -141,7 +141,6 @@ except ImportError:
     PYMC_AVAILABLE = False
 
 
-
 class HomodyneAnalysisCore:
     """
     Core analysis engine for homodyne scattering data.
@@ -251,7 +250,7 @@ class HomodyneAnalysisCore:
         self._cache = {}
         self.cached_experimental_data = None
         self.cached_phi_angles = None
-        
+
         # Initialize plotting cache variables
         self._last_experimental_data = None
         self._last_phi_angles = None
@@ -464,10 +463,14 @@ class HomodyneAnalysisCore:
             # In isotropic static mode, create a single dummy angle
             phi_angles = np.array([0.0], dtype=np.float64)
             num_angles = 1
-            logger.info("Isotropic static mode: Using single dummy angle (0.0°) instead of loading phi_angles_file")
+            logger.info(
+                "Isotropic static mode: Using single dummy angle (0.0°) instead of loading phi_angles_file"
+            )
         else:
             # Normal mode: load phi angles from file
-            phi_angles_path = self.config["experimental_data"].get("phi_angles_path", ".")
+            phi_angles_path = self.config["experimental_data"].get(
+                "phi_angles_path", "."
+            )
             phi_angles_file = self.config["experimental_data"]["phi_angles_file"]
             phi_file = os.path.join(phi_angles_path, phi_angles_file)
             logger.debug(f"Loading phi angles from: {phi_file}")
@@ -524,20 +527,26 @@ class HomodyneAnalysisCore:
         # Cache in memory
         self.cached_experimental_data = c2_experimental
         self.cached_phi_angles = phi_angles
-        
+
         # Cache for plotting
         self._last_experimental_data = c2_experimental
         self._last_phi_angles = phi_angles
         logger.debug(f"Data cached in memory - final shape: {c2_experimental.shape}")
 
         # Plot experimental data for validation if enabled
-        if self.config.get("workflow_integration", {}).get("analysis_workflow", {}).get("plot_experimental_data_on_load", False):
+        if (
+            self.config.get("workflow_integration", {})
+            .get("analysis_workflow", {})
+            .get("plot_experimental_data_on_load", False)
+        ):
             logger.info("Plotting experimental data for validation...")
             try:
                 self._plot_experimental_data_validation(c2_experimental, phi_angles)
                 logger.info("Experimental data validation plot created successfully")
             except Exception as e:
-                logger.warning(f"Failed to create experimental data validation plot: {e}")
+                logger.warning(
+                    f"Failed to create experimental data validation plot: {e}"
+                )
 
         logger.debug("load_experimental_data method completed successfully")
         return c2_experimental, self.time_length, phi_angles, num_angles
@@ -583,14 +592,18 @@ class HomodyneAnalysisCore:
         # Handle data loading for isotropic static mode vs normal mode
         if self.config_manager.is_static_isotropic_enabled():
             # In isotropic static mode, load data only once and use for the single dummy angle
-            logger.info(f"Isotropic static mode: Loading single correlation matrix for dummy angle")
-            
+            logger.info(
+                f"Isotropic static mode: Loading single correlation matrix for dummy angle"
+            )
+
             try:
                 # Load data once for isotropic case
                 raw_data = data_file.get_twotime_c2(exchange_key, correct_diag=False)
                 if raw_data is None:
-                    raise ValueError("get_twotime_c2 returned None in isotropic static mode")
-                
+                    raise ValueError(
+                        "get_twotime_c2 returned None in isotropic static mode"
+                    )
+
                 # Ensure raw_data is a NumPy array
                 raw_data_np = np.array(raw_data)
                 sliced_data = raw_data_np[
@@ -602,7 +615,7 @@ class HomodyneAnalysisCore:
                 logger.debug(
                     f"  Isotropic mode - Raw data shape: {raw_data_np.shape} -> sliced: {sliced_data.shape}"
                 )
-                
+
             except Exception as e:
                 logger.error(f"Failed to load data in isotropic static mode: {e}")
                 raise
@@ -615,7 +628,9 @@ class HomodyneAnalysisCore:
 
                 try:
                     # Fix: Pass correct_diag as bool, not int. If you want diagonal correction, set to True, else False.
-                    raw_data = data_file.get_twotime_c2(exchange_key, correct_diag=False)
+                    raw_data = data_file.get_twotime_c2(
+                        exchange_key, correct_diag=False
+                    )
                     if raw_data is None:
                         raise ValueError(
                             f"get_twotime_c2 returned None for angle {i+1} (φ={angle_deg:.2f}°)"
@@ -984,20 +999,20 @@ class HomodyneAnalysisCore:
         Notes
         -----
         The uncertainty calculation follows standard error of the mean:
-        
+
         reduced_chi2_uncertainty = std(angle_chi2_reduced) / sqrt(n_angles)
-        
+
         Interpretation of uncertainty:
         - Small uncertainty (< 0.1 * reduced_chi2): Consistent fit across angles
         - Large uncertainty (> 0.5 * reduced_chi2): High angle variability, potential
           systematic issues or model inadequacy
-        
+
         The method uses averaged (not summed) chi-squared for better angle weighting:
         reduced_chi2 = mean(chi2_reduced_per_angle) for optimization angles only
-        
+
         Quality assessment guidelines:
         - Excellent: reduced_chi2 ≤ 2.0
-        - Acceptable: 2.0 < reduced_chi2 ≤ 5.0  
+        - Acceptable: 2.0 < reduced_chi2 ≤ 5.0
         - Warning: 5.0 < reduced_chi2 ≤ 10.0
         - Poor/Critical: reduced_chi2 > 10.0
         """
@@ -1159,17 +1174,17 @@ class HomodyneAnalysisCore:
                 # =====================================
                 # This performs least squares fitting to determine the optimal scaling relationship:
                 # g₂ = offset + contrast × g₁ where:
-                # - g₁ is the theoretical correlation function 
+                # - g₁ is the theoretical correlation function
                 # - g₂ is the experimental correlation function
                 # - contrast and offset are fitted scaling parameters
                 #
                 # WHY THIS IS ESSENTIAL:
                 # This scaling optimization is ALWAYS enabled because it is fundamental to proper
-                # chi-squared calculation. Without it, we would compare raw theoretical values 
-                # directly to experimental data, which ignores systematic scaling factors and 
+                # chi-squared calculation. Without it, we would compare raw theoretical values
+                # directly to experimental data, which ignores systematic scaling factors and
                 # offsets that are physically present due to:
                 # - Instrumental response functions
-                # - Background signals  
+                # - Background signals
                 # - Detector gain variations
                 # - Normalization differences
                 #
@@ -1211,26 +1226,40 @@ class HomodyneAnalysisCore:
             if optimization_chi2_angles:
                 reduced_chi2 = np.mean(optimization_chi2_angles)
                 n_optimization_angles = len(optimization_chi2_angles)
-                
+
                 # Calculate uncertainty in reduced chi-squared
                 if n_optimization_angles > 1:
                     # Standard error of the mean
                     reduced_chi2_std = np.std(optimization_chi2_angles, ddof=1)
-                    reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(n_optimization_angles)
+                    reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(
+                        n_optimization_angles
+                    )
                 else:
                     # Single angle case
                     reduced_chi2_std = 0.0
                     reduced_chi2_uncertainty = 0.0
-                
+
                 logger.debug(
                     f"Using average of {n_optimization_angles} optimization angles: χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
             else:
                 # Fallback if no optimization angles (shouldn't happen)
-                reduced_chi2 = np.mean(angle_chi2_reduced) if angle_chi2_reduced else 1e6
-                reduced_chi2_std = np.std(angle_chi2_reduced, ddof=1) if len(angle_chi2_reduced) > 1 else 0.0
-                reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(len(angle_chi2_reduced)) if len(angle_chi2_reduced) > 1 else 0.0
-                logger.warning("No optimization angles found, using average of all angles")
+                reduced_chi2 = (
+                    np.mean(angle_chi2_reduced) if angle_chi2_reduced else 1e6
+                )
+                reduced_chi2_std = (
+                    np.std(angle_chi2_reduced, ddof=1)
+                    if len(angle_chi2_reduced) > 1
+                    else 0.0
+                )
+                reduced_chi2_uncertainty = (
+                    reduced_chi2_std / np.sqrt(len(angle_chi2_reduced))
+                    if len(angle_chi2_reduced) > 1
+                    else 0.0
+                )
+                logger.warning(
+                    "No optimization angles found, using average of all angles"
+                )
 
             # Logging
             OPTIMIZATION_COUNTER += 1
@@ -1242,20 +1271,30 @@ class HomodyneAnalysisCore:
                     f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
                 # Log reduced chi-square per angle
-                for i, (phi, chi2_red_angle) in enumerate(zip(phi_angles, angle_chi2_reduced)):
+                for i, (phi, chi2_red_angle) in enumerate(
+                    zip(phi_angles, angle_chi2_reduced)
+                ):
                     logger.info(
                         f"  Angle {i+1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
                     )
 
             if return_components:
                 # Calculate total chi2 for compatibility (sum of optimization angles)
-                total_chi2_compat = sum(angle_chi2[i] for i in optimization_indices) if filter_angles_for_optimization else sum(angle_chi2)
-                
+                total_chi2_compat = (
+                    sum(angle_chi2[i] for i in optimization_indices)
+                    if filter_angles_for_optimization
+                    else sum(angle_chi2)
+                )
+
                 # Calculate degrees of freedom
-                total_data_points = sum(angle_data_points[i] for i in optimization_indices) if filter_angles_for_optimization else sum(angle_data_points)
+                total_data_points = (
+                    sum(angle_data_points[i] for i in optimization_indices)
+                    if filter_angles_for_optimization
+                    else sum(angle_data_points)
+                )
                 num_parameters = len(parameters)
                 degrees_of_freedom = max(1, total_data_points - num_parameters)
-                
+
                 return {
                     "chi_squared": total_chi2_compat,
                     "reduced_chi_squared": float(reduced_chi2),
@@ -1339,18 +1378,18 @@ class HomodyneAnalysisCore:
         - Overall reduced chi-squared uncertainty indicates fit consistency:
           * Small uncertainty (< 10% of chi2): Consistent across angles
           * Large uncertainty (> 50% of chi2): High variability, investigate systematically
-        
+
         Angle Classification:
         - Good angles: reduced_chi2 ≤ acceptable_threshold (default 5.0)
         - Unacceptable angles: reduced_chi2 > acceptable_threshold
         - Statistical outliers: reduced_chi2 > mean + 2.5*std
-        
+
         The method uses configuration-driven thresholds from validation_rules.fit_quality
         for consistent quality assessment across the package.
-        
+
         Files saved (if save_to_file=True):
         - per_angle_chi_squared_{method_name.lower()}.json: Detailed analysis results
-        
+
         See Also
         --------
         calculate_chi_squared_optimized : Underlying chi-squared calculation
@@ -1422,27 +1461,27 @@ class HomodyneAnalysisCore:
 
         # Categorize angles by quality levels
         angle_chi2_array = np.array(angle_chi2_reduced)
-        
+
         # Excellent angles (≤ 2.0)
         excellent_indices = np.where(angle_chi2_array <= excellent_per_angle)[0]
         excellent_angles = [angles[i] for i in excellent_indices]
-        
+
         # Acceptable angles (≤ 5.0)
         acceptable_indices = np.where(angle_chi2_array <= acceptable_per_angle)[0]
         acceptable_angles = [angles[i] for i in acceptable_indices]
-        
+
         # Warning angles (> 5.0, ≤ 10.0)
         warning_indices = np.where(
-            (angle_chi2_array > acceptable_per_angle) & 
-            (angle_chi2_array <= warning_per_angle)
+            (angle_chi2_array > acceptable_per_angle)
+            & (angle_chi2_array <= warning_per_angle)
         )[0]
         warning_angles = [angles[i] for i in warning_indices]
-        
+
         # Poor angles (> 10.0)
         poor_indices = np.where(angle_chi2_array > warning_per_angle)[0]
         poor_angles = [angles[i] for i in poor_indices]
         poor_chi2 = [angle_chi2_reduced[i] for i in poor_indices]
-        
+
         # Legacy compatibility
         unacceptable_angles = poor_angles
         unacceptable_chi2 = poor_chi2
@@ -1495,9 +1534,15 @@ class HomodyneAnalysisCore:
         per_angle_results = {
             "method": method_name,
             "overall_reduced_chi_squared": chi_results["reduced_chi_squared"],
-            "overall_reduced_chi_squared_uncertainty": chi_results.get("reduced_chi_squared_uncertainty", 0.0),
-            "overall_reduced_chi_squared_std": chi_results.get("reduced_chi_squared_std", 0.0),
-            "n_optimization_angles": chi_results.get("n_optimization_angles", len(angles)),
+            "overall_reduced_chi_squared_uncertainty": chi_results.get(
+                "reduced_chi_squared_uncertainty", 0.0
+            ),
+            "overall_reduced_chi_squared_std": chi_results.get(
+                "reduced_chi_squared_std", 0.0
+            ),
+            "n_optimization_angles": chi_results.get(
+                "n_optimization_angles", len(angles)
+            ),
             "per_angle_analysis": {
                 "phi_angles_deg": angles,
                 "chi_squared_reduced": angle_chi2_reduced,
@@ -1510,7 +1555,9 @@ class HomodyneAnalysisCore:
                 "min_chi2_reduced": min_chi2_red,
                 "max_chi2_reduced": max_chi2_red,
                 "range_chi2_reduced": max_chi2_red - min_chi2_red,
-                "uncertainty_from_angles": chi_results.get("reduced_chi_squared_uncertainty", 0.0),
+                "uncertainty_from_angles": chi_results.get(
+                    "reduced_chi_squared_uncertainty", 0.0
+                ),
             },
             "quality_assessment": {
                 "overall_quality": overall_quality,
@@ -1532,7 +1579,9 @@ class HomodyneAnalysisCore:
                 "interpretation": {
                     "overall_chi2_meaning": _get_chi2_interpretation(overall_chi2),
                     "quality_explanation": _get_quality_explanation(combined_quality),
-                    "recommended_actions": _get_quality_recommendations(combined_quality, quality_issues),
+                    "recommended_actions": _get_quality_recommendations(
+                        combined_quality, quality_issues
+                    ),
                 },
             },
             "angle_categorization": {
@@ -1611,7 +1660,7 @@ class HomodyneAnalysisCore:
 
         # Log summary with quality assessment
         logger.info(f"Per-angle chi-squared analysis [{method_name}]:")
-        overall_uncertainty = chi_results.get('reduced_chi_squared_uncertainty', 0.0)
+        overall_uncertainty = chi_results.get("reduced_chi_squared_uncertainty", 0.0)
         if overall_uncertainty > 0:
             logger.info(
                 f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ± {overall_uncertainty:.6e} ({overall_quality})"
@@ -1680,10 +1729,10 @@ class HomodyneAnalysisCore:
     def save_results_with_config(self, results: Dict[str, Any]) -> None:
         """
         Save optimization results along with configuration to JSON file.
-        
+
         This method ensures all results including uncertainty fields are properly
         saved with the configuration for reproducibility.
-        
+
         Parameters
         ----------
         results : Dict[str, Any]
@@ -1691,24 +1740,25 @@ class HomodyneAnalysisCore:
         """
         import json
         from datetime import datetime
-        
+
         # Create comprehensive results with configuration
         from datetime import timezone
+
         timestamp = datetime.now(timezone.utc).isoformat()
-        
+
         output_data = {
             "timestamp": timestamp,
             "config": self.config,
-            "results": results
+            "results": results,
         }
-        
+
         # Add execution metadata
         if "execution_metadata" not in output_data:
             output_data["execution_metadata"] = {
                 "analysis_success": True,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
-        
+
         # Determine output file name
         if self.config is not None:
             output_settings = self.config.get("output_settings", {})
@@ -1716,41 +1766,43 @@ class HomodyneAnalysisCore:
             results_format = file_formats.get("results_format", "json")
         else:
             results_format = "json"
-        
+
         if results_format == "json":
             output_file = "homodyne_analysis_results.json"
         else:
             output_file = f"homodyne_analysis_results.{results_format}"
-        
+
         try:
             # Save to JSON format regardless of specified format for compatibility
-            with open(output_file, 'w') as f:
+            with open(output_file, "w") as f:
                 json.dump(output_data, f, indent=2, default=str)
-            
+
             logger.info(f"Results and configuration saved to {output_file}")
-            
+
             # Also save a copy to results directory if it exists
             results_dir = "homodyne_analysis_results"
             if os.path.exists(results_dir):
                 results_file_path = os.path.join(results_dir, "run_configuration.json")
-                with open(results_file_path, 'w') as f:
+                with open(results_file_path, "w") as f:
                     json.dump(output_data, f, indent=2, default=str)
                 logger.info(f"Results also saved to {results_file_path}")
-                
+
         except Exception as e:
             logger.error(f"Failed to save results: {e}")
             raise
-        
+
         # Generate plots if enabled in configuration
         self._generate_analysis_plots(results, output_data)
 
-    def _plot_experimental_data_validation(self, c2_experimental: np.ndarray, phi_angles: np.ndarray) -> None:
+    def _plot_experimental_data_validation(
+        self, c2_experimental: np.ndarray, phi_angles: np.ndarray
+    ) -> None:
         """
         Plot experimental C2 data immediately after loading for validation.
-        
+
         This method creates a comprehensive validation plot of the loaded experimental
         data to verify data integrity and structure before analysis.
-        
+
         Parameters
         ----------
         c2_experimental : np.ndarray
@@ -1763,81 +1815,95 @@ class HomodyneAnalysisCore:
             import matplotlib.pyplot as plt
             import matplotlib.gridspec as gridspec
             from pathlib import Path
-            
+
             logger.debug("Creating experimental data validation plot")
-            
+
             # Set up plotting style
-            plt.style.use('default')
-            plt.rcParams.update({
-                'font.size': 11,
-                'axes.labelsize': 12,
-                'axes.titlesize': 14,
-                'figure.dpi': 150
-            })
-            
+            plt.style.use("default")
+            plt.rcParams.update(
+                {
+                    "font.size": 11,
+                    "axes.labelsize": 12,
+                    "axes.titlesize": 14,
+                    "figure.dpi": 150,
+                }
+            )
+
             # Get temporal parameters
             dt = self.dt
             n_angles, n_t2, n_t1 = c2_experimental.shape
             time_t2 = np.arange(n_t2) * dt
             time_t1 = np.arange(n_t1) * dt
-            
+
             logger.debug(f"Data shape for validation plot: {c2_experimental.shape}")
-            logger.debug(f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s")
-            
+            logger.debug(
+                f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s"
+            )
+
             # Create the validation plot
             n_plot_angles = min(3, n_angles)  # Show up to 3 angles
             fig = plt.figure(figsize=(16, 4 * n_plot_angles))
             gs = gridspec.GridSpec(n_plot_angles, 4, hspace=0.3, wspace=0.3)
-            
+
             for i in range(n_plot_angles):
                 angle_idx = i * (n_angles // n_plot_angles) if n_angles > 1 else 0
                 if angle_idx >= n_angles:
                     angle_idx = n_angles - 1
-                    
+
                 angle_data = c2_experimental[angle_idx, :, :]
                 phi_deg = phi_angles[angle_idx] if len(phi_angles) > angle_idx else 0.0
-                
+
                 # 1. Full heatmap
                 ax1 = fig.add_subplot(gs[i, 0])
-                im1 = ax1.imshow(angle_data, aspect='equal', origin='lower',
-                               extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]], # type: ignore
-                               cmap='viridis')
-                ax1.set_xlabel('Time t₁ (s)')
-                ax1.set_ylabel('Time t₂ (s)')
-                ax1.set_title(f'g₂(t₁,t₂) at φ={phi_deg:.1f}°')
+                im1 = ax1.imshow(
+                    angle_data,
+                    aspect="equal",
+                    origin="lower",
+                    extent=[time_t1[0], time_t1[-1], time_t2[0], time_t2[-1]],  # type: ignore
+                    cmap="viridis",
+                )
+                ax1.set_xlabel("Time t₁ (s)")
+                ax1.set_ylabel("Time t₂ (s)")
+                ax1.set_title(f"g₂(t₁,t₂) at φ={phi_deg:.1f}°")
                 plt.colorbar(im1, ax=ax1, shrink=0.8)
-                
+
                 # 2. Diagonal slice
                 ax2 = fig.add_subplot(gs[i, 1])
                 diagonal = np.diag(angle_data)
-                time_diag = time_t1[:len(diagonal)]
-                ax2.plot(time_diag, diagonal, 'b-', linewidth=2)
-                ax2.set_xlabel('Time (s)')
-                ax2.set_ylabel('g₂(t,t)')
-                ax2.set_title(f'Diagonal at φ={phi_deg:.1f}°')
+                time_diag = time_t1[: len(diagonal)]
+                ax2.plot(time_diag, diagonal, "b-", linewidth=2)
+                ax2.set_xlabel("Time (s)")
+                ax2.set_ylabel("g₂(t,t)")
+                ax2.set_title(f"Diagonal at φ={phi_deg:.1f}°")
                 ax2.grid(True, alpha=0.3)
-                
+
                 # 3. Cross-sections
                 ax3 = fig.add_subplot(gs[i, 2])
                 n_sections = 3
-                section_indices = np.linspace(5, n_t2-5, n_sections, dtype=int)
-                colors = ['red', 'blue', 'green']
-                
+                section_indices = np.linspace(5, n_t2 - 5, n_sections, dtype=int)
+                colors = ["red", "blue", "green"]
+
                 for idx, color in zip(section_indices, colors):
                     if idx < n_t2:
-                        ax3.plot(time_t1, angle_data[idx, :], color=color, 
-                               linewidth=1.5, alpha=0.8, label=f't₂={time_t2[idx]:.1f}s')
-                
-                ax3.set_xlabel('Time t₁ (s)')
-                ax3.set_ylabel('g₂(t₁,t₂)')
-                ax3.set_title(f'Cross-sections at φ={phi_deg:.1f}°')
+                        ax3.plot(
+                            time_t1,
+                            angle_data[idx, :],
+                            color=color,
+                            linewidth=1.5,
+                            alpha=0.8,
+                            label=f"t₂={time_t2[idx]:.1f}s",
+                        )
+
+                ax3.set_xlabel("Time t₁ (s)")
+                ax3.set_ylabel("g₂(t₁,t₂)")
+                ax3.set_title(f"Cross-sections at φ={phi_deg:.1f}°")
                 ax3.legend(fontsize=9)
                 ax3.grid(True, alpha=0.3)
-                
+
                 # 4. Statistics
                 ax4 = fig.add_subplot(gs[i, 3])
-                ax4.axis('off')
-                
+                ax4.axis("off")
+
                 # Calculate statistics
                 mean_val = np.mean(angle_data)
                 std_val = np.std(angle_data)
@@ -1845,7 +1911,7 @@ class HomodyneAnalysisCore:
                 max_val = np.max(angle_data)
                 diag_mean = np.mean(diagonal)
                 contrast = (max_val - min_val) / min_val
-                
+
                 stats_text = f"""Data Statistics (φ={phi_deg:.1f}°):
 
 Shape: {angle_data.shape[0]} × {angle_data.shape[1]}
@@ -1863,41 +1929,54 @@ Validation:
 {'✓' if 0.9 < mean_val < 1.2 else '✗'} Mean around 1.0
 {'✓' if diag_mean > mean_val else '✗'} Diagonal enhanced
 {'✓' if contrast > 0.001 else '✗'} Sufficient contrast"""
-                
-                ax4.text(0.05, 0.95, stats_text, transform=ax4.transAxes, fontsize=9,
-                        verticalalignment='top', fontfamily='monospace',
-                        bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
-            
+
+                ax4.text(
+                    0.05,
+                    0.95,
+                    stats_text,
+                    transform=ax4.transAxes,
+                    fontsize=9,
+                    verticalalignment="top",
+                    fontfamily="monospace",
+                    bbox=dict(boxstyle="round", facecolor="lightblue", alpha=0.7),
+                )
+
             # Overall title
-            sample_desc = self.config.get('metadata', {}).get('sample_description', 'Unknown Sample') # type: ignore
-            plt.suptitle(f'Experimental Data Validation: {sample_desc}', 
-                        fontsize=16, fontweight='bold')
-            
+            sample_desc = self.config.get("metadata", {}).get("sample_description", "Unknown Sample")  # type: ignore
+            plt.suptitle(
+                f"Experimental Data Validation: {sample_desc}",
+                fontsize=16,
+                fontweight="bold",
+            )
+
             # Save the validation plot
-            plots_base_dir = self.config.get("output_settings", {}).get("plotting", {}).get("output", {}).get("base_directory", "./plots") # type: ignore
+            plots_base_dir = self.config.get("output_settings", {}).get("plotting", {}).get("output", {}).get("base_directory", "./plots")  # type: ignore
             plots_dir = Path(plots_base_dir) / "data_validation"
             plots_dir.mkdir(parents=True, exist_ok=True)
-            
+
             output_file = plots_dir / "experimental_data_validation.png"
-            plt.savefig(output_file, dpi=300, bbox_inches='tight')
+            plt.savefig(output_file, dpi=300, bbox_inches="tight")
             logger.info(f"Experimental data validation plot saved to: {output_file}")
-            
+
             # Optionally show the plot
-            show_plots = self.config.get("output_settings", {}).get("plotting", {}).get("general", {}).get("show_plots", False) # type: ignore
+            show_plots = self.config.get("output_settings", {}).get("plotting", {}).get("general", {}).get("show_plots", False)  # type: ignore
             if show_plots:
                 plt.show()
             else:
                 plt.close(fig)
-                
+
         except Exception as e:
             logger.error(f"Failed to create experimental data validation plot: {e}")
             import traceback
+
             logger.debug(traceback.format_exc())
 
-    def _generate_analysis_plots(self, results: Dict[str, Any], output_data: Dict[str, Any]) -> None:
+    def _generate_analysis_plots(
+        self, results: Dict[str, Any], output_data: Dict[str, Any]
+    ) -> None:
         """
         Generate analysis plots including C2 heatmaps with experimental vs theoretical comparison.
-        
+
         Parameters
         ----------
         results : Dict[str, Any]
@@ -1906,49 +1985,57 @@ Validation:
             Complete output data including configuration
         """
         logger = logging.getLogger(__name__)
-        
+
         # Check if plotting is enabled in configuration
         config = output_data.get("config") or {}
         output_settings = config.get("output_settings", {})
         reporting = output_settings.get("reporting", {})
-        
+
         if not reporting.get("generate_plots", True):
             logger.info("Plotting disabled in configuration - skipping plot generation")
             return
-        
+
         logger.info("Generating analysis plots...")
-        
+
         try:
             # Import plotting module
             from homodyne.plotting import (
-                plot_c2_heatmaps, plot_diagnostic_summary,
-                plot_mcmc_corner, plot_mcmc_trace, plot_mcmc_convergence_diagnostics
+                plot_c2_heatmaps,
+                plot_diagnostic_summary,
+                plot_mcmc_corner,
+                plot_mcmc_trace,
+                plot_mcmc_convergence_diagnostics,
             )
-            
+
             # Determine output directory
             results_dir = Path("homodyne_results")
             plots_dir = results_dir / "plots"
             plots_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Prepare data for plotting
             plot_data = self._prepare_plot_data(results, config)
-            
+
             if plot_data is None:
-                logger.warning("Insufficient data for plotting - skipping plot generation")
+                logger.warning(
+                    "Insufficient data for plotting - skipping plot generation"
+                )
                 return
-            
+
             # Generate C2 heatmaps if experimental and theoretical data are available
-            if all(key in plot_data for key in ["experimental_data", "theoretical_data", "phi_angles"]):
+            if all(
+                key in plot_data
+                for key in ["experimental_data", "theoretical_data", "phi_angles"]
+            ):
                 logger.info("Generating C2 correlation heatmaps...")
                 try:
                     success = plot_c2_heatmaps(
                         plot_data["experimental_data"],
-                        plot_data["theoretical_data"], 
+                        plot_data["theoretical_data"],
                         plot_data["phi_angles"],
                         plots_dir,
                         config,
                         t2=plot_data.get("t2"),
-                        t1=plot_data.get("t1")
+                        t1=plot_data.get("t1"),
                     )
                     if success:
                         logger.info("✓ C2 heatmaps generated successfully")
@@ -1956,14 +2043,14 @@ Validation:
                         logger.warning("⚠ Some C2 heatmaps failed to generate")
                 except Exception as e:
                     logger.error(f"Failed to generate C2 heatmaps: {e}")
-            
+
             # Parameter evolution plot - DISABLED (was non-functional)
             # This plot has been removed due to persistent issues
-            
+
             # Generate MCMC plots if trace data is available
             if "mcmc_trace" in plot_data:
                 logger.info("Generating MCMC plots...")
-                
+
                 # MCMC corner plot
                 try:
                     success = plot_mcmc_corner(
@@ -1979,7 +2066,7 @@ Validation:
                         logger.warning("⚠ MCMC corner plot failed to generate")
                 except Exception as e:
                     logger.error(f"Failed to generate MCMC corner plot: {e}")
-                
+
                 # MCMC trace plots
                 try:
                     success = plot_mcmc_trace(
@@ -1995,7 +2082,7 @@ Validation:
                         logger.warning("⚠ MCMC trace plots failed to generate")
                 except Exception as e:
                     logger.error(f"Failed to generate MCMC trace plots: {e}")
-                
+
                 # MCMC convergence diagnostics
                 if "mcmc_diagnostics" in plot_data:
                     try:
@@ -2007,11 +2094,17 @@ Validation:
                             param_names=plot_data.get("parameter_names"),
                         )
                         if success:
-                            logger.info("✓ MCMC convergence diagnostics generated successfully")
+                            logger.info(
+                                "✓ MCMC convergence diagnostics generated successfully"
+                            )
                         else:
-                            logger.warning("⚠ MCMC convergence diagnostics failed to generate")
+                            logger.warning(
+                                "⚠ MCMC convergence diagnostics failed to generate"
+                            )
                     except Exception as e:
-                        logger.error(f"Failed to generate MCMC convergence diagnostics: {e}")
+                        logger.error(
+                            f"Failed to generate MCMC convergence diagnostics: {e}"
+                        )
             else:
                 logger.debug("MCMC trace data not available - skipping MCMC plots")
 
@@ -2025,40 +2118,42 @@ Validation:
                     logger.warning("⚠ Diagnostic summary plot failed to generate")
             except Exception as e:
                 logger.error(f"Failed to generate diagnostic summary plot: {e}")
-                
+
             logger.info(f"Plots saved to: {plots_dir}")
-            
+
         except ImportError as e:
             logger.warning(f"Plotting module not available: {e}")
             logger.info("Install matplotlib for plotting: pip install matplotlib")
         except Exception as e:
             logger.error(f"Unexpected error during plot generation: {e}")
 
-    def _prepare_plot_data(self, results: Dict[str, Any], config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _prepare_plot_data(
+        self, results: Dict[str, Any], config: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """
         Prepare data for plotting from analysis results.
-        
+
         Parameters
         ----------
         results : Dict[str, Any]
             Results dictionary from optimization methods
         config : Dict[str, Any]
             Configuration dictionary
-            
+
         Returns
         -------
         Optional[Dict[str, Any]]
             Plot data dictionary or None if insufficient data
         """
         logger = logging.getLogger(__name__)
-        
+
         try:
             plot_data = {}
-            
+
             # Find the best method results
             best_method = None
-            best_chi2 = float('inf')
-            
+            best_chi2 = float("inf")
+
             # Check different method results
             for method_key in ["classical_optimization", "mcmc_optimization"]:
                 if method_key in results:
@@ -2067,83 +2162,101 @@ Validation:
                     if chi2 is not None and chi2 < best_chi2:
                         best_chi2 = chi2
                         best_method = method_key
-            
+
             if best_method is None:
                 logger.warning("No valid optimization results found for plotting")
                 return None
-            
+
             # Extract best parameters
             best_params_list = results[best_method].get("parameters")
             if best_params_list is not None:
                 # Convert parameter list to dictionary
-                param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+                param_names = config.get("initial_parameters", {}).get(
+                    "parameter_names", []
+                )
                 if len(param_names) == len(best_params_list):
-                    plot_data["best_parameters"] = dict(zip(param_names, best_params_list))
+                    plot_data["best_parameters"] = dict(
+                        zip(param_names, best_params_list)
+                    )
                 else:
                     # Use generic names if parameter names don't match
-                    plot_data["best_parameters"] = {f"param_{i}": val for i, val in enumerate(best_params_list)}
-            
+                    plot_data["best_parameters"] = {
+                        f"param_{i}": val for i, val in enumerate(best_params_list)
+                    }
+
             # Extract parameter bounds
             parameter_space = config.get("parameter_space", {})
             if "bounds" in parameter_space:
                 plot_data["parameter_bounds"] = parameter_space["bounds"]
-            
+
             # Extract initial parameters
             initial_params = config.get("initial_parameters", {}).get("values")
             if initial_params is not None:
-                param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+                param_names = config.get("initial_parameters", {}).get(
+                    "parameter_names", []
+                )
                 if len(param_names) == len(initial_params):
-                    plot_data["initial_parameters"] = dict(zip(param_names, initial_params))
-            
+                    plot_data["initial_parameters"] = dict(
+                        zip(param_names, initial_params)
+                    )
+
             # Try to reconstruct experimental and theoretical data for plotting
-            if hasattr(self, '_last_experimental_data') and hasattr(self, '_last_phi_angles'):
+            if hasattr(self, "_last_experimental_data") and hasattr(
+                self, "_last_phi_angles"
+            ):
                 plot_data["experimental_data"] = self._last_experimental_data
                 plot_data["phi_angles"] = self._last_phi_angles
-                
+
                 # Generate theoretical data using best parameters
                 if best_params_list is not None:
                     try:
-                        theoretical_data = self._generate_theoretical_data(best_params_list, self._last_phi_angles) # type: ignore
+                        theoretical_data = self._generate_theoretical_data(best_params_list, self._last_phi_angles)  # type: ignore
                         plot_data["theoretical_data"] = theoretical_data
                     except Exception as e:
-                        logger.warning(f"Failed to generate theoretical data for plotting: {e}")
-            
+                        logger.warning(
+                            f"Failed to generate theoretical data for plotting: {e}"
+                        )
+
             # Add time axes if available
             temporal = config.get("analyzer_parameters", {}).get("temporal", {})
             dt = temporal.get("dt", 0.1)
             start_frame = temporal.get("start_frame", 1)
             end_frame = temporal.get("end_frame", 1000)
-            
+
             # Generate time arrays (these are approximate)
             n_frames = end_frame - start_frame + 1
             t_array = np.arange(n_frames) * dt
             plot_data["t1"] = t_array
             plot_data["t2"] = t_array
-            
+
             # Add parameter names and units for MCMC plotting
-            param_names = config.get("initial_parameters", {}).get("parameter_names", [])
+            param_names = config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            )
             if param_names:
                 plot_data["parameter_names"] = param_names
-                
+
             # Extract parameter units from bounds configuration
             parameter_space = config.get("parameter_space", {})
             bounds = parameter_space.get("bounds", [])
             if bounds:
                 param_units = [bound.get("unit", "") for bound in bounds]
                 plot_data["parameter_units"] = param_units
-            
+
             # Add MCMC-specific data if available
             if "mcmc_optimization" in results:
                 mcmc_results = results["mcmc_optimization"]
-                
+
                 # Add convergence diagnostics
                 if "convergence_diagnostics" in mcmc_results:
-                    plot_data["mcmc_diagnostics"] = mcmc_results["convergence_diagnostics"]
-                
+                    plot_data["mcmc_diagnostics"] = mcmc_results[
+                        "convergence_diagnostics"
+                    ]
+
                 # Add posterior means
                 if "posterior_means" in mcmc_results:
                     plot_data["posterior_means"] = mcmc_results["posterior_means"]
-                    
+
                 # Try to get MCMC trace data from live results first
                 trace_data = None
                 if "trace" in mcmc_results and mcmc_results["trace"] is not None:
@@ -2157,75 +2270,90 @@ Validation:
                     # Final fallback: try to load from NetCDF file
                     try:
                         from pathlib import Path
+
                         mcmc_results_dir = Path("homodyne_results") / "mcmc_results"
                         trace_file = mcmc_results_dir / "mcmc_trace.nc"
-                        
+
                         if trace_file.exists():
                             try:
                                 import arviz as az
+
                                 trace_data = az.from_netcdf(str(trace_file))
-                                logger.debug(f"Loaded MCMC trace data from {trace_file}")
+                                logger.debug(
+                                    f"Loaded MCMC trace data from {trace_file}"
+                                )
                             except ImportError:
-                                logger.warning("ArviZ not available - cannot load MCMC trace for plotting")
+                                logger.warning(
+                                    "ArviZ not available - cannot load MCMC trace for plotting"
+                                )
                             except Exception as e:
                                 logger.warning(f"Failed to load MCMC trace data: {e}")
                         else:
                             logger.debug("MCMC trace file not found")
-                            
+
                     except Exception as e:
                         logger.warning(f"Error checking for MCMC trace file: {e}")
-                
+
                 # Add trace data to plot_data if found
                 if trace_data is not None:
                     plot_data["mcmc_trace"] = trace_data
                     logger.info("✓ MCMC trace data available for plotting")
                 else:
-                    logger.debug("MCMC trace data not available - trace plots will be skipped")
-            
+                    logger.debug(
+                        "MCMC trace data not available - trace plots will be skipped"
+                    )
+
             # Add other plot data
             plot_data["chi_squared"] = best_chi2
             plot_data["method"] = best_method.replace("_optimization", "").title()
-            
+
             return plot_data
-            
+
         except Exception as e:
             logger.error(f"Error preparing plot data: {e}")
             return None
 
-    def _generate_theoretical_data(self, parameters: list, phi_angles: np.ndarray) -> np.ndarray:
+    def _generate_theoretical_data(
+        self, parameters: list, phi_angles: np.ndarray
+    ) -> np.ndarray:
         """
         Generate theoretical correlation data for plotting.
-        
+
         Parameters
         ----------
         parameters : list
             Optimized parameters
         phi_angles : np.ndarray
             Array of phi angles
-            
+
         Returns
         -------
         np.ndarray
             Theoretical correlation data
         """
         logger = logging.getLogger(__name__)
-        
+
         try:
             # Use the existing physics model to generate theoretical data
             logger.debug(f"Generating theoretical data for {len(phi_angles)} angles")
-            
+
             # Call the main correlation calculation method
             theoretical_data = self.calculate_c2_nonequilibrium_laminar_parallel(
-                parameters, phi_angles # type: ignore
+                parameters, phi_angles  # type: ignore
             )
-            
-            logger.debug(f"Successfully generated theoretical data with shape: {theoretical_data.shape}")
+
+            logger.debug(
+                f"Successfully generated theoretical data with shape: {theoretical_data.shape}"
+            )
             return theoretical_data
-                
+
         except Exception as e:
             logger.error(f"Error generating theoretical data: {e}")
             # Fallback: return experimental data shape filled with ones if available
-            if hasattr(self, '_last_experimental_data') and self._last_experimental_data is not None:
+            if (
+                hasattr(self, "_last_experimental_data")
+                and self._last_experimental_data is not None
+            ):
                 shape = self._last_experimental_data.shape
                 logger.warning(f"Using fallback data with shape {shape}")
                 return np.ones(shape)
@@ -2236,17 +2364,17 @@ Validation:
 
 def _get_chi2_interpretation(chi2_value: float) -> str:
     """Provide interpretation of reduced chi-squared value with uncertainty context.
-    
+
     The reduced chi-squared uncertainty quantifies the reliability of the average:
     - Small uncertainty (< 0.1 * χ²_red): Consistent fit quality across angles
     - Moderate uncertainty (0.1-0.5 * χ²_red): Some angle variation, generally acceptable
     - Large uncertainty (> 0.5 * χ²_red): High variability between angles, potential systematic issues
-    
+
     Parameters
     ----------
     chi2_value : float
         Reduced chi-squared value
-        
+
     Returns
     -------
     str
@@ -2271,7 +2399,7 @@ def _get_quality_explanation(quality: str) -> str:
         "acceptable": "Model provides reasonable agreement with experimental data for most angles",
         "warning": "Model shows concerning deviations that may indicate systematic issues",
         "poor": "Model shows significant inadequacies in describing the experimental data",
-        "critical": "Model is fundamentally inappropriate for this dataset"
+        "critical": "Model is fundamentally inappropriate for this dataset",
     }
     return explanations.get(quality, "Unknown quality level")
 
@@ -2279,13 +2407,15 @@ def _get_quality_explanation(quality: str) -> str:
 def _get_quality_recommendations(quality: str, issues: list) -> list:
     """Provide actionable recommendations based on quality assessment."""
     recommendations = []
-    
+
     if quality == "excellent":
         recommendations.append("Results are reliable for publication")
         recommendations.append("Consider this model for further analysis")
     elif quality == "acceptable":
         recommendations.append("Results may be suitable with appropriate caveats")
-        recommendations.append("Consider checking specific angles with higher chi-squared")
+        recommendations.append(
+            "Consider checking specific angles with higher chi-squared"
+        )
     elif quality == "warning":
         recommendations.append("Investigate systematic deviations before publication")
         recommendations.append("Consider alternative models or parameter ranges")
@@ -2295,14 +2425,18 @@ def _get_quality_recommendations(quality: str, issues: list) -> list:
         recommendations.append("Consider fundamental model revision")
         recommendations.append("Check experimental setup and data processing")
         recommendations.append("Investigate alternative theoretical approaches")
-    
+
     # Add issue-specific recommendations
     for issue in issues:
         if "outliers" in issue.lower():
-            recommendations.append("Investigate outlier angles for experimental artifacts")
+            recommendations.append(
+                "Investigate outlier angles for experimental artifacts"
+            )
         if "good angles" in issue.lower():
-            recommendations.append("Consider focusing analysis on subset of reliable angles")
-    
+            recommendations.append(
+                "Consider focusing analysis on subset of reliable angles"
+            )
+
     return recommendations
 
 
@@ -2311,5 +2445,3 @@ def _get_quality_recommendations(quality: str, issues: list) -> list:
 # ============================================================================
 
 # Note: Additional methods would be defined here if needed
-
-

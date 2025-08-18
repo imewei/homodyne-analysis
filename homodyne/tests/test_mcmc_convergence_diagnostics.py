@@ -277,8 +277,12 @@ class TestMCMCConvergenceDiagnostics:
 
         # Verify R-hat thresholds
         rhat_thresholds = mcmc_config["rhat_thresholds"]
-        assert rhat_thresholds["excellent_threshold"] < rhat_thresholds["good_threshold"]
-        assert rhat_thresholds["good_threshold"] < rhat_thresholds["acceptable_threshold"]
+        assert (
+            rhat_thresholds["excellent_threshold"] < rhat_thresholds["good_threshold"]
+        )
+        assert (
+            rhat_thresholds["good_threshold"] < rhat_thresholds["acceptable_threshold"]
+        )
         assert (
             rhat_thresholds["acceptable_threshold"]
             < rhat_thresholds["critical_threshold"]

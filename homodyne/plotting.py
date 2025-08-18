@@ -932,11 +932,11 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 1: R-hat values
         ax1 = fig.add_subplot(gs[0, 0])
-        
+
         # Check for diagnostics with various key names (r_hat, rhat)
         r_hat_data = diagnostics.get("r_hat") or diagnostics.get("rhat")
         logger.debug(f"R-hat from diagnostics: {r_hat_data}")
-        
+
         # Convert ArviZ Dataset to dict if needed
         r_hat_dict = {}
         if r_hat_data is not None:
@@ -1025,11 +1025,11 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 2: Effective Sample Size (ESS)
         ax2 = fig.add_subplot(gs[0, 1])
-        
+
         # Check for diagnostics with various key names (ess_bulk, ess)
         ess_data = diagnostics.get("ess_bulk") or diagnostics.get("ess")
         logger.debug(f"ESS from diagnostics: {ess_data}")
-        
+
         # Convert ArviZ Dataset to dict if needed
         ess_dict = {}
         if ess_data is not None:
@@ -1115,11 +1115,11 @@ def plot_mcmc_convergence_diagnostics(
 
         # Plot 3: Monte Carlo Standard Error
         ax3 = fig.add_subplot(gs[0, 2])
-        
+
         # Check for diagnostics with various key names (mcse_mean, mcse)
         mcse_data = diagnostics.get("mcse_mean") or diagnostics.get("mcse")
         logger.debug(f"MCSE from diagnostics: {mcse_data}")
-        
+
         # Convert ArviZ Dataset to dict if needed
         mcse_dict = {}
         if mcse_data is not None:
@@ -1356,11 +1356,12 @@ def plot_diagnostic_summary(
         # Plot 2: Parameter uncertainty (if available)
         ax2 = fig.add_subplot(gs[0, 1])
         uncertainties = results.get("parameter_uncertainties", {})
-        
+
         # Try to compute uncertainties from MCMC trace if not available
         if not uncertainties and "mcmc_trace" in results and ARVIZ_AVAILABLE:
             try:
                 import arviz as az
+
                 trace_data = results["mcmc_trace"]
                 if hasattr(trace_data, "posterior"):
                     # Get parameter names from config or trace data
@@ -1373,21 +1374,23 @@ def plot_diagnostic_summary(
                         param_names = config["initial_parameters"]["parameter_names"]
                     elif hasattr(trace_data.posterior, "data_vars"):
                         param_names = list(trace_data.posterior.data_vars.keys())
-                    
+
                     if param_names:
                         uncertainties = {}
                         for param in param_names:
                             if param in trace_data.posterior:
                                 samples = trace_data.posterior[param].values.flatten()
                                 uncertainties[param] = float(np.std(samples))
-                        logger.debug(f"Computed parameter uncertainties: {uncertainties}")
+                        logger.debug(
+                            f"Computed parameter uncertainties: {uncertainties}"
+                        )
             except Exception as e:
                 logger.warning(f"Could not compute parameter uncertainties: {e}")
-        
+
         if uncertainties:
             param_names = list(uncertainties.keys())
             uncertainty_values = list(uncertainties.values())
-            
+
             # Filter for active parameters if available
             if (
                 config
@@ -1395,7 +1398,9 @@ def plot_diagnostic_summary(
                 and "active_parameters" in config["initial_parameters"]
             ):
                 active_param_names = config["initial_parameters"]["active_parameters"]
-                param_names = [name for name in active_param_names if name in uncertainties]
+                param_names = [
+                    name for name in active_param_names if name in uncertainties
+                ]
                 uncertainty_values = [uncertainties[name] for name in param_names]
 
             if param_names and uncertainty_values:  # Check if we have data
@@ -1408,9 +1413,16 @@ def plot_diagnostic_summary(
                 ax2.grid(True, alpha=0.3)
         else:
             # Show placeholder message if no uncertainties available
-            ax2.text(0.5, 0.5, "No uncertainty data\navailable", 
-                    ha='center', va='center', transform=ax2.transAxes,
-                    fontsize=12, color='gray')
+            ax2.text(
+                0.5,
+                0.5,
+                "No uncertainty data\navailable",
+                ha="center",
+                va="center",
+                transform=ax2.transAxes,
+                fontsize=12,
+                color="gray",
+            )
             ax2.set_title("Parameter Uncertainties")
             ax2.set_xticks([])
             ax2.set_yticks([])
@@ -1420,11 +1432,11 @@ def plot_diagnostic_summary(
         if "mcmc_diagnostics" in results and ARVIZ_AVAILABLE:
             # Plot R-hat values
             diagnostics = results["mcmc_diagnostics"]
-            
+
             # Check for diagnostics with various key names (r_hat, rhat)
             r_hat_data = diagnostics.get("r_hat") or diagnostics.get("rhat")
             logger.debug(f"R-hat data for summary plot: {r_hat_data}")
-            
+
             # Convert ArviZ Dataset to dict if needed
             r_hat_dict = {}
             if r_hat_data is not None:
@@ -1463,17 +1475,25 @@ def plot_diagnostic_summary(
                     and "initial_parameters" in config
                     and "active_parameters" in config["initial_parameters"]
                 ):
-                    active_param_names = config["initial_parameters"]["active_parameters"]
-                    logger.debug(f"Using active parameters for summary: {active_param_names}")
-                
+                    active_param_names = config["initial_parameters"][
+                        "active_parameters"
+                    ]
+                    logger.debug(
+                        f"Using active parameters for summary: {active_param_names}"
+                    )
+
                 # Filter for active parameters if available
                 if active_param_names:
-                    param_names = [name for name in active_param_names if name in r_hat_dict]
+                    param_names = [
+                        name for name in active_param_names if name in r_hat_dict
+                    ]
                 else:
                     param_names = list(r_hat_dict.keys())
-                
+
                 r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names]
-                logger.debug(f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values))}")
+                logger.debug(
+                    f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values))}"
+                )
 
                 if param_names and r_hat_values:  # Check if we have data
                     colors = [
@@ -1497,9 +1517,16 @@ def plot_diagnostic_summary(
                     ax3.grid(True, alpha=0.3)
         else:
             # Show placeholder message if no MCMC diagnostics available
-            ax3.text(0.5, 0.5, "No MCMC convergence\ndiagnostics available", 
-                    ha='center', va='center', transform=ax3.transAxes,
-                    fontsize=12, color='gray')
+            ax3.text(
+                0.5,
+                0.5,
+                "No MCMC convergence\ndiagnostics available",
+                ha="center",
+                va="center",
+                transform=ax3.transAxes,
+                fontsize=12,
+                color="gray",
+            )
             ax3.set_title("MCMC Convergence")
             ax3.set_xticks([])
             ax3.set_yticks([])
@@ -1507,24 +1534,34 @@ def plot_diagnostic_summary(
         # Plot 4: Residuals analysis (if available)
         ax4 = fig.add_subplot(gs[1, :])
         residuals = results.get("residuals")
-        
+
         # Try to compute residuals from experimental and theoretical data if not available
         if residuals is None:
             exp_data = results.get("experimental_data")
             theory_data = results.get("theoretical_data")
-            
+
             if exp_data is not None and theory_data is not None:
                 try:
-                    if isinstance(exp_data, np.ndarray) and isinstance(theory_data, np.ndarray):
+                    if isinstance(exp_data, np.ndarray) and isinstance(
+                        theory_data, np.ndarray
+                    ):
                         if exp_data.shape == theory_data.shape:
                             residuals = exp_data - theory_data
-                            logger.debug(f"Computed residuals from exp - theory data, shape: {residuals.shape}")
+                            logger.debug(
+                                f"Computed residuals from exp - theory data, shape: {residuals.shape}"
+                            )
                         else:
-                            logger.warning(f"Shape mismatch: exp_data {exp_data.shape} vs theory_data {theory_data.shape}")
+                            logger.warning(
+                                f"Shape mismatch: exp_data {exp_data.shape} vs theory_data {theory_data.shape}"
+                            )
                 except Exception as e:
                     logger.warning(f"Could not compute residuals from data: {e}")
-        
-        if residuals is not None and isinstance(residuals, np.ndarray) and residuals.size > 0:
+
+        if (
+            residuals is not None
+            and isinstance(residuals, np.ndarray)
+            and residuals.size > 0
+        ):
             # Flatten residuals for histogram
             flat_residuals = residuals.flatten()
 
@@ -1573,9 +1610,16 @@ def plot_diagnostic_summary(
                 ax4.grid(True, alpha=0.3)
         else:
             # Show placeholder message if no residuals available
-            ax4.text(0.5, 0.5, "No residuals data available\n(requires experimental and theoretical data)", 
-                    ha='center', va='center', transform=ax4.transAxes,
-                    fontsize=12, color='gray')
+            ax4.text(
+                0.5,
+                0.5,
+                "No residuals data available\n(requires experimental and theoretical data)",
+                ha="center",
+                va="center",
+                transform=ax4.transAxes,
+                fontsize=12,
+                color="gray",
+            )
             ax4.set_title("Residuals Distribution Analysis")
             ax4.set_xticks([])
             ax4.set_yticks([])

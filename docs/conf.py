@@ -4,71 +4,74 @@ import os
 import sys
 
 # Add the parent directory (containing homodyne package) to Python path
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
 # Also add the homodyne package directory itself
-homodyne_path = os.path.join(os.path.abspath('..'), 'homodyne')
+homodyne_path = os.path.join(os.path.abspath(".."), "homodyne")
 if os.path.exists(homodyne_path):
     sys.path.insert(0, homodyne_path)
 
 # -- Project information -----------------------------------------------------
-project = 'Homodyne Analysis'
-copyright = '2025, Wei Chen, Hongrui He'
-author = 'Wei Chen, Hongrui He'
-release = '6.0'
-version = '6.0'
+project = "Homodyne Analysis"
+copyright = "2025, Wei Chen, Hongrui He"
+author = "Wei Chen, Hongrui He"
+release = "6.0"
+version = "6.0"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.autosummary',
-    'myst_parser',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.autosummary",
+    "myst_parser",
 ]
 
 # Suppress specific warnings to reduce noise
 suppress_warnings = [
-    'misc.highlighting_failure',
-    'autosummary',
+    "misc.highlighting_failure",
+    "autosummary",
 ]
 
 # Performance optimizations - mock heavy dependencies
 autodoc_mock_imports = [
-    'numba', 'pymc', 'arviz', 'pytensor',
+    "numba",
+    "pymc",
+    "arviz",
+    "pytensor",
     # Don't mock homodyne submodules - they should be importable
 ]
 autodoc_preserve_defaults = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The default language to highlight source code in.
-highlight_language = 'python3'
+highlight_language = "python3"
 
 # -- Options for extensions --------------------------------------------------
 
 # autodoc configuration
-autodoc_typehints = 'description'
-autodoc_member_order = 'bysource'
+autodoc_typehints = "description"
+autodoc_member_order = "bysource"
 autodoc_default_options = {
-    'members': True,
-    'undoc-members': True,
-    'show-inheritance': True,
-    'special-members': '__init__',
-    'exclude-members': '__weakref__',
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+    "special-members": "__init__",
+    "exclude-members": "__weakref__",
 }
 
 # Optimize autodoc performance
-autodoc_class_signature = 'mixed'
+autodoc_class_signature = "mixed"
 autodoc_inherit_docstrings = True
-autodoc_typehints_format = 'short'
+autodoc_typehints_format = "short"
 
 # napoleon configuration
 napoleon_google_docstring = True
@@ -86,23 +89,23 @@ napoleon_type_aliases = None
 
 # intersphinx configuration
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
-    'matplotlib': ('https://matplotlib.org/stable/', None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
 }
 
 # MyST parser configuration
 myst_enable_extensions = [
-    'colon_fence',
-    'deflist',
-    'html_admonition',
-    'html_image',
-    'linkify',
-    'replacements',
-    'smartquotes',
-    'substitution',
-    'tasklist',
+    "colon_fence",
+    "deflist",
+    "html_admonition",
+    "html_image",
+    "linkify",
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "tasklist",
 ]
 
 # Configure MyST parser for better performance
@@ -121,54 +124,64 @@ myst_substitutions = {
 }
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    'analytics_id': '',
-    'logo_only': False,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'style_nav_header_background': '#2980b9',
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 3,
-    'includehidden': True,
-    'titles_only': False
+    "analytics_id": "",
+    "logo_only": False,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": False,
+    "style_nav_header_background": "#2980b9",
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 3,
+    "includehidden": True,
+    "titles_only": False,
 }
 
 # Optimize HTML output
 html_copy_source = False
 html_show_sourcelink = False
 html_compact_lists = True
-html_secnumber_suffix = '. '
+html_secnumber_suffix = ". "
 
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # -- Options for LaTeX output ------------------------------------------------
 latex_elements = {
-    'papersize': 'letterpaper',
-    'pointsize': '10pt',
-    'preamble': '',
-    'fncychap': '\\usepackage[Bjornstrup]{fncychap}',
-    'printindex': '\\footnotesize\\raggedright\\printindex',
+    "papersize": "letterpaper",
+    "pointsize": "10pt",
+    "preamble": "",
+    "fncychap": "\\usepackage[Bjornstrup]{fncychap}",
+    "printindex": "\\footnotesize\\raggedright\\printindex",
 }
 
 latex_documents = [
-    ('index', 'homodyne-analysis.tex', 'Homodyne Analysis Documentation',
-     'Wei Chen, Hongrui He', 'manual'),
+    (
+        "index",
+        "homodyne-analysis.tex",
+        "Homodyne Analysis Documentation",
+        "Wei Chen, Hongrui He",
+        "manual",
+    ),
 ]
 
 # -- Options for manual page output ------------------------------------------
 man_pages = [
-    ('index', 'homodyne-analysis', 'Homodyne Analysis Documentation',
-     [author], 1)
+    ("index", "homodyne-analysis", "Homodyne Analysis Documentation", [author], 1)
 ]
 
 # -- Options for Texinfo output ----------------------------------------------
 texinfo_documents = [
-    ('index', 'homodyne-analysis', 'Homodyne Analysis Documentation',
-     author, 'homodyne-analysis', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        "index",
+        "homodyne-analysis",
+        "Homodyne Analysis Documentation",
+        author,
+        "homodyne-analysis",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]

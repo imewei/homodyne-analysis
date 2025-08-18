@@ -5,7 +5,7 @@ Homodyne Analysis Documentation
    :target: https://opensource.org/licenses/MIT
    :alt: License: MIT
 
-.. image:: https://img.shields.io/badge/Python-3.8%2B-blue
+.. image:: https://img.shields.io/badge/Python-3.12%2B-blue
    :target: https://www.python.org/
    :alt: Python
 

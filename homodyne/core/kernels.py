@@ -63,19 +63,24 @@ def create_time_integral_matrix_numba(time_dependent_array):
 
     # Compute cumulative sum using built-in cumsum for better optimization
     cumsum = np.cumsum(time_dependent_array)
-    
+
     # Optimized loop with cache-friendly memory access pattern
     for i in prange(n):
         for j in range(n):
             if j >= i:
-                matrix[i, j] = cumsum[j] - (cumsum[i-1] if i > 0 else 0.0)
+                matrix[i, j] = cumsum[j] - (cumsum[i - 1] if i > 0 else 0.0)
             else:
-                matrix[i, j] = cumsum[i-1] - cumsum[j] if i > 0 else -cumsum[j]
+                matrix[i, j] = cumsum[i - 1] - cumsum[j] if i > 0 else -cumsum[j]
 
     return matrix
 
 
-@njit(float64[:](float64[:], float64, float64, float64), cache=True, fastmath=True, parallel=True)
+@njit(
+    float64[:](float64[:], float64, float64, float64),
+    cache=True,
+    fastmath=True,
+    parallel=True,
+)
 def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     """
     Calculate time-dependent diffusion coefficient.
@@ -115,7 +120,12 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     return D_t
 
 
-@njit(float64[:](float64[:], float64, float64, float64), cache=True, fastmath=True, parallel=True)
+@njit(
+    float64[:](float64[:], float64, float64, float64),
+    cache=True,
+    fastmath=True,
+    parallel=True,
+)
 def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
     """
     Calculate time-dependent shear rate.
@@ -267,7 +277,7 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
 
     # Pre-compute pi for efficiency
     pi = np.pi
-    
+
     for i in prange(shape[0]):
         for j in range(shape[1]):
             argument = prefactor * shear_integral_matrix[i, j]
@@ -394,39 +404,40 @@ def memory_efficient_cache(maxsize=128):
 
 # Additional optimized kernels for improved performance
 
+
 @njit(float64[:, :](float64[:], int64), parallel=True, cache=True, fastmath=True)
 def create_symmetric_matrix_optimized(diagonal_values, matrix_size):
     """
     Create symmetric matrix with optimized memory layout.
-    
+
     Parameters
     ----------
     diagonal_values : np.ndarray
         Values for the diagonal
     matrix_size : int
         Size of the square matrix
-        
+
     Returns
     -------
     np.ndarray
         Symmetric matrix with cache-friendly memory access
     """
     matrix = np.empty((matrix_size, matrix_size), dtype=np.float64)
-    
+
     # Fill diagonal first for cache efficiency
     for i in prange(matrix_size):
         if i < len(diagonal_values):
             matrix[i, i] = diagonal_values[i]
         else:
             matrix[i, i] = 1.0
-    
+
     # Fill off-diagonal elements symmetrically
     for i in prange(matrix_size):
         for j in range(i + 1, matrix_size):
             value = 0.5 * (matrix[i, i] + matrix[j, j])
             matrix[i, j] = value
             matrix[j, i] = value
-    
+
     return matrix
 
 
@@ -434,14 +445,14 @@ def create_symmetric_matrix_optimized(diagonal_values, matrix_size):
 def matrix_vector_multiply_optimized(matrix, vector):
     """
     Optimized matrix-vector multiplication for correlation calculations.
-    
+
     Parameters
     ----------
     matrix : np.ndarray
         2D matrix
     vector : np.ndarray
         1D vector
-        
+
     Returns
     -------
     np.ndarray
@@ -450,21 +461,23 @@ def matrix_vector_multiply_optimized(matrix, vector):
     n_rows = matrix.shape[0]
     n_cols = matrix.shape[1]
     result = np.zeros(n_rows, dtype=np.float64)
-    
+
     for i in prange(n_rows):
         temp_sum = 0.0
         for j in range(n_cols):
             temp_sum += matrix[i, j] * vector[j]
         result[i] = temp_sum
-    
+
     return result
 
 
-@njit(float64[:](float64[:], float64, float64), parallel=True, cache=True, fastmath=True)
+@njit(
+    float64[:](float64[:], float64, float64), parallel=True, cache=True, fastmath=True
+)
 def apply_scaling_vectorized(data, contrast, offset):
     """
     Apply per-angle scaling (contrast and offset) with vectorized operations.
-    
+
     Parameters
     ----------
     data : np.ndarray
@@ -473,17 +486,17 @@ def apply_scaling_vectorized(data, contrast, offset):
         Scaling contrast factor
     offset : float
         Additive offset
-        
+
     Returns
     -------
     np.ndarray
         Scaled data: contrast * data + offset
     """
     result = np.empty_like(data)
-    
+
     for i in prange(len(data)):
         result[i] = contrast * data[i] + offset
-    
+
     return result
 
 
@@ -491,14 +504,14 @@ def apply_scaling_vectorized(data, contrast, offset):
 def compute_chi_squared_fast(observed, expected):
     """
     Fast chi-squared calculation with optimized numerics.
-    
+
     Parameters
     ----------
     observed : np.ndarray
         Observed values
     expected : np.ndarray
         Expected/theoretical values
-        
+
     Returns
     -------
     float
@@ -506,13 +519,13 @@ def compute_chi_squared_fast(observed, expected):
     """
     chi2 = 0.0
     n = len(observed)
-    
+
     for i in range(n):
         diff = observed[i] - expected[i]
         # Use expected value as variance estimate (Poisson-like)
         variance = max(expected[i], 1e-12)  # Avoid division by zero
         chi2 += (diff * diff) / variance
-    
+
     return chi2
 
 
@@ -520,22 +533,22 @@ def compute_chi_squared_fast(observed, expected):
 def exp_negative_vectorized(input_array, scale_factor):
     """
     Vectorized computation of exp(-scale_factor * input_array).
-    
+
     Parameters
     ----------
     input_array : np.ndarray
         Input values
     scale_factor : float
         Scaling factor
-        
+
     Returns
     -------
     np.ndarray
         exp(-scale_factor * input_array)
     """
     result = np.empty_like(input_array)
-    
+
     for i in prange(len(input_array)):
         result[i] = np.exp(-scale_factor * input_array[i])
-    
+
     return result

@@ -42,41 +42,23 @@ warnings.filterwarnings(
 
 # Comprehensive matplotlib font warning suppression
 warnings.filterwarnings(
-    "ignore", 
-    category=UserWarning, 
-    message=".*Glyph.*missing from font.*"
+    "ignore", category=UserWarning, message=".*Glyph.*missing from font.*"
 )
 warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message=".*SUBSCRIPT.*missing from font.*"
+    "ignore", category=UserWarning, message=".*SUBSCRIPT.*missing from font.*"
 )
 warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message=".*SUPERSCRIPT.*missing from font.*"
+    "ignore", category=UserWarning, message=".*SUPERSCRIPT.*missing from font.*"
 )
 
 # Suppress all matplotlib UserWarnings to catch font issues
 import matplotlib
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    module="matplotlib.*"
-)
+
+warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib.*")
 
 # Suppress font warnings from homodyne modules that use matplotlib
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    module="homodyne.core.io_utils"
-)
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    module="homodyne.plotting"
-)
-
+warnings.filterwarnings("ignore", category=UserWarning, module="homodyne.core.io_utils")
+warnings.filterwarnings("ignore", category=UserWarning, module="homodyne.plotting")
 
 
 def pytest_configure(config):
@@ -85,9 +67,7 @@ def pytest_configure(config):
         "markers",
         "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line(
         "markers", "plotting: marks tests that require plotting functionality"
     )
@@ -97,14 +77,10 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "mcmc_integration: marks tests as MCMC integration tests"
     )
-    
+
     # Configure warnings filters
-    config.addinivalue_line(
-        "filterwarnings", "ignore::UserWarning:matplotlib.*"
-    )
-    config.addinivalue_line(
-        "filterwarnings", "ignore::UserWarning:homodyne.*"
-    )
+    config.addinivalue_line("filterwarnings", "ignore::UserWarning:matplotlib.*")
+    config.addinivalue_line("filterwarnings", "ignore::UserWarning:homodyne.*")
     config.addinivalue_line(
         "filterwarnings", "ignore:.*Glyph.*missing from font.*:UserWarning"
     )
@@ -149,7 +125,7 @@ def suppress_dlascl_warnings():
     import contextlib
     from io import StringIO
     import threading
-    
+
     # For now, let's try a simpler approach - just yield without capturing
     # since stderr redirection can be tricky with multiprocessing
     yield

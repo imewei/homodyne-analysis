@@ -36,14 +36,16 @@ def read_requirements(filename):
     requirements_path = os.path.join(os.path.dirname(__file__), filename)
     if os.path.exists(requirements_path):
         with open(requirements_path, "r", encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            return [
+                line.strip() for line in f if line.strip() and not line.startswith("#")
+            ]
     return []
 
 
 # Core requirements (always needed)
 CORE_REQUIREMENTS = [
     "numpy>=1.19.0",
-    "scipy>=1.7.0", 
+    "scipy>=1.7.0",
     "matplotlib>=3.3.0",
 ]
 
@@ -55,7 +57,7 @@ PERFORMANCE_REQUIREMENTS = [
 # MCMC requirements (optional advanced feature)
 MCMC_REQUIREMENTS = [
     "pymc>=5.0.0",
-    "arviz>=0.12.0", 
+    "arviz>=0.12.0",
     "pytensor>=2.8.0",
 ]
 
@@ -79,12 +81,14 @@ DEV_REQUIREMENTS = [
 ] + DOC_REQUIREMENTS
 
 # All optional requirements combined
-ALL_REQUIREMENTS = PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + DEV_REQUIREMENTS
+ALL_REQUIREMENTS = (
+    PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + DEV_REQUIREMENTS
+)
 
 setup(
     name="homodyne-analysis",
     version=read_version(),
-    author="Wei Chen, Hongrui He", 
+    author="Wei Chen, Hongrui He",
     author_email="wchen@anl.gov",
     description="Comprehensive Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions",
     long_description=read_long_description(),
@@ -100,7 +104,7 @@ setup(
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Chemistry", 
+        "Topic :: Scientific/Engineering :: Chemistry",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.12",
@@ -130,9 +134,9 @@ setup(
         ],
     },
     keywords=[
-        "xpcs", 
-        "homodyne", 
-        "scattering", 
+        "xpcs",
+        "homodyne",
+        "scattering",
         "correlation spectroscopy",
         "soft matter",
         "nonequilibrium dynamics",

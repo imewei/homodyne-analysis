@@ -40,9 +40,7 @@ class TestStaticModeAnalysis:
                 "phi_angles_file": "phi_list.txt",
                 "exchange_key": "exchange",
                 "cache_file_path": "./data/test/",
-                "cache_filename_template": (
-                    "test_cache_{start_frame}_{end_frame}.npz"
-                ),
+                "cache_filename_template": ("test_cache_{start_frame}_{end_frame}.npz"),
             },
             "optimization_config": {
                 "classical_optimization": {"methods": ["Nelder-Mead"]}
@@ -81,9 +79,7 @@ class TestStaticModeAnalysis:
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    def test_static_mode_detection_by_config(
-        self, temp_directory, base_config
-    ):
+    def test_static_mode_detection_by_config(self, temp_directory, base_config):
         """Test static mode detection via configuration flag."""
         # Test static mode enabled
         static_config = base_config.copy()
@@ -111,9 +107,7 @@ class TestStaticModeAnalysis:
         assert core.is_static_mode() is False
         assert core.get_effective_parameter_count() == 7
 
-    def test_static_mode_detection_by_parameters(
-        self, temp_directory, base_config
-    ):
+    def test_static_mode_detection_by_parameters(self, temp_directory, base_config):
         """Test static mode detection via parameter values."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -146,9 +140,7 @@ class TestStaticModeAnalysis:
         core = HomodyneAnalysisCore(str(config_file))
 
         # Test parameter processing
-        original_params = np.array(
-            [1000.0, -0.2, 100.0, 0.001, -0.5, 0.0001, 30.0]
-        )
+        original_params = np.array([1000.0, -0.2, 100.0, 0.001, -0.5, 0.0001, 30.0])
         effective_params = core.get_effective_parameters(original_params)
 
         # In static mode, shear and phi0 should be zeroed
@@ -169,9 +161,7 @@ class TestStaticModeAnalysis:
         # In flow mode, all parameters should be preserved
         np.testing.assert_array_equal(effective_params, original_params)
 
-    def test_correlation_calculation_static_vs_flow(
-        self, temp_directory, base_config
-    ):
+    def test_correlation_calculation_static_vs_flow(self, temp_directory, base_config):
         """Test that correlation calculations differ between static and flow modes."""
         # Create test parameters
         diffusion_params = [1000.0, 0.0, 100.0]
@@ -189,9 +179,7 @@ class TestStaticModeAnalysis:
             json.dump(static_config, f)
 
         core_static = HomodyneAnalysisCore(str(config_file))
-        c2_static = core_static.calculate_c2_single_angle_optimized(
-            params, phi_angle
-        )
+        c2_static = core_static.calculate_c2_single_angle_optimized(params, phi_angle)
 
         # Flow mode calculation
         flow_config = base_config.copy()
@@ -202,15 +190,11 @@ class TestStaticModeAnalysis:
             json.dump(flow_config, f)
 
         core_flow = HomodyneAnalysisCore(str(config_file))
-        c2_flow = core_flow.calculate_c2_single_angle_optimized(
-            params, phi_angle
-        )
+        c2_flow = core_flow.calculate_c2_single_angle_optimized(params, phi_angle)
 
         # Results should be different (static ignores shear, flow includes it)
         max_diff = np.abs(c2_static - c2_flow).max()
-        assert (
-            max_diff > 1e-6
-        ), "Static and flow mode should produce different results"
+        assert max_diff > 1e-6, "Static and flow mode should produce different results"
 
         # Both should have same shape
         assert c2_static.shape == c2_flow.shape
@@ -219,9 +203,7 @@ class TestStaticModeAnalysis:
         assert np.all(c2_static >= 0) and np.all(c2_static <= 1)
         assert np.all(c2_flow >= 0) and np.all(c2_flow <= 1)
 
-    def test_phi0_irrelevance_in_static_mode(
-        self, temp_directory, base_config
-    ):
+    def test_phi0_irrelevance_in_static_mode(self, temp_directory, base_config):
         """Test that phi0 is irrelevant in static mode."""
         static_config = base_config.copy()
         static_config["analysis_settings"] = {"static_mode": True}
@@ -240,12 +222,8 @@ class TestStaticModeAnalysis:
         phi_angle = 0.0
 
         # Both should give identical results in static mode
-        c2_phi0_0 = core.calculate_c2_single_angle_optimized(
-            params_phi0_0, phi_angle
-        )
-        c2_phi0_45 = core.calculate_c2_single_angle_optimized(
-            params_phi0_45, phi_angle
-        )
+        c2_phi0_0 = core.calculate_c2_single_angle_optimized(params_phi0_0, phi_angle)
+        c2_phi0_45 = core.calculate_c2_single_angle_optimized(params_phi0_45, phi_angle)
 
         # Results should be identical (within numerical precision)
         max_diff = np.abs(c2_phi0_0 - c2_phi0_45).max()
@@ -270,9 +248,7 @@ class TestConfigManagerStaticMode:
                 "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 50}
             },
             "experimental_data": {"data_folder_path": "./test/"},
-            "optimization_config": {
-                "classical_optimization": {"methods": ["test"]}
-            },
+            "optimization_config": {"classical_optimization": {"methods": ["test"]}},
             "analysis_settings": {"static_mode": True},
         }
 
@@ -330,6 +306,4 @@ def test_static_mode_integration():
         assert core.is_static_parameters(non_zero_shear) is False
 
     except FileNotFoundError:
-        pytest.skip(
-            "Template config file not found - skipping integration test"
-        )
+        pytest.skip("Template config file not found - skipping integration test")

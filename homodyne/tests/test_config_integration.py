@@ -284,12 +284,8 @@ class TestConfigurationIntegration:
             )
 
             # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=5.0
-            )
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0]
-            )
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=5.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 
@@ -334,11 +330,7 @@ class TestConfigurationIntegration:
 
             optimizer = ClassicalOptimizer(
                 mock_analyzer,
-                {
-                    "optimization_config": {
-                        "angle_filtering": {"enabled": True}
-                    }
-                },
+                {"optimization_config": {"angle_filtering": {"enabled": True}}},
             )
 
             phi_angles = np.array([0.0, 90.0, 180.0])
@@ -349,12 +341,8 @@ class TestConfigurationIntegration:
             )
 
             # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=3.0
-            )
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0]
-            )
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=3.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 

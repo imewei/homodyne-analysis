@@ -36,18 +36,20 @@ import argparse
 def main():
     """
     Execute comprehensive test suite with intelligent configuration.
-    
+
     Orchestrates test execution with advanced options for development,
     continuous integration, and quality assurance workflows. Automatically
     detects available testing tools and configures optimal execution strategy.
-    
+
     Test Execution Strategy:
     - Fast mode: Unit tests only, optimized for development cycles
     - Full mode: Complete test suite including slow integration tests
     - Parallel mode: Multi-worker execution for faster completion
     - Coverage mode: Code coverage analysis with detailed reporting
     """
-    parser = argparse.ArgumentParser(description="Run homodyne analysis test suite with advanced options")
+    parser = argparse.ArgumentParser(
+        description="Run homodyne analysis test suite with advanced options"
+    )
 
     parser.add_argument(
         "--fast",
