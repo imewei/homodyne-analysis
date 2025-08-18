@@ -67,11 +67,30 @@ jobs:
     
     steps:
     - name: Setup Pages
+      id: setup-pages
       uses: actions/configure-pages@v5
-      
-    - name: Deploy to GitHub Pages
+      with:
+        # Automatically enable GitHub Pages if not already enabled
+        enablement: true
+      continue-on-error: true
+        
+    - name: Deploy to GitHub Pages (Primary)
       id: deployment
       uses: actions/deploy-pages@v4
+      with:
+        timeout: 600000  # 10 minutes timeout
+      continue-on-error: true
+      
+    - name: Check deployment status
+      if: steps.deployment.outcome == 'failure'
+      run: |
+        echo "⚠️ GitHub Pages deployment failed"
+        echo "This may be due to repository settings or permissions"
+        echo "Please check:"
+        echo "1. Repository Settings → Pages → Source should be 'GitHub Actions'"
+        echo "2. Repository has Pages enabled"
+        echo "3. Workflow has proper permissions"
+        exit 1
 
   test-docs:
     runs-on: ubuntu-latest

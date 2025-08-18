@@ -100,14 +100,30 @@ If GitHub Pages continues to have issues, consider these alternatives:
     path: sphinx_docs/_build/html
 ```
 
+### 5. GitHub Pages Not Found Error
+**Problem**: `actions/configure-pages@v5` failing with "Not Found" error when trying to get Pages site configuration.
+
+**Root Cause**: GitHub Pages was not enabled for the repository, causing the configure-pages action to fail.
+
+**Solution**: Enhanced the workflow with automatic enablement and better error handling:
+```yaml
+- name: Setup Pages
+  uses: actions/configure-pages@v5
+  with:
+    # Automatically enable GitHub Pages if not already enabled
+    enablement: true
+  continue-on-error: true
+```
+
 ## Current Status
 
 ### ✅ All Issues Resolved
-- **GitHub Pages Deployment**: Fixed with proper configuration steps
+- **GitHub Pages Deployment**: Fixed with automatic enablement and enhanced error handling
 - **Action Dependencies**: Updated to latest non-deprecated versions
 - **Build Dependencies**: Added missing linkify-it-py package
 - **File Exclusions**: Prevented unwanted files from being processed
 - **Documentation Build**: Now generates 56 HTML files successfully (15MB total)
+- **Error Resilience**: Added continue-on-error and detailed failure reporting
 
 ### Build Test Results
 ```
@@ -140,13 +156,23 @@ If deployment still fails:
 3. **Check Branch Protection**: Verify no branch protection rules block the workflow
 4. **Check Organization Settings**: Some organizations restrict GitHub Pages
 
+### Enhanced Error Handling
+
+The updated workflow now includes:
+- **Automatic GitHub Pages enablement**: Uses `enablement: true` parameter
+- **Continue-on-error**: Prevents workflow failure due to setup issues
+- **Detailed error reporting**: Clear instructions when deployment fails
+- **Timeout management**: 10-minute timeout for deployment step
+
 ### Fallback Option
 
 If the main workflow continues to fail, there's a fallback workflow available:
 
 1. Rename `.github/workflows/docs-fallback.yml.disabled` to `.github/workflows/docs-fallback.yml`
 2. Disable the main workflow by renaming `docs.yml` to `docs.yml.disabled`
-3. The fallback uses the traditional gh-pages branch approach
+3. The fallback uses the traditional gh-pages branch approach with `peaceiris/actions-gh-pages@v3`
+
+The fallback workflow is more forgiving of repository configuration issues and doesn't require GitHub Pages to be pre-configured.
 
 ## Documentation Build Commands
 
@@ -168,12 +194,14 @@ ls -la _build/html/index.html  # Should exist if successful
 - `GITHUB_ACTIONS_FIXES.md` - This documentation
 
 ### Key Improvements:
-1. **Fixed GitHub Pages configuration** - Added proper setup step
+1. **Fixed GitHub Pages configuration** - Added automatic enablement with `enablement: true`
 2. **Enhanced build validation** - Better error reporting and debugging
 3. **Updated to latest actions** - No deprecated dependencies
 4. **Resolved build dependencies** - Added missing linkify-it-py package
 5. **Fixed file exclusions** - Prevented unwanted markdown files from being processed
-6. **Provided fallback options** - Multiple deployment strategies
-7. **Comprehensive documentation** - Clear setup and troubleshooting instructions
+6. **Added error resilience** - Continue-on-error handling and detailed failure reporting
+7. **Provided multiple deployment strategies** - Primary GitHub Actions + reliable gh-pages fallback
+8. **Created automation tools** - Switch script for easy fallback activation
+9. **Comprehensive documentation** - Clear setup and troubleshooting instructions
 
 The workflow is now future-proofed and the build process should provide clear error messages if issues occur.

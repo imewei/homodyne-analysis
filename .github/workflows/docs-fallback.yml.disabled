@@ -1,7 +1,14 @@
 name: Build and Deploy Documentation (Fallback)
 
-# This is a fallback workflow that uses the traditional gh-pages branch approach
-# Rename this file to .yml (remove .disabled) if the main workflow fails
+# FALLBACK WORKFLOW - Use if main workflow fails
+# 
+# To activate this workflow:
+# 1. Rename this file from .yml.disabled to .yml
+# 2. Disable main workflow by renaming docs.yml to docs.yml.disabled
+# 3. This uses traditional gh-pages branch deployment (more reliable)
+#
+# This workflow uses peaceiris/actions-gh-pages which is more forgiving
+# of repository configuration issues
 
 on:
   push:
