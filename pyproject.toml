@@ -45,6 +45,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+data = [
+    "xpcs-viewer>=1.0.4",  # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
+]
 performance = [
     "numba>=0.56.0",
 ]
@@ -76,6 +79,7 @@ dev = [
     "linkify-it-py>=2.0.0",
 ]
 all = [
+    "xpcs-viewer>=1.0.4",
     "numba>=0.56.0",
     "pymc>=5.0.0",
     "arviz>=0.12.0",

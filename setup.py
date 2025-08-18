@@ -49,6 +49,11 @@ CORE_REQUIREMENTS = [
     "matplotlib>=3.3.0",
 ]
 
+# Data handling and manipulation
+DATA_REQUIREMENTS = [
+    "xpcs-viewer>=1.0.4",  # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
+]
+
 # Performance requirements (recommended)
 PERFORMANCE_REQUIREMENTS = [
     "numba>=0.56.0",
@@ -82,7 +87,7 @@ DEV_REQUIREMENTS = [
 
 # All optional requirements combined
 ALL_REQUIREMENTS = (
-    PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + DEV_REQUIREMENTS
+    DATA_REQUIREMENTS + PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + DEV_REQUIREMENTS
 )
 
 setup(
@@ -114,6 +119,7 @@ setup(
     python_requires=">=3.12",
     install_requires=CORE_REQUIREMENTS,
     extras_require={
+        "data": DATA_REQUIREMENTS,
         "performance": PERFORMANCE_REQUIREMENTS,
         "mcmc": MCMC_REQUIREMENTS,
         "docs": DOC_REQUIREMENTS,

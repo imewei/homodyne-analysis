@@ -34,36 +34,47 @@ The package analyzes time-dependent intensity correlation functions c₂(φ,t₁
 
 ## Installation
 
-### Quick Start Installation
+### Development Installation
+
+Since the package is not yet published to PyPI, install directly from the repository:
 
 ```bash
+# Clone the repository
+git clone https://github.com/imewei/homodyne.git
+cd homodyne
+
 # Set up Python environment
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 
-# Set up Miniforge3 Python environment
-mamba create -n homodyne python
+# Or with Miniforge3
+mamba create -n homodyne python>=3.12
 mamba activate homodyne
 
 # Install core dependencies
 pip install numpy scipy matplotlib
+
+# For XPCS data handling (recommended)
+pip install xpcs-viewer
 
 # For enhanced performance (recommended)
 pip install numba
 
 # For Bayesian MCMC analysis
 pip install pymc arviz pytensor
+
+# Install the package in development mode
+pip install -e .
 ```
 
 ### Dependencies
 
 **Core Requirements**: `numpy`, `scipy`, `matplotlib`  
+**Data Handling**: `xpcs-viewer` (specialized XPCS data loading and manipulation)  
 **Performance Enhancement**: `numba` (provides 3-5x speedup via JIT compilation)  
 **Bayesian Analysis**: `pymc`, `arviz`, `pytensor` (for MCMC sampling and diagnostics)  
-**Data handling and manipulation**: `xpcs-viewer (pyXpcsViewer)` (specialized XPCS data loading)  
-**Optional MCMC dependencies (for Bayesian analysis)**: `pymc`, `arviz`, `pytensor`  
 **Optional Test Dependencies**: `pytest`, `pytest-cov`, `pytest-xdist`, `pytest-benchmark`, `pytest-mock`, `hypothesis`, `black`, `flake8`, `mypy`  
-**Optional Documentation Dependencies**: `sphinx`, `sphinx-rtd-theme`, `myst-parser`, `sphinx-autodoc-typehints`, `numpydoc`  
+**Optional Documentation Dependencies**: `sphinx`, `sphinx-rtd-theme`, `myst-parser`, `sphinx-autodoc-typehints`, `numpydoc`
 
 ## Quick Start
 
