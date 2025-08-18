@@ -313,7 +313,7 @@ def plot_c2_heatmaps(
             colorbar_vmax = data_max
             im1.set_clim(colorbar_vmin, colorbar_vmax)
             im2.set_clim(colorbar_vmin, colorbar_vmax)
-            plt.colorbar(im1, cax=cbar_ax1, label="C₂")
+            plt.colorbar(im1, cax=cbar_ax1, label=r"$C_2$")
 
             # Residuals colorbar
             cbar_ax2 = fig.add_subplot(gs[0, 4])

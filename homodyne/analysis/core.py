@@ -1888,7 +1888,7 @@ class HomodyneAnalysisCore:
                 time_diag = time_t1[: len(diagonal)]
                 ax2.plot(time_diag, diagonal, "b-", linewidth=2)
                 ax2.set_xlabel("Time (s)")
-                ax2.set_ylabel("g₂(t,t)")
+                ax2.set_ylabel(r"$g_2(t,t)$")
                 ax2.set_title(f"Diagonal at φ={phi_deg:.1f}°")
                 ax2.grid(True, alpha=0.3)
 
