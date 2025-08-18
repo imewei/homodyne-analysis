@@ -3,6 +3,14 @@ Quick Start Guide
 
 This guide will get you analyzing homodyne scattering data in minutes.
 
+Installation
+------------
+
+.. code-block:: bash
+
+   # Full installation with all features (MCMC, performance, data handling)
+   pip install homodyne-analysis[all]
+
 5-Minute Tutorial
 -----------------
 

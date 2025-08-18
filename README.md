@@ -75,7 +75,14 @@ pip install -e .[all]
 
 ## Quick Start
 
-After installing via PyPI (`pip install homodyne-analysis[all]`), use the command line tools:
+Installation:
+
+```bash
+# Full installation with all features (MCMC, performance, data handling)
+pip install homodyne-analysis[all]
+```
+
+After installation, use the command line tools:
 
 ```bash
 # Create a configuration file
