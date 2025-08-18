@@ -60,10 +60,10 @@ pip install pymc arviz pytensor
 **Core Requirements**: `numpy`, `scipy`, `matplotlib`  
 **Performance Enhancement**: `numba` (provides 3-5x speedup via JIT compilation)  
 **Bayesian Analysis**: `pymc`, `arviz`, `pytensor` (for MCMC sampling and diagnostics)  
-**Data handling and manipulation**: `xpcs-viewer (pyXpcsViewer)` (specialized XPCS data loading)
-**Optional MCMC dependencies (for Bayesian analysis)**: `pymc`, `arviz`, `pytensor`
-**Optional Test Dependencies**: `pytest`, `pytest-cov`, `pytest-xdist`, `pytest-benchmark`, `pytest-mock`, `hypothesis`, `black`, `flake8`, `mypy`
-**Optional Documentation Dependencies**: `sphinx`, `sphinx-rtd-theme`, `myst-parser`, `sphinx-autodoc-typehints`, `numpydoc`
+**Data handling and manipulation**: `xpcs-viewer (pyXpcsViewer)` (specialized XPCS data loading)  
+**Optional MCMC dependencies (for Bayesian analysis)**: `pymc`, `arviz`, `pytensor`  
+**Optional Test Dependencies**: `pytest`, `pytest-cov`, `pytest-xdist`, `pytest-benchmark`, `pytest-mock`, `hypothesis`, `black`, `flake8`, `mypy`  
+**Optional Documentation Dependencies**: `sphinx`, `sphinx-rtd-theme`, `myst-parser`, `sphinx-autodoc-typehints`, `numpydoc`  
 
 ## Quick Start
 
