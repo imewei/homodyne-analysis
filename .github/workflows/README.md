@@ -10,7 +10,7 @@ This directory contains GitHub Actions workflows for the homodyne repository.
   - Push to `main` branch
   - Manual workflow dispatch
 - **Method**: Uses `peaceiris/actions-gh-pages@v4` for reliable deployment
-- **Output**: https://imewei.github.io/homodyne/
+- **Output**: https://homodyne.readthedocs.io/
 - **Features**:
   - Builds documentation with Sphinx
   - Deploys to `gh-pages` branch

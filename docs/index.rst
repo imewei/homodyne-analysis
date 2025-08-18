@@ -154,7 +154,7 @@ If you use this package in your research, please cite:
 Support
 -------
 
-- **Documentation**: https://imewei.github.io/homodyne/
+- **Documentation**: https://homodyne.readthedocs.io/
 - **Issues**: https://github.com/imewei/homodyne/issues
 - **Source Code**: https://github.com/imewei/homodyne
 - **License**: MIT License

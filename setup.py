@@ -100,7 +100,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/imewei/homodyne",
     project_urls={
-        "Documentation": "https://imewei.github.io/homodyne/",
+        "Documentation": "https://homodyne.readthedocs.io/",
         "Source": "https://github.com/imewei/homodyne",
         "Tracker": "https://github.com/imewei/homodyne/issues",
     },
