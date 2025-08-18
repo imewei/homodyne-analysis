@@ -1,11 +1,10 @@
-name: Deploy Documentation (peaceiris)
+name: Deploy Documentation
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-# Minimal permissions needed for this approach
 permissions:
   contents: write
 
@@ -28,8 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install sphinx sphinx-rtd-theme myst-parser numpydoc sphinx-autodoc-typehints linkify-it-py
-        pip install -e .
+        pip install -e .[docs]  # Use the package's doc dependencies
         
     - name: Build documentation
       run: |
@@ -37,16 +35,20 @@ jobs:
         make clean
         make html
         
-        # Verify build
+        # Verify build success
         if [ ! -f _build/html/index.html ]; then
-          echo "❌ Build failed"
+          echo "❌ Documentation build failed - index.html not found"
+          ls -la _build/html/ || echo "No _build/html directory"
           exit 1
         fi
+        
         echo "✅ Documentation built successfully"
+        echo "📊 Build statistics:"
+        echo "  Total HTML files: $(find _build/html -name "*.html" | wc -l)"
+        echo "  Total size: $(du -sh _build/html | cut -f1)"
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs/_build/html
@@ -55,11 +57,8 @@ jobs:
         user_email: 'github-actions[bot]@users.noreply.github.com'
         commit_message: 'Deploy documentation ${{ github.sha }}'
         
-    - name: Deployment info
+    - name: Success message
       run: |
-        echo "🎉 Documentation deployed!"
-        echo "📖 URL: https://${{ github.repository_owner }}.github.io/$(echo '${{ github.repository }}' | cut -d'/' -f2)/"
-        echo ""
-        echo "⚠️ If the site doesn't appear immediately:"
-        echo "1. Wait a few minutes for GitHub Pages to update"
-        echo "2. Check Settings → Pages to ensure source is set to 'gh-pages' branch"
+        echo "🎉 Deployment successful!"
+        echo "📖 URL: https://imewei.github.io/homodyne/"
+        echo "⏰ Note: GitHub Pages may take 5-10 minutes to update"
