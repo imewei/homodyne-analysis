@@ -44,7 +44,7 @@ def create_time_integral_matrix_numba(time_dependent_array):
     """
     Create time integral matrix for correlation calculations.
 
-    Computes matrix of time integrals I[i,j] = |∫ᵗʲₜᵢ f(t)dt|
+    Computes matrix of time integrals I[i,j] = |integral from t_i to t_j of f(t)dt|
     using cumulative sum for O(n) complexity instead of O(n²).
     Optimized with fastmath and memory-efficient layout.
 
@@ -134,7 +134,8 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
 
     Common experimental scenarios:
     1. Creep tests: Applied constant stress → time-dependent strain rate
-        - Initially: γ̇(t) ~ t^(-n) as material yields
+       
+       - Initially: γ̇(t) ~ t^(-n) as material yields
         - Later: γ̇(t) ~ constant for steady-state flow
         - Recovery: γ̇(t) → 0 with power-law or exponential decay
 
@@ -226,6 +227,7 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     where x = (1/2π) × q⃗·v̄ × ∫γ̇(t)dt
 
     Physical interpretation:
+    
     - The sinc function arises from the Fourier transform of a rectangular
       velocity profile in laminar shear flow
     - Shear flow creates a systematic velocity gradient perpendicular to the flow
@@ -244,11 +246,13 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     Where qy̲ is the component of q⃗ perpendicular to flow direction.
 
     Flow geometry considerations:
+    
     - For q⃗ parallel to flow: cos(φ) = ±1, maximum shear effect
     - For q⃗ perpendicular to flow: cos(φ) = 0, no shear contribution
     - Intermediate angles: cos(φ) determines the effective shear sensitivity
 
     Limiting behaviors:
+    
     - Small argument (weak shear): sinc²(x) ≈ 1 - (πx)²/3
     - Large argument (strong shear): sinc²(x) ≈ 0 with oscillations
     - First zero at x = 1: complete destructive interference

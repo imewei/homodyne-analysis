@@ -22,9 +22,8 @@ Quick Start
 
 .. code-block:: bash
 
-   pip install numpy scipy matplotlib numba
-   # For MCMC capabilities:
-   pip install pymc arviz pytensor
+   # Full installation with all features (MCMC, performance, data handling)
+   pip install homodyne-analysis[all]
 
 **Basic Usage:**
 
@@ -119,7 +118,7 @@ API Reference
    :maxdepth: 2
    
    api-reference/core
-   api-reference/optimization
+   api-reference/mcmc
    api-reference/utilities
 
 Developer Guide

@@ -6,85 +6,69 @@ Utility functions for data handling, validation, and common operations.
 Data Handling
 -------------
 
-.. autofunction:: homodyne.core.io_utils.load_data_file
+.. autofunction:: homodyne.core.io_utils.save_json
 
-   Load correlation data from HDF5 or NPZ files.
+   Save data in JSON format with NumPy array support.
 
-.. autofunction:: homodyne.core.io_utils.save_results
+.. autofunction:: homodyne.core.io_utils.save_numpy
 
-   Save analysis results in multiple formats.
+   Save analysis results as NumPy compressed files.
 
-.. autofunction:: homodyne.core.io_utils.validate_data_format
+.. autofunction:: homodyne.core.io_utils.save_analysis_results
 
-   Validate experimental data structure and content.
+   Save complete analysis results in multiple formats.
 
 Angle Processing
 ----------------
 
-.. autofunction:: homodyne.core.io_utils.load_angles
+.. autofunction:: homodyne.core.io_utils.ensure_dir
 
-   Load scattering angles from text files.
+   Create directories with proper permissions.
 
-.. autofunction:: homodyne.core.io_utils.validate_angles
+.. autofunction:: homodyne.core.io_utils.timestamped_filename
 
-   Validate angle data and ranges.
-
-.. autofunction:: homodyne.analysis.core.apply_angle_filtering
-
-   Apply angle filtering for performance optimization.
-
-.. autofunction:: homodyne.core.io_utils.convert_angle_units
-
-   Convert between degrees and radians.
+   Generate timestamped filenames for results.
 
 Configuration Utilities
 ------------------------
 
-.. autofunction:: homodyne.core.config.validate_config
+.. autoclass:: homodyne.core.config.ConfigManager
 
-   Comprehensive configuration validation.
+   Configuration management with validation and template support.
 
-.. autofunction:: homodyne.core.config.merge_configs
+.. autofunction:: homodyne.core.config.configure_logging
 
-   Merge multiple configuration dictionaries.
-
-.. autofunction:: homodyne.core.config.expand_env_vars
-
-   Expand environment variables in file paths.
+   Configure logging for analysis sessions.
 
 Performance Utilities
 ----------------------
 
-.. autofunction:: homodyne.utils.estimate_memory_usage
+.. autofunction:: homodyne.core.kernels.memory_efficient_cache
 
-   Estimate memory requirements for analysis.
+   Memory-efficient caching decorator for expensive computations.
 
-.. autofunction:: homodyne.utils.optimize_data_types
+.. autofunction:: homodyne.core.kernels.exp_negative_vectorized
 
-   Convert data to optimal types for performance.
-
-.. autofunction:: homodyne.utils.setup_parallel_processing
-
-   Configure parallel processing settings.
+   Optimized vectorized exponential operations.
 
 Plotting Utilities
 ------------------
 
-.. autofunction:: homodyne.utils.plot_correlation_data
+.. autofunction:: homodyne.plotting.plot_c2_heatmaps
 
-   Plot experimental correlation data.
+   Plot experimental correlation data as heatmaps.
 
-.. autofunction:: homodyne.utils.plot_fit_results
+.. autofunction:: homodyne.plotting.plot_mcmc_corner
 
-   Visualize optimization results and fits.
+   Create corner plots for MCMC parameter distributions.
 
-.. autofunction:: homodyne.utils.plot_mcmc_diagnostics
+.. autofunction:: homodyne.plotting.plot_mcmc_trace
 
-   Create MCMC convergence diagnostic plots.
+   Create trace plots for MCMC convergence diagnostics.
 
-.. autofunction:: homodyne.utils.plot_parameter_correlations
+.. autofunction:: homodyne.plotting.plot_3d_surface
 
-   Plot parameter correlation matrices.
+   Create 3D surface plots of correlation data.
 
 Usage Examples
 --------------
@@ -184,36 +168,13 @@ Usage Examples
 File I/O Functions
 ------------------
 
-.. autofunction:: homodyne.utils.create_output_directory
+.. autofunction:: homodyne.core.io_utils.get_output_directory
 
-   Create organized output directory structure.
+   Get organized output directory structure.
 
-.. autofunction:: homodyne.utils.save_analysis_report
+.. autofunction:: homodyne.core.io_utils.save_fig
 
-   Generate comprehensive analysis report.
-
-.. autofunction:: homodyne.utils.export_parameters
-
-   Export parameters in various formats (JSON, CSV, etc.).
-
-Error Handling
---------------
-
-.. autofunction:: homodyne.utils.HomodyneError
-
-   Base exception class for homodyne-specific errors.
-
-.. autofunction:: homodyne.utils.ConfigurationError
-
-   Raised for configuration-related issues.
-
-.. autofunction:: homodyne.utils.DataFormatError
-
-   Raised for data format problems.
-
-.. autofunction:: homodyne.utils.ConvergenceError
-
-   Raised for optimization convergence failures.
+   Save matplotlib figures with proper formatting.
 
 **Error Handling Example**:
 
@@ -233,17 +194,3 @@ Error Handling
    except Exception as e:
        print(f"Unexpected error: {e}")
 
-Constants
----------
-
-.. autodata:: homodyne.utils.DEFAULT_ANGLE_FILTER_RANGES
-
-   Default angle filtering ranges for optimization.
-
-.. autodata:: homodyne.utils.SUPPORTED_DATA_FORMATS
-
-   List of supported data file formats.
-
-.. autodata:: homodyne.utils.PHYSICAL_PARAMETER_BOUNDS
-
-   Default bounds for physical parameters.

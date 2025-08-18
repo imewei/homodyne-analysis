@@ -1,6 +1,6 @@
 """
 IO Utilities for Homodyne Scattering Analysis
-===========================================
+==============================================
 
 Comprehensive I/O utilities for safe data handling in XPCS analysis workflows.
 Provides robust file operations, intelligent data serialization, and structured

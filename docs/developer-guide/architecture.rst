@@ -1,5 +1,5 @@
 Package Architecture
-===================
+====================
 
 This document describes the overall architecture and design patterns used in the homodyne package.
 

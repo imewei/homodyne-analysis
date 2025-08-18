@@ -1,5 +1,5 @@
 Performance Optimization
-=======================
+=========================
 
 This guide covers performance optimization strategies for the homodyne package.
 

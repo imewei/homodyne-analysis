@@ -9,14 +9,13 @@ Complete API documentation for the homodyne analysis package.
 
    core
    mcmc
-   models
    utilities
 
 Core Classes
 ------------
 
-* :class:`~homodyne.core.HomodyneAnalysisCore` - Main analysis orchestrator
-* :class:`~homodyne.config.ConfigManager` - Configuration management
+* :class:`~homodyne.analysis.core.HomodyneAnalysisCore` - Main analysis orchestrator
+* :class:`~homodyne.core.config.ConfigManager` - Configuration management
 * :class:`~homodyne.optimization.mcmc.MCMCSampler` - Bayesian analysis
 
 Quick Reference
@@ -28,7 +27,6 @@ Quick Reference
 
    from homodyne import HomodyneAnalysisCore, ConfigManager
    from homodyne.optimization.mcmc import MCMCSampler
-   from homodyne.models import static_isotropic_model, laminar_flow_model
 
 **Basic Workflow**:
 
@@ -55,7 +53,4 @@ Module Index
    :template: module.rst
 
    homodyne.core
-   homodyne.config
    homodyne.optimization.mcmc
-   homodyne.models
-   homodyne.utils

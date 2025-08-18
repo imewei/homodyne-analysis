@@ -1,5 +1,5 @@
 Troubleshooting Guide
-====================
+=====================
 
 This guide helps diagnose and resolve common issues encountered when using or developing the homodyne package.
 
