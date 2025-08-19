@@ -83,9 +83,9 @@ Enable Numba for computational functions:
        # 5-10x speedup for model functions
        pass
 
-**4. Parallel MCMC**
+**4. Parallel MCMC with Thinning**
 
-Optimize MCMC sampling configuration:
+Optimize MCMC sampling configuration with thinning support:
 
 .. code-block:: python
 
@@ -94,11 +94,35 @@ Optimize MCMC sampling configuration:
            "mcmc_sampling": {
                "chains": 4,           # Match CPU cores
                "cores": 4,            # Parallel processing
-               "draws": 2000,         # Reduce if acceptable
-               "tune": 1000           # Adequate tuning
+               "draws": 2000,         # Raw samples to draw
+               "tune": 1000,          # Adequate tuning
+               "thin": 1              # Thinning interval (1 = no thinning)
            }
        }
    }
+
+**Thinning Benefits**:
+
+- **Reduced autocorrelation**: Keep every nth sample for better independence
+- **Memory efficiency**: Store fewer samples, reducing memory usage
+- **Faster post-processing**: Smaller trace files load and analyze faster
+- **Better mixing diagnostics**: More independent samples improve R̂ and ESS
+
+**Thinning Guidelines**:
+
+.. code-block:: python
+
+   # No thinning (default for laminar flow mode)
+   "thin": 1
+   
+   # Moderate thinning (recommended for static modes)
+   "thin": 2    # Keep every 2nd sample
+   
+   # Aggressive thinning (high autocorrelation cases)
+   "thin": 5    # Keep every 5th sample
+   
+   # Memory-constrained systems
+   "thin": 10   # Keep every 10th sample
 
 Memory Optimization
 -------------------
@@ -235,7 +259,7 @@ Choose appropriate optimization algorithms:
        }
    }
 
-**2. MCMC Tuning**
+**2. MCMC Tuning with Thinning**
 
 Optimize MCMC parameters for efficiency:
 
@@ -247,9 +271,38 @@ Optimize MCMC parameters for efficiency:
                "target_accept": 0.9,      # Higher acceptance
                "max_treedepth": 10,       # Prevent divergences
                "adapt_step_size": True,   # Auto-tuning
-               "adapt_diag_grad": True    # Mass matrix adaptation
+               "adapt_diag_grad": True,   # Mass matrix adaptation
+               "thin": 2                  # Apply thinning for better mixing
            }
        }
+   }
+
+**Thinning Strategy by Analysis Mode**:
+
+.. code-block:: python
+
+   # Static Isotropic Mode (3 parameters)
+   {
+       "draws": 8000,
+       "thin": 2,        # Effective samples: 4000
+       "chains": 4,
+       "target_accept": 0.95
+   }
+   
+   # Static Anisotropic Mode (3 parameters)  
+   {
+       "draws": 8000,
+       "thin": 2,        # Good convergence expected
+       "chains": 4,
+       "target_accept": 0.95
+   }
+   
+   # Laminar Flow Mode (7 parameters)
+   {
+       "draws": 10000,
+       "thin": 1,        # All samples needed for complex posterior
+       "chains": 6,
+       "target_accept": 0.95
    }
 
 Performance Benchmarks
@@ -287,32 +340,80 @@ Performance Benchmarks
      - 6x
      - Full optimization
 
-**MCMC Performance**:
+**MCMC Performance with Thinning**:
 
 .. list-table:: MCMC Benchmarks
-   :widths: 20 15 15 15 35
+   :widths: 15 10 15 10 10 40
    :header-rows: 1
 
-   * - Chains
+   * - Configuration
+     - Chains
      - Time
      - ESS/min
      - R̂
      - Notes
-   * - **2 chains**
+   * - **Basic**
+     - 2
      - 120s
      - 250
      - 1.02
-     - Minimal setup
-   * - **4 chains**
+     - Minimal setup, thin=1
+   * - **Recommended**
+     - 4
      - 80s
      - 600
      - 1.01
-     - Recommended
-   * - **8 chains**
+     - Good balance, thin=1
+   * - **With thinning**
+     - 4
+     - 80s
+     - 300
+     - 1.00
+     - thin=2, better independence
+   * - **Memory optimized**
+     - 4
+     - 85s
+     - 120
+     - 1.00
+     - thin=5, 80% less memory
+   * - **High performance**
+     - 8
      - 70s
      - 900
      - 1.00
-     - Diminishing returns
+     - thin=1, diminishing returns
+
+**Thinning Trade-offs**:
+
+.. list-table:: Thinning Effects
+   :widths: 15 20 20 20 25
+   :header-rows: 1
+
+   * - Thin
+     - Effective Samples
+     - Memory Usage
+     - Autocorrelation
+     - Use Case
+   * - **1**
+     - 100%
+     - 100%
+     - Higher
+     - Complex posteriors
+   * - **2**
+     - 50%
+     - 50%
+     - Reduced
+     - Static modes
+   * - **5**
+     - 20%
+     - 20%
+     - Low
+     - High autocorr.
+   * - **10**
+     - 10%
+     - 10%
+     - Very low
+     - Memory constrained
 
 Profiling Tools
 ---------------
@@ -376,6 +477,8 @@ Performance Best Practices
 2. **Use 4 chains** as a good balance
 3. **Monitor convergence** with R̂ and ESS
 4. **Adjust target_accept** for efficiency
+5. **Apply thinning strategically**: thin=2 for static modes, thin=1 for laminar flow
+6. **Balance effective samples vs. memory**: use thinning for memory-constrained systems
 
 **Memory**:
 
@@ -414,6 +517,8 @@ Troubleshooting Performance Issues
 2. Adjust target acceptance rate
 3. Check parameter bounds
 4. Use better initial values
+5. Consider thinning to reduce autocorrelation
+6. Increase draws if using aggressive thinning
 
 **System-Specific Issues**:
 

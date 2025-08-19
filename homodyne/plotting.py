@@ -27,25 +27,53 @@ from homodyne.core.io_utils import ensure_dir, save_fig
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Check availability of optional dependencies for advanced plotting
-try:
-    import arviz  # noqa: F401
 
-    # pandas is imported locally when needed
-    ARVIZ_AVAILABLE = True
-    logger.info("ArviZ imported - MCMC corner plots available")
+# Lazy import functions for optional plotting dependencies
+def _lazy_import_plotting_deps():
+    """Lazy import plotting dependencies to improve module loading time."""
+    imports = {}
+
+    try:
+        import arviz as arviz_module
+
+        imports["arviz"] = arviz_module
+        logger.debug("ArviZ imported for MCMC corner plots")
+    except ImportError:
+        imports["arviz"] = None
+        logger.debug("ArviZ not available")
+
+    try:
+        import corner as corner_module
+
+        imports["corner"] = corner_module
+        logger.debug("corner package imported for enhanced corner plots")
+    except ImportError:
+        imports["corner"] = None
+        logger.debug("corner package not available")
+
+    return imports
+
+
+# Check availability without importing - performance optimization
+try:
+    import importlib.util
+
+    ARVIZ_AVAILABLE = importlib.util.find_spec("arviz") is not None
+    CORNER_AVAILABLE = importlib.util.find_spec("corner") is not None
 except ImportError:
     ARVIZ_AVAILABLE = False
-    logger.warning("ArviZ not available. Install with: pip install arviz")
-
-try:
-    import corner  # noqa: F401
-
-    CORNER_AVAILABLE = True
-    logger.info("corner package imported - Enhanced corner plots available")
-except ImportError:
     CORNER_AVAILABLE = False
-    logger.warning("corner package not available. Install with: pip install corner")
+
+# Global variables for lazy-loaded modules
+_plotting_deps = None
+
+
+def _get_plotting_deps():
+    """Get plotting dependencies, loading them lazily if needed."""
+    global _plotting_deps
+    if _plotting_deps is None:
+        _plotting_deps = _lazy_import_plotting_deps()
+    return _plotting_deps
 
 
 def get_plot_config(config: Optional[Dict] = None) -> Dict[str, Any]:
@@ -1991,7 +2019,7 @@ def plot_3d_surface(
     - Experimental C2 data surface
     - Fitted C2 data surface (from MCMC posterior means)
     - Confidence interval bands (upper and lower bounds) as semi-transparent surfaces
-    
+
     The plots provide intuitive 3D visualization of the correlation function
     structure and uncertainty quantification for publication-quality figures.
 
@@ -1999,7 +2027,7 @@ def plot_3d_surface(
     ----------
     c2_experimental : np.ndarray
         Experimental correlation data [n_t2, n_t1]
-    c2_fitted : np.ndarray  
+    c2_fitted : np.ndarray
         Fitted correlation data [n_t2, n_t1] calculated from posterior means
     posterior_samples : np.ndarray, optional
         Posterior samples for uncertainty quantification [n_samples, n_t2, n_t1]
@@ -2012,7 +2040,7 @@ def plot_3d_surface(
         Configuration dictionary for plot styling
     t2 : np.ndarray, optional
         Time lag values (t₂) for y-axis
-    t1 : np.ndarray, optional  
+    t1 : np.ndarray, optional
         Delay time values (t₁) for x-axis
     confidence_level : float, optional
         Confidence level for interval calculation (default: 0.95)
@@ -2026,7 +2054,7 @@ def plot_3d_surface(
     --------
     >>> # Basic usage with experimental and fitted data
     >>> success = plot_3d_surface(c2_exp, c2_fitted, phi_angle=0.0, outdir="./plots")
-    
+
     >>> # With confidence intervals from MCMC samples
     >>> success = plot_3d_surface(
     ...     c2_exp, c2_fitted, posterior_samples=mcmc_samples,
@@ -2034,263 +2062,273 @@ def plot_3d_surface(
     ... )
     """
     logger.info(f"Creating 3D surface plot for φ = {phi_angle:.1f}°")
-    
+
     try:
         from mpl_toolkits.mplot3d import Axes3D
         import matplotlib.cm as cm
         from matplotlib.colors import LightSource
-        
+
         # Validate inputs
         if c2_experimental.shape != c2_fitted.shape:
-            logger.error(f"Shape mismatch: experimental {c2_experimental.shape} vs fitted {c2_fitted.shape}")
+            logger.error(
+                f"Shape mismatch: experimental {c2_experimental.shape} vs fitted {c2_fitted.shape}"
+            )
             return False
-        
+
         n_t2, n_t1 = c2_experimental.shape
-        
+
         # Create time arrays if not provided
         if t2 is None:
             t2 = np.arange(n_t2)
         if t1 is None:
             t1 = np.arange(n_t1)
-            
+
+        # Ensure t1 and t2 are not None for type checking
+        assert t1 is not None and t2 is not None
+
         # Create meshgrids for 3D plotting
         T1, T2 = np.meshgrid(t1, t2)
-        
+
         # Validate meshgrid shapes
         if T1.shape != c2_experimental.shape or T2.shape != c2_experimental.shape:
-            logger.error(f"Meshgrid shape {T1.shape} doesn't match data shape {c2_experimental.shape}")
+            logger.error(
+                f"Meshgrid shape {T1.shape} doesn't match data shape {c2_experimental.shape}"
+            )
             return False
-            
+
         # Calculate confidence intervals if posterior samples provided
         upper_ci = None
         lower_ci = None
         if posterior_samples is not None:
-            logger.info(f"Calculating {confidence_level*100:.1f}% confidence intervals from {posterior_samples.shape[0]} samples")
-            
+            logger.info(
+                f"Calculating {confidence_level*100:.1f}% confidence intervals from {posterior_samples.shape[0]} samples"
+            )
+
             # Calculate percentiles for confidence intervals
             alpha = 1 - confidence_level
-            lower_percentile = (alpha/2) * 100
-            upper_percentile = (1 - alpha/2) * 100
-            
+            lower_percentile = (alpha / 2) * 100
+            upper_percentile = (1 - alpha / 2) * 100
+
             lower_ci = np.percentile(posterior_samples, lower_percentile, axis=0)
             upper_ci = np.percentile(posterior_samples, upper_percentile, axis=0)
-            
+
             # Validate CI shapes
             if lower_ci.shape != c2_experimental.shape:
-                logger.warning(f"CI shape {lower_ci.shape} doesn't match data shape {c2_experimental.shape}")
+                logger.warning(
+                    f"CI shape {lower_ci.shape} doesn't match data shape {c2_experimental.shape}"
+                )
                 lower_ci = upper_ci = None
-        
+
         # Set up plotting style
         plot_config = get_plot_config(config)
         setup_matplotlib_style(plot_config)
-        
+
         # Create figure with two subplots: experimental and fitted
         fig = plt.figure(figsize=(16, 7))
-        
+
         # =================================================================
         # Left subplot: Experimental data with confidence intervals
         # =================================================================
-        ax1 = fig.add_subplot(121, projection='3d')
-        
+        ax1 = fig.add_subplot(121, projection="3d")
+
         # Create light source for realistic shading
         ls = LightSource(azdeg=315, altdeg=45)
-        
+
         # Plot experimental surface with enhanced aesthetics
         surf1 = ax1.plot_surface(
-            T1, T2, c2_experimental, 
-            cmap=cm.viridis, 
+            T1,
+            T2,
+            c2_experimental,
+            cmap="viridis",
             alpha=0.9,
             linewidth=0,
             antialiased=True,
-            shade=True
+            shade=True,
         )
-        
+
         # Plot confidence interval surfaces if available
         if upper_ci is not None and lower_ci is not None:
             # Upper CI surface (semi-transparent red)
             ax1.plot_surface(
-                T1, T2, upper_ci,
-                color='red',
-                alpha=0.3,
-                linewidth=0,
-                antialiased=True
+                T1, T2, upper_ci, color="red", alpha=0.3, linewidth=0, antialiased=True
             )
-            
-            # Lower CI surface (semi-transparent red)  
+
+            # Lower CI surface (semi-transparent red)
             ax1.plot_surface(
-                T1, T2, lower_ci,
-                color='red', 
-                alpha=0.3,
-                linewidth=0,
-                antialiased=True
+                T1, T2, lower_ci, color="red", alpha=0.3, linewidth=0, antialiased=True
             )
-            
-            title1 = f'Experimental $C_2$ Data with {confidence_level*100:.0f}% CI\nφ = {phi_angle:.1f}°'
+
+            title1 = f"Experimental $C_2$ Data with {confidence_level*100:.0f}% CI\nφ = {phi_angle:.1f}°"
         else:
-            title1 = f'Experimental $C_2$ Data\nφ = {phi_angle:.1f}°'
-            
+            title1 = f"Experimental $C_2$ Data\nφ = {phi_angle:.1f}°"
+
         # Customize first subplot
-        ax1.set_xlabel(r'$t_1$ (time units)', fontsize=12, labelpad=10)
-        ax1.set_ylabel(r'$t_2$ (time units)', fontsize=12, labelpad=10) 
-        ax1.set_zlabel(r'$C_2$ (correlation)', fontsize=12, labelpad=8)
+        ax1.set_xlabel(r"$t_1$ (time units)", fontsize=12, labelpad=10)
+        ax1.set_ylabel(r"$t_2$ (time units)", fontsize=12, labelpad=10)
+        ax1.set_zlabel(r"$C_2$ (correlation)", fontsize=12, labelpad=8)
         ax1.set_title(title1, fontsize=14, pad=20)
         ax1.view_init(elev=20, azim=120)
-        
+
         # Add colorbar for experimental data
         cbar1 = fig.colorbar(surf1, ax=ax1, shrink=0.5, aspect=20, pad=0.1)
-        cbar1.set_label(r'$C_2$ (experimental)', fontsize=10)
-        
+        cbar1.set_label(r"$C_2$ (experimental)", fontsize=10)
+
         # =================================================================
         # Right subplot: Fitted data comparison
         # =================================================================
-        ax2 = fig.add_subplot(122, projection='3d')
-        
+        ax2 = fig.add_subplot(122, projection="3d")
+
         # Plot fitted surface
         surf2 = ax2.plot_surface(
-            T1, T2, c2_fitted,
-            cmap=cm.plasma,
-            alpha=0.9, 
+            T1,
+            T2,
+            c2_fitted,
+            cmap="plasma",
+            alpha=0.9,
             linewidth=0,
             antialiased=True,
-            shade=True
+            shade=True,
         )
-        
+
         # Plot experimental as wireframe for comparison
         ax2.plot_wireframe(
-            T1, T2, c2_experimental,
-            color='gray',
-            alpha=0.4,
-            linewidth=0.5
+            T1, T2, c2_experimental, color="gray", alpha=0.4, linewidth=0.5
         )
-        
+
         # Customize second subplot
-        ax2.set_xlabel(r'$t_1$ (time units)', fontsize=12, labelpad=10)
-        ax2.set_ylabel(r'$t_2$ (time units)', fontsize=12, labelpad=10)
-        ax2.set_zlabel(r'$C_2$ (correlation)', fontsize=12, labelpad=8) 
-        ax2.set_title(f'Fitted vs Experimental Data\nφ = {phi_angle:.1f}°', fontsize=14, pad=20)
+        ax2.set_xlabel(r"$t_1$ (time units)", fontsize=12, labelpad=10)
+        ax2.set_ylabel(r"$t_2$ (time units)", fontsize=12, labelpad=10)
+        ax2.set_zlabel(r"$C_2$ (correlation)", fontsize=12, labelpad=8)
+        ax2.set_title(
+            f"Fitted vs Experimental Data\nφ = {phi_angle:.1f}°", fontsize=14, pad=20
+        )
         ax2.view_init(elev=20, azim=120)
-        
+
         # Add colorbar for fitted data
         cbar2 = fig.colorbar(surf2, ax=ax2, shrink=0.5, aspect=20, pad=0.1)
-        cbar2.set_label(r'$C_2$ (fitted)', fontsize=10)
-        
+        cbar2.set_label(r"$C_2$ (fitted)", fontsize=10)
+
         # =================================================================
         # Additional plot enhancements
         # =================================================================
-        
+
         # Set consistent z-axis limits for both subplots
         z_min = min(c2_experimental.min(), c2_fitted.min())
         z_max = max(c2_experimental.max(), c2_fitted.max())
         z_range = z_max - z_min
         z_margin = 0.1 * z_range
-        
+
         ax1.set_zlim(z_min - z_margin, z_max + z_margin)
         ax2.set_zlim(z_min - z_margin, z_max + z_margin)
-        
-        # Add grid for better depth perception  
+
+        # Add grid for better depth perception
         ax1.grid(True, alpha=0.3)
         ax2.grid(True, alpha=0.3)
-        
+
         # Improve layout
         plt.tight_layout()
-        
+
         # =================================================================
         # Save the plot
         # =================================================================
         outdir = Path(outdir)
         outdir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate filename based on angle
         filename = f"3d_surface_c2_phi_{phi_angle:.1f}deg.png"
         output_path = outdir / filename
-        
+
         # Save with high quality
         plt.savefig(
             output_path,
             dpi=300,
-            bbox_inches='tight',
-            facecolor='white',
-            edgecolor='none',
-            format='png'
+            bbox_inches="tight",
+            facecolor="white",
+            edgecolor="none",
+            format="png",
         )
-        
+
         plt.close()
-        
+
         logger.info(f"✓ 3D surface plot saved to: {output_path}")
-        
+
         # =================================================================
         # Create additional residuals 3D plot if fitted data available
         # =================================================================
         try:
             residuals = c2_experimental - c2_fitted
-            
+
             fig_res = plt.figure(figsize=(10, 7))
-            ax_res = fig_res.add_subplot(111, projection='3d')
-            
+            ax_res = fig_res.add_subplot(111, projection="3d")
+
             # Plot residuals surface
             surf_res = ax_res.plot_surface(
-                T1, T2, residuals,
+                T1,
+                T2,
+                residuals,
                 cmap=cm.RdBu_r,  # Red-Blue colormap centered at zero
                 alpha=0.8,
                 linewidth=0,
                 antialiased=True,
                 vmin=-np.max(np.abs(residuals)),
-                vmax=np.max(np.abs(residuals))
+                vmax=np.max(np.abs(residuals)),
             )
-            
+
             # Add zero plane for reference
             zero_plane = np.zeros_like(residuals)
             ax_res.plot_surface(
-                T1, T2, zero_plane,
-                color='black',
-                alpha=0.1,
-                linewidth=0
+                T1, T2, zero_plane, color="black", alpha=0.1, linewidth=0
             )
-            
+
             # Customize residuals plot
-            ax_res.set_xlabel(r'$t_1$ (time units)', fontsize=12, labelpad=10)
-            ax_res.set_ylabel(r'$t_2$ (time units)', fontsize=12, labelpad=10)
-            ax_res.set_zlabel('Residuals (exp - fitted)', fontsize=12, labelpad=8)
-            ax_res.set_title(f'Residuals (Experimental - Fitted)\nφ = {phi_angle:.1f}°', fontsize=14, pad=20)
+            ax_res.set_xlabel(r"$t_1$ (time units)", fontsize=12, labelpad=10)
+            ax_res.set_ylabel(r"$t_2$ (time units)", fontsize=12, labelpad=10)
+            ax_res.set_zlabel("Residuals (exp - fitted)", fontsize=12, labelpad=8)
+            ax_res.set_title(
+                f"Residuals (Experimental - Fitted)\nφ = {phi_angle:.1f}°",
+                fontsize=14,
+                pad=20,
+            )
             ax_res.view_init(elev=20, azim=120)
             ax_res.grid(True, alpha=0.3)
-            
+
             # Add colorbar
             cbar_res = fig_res.colorbar(surf_res, shrink=0.5, aspect=20, pad=0.1)
-            cbar_res.set_label('Residuals', fontsize=10)
-            
+            cbar_res.set_label("Residuals", fontsize=10)
+
             plt.tight_layout()
-            
+
             # Save residuals plot
             residuals_filename = f"3d_residuals_phi_{phi_angle:.1f}deg.png"
             residuals_path = outdir / residuals_filename
-            
+
             plt.savefig(
                 residuals_path,
                 dpi=300,
-                bbox_inches='tight', 
-                facecolor='white',
-                edgecolor='none',
-                format='png'
+                bbox_inches="tight",
+                facecolor="white",
+                edgecolor="none",
+                format="png",
             )
-            
+
             plt.close()
-            
+
             logger.info(f"✓ 3D residuals plot saved to: {residuals_path}")
-            
+
         except Exception as e:
             logger.warning(f"Failed to create residuals plot: {e}")
-        
+
         return True
-        
+
     except ImportError as e:
         logger.error(f"Missing required 3D plotting dependencies: {e}")
         logger.error("Install with: pip install matplotlib[3d]")
         return False
-        
+
     except Exception as e:
         logger.error(f"Failed to create 3D surface plot: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         return False
 
@@ -2305,10 +2343,10 @@ def plot_3d_surface_comparison(
 ) -> bool:
     """
     Create comparative 3D surface plots for multiple C2 datasets.
-    
+
     Useful for comparing experimental, fitted, theoretical, and residual data
     in a single comprehensive visualization.
-    
+
     Parameters
     ----------
     c2_data_dict : Dict[str, np.ndarray]
@@ -2324,100 +2362,99 @@ def plot_3d_surface_comparison(
         Time lag values (t₂) for y-axis
     t1 : np.ndarray, optional
         Delay time values (t₁) for x-axis
-        
+
     Returns
     -------
     bool
         True if plots were created successfully, False otherwise
     """
     logger.info(f"Creating comparative 3D surface plots for φ = {phi_angle:.1f}°")
-    
+
     try:
         from mpl_toolkits.mplot3d import Axes3D
         import matplotlib.cm as cm
-        
+
         if not c2_data_dict:
             logger.error("No data provided in c2_data_dict")
             return False
-        
+
         # Get reference shape from first dataset
         first_key = list(c2_data_dict.keys())[0]
         n_t2, n_t1 = c2_data_dict[first_key].shape
-        
+
         # Create time arrays if not provided
         if t2 is None:
             t2 = np.arange(n_t2)
         if t1 is None:
             t1 = np.arange(n_t1)
-            
+
         T1, T2 = np.meshgrid(t1, t2)
-        
+
         # Set up plotting
         plot_config = get_plot_config(config)
         setup_matplotlib_style(plot_config)
-        
+
         n_datasets = len(c2_data_dict)
         n_cols = min(3, n_datasets)
         n_rows = (n_datasets + n_cols - 1) // n_cols
-        
-        fig = plt.figure(figsize=(6*n_cols, 5*n_rows))
-        
+
+        fig = plt.figure(figsize=(6 * n_cols, 5 * n_rows))
+
         colormaps = [cm.viridis, cm.plasma, cm.RdBu_r, cm.cividis, cm.coolwarm]
-        
+
         for idx, (name, data) in enumerate(c2_data_dict.items()):
-            ax = fig.add_subplot(n_rows, n_cols, idx+1, projection='3d')
-            
+            ax = fig.add_subplot(n_rows, n_cols, idx + 1, projection="3d")
+
             # Choose colormap
             cmap = colormaps[idx % len(colormaps)]
-            
+
             # Special handling for residuals
-            if 'residual' in name.lower():
+            if "residual" in name.lower():
                 vmin, vmax = -np.max(np.abs(data)), np.max(np.abs(data))
             else:
                 vmin, vmax = None, None
-            
+
             surf = ax.plot_surface(
-                T1, T2, data,
+                T1,
+                T2,
+                data,
                 cmap=cmap,
                 alpha=0.9,
                 linewidth=0,
                 antialiased=True,
-                vmin=vmin, vmax=vmax
+                vmin=vmin,
+                vmax=vmax,
             )
-            
-            ax.set_xlabel(r'$t_1$', fontsize=10)
-            ax.set_ylabel(r'$t_2$', fontsize=10)
-            ax.set_zlabel(r'$C_2$', fontsize=10)
-            ax.set_title(f'{name.capitalize()}\nφ = {phi_angle:.1f}°', fontsize=12)
+
+            ax.set_xlabel(r"$t_1$", fontsize=10)
+            ax.set_ylabel(r"$t_2$", fontsize=10)
+            ax.set_zlabel(r"$C_2$", fontsize=10)
+            ax.set_title(f"{name.capitalize()}\nφ = {phi_angle:.1f}°", fontsize=12)
             ax.view_init(elev=20, azim=120)
             ax.grid(True, alpha=0.3)
-            
+
             # Add colorbar
             cbar = fig.colorbar(surf, ax=ax, shrink=0.6, aspect=15)
-            cbar.set_label(f'$C_2$ ({name})', fontsize=8)
-        
+            cbar.set_label(f"$C_2$ ({name})", fontsize=8)
+
         plt.tight_layout()
-        
+
         # Save plot
         outdir = Path(outdir)
         outdir.mkdir(parents=True, exist_ok=True)
-        
+
         filename = f"3d_comparison_phi_{phi_angle:.1f}deg.png"
         output_path = outdir / filename
-        
+
         plt.savefig(
-            output_path,
-            dpi=300,
-            bbox_inches='tight',
-            facecolor='white',
-            format='png'
+            output_path, dpi=300, bbox_inches="tight", facecolor="white", format="png"
         )
-        
+
         plt.close()
-        
+
         logger.info(f"✓ Comparative 3D surface plot saved to: {output_path}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Failed to create comparative 3D surface plot: {e}")
         return False
@@ -2426,47 +2463,49 @@ def plot_3d_surface_comparison(
 if __name__ == "__main__":
     # Test the plotting functions
     import tempfile
-    
+
     print("Testing 3D surface plotting functions...")
-    
+
     # Create test data
     n_t2, n_t1 = 30, 40
     t1 = np.linspace(0, 10, n_t1)
     t2 = np.linspace(0, 8, n_t2)
     T1, T2 = np.meshgrid(t1, t2)
-    
+
     # Generate synthetic C2 data
-    c2_exp = 1.0 + 0.1 * np.exp(-(T1**2 + T2**2)/20) * np.cos(T1) * np.sin(T2)
+    c2_exp = 1.0 + 0.1 * np.exp(-(T1**2 + T2**2) / 20) * np.cos(T1) * np.sin(T2)
     c2_fitted = c2_exp + 0.02 * np.random.randn(*c2_exp.shape)
-    
+
     # Generate mock posterior samples for CI
     n_samples = 100
-    posterior_samples = np.array([
-        c2_exp + 0.05 * np.random.randn(*c2_exp.shape) 
-        for _ in range(n_samples)
-    ])
-    
+    posterior_samples = np.array(
+        [c2_exp + 0.05 * np.random.randn(*c2_exp.shape) for _ in range(n_samples)]
+    )
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         print(f"Saving test 3D plots to: {tmp_dir}")
-        
+
         # Test main 3D surface function
         success1 = plot_3d_surface(
-            c2_exp, c2_fitted, posterior_samples,
-            phi_angle=45.0, outdir=tmp_dir,
-            t1=t1, t2=t2
+            c2_exp,
+            c2_fitted,
+            posterior_samples,
+            phi_angle=45.0,
+            outdir=tmp_dir,
+            t1=t1,
+            t2=t2,
         )
         print(f"3D surface plot: {'Success' if success1 else 'Failed'}")
-        
+
         # Test comparison function
         data_dict = {
-            'experimental': c2_exp,
-            'fitted': c2_fitted, 
-            'residuals': c2_exp - c2_fitted
+            "experimental": c2_exp,
+            "fitted": c2_fitted,
+            "residuals": c2_exp - c2_fitted,
         }
-        
+
         success2 = plot_3d_surface_comparison(
-            data_dict, phi_angle=45.0, outdir=tmp_dir,
-            t1=t1, t2=t2
+            data_dict, phi_angle=45.0, outdir=tmp_dir, t1=t1, t2=t2
         )
         print(f"3D comparison plot: {'Success' if success2 else 'Failed'}")
 

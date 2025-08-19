@@ -134,7 +134,7 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
 
     Common experimental scenarios:
     1. Creep tests: Applied constant stress → time-dependent strain rate
-       
+
        - Initially: γ̇(t) ~ t^(-n) as material yields
         - Later: γ̇(t) ~ constant for steady-state flow
         - Recovery: γ̇(t) → 0 with power-law or exponential decay
@@ -227,7 +227,7 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     where x = (1/2π) × q⃗·v̄ × ∫γ̇(t)dt
 
     Physical interpretation:
-    
+
     - The sinc function arises from the Fourier transform of a rectangular
       velocity profile in laminar shear flow
     - Shear flow creates a systematic velocity gradient perpendicular to the flow
@@ -246,13 +246,13 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     Where qy̲ is the component of q⃗ perpendicular to flow direction.
 
     Flow geometry considerations:
-    
+
     - For q⃗ parallel to flow: cos(φ) = ±1, maximum shear effect
     - For q⃗ perpendicular to flow: cos(φ) = 0, no shear contribution
     - Intermediate angles: cos(φ) determines the effective shear sensitivity
 
     Limiting behaviors:
-    
+
     - Small argument (weak shear): sinc²(x) ≈ 1 - (πx)²/3
     - Large argument (strong shear): sinc²(x) ≈ 0 with oscillations
     - First zero at x = 1: complete destructive interference
@@ -326,17 +326,27 @@ def memory_efficient_cache(maxsize=128):
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Create hashable cache key
+            # Create hashable cache key - optimized for performance
             key_parts = []
             for arg in args:
                 if isinstance(arg, np.ndarray):
-                    # Convert bytes to hex string to avoid joining bytes with strings
-                    key_parts.append(arg.tobytes().hex())
+                    # Use faster hash-based key generation
+                    array_info = (arg.shape, arg.dtype.str, hash(arg.data.tobytes()))
+                    key_parts.append(str(array_info))
+                elif hasattr(arg, "__array__"):
+                    # Handle array-like objects
+                    arr = np.asarray(arg)
+                    array_info = (arr.shape, arr.dtype.str, hash(arr.data.tobytes()))
+                    key_parts.append(str(array_info))
                 else:
                     key_parts.append(str(arg))
 
             for k, v in sorted(kwargs.items()):
-                key_parts.append(f"{k}={v}")
+                if isinstance(v, np.ndarray):
+                    array_info = (v.shape, v.dtype.str, hash(v.data.tobytes()))
+                    key_parts.append(f"{k}={array_info}")
+                else:
+                    key_parts.append(f"{k}={v}")
 
             cache_key = "|".join(key_parts)
 

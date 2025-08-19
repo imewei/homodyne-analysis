@@ -304,6 +304,9 @@
       "tune": 1000,
       "_tune_note": "Number of tuning steps before sampling",
       
+      "thin": 1,
+      "_thin_note": "Thinning interval: keep every nth sample (1=no thinning, 2=every other sample, etc.)",
+      
       "chains": 4,
       "_chains_note": "Number of parallel MCMC chains",
       
@@ -1130,6 +1133,7 @@
         "optimization_config.mcmc_sampling.enabled": true,
         "optimization_config.mcmc_sampling.draws": 15000,
         "optimization_config.mcmc_sampling.tune": 2000,
+        "optimization_config.mcmc_sampling.thin": 2,
         "optimization_config.mcmc_sampling.chains": 6,
         "optimization_config.mcmc_sampling.target_accept": 0.95,
         "output_settings.plotting.mcmc_plots.corner_plots.enabled": true,

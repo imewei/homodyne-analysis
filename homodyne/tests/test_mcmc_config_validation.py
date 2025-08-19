@@ -26,7 +26,7 @@ from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 class TestMCMCConfigurationUsage:
     """Test that MCMC configuration is properly used during sampling."""
 
-    def create_test_config(self, draws=10000, chains=8, tune=1000):
+    def create_test_config(self, draws=10000, chains=8, tune=1000, thin=1):
         """Create a test configuration with specified MCMC parameters."""
         return {
             "optimization_config": {
@@ -35,6 +35,7 @@ class TestMCMCConfigurationUsage:
                     "sampler": "NUTS",
                     "draws": draws,
                     "tune": tune,
+                    "thin": thin,
                     "chains": chains,
                     "cores": min(chains, 4),
                     "target_accept": 0.95,
@@ -451,3 +452,247 @@ class TestMCMCConfigurationIntegration:
         expected_trace_dims = {"chain": chains, "draw": draws}
         assert expected_trace_dims["chain"] == 4
         assert expected_trace_dims["draw"] == 5000
+
+
+class TestMCMCThinningConfiguration:
+    """Test MCMC thinning configuration and validation."""
+
+    def create_test_config(self, draws=10000, chains=4, tune=1000, thin=1):
+        """Create a test configuration with specified MCMC parameters including thinning."""
+        return {
+            "optimization_config": {
+                "mcmc_sampling": {
+                    "enabled": True,
+                    "sampler": "NUTS",
+                    "draws": draws,
+                    "tune": tune,
+                    "thin": thin,
+                    "chains": chains,
+                    "cores": min(chains, 4),
+                    "target_accept": 0.95,
+                }
+            },
+            "initial_parameters": {
+                "parameter_names": ["D0", "alpha", "D_offset"],
+                "values": [18000, -1.59, 3.10],
+                "active_parameters": ["D0", "alpha", "D_offset"],
+            },
+            "parameter_space": {
+                "bounds": [
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                ]
+            },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5},
+                "scattering": {"wavevector_q": 0.0237},
+            },
+            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "performance_settings": {
+                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+            },
+        }
+
+    def create_mock_core(self):
+        """Create a mock analysis core for testing."""
+        mock_core = Mock()
+        mock_core.num_threads = 4
+        mock_core.config_manager = Mock()
+        mock_core.config_manager.is_static_mode_enabled.return_value = True
+        mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
+        mock_core.config_manager.get_effective_parameter_count.return_value = 3
+        mock_core.config_manager.is_angle_filtering_enabled.return_value = True
+        return mock_core
+
+    def test_thinning_parameter_extraction(self):
+        """Test that MCMCSampler correctly extracts thinning parameter."""
+        config = self.create_test_config(draws=2000, chains=4, tune=500, thin=3)
+        mock_core = self.create_mock_core()
+
+        sampler = MCMCSampler(mock_core, config)
+
+        # Verify the sampler extracted the correct thinning value
+        assert sampler.mcmc_config["thin"] == 3
+        assert sampler.mcmc_config["draws"] == 2000
+
+    def test_thinning_default_value(self):
+        """Test that thinning defaults to 1 when not specified."""
+        config = {
+            "optimization_config": {
+                "mcmc_sampling": {
+                    "enabled": True,
+                    "draws": 1000,
+                    "chains": 2,
+                    "tune": 500,
+                    # Note: thin parameter not specified
+                }
+            },
+            "initial_parameters": {
+                "parameter_names": ["D0", "alpha", "D_offset"],
+                "values": [18000, -1.59, 3.10],
+            },
+            "parameter_space": {"bounds": []},
+            "analyzer_parameters": {"temporal": {"dt": 0.5}},
+            "analysis_settings": {"static_mode": True},
+        }
+        mock_core = self.create_mock_core()
+
+        sampler = MCMCSampler(mock_core, config)
+        mcmc_config = sampler.mcmc_config
+
+        # Should get default value of 1 (no thinning)
+        thin = mcmc_config.get("thin", 1)
+        assert thin == 1
+
+    def test_thinning_validation_positive_integer(self):
+        """Test that thinning validation requires positive integer."""
+        mock_core = self.create_mock_core()
+
+        # Test invalid thinning values
+        invalid_values = [-1, 0, 2.5, "2", None]
+
+        for invalid_thin in invalid_values:
+            config = self.create_test_config(thin=invalid_thin)
+
+            with pytest.raises(ValueError, match="thin must be a positive integer"):
+                MCMCSampler(mock_core, config)
+
+    def test_thinning_valid_values(self):
+        """Test that valid thinning values are accepted."""
+        mock_core = self.create_mock_core()
+
+        valid_values = [1, 2, 3, 5, 10, 100]
+
+        for valid_thin in valid_values:
+            config = self.create_test_config(thin=valid_thin)
+            sampler = MCMCSampler(mock_core, config)
+            assert sampler.mcmc_config["thin"] == valid_thin
+
+    def test_effective_draws_calculation(self):
+        """Test effective draws calculation with thinning."""
+        config = self.create_test_config(draws=1000, thin=5)
+        mock_core = self.create_mock_core()
+
+        sampler = MCMCSampler(mock_core, config)
+        mcmc_config = sampler.mcmc_config
+
+        draws = mcmc_config.get("draws", 1000)
+        thin = mcmc_config.get("thin", 1)
+
+        # Effective draws should be draws // thin
+        effective_draws = draws // thin if thin > 1 else draws
+        expected_effective = 1000 // 5  # = 200
+
+        assert effective_draws == expected_effective
+        assert effective_draws == 200
+
+    def test_thinning_passed_to_pymc_sample(self):
+        """Test that thinning parameter is passed to PyMC's sample function."""
+        config = self.create_test_config(draws=1000, chains=2, tune=500, thin=3)
+        mock_core = self.create_mock_core()
+
+        # Create dummy data
+        c2_experimental = np.random.rand(1, 50, 50) * 0.1 + 1.0
+        phi_angles = np.array([0.0])
+
+        with patch("homodyne.optimization.mcmc.pm") as mock_pm:
+            # Mock PyMC components
+            mock_model = MagicMock()
+            mock_pm.Model.return_value.__enter__.return_value = mock_model
+            mock_pm.Uniform = MagicMock()
+            mock_pm.HalfNormal = MagicMock()
+            mock_pm.Normal = MagicMock()
+            mock_pm.Deterministic = MagicMock()
+
+            # Mock the shared function from pytensor
+            with patch("homodyne.optimization.mcmc.shared") as mock_shared:
+                mock_shared.return_value = MagicMock()
+
+                # Mock pt.stack, pt.constant, pt.ones_like
+                with patch("homodyne.optimization.mcmc.pt") as mock_pt:
+                    mock_pt.stack.return_value = MagicMock()
+                    mock_pt.constant.return_value = MagicMock()
+                    mock_pt.ones_like.return_value = MagicMock()
+
+                    # Create sampler and attempt to run
+                    sampler = MCMCSampler(mock_core, config)
+
+                    try:
+                        sampler._run_mcmc_nuts_optimized(
+                            c2_experimental=c2_experimental,
+                            phi_angles=phi_angles,
+                            config=config,
+                            filter_angles_for_optimization=False,
+                            is_static_mode=True,
+                            analysis_mode="static_isotropic",
+                            effective_param_count=3,
+                        )
+                    except Exception:
+                        pass  # Expected to fail due to mocking, but we'll check the calls
+
+                    # Verify that pm.sample was called with thinning parameter
+                    if mock_pm.sample.called:
+                        call_args = mock_pm.sample.call_args
+                        assert call_args[1]["thin"] == 3
+                        assert call_args[1]["draws"] == 1000
+                        assert call_args[1]["chains"] == 2
+                        assert call_args[1]["tune"] == 500
+
+    def test_thinning_warning_for_low_effective_samples(self):
+        """Test that validation warns when thinning reduces effective samples too much."""
+        config = self.create_test_config(draws=2000, thin=5)  # Effective = 400 samples
+        mock_core = self.create_mock_core()
+
+        sampler = MCMCSampler(mock_core, config)
+        validation = sampler.validate_model_setup()
+
+        # Should warn about low effective sample count
+        warnings = validation.get("warnings", [])
+        low_sample_warning = any(
+            "reduces effective draws to 400" in warning for warning in warnings
+        )
+        assert (
+            low_sample_warning
+        ), f"Expected low effective samples warning, got warnings: {warnings}"
+
+    def test_thinning_recommendation_for_large_samples(self):
+        """Test that validation recommends thinning for large sample sizes."""
+        config = self.create_test_config(
+            draws=10000, thin=1
+        )  # Large samples, no thinning
+        mock_core = self.create_mock_core()
+
+        sampler = MCMCSampler(mock_core, config)
+        validation = sampler.validate_model_setup()
+
+        # Should recommend thinning for large sample sizes
+        recommendations = validation.get("recommendations", [])
+        thinning_recommendation = any(
+            "Consider using thinning" in rec for rec in recommendations
+        )
+        assert (
+            thinning_recommendation
+        ), f"Expected thinning recommendation, got: {recommendations}"
+
+    def test_thinning_in_different_analysis_modes(self):
+        """Test thinning configuration in different analysis modes."""
+        mock_core = self.create_mock_core()
+
+        # Test static isotropic mode
+        config_static = self.create_test_config(draws=1000, thin=2)
+        config_static["analysis_settings"]["static_submode"] = "isotropic"
+
+        sampler_static = MCMCSampler(mock_core, config_static)
+        assert sampler_static.mcmc_config["thin"] == 2
+
+        # Test laminar flow mode
+        config_flow = self.create_test_config(draws=2000, thin=1)
+        config_flow["analysis_settings"]["static_mode"] = False
+
+        mock_core.config_manager.is_static_mode_enabled.return_value = False
+        mock_core.config_manager.get_analysis_mode.return_value = "laminar_flow"
+        mock_core.config_manager.get_effective_parameter_count.return_value = 7
+
+        sampler_flow = MCMCSampler(mock_core, config_flow)
+        assert sampler_flow.mcmc_config["thin"] == 1

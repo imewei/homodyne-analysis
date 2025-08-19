@@ -231,7 +231,7 @@ def run_analysis(args: argparse.Namespace) -> None:
             if "analysis_workflow" not in config_override["workflow_integration"]:
                 config_override["workflow_integration"]["analysis_workflow"] = {}  # type: ignore
             config_override["workflow_integration"]["analysis_workflow"]["plot_experimental_data_on_load"] = True  # type: ignore
-            
+
             # Set the output directory for experimental data plots
             if "output_settings" not in config_override:
                 config_override["output_settings"] = {}
@@ -239,8 +239,10 @@ def run_analysis(args: argparse.Namespace) -> None:
                 config_override["output_settings"]["plotting"] = {}
             if "output" not in config_override["output_settings"]["plotting"]:
                 config_override["output_settings"]["plotting"]["output"] = {}
-            config_override["output_settings"]["plotting"]["output"]["base_directory"] = str(args.output_dir / "exp_data")
-            
+            config_override["output_settings"]["plotting"]["output"][
+                "base_directory"
+            ] = str(args.output_dir / "exp_data")
+
             logger.info(
                 "Using command-line override: experimental data plotting enabled"
             )
@@ -321,7 +323,9 @@ def run_analysis(args: argparse.Namespace) -> None:
         if results:
             # Save results - skip default plots for classical-only methods
             skip_plots = args.method == "classical"
-            analyzer.save_results_with_config(results, skip_plots=skip_plots, output_dir=str(args.output_dir))
+            analyzer.save_results_with_config(
+                results, skip_plots=skip_plots, output_dir=str(args.output_dir)
+            )
 
             # Perform per-angle chi-squared analysis for each successful method
             successful_methods = results.get("methods_used", [])
@@ -424,7 +428,9 @@ def run_analysis(args: argparse.Namespace) -> None:
                             # For classical optimization methods, use chi-squared analysis
                             try:
                                 # Save classical results to classical subdirectory
-                                classical_output_dir = Path(args.output_dir) / "classical"
+                                classical_output_dir = (
+                                    Path(args.output_dir) / "classical"
+                                )
                                 analyzer.analyze_per_angle_chi_squared(
                                     np.array(method_params),
                                     phi_angles,
@@ -462,7 +468,9 @@ def run_analysis(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
-def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
+def run_classical_optimization(
+    analyzer, initial_params, phi_angles, c2_exp, output_dir=None
+):
     """
     Execute classical optimization using Nelder-Mead simplex method.
 
@@ -517,9 +525,13 @@ def run_classical_optimization(analyzer, initial_params, phi_angles, c2_exp, out
 
         # Save experimental and fitted data to classical directory
         if output_dir is not None and best_params is not None:
-            _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir)
+            _save_classical_fitted_data(
+                analyzer, best_params, phi_angles, c2_exp, output_dir
+            )
             # Generate classical-specific plots
-            _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_dir)
+            _generate_classical_plots(
+                analyzer, best_params, phi_angles, c2_exp, output_dir
+            )
 
         return {
             "classical_optimization": {
@@ -733,12 +745,16 @@ def run_mcmc_optimization(
             )
             posterior_means = mcmc_results["posterior_means"]
             best_params = [posterior_means.get(name, 0.0) for name in param_names]
-            
+
         # Save experimental and fitted data to mcmc directory
         if output_dir is not None and best_params is not None:
-            _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir)
+            _save_mcmc_fitted_data(
+                analyzer, best_params, phi_angles, c2_exp, output_dir
+            )
             # Generate mcmc-specific plots
-            _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results)
+            _generate_mcmc_plots(
+                analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results
+            )
 
         # Extract convergence quality for MCMC summary (no chi-squared calculation)
         convergence_quality = "unknown"
@@ -947,7 +963,7 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
 def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_dir):
     """
     Generate plots specifically for classical optimization results.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -962,43 +978,47 @@ def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_
         Output directory for saving classical results
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         from pathlib import Path
         import numpy as np
-        
+
         # Create classical subdirectory
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
-        
+
         classical_dir = output_dir / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Check if plotting is enabled
         config = analyzer.config
         output_settings = config.get("output_settings", {})
         reporting = output_settings.get("reporting", {})
         if not reporting.get("generate_plots", True):
-            logger.info("Plotting disabled in configuration - skipping classical plot generation")
+            logger.info(
+                "Plotting disabled in configuration - skipping classical plot generation"
+            )
             return
-            
+
         logger.info("Generating classical optimization plots...")
-        
+
         # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
-        
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            best_params, phi_angles
+        )
+
         # Generate C2 heatmaps in classical directory
         try:
             from .plotting import plot_c2_heatmaps
-            
+
             # Create time arrays for plotting
             dt = analyzer.dt
             n_angles, n_t2, n_t1 = c2_exp.shape
             t2 = np.arange(n_t2) * dt
             t1 = np.arange(n_t1) * dt
-            
+
             logger.info("Generating C2 correlation heatmaps for classical results...")
             success = plot_c2_heatmaps(
                 c2_exp,
@@ -1009,27 +1029,29 @@ def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_
                 t2=t2,
                 t1=t1,
             )
-            
+
             if success:
                 logger.info("✓ Classical C2 heatmaps generated successfully")
             else:
                 logger.warning("⚠ Some classical C2 heatmaps failed to generate")
-                
+
         except Exception as e:
             logger.error(f"Failed to generate classical C2 heatmaps: {e}")
             import traceback
+
             logger.debug(f"Full traceback: {traceback.format_exc()}")
-        
+
     except Exception as e:
         logger.error(f"Failed to generate classical plots: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
 def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
     """
     Calculate fitted data and save experimental and fitted data to classical directory.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -1044,37 +1066,47 @@ def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, outpu
         Output directory for saving classical results
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         from pathlib import Path
         import numpy as np
-        
+
         # Create classical subdirectory
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
-        
+
         classical_dir = output_dir / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
-        
+
         logger.info(f"Calculating fitted data for classical optimization results...")
-        
+
         # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
-        
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            best_params, phi_angles
+        )
+
         # Calculate fitted data for each angle using scaling optimization
         n_angles, n_t2, n_t1 = c2_exp.shape
         c2_fitted = np.zeros_like(c2_exp)
-        
-        uncertainty_factor = analyzer.config.get("advanced_settings", {}).get("chi_squared_calculation", {}).get("uncertainty_estimation_factor", 0.1)
-        min_sigma = analyzer.config.get("advanced_settings", {}).get("chi_squared_calculation", {}).get("minimum_sigma", 1e-10)
-        
+
+        uncertainty_factor = (
+            analyzer.config.get("advanced_settings", {})
+            .get("chi_squared_calculation", {})
+            .get("uncertainty_estimation_factor", 0.1)
+        )
+        min_sigma = (
+            analyzer.config.get("advanced_settings", {})
+            .get("chi_squared_calculation", {})
+            .get("minimum_sigma", 1e-10)
+        )
+
         for i in range(n_angles):
             # Flatten the 2D correlation data for least squares fitting
             exp_flat = c2_exp[i].flatten()
             theory_flat = c2_theory[i].flatten()
-            
+
             # Perform scaling optimization: fitted = theory * contrast + offset
             A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
             try:
@@ -1082,55 +1114,74 @@ def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, outpu
                 if len(scaling) == 2:
                     contrast, offset = scaling
                     c2_fitted[i] = c2_theory[i] * contrast + offset
-                    logger.debug(f"Angle {i} (φ={phi_angles[i]:.1f}°): contrast={contrast:.3f}, offset={offset:.4f}")
+                    logger.debug(
+                        f"Angle {i} (φ={phi_angles[i]:.1f}°): contrast={contrast:.3f}, offset={offset:.4f}"
+                    )
                 else:
                     c2_fitted[i] = c2_theory[i]
-                    logger.debug(f"Angle {i} (φ={phi_angles[i]:.1f}°): using unscaled theory (no scaling solution)")
+                    logger.debug(
+                        f"Angle {i} (φ={phi_angles[i]:.1f}°): using unscaled theory (no scaling solution)"
+                    )
             except np.linalg.LinAlgError:
                 c2_fitted[i] = c2_theory[i]
-                logger.warning(f"Scaling optimization failed for angle {i}, using unscaled theory")
-        
+                logger.warning(
+                    f"Scaling optimization failed for angle {i}, using unscaled theory"
+                )
+
         # Calculate residuals: experimental - fitted
         c2_residuals = c2_exp - c2_fitted
-        
+
         # Save data files
         exp_file = classical_dir / "experimental_data.npz"
         fitted_file = classical_dir / "fitted_data.npz"
         residuals_file = classical_dir / "residuals_data.npz"
-        
-        np.savez_compressed(exp_file, 
-                           c2_experimental=c2_exp, 
-                           phi_angles=phi_angles,
-                           parameters=best_params,
-                           parameter_names=analyzer.config.get("initial_parameters", {}).get("parameter_names", []))
-        
-        np.savez_compressed(fitted_file,
-                           c2_fitted=c2_fitted,
-                           phi_angles=phi_angles,
-                           parameters=best_params,
-                           parameter_names=analyzer.config.get("initial_parameters", {}).get("parameter_names", []))
-        
-        np.savez_compressed(residuals_file,
-                           c2_residuals=c2_residuals,
-                           phi_angles=phi_angles,
-                           parameters=best_params,
-                           parameter_names=analyzer.config.get("initial_parameters", {}).get("parameter_names", []))
-        
+
+        np.savez_compressed(
+            exp_file,
+            c2_experimental=c2_exp,
+            phi_angles=phi_angles,
+            parameters=best_params,
+            parameter_names=analyzer.config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            ),
+        )
+
+        np.savez_compressed(
+            fitted_file,
+            c2_fitted=c2_fitted,
+            phi_angles=phi_angles,
+            parameters=best_params,
+            parameter_names=analyzer.config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            ),
+        )
+
+        np.savez_compressed(
+            residuals_file,
+            c2_residuals=c2_residuals,
+            phi_angles=phi_angles,
+            parameters=best_params,
+            parameter_names=analyzer.config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            ),
+        )
+
         logger.info(f"✓ Classical fitting data saved to {classical_dir}/")
         logger.info(f"  - Experimental data: {exp_file}")
         logger.info(f"  - Fitted data: {fitted_file}")
         logger.info(f"  - Residuals data: {residuals_file}")
-        
+
     except Exception as e:
         logger.error(f"Failed to save classical fitted data: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
 def _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
     """
     Calculate fitted data and save experimental and fitted data to mcmc directory.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -1145,80 +1196,87 @@ def _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir
         Output directory for saving MCMC results
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         from pathlib import Path
         import numpy as np
-        
+
         # Create mcmc subdirectory
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
-        
+
         mcmc_dir = output_dir / "mcmc"
         mcmc_dir.mkdir(parents=True, exist_ok=True)
-        
+
         logger.info("Calculating fitted data for MCMC optimization results...")
-        
+
         # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
-        
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            best_params, phi_angles
+        )
+
         # Calculate fitted data using least squares scaling for each angle
         # fitted = contrast * theory + offset
         c2_fitted = np.zeros_like(c2_exp)
         c2_residuals = np.zeros_like(c2_exp)
-        
+
         for angle_idx in range(c2_exp.shape[0]):
             # Flatten data for least squares
             theory_flat = c2_theory[angle_idx].flatten()
             exp_flat = c2_exp[angle_idx].flatten()
-            
+
             # Create design matrix for least squares: [theory, ones]
             A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
-            
+
             try:
                 # Solve for scaling parameters
-                scaling_params, residuals, rank, s = np.linalg.lstsq(A, exp_flat, rcond=None)
+                scaling_params, residuals, rank, s = np.linalg.lstsq(
+                    A, exp_flat, rcond=None
+                )
                 contrast, offset = scaling_params
-                
+
                 # Calculate fitted data
                 fitted_flat = theory_flat * contrast + offset
                 c2_fitted[angle_idx] = fitted_flat.reshape(c2_theory[angle_idx].shape)
-                
+
                 # Calculate residuals
                 c2_residuals[angle_idx] = c2_exp[angle_idx] - c2_fitted[angle_idx]
-                
+
             except np.linalg.LinAlgError as e:
                 logger.warning(f"Least squares failed for angle {angle_idx}: {e}")
                 # Fallback: use theory as fitted data
                 c2_fitted[angle_idx] = c2_theory[angle_idx]
                 c2_residuals[angle_idx] = c2_exp[angle_idx] - c2_theory[angle_idx]
-        
+
         # Save data as compressed NPZ files
         experimental_file = mcmc_dir / "experimental_data.npz"
         fitted_file = mcmc_dir / "fitted_data.npz"
         residuals_file = mcmc_dir / "residuals_data.npz"
-        
+
         np.savez_compressed(experimental_file, data=c2_exp)
         np.savez_compressed(fitted_file, data=c2_fitted)
         np.savez_compressed(residuals_file, data=c2_residuals)
-        
+
         logger.info("✓ MCMC fitting data saved to homodyne_results/mcmc/")
         logger.info(f"  - Experimental data: {experimental_file}")
         logger.info(f"  - Fitted data: {fitted_file}")
         logger.info(f"  - Residuals data: {residuals_file}")
-        
+
     except Exception as e:
         logger.error(f"Failed to save MCMC fitted data: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
-def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results):
+def _generate_mcmc_plots(
+    analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results
+):
     """
     Generate plots specifically for MCMC optimization results.
-    
+
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
@@ -1235,43 +1293,47 @@ def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, 
         Complete MCMC results including trace data
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         from pathlib import Path
         import numpy as np
-        
+
         # Create mcmc subdirectory
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
-        
+
         mcmc_dir = output_dir / "mcmc"
         mcmc_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Check if plotting is enabled
         config = analyzer.config
         output_settings = config.get("output_settings", {})
         reporting = output_settings.get("reporting", {})
         if not reporting.get("generate_plots", True):
-            logger.info("Plotting disabled in configuration - skipping MCMC plot generation")
+            logger.info(
+                "Plotting disabled in configuration - skipping MCMC plot generation"
+            )
             return
-            
+
         logger.info("Generating MCMC optimization plots...")
-        
+
         # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(best_params, phi_angles)
-        
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            best_params, phi_angles
+        )
+
         # Generate C2 heatmaps in mcmc directory
         try:
-            from .plotting import plot_c2_heatmaps
-            
+            from homodyne.plotting import plot_c2_heatmaps
+
             # Create time arrays for plotting
             dt = analyzer.dt
             n_angles, n_t2, n_t1 = c2_exp.shape
             t2 = np.arange(n_t2) * dt
             t1 = np.arange(n_t1) * dt
-            
+
             logger.info("Generating C2 correlation heatmaps for MCMC results...")
             success = plot_c2_heatmaps(
                 c2_exp,
@@ -1282,33 +1344,37 @@ def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, 
                 t2=t2,
                 t1=t1,
             )
-            
+
             if success:
                 logger.info("✓ MCMC C2 heatmaps generated successfully")
             else:
                 logger.warning("⚠ Some MCMC C2 heatmaps failed to generate")
-                
+
         except Exception as e:
             logger.error(f"Failed to generate MCMC C2 heatmaps: {e}")
-        
+
         # Generate 3D surface plots with confidence intervals
         try:
-            from .plotting import plot_3d_surface
-            
-            # Extract posterior samples from trace for confidence intervals  
+            from homodyne.plotting import plot_3d_surface
+
+            # Extract posterior samples from trace for confidence intervals
             trace = mcmc_results.get("trace")
             if trace is not None:
-                logger.info("Generating 3D surface plots with MCMC confidence intervals...")
-                
+                logger.info(
+                    "Generating 3D surface plots with MCMC confidence intervals..."
+                )
+
                 # Get parameter samples from the trace
                 try:
                     import arviz as az
-                    
+
                     # Extract posterior samples - convert InferenceData to numpy array
-                    if hasattr(trace, 'posterior'):
+                    if hasattr(trace, "posterior"):
                         # Get parameter names from config
-                        param_names = config.get("initial_parameters", {}).get("parameter_names", [])
-                        
+                        param_names = config.get("initial_parameters", {}).get(
+                            "parameter_names", []
+                        )
+
                         # Extract samples for each parameter and stack them
                         param_samples = []
                         for param_name in param_names:
@@ -1317,58 +1383,88 @@ def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, 
                                 param_data = trace.posterior[param_name].values
                                 # Reshape from (chains, draws) to (chains*draws,)
                                 param_samples.append(param_data.reshape(-1))
-                        
+
                         if param_samples:
-                            # Stack to get shape (n_samples, n_parameters) 
+                            # Stack to get shape (n_samples, n_parameters)
                             param_samples_array = np.column_stack(param_samples)
-                            n_samples = min(500, param_samples_array.shape[0])  # Limit for performance
-                            
+                            n_samples = min(
+                                500, param_samples_array.shape[0]
+                            )  # Limit for performance
+
                             # Subsample for performance
-                            indices = np.linspace(0, param_samples_array.shape[0]-1, n_samples, dtype=int)
+                            indices = np.linspace(
+                                0,
+                                param_samples_array.shape[0] - 1,
+                                n_samples,
+                                dtype=int,
+                            )
                             param_samples_subset = param_samples_array[indices]
-                            
-                            logger.info(f"Using {n_samples} posterior samples for 3D confidence intervals")
-                            
+
+                            logger.info(
+                                f"Using {n_samples} posterior samples for 3D confidence intervals"
+                            )
+
                             # Generate C2 samples for each parameter sample
                             c2_posterior_samples = []
                             for i, params in enumerate(param_samples_subset):
                                 if i % 50 == 0:  # Log progress every 50 samples
-                                    logger.debug(f"Processing posterior sample {i+1}/{n_samples}")
-                                
+                                    logger.debug(
+                                        f"Processing posterior sample {i+1}/{n_samples}"
+                                    )
+
                                 # Calculate theoretical C2 for this parameter sample
-                                c2_sample = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
-                                
+                                c2_sample = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                                    params, phi_angles
+                                )
+
                                 # Apply least squares scaling to match experimental data structure
                                 for j in range(c2_exp.shape[0]):  # For each angle
                                     exp_data = c2_exp[j].flatten()
                                     theory_data = c2_sample[j].flatten()
-                                    
+
                                     # Least squares scaling: fitted = contrast * theory + offset
-                                    A = np.vstack([theory_data, np.ones(len(theory_data))]).T
-                                    scaling, residuals, rank, s = np.linalg.lstsq(A, exp_data, rcond=None)
+                                    A = np.vstack(
+                                        [theory_data, np.ones(len(theory_data))]
+                                    ).T
+                                    scaling, residuals, rank, s = np.linalg.lstsq(
+                                        A, exp_data, rcond=None
+                                    )
                                     contrast, offset = scaling
-                                    
+
                                     # Apply scaling to this angle slice
-                                    c2_sample[j] = theory_data.reshape(c2_exp[j].shape) * contrast + offset
-                                
+                                    c2_sample[j] = (
+                                        theory_data.reshape(c2_exp[j].shape) * contrast
+                                        + offset
+                                    )
+
                                 c2_posterior_samples.append(c2_sample)
-                            
+
                             # Convert to numpy array: (n_samples, n_angles, n_t2, n_t1)
                             c2_posterior_samples = np.array(c2_posterior_samples)
-                            
+
                             # Generate 3D plots for a subset of angles (to avoid too many plots)
                             n_angles = c2_exp.shape[0]
-                            angle_indices = np.linspace(0, n_angles-1, min(5, n_angles), dtype=int)
-                            
+                            angle_indices = np.linspace(
+                                0, n_angles - 1, min(5, n_angles), dtype=int
+                            )
+
                             successful_3d_plots = 0
                             for angle_idx in angle_indices:
-                                angle_deg = phi_angles[angle_idx] if angle_idx < len(phi_angles) else angle_idx
-                                
+                                angle_deg = (
+                                    phi_angles[angle_idx]
+                                    if angle_idx < len(phi_angles)
+                                    else angle_idx
+                                )
+
                                 # Extract data for this angle
                                 c2_exp_angle = c2_exp[angle_idx]  # Shape: (n_t2, n_t1)
-                                c2_fitted_angle = c2_theory[angle_idx]  # Shape: (n_t2, n_t1)  
-                                c2_samples_angle = c2_posterior_samples[:, angle_idx, :, :]  # Shape: (n_samples, n_t2, n_t1)
-                                
+                                c2_fitted_angle = c2_theory[
+                                    angle_idx
+                                ]  # Shape: (n_t2, n_t1)
+                                c2_samples_angle = c2_posterior_samples[
+                                    :, angle_idx, :, :
+                                ]  # Shape: (n_samples, n_t2, n_t1)
+
                                 # Create 3D surface plot with confidence intervals
                                 success = plot_3d_surface(
                                     c2_experimental=c2_exp_angle,
@@ -1379,38 +1475,54 @@ def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, 
                                     config=config,
                                     t2=t2,
                                     t1=t1,
-                                    confidence_level=0.95
+                                    confidence_level=0.95,
                                 )
-                                
+
                                 if success:
                                     successful_3d_plots += 1
-                            
+
                             if successful_3d_plots > 0:
-                                logger.info(f"✓ Generated {successful_3d_plots} 3D surface plots with confidence intervals")
+                                logger.info(
+                                    f"✓ Generated {successful_3d_plots} 3D surface plots with confidence intervals"
+                                )
                             else:
-                                logger.warning("⚠ No 3D surface plots were generated successfully")
-                        
+                                logger.warning(
+                                    "⚠ No 3D surface plots were generated successfully"
+                                )
+
                         else:
                             logger.warning("No parameter samples found in MCMC trace")
-                    
+
                     else:
                         logger.warning("MCMC trace does not contain posterior data")
-                        
+
                 except ImportError:
-                    logger.warning("ArviZ not available - skipping 3D plots with confidence intervals")
+                    logger.warning(
+                        "ArviZ not available - skipping 3D plots with confidence intervals"
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to process MCMC samples for 3D plotting: {e}")
-                    
+                    logger.warning(
+                        f"Failed to process MCMC samples for 3D plotting: {e}"
+                    )
+
             else:
-                logger.info("No MCMC trace available - generating 3D plots without confidence intervals")
+                logger.info(
+                    "No MCMC trace available - generating 3D plots without confidence intervals"
+                )
                 # Generate basic 3D plots without confidence intervals
                 n_angles = c2_exp.shape[0]
-                angle_indices = np.linspace(0, n_angles-1, min(3, n_angles), dtype=int)
-                
+                angle_indices = np.linspace(
+                    0, n_angles - 1, min(3, n_angles), dtype=int
+                )
+
                 successful_3d_plots = 0
                 for angle_idx in angle_indices:
-                    angle_deg = phi_angles[angle_idx] if angle_idx < len(phi_angles) else angle_idx
-                    
+                    angle_deg = (
+                        phi_angles[angle_idx]
+                        if angle_idx < len(phi_angles)
+                        else angle_idx
+                    )
+
                     success = plot_3d_surface(
                         c2_experimental=c2_exp[angle_idx],
                         c2_fitted=c2_theory[angle_idx],
@@ -1419,53 +1531,62 @@ def _generate_mcmc_plots(analyzer, best_params, phi_angles, c2_exp, output_dir, 
                         outdir=mcmc_dir,
                         config=config,
                         t2=t2,
-                        t1=t1
+                        t1=t1,
                     )
-                    
+
                     if success:
                         successful_3d_plots += 1
-                
+
                 if successful_3d_plots > 0:
-                    logger.info(f"✓ Generated {successful_3d_plots} basic 3D surface plots")
-                        
+                    logger.info(
+                        f"✓ Generated {successful_3d_plots} basic 3D surface plots"
+                    )
+
         except Exception as e:
             logger.error(f"Failed to generate 3D surface plots: {e}")
 
         # Generate MCMC-specific plots (trace plots, corner plots, etc.)
         try:
-            from .plotting import create_all_plots
-            
+            from homodyne.plotting import create_all_plots
+
             # Prepare results data for plotting
             plot_data = {
                 "experimental_data": c2_exp,
                 "theoretical_data": c2_theory,
                 "phi_angles": phi_angles,
-                "best_parameters": dict(zip(
-                    config.get("initial_parameters", {}).get("parameter_names", []),
-                    best_params
-                )),
-                "parameter_names": config.get("initial_parameters", {}).get("parameter_names", []),
-                "parameter_units": config.get("initial_parameters", {}).get("units", []),
+                "best_parameters": dict(
+                    zip(
+                        config.get("initial_parameters", {}).get("parameter_names", []),
+                        best_params,
+                    )
+                ),
+                "parameter_names": config.get("initial_parameters", {}).get(
+                    "parameter_names", []
+                ),
+                "parameter_units": config.get("initial_parameters", {}).get(
+                    "units", []
+                ),
                 "mcmc_trace": mcmc_results.get("trace"),
                 "mcmc_diagnostics": mcmc_results.get("diagnostics", {}),
                 "method": "MCMC",
             }
-            
+
             logger.info("Generating MCMC-specific plots (trace, corner, etc.)...")
             plot_status = create_all_plots(plot_data, mcmc_dir, config)
-            
+
             successful_plots = sum(1 for status in plot_status.values() if status)
             if successful_plots > 0:
                 logger.info(f"✓ Generated {successful_plots} MCMC plots successfully")
             else:
                 logger.warning("⚠ No MCMC plots were generated successfully")
-                
+
         except Exception as e:
             logger.error(f"Failed to generate MCMC-specific plots: {e}")
-        
+
     except Exception as e:
         logger.error(f"Failed to generate MCMC plots: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 

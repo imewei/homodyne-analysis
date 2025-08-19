@@ -146,52 +146,49 @@ class TestCompleteWorkflow:
     def test_new_output_directory_structure(self, temp_directory):
         """Test the new organized output directory structure."""
         base_dir = temp_directory / "homodyne_results"
-        
+
         # Create the new expected directory structure
         expected_structure = [
             base_dir,  # Main output directory
             base_dir / "classical",  # Classical method results
-            base_dir / "exp_data",   # Experimental data plots
+            base_dir / "exp_data",  # Experimental data plots
         ]
-        
+
         created_dirs = []
         for dir_path in expected_structure:
             result_dir = ensure_dir(dir_path)
             created_dirs.append(result_dir)
             assert result_dir.exists()
             assert result_dir.is_dir()
-        
+
         # Test creating expected files in each directory
         # Main directory files
-        main_files = [
-            base_dir / "homodyne_analysis_results.json",
-            base_dir / "run.log"
-        ]
-        
-        # Classical directory files  
+        main_files = [base_dir / "homodyne_analysis_results.json", base_dir / "run.log"]
+
+        # Classical directory files
         classical_files = [
             base_dir / "classical" / "per_angle_chi_squared_classical.json",
             base_dir / "classical" / "experimental_data.npz",
             base_dir / "classical" / "fitted_data.npz",
             base_dir / "classical" / "residuals_data.npz",
-            base_dir / "classical" / "c2_heatmaps_phi_0.0deg.png"
+            base_dir / "classical" / "c2_heatmaps_phi_0.0deg.png",
         ]
-        
+
         # Experimental data directory files
         exp_data_files = [
             base_dir / "exp_data" / "data_validation_phi_0.0deg.png",
-            base_dir / "exp_data" / "summary_statistics.txt"
+            base_dir / "exp_data" / "summary_statistics.txt",
         ]
-        
+
         # Create all expected files
         all_files = main_files + classical_files + exp_data_files
         for file_path in all_files:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.touch()
             assert file_path.exists()
-        
+
         # Verify directory organization
-        assert len(list(base_dir.glob("*.json"))) >= 2  # Main results files
+        assert len(list(base_dir.glob("*.json"))) >= 1  # Main results files
         assert len(list((base_dir / "classical").glob("*.npz"))) >= 3  # NPZ data files
         assert len(list((base_dir / "exp_data").glob("*.png"))) >= 1  # Validation plots
 

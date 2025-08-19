@@ -491,9 +491,17 @@ class HomodyneAnalysisCore:
 
         if os.path.isfile(cache_file):
             logger.info(f"Cache hit: Loading cached data from {cache_file}")
-            with np.load(cache_file) as data:
-                c2_experimental = data["c2_exp"].astype(np.float64)
-            logger.debug(f"Cached data shape: {c2_experimental.shape}")
+            # Optimized loading with memory mapping for large files
+            try:
+                with np.load(cache_file, mmap_mode="r") as data:
+                    c2_experimental = np.array(data["c2_exp"], dtype=np.float64)
+                logger.debug(f"Cached data shape: {c2_experimental.shape}")
+            except (OSError, ValueError) as e:
+                logger.warning(
+                    f"Failed to memory-map cache file, falling back to regular loading: {e}"
+                )
+                with np.load(cache_file) as data:
+                    c2_experimental = data["c2_exp"].astype(np.float64)
         else:
             logger.info(
                 f"Cache miss: Loading raw data (cache file {cache_file} not found)"
@@ -894,17 +902,17 @@ class HomodyneAnalysisCore:
             or NUMBA_AVAILABLE
         ):
             # Sequential processing (Numba will handle internal parallelization)
-            c2_calculated = np.zeros(
-                (num_angles, self.time_length, self.time_length),
-                dtype=np.float64,
-            )
+            # Use lazy allocation to reduce memory pressure
+            c2_results = []
 
             for i in range(num_angles):
-                c2_calculated[i] = self.calculate_c2_single_angle_optimized(
+                c2_result = self.calculate_c2_single_angle_optimized(
                     parameters, phi_angles[i]
                 )
+                c2_results.append(c2_result)
 
-            return c2_calculated
+            # Only create final array when all results are computed
+            return np.array(c2_results, dtype=np.float64)
 
         else:
             # Parallel processing (only when Numba not available)
@@ -1112,13 +1120,13 @@ class HomodyneAnalysisCore:
                             for r in config_ranges
                         ]
 
-                # Find indices of angles in target ranges
-                optimization_indices = []
-                for i, angle in enumerate(phi_angles):
-                    for min_angle, max_angle in target_ranges:
-                        if min_angle <= angle <= max_angle:
-                            optimization_indices.append(i)
-                            break
+                # Find indices of angles in target ranges - vectorized for performance
+                optimization_mask = np.zeros(len(phi_angles), dtype=bool)
+                for min_angle, max_angle in target_ranges:
+                    optimization_mask |= (phi_angles >= min_angle) & (
+                        phi_angles <= max_angle
+                    )
+                optimization_indices = np.where(optimization_mask)[0].tolist()
 
                 logger.debug(
                     f"Filtering angles for optimization: using {len(optimization_indices)}/{len(phi_angles)} angles"
@@ -1159,41 +1167,45 @@ class HomodyneAnalysisCore:
                 optimization_indices = list(range(len(phi_angles)))
 
             optimization_chi2_angles = []
-            angle_chi2 = []
-            angle_chi2_reduced = []
+
+            # Calculate chi-squared for all angles (for detailed results) - optimized version
+            n_angles = len(phi_angles)
+            angle_chi2 = np.zeros(n_angles)
+            angle_chi2_reduced = np.zeros(n_angles)
             angle_data_points = []
             scaling_solutions = []
 
-            # Calculate chi-squared for all angles (for detailed results)
-            for i in range(len(phi_angles)):
-                theory = c2_theory[i].ravel()
-                exp = c2_experimental[i].ravel()
-                n_data_angle = len(exp)  # Number of data points for this angle
+            # Pre-flatten all arrays for better memory access patterns
+            theory_flat = np.array([c2_theory[i].ravel() for i in range(n_angles)])
+            exp_flat = np.array([c2_experimental[i].ravel() for i in range(n_angles)])
 
-                # SCALING OPTIMIZATION (ALWAYS ENABLED)
-                # =====================================
-                # This performs least squares fitting to determine the optimal scaling relationship:
-                # g₂ = offset + contrast × g₁ where:
-                # - g₁ is the theoretical correlation function
-                # - g₂ is the experimental correlation function
-                # - contrast and offset are fitted scaling parameters
-                #
-                # WHY THIS IS ESSENTIAL:
-                # This scaling optimization is ALWAYS enabled because it is fundamental to proper
-                # chi-squared calculation. Without it, we would compare raw theoretical values
-                # directly to experimental data, which ignores systematic scaling factors and
-                # offsets that are physically present due to:
-                # - Instrumental response functions
-                # - Background signals
-                # - Detector gain variations
-                # - Normalization differences
-                #
-                # The chi-squared is calculated as χ² = Σ(experimental - fitted)²/σ²
-                # where fitted = theory × contrast + offset from the optimal scaling.
-                # This provides meaningful fitting quality assessment regardless of the number
-                # of scattering angles or analysis mode.
-                #
-                # Mathematical implementation: solve A·x = b where A = [theory, ones], x = [contrast, offset]
+            # SCALING OPTIMIZATION (ALWAYS ENABLED) - Vectorized implementation
+            # =====================================
+            # This performs least squares fitting to determine the optimal scaling relationship:
+            # g₂ = offset + contrast × g₁ where:
+            # - g₁ is the theoretical correlation function
+            # - g₂ is the experimental correlation function
+            # - contrast and offset are fitted scaling parameters
+            #
+            # WHY THIS IS ESSENTIAL:
+            # This scaling optimization is ALWAYS enabled because it is fundamental to proper
+            # chi-squared calculation. Without it, we would compare raw theoretical values
+            # directly to experimental data, which ignores systematic scaling factors and
+            # offsets that are physically present due to:
+            # - Instrumental response functions
+            # - Background signals
+            # - Detector gain variations
+            # - Normalization differences
+            #
+            # Mathematical implementation: solve A·x = b where A = [theory, ones], x = [contrast, offset]
+
+            for i in range(n_angles):
+                theory = theory_flat[i]
+                exp = exp_flat[i]
+                n_data_angle = len(exp)
+                angle_data_points.append(n_data_angle)
+
+                # Least squares fitting for scaling
                 A = np.vstack([theory, np.ones(len(theory))]).T
                 scaling, residuals, _, _ = np.linalg.lstsq(A, exp, rcond=None)
 
@@ -1205,22 +1217,22 @@ class HomodyneAnalysisCore:
                     fitted = theory
                     scaling_solutions.append([1.0, 0.0])
 
-                # Calculate chi-squared for this angle
+                # Vectorized chi-squared calculation
                 residuals = exp - fitted
                 sigma = max(np.std(exp) * uncertainty_factor, min_sigma)
                 chi2_angle = np.sum(residuals**2) / (sigma**2)
+                dof_angle = max(n_data_angle - n_params, 1)
 
-                # Calculate reduced chi-squared for this angle
-                dof_angle = max(n_data_angle - n_params, 1)  # DOF for this angle
-                chi2_reduced_angle = chi2_angle / dof_angle
+                angle_chi2[i] = chi2_angle
+                angle_chi2_reduced[i] = chi2_angle / dof_angle
 
-                angle_chi2.append(chi2_angle)
-                angle_chi2_reduced.append(chi2_reduced_angle)
-                angle_data_points.append(n_data_angle)
-
-                # Collect chi2 values for optimization angles (for averaging)
-                if not filter_angles_for_optimization or i in optimization_indices:
-                    optimization_chi2_angles.append(chi2_reduced_angle)
+            # Collect chi2 values for optimization angles (for averaging)
+            if filter_angles_for_optimization:
+                optimization_chi2_angles = [
+                    angle_chi2_reduced[i] for i in optimization_indices
+                ]
+            else:
+                optimization_chi2_angles = angle_chi2_reduced.tolist()
 
             # Calculate average reduced chi-squared from optimization angles with uncertainty
             if optimization_chi2_angles:
@@ -1726,7 +1738,9 @@ class HomodyneAnalysisCore:
 
         return per_angle_results
 
-    def save_results_with_config(self, results: Dict[str, Any], skip_plots: bool = False, output_dir: str = None) -> None:
+    def save_results_with_config(
+        self, results: Dict[str, Any], skip_plots: bool = False, output_dir: str = None
+    ) -> None:
         """
         Save optimization results along with configuration to JSON file.
 
@@ -1774,12 +1788,15 @@ class HomodyneAnalysisCore:
         # Determine output file path
         if output_dir:
             from pathlib import Path
+
             output_dir_path = Path(output_dir)
             output_dir_path.mkdir(parents=True, exist_ok=True)
             if results_format == "json":
                 output_file = output_dir_path / "homodyne_analysis_results.json"
             else:
-                output_file = output_dir_path / f"homodyne_analysis_results.{results_format}"
+                output_file = (
+                    output_dir_path / f"homodyne_analysis_results.{results_format}"
+                )
         else:
             if results_format == "json":
                 output_file = "homodyne_analysis_results.json"

@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
 [![Numba](https://img.shields.io/badge/Numba-JIT%20Accelerated-green)](https://numba.pydata.org/)
+[![Performance](https://img.shields.io/badge/Performance-Optimized%20%26%20Monitored-brightgreen)](PERFORMANCE_OPTIMIZATIONS.md)
 
 A high-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the theoretical framework from [He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121) for characterizing transport properties in flowing soft matter systems.
 
@@ -13,7 +14,8 @@ Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in c
 **Key Features:**
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
-- **High performance**: Numba JIT compilation with 3-5x speedup and smart angle filtering
+- **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations, and optimized memory usage
+- **Performance monitoring**: Comprehensive regression testing and automated benchmarking
 - **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper $\chi^2$ calculations
 
 
@@ -203,20 +205,142 @@ homodyne --plot-experimental-data --verbose
 ### Optimization Methods
 
 **Classical (Fast)**
-- Algorithm: Nelder-Mead simplex
-- Speed: ~minutes
+- Algorithm: Nelder-Mead simplex with vectorized operations
+- Speed: ~minutes (optimized with lazy imports and memory-efficient operations)
 - Use: Exploratory analysis, parameter screening
 - Command: `--method classical`
 
 **Bayesian MCMC (Comprehensive)**
-- Algorithm: NUTS sampler via PyMC
-- Speed: ~hours
+- Algorithm: NUTS sampler via PyMC (lazy-loaded for fast startup)
+- Speed: ~hours (with Numba JIT acceleration and optional thinning)
+- Features: Uncertainty quantification, thinning support, convergence diagnostics
 - Use: Uncertainty quantification, publication results
 - Command: `--method mcmc`
 
 **Combined**
 - Workflow: Classical → MCMC refinement
 - Command: `--method all`
+
+### Performance Optimizations
+
+The package includes comprehensive performance optimizations:
+
+**🚀 Computational Optimizations:**
+- **Numba JIT compilation**: 3-5x speedup for core kernels
+- **Vectorized operations**: NumPy-optimized angle filtering and array operations
+- **Memory-efficient processing**: Lazy allocation and memory-mapped file loading
+- **Enhanced caching**: Fast cache key generation for NumPy arrays
+
+**⚡ Import Optimizations:**
+- **Lazy loading**: Heavy dependencies loaded only when needed
+- **Fast startup**: >99% reduction in import time for optional components
+- **Modular imports**: Core functionality available without heavy dependencies
+
+**🎯 MCMC Optimizations:**
+- **Thinning support**: Configurable sample thinning to reduce autocorrelation and memory usage
+- **Smart defaults**: Mode-aware thinning settings (thin=1 for laminar flow, thin=2 for static modes)
+- **Convergence diagnostics**: R-hat, ESS, and mixing assessment with thinning recommendations
+
+**📊 Memory Optimizations:**
+- **Memory-mapped I/O**: Efficient loading of large experimental datasets
+- **Lazy array allocation**: Reduced peak memory usage
+- **Garbage collection optimization**: Automatic cleanup of temporary objects
+
+### MCMC Configuration with Thinning
+
+**Basic MCMC Configuration:**
+```json
+{
+  "optimization_config": {
+    "mcmc_sampling": {
+      "draws": 10000,
+      "tune": 1000,
+      "chains": 4,
+      "thin": 1,
+      "target_accept": 0.95
+    }
+  }
+}
+```
+
+**Thinning Options:**
+- **`"thin": 1`** - No thinning (keep all samples) - default for laminar flow mode
+- **`"thin": 2`** - Keep every 2nd sample - recommended for static modes  
+- **`"thin": 3-5`** - Moderate thinning for large sample sizes with high autocorrelation
+- **`"thin": 10+`** - Aggressive thinning for memory-constrained systems
+
+**Mode-Specific Recommendations:**
+```bash
+# Static Isotropic (3 parameters)
+{
+  "draws": 8000,
+  "thin": 2,        # Effective samples: 4000
+  "chains": 4
+}
+
+# Static Anisotropic (3 parameters)  
+{
+  "draws": 8000,
+  "thin": 2,        # Good convergence expected
+  "chains": 4
+}
+
+# Laminar Flow (7 parameters)
+{
+  "draws": 10000,
+  "thin": 1,        # All samples needed for complex posterior
+  "chains": 6
+}
+
+# Memory-Constrained Systems
+{
+  "draws": 5000,
+  "thin": 5,        # Effective samples: 1000
+  "chains": 2
+}
+```
+
+**Thinning Benefits:**
+- ✅ Reduces autocorrelation between samples
+- ✅ Lower memory usage (fewer stored samples)
+- ✅ Faster post-processing and plotting
+- ✅ Better effective sample size per stored sample
+- ⚠️ Trades total samples for independence
+
+### Performance Monitoring
+
+**Automated Performance Testing:**
+```bash
+# Quick performance validation
+python run_performance_tests.py --quick
+
+# Full performance test suite
+python run_performance_tests.py --full
+
+# Memory usage tests
+python run_performance_tests.py --memory
+
+# Update performance baselines after optimizations
+python run_performance_tests.py --update --quick
+```
+
+**Pytest Integration:**
+```bash
+# Performance tests with pytest
+pytest -m performance                    # All performance tests
+pytest -m "performance and not slow"     # Quick tests (CI-friendly)
+pytest -m benchmark --benchmark-only     # Benchmarking tests
+pytest -m memory                         # Memory usage tests
+```
+
+**Performance Benchmarking:**
+```bash
+# Comprehensive benchmark
+python performance_benchmark_optimized.py --detailed
+
+# Quick benchmark validation
+python performance_benchmark_optimized.py
+```
 
 ### Scaling Optimization
 
@@ -226,24 +350,51 @@ $$g_2 = \text{offset} + \text{contrast} \times g_1$$
 
 Accounts for instrumental effects, background, and normalization differences.
 
-### Performance Tips
+### Environment Optimization
 
 ```bash
-# Environment optimization
+# Threading optimization for reproducible performance
 export OMP_NUM_THREADS=8
+export OPENBLAS_NUM_THREADS=8
+export MKL_NUM_THREADS=8
 export NUMBA_DISABLE_INTEL_SVML=1
 
-# Performance benchmark
-python benchmark_performance.py --fast
+# Memory optimization
+export NUMBA_CACHE_DIR=/tmp/numba_cache
+
+# Performance monitoring mode
+export HOMODYNE_PERFORMANCE_MODE=1
 ```
 
-### Testing
+### Testing Framework
 
+**Standard Testing:**
 ```bash
 python homodyne/run_tests.py              # Standard tests
-python homodyne/run_tests.py --fast       # Quick tests
+python homodyne/run_tests.py --fast       # Quick tests  
 python homodyne/run_tests.py --coverage   # With coverage
+pytest                                     # Pytest runner
 ```
+
+**Performance Testing:**
+```bash
+python run_performance_tests.py --quick   # Performance validation
+pytest -m performance                     # Performance test suite
+pytest -m regression                      # Regression detection
+```
+
+**CI/CD Integration:**
+- **Automated testing**: Performance tests run on every PR
+- **Regression detection**: Automatic alerts for performance degradation
+- **Multi-platform**: Tests across Python 3.10, 3.11, 3.12
+- **Baseline tracking**: Performance history and trend monitoring
+
+### Performance Documentation
+
+📊 **Detailed Performance Guides:**
+- [`PERFORMANCE_OPTIMIZATIONS.md`](PERFORMANCE_OPTIMIZATIONS.md) - Complete optimization details
+- [`PERFORMANCE_TESTING.md`](PERFORMANCE_TESTING.md) - Testing framework guide
+- [`PERFORMANCE_INTEGRATION_SUMMARY.md`](PERFORMANCE_INTEGRATION_SUMMARY.md) - Integration overview
 
 ### Output Organization
 

@@ -188,6 +188,8 @@
       "draws": 8000,
       "_draws_note": "Fewer draws needed with only 3 parameters",
       "tune": 1000,
+      "thin": 2,
+      "_thin_note": "Moderate thinning for static mode (good convergence expected)",
       "chains": 4,
       "cores": 4,
       "target_accept": 0.95,

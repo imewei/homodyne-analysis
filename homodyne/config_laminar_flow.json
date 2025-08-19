@@ -211,6 +211,8 @@
       "draws": 10000,
       "_draws_note": "More draws needed for 7-parameter posterior exploration",
       "tune": 1000,
+      "thin": 1,
+      "_thin_note": "No thinning for laminar flow mode (all samples needed for complex posterior)",
       "chains": 4,
       "cores": 4,
       "target_accept": 0.95,

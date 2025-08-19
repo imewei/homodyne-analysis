@@ -31,20 +31,43 @@ except ImportError:
     HOMODYNE_CORE_AVAILABLE = False
     HomodyneAnalysisCore = None
 
-# PyMC and Bayesian inference dependencies
-try:
-    import arviz as az
-    import pymc as pm
-    import pytensor.tensor as pt
-    from pytensor.compile.sharedvalue import shared
 
-    PYMC_AVAILABLE = True
+# PyMC and Bayesian inference dependencies
+# Lazy import implementation for performance optimization
+def _lazy_import_pymc():
+    """Lazy import of PyMC dependencies to reduce module loading time."""
+    global pm, az, pt, shared, PYMC_AVAILABLE
+
+    if "pm" not in globals() or pm is None:
+        try:
+            import arviz as az
+            import pymc as pm
+            import pytensor.tensor as pt
+            from pytensor.compile.sharedvalue import shared
+
+            PYMC_AVAILABLE = True
+        except ImportError as e:
+            PYMC_AVAILABLE = False
+            pm = az = pt = shared = None
+            raise ImportError(f"PyMC dependencies not available: {e}")
+
+    return pm, az, pt, shared
+
+
+# Check availability without importing
+try:
+    import importlib.util
+
+    PYMC_AVAILABLE = (
+        importlib.util.find_spec("pymc") is not None
+        and importlib.util.find_spec("arviz") is not None
+        and importlib.util.find_spec("pytensor") is not None
+    )
 except ImportError:
     PYMC_AVAILABLE = False
-    pm = None
-    az = None
-    pt = None
-    shared = None
+
+# Initialize as None - will be loaded when needed
+pm = az = pt = shared = None
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +78,16 @@ class MCMCSampler:
 
     This class provides advanced Bayesian sampling using PyMC's No-U-Turn
     Sampler (NUTS) for comprehensive uncertainty quantification of model
-    parameters.
+    parameters. Supports thinning during sampling to reduce autocorrelation
+    and memory usage.
+
+    Features:
+    - NUTS sampling with adaptive step size and path length
+    - Thinning support for reducing autocorrelation
+    - Multi-chain parallel sampling
+    - Convergence diagnostics (R-hat, ESS)
+    - Parameter uncertainty quantification
+    - Mode-aware sampling (static vs laminar flow)
     """
 
     def __init__(self, analysis_core, config: Dict[str, Any]):
@@ -76,12 +108,19 @@ class MCMCSampler:
         ValueError
             If configuration is invalid
         """
-        # Validate dependencies
+        # Validate dependencies and lazy load
         if not PYMC_AVAILABLE:
             raise ImportError(
                 "PyMC is required for MCMC sampling but is not available. "
                 "Install with: pip install pymc arviz"
             )
+
+        # Lazy import dependencies when actually needed
+        try:
+            global pm, az, pt, shared
+            pm, az, pt, shared = _lazy_import_pymc()
+        except ImportError as e:
+            raise ImportError(f"Failed to import PyMC dependencies: {e}")
 
         # Validate inputs
         if analysis_core is None:
@@ -164,9 +203,11 @@ class MCMCSampler:
             )
 
         # Type assertions for type checker - these are guaranteed after the availability check
-        assert pm is not None
-        assert pt is not None
-        assert shared is not None
+        if pm is None or pt is None or shared is None:
+            raise ImportError(
+                "PyMC dependencies not properly imported. "
+                "Install with: pip install pymc arviz pytensor"
+            )
 
         print("   Building Bayesian model with PyMC...")
         performance_config = self.config.get("performance_settings", {})
@@ -267,10 +308,10 @@ class MCMCSampler:
                             and max_val > min_val
                         ):
                             # For log-uniform: use Uniform on log scale or constrained LogNormal
-                            return pm.Uniform(param_name, lower=min_val, upper=max_val)
+                            return pm.Uniform(param_name, lower=min_val, upper=max_val)  # type: ignore
                         else:
                             # For uniform or other types: use Uniform
-                            return pm.Uniform(param_name, lower=min_val, upper=max_val)
+                            return pm.Uniform(param_name, lower=min_val, upper=max_val)  # type: ignore
                     else:
                         logger.warning(
                             f"Parameter name mismatch: expected {param_name}, got {bound.get('name')}"
@@ -280,7 +321,7 @@ class MCMCSampler:
                 print(
                     f"   Using default prior for {param_name}: [{default_lower}, {default_upper}]"
                 )
-                return pm.Uniform(param_name, lower=default_lower, upper=default_upper)
+                return pm.Uniform(param_name, lower=default_lower, upper=default_upper)  # type: ignore
 
             # Always include diffusion parameters (first 3) with configured bounds
             D0 = create_prior_from_bounds("D0", 0, 100.0, 10000.0, "log-uniform")
@@ -445,7 +486,8 @@ class MCMCSampler:
         Run MCMC NUTS sampling for parameter uncertainty quantification.
 
         This method provides advanced Bayesian sampling using PyMC's
-        No-U-Turn Sampler for uncertainty quantification.
+        No-U-Turn Sampler for uncertainty quantification. Supports
+        thinning during sampling to reduce autocorrelation and memory usage.
 
         Parameters
         ----------
@@ -454,7 +496,7 @@ class MCMCSampler:
         phi_angles : np.ndarray
             Scattering angles
         config : Dict[str, Any]
-            MCMC configuration
+            MCMC configuration (supports 'thin' parameter for thinning)
         filter_angles_for_optimization : bool, default True
             If True, use only angles in ranges [-10°, 10°] and [170°, 190°] for sampling
         is_static_mode : bool, default False
@@ -473,6 +515,16 @@ class MCMCSampler:
         ------
         ImportError
             If PyMC is not available
+
+        Notes
+        -----
+        Thinning Configuration:
+        - thin=1: No thinning (keep all samples)
+        - thin=2: Keep every 2nd sample
+        - thin=k: Keep every kth sample
+
+        Thinning reduces autocorrelation and memory usage but also reduces
+        effective sample size. Use when chains mix well but show high autocorrelation.
         """
         if not PYMC_AVAILABLE:
             raise ImportError("PyMC not available for MCMC")
@@ -488,12 +540,20 @@ class MCMCSampler:
         tune = mcmc_config.get("tune", 500)
         chains = mcmc_config.get("chains", 2)
         target_accept = mcmc_config.get("target_accept", 0.9)
+        thin = mcmc_config.get("thin", 1)  # Thinning interval for sampling
         cores = min(chains, getattr(self.core, "num_threads", 1))
 
         print(f"   Running MCMC (NUTS) Sampling...")
         print(f"     Mode: {analysis_mode} ({effective_param_count} parameters)")
+
+        # Calculate effective draws after thinning
+        effective_draws = draws // thin if thin > 1 else draws
+        thinning_info = (
+            f", thin={thin} (effective={effective_draws})" if thin > 1 else ""
+        )
+
         print(
-            f"     Settings: draws={draws}, tune={tune}, chains={chains}, cores={cores}"
+            f"     Settings: draws={draws}, tune={tune}, chains={chains}, cores={cores}{thinning_info}"
         )
 
         # Build the Bayesian model with angle filtering
@@ -558,7 +618,17 @@ class MCMCSampler:
         mcmc_start = time.time()
 
         with model:
-            print(f"    Starting MCMC sampling ({draws} draws + {tune} tuning)...")
+            thinning_msg = f" with thinning={thin}" if thin > 1 else ""
+            print(
+                f"    Starting MCMC sampling ({draws} draws + {tune} tuning{thinning_msg})..."
+            )
+
+            # Add thinning information
+            if thin > 1:
+                print(
+                    f"    Thinning: keeping every {thin} samples (effective samples: {effective_draws})"
+                )
+
             trace = pm.sample(
                 draws=draws,
                 tune=tune,
@@ -566,6 +636,7 @@ class MCMCSampler:
                 cores=cores,
                 initvals=initvals,
                 target_accept=target_accept,
+                thin=thin,  # Apply thinning during sampling
                 return_inferencedata=True,
                 compute_convergence_checks=True,
                 progressbar=True,
@@ -1037,6 +1108,10 @@ class MCMCSampler:
                 f"target_accept must be between 0 and 1, got {target_accept}"
             )
 
+        mcmc_thin = self.mcmc_config.get("thin", 1)
+        if not isinstance(mcmc_thin, int) or mcmc_thin < 1:
+            raise ValueError(f"thin must be a positive integer, got {mcmc_thin}")
+
         logger.debug("MCMC configuration validated successfully")
 
     def _validate_physical_parameters(self, params: np.ndarray) -> bool:
@@ -1151,6 +1226,7 @@ class MCMCSampler:
         # MCMC settings validation
         draws = self.mcmc_config.get("draws", 1000)
         chains = self.mcmc_config.get("chains", 2)
+        thin = self.mcmc_config.get("thin", 1)
 
         if draws < 1000:
             validation_results["warnings"].append(
@@ -1163,6 +1239,24 @@ class MCMCSampler:
             )
             validation_results["recommendations"].append(
                 "Use at least 2 chains for robust convergence assessment"
+            )
+
+        # Thinning recommendations
+        if thin > 1:
+            effective_draws = draws // thin
+            if effective_draws < 1000:
+                validation_results["warnings"].append(
+                    f"Thinning reduces effective draws to {effective_draws} (< 1000)"
+                )
+                validation_results["recommendations"].append(
+                    f"Consider increasing draws to {thin * 1000} or reducing thinning"
+                )
+            validation_results["recommendations"].append(
+                f"Using thinning={thin} for reduced autocorrelation (effective samples: {effective_draws})"
+            )
+        elif draws > 5000:
+            validation_results["recommendations"].append(
+                "Consider using thinning (thin=2-5) for large sample sizes to reduce autocorrelation and memory usage"
             )
 
         return validation_results

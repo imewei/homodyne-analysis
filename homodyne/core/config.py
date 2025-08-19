@@ -34,7 +34,9 @@ import time
 import gc
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict, cast
+from contextlib import contextmanager
+from typing_extensions import NotRequired
 
 # Default parallelization setting - balance performance and resource usage
 # Limit to 16 threads to avoid overwhelming system resources while providing
@@ -43,6 +45,106 @@ DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
 
 # Module-level logger for configuration-related messages
 logger = logging.getLogger(__name__)
+
+
+# TypedDict definitions for strong typing of configuration structures
+class LoggingConfig(TypedDict, total=False):
+    """Typed configuration for logging system."""
+
+    log_to_file: bool
+    log_to_console: bool
+    log_filename: str
+    level: str
+    format: str
+    rotation: Dict[str, Union[int, str]]
+
+
+class AngleRange(TypedDict):
+    """Typed configuration for angle filtering ranges."""
+
+    min_angle: float
+    max_angle: float
+
+
+class AngleFilteringConfig(TypedDict, total=False):
+    """Typed configuration for angle filtering."""
+
+    enabled: bool
+    target_ranges: List[AngleRange]
+    fallback_to_all_angles: bool
+
+
+class OptimizationMethodConfig(TypedDict, total=False):
+    """Typed configuration for optimization method parameters."""
+
+    maxiter: int
+    xatol: float
+    fatol: float
+
+
+class ClassicalOptimizationConfig(TypedDict, total=False):
+    """Typed configuration for classical optimization methods."""
+
+    methods: List[str]
+    method_options: Dict[str, OptimizationMethodConfig]
+
+
+class BayesianInferenceConfig(TypedDict, total=False):
+    """Typed configuration for Bayesian MCMC inference."""
+
+    mcmc_draws: int
+    mcmc_tune: int
+
+
+class OptimizationConfig(TypedDict, total=False):
+    """Typed configuration for optimization settings."""
+
+    angle_filtering: AngleFilteringConfig
+    classical_optimization: ClassicalOptimizationConfig
+    bayesian_inference: BayesianInferenceConfig
+
+
+class ParameterBound(TypedDict):
+    """Typed configuration for parameter bounds."""
+
+    name: str
+    min: float
+    max: float
+    type: str  # "uniform" or "log-uniform"
+
+
+class ParameterSpaceConfig(TypedDict, total=False):
+    """Typed configuration for parameter space definition."""
+
+    bounds: List[ParameterBound]
+
+
+class InitialParametersConfig(TypedDict, total=False):
+    """Typed configuration for initial parameter values."""
+
+    values: List[float]
+    parameter_names: List[str]
+    active_parameters: NotRequired[List[str]]
+
+
+class AnalysisSettings(TypedDict, total=False):
+    """Typed configuration for analysis mode settings."""
+
+    static_mode: bool
+    static_submode: NotRequired[str]  # "isotropic" or "anisotropic"
+    model_description: Dict[str, str]
+
+
+class ExperimentalDataConfig(TypedDict, total=False):
+    """Typed configuration for experimental data paths."""
+
+    data_folder_path: str
+    data_file_name: str
+    phi_angles_path: str
+    phi_angles_file: str
+    exchange_key: str
+    cache_file_path: str
+    cache_filename_template: str
 
 
 def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
@@ -196,12 +298,13 @@ class ConfigManager:
             Path to JSON configuration file
         """
         self.config_file = config_file
-        self.config = None
+        self.config: Optional[Dict[str, Any]] = None
+        self._cached_values: Dict[str, Any] = {}
         self.load_config()
         self.validate_config()
         self.setup_logging()
 
-    def load_config(self):
+    def load_config(self) -> None:
         """
         Load and parse JSON configuration file with comprehensive error handling.
 
@@ -251,7 +354,7 @@ class ConfigManager:
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
 
-    def _optimize_config_structure(self):
+    def _optimize_config_structure(self) -> None:
         """
         Pre-compute and cache frequently accessed configuration values.
 
@@ -269,8 +372,7 @@ class ConfigManager:
         if not self.config:
             return
 
-        # Initialize cache dictionary for performance-critical values
-        self._cached_values = {}
+        # Initialize cache dictionary for performance-critical values (already initialized in __init__)
 
         # Cache optimization config paths
         if "optimization_config" in self.config:
@@ -314,7 +416,7 @@ class ConfigManager:
             3 if self._cached_values.get("static_mode", False) else 7
         )
 
-    def validate_config(self):
+    def validate_config(self) -> None:
         """
         Comprehensive validation of configuration parameters.
 
@@ -380,7 +482,7 @@ class ConfigManager:
             f"Configuration validated: frames {start}-{end} ({end-start} frames)"
         )
 
-    def _validate_physical_parameters(self):
+    def _validate_physical_parameters(self) -> None:
         """
         Validate physical parameters for scientific and computational validity.
 
@@ -450,7 +552,7 @@ class ConfigManager:
             logger.info("Continuing without logging...")
             return None
 
-    def get(self, *keys, default=None):
+    def get(self, *keys: str, default: Any = None) -> Any:
         """
         Get nested configuration value.
 
@@ -711,11 +813,11 @@ class ConfigManager:
             Falls back to all parameters if not specified in configuration.
         """
         initial_params = self.get("initial_parameters", default={})
-        active_params = initial_params.get("active_parameters", [])
+        active_params = cast(List[str], initial_params.get("active_parameters", []))
 
         # If no active_parameters specified, use all parameter names
         if not active_params:
-            param_names = initial_params.get("parameter_names", [])
+            param_names = cast(List[str], initial_params.get("parameter_names", []))
             if param_names:
                 active_params = param_names
             else:
@@ -963,11 +1065,11 @@ class PerformanceMonitor:
     for optimization of computational kernels.
     """
 
-    def __init__(self):
-        self.timings = {}
-        self.memory_usage = {}
+    def __init__(self) -> None:
+        self.timings: Dict[str, List[float]] = {}
+        self.memory_usage: Dict[str, float] = {}
 
-    def time_function(self, func_name: str):
+    def time_function(self, func_name: str) -> "PerformanceMonitor._TimingContext":
         """
         Context manager for timing function execution.
 
@@ -985,17 +1087,17 @@ class PerformanceMonitor:
         return self._TimingContext(self, func_name)
 
     class _TimingContext:
-        def __init__(self, monitor, func_name):
+        def __init__(self, monitor: "PerformanceMonitor", func_name: str) -> None:
             self.monitor = monitor
             self.func_name = func_name
             self.start_time: Optional[float] = None
 
-        def __enter__(self):
+        def __enter__(self) -> "PerformanceMonitor._TimingContext":
             gc.collect()  # Clean memory before timing
             self.start_time = time.perf_counter()
             return self
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
+        def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
             # Suppress unused parameter warnings
             _ = exc_type, exc_val, exc_tb
 
@@ -1018,12 +1120,12 @@ class PerformanceMonitor:
             }
         return summary
 
-    def reset_timings(self):
+    def reset_timings(self) -> None:
         """Clear all timing data."""
         self.timings.clear()
         self.memory_usage.clear()
 
-    def log_performance_summary(self, logger=None):
+    def log_performance_summary(self, logger: Optional[logging.Logger] = None) -> None:
         """Log performance summary to logger."""
         if logger is None:
             logger = logging.getLogger(__name__)

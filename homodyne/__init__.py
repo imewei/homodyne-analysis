@@ -16,7 +16,7 @@ H. He, H. Liang, M. Chu, Z. Jiang, J.J. de Pablo, M.V. Tirrell, S. Narayanan,
 dynamics in soft matter", Proc. Natl. Acad. Sci. U.S.A. 121 (31) e2401162121 (2024).
 
 Key Features:
-- Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params), 
+- Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params),
   Laminar Flow (7 params)
 - Dual optimization: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
 - High performance: Numba JIT compilation with 3-5x speedup and smart angle filtering
@@ -58,6 +58,7 @@ try:
 except ImportError as e:
     ClassicalOptimizer = None
     import logging
+
     logging.getLogger(__name__).warning(
         f"Classical optimization not available - missing scipy: {e}"
     )
@@ -68,6 +69,7 @@ except ImportError as e:
     MCMCSampler = None
     create_mcmc_sampler = None
     import logging
+
     logging.getLogger(__name__).warning(
         f"MCMC Bayesian analysis not available - missing PyMC/ArviZ: {e}"
     )
@@ -75,7 +77,7 @@ except ImportError as e:
 __all__ = [
     # Core functionality
     "ConfigManager",
-    "configure_logging", 
+    "configure_logging",
     "performance_monitor",
     "HomodyneAnalysisCore",
     # Computational kernels

@@ -143,6 +143,8 @@
       "draws": 8000,
       "_draws_note": "Fewer draws needed with only 3 parameters",
       "tune": 1000,
+      "thin": 2,
+      "_thin_note": "Moderate thinning for static isotropic mode (effective samples: 4000)",
       "chains": 8,
       "cores": 8,
       "target_accept": 0.95,
@@ -370,9 +372,11 @@
     ],
     "performance_benefits": [
       "Faster optimization (3 vs 7 parameters)",
-      "No angle file loading overhead",
+      "No angle file loading overhead", 
       "No angle filtering computational cost",
-      "Simpler parameter space for MCMC"
+      "Simpler parameter space for MCMC",
+      "Thinning (thin=2) reduces autocorrelation with minimal effective sample loss",
+      "Better convergence diagnostics due to more independent samples"
     ]
   },
   "validation_rules": {
@@ -413,15 +417,16 @@
         "_critical_threshold_note": "R̂ > 1.15 indicates poor convergence"
       },
       "ess_thresholds": {
-        "_comment": "ESS thresholds for 3-parameter isotropic space",
+        "_comment": "ESS thresholds for 3-parameter isotropic space with thinning",
         "excellent_threshold": 400,
-        "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space",
+        "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space (effective samples: 4000 with thin=2)",
         "good_threshold": 200,
         "_good_threshold_note": "ESS ≥ 200 good for isotropic analysis",
         "acceptable_threshold": 100,
         "_acceptable_threshold_note": "ESS ≥ 100 acceptable for static isotropic",
         "minimum_threshold": 50,
-        "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates"
+        "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates",
+        "_thinning_note": "With thin=2, effective sample independence improved while maintaining adequate sample count"
       },
       "divergence_thresholds": {
         "_comment": "Divergence criteria for simple isotropic geometry",
