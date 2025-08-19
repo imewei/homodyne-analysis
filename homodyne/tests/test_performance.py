@@ -536,11 +536,9 @@ class TestRegressionBenchmarks:
         def correlation_calculation():
             return analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
 
-        # JIT warmup runs to stabilize performance
-        print("Performing JIT warmup for stable benchmarking...")
-        for _ in range(3):
-            _ = correlation_calculation()
-            gc.collect()  # Consistent garbage collection state
+        # The analyzer already has JIT warmup in __init__, but we need to ensure
+        # stable state for benchmarking by clearing any caches and running GC
+        gc.collect()  # Ensure consistent memory state for benchmarking
 
         # Benchmark the function with stable JIT
         result = benchmark.pedantic(correlation_calculation, rounds=10, iterations=1)

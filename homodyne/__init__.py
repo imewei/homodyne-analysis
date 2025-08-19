@@ -51,21 +51,18 @@ from .core.kernels import (
     exp_negative_vectorized,
 )
 
-# Performance optimization utilities (optional)
+# Performance profiling utilities (existing)
 try:
-    from .core.performance_utils import (
-        jit_warmup,
-        stable_benchmark,
-        PerformanceMonitor,
-        optimize_numerical_environment,
-        assert_performance_within_bounds,
-        assert_performance_stability,
+    from .core.profiler import (
+        profile_execution_time,
+        profile_memory_usage, 
+        get_performance_summary,
     )
 except ImportError as e:
-    # Performance utilities are optional
+    # Profiling utilities are optional
     import logging
     logging.getLogger(__name__).debug(
-        f"Performance utilities not available: {e}"
+        f"Performance profiling utilities not available: {e}"
     )
 from .analysis.core import HomodyneAnalysisCore
 
@@ -110,13 +107,10 @@ __all__ = [
     "apply_scaling_vectorized",
     "compute_chi_squared_fast",
     "exp_negative_vectorized",
-    # Performance utilities (optional)
-    "jit_warmup",
-    "stable_benchmark", 
-    "PerformanceMonitor",
-    "optimize_numerical_environment",
-    "assert_performance_within_bounds",
-    "assert_performance_stability",
+    # Performance profiling utilities (optional)
+    "profile_execution_time",
+    "profile_memory_usage", 
+    "get_performance_summary",
     # Optimization methods (optional)
     "ClassicalOptimizer",
     "MCMCSampler",
