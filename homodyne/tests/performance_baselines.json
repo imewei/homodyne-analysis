@@ -40,7 +40,16 @@
     "memory_mb": 8.0
   },
   "test_correlation_calculation_benchmark": {
-    "execution_time": 0.2,
-    "memory_mb": 12.0
+    "execution_time_median": 0.008,
+    "execution_time_mean": 0.010,
+    "execution_time_95th_percentile": 0.020,
+    "execution_time_max_acceptable": 0.050,
+    "memory_mb": 5.0,
+    "variance_notes": "JIT compilation causes initial warmup overhead. Stable after 3 warmup runs.",
+    "performance_characteristics": {
+      "warmup_required": true,
+      "jit_sensitive": true,
+      "expected_speedup_over_baseline": "20-30x faster than original 200ms target"
+    }
   }
 }

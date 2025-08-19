@@ -509,7 +509,11 @@ class TestRegressionBenchmarks:
     def test_correlation_calculation_benchmark(
         self, performance_config, small_benchmark_data, benchmark
     ):
-        """Benchmark correlation calculation for regression testing."""
+        """Benchmark correlation calculation with JIT warmup for stable performance.
+        
+        This test includes proper JIT compilation warmup to reduce performance
+        variance and provide more reliable benchmark results.
+        """
         analyzer = HomodyneAnalysisCore()
         analyzer.config = performance_config
         analyzer.time_length = small_benchmark_data["time_length"]
@@ -521,18 +525,25 @@ class TestRegressionBenchmarks:
             small_benchmark_data["time_length"],
         )
 
-        def correlation_calculation():
-            # Use proper parameter count - extend to 7 parameters if needed
-            params = small_benchmark_data["parameters"]
-            if len(params) < 7:
-                # Pad with zeros for laminar flow parameters
-                params = np.concatenate([params, np.zeros(7 - len(params))])
-            return analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                params, small_benchmark_data["phi_angles"]
-            )
+        # Prepare parameters
+        params = small_benchmark_data["parameters"]
+        if len(params) < 7:
+            # Pad with zeros for laminar flow parameters
+            params = np.concatenate([params, np.zeros(7 - len(params))])
+        
+        phi_angles = small_benchmark_data["phi_angles"]
 
-        # Benchmark the function
-        result = benchmark(correlation_calculation)
+        def correlation_calculation():
+            return analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+
+        # JIT warmup runs to stabilize performance
+        print("Performing JIT warmup for stable benchmarking...")
+        for _ in range(3):
+            _ = correlation_calculation()
+            gc.collect()  # Consistent garbage collection state
+
+        # Benchmark the function with stable JIT
+        result = benchmark.pedantic(correlation_calculation, rounds=10, iterations=1)
 
         # Verify result shape
         expected_shape = (
@@ -543,7 +554,7 @@ class TestRegressionBenchmarks:
         assert (
             result.shape == expected_shape
         ), f"Unexpected result shape: {result.shape}"
-        print(f"✓ Correlation calculation benchmark completed")
+        print(f"✓ Correlation calculation benchmark completed with warmup")
 
 
 # Performance test configuration

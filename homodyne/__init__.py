@@ -50,6 +50,23 @@ from .core.kernels import (
     compute_chi_squared_fast,
     exp_negative_vectorized,
 )
+
+# Performance optimization utilities (optional)
+try:
+    from .core.performance_utils import (
+        jit_warmup,
+        stable_benchmark,
+        PerformanceMonitor,
+        optimize_numerical_environment,
+        assert_performance_within_bounds,
+        assert_performance_stability,
+    )
+except ImportError as e:
+    # Performance utilities are optional
+    import logging
+    logging.getLogger(__name__).debug(
+        f"Performance utilities not available: {e}"
+    )
 from .analysis.core import HomodyneAnalysisCore
 
 # Optional optimization modules with graceful degradation
@@ -93,6 +110,13 @@ __all__ = [
     "apply_scaling_vectorized",
     "compute_chi_squared_fast",
     "exp_negative_vectorized",
+    # Performance utilities (optional)
+    "jit_warmup",
+    "stable_benchmark", 
+    "PerformanceMonitor",
+    "optimize_numerical_environment",
+    "assert_performance_within_bounds",
+    "assert_performance_stability",
     # Optimization methods (optional)
     "ClassicalOptimizer",
     "MCMCSampler",
