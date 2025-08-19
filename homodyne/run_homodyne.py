@@ -21,6 +21,7 @@ import time
 import json
 from pathlib import Path
 import numpy as np
+from typing import Optional, Dict, Any
 
 # Import core analysis components with graceful error handling
 # This allows the script to provide informative error messages if dependencies are missing
@@ -183,7 +184,7 @@ def run_analysis(args: argparse.Namespace) -> None:
         logger.info(f"Initializing Homodyne Analysis with config: {config_path}")
 
         # Apply mode override if specified
-        config_override = None
+        config_override: Optional[Dict[str, Any]] = None
         if args.static:
             # Keep backward compatibility: --static maps to static anisotropic
             config_override = {
@@ -1004,6 +1005,12 @@ def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_
 
         logger.info("Generating classical optimization plots...")
 
+        # Initialize time arrays for plotting
+        dt = analyzer.dt
+        n_angles, n_t2, n_t1 = c2_exp.shape
+        t2 = np.arange(n_t2) * dt
+        t1 = np.arange(n_t1) * dt
+
         # Calculate theoretical data with optimized parameters
         c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
             best_params, phi_angles
@@ -1013,11 +1020,7 @@ def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_
         try:
             from .plotting import plot_c2_heatmaps
 
-            # Create time arrays for plotting
-            dt = analyzer.dt
-            n_angles, n_t2, n_t1 = c2_exp.shape
-            t2 = np.arange(n_t2) * dt
-            t1 = np.arange(n_t1) * dt
+            # Time arrays already initialized at function start
 
             logger.info("Generating C2 correlation heatmaps for classical results...")
             success = plot_c2_heatmaps(
@@ -1319,6 +1322,12 @@ def _generate_mcmc_plots(
 
         logger.info("Generating MCMC optimization plots...")
 
+        # Initialize time arrays that may be needed later
+        dt = analyzer.dt
+        n_angles, n_t2, n_t1 = c2_exp.shape
+        t2 = np.arange(n_t2) * dt
+        t1 = np.arange(n_t1) * dt
+
         # Calculate theoretical data with optimized parameters
         c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
             best_params, phi_angles
@@ -1328,11 +1337,7 @@ def _generate_mcmc_plots(
         try:
             from homodyne.plotting import plot_c2_heatmaps
 
-            # Create time arrays for plotting
-            dt = analyzer.dt
-            n_angles, n_t2, n_t1 = c2_exp.shape
-            t2 = np.arange(n_t2) * dt
-            t1 = np.arange(n_t1) * dt
+            # Time arrays already initialized at function start
 
             logger.info("Generating C2 correlation heatmaps for MCMC results...")
             success = plot_c2_heatmaps(

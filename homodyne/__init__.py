@@ -51,12 +51,17 @@ from .core.kernels import (
     exp_negative_vectorized,
 )
 
-# Performance profiling utilities (existing)
+# Performance profiling utilities (enhanced)
 try:
     from .core.profiler import (
         profile_execution_time,
         profile_memory_usage, 
         get_performance_summary,
+        # New stable benchmarking utilities
+        stable_benchmark,
+        optimize_numerical_environment,
+        assert_performance_within_bounds,
+        assert_performance_stability,
     )
 except ImportError as e:
     # Profiling utilities are optional
@@ -111,14 +116,26 @@ __all__ = [
     "profile_execution_time",
     "profile_memory_usage", 
     "get_performance_summary",
+    # Stable benchmarking utilities (new)
+    "stable_benchmark",
+    "optimize_numerical_environment", 
+    "assert_performance_within_bounds",
+    "assert_performance_stability",
     # Optimization methods (optional)
     "ClassicalOptimizer",
     "MCMCSampler",
     "create_mcmc_sampler",
 ]
 
-# Version information
-__version__ = "0.6.0"
+# Version information  
+__version__ = "0.6.1"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory & University of Chicago"
+
+# Recent improvements (v0.6.1)
+# - Enhanced JIT warmup with comprehensive function-level compilation
+# - Stable benchmarking utilities with statistical outlier filtering  
+# - Consolidated performance testing infrastructure
+# - Performance baseline tracking and regression detection
+# - Improved type annotations and consistency checks

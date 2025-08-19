@@ -198,8 +198,7 @@ class TestClassicalOptimizationConfigurationReading:
         effective_param_count = 3  # Static mode uses first 3 parameters
 
         # For static mode, only use first 3 parameters
-        if len(initial_parameters) > effective_param_count:
-            static_parameters = initial_parameters[:effective_param_count]
+        static_parameters = initial_parameters[:effective_param_count]
 
         expected_static_params = np.array([18000, -1.59, 3.10])
         np.testing.assert_array_equal(static_parameters, expected_static_params)

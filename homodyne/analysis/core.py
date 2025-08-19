@@ -270,15 +270,43 @@ class HomodyneAnalysisCore:
         test_matrix = np.ones((size, size), dtype=np.float64)
 
         try:
-            # Warm up each function
+            # Warm up low-level Numba functions
             create_time_integral_matrix_numba(test_array)
             calculate_diffusion_coefficient_numba(test_time, 1000.0, 0.0, 0.0)
             calculate_shear_rate_numba(test_time, 0.01, 0.0, 0.0)
             compute_g1_correlation_numba(test_matrix, 1.0)
             compute_sinc_squared_numba(test_matrix, 1.0)
+            
+            # Warm up high-level correlation calculation function
+            # This is crucial for stable performance testing
+            test_params = np.array([1000.0, -0.1, 50.0, 0.001, -0.2, 0.0, 0.0])
+            test_phi_angles = np.array([0.0, 45.0])
+            
+            # Create minimal test configuration for warmup
+            original_config = self.config
+            original_time_length = getattr(self, 'time_length', None)
+            original_time_array = getattr(self, 'time_array', None)
+            
+            # Temporarily set minimal configuration for warmup
+            self.time_length = size
+            self.time_array = test_time
+            
+            try:
+                # Warm up the main correlation calculation
+                _ = self.calculate_c2_nonequilibrium_laminar_parallel(test_params, test_phi_angles)
+                logger.debug("High-level correlation function warmed up")
+            except Exception as warmup_error:
+                logger.debug(f"High-level warmup failed (expected in some configs): {warmup_error}")
+            finally:
+                # Restore original configuration
+                self.config = original_config
+                if original_time_length is not None:
+                    self.time_length = original_time_length
+                if original_time_array is not None:
+                    self.time_array = original_time_array
 
             elapsed = time.time() - start_time
-            logger.info(f"Numba warmup completed in {elapsed:.2f}s")
+            logger.info(f"Numba warmup completed in {elapsed:.2f}s (including high-level functions)")
 
         except Exception as e:
             logger.warning(f"Numba warmup failed: {e}")
@@ -1739,7 +1767,7 @@ class HomodyneAnalysisCore:
         return per_angle_results
 
     def save_results_with_config(
-        self, results: Dict[str, Any], skip_plots: bool = False, output_dir: str = None
+        self, results: Dict[str, Any], skip_plots: bool = False, output_dir: Optional[str] = None
     ) -> None:
         """
         Save optimization results along with configuration to JSON file.
@@ -2039,8 +2067,17 @@ Validation:
                 plot_mcmc_convergence_diagnostics,
             )
 
-            # Determine output directory
-            results_dir = Path("homodyne_results")
+            # Extract output directory from output_data if available
+            output_dir = output_data.get("output_dir")
+            
+            # Determine output directory - use output_data, config, or default
+            if output_dir is not None:
+                results_dir = Path(output_dir)
+            elif config and "output_settings" in config and "results_directory" in config["output_settings"]:
+                results_dir = Path(config["output_settings"]["results_directory"])
+            else:
+                results_dir = Path("homodyne_results")
+            
             plots_dir = results_dir / "plots"
             plots_dir.mkdir(parents=True, exist_ok=True)
 

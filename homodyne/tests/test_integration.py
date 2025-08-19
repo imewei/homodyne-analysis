@@ -61,12 +61,29 @@ except ImportError:
         return {}
 
 
+from typing import Any, Optional
+
+# Define a type stub that matches the interface we need
+class _HomodyneAnalysisCoreStub:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.config: Optional[Any] = None
+    
+    def _prepare_plot_data(self, *args: Any, **kwargs: Any) -> None:
+        return None
+    
+    def _generate_analysis_plots(self, *args: Any, **kwargs: Any) -> None:
+        return None
+    
+    def _generate_theoretical_data(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
-
     CORE_ANALYSIS_AVAILABLE = True
 except ImportError:
     CORE_ANALYSIS_AVAILABLE = False
+    # Use the stub when the real module is not available
+    HomodyneAnalysisCore = _HomodyneAnalysisCoreStub  # type: ignore[misc]
 
 
 class TestCompleteWorkflow:
@@ -769,7 +786,7 @@ class TestAnalysisWorkflowIntegration:
             }
 
             # Test plot data preparation
-            plot_data = analyzer._prepare_plot_data(mock_results, analyzer.config)
+            plot_data = analyzer._prepare_plot_data(mock_results, analyzer.config or {})
             assert plot_data is not None
             assert "best_parameters" in plot_data
             assert "parameter_bounds" in plot_data
@@ -829,7 +846,7 @@ class TestAnalysisWorkflowIntegration:
             }
 
             # Test MCMC plot data preparation
-            plot_data = analyzer._prepare_plot_data(mcmc_results, analyzer.config)
+            plot_data = analyzer._prepare_plot_data(mcmc_results, analyzer.config or {})
             assert plot_data is not None
             assert "mcmc_diagnostics" in plot_data
             assert "parameter_names" in plot_data
@@ -905,13 +922,14 @@ class TestAnalysisWorkflowIntegration:
             analyzer = HomodyneAnalysisCore(str(config_file))
 
             # Check parameter consistency
-            param_names = analyzer.config.get("initial_parameters", {}).get(
+            config = analyzer.config or {}
+            param_names = config.get("initial_parameters", {}).get(
                 "parameter_names", []
             )
-            param_values = analyzer.config.get("initial_parameters", {}).get(
+            param_values = config.get("initial_parameters", {}).get(
                 "values", []
             )
-            bounds = analyzer.config.get("parameter_space", {}).get("bounds", [])
+            bounds = config.get("parameter_space", {}).get("bounds", [])
 
             # All should have same count
             assert len(param_names) == len(param_values) == len(bounds)
@@ -921,7 +939,7 @@ class TestAnalysisWorkflowIntegration:
             assert param_names == bound_names
 
             # Check plotting configuration
-            output_settings = analyzer.config.get("output_settings", {})
+            output_settings = config.get("output_settings", {})
             reporting = output_settings.get("reporting", {})
             plotting_enabled = reporting.get("generate_plots", False)
 

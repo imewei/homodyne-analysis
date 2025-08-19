@@ -2266,7 +2266,7 @@ def plot_3d_surface(
                 T1,
                 T2,
                 residuals,
-                cmap=cm.RdBu_r,  # Red-Blue colormap centered at zero
+                cmap=plt.cm.get_cmap('RdBu_r'),  # Red-Blue colormap centered at zero
                 alpha=0.8,
                 linewidth=0,
                 antialiased=True,
@@ -2388,6 +2388,9 @@ def plot_3d_surface_comparison(
         if t1 is None:
             t1 = np.arange(n_t1)
 
+        # Type assertions to help type checker
+        assert t1 is not None
+        assert t2 is not None
         T1, T2 = np.meshgrid(t1, t2)
 
         # Set up plotting
@@ -2400,7 +2403,7 @@ def plot_3d_surface_comparison(
 
         fig = plt.figure(figsize=(6 * n_cols, 5 * n_rows))
 
-        colormaps = [cm.viridis, cm.plasma, cm.RdBu_r, cm.cividis, cm.coolwarm]
+        colormaps = [plt.cm.get_cmap('viridis'), plt.cm.get_cmap('plasma'), plt.cm.get_cmap('RdBu_r'), plt.cm.get_cmap('cividis'), plt.cm.get_cmap('coolwarm')]
 
         for idx, (name, data) in enumerate(c2_data_dict.items()):
             ax = fig.add_subplot(n_rows, n_cols, idx + 1, projection="3d")

@@ -18,6 +18,14 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import numpy as np
 
+# Import consolidated performance utilities
+from homodyne.core.profiler import (
+    assert_performance_within_bounds,
+    assert_performance_stability,
+    stable_benchmark,
+    optimize_numerical_environment
+)
+
 # Performance test data storage
 PERFORMANCE_BASELINE_FILE = Path(__file__).parent / "performance_baselines.json"
 
@@ -90,16 +98,11 @@ def performance_recorder():
 @pytest.fixture(scope="session", autouse=True)
 def setup_performance_environment():
     """Set up consistent performance testing environment."""
-    # Set reproducible random seed
-    np.random.seed(42)
-
-    # Configure threading for consistent results
-    os.environ["OPENBLAS_NUM_THREADS"] = "1"
-    os.environ["MKL_NUM_THREADS"] = "1"
-    os.environ["NUMEXPR_NUM_THREADS"] = "1"
-    os.environ["OMP_NUM_THREADS"] = "1"
-
-    print("✓ Performance testing environment configured")
+    from homodyne.core.profiler import optimize_numerical_environment
+    
+    # Use consolidated environment optimization
+    optimizations = optimize_numerical_environment()
+    print(f"✓ Performance testing environment configured ({len(optimizations)} optimizations)")
 
     yield
 
@@ -125,7 +128,10 @@ def performance_timer():
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             self.end_time = time.perf_counter()
-            self.elapsed = self.end_time - self.start_time
+            if self.start_time is not None and self.end_time is not None:
+                self.elapsed = self.end_time - self.start_time
+            else:
+                self.elapsed = None
 
     return Timer
 
@@ -298,16 +304,19 @@ def assert_performance_regression(
     update_baseline: bool = False,
 ):
     """Assert that performance hasn't regressed beyond threshold."""
+    from homodyne.core.profiler import assert_performance_within_bounds
+    
     is_regression = recorder.check_regression(test_name, metric_name, value, threshold)
 
     if is_regression:
         baseline = recorder.baselines[test_name][metric_name]
-        regression_factor = value / baseline
-        pytest.fail(
-            f"Performance regression detected in {test_name}.{metric_name}: "
-            f"{value:.4f} vs baseline {baseline:.4f} "
-            f"({regression_factor:.2f}x slower, threshold: {threshold}x)"
-        )
+        # Use the consolidated assertion function
+        try:
+            assert_performance_within_bounds(
+                value, baseline, threshold, f"{test_name}.{metric_name}"
+            )
+        except AssertionError as e:
+            pytest.fail(str(e))
 
     if update_baseline:
         recorder.update_baseline(test_name, metric_name, value)
@@ -342,6 +351,19 @@ def assert_memory_usage(
 
     # Record memory usage
     recorder.record_metric(test_name, "memory_mb", memory_mb)
+
+
+# Expose consolidated performance utilities for backward compatibility
+# These are now imported from homodyne.core.profiler for consistency
+__all__ = [
+    "PerformanceRecorder",
+    "assert_performance_regression", 
+    "assert_memory_usage",
+    "assert_performance_within_bounds",  # From profiler
+    "assert_performance_stability",     # From profiler
+    "stable_benchmark",                 # From profiler
+    "optimize_numerical_environment",   # From profiler
+]
 
 
 # Pytest hooks for performance testing

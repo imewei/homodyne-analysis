@@ -340,7 +340,7 @@ class ConfigManager:
                 logger.info(f"Configuration loaded from: {self.config_file}")
 
                 # Display version information if available
-                if "metadata" in self.config:
+                if isinstance(self.config, dict) and "metadata" in self.config:
                     version = self.config["metadata"].get("config_version", "Unknown")
                     logger.info(f"Configuration version: {version}")
 

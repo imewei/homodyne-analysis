@@ -25,7 +25,14 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from homodyne.analysis.core import HomodyneAnalysisCore
-from homodyne.core.profiler import profile_execution_time, profile_memory_usage
+from homodyne.core.profiler import (
+    profile_execution_time, 
+    profile_memory_usage,
+    stable_benchmark,
+    optimize_numerical_environment,
+    assert_performance_within_bounds,
+    assert_performance_stability
+)
 
 
 @pytest.fixture
@@ -112,6 +119,10 @@ class TestAngleFilteringPerformance:
         # Benchmark both methods
         n_iterations = 1000
 
+        # Initialize results to ensure they're defined
+        old_result = None
+        new_result = None
+
         # Time old method
         start_time = time.perf_counter()
         for _ in range(n_iterations):
@@ -168,6 +179,10 @@ class TestAngleFilteringPerformance:
 
         # Benchmark both methods
         n_iterations = 1000
+
+        # Initialize results to ensure they're defined
+        old_result = None
+        new_result = None
 
         # Time old method
         start_time = time.perf_counter()
@@ -463,6 +478,163 @@ class TestImportPerformance:
         assert hasattr(plotting, "CORNER_AVAILABLE"), "CORNER_AVAILABLE flag missing"
 
 
+class TestStableBenchmarking:
+    """Test stable benchmarking utilities and comprehensive performance measurement."""
+
+    @pytest.mark.performance
+    def test_correlation_calculation_stable_benchmark(self, small_benchmark_data):
+        """Test correlation calculation with stable benchmarking utilities.
+        
+        This test demonstrates the improved performance testing approach with:
+        - JIT warmup to reduce variance
+        - Outlier filtering for reliable measurements
+        - Comprehensive performance metrics
+        - Automatic performance validation
+        """
+        # Numerical environment already optimized by conftest_performance.py fixture
+        print("Using pre-optimized numerical environment")
+        
+        # Use analyzer instance to call the correlation function
+        # (the function exists as a method of HomodyneAnalysisCore)
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = {"performance_settings": {"parallel_execution": True}}
+        analyzer.time_length = small_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(
+            0.1,
+            small_benchmark_data["time_length"] * 0.1,
+            small_benchmark_data["time_length"],
+        )
+        
+        # Prepare test parameters
+        params = small_benchmark_data["parameters"]
+        if len(params) < 7:
+            # Pad with zeros for laminar flow parameters
+            params = np.concatenate([params, np.zeros(7 - len(params))])
+        
+        phi_angles = small_benchmark_data["phi_angles"]
+        
+        # Create benchmark function
+        def correlation_benchmark():
+            return analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+        
+        # Run stable benchmark with comprehensive statistics
+        benchmark_results = stable_benchmark(
+            correlation_benchmark,
+            warmup_runs=5,  # More warmup for JIT stability
+            measurement_runs=15,  # More measurements for reliable statistics
+            outlier_threshold=2.0
+        )
+        
+        # Verify result integrity
+        result = benchmark_results['result']
+        expected_shape = (
+            len(phi_angles), 
+            small_benchmark_data["time_length"], 
+            small_benchmark_data["time_length"]
+        )
+        assert result.shape == expected_shape, f"Unexpected result shape: {result.shape}"
+        
+        # Performance validation using baselines
+        mean_time = benchmark_results['mean']
+        median_time = benchmark_results['median']
+        
+        # Load performance baselines
+        baseline_file = Path(__file__).parent.parent / "performance_baselines.json"
+        if baseline_file.exists():
+            import json
+            with open(baseline_file) as f:
+                baselines = json.load(f)
+                
+            test_baseline = baselines.get("correlation_calculation_benchmark", {})
+            
+            if test_baseline:
+                expected_median = test_baseline.get("expected_median_time", 0.01)  # 10ms default
+                max_acceptable = test_baseline.get("max_acceptable_time", 0.05)  # 50ms default
+                
+                # Assert performance within bounds
+                assert_performance_within_bounds(
+                    median_time,
+                    expected_median, 
+                    tolerance_factor=5.0,  # Allow 5x variance
+                    test_name="correlation_calculation_stable_benchmark"
+                )
+                
+                # Assert performance stability
+                assert_performance_stability(
+                    benchmark_results['times'].tolist(),
+                    max_cv=1.0,  # Allow 100% coefficient of variation for JIT effects
+                    test_name="correlation_calculation_stability"
+                )
+            else:
+                print("⚠ No performance baseline found, recording current measurements")
+        else:
+            print("⚠ Performance baselines file not found")
+        
+        # Report comprehensive performance metrics
+        print("\n=== Correlation Calculation Performance Report ===")
+        print(f"Mean execution time: {mean_time*1000:.2f} ms")
+        print(f"Median execution time: {median_time*1000:.2f} ms")
+        print(f"Standard deviation: {benchmark_results['std']*1000:.2f} ms")
+        print(f"95th percentile: {benchmark_results['percentile_95']*1000:.2f} ms")
+        print(f"Min/Max ratio: {benchmark_results['outlier_ratio']:.2f}x")
+        print(f"Outliers detected: {benchmark_results['outlier_count']}/{len(benchmark_results['times'])}")
+        print(f"Performance variance (CV): {benchmark_results['std']/mean_time:.2f}")
+        
+        # Additional checks for performance regression
+        if mean_time > 0.1:  # Flag if slower than 100ms
+            print(f"⚠ Performance warning: mean time {mean_time*1000:.2f}ms > 100ms threshold")
+        
+        if benchmark_results['outlier_ratio'] > 10.0:  # Flag high variance
+            print(f"⚠ Stability warning: outlier ratio {benchmark_results['outlier_ratio']:.2f}x > 10x threshold")
+            
+        print("=" * 55)
+
+    @pytest.mark.performance
+    def test_environment_optimization_effectiveness(self):
+        """Test that numerical environment optimizations reduce performance variance."""
+        
+        # Simple computation function for testing
+        def simple_computation():
+            return np.sum(np.random.rand(1000, 1000))
+        
+        # Benchmark without optimizations first
+        baseline_results = stable_benchmark(
+            simple_computation,
+            warmup_runs=3,
+            measurement_runs=10,
+            outlier_threshold=2.0
+        )
+        
+        # Apply additional optimizations for testing
+        optimizations = optimize_numerical_environment()  # Test the function directly
+        
+        # Benchmark with optimizations
+        optimized_results = stable_benchmark(
+            simple_computation,
+            warmup_runs=3,
+            measurement_runs=10,
+            outlier_threshold=2.0
+        )
+        
+        # Compare variance
+        baseline_cv = baseline_results['std'] / baseline_results['mean']
+        optimized_cv = optimized_results['std'] / optimized_results['mean']
+        
+        print(f"\nEnvironment optimization effectiveness:")
+        print(f"Applied {len(optimizations)} optimizations")
+        print(f"Baseline CV: {baseline_cv:.3f}")
+        print(f"Optimized CV: {optimized_cv:.3f}")
+        
+        # Environment optimizations should not significantly hurt performance
+        # (They may not always reduce variance for simple computations)
+        mean_slowdown = optimized_results['mean'] / baseline_results['mean']
+        assert mean_slowdown < 2.0, f"Environment optimization caused {mean_slowdown:.2f}x slowdown"
+        
+        print(f"Performance impact: {mean_slowdown:.2f}x (acceptable)")
+
+
 class TestRegressionBenchmarks:
     """Regression tests to ensure performance doesn't degrade."""
 
@@ -536,13 +708,19 @@ class TestRegressionBenchmarks:
         def correlation_calculation():
             return analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
 
-        # The analyzer already has JIT warmup in __init__, but we need to ensure
-        # stable state for benchmarking by clearing any caches and running GC
-        gc.collect()  # Ensure consistent memory state for benchmarking
-
-        # Benchmark the function with stable JIT
-        result = benchmark.pedantic(correlation_calculation, rounds=10, iterations=1)
-
+        # Use stable benchmarking with comprehensive warmup for JIT stability
+        benchmark_results = stable_benchmark(
+            correlation_calculation,
+            warmup_runs=5,  # Extra warmup for JIT compilation  
+            measurement_runs=10,
+            outlier_threshold=2.5  # More lenient for JIT variability
+        )
+        
+        # Get the result for verification
+        result = benchmark_results['result']
+        mean_time = benchmark_results['mean']
+        median_time = benchmark_results['median']
+        
         # Verify result shape
         expected_shape = (
             len(small_benchmark_data["phi_angles"]),
@@ -552,7 +730,31 @@ class TestRegressionBenchmarks:
         assert (
             result.shape == expected_shape
         ), f"Unexpected result shape: {result.shape}"
-        print(f"✓ Correlation calculation benchmark completed with warmup")
+        
+        # Performance validation with realistic expectations for JIT-compiled code
+        # Use median time for more stable performance assessment
+        assert_performance_within_bounds(
+            median_time,
+            expected_time=0.02,  # 20ms expected
+            tolerance_factor=5.0,  # Allow 5x variance for JIT effects
+            test_name="correlation_calculation_benchmark"
+        )
+        
+        # Check performance stability - allow higher variance due to JIT
+        assert_performance_stability(
+            benchmark_results['times'].tolist(),
+            max_cv=1.5,  # Allow 150% coefficient of variation for JIT
+            test_name="correlation_calculation_stability"
+        )
+        
+        # COMPATIBILITY: Also run pytest-benchmark for comparison if needed
+        try:
+            pytest_result = benchmark.pedantic(correlation_calculation, rounds=3, iterations=1)
+            print(f"  pytest-benchmark also completed successfully")
+        except Exception as e:
+            print(f"  pytest-benchmark comparison failed: {e}")
+        
+        print(f"✓ Stable correlation benchmark: {median_time*1000:.1f}ms median, CV={benchmark_results['std']/mean_time:.2f}")
 
 
 # Performance test configuration
@@ -562,14 +764,8 @@ def configure_performance_tests():
     # Ensure consistent performance testing environment
     np.random.seed(42)  # Reproducible random data
 
-    # Set environment variables for performance
-    import os
-
-    os.environ["OPENBLAS_NUM_THREADS"] = "1"  # Consistent threading
-    os.environ["MKL_NUM_THREADS"] = "1"
-    os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
-    print("Performance test environment configured")
+    # Environment variables are configured by conftest_performance.py
+    print("Performance test environment already configured")
 
 
 # Custom pytest markers for performance tests

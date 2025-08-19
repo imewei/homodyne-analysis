@@ -11,6 +11,7 @@ import matplotlib
 import warnings
 import sys
 import os
+import shutil
 from pathlib import Path
 
 # Use non-GUI matplotlib backend for testing
@@ -27,6 +28,131 @@ os.environ["NUMBA_DISABLE_INTEL_SVML"] = "1"
 # Add the project root directory to Python path for imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
+
+
+@pytest.fixture(autouse=True, scope="function")
+def cleanup_test_artifacts(request):
+    """Automatically clean up test artifacts after each test.
+    
+    This fixture ensures that temporary directories created during testing
+    (especially homodyne_results folders) are cleaned up automatically.
+    
+    SAFETY: Only removes homodyne_results directories that were created
+    during the test execution, NOT pre-existing directories with user data.
+    """
+    # Store initial working directory and check for pre-existing homodyne_results
+    initial_cwd = Path.cwd()
+    
+    # Track which homodyne_results directories existed before the test
+    pre_existing_results_dirs = set()
+    potential_paths = [
+        initial_cwd / "homodyne_results",
+    ]
+    
+    for path in potential_paths:
+        if path.exists() and path.is_dir():
+            pre_existing_results_dirs.add(path)
+    
+    yield  # Run the test
+    
+    # Cleanup after test - ONLY remove directories that didn't exist before
+    try:
+        current_cwd = Path.cwd()
+        cleanup_candidates = [
+            initial_cwd / "homodyne_results",
+            current_cwd / "homodyne_results",  # In case cwd changed during test
+        ]
+        
+        for cleanup_path in cleanup_candidates:
+            if cleanup_path.exists() and cleanup_path.is_dir():
+                # SAFETY CHECK: Only remove if this directory wasn't there before the test
+                if cleanup_path not in pre_existing_results_dirs:
+                    try:
+                        shutil.rmtree(cleanup_path)
+                        # Only print in verbose mode to avoid cluttering output
+                        if getattr(request.config.option, 'verbose', 0) > 1:
+                            print(f"\n✓ Cleaned up test-created artifact: {cleanup_path}")
+                    except (OSError, PermissionError):
+                        # Silently continue if cleanup fails
+                        pass
+                else:
+                    # This directory existed before the test - preserve it
+                    if getattr(request.config.option, 'verbose', 0) > 1:
+                        print(f"\n⚠ Preserved pre-existing directory: {cleanup_path}")
+                    
+    except Exception:
+        # Don't fail tests due to cleanup issues
+        pass
+
+
+@pytest.fixture(autouse=True, scope="session")
+def cleanup_session_artifacts():
+    """Clean up any remaining test artifacts after the entire test session.
+    
+    SAFETY: Only removes homodyne_results in the project root that were
+    likely created during testing, not in user working directories.
+    """
+    yield  # Run all tests
+    
+    # Final cleanup after all tests - only clean up in the project directory
+    try:
+        project_root = Path(__file__).parent.parent.parent
+        
+        # Only clean up homodyne_results in the project root directory
+        # This is safe because users typically don't run analysis from the project root
+        current_cwd = Path.cwd()
+        
+        # Only clean up if we're running from the project directory itself
+        if current_cwd == project_root:
+            homodyne_results_path = project_root / "homodyne_results"
+            
+            if homodyne_results_path.exists() and homodyne_results_path.is_dir():
+                try:
+                    shutil.rmtree(homodyne_results_path)
+                    print(f"\n✓ Final cleanup: Removed {homodyne_results_path}")
+                except (OSError, PermissionError):
+                    print(f"\n⚠ Could not remove {homodyne_results_path} - manual cleanup may be needed")
+        else:
+            # Don't clean up homodyne_results when running from user directories
+            pass
+    except Exception:
+        pass
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Hook that runs after the entire test session is finished.
+    
+    SAFETY: Only performs cleanup in safe contexts (project directory)
+    to avoid removing user analysis results.
+    """
+    try:
+        # Final cleanup - only in safe contexts
+        current_dir = Path.cwd()
+        project_root = Path(__file__).parent.parent.parent
+        
+        # Only clean up homodyne_results if we're in the project directory
+        # This prevents accidental deletion of user analysis results
+        if current_dir == project_root:
+            cleanup_candidates = [
+                project_root / "homodyne_results",
+            ]
+            
+            for path in cleanup_candidates:
+                if path.exists() and path.is_dir():
+                    try:
+                        shutil.rmtree(path)
+                        if session.config.option.verbose > 0:
+                            print(f"\n✓ Test cleanup: Removed {path}")
+                    except (OSError, PermissionError):
+                        if session.config.option.verbose > 0:
+                            print(f"\n⚠ Could not clean up {path}")
+        else:
+            # Running from user directory - don't clean up homodyne_results
+            if session.config.option.verbose > 0:
+                print(f"\n⚠ Skipping cleanup in user directory: {current_dir}")
+    except Exception:
+        # Don't break test reporting due to cleanup issues
+        pass
 
 # Configure numpy to raise on errors (helps catch numerical issues)
 np.seterr(
