@@ -798,50 +798,63 @@ def plot_mcmc_trace(
 
         # Create trace plot with proper variable name handling
         try:
-            # First check what variables are actually available
-            if hasattr(trace_obj, "posterior") and hasattr(
-                trace_obj.posterior, "data_vars"
-            ):
-                available_vars = list(trace_obj.posterior.data_vars.keys())
-                logger.debug(f"Available variables in trace: {available_vars}")
+            # Set up numpy error handling to prevent underflow from causing failures
+            import numpy as np
+            old_err = np.seterr(all='ignore')
+            
+            try:
+                # First check what variables are actually available
+                if hasattr(trace_obj, "posterior") and hasattr(
+                    trace_obj.posterior, "data_vars"
+                ):
+                    available_vars = list(trace_obj.posterior.data_vars.keys())
+                    logger.debug(f"Available variables in trace: {available_vars}")
 
-                # Use only parameter names that exist in the trace
-                if param_names:
-                    var_names_to_use = [
-                        name for name in param_names if name in available_vars
-                    ]
-                    if not var_names_to_use:
-                        logger.warning(
-                            f"None of the requested parameter names {param_names} found in trace"
-                        )
-                        var_names_to_use = None  # Use all available
+                    # Use only parameter names that exist in the trace
+                    if param_names:
+                        var_names_to_use = [
+                            name for name in param_names if name in available_vars
+                        ]
+                        if not var_names_to_use:
+                            logger.warning(
+                                f"None of the requested parameter names {param_names} found in trace"
+                            )
+                            var_names_to_use = None  # Use all available
+                    else:
+                        var_names_to_use = None
                 else:
                     var_names_to_use = None
-            else:
-                var_names_to_use = None
 
-            axes = az.plot_trace(
-                trace_obj,
-                var_names=var_names_to_use,
-                figsize=(
-                    plot_config["figure_size"][0] * 1.2,
-                    plot_config["figure_size"][1] * 1.5,
-                ),
-                compact=True,
-            )
-        except Exception as e:
-            logger.warning(f"Failed to create trace plot with requested variables: {e}")
-            # Fallback: try without specifying variable names
-            try:
                 axes = az.plot_trace(
                     trace_obj,
-                    var_names=None,
+                    var_names=var_names_to_use,
                     figsize=(
                         plot_config["figure_size"][0] * 1.2,
                         plot_config["figure_size"][1] * 1.5,
                     ),
                     compact=True,
                 )
+            finally:
+                # Restore original numpy error handling
+                np.seterr(**old_err)
+        except Exception as e:
+            logger.warning(f"Failed to create trace plot with requested variables: {e}")
+            # Fallback: try without specifying variable names
+            try:
+                # Set up numpy error handling for fallback attempt too
+                old_err = np.seterr(all='ignore')
+                try:
+                    axes = az.plot_trace(
+                        trace_obj,
+                        var_names=None,
+                        figsize=(
+                            plot_config["figure_size"][0] * 1.2,
+                            plot_config["figure_size"][1] * 1.5,
+                        ),
+                        compact=True,
+                    )
+                finally:
+                    np.seterr(**old_err)
             except Exception as e2:
                 logger.error(
                     f"Failed to create trace plot even without variable names: {e2}"
