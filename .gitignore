@@ -1,10 +1,14 @@
-# Run code
+# Run code and experimental data
 data/
 homodyne_analysis_results/
 homodyne_results/
 homodyne_analysis_results.json
+run.log
 WARP.md
 my_config*.json
+
+# Development scripts
+scripts/dev_cleanup/
 
 # Benchmark
 .benchmarks
@@ -223,7 +227,12 @@ __marimo__/
 # OS files
 .DS_Store
 Thumbs.db
+.directory
+*~
 
 # Editor temp files
 *.swp
 *.swo
+*.tmp
+*.bak
+*.orig
