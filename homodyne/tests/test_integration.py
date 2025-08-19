@@ -165,12 +165,12 @@ class TestCompleteWorkflow:
         # Main directory files
         main_files = [
             base_dir / "homodyne_analysis_results.json",
-            base_dir / "per_angle_chi_squared_classical.json",
             base_dir / "run.log"
         ]
         
         # Classical directory files  
         classical_files = [
+            base_dir / "classical" / "per_angle_chi_squared_classical.json",
             base_dir / "classical" / "experimental_data.npz",
             base_dir / "classical" / "fitted_data.npz",
             base_dir / "classical" / "residuals_data.npz",
@@ -642,8 +642,10 @@ class TestPerAngleAnalysisIntegration:
             },
         }
 
-        # Mock file saving by creating the expected file manually
-        results_file = Path(temp_directory) / "per_angle_chi_squared_classical.json"
+        # Mock file saving by creating the expected file manually (in classical subdirectory)
+        classical_dir = Path(temp_directory) / "classical"
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        results_file = classical_dir / "per_angle_chi_squared_classical.json"
         with open(results_file, "w") as f:
             json.dump(mock_results, f, indent=2)
 

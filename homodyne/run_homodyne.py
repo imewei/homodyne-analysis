@@ -423,13 +423,15 @@ def run_analysis(args: argparse.Namespace) -> None:
                         else:
                             # For classical optimization methods, use chi-squared analysis
                             try:
+                                # Save classical results to classical subdirectory
+                                classical_output_dir = Path(args.output_dir) / "classical"
                                 analyzer.analyze_per_angle_chi_squared(
                                     np.array(method_params),
                                     phi_angles,
                                     c2_exp,
                                     method_name=method,
                                     save_to_file=True,
-                                    output_dir=args.output_dir,
+                                    output_dir=str(classical_output_dir),
                                 )
                             except Exception as e:
                                 logger.warning(

@@ -147,7 +147,7 @@ class TestRunHomodyneIntegration:
         
         # Create main results files
         main_results = base_dir / "homodyne_analysis_results.json"
-        per_angle_results = base_dir / "per_angle_chi_squared_classical.json"
+        per_angle_results = base_dir / "classical" / "per_angle_chi_squared_classical.json"
         log_file = base_dir / "run.log"
         
         # Mock main results

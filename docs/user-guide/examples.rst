@@ -398,12 +398,12 @@ Starting from version 6.0, the analysis results are organized into method-specif
 
    ./homodyne_results/
    ├── homodyne_analysis_results.json    # Main results file (moved from root directory)
-   ├── per_angle_chi_squared_classical.json
    ├── run.log                           # Analysis log file
    ├── exp_data/                         # Experimental data plots (--plot-experimental-data)
    │   ├── data_validation_phi_*.png
    │   └── summary_statistics.txt
    ├── classical/                       # Classical method outputs (--method classical)
+   │   ├── per_angle_chi_squared_classical.json  # Per-angle analysis results
    │   ├── experimental_data.npz         # Original experimental correlation data
    │   ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
    │   ├── residuals_data.npz           # Residuals (experimental - fitted)

@@ -91,9 +91,9 @@ class TestOutputDirectoryStructure:
         # Create complete expected structure
         structure = {
             "homodyne_analysis_results.json": "file",
-            "per_angle_chi_squared_classical.json": "file", 
             "run.log": "file",
             "classical": {
+                "per_angle_chi_squared_classical.json": "file", 
                 "experimental_data.npz": "file",
                 "fitted_data.npz": "file",
                 "residuals_data.npz": "file",
@@ -513,9 +513,9 @@ class TestMCMCOutputDirectoryStructure:
         # Create complete expected structure
         structure = {
             "homodyne_analysis_results.json": "file",
-            "per_angle_chi_squared_classical.json": "file", 
             "run.log": "file",
             "classical": {
+                "per_angle_chi_squared_classical.json": "file", 
                 "experimental_data.npz": "file",
                 "fitted_data.npz": "file",
                 "residuals_data.npz": "file",
