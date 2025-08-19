@@ -6,53 +6,58 @@ The core API provides the main classes and functions for homodyne analysis.
 HomodyneAnalysisCore
 --------------------
 
-.. autoclass:: homodyne.core.HomodyneAnalysisCore
-   :members:
-   :show-inheritance:
+The main analysis class that orchestrates the entire homodyne analysis workflow.
 
-   The main analysis class that orchestrates the entire homodyne analysis workflow.
+**Key Methods:**
 
-   .. automethod:: __init__
-   
-   **Key Methods:**
-   
-   .. automethod:: load_experimental_data
-   .. automethod:: optimize_classical
-   .. automethod:: run_mcmc_sampling
-   .. automethod:: validate_configuration
+* ``__init__(config)`` - Initialize with configuration
+* ``load_experimental_data()`` - Load experimental correlation data
+* ``run_analysis()`` - Run the complete analysis workflow
+* ``get_results()`` - Extract analysis results
+* ``save_results(output_dir)`` - Save results to disk
+
+**Properties:**
+
+* ``config`` - Configuration manager instance
+* ``experimental_data`` - Loaded experimental data
+* ``results`` - Analysis results dictionary
 
 ConfigManager
 -------------
 
-.. autoclass:: homodyne.config.ConfigManager
-   :members:
-   :show-inheritance:
+Manages configuration loading, validation, and access.
 
-   Manages configuration loading, validation, and access.
+**Key Methods:**
 
-   .. automethod:: __init__
-   .. automethod:: validate
-   .. automethod:: get_analysis_settings
-   .. automethod:: get_file_paths
-   .. automethod:: is_mcmc_enabled
+* ``__init__(config_file)`` - Load configuration from file
+* ``validate_config()`` - Validate configuration settings
+* ``get_analysis_mode()`` - Get the analysis mode (static_isotropic, etc.)
+* ``get_active_parameters()`` - Get list of active parameters
+* ``is_angle_filtering_enabled()`` - Check if angle filtering is enabled
 
-ModelFunctions
---------------
+Core Kernels
+------------
 
-.. automodule:: homodyne.models
-   :members:
-   :show-inheritance:
+High-performance computational kernels for correlation analysis.
 
-   Physical model functions for correlation analysis.
+**JIT-Compiled Functions:**
 
-Core Functions
---------------
+* ``compute_g1_correlation_numba()`` - Compute g1 correlation function
+* ``create_time_integral_matrix_numba()`` - Create time integral matrices
+* ``calculate_diffusion_coefficient_numba()`` - Calculate diffusion coefficients
+* ``compute_sinc_squared_numba()`` - Compute sinc² functions
 
-.. autofunction:: homodyne.utils.load_data_file
+I/O Utilities
+-------------
 
-.. autofunction:: homodyne.utils.validate_angles
+Data input/output utilities for loading experimental data and saving results.
 
-.. autofunction:: homodyne.utils.apply_angle_filtering
+**File Operations:**
+
+* ``save_json()`` - Save data as JSON with NumPy support
+* ``save_numpy()`` - Save as NumPy compressed files
+* ``ensure_dir()`` - Create directories with proper permissions
+* ``timestamped_filename()`` - Generate timestamped filenames
 
 Example Usage
 -------------
@@ -71,38 +76,47 @@ Example Usage
    
    # Load data and run analysis
    analysis.load_experimental_data()
-   result = analysis.optimize_classical()
+   results = analysis.run_analysis()
    
-   print(f"Optimized parameters: {result.x}")
-   print(f"Chi-squared: {result.fun:.4f}")
+   print(f"Analysis completed: {len(results)} angle analyses")
+   print(f"Best chi-squared: {min(r['chi_squared'] for r in results):.4f}")
 
-**MCMC Analysis**:
-
-.. code-block:: python
-
-   from homodyne import HomodyneAnalysisCore, ConfigManager
-   
-   config = ConfigManager("mcmc_config.json")
-   analysis = HomodyneAnalysisCore(config)
-   
-   # Classical optimization first
-   classical_result = analysis.optimize_classical()
-   
-   # MCMC sampling for uncertainty quantification
-   mcmc_result = analysis.run_mcmc_sampling()
-   
-   print(f"MCMC converged: {mcmc_result['converged']}")
-   print(f"R-hat values: {mcmc_result['rhat']}")
-
-**Configuration Validation**:
+**Advanced Configuration**:
 
 .. code-block:: python
 
    from homodyne import ConfigManager
    
-   try:
-       config = ConfigManager("my_config.json")
-       config.validate()
-       print("✅ Configuration is valid")
-   except ValueError as e:
-       print(f"❌ Configuration error: {e}")
+   config = ConfigManager("advanced_config.json")
+   
+   # Check analysis mode
+   mode = config.get_analysis_mode()
+   print(f"Analysis mode: {mode}")
+   
+   # Get active parameters
+   params = config.get_active_parameters()
+   print(f"Active parameters: {params}")
+   
+   # Check if angle filtering is enabled
+   if config.is_angle_filtering_enabled():
+       ranges = config.get_target_angle_ranges()
+       print(f"Target angle ranges: {ranges}")
+
+**High-Performance Computing**:
+
+.. code-block:: python
+
+   from homodyne import (
+       compute_g1_correlation_numba,
+       create_time_integral_matrix_numba,
+       performance_monitor
+   )
+   
+   # Use performance monitoring
+   with performance_monitor() as monitor:
+       # Compute correlation with JIT compilation
+       g1_values = compute_g1_correlation_numba(
+           diffusion_coeff, shear_rate, time_points, angles
+       )
+   
+   print(f"Computation time: {monitor.elapsed_time:.4f}s")

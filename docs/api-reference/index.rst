@@ -48,9 +48,29 @@ Quick Reference
 Module Index
 ------------
 
-.. autosummary::
-   :toctree: _autosummary
-   :template: module.rst
+The package includes the following key modules:
 
-   homodyne.core
-   homodyne.optimization.mcmc
+* **homodyne.core** - Core functionality and configuration
+* **homodyne.analysis.core** - Main analysis engine  
+* **homodyne.optimization.mcmc** - Bayesian MCMC sampling
+* **homodyne.optimization.classical** - Classical optimization
+* **homodyne.plotting** - Visualization utilities
+
+.. note::
+   For detailed API documentation, see the individual module pages in the navigation.
+
+..
+   Temporarily disabled autosummary due to import issues
+   
+   .. autosummary::
+      :toctree: _autosummary
+      :template: module.rst
+   
+      homodyne.core
+      homodyne.core.config
+      homodyne.core.kernels
+      homodyne.core.io_utils
+      homodyne.analysis.core
+      homodyne.optimization.mcmc
+      homodyne.optimization.classical
+      homodyne.plotting

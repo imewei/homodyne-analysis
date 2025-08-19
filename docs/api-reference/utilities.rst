@@ -6,164 +6,160 @@ Utility functions for data handling, validation, and common operations.
 Data Handling
 -------------
 
-.. autofunction:: homodyne.core.io_utils.save_json
+**save_json(data, filepath)**
 
-   Save data in JSON format with NumPy array support.
+Save data in JSON format with NumPy array support.
 
-.. autofunction:: homodyne.core.io_utils.save_numpy
+**save_numpy(data, filepath)**
 
-   Save analysis results as NumPy compressed files.
+Save analysis results as NumPy compressed files.
 
-.. autofunction:: homodyne.core.io_utils.save_analysis_results
+**save_analysis_results(results, output_dir)**
 
-   Save complete analysis results in multiple formats.
+Save complete analysis results in multiple formats.
 
-Angle Processing
-----------------
+File System Utilities
+---------------------
 
-.. autofunction:: homodyne.core.io_utils.ensure_dir
+**ensure_dir(path)**
 
-   Create directories with proper permissions.
+Create directories with proper permissions.
 
-.. autofunction:: homodyne.core.io_utils.timestamped_filename
+**timestamped_filename(base_name, ext=".json")**
 
-   Generate timestamped filenames for results.
+Generate timestamped filenames for results.
 
 Configuration Utilities
 ------------------------
 
-.. autoclass:: homodyne.core.config.ConfigManager
+**ConfigManager**
 
-   Configuration management with validation and template support.
+Configuration management with validation and template support.
 
-.. autofunction:: homodyne.core.config.configure_logging
+**configure_logging(level="INFO", log_file=None)**
 
-   Configure logging for analysis sessions.
+Configure logging for analysis sessions.
 
 Performance Utilities
 ----------------------
 
-.. autofunction:: homodyne.core.kernels.memory_efficient_cache
+**memory_efficient_cache(maxsize=128)**
 
-   Memory-efficient caching decorator for expensive computations.
+Memory-efficient caching decorator for expensive computations.
 
-.. autofunction:: homodyne.core.kernels.exp_negative_vectorized
+**exp_negative_vectorized(array)**
 
-   Optimized vectorized exponential operations.
+Optimized vectorized exponential operations.
 
 Plotting Utilities
 ------------------
 
-.. autofunction:: homodyne.plotting.plot_c2_heatmaps
+**plot_c2_heatmaps(data, angles, time_points)**
 
-   Plot experimental correlation data as heatmaps.
+Plot experimental correlation data as heatmaps.
 
-.. autofunction:: homodyne.plotting.plot_mcmc_corner
+**plot_mcmc_corner(trace, var_names=None)**
 
-   Create corner plots for MCMC parameter distributions.
+Create corner plots for MCMC parameter distributions.
 
-.. autofunction:: homodyne.plotting.plot_mcmc_trace
+**plot_mcmc_trace(trace, var_names=None)**
 
-   Create trace plots for MCMC convergence diagnostics.
+Create trace plots for MCMC convergence diagnostics.
 
-.. autofunction:: homodyne.plotting.plot_3d_surface
+**plot_3d_surface(data, x, y)**
 
-   Create 3D surface plots of correlation data.
+Create 3D surface plots of correlation data.
 
 Usage Examples
 --------------
 
-**Data Loading and Validation**:
+**Data I/O Operations**:
 
 .. code-block:: python
 
-   from homodyne.utils import load_data_file, validate_data_format
-   
-   # Load experimental data
-   data = load_data_file("correlation_data.h5")
-   
-   # Validate format
-   is_valid, issues = validate_data_format(data)
-   if not is_valid:
-       for issue in issues:
-           print(f"⚠️ {issue}")
-
-**Angle Filtering**:
-
-.. code-block:: python
-
-   from homodyne.utils import load_angles, apply_angle_filtering
-   
-   # Load angles
-   phi_angles = load_angles("scattering_angles.txt")
-   
-   # Apply filtering
-   filtered_data, filtered_angles = apply_angle_filtering(
-       correlation_data, 
-       phi_angles,
-       ranges=[[-5, 5], [175, 185]]
+   from homodyne.core.io_utils import (
+       save_json, save_numpy, save_analysis_results,
+       ensure_dir, timestamped_filename
    )
    
-   print(f"Filtered from {len(phi_angles)} to {len(filtered_angles)} angles")
+   # Ensure output directory exists
+   output_dir = ensure_dir("results/experiment_1")
+   
+   # Generate timestamped filename
+   filename = timestamped_filename("analysis_results", ext=".json")
+   
+   # Save results in multiple formats
+   save_json(results_dict, f"{output_dir}/{filename}")
+   save_analysis_results(analysis_results, output_dir)
 
 **Configuration Management**:
 
 .. code-block:: python
 
-   from homodyne.utils import validate_config, expand_env_vars
+   from homodyne import ConfigManager
+   from homodyne.core.config import configure_logging
    
-   # Load and validate configuration
-   with open("config.json") as f:
-       config_dict = json.load(f)
+   # Configure logging
+   configure_logging(level="INFO", log_file="analysis.log")
    
-   # Expand environment variables
-   config_dict = expand_env_vars(config_dict)
+   # Initialize configuration manager
+   config = ConfigManager("experiment_config.json")
    
-   # Validate
-   is_valid, errors = validate_config(config_dict)
-   if not is_valid:
-       for error in errors:
-           print(f"❌ {error}")
+   # Access configuration settings
+   analysis_mode = config.get_analysis_mode()
+   active_params = config.get_active_parameters()
+   
+   print(f"Analysis mode: {analysis_mode}")
+   print(f"Active parameters: {active_params}")
 
-**Performance Optimization**:
+**High-Performance Computing**:
 
 .. code-block:: python
 
-   from homodyne.utils import estimate_memory_usage, optimize_data_types
-   
-   # Estimate memory requirements
-   memory_gb = estimate_memory_usage(
-       data_shape=(1000, 500),
-       num_angles=360,
-       analysis_mode="laminar_flow"
+   from homodyne import (
+       memory_efficient_cache, exp_negative_vectorized,
+       performance_monitor
    )
-   print(f"Estimated memory usage: {memory_gb:.1f} GB")
    
-   # Optimize data types
-   optimized_data = optimize_data_types(
-       correlation_data, 
-       target_precision="float32"
-   )
+   # Use memory-efficient caching
+   @memory_efficient_cache(maxsize=128)
+   def expensive_computation(data):
+       return complex_analysis(data)
+   
+   # Optimized vectorized operations
+   result = exp_negative_vectorized(large_array)
+   
+   # Monitor performance
+   with performance_monitor() as monitor:
+       analysis_result = run_analysis()
+   
+   print(f"Analysis completed in {monitor.elapsed_time:.2f}s")
 
 **Results Visualization**:
 
 .. code-block:: python
 
-   from homodyne.utils import plot_fit_results, plot_mcmc_diagnostics
-   
-   # Plot optimization results
-   fig1 = plot_fit_results(
-       experimental_data,
-       fitted_data,
-       parameters=result.x,
-       chi_squared=result.fun
+   from homodyne.plotting import (
+       plot_c2_heatmaps, plot_mcmc_corner, 
+       plot_mcmc_trace, plot_3d_surface
    )
-   fig1.savefig("fit_results.png", dpi=300)
+   from homodyne.core.io_utils import save_fig
    
-   # Plot MCMC diagnostics (if available)
+   # Plot correlation data heatmaps
+   fig1 = plot_c2_heatmaps(
+       experimental_data, phi_angles, time_points
+   )
+   save_fig(fig1, "correlation_heatmaps.png", dpi=300)
+   
+   # Plot MCMC results (if available)
    if mcmc_trace is not None:
-       fig2 = plot_mcmc_diagnostics(mcmc_trace)
-       fig2.savefig("mcmc_diagnostics.png", dpi=300)
+       # Corner plot for parameter distributions
+       fig2 = plot_mcmc_corner(mcmc_trace)
+       save_fig(fig2, "mcmc_corner.png", dpi=300)
+       
+       # Trace plots for convergence
+       fig3 = plot_mcmc_trace(mcmc_trace)
+       save_fig(fig3, "mcmc_trace.png", dpi=300)
 
 File I/O Functions
 ------------------
@@ -180,17 +176,29 @@ File I/O Functions
 
 .. code-block:: python
 
-   from homodyne.utils import ConfigurationError, DataFormatError
+   from homodyne import ConfigManager, HomodyneAnalysisCore
+   import logging
+   
+   # Configure logging for better error tracking
+   logging.basicConfig(level=logging.INFO)
+   logger = logging.getLogger(__name__)
    
    try:
        config = ConfigManager("config.json")
-       analysis = HomodyneAnalysisCore(config)
-       result = analysis.optimize_classical()
+       config.validate_config()  # Validate configuration
        
-   except ConfigurationError as e:
-       print(f"Configuration issue: {e}")
-   except DataFormatError as e:
-       print(f"Data format problem: {e}")
+       analysis = HomodyneAnalysisCore(config)
+       analysis.load_experimental_data()
+       results = analysis.run_analysis()
+       
+       logger.info(f"Analysis completed successfully with {len(results)} results")
+       
+   except FileNotFoundError as e:
+       logger.error(f"Configuration file not found: {e}")
+   except ValueError as e:
+       logger.error(f"Configuration validation error: {e}")
+   except ImportError as e:
+       logger.error(f"Missing dependencies: {e}")
    except Exception as e:
-       print(f"Unexpected error: {e}")
+       logger.error(f"Unexpected error during analysis: {e}")
 

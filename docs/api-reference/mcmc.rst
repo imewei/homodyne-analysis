@@ -6,43 +6,45 @@ The MCMC module provides Bayesian analysis capabilities using PyMC for uncertain
 MCMCSampler
 -----------
 
-.. autoclass:: homodyne.optimization.mcmc.MCMCSampler
-   :members:
-   :show-inheritance:
+Main class for MCMC-based parameter estimation with Bayesian inference using PyMC.
 
-   Main class for MCMC-based parameter estimation with Bayesian inference.
+**Initialization:**
 
-   .. automethod:: __init__
-   
-   **Core Methods:**
-   
-   .. automethod:: setup_model
-   .. automethod:: run_sampling
-   .. automethod:: diagnose_convergence
-   .. automethod:: extract_results
+* ``MCMCSampler(analysis_core, config)`` - Initialize with analysis core and configuration
 
-Convergence Diagnostics
------------------------
+**Core Methods:**
 
-.. autofunction:: homodyne.optimization.mcmc.compute_rhat
+* ``run_mcmc_analysis()`` - Run full MCMC analysis with convergence checking
+* ``compute_convergence_diagnostics()`` - Compute R-hat, ESS, and other diagnostics
+* ``extract_posterior_statistics()`` - Extract mean, std, credible intervals
+* ``get_best_params()`` - Get best-fit parameters from posterior
+* ``get_parameter_uncertainties()`` - Get parameter uncertainties
 
-.. autofunction:: homodyne.optimization.mcmc.effective_sample_size
+**Model and Setup:**
 
-.. autofunction:: homodyne.optimization.mcmc.assess_convergence
+* ``validate_model_setup()`` - Validate Bayesian model configuration
+* ``get_model_summary()`` - Get summary of model structure
+* ``assess_chain_mixing()`` - Assess MCMC chain mixing quality
 
-Prior Distributions
--------------------
+**Results Management:**
 
-.. autofunction:: homodyne.optimization.mcmc.setup_priors
+* ``save_results(filepath)`` - Save MCMC results to file
+* ``load_results(filepath)`` - Load previously saved results
+* ``generate_posterior_samples()`` - Generate posterior samples for analysis
 
-.. autofunction:: homodyne.optimization.mcmc.create_parameter_priors
+Utility Functions
+-----------------
 
-Model Building
---------------
+**create_mcmc_sampler(analysis_core, config)**
 
-.. autofunction:: homodyne.optimization.mcmc.build_pymc_model
+Helper function to create a properly configured MCMC sampler instance.
 
-.. autofunction:: homodyne.optimization.mcmc.setup_likelihood
+**Parameters:**
+* ``analysis_core`` - HomodyneAnalysisCore instance
+* ``config`` - Configuration dictionary
+
+**Returns:**
+* ``MCMCSampler`` - Configured sampler instance
 
 Usage Examples
 --------------
