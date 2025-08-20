@@ -57,6 +57,7 @@ DATA_REQUIREMENTS = [
 # Performance requirements (recommended)
 PERFORMANCE_REQUIREMENTS = [
     "numba>=0.56.0",
+    "psutil>=5.8.0",  # For memory profiling and system monitoring
 ]
 
 # MCMC requirements (optional advanced feature)
@@ -64,6 +65,7 @@ MCMC_REQUIREMENTS = [
     "pymc>=5.0.0",
     "arviz>=0.12.0",
     "pytensor>=2.8.0",
+    "corner>=2.2.0",  # For enhanced MCMC corner plots
 ]
 
 # Test requirements
@@ -72,6 +74,8 @@ TEST_REQUIREMENTS = [
     "pytest-cov>=2.12.0",
     "pytest-xdist>=2.3.0",
     "pytest-benchmark>=4.0.0",
+    "pytest-mock>=3.6.0",  # For mocking utilities in tests
+    "hypothesis>=6.0.0",  # For property-based testing
 ]
 
 # Documentation requirements
@@ -90,6 +94,8 @@ DEV_REQUIREMENTS = [
     "pytest-cov>=2.12.0",
     "pytest-xdist>=2.3.0",
     "pytest-benchmark>=4.0.0",
+    "pytest-mock>=3.6.0",
+    "hypothesis>=6.0.0",
     "black>=21.0.0",
     "flake8>=3.9.0",
     "mypy>=0.910",

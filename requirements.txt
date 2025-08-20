@@ -5,6 +5,7 @@ matplotlib>=3.3.0       # Plotting and visualization
 
 # Performance enhancement (recommended)
 numba>=0.56.0           # Just-In-Time compiler for Python
+psutil>=5.8.0           # System and process utilities for memory profiling
 
 # Data handling and manipulation
 xpcs-viewer>=1.0.4      # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
@@ -14,14 +15,15 @@ xpcs-viewer>=1.0.4      # XPCS data handling (pyXpcsViewer): https://github.com/
 pymc>=5.0.0             # Bayesian modeling framework
 arviz>=0.12.0           # Bayesian data analysis
 pytensor>=2.8.0         # Mathematical expressions compiler
+corner>=2.2.0           # Enhanced MCMC corner plots
 
 # Optional Test Dependencies
 pytest>=6.2.0           # Testing framework
 pytest-cov>=2.12.0      # Coverage reporting
 pytest-xdist>=2.3.0     # Parallel testing
-pytest-benchmark>=3.0   # Performance testing
-pytest-mock>=3.0        # Mocking utilities
-hypothesis>=6.0         # Property-based testing
+pytest-benchmark>=4.0.0 # Performance testing
+pytest-mock>=3.6.0      # Mocking utilities
+hypothesis>=6.0.0       # Property-based testing
 black>=21.0.0           # Code formatting
 flake8>=3.9.0           # Linting
 mypy>=0.910             # Type checking
