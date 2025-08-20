@@ -51,9 +51,9 @@ def create_minimal_mcmc_config(draws=1000, chains=2, tune=500, **kwargs):
         },
         "parameter_space": {
             "bounds": [
-                {"name": "D0", "min": 100, "max": 10000, "type": "log-uniform"},
-                {"name": "alpha", "min": -2.0, "max": 0.0, "type": "uniform"},
-                {"name": "D_offset", "min": 0, "max": 1000, "type": "uniform"},
+                {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
+                {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
+                {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
             ]
         },
         "analyzer_parameters": {
@@ -283,9 +283,9 @@ def create_realistic_user_config():
         },
         "parameter_space": {
             "bounds": [
-                {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
-                {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
+                {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
                 {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                 {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                 {"name": "gamma_dot_t_offset", "min": 0.0, "max": 0.0, "type": "fixed"},

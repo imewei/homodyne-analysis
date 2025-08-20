@@ -80,22 +80,80 @@ Starting values for optimization:
      }
    }
 
-Parameter Bounds
-~~~~~~~~~~~~~~~~
+Parameter Bounds and Prior Distributions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Optimization constraints:
+Optimization constraints and MCMC prior distributions:
 
 .. code-block:: javascript
 
    {
      "parameter_space": {
        "bounds": [
-         {"name": "D0", "min": 100, "max": 10000, "type": "log-uniform"},
-         {"name": "alpha", "min": -2.0, "max": 0.0, "type": "uniform"},
-         {"name": "D_offset", "min": 0, "max": 1000, "type": "uniform"}
+         {"name": "D0", "min": 100, "max": 10000, "type": "Normal"},
+         {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
+         {"name": "D_offset", "min": 0, "max": 1000, "type": "Normal"}
        ]
      }
    }
+
+.. note::
+   **MCMC Prior Distributions**: All parameters use **Normal distributions** in MCMC sampling. The ``type`` field in configuration files affects both classical optimization bounds and MCMC prior specification. All seven parameters (D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0) use Normal priors in the Bayesian analysis.
+
+Parameter Constraints and Ranges
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The homodyne package implements comprehensive physical constraints to ensure scientifically meaningful results:
+
+**Core Model Parameters**
+
++--------------------+------------------------+-------------------------------------+----------------------+
+| Parameter          | Range                  | Distribution                        | Physical Constraint  |
++====================+========================+=====================================+======================+
+| ``D0``             | [1.0, 1000000.0] Å²/s | TruncatedNormal(μ=10000.0, σ=1000.0) | Must be positive   |
++--------------------+------------------------+-------------------------------------+----------------------+
+| ``alpha``          | [-2.0, 2.0]            | Normal(μ=-1.5, σ=0.1)               | none                 |
++--------------------+------------------------+-------------------------------------+----------------------+
+| ``D_offset``       | [-100, 100] Å²/s       | Normal(μ=0.0, σ=10.0)               | none                 |
++--------------------+------------------------+-------------------------------------+----------------------+
+| ``gamma_dot_t0``   | [1e-06, 1.0] s⁻¹      | TruncatedNormal(μ=0.001, σ=0.01)    | Must be positive     |
++--------------------+------------------------+-------------------------------------+----------------------+
+| ``beta``           | [-2.0, 2.0]            | Normal(μ=0.0, σ=0.1)                | none                 |
++--------------------+------------------------+-------------------------------------+----------------------+
+| ``gamma_dot_t_offset`` | [-0.01, 0.01] s⁻¹     | Normal(μ=0.0, σ=0.001)             | none                 |
++--------------------+------------------------+-------------------------------------+----------------------+
+| ``phi0``           | [-10, 10] degrees      | Normal(μ=0.0, σ=5.0)                | angular              |
++--------------------+------------------------+-------------------------------------+----------------------+
+
+**Physical Function Constraints**
+
+The package automatically enforces positivity for time-dependent functions:
+
+- **D(t) = D₀(t)^α + D_offset** → **max(D(t), 1×10⁻¹⁰)**
+  
+  - Prevents negative diffusion coefficients from any parameter combination
+  - Maintains numerical stability with minimal threshold
+
+- **γ̇(t) = γ̇₀(t)^β + γ̇_offset** → **max(γ̇(t), 1×10⁻¹⁰)**
+  
+  - Prevents negative shear rates from any parameter combination  
+  - Ensures physical validity in all optimization scenarios
+
+**Scaling Parameters for Correlation Functions**
+
+The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded parameters:
+
++---------------+-------------------+-------------------------------------+-------------------------------+
+| Parameter     | Range             | Distribution                        | Physical Meaning              |
++===============+===================+=====================================+===============================+
+| ``contrast``  | (0.05, 0.5]       | TruncatedNormal(μ=0.3, σ=0.1)      | Correlation strength scaling  |
++---------------+-------------------+-------------------------------------+-------------------------------+
+| ``offset``    | (0.05, 1.95)      | TruncatedNormal(μ=1.0, σ=0.2)      | Baseline correlation level    |
++---------------+-------------------+-------------------------------------+-------------------------------+
+| ``c2_fitted`` | [1.0, 2.0]        | *derived*                           | Final correlation function    |
++---------------+-------------------+-------------------------------------+-------------------------------+
+| ``c2_theory`` | [0.0, 1.0]        | *derived*                           | Theoretical correlation bounds|
++---------------+-------------------+-------------------------------------+-------------------------------+
 
 Optimization Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -178,9 +236,9 @@ Configuration Templates
      },
      "parameter_space": {
        "bounds": [
-         {"name": "D0", "min": 100, "max": 10000, "type": "log-uniform"},
-         {"name": "alpha", "min": -2.0, "max": 0.0, "type": "uniform"},
-         {"name": "D_offset", "min": 0, "max": 1000, "type": "uniform"}
+         {"name": "D0", "min": 100, "max": 10000, "type": "Normal"},
+         {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
+         {"name": "D_offset", "min": 0, "max": 1000, "type": "Normal"}
        ]
      }
    }

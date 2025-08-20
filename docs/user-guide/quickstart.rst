@@ -162,3 +162,91 @@ Common First-Time Issues
 
 **MCMC convergence issues:**
    Start with classical optimization, then use those results to initialize MCMC.
+
+MCMC Prior Distributions
+------------------------
+
+The homodyne package uses **Normal distributions** for all parameters in MCMC analysis:
+
+.. list-table:: Parameter Prior Distributions
+   :widths: 20 30 15 35
+   :header-rows: 1
+
+   * - Parameter
+     - Distribution
+     - Unit
+     - Physical Meaning
+   * - ``D0``
+     - TruncatedNormal(μ=1e4, σ=1000.0, lower=1.0)
+     - [Å²/s]
+     - Reference diffusion coefficient
+   * - ``alpha``
+     - Normal(μ=-1.5, σ=0.1)
+     - [dimensionless]
+     - Time dependence exponent
+   * - ``D_offset``
+     - Normal(μ=0.0, σ=10.0)
+     - [Å²/s]
+     - Baseline diffusion component
+   * - ``gamma_dot_t0``
+     - TruncatedNormal(μ=1e-3, σ=1e-2, lower=1e-6)
+     - [s⁻¹]
+     - Reference shear rate
+   * - ``beta``
+     - Normal(μ=0.0, σ=0.1)
+     - [dimensionless]
+     - Shear exponent
+   * - ``gamma_dot_t_offset``
+     - Normal(μ=0.0, σ=1e-3)
+     - [s⁻¹]
+     - Baseline shear component
+   * - ``phi0``
+     - Normal(μ=0.0, σ=5.0)
+     - [degrees]
+     - Angular offset parameter
+
+Scaling Parameters for Physical Constraints
+--------------------------------------------
+
+The MCMC implementation includes additional scaling parameters to ensure physical validity:
+
+.. list-table:: Scaling Parameter Constraints
+   :widths: 20 30 15 35
+   :header-rows: 1
+
+   * - Parameter
+     - Distribution
+     - Range
+     - Physical Meaning
+   * - ``contrast``
+     - TruncatedNormal(μ=0.3, σ=0.1)
+     - (0.05, 0.5]
+     - Scaling factor for correlation strength
+   * - ``offset``
+     - TruncatedNormal(μ=1.0, σ=0.2)
+     - (0.05, 1.95)
+     - Baseline correlation level
+   * - ``c2_fitted``
+     - -
+     - [1.0, 2.0]
+     - Final correlation function range
+   * - ``c2_theory``
+     - -
+     - [0.0, 1.0]
+     - Theoretical correlation function range
+
+The relationship is: **c2_fitted = c2_theory × contrast + offset**
+
+**Configuration Format:**
+
+.. code-block:: json
+
+   {
+     "parameter_space": {
+       "bounds": [
+         {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
+         {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
+         {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"}
+       ]
+     }
+   }

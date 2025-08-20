@@ -1,42 +1,81 @@
 {
+  "_template_info": {
+    "name": "Homodyne Static Isotropic Mode Configuration",
+    "version": "2.1",
+    "description": "Specialized configuration for static isotropic scattering analysis",
+    "based_on": "config_template.json - specialized for isotropic static mode",
+    "usage": "Copy this template for isotropic static scattering experiments",
+    "mode": "static_isotropic",
+    "package_version": "0.6.1",
+    "template_updated": "2024-08-19",
+    "key_features": [
+      "Static mode with no flow effects",
+      "Isotropic scattering - no angle selection",
+      "phi_angles_file not loaded - uses dummy angles",
+      "Angle filtering automatically disabled",
+      "Only diffusion parameters (D0, alpha, D_offset) are relevant",
+      "Scaling optimization always enabled for proper chi-squared calculation"
+    ],
+    
+    "_scaling_optimization_benefits_isotropic": {
+      "overview": "Even in isotropic mode, scaling optimization (g₂ = offset + contrast × g₁) is essential",
+      "single_scaling": "One scaling relationship applies to all 'angles' (isotropic averaging)",
+      "faster_computation": "Simpler geometry but same mathematical rigor for chi-squared",
+      "robust_results": "Accounts for instrumental factors even in simplified isotropic case"
+    },
+    
+    "_when_to_use_this_template": [
+      "Sample shows no angular dependence in scattering",
+      "No flow or rotation applied to sample",
+      "Want fastest analysis with 3-parameter model",
+      "Focus on diffusion dynamics only (D0, alpha, D_offset)",
+      "Sample is liquid, powder, or isotropic solid"
+    ]
+  },
+
   "metadata": {
     "_comment": "Project metadata for static isotropic analysis",
     "config_version": "6.1",
     "description": "Static Isotropic Scattering Analysis - No flow, no angular dependence",
     "analysis_mode": "static_isotropic",
-    "created_date": "2025-08-17",
-    "updated_date": "2025-08-19",
-    "authors": [
-      "Wei Chen"
-    ],
-    "institution": "Argonne National Laboratory",
-    "experiment_name": "Testing",
-    "sample_description": "Simon PNAS",
+    "created_date": "YYYY-MM-DD",
+    "updated_date": "YYYY-MM-DD",
+    "authors": ["Your Name"],
+    "institution": "Your Institution",
+    "experiment_name": "Static Isotropic Scattering Experiment",
+    "sample_description": "Sample description for static measurement",
     "script_compatibility": "homodyne v0.6.1",
     "_cli_usage": {
-      "description": "CLI usage for this static isotropic analysis",
+      "description": "CLI usage for static isotropic analysis",
       "recommended_commands": [
-        "homodyne --config my_config.json --static-isotropic --method classical",
-        "homodyne --config my_config.json --static-isotropic --method all",
-        "homodyne --config my_config.json --static-isotropic --method mcmc"
+        "homodyne-config --mode static_isotropic --sample SAMPLE_NAME",
+        "homodyne --config config.json --static-isotropic --method classical",
+        "homodyne --config config.json --static-isotropic --method all"
       ]
     }
   },
+
   "experimental_data": {
     "_comment": "Data configuration for isotropic static mode",
     "description": "Data source configuration - phi_angles_file ignored in isotropic mode",
-    "data_folder_path": "./data/Simon/",
+    
+    "data_folder_path": "./data/SAMPLE_NAME/",
     "data_file_name": "your_data_file.hdf",
-    "phi_angles_path": "./data/Simon/",
+    
+    "phi_angles_path": "./data/phi_angles/",
     "_phi_angles_path_note": "Path ignored in isotropic mode - dummy angles used instead",
+    
     "phi_angles_file": "phi_list.txt",
     "_phi_angles_file_note": "File ignored in isotropic mode - single dummy angle used",
+    
     "exchange_key": "exchange",
-    "cache_file_path": "./data/Simon/",
-    "cache_filename_template": "cached_c2_100pa_isotropic_frames_{start_frame}_{end_frame}.npz",
+    "cache_file_path": "./data/SAMPLE_NAME/",
+    "cache_filename_template": "cached_c2_isotropic_frames_{start_frame}_{end_frame}.npz",
+    
     "cache_compression": true,
     "data_type": "float64",
     "file_format": "NPZ",
+    
     "preprocessing": {
       "_comment": "Optimized for isotropic mode",
       "apply_diagonal_correction": true,
@@ -46,26 +85,31 @@
       "normalization_method": "baseline"
     }
   },
+
   "analyzer_parameters": {
     "_comment": "Analysis parameters optimized for static isotropic mode",
+    
     "temporal": {
-      "dt": 0.5,
+      "dt": 0.1,
       "_dt_note": "Time step - same importance as other modes",
       "dt_unit": "seconds",
-      "start_frame": 400,
-      "end_frame": 1000
+      "start_frame": 1001,
+      "end_frame": 2000
     },
+    
     "scattering": {
-      "wavevector_q": 0.0237,
+      "wavevector_q": 0.0054,
       "_wavevector_q_note": "q-vector magnitude - isotropic so angular averaging applied",
       "q_unit": "Å⁻¹"
     },
+    
     "geometry": {
       "_comment": "Geometry parameters - gap still relevant for potential future use",
       "stator_rotor_gap": 2000000,
       "gap_unit": "Å",
       "_gap_note": "Gap parameter kept for consistency but not used in static mode"
     },
+    
     "computational": {
       "num_threads": 8,
       "auto_detect_cores": true,
@@ -73,37 +117,42 @@
       "memory_limit_gb": 8
     }
   },
+
   "initial_parameters": {
     "_comment": "Initial parameters for static isotropic mode - only diffusion parameters matter",
     "description": "Only D0, alpha, D_offset are physically meaningful in static isotropic mode",
+    
     "values": [
-      16000,
-      -1.5,
-      1.1,
+      1324.1,
+      -0.014,
+      -0.674361,
       0.0,
       0.0,
       0.0,
       0.0
     ],
     "_values_note": "Last 4 parameters (shear + phi0) automatically set to 0 in static mode",
+    
     "parameter_names": [
       "D0",
-      "alpha",
+      "alpha", 
       "D_offset",
       "gamma_dot_t0",
       "beta",
       "gamma_dot_t_offset",
       "phi0"
     ],
+    
     "units": [
       "Å²/s",
       "dimensionless",
-      "Å²/s",
+      "Å²/s", 
       "s⁻¹",
       "dimensionless",
       "s⁻¹",
       "degrees"
     ],
+    
     "physical_meaning": {
       "D0": "Reference diffusion coefficient - PRIMARY PARAMETER",
       "alpha": "Power-law exponent for D(t) evolution - PRIMARY PARAMETER",
@@ -113,15 +162,14 @@
       "gamma_dot_t_offset": "Ignored in static mode (automatically set to 0)",
       "phi0": "Irrelevant in isotropic mode (automatically set to 0)"
     },
-    "active_parameters": [
-      "D0",
-      "alpha",
-      "D_offset"
-    ],
+    
+    "active_parameters": ["D0", "alpha", "D_offset"],
     "_active_parameters_note": "Only these 3 parameters are optimized in static isotropic mode"
   },
+
   "optimization_config": {
     "_comment": "Optimization for static isotropic mode",
+    
     "angle_filtering": {
       "_comment": "Angle filtering automatically disabled in isotropic mode",
       "enabled": false,
@@ -131,20 +179,20 @@
       "fallback_to_all_angles": true,
       "_isotropic_mode_note": "Angle filtering is automatically disabled for static isotropic mode"
     },
+    
     "classical_optimization": {
-      "methods": [
-        "Nelder-Mead"
-      ],
+      "methods": ["Nelder-Mead"],
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 3000,
           "_maxiter_note": "Reduced iterations since only 3 parameters to optimize",
-          "xatol": 1e-08,
-          "fatol": 1e-08,
+          "xatol": 1e-8,
+          "fatol": 1e-8,
           "adaptive": true
         }
       }
     },
+    
     "mcmc_sampling": {
       "enabled": true,
       "sampler": "NUTS",
@@ -189,19 +237,21 @@
       }
     }
   },
+
   "parameter_space": {
     "_comment": "Parameter bounds - only first 3 are used in static isotropic mode",
+    
     "bounds": [
       {
         "name": "D0",
         "min": 1.0,
-        "max": 1000000.0,
+        "max": 1e6,
         "type": "TruncatedNormal",
-        "prior_mu": 10000.0,
+        "prior_mu": 1e4,
         "prior_sigma": 1000.0,
         "unit": "Å²/s",
         "physical_constraint": "positive",
-        "_note": "PRIMARY PARAMETER - reference diffusion coefficient (typical colloidal systems)"
+        "_note": "PRIMARY PARAMETER - reference diffusion coefficient"
       },
       {
         "name": "alpha",
@@ -212,10 +262,10 @@
         "prior_sigma": 0.1,
         "unit": "dimensionless",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - diffusion time dependence (sub-/superdiffusion range)"
+        "_note": "PRIMARY PARAMETER - diffusion time dependence exponent"
       },
       {
-        "name": "D_offset",
+        "name": "D_offset", 
         "min": -100,
         "max": 100,
         "type": "Normal",
@@ -223,7 +273,7 @@
         "prior_sigma": 10.0,
         "unit": "Å²/s",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient (typically small vs D0)"
+        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient"
       },
       {
         "name": "gamma_dot_t0",
@@ -232,12 +282,7 @@
         "_bounds_note": "Fixed at 0 in static mode",
         "type": "fixed",
         "unit": "s⁻¹",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": 1e-06,
-        "_reference_max": 1.0,
-        "_reference_type": "TruncatedNormal",
-        "_reference_prior_mu": 0.001,
-        "_reference_prior_sigma": 0.01
+        "physical_constraint": "fixed_zero"
       },
       {
         "name": "beta",
@@ -246,12 +291,7 @@
         "_bounds_note": "Fixed at 0 in static mode",
         "type": "fixed",
         "unit": "dimensionless",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": -2.0,
-        "_reference_max": 2.0,
-        "_reference_type": "Normal",
-        "_reference_prior_mu": 0.0,
-        "_reference_prior_sigma": 0.1
+        "physical_constraint": "fixed_zero"
       },
       {
         "name": "gamma_dot_t_offset",
@@ -260,35 +300,29 @@
         "_bounds_note": "Fixed at 0 in static mode",
         "type": "fixed",
         "unit": "s⁻¹",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": -0.01,
-        "_reference_max": 0.01,
-        "_reference_type": "Normal",
-        "_reference_prior_mu": 0.0,
-        "_reference_prior_sigma": 0.001
+        "physical_constraint": "fixed_zero"
       },
       {
         "name": "phi0",
         "min": 0.0,
         "max": 0.0,
-        "_bounds_note": "Fixed at 0 in static mode",
+        "_bounds_note": "Fixed at 0 - irrelevant in isotropic mode",
         "type": "fixed",
         "unit": "degrees",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": -10,
-        "_reference_max": 10,
-        "_reference_type": "Normal",
-        "_reference_prior_mu": 0.0,
-        "_reference_prior_sigma": 5.0
+        "physical_constraint": "fixed_zero"
       }
     ]
   },
+
   "analysis_settings": {
     "_comment": "Static isotropic mode configuration",
+    
     "static_mode": true,
     "_static_mode_note": "REQUIRED: Must be true for static analysis",
+    
     "static_submode": "isotropic",
     "_static_submode_note": "REQUIRED: Must be 'isotropic' for this template",
+    
     "model_description": {
       "current_mode": "static_isotropic_case",
       "equation": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
@@ -301,22 +335,19 @@
       ]
     }
   },
+
   "advanced_settings": {
     "data_loading": {
       "use_diagonal_correction": true,
       "vectorized_diagonal_fix": true
     },
+    
     "chi_squared_calculation": {
-      "method": "standard",
+      "method": "standard", 
       "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
       "_scaling_details": {
         "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
-        "_accounts_for": [
-          "instrumental response",
-          "background signals",
-          "detector variations",
-          "normalization differences"
-        ],
+        "_accounts_for": ["instrumental response", "background signals", "detector variations", "normalization differences"],
         "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
         "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]",
         "_isotropic_mode_benefits": [
@@ -326,13 +357,14 @@
           "Consistent results independent of sample orientation"
         ],
         "_typical_values_isotropic": {
-          "contrast": "0.0-1.0 (narrower range due to isotropic averaging)",
+          "contrast": "0.5-2.0 (narrower range due to isotropic averaging)",
           "offset": "0.01-0.05 (typically smaller due to reduced background anisotropy)"
         }
       },
       "uncertainty_estimation_factor": 0.1,
       "minimum_sigma": 1e-10,
       "fast_computation": true,
+      
       "validity_check": {
         "check_positive_D0": true,
         "check_positive_gamma_dot_t0": false,
@@ -342,6 +374,7 @@
       }
     }
   },
+
   "performance_settings": {
     "caching": {
       "enable_memory_cache": true,
@@ -349,37 +382,36 @@
       "cache_size_limit_mb": 1000,
       "auto_cleanup": true
     },
+    
     "parallel_processing": {
       "enable_multiprocessing": true,
       "chunk_size": "auto",
       "backend": "threading"
     },
+    
     "noise_model": {
       "use_simple_forward_model": false,
       "sigma_prior": 0.1,
       "_isotropic_note": "Simple forward model appropriate for isotropic case"
     }
   },
+
   "output_settings": {
     "reporting": {
       "generate_plots": true,
-      "plot_formats": [
-        "png",
-        "pdf"
-      ],
+      "plot_formats": ["png", "pdf"],
       "detailed_summary": true
     },
+    
     "plotting": {
       "general": {
         "create_plots": true,
         "plot_format": "png",
         "dpi": 300,
-        "figure_size": [
-          10,
-          8
-        ],
+        "figure_size": [10, 8],
         "style": "publication"
       },
+      
       "c2_heatmaps": {
         "enabled": true,
         "_enabled_note": "Single angle heatmaps for isotropic mode",
@@ -389,29 +421,26 @@
         "include_residuals": true,
         "title_prefix": "C2 Isotropic Static Mode"
       },
+      
       "mcmc_plots": {
         "enabled": true,
         "corner_plots": {
           "enabled": true,
-          "figsize": [
-            8,
-            8
-          ],
+          "figsize": [8, 8],
           "_figsize_note": "Smaller size for 3x3 parameter space"
         },
         "trace_plots": {
           "enabled": true,
-          "figsize": [
-            10,
-            6
-          ],
+          "figsize": [10, 6],
           "_figsize_note": "Compact layout for 3 parameters"
         }
       }
     }
   },
+
   "_usage_notes": {
     "description": "Specific usage notes for static isotropic mode",
+    
     "key_differences": [
       "phi_angles_file is not loaded - dummy angles used automatically",
       "Angle filtering is disabled regardless of configuration",
@@ -420,12 +449,14 @@
       "Results are independent of scattering angle",
       "Faster optimization due to fewer parameters and no angle selection"
     ],
+    
     "when_to_use": [
       "Static samples with no applied flow or rotation",
-      "Isotropic scattering where results don't depend on angle",
+      "Isotropic scattering where results don't depend on angle", 
       "Quick analysis focusing only on diffusion dynamics",
       "Systems where angular anisotropy is not expected or relevant"
     ],
+    
     "performance_benefits": [
       "Faster optimization (3 vs 7 parameters)",
       "No angle file loading overhead",
@@ -433,11 +464,13 @@
       "Simpler parameter space for MCMC"
     ]
   },
+  
   "validation_rules": {
     "_comment": "Validation rules for static isotropic mode",
+    
     "fit_quality": {
       "_comment": "Classical optimization fit quality for 3-parameter isotropic analysis",
-      "_applies_to": "Classical optimization methods only (Nelder-Mead, etc.)",
+      "_applies_to": "Classical optimization using Nelder-Mead method",
       "overall_chi_squared": {
         "excellent_threshold": 2.0,
         "acceptable_threshold": 5.0,
@@ -445,6 +478,7 @@
         "critical_threshold": 20.0,
         "_isotropic_note": "Isotropic averaging may improve fit quality vs anisotropic"
       },
+      
       "per_angle_chi_squared": {
         "excellent_threshold": 2.0,
         "acceptable_threshold": 5.0,
@@ -455,10 +489,12 @@
         "_min_good_angles_note": "Only 1 angle minimum for isotropic (single dummy angle)"
       }
     },
+    
     "mcmc_convergence": {
       "_comment": "MCMC convergence validation for 3-parameter static isotropic analysis",
       "_applies_to": "MCMC/NUTS sampling methods only",
       "_note": "Isotropic mode uses MCMC convergence diagnostics instead of chi-squared",
+      
       "rhat_thresholds": {
         "_comment": "R-hat thresholds for simplified 3-parameter isotropic model",
         "excellent_threshold": 1.01,
@@ -470,8 +506,9 @@
         "critical_threshold": 1.15,
         "_critical_threshold_note": "R̂ > 1.15 indicates poor convergence"
       },
+      
       "ess_thresholds": {
-        "_comment": "ESS thresholds for 3-parameter isotropic space with thinning",
+        "_comment": "ESS thresholds for 3-parameter isotropic space",
         "excellent_threshold": 400,
         "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space",
         "good_threshold": 200,
@@ -481,6 +518,7 @@
         "minimum_threshold": 50,
         "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates"
       },
+      
       "divergence_thresholds": {
         "_comment": "Divergence criteria for simple isotropic geometry",
         "max_divergences_fraction": 0.01,
@@ -488,6 +526,7 @@
         "warning_divergences_fraction": 0.005,
         "_warning_divergences_fraction_note": "0.5% divergences warrants investigation"
       },
+      
       "quality_assessment": {
         "_comment": "Isotropic-specific MCMC quality criteria",
         "excellent_criteria": "R̂ < 1.01 AND ESS > 400 AND divergences < 0.5%",
@@ -497,6 +536,7 @@
         "_isotropic_note": "3-parameter isotropic model should converge efficiently"
       }
     },
+    
     "parameter_validation": {
       "_comment": "Parameter validation for static isotropic mode",
       "check_bounds": true,

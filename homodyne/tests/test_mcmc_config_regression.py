@@ -66,9 +66,9 @@ class TestMCMCConfigurationRegression:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                 ]
             },
             "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},

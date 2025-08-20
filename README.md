@@ -253,31 +253,54 @@ The package includes comprehensive performance optimizations:
 - **Consolidated performance utilities**: Unified performance testing infrastructure
 - **Improved type safety**: Enhanced type annotations and consistency checks
 
-### MCMC Configuration with Thinning
+## Physical Constraints and Parameter Ranges
 
-**Basic MCMC Configuration:**
-```json
-{
-  "optimization_config": {
-    "mcmc_sampling": {
-      "draws": 10000,
-      "tune": 1000,
-      "chains": 4,
-      "thin": 1,
-      "target_accept": 0.95
-    }
-  }
-}
-```
+### Parameter Distributions and Constraints
 
-**Thinning Options:**
-- **`"thin": 1`** - No thinning (keep all samples) - default for laminar flow mode
-- **`"thin": 2`** - Keep every 2nd sample - recommended for static modes  
-- **`"thin": 3-5`** - Moderate thinning for large sample sizes with high autocorrelation
-- **`"thin": 10+`** - Aggressive thinning for memory-constrained systems
+The homodyne package implements comprehensive physical constraints to ensure scientifically meaningful results:
 
-**Mode-Specific Recommendations:**
-```bash
+#### **Core Model Parameters**
+
+| Parameter | Range | Distribution | Physical Constraint |
+|-----------|-------|--------------|-------------------|
+| `D0` | [1.0, 1000000.0] Å²/s | TruncatedNormal(μ=10000.0, σ=1000.0) | positive |
+| `alpha` | [-2.0, 2.0] dimensionless | Normal(μ=-1.5, σ=0.1) | none |
+| `D_offset` | [-100, 100] Å²/s | Normal(μ=0.0, σ=10.0) | none |
+| `gamma_dot_t0` | [1e-06, 1.0] s⁻¹ | TruncatedNormal(μ=0.001, σ=0.01) | positive |
+| `beta` | [-2.0, 2.0] dimensionless | Normal(μ=0.0, σ=0.1) | none |
+| `gamma_dot_t_offset` | [-0.01, 0.01] s⁻¹ | Normal(μ=0.0, σ=0.001) | none |
+| `phi0` | [-10, 10] degrees | Normal(μ=0.0, σ=5.0) | angular |
+
+#### **Physical Function Constraints**
+
+The package **automatically enforces positivity** for time-dependent functions:
+
+- **D(t) = D₀(t)^α + D_offset** → **max(D(t), 1×10⁻¹⁰)**
+  - Prevents negative diffusion coefficients
+  - Maintains numerical stability with minimal threshold
+
+- **γ̇(t) = γ̇₀(t)^β + γ̇_offset** → **max(γ̇(t), 1×10⁻¹⁰)**
+  - Prevents negative shear rates
+  - Ensures physical validity in all optimization scenarios
+
+#### **Scaling Parameters for Correlation Functions**
+
+The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded parameters:
+
+| Parameter | Range | Distribution | Physical Meaning |
+|-----------|-------|--------------|------------------|
+| `contrast` | (0.05, 0.5] | TruncatedNormal(μ=0.3, σ=0.1) | Correlation strength scaling |
+| `offset` | (0.05, 1.95] | TruncatedNormal(μ=1.0, σ=0.2) | Baseline correlation level |
+| `c2_fitted` | [1.0, 2.0] | *derived* | Final correlation function range |
+| `c2_theory` | [0.0, 1.0] | *derived* | Theoretical correlation bounds |
+
+
+### MCMC Configuration
+
+**Optimized MCMC Settings:**
+- **target_accept = 0.95**: High acceptance rate for constrained sampling
+- **Distribution-aware priors**: TruncatedNormal for positive parameters, Normal otherwise  
+- **Configuration-driven**: All parameters read from JSON files for consistency
 # Static Isotropic (3 parameters)
 {
   "draws": 8000,

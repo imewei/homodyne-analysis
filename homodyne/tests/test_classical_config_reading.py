@@ -65,18 +65,18 @@ class TestClassicalOptimizationConfigurationReading:
         test_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 100, "max": 10000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -2.0, "max": 0.0, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 1000, "type": "uniform"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.1, "type": "uniform"},
-                    {"name": "beta", "min": -1.0, "max": 1.0, "type": "uniform"},
+                    {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
+                    {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
+                    {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
+                    {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0, "type": "Normal"},
+                    {"name": "beta", "min": -2.0, "max": 2.0, "type": "Normal"},
                     {
                         "name": "gamma_dot_t_offset",
-                        "min": 0.0,
-                        "max": 0.01,
-                        "type": "uniform",
+                        "min": -1e-2,
+                        "max": 1e-2,
+                        "type": "Normal",
                     },
-                    {"name": "phi0", "min": 0.0, "max": 360.0, "type": "uniform"},
+                    {"name": "phi0", "min": -10.0, "max": 10.0, "type": "Normal"},
                 ]
             },
             "optimization_config": {
@@ -113,9 +113,9 @@ class TestClassicalOptimizationConfigurationReading:
         test_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 500, "max": 5000},
+                    {"name": "D0", "min": 1.0, "max": 1000000},
                     {"name": "alpha", "min": -1.5, "max": -0.5},
-                    {"name": "D_offset", "min": 10, "max": 500},
+                    {"name": "D_offset", "min": -100, "max": 100},
                 ]
             },
             "optimization_config": {
@@ -161,9 +161,9 @@ class TestClassicalOptimizationConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000},
+                    {"name": "D0", "min": 1.0, "max": 1000000},
                     {"name": "alpha", "min": -1.6, "max": -1.5},
-                    {"name": "D_offset", "min": 0, "max": 5},
+                    {"name": "D_offset", "min": -100, "max": 100},
                     {
                         "name": "gamma_dot_t0",
                         "min": 0.0,
@@ -294,9 +294,9 @@ class TestClassicalOptimizationConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {

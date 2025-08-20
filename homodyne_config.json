@@ -117,8 +117,14 @@
       "_comment": "Angle filtering settings",
       "enabled": true,
       "target_ranges": [
-        [10, 30],
-        [45, 75]
+        [
+          10,
+          30
+        ],
+        [
+          45,
+          75
+        ]
       ],
       "fallback_to_all_angles": true
     },
@@ -143,9 +149,38 @@
       "thin": 1,
       "chains": 2,
       "cores": 2,
-      "target_accept": 0.8,
+      "target_accept": 0.95,
       "max_treedepth": 10,
       "return_inferencedata": true
+    },
+    "scaling_parameters": {
+      "_comment": "Physical scaling constraints for c2 fitting",
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0,
+        "_description": "c2_fitted = c2_theory * contrast + offset, must be in [1,2]"
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0,
+        "_description": "c2_theory normalized correlation function, must be in [0,1]"
+      },
+      "contrast": {
+        "min": 0.05,
+        "max": 0.5,
+        "prior_mu": 0.3,
+        "prior_sigma": 0.1,
+        "type": "TruncatedNormal",
+        "_description": "Scaling factor for correlation strength, typically ∈ (0, 0.5]"
+      },
+      "offset": {
+        "min": 0.05,
+        "max": 1.95,
+        "prior_mu": 1.0,
+        "prior_sigma": 0.2,
+        "type": "TruncatedNormal",
+        "_description": "Baseline correlation level, typically ∈ (0, 2.0), μ ≈ 1.0"
+      }
     }
   },
   "parameter_space": {
@@ -153,73 +188,73 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 100,
-        "max": 10000,
-        "type": "log-uniform",
-        "prior_mu": 3.0,
-        "prior_sigma": 1.0,
+        "min": 1.0,
+        "max": 1000000,
+        "type": "TruncatedNormal",
+        "prior_mu": 10000.0,
+        "prior_sigma": 1000.0,
         "unit": "Å²/s",
         "physical_constraint": "positive"
       },
       {
         "name": "alpha",
         "min": -2.0,
-        "max": 0.0,
-        "type": "uniform",
-        "prior_mu": -1.0,
-        "prior_sigma": 0.5,
+        "max": 2.0,
+        "type": "Normal",
+        "prior_mu": -1.5,
+        "prior_sigma": 0.1,
         "unit": "dimensionless",
         "physical_constraint": "none"
       },
       {
         "name": "D_offset",
-        "min": 0,
-        "max": 1000,
-        "type": "uniform",
-        "prior_mu": 50.0,
-        "prior_sigma": 100.0,
+        "min": -100,
+        "max": 100,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 10.0,
         "unit": "Å²/s",
-        "physical_constraint": "positive"
+        "physical_constraint": "none"
       },
       {
         "name": "gamma_dot_t0",
-        "min": 0.001,
+        "min": 1e-06,
         "max": 1.0,
-        "type": "log-uniform",
-        "prior_mu": -2.0,
-        "prior_sigma": 1.0,
+        "type": "TruncatedNormal",
+        "prior_mu": 0.001,
+        "prior_sigma": 0.01,
         "unit": "s⁻¹",
         "physical_constraint": "positive"
       },
       {
         "name": "beta",
-        "min": -1.0,
-        "max": 1.0,
-        "type": "uniform",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "Normal",
         "prior_mu": 0.0,
-        "prior_sigma": 0.5,
+        "prior_sigma": 0.1,
         "unit": "dimensionless",
         "physical_constraint": "none"
       },
       {
         "name": "gamma_dot_t_offset",
-        "min": 0.0,
-        "max": 0.1,
-        "type": "uniform",
-        "prior_mu": 0.01,
-        "prior_sigma": 0.02,
+        "min": -0.01,
+        "max": 0.01,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.001,
         "unit": "s⁻¹",
-        "physical_constraint": "positive"
+        "physical_constraint": "none"
       },
       {
         "name": "phi0",
-        "min": 0,
-        "max": 90,
-        "type": "uniform",
-        "prior_mu": 45.0,
-        "prior_sigma": 25.0,
+        "min": -10,
+        "max": 10,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 5.0,
         "unit": "degrees",
-        "physical_constraint": "positive"
+        "physical_constraint": "none"
       }
     ]
   },

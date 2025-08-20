@@ -85,7 +85,13 @@ Example 2: Flow Analysis with MCMC
          "draws": 3000,
          "tune": 1500,
          "chains": 4,
-         "target_accept": 0.9
+         "target_accept": 0.95
+       },
+       "scaling_parameters": {
+         "fitted_range": {"min": 1.0, "max": 2.0},
+         "theory_range": {"min": 0.0, "max": 1.0},
+         "contrast": {"min": 0.05, "max": 0.5, "prior_mu": 0.3, "prior_sigma": 0.1, "type": "TruncatedNormal"},
+         "offset": {"min": 0.05, "max": 1.95, "prior_mu": 1.0, "prior_sigma": 0.2, "type": "TruncatedNormal"}
        }
      }
    }
@@ -365,8 +371,8 @@ Common Patterns
            if not (-2.0 <= alpha <= 0.0):
                print(f"⚠️ α = {alpha} may be outside typical range [-2.0, 0.0]")
                
-           if D_offset < 0:
-               print(f"⚠️ D_offset = {D_offset} should be non-negative")
+           if abs(D_offset) > 100:
+               print(f"⚠️ D_offset = {D_offset} is outside typical range [-100, 100]")
 
 **Result Comparison**:
 
@@ -433,6 +439,44 @@ Starting from version 6.0, the analysis results are organized into method-specif
 - **3D visualization**: MCMC method automatically generates publication-quality 3D surface plots with confidence intervals
 - **Fitted data calculation**: Both methods use least squares scaling optimization (``fitted = contrast * theory + offset``)
 - **Plotting behavior**: The ``--plot-experimental-data`` flag now skips all fitting and exits immediately after plotting
+
+MCMC Prior Distributions
+------------------------
+
+All parameters use **Normal distributions** in the MCMC implementation:
+
+.. code-block:: python
+
+   import pymc as pm
+   
+   # Standard prior distributions used in homodyne MCMC
+   with pm.Model() as model:
+       # All parameters use Normal distributions
+       D0 = pm.Normal("D0", mu=1e4, sigma=1000.0)                      # Diffusion coefficient [Å²/s]
+       alpha = pm.Normal("alpha", mu=-1.5, sigma=0.1)                 # Time exponent [dimensionless]
+       D_offset = pm.Normal("D_offset", mu=0.0, sigma=10.0)            # Baseline diffusion [Å²/s]
+       gamma_dot_t0 = pm.Normal("gamma_dot_t0", mu=1e-3, sigma=1e-2)   # Reference shear rate [s⁻¹]
+       beta = pm.Normal("beta", mu=0.0, sigma=0.1)                     # Shear exponent [dimensionless]
+       gamma_dot_t_offset = pm.Normal("gamma_dot_t_offset", mu=0.0, sigma=1e-3)  # Baseline shear [s⁻¹]
+       phi0 = pm.Normal("phi0", mu=0.0, sigma=5.0)                     # Angular offset [degrees]
+
+**Configuration Example:**
+
+.. code-block:: json
+
+   {
+     "parameter_space": {
+       "bounds": [
+         {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
+         {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
+         {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
+         {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0, "type": "Normal"},
+         {"name": "beta", "min": -2.0, "max": 2.0, "type": "Normal"},
+         {"name": "gamma_dot_t_offset", "min": -1e-2, "max": 1e-2, "type": "Normal"},
+         {"name": "phi0", "min": -10, "max": 10, "type": "Normal"}
+       ]
+     }
+   }
 
 Next Steps
 ----------

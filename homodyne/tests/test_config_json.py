@@ -324,23 +324,23 @@ class TestParameterTypes:
         for bound in bounds:
             if "type" in bound:
                 valid_types = [
-                    "uniform",
-                    "log-uniform",
-                    "normal",
-                    "log-normal",
+                    "Normal",
+                    "LogNormal",
+                    "Uniform",
+                    "LogUniform",
                 ]
                 assert (
                     bound["type"] in valid_types
                 ), f"Invalid parameter type: {bound['type']}"
 
-                # Log-uniform parameters should have positive bounds
-                if bound["type"] == "log-uniform":
+                # LogNormal parameters should have positive bounds
+                if bound["type"] == "LogNormal":
                     assert (
                         bound["min"] > 0
-                    ), f"Log-uniform parameter {bound['name']} must have positive min bound"
+                    ), f"LogNormal parameter {bound['name']} must have positive min bound"
                     assert (
                         bound["max"] > 0
-                    ), f"Log-uniform parameter {bound['name']} must have positive max bound"
+                    ), f"LogNormal parameter {bound['name']} must have positive max bound"
 
     def test_physical_parameter_constraints(self, dummy_config):
         """Test physical constraints on specific parameters."""

@@ -50,11 +50,11 @@ class TestIsotropicModeIntegration:
                 "bounds": [
                     {"name": "D0", "min": 1e-3, "max": 1e6},
                     {"name": "alpha", "min": -2.0, "max": 2.0},
-                    {"name": "D_offset", "min": -5000, "max": 5000},
+                    {"name": "D_offset", "min": -100, "max": 100},
                     {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0},
                     {"name": "beta", "min": -2.0, "max": 2.0},
                     {"name": "gamma_dot_t_offset", "min": -0.1, "max": 0.1},
-                    {"name": "phi0", "min": -15.0, "max": 15.0},
+                    {"name": "phi0", "min": -10.0, "max": 10.0},
                 ]
             },
             "initial_parameters": {"values": [1000.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0]},

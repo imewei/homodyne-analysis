@@ -59,14 +59,14 @@ class TestMCMCParameterBoundsRegression:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
                     {
                         "name": "alpha",
                         "min": -1.6,
                         "max": -1.5,
-                        "type": "uniform",
+                        "type": "Normal",
                     },  # Narrow range, initial at boundary
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
@@ -128,14 +128,14 @@ class TestMCMCParameterBoundsRegression:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
                     {
                         "name": "alpha",
                         "min": -1.8,
                         "max": -1.2,
-                        "type": "uniform",
+                        "type": "Normal",
                     },  # Wider range, initial in center
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
@@ -171,7 +171,7 @@ class TestMCMCParameterBoundsRegression:
         boundary_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"}
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"}
                 ]
             },
             "initial_parameters": {
@@ -210,7 +210,7 @@ class TestMCMCParameterBoundsRegression:
         safe_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "uniform"}
+                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "Normal"}
                 ]
             },
             "initial_parameters": {
@@ -262,7 +262,7 @@ class TestMCMCParameterBoundsRegression:
                         "name": "alpha",
                         "min": -1.6,
                         "max": -1.5,
-                        "type": "uniform",
+                        "type": "Normal",
                     }  # Width: 0.1
                 ]
             },
@@ -277,7 +277,7 @@ class TestMCMCParameterBoundsRegression:
                         "name": "alpha",
                         "min": -1.8,
                         "max": -1.2,
-                        "type": "uniform",
+                        "type": "Normal",
                     }  # Width: 0.6
                 ]
             },
@@ -320,16 +320,16 @@ class TestMCMCParameterBoundsRegression:
         """Test edge cases for MCMC parameter bounds validation."""
 
         # Test case 1: Initial value exactly at lower bound
-        bounds_at_min = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "uniform"}]
+        bounds_at_min = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
         initial_at_min = [-2.0]  # Exactly at minimum
 
         # Test case 2: Initial value exactly at upper bound
-        bounds_at_max = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "uniform"}]
+        bounds_at_max = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
         initial_at_max = [-1.0]  # Exactly at maximum
 
         # Test case 3: Initial value safely in middle
         bounds_centered = [
-            {"name": "alpha", "min": -2.0, "max": -1.0, "type": "uniform"}
+            {"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}
         ]
         initial_centered = [-1.5]  # Exactly in center
 
@@ -402,15 +402,15 @@ class TestMCMCBoundsIntegration:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
                     {
                         "name": "alpha",
                         "min": -1.8,
                         "max": -1.2,
-                        "type": "uniform",
+                        "type": "Normal",
                         "_note": "PRIMARY PARAMETER - diffusion time dependence exponent. Bounds widened to avoid initialization at hard boundary.",
                     },
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
@@ -450,7 +450,7 @@ class TestMCMCBoundsIntegration:
 
         assert alpha_bound["min"] == -1.8
         assert alpha_bound["max"] == -1.2
-        assert alpha_bound["type"] == "uniform"
+        assert alpha_bound["type"] == "Normal"
         assert "Bounds widened" in alpha_bound["_note"]
 
         # Verify initial value is now centered
@@ -495,9 +495,9 @@ class TestMCMCBoundsIntegration:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "Normal"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {

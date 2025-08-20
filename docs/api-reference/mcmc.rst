@@ -93,23 +93,47 @@ Usage Examples
    for param, ess in ess_values.items():
        print(f"{param}: ESS = {ess:.0f}")
 
-**Custom Prior Setup**:
+**Prior Distributions**:
+
+All parameters use **Normal distributions** in the MCMC implementation:
 
 .. code-block:: python
 
-   from homodyne.optimization.mcmc import setup_priors
    import pymc as pm
    
-   # Define custom priors for parameters
+   # Standard prior distributions used in homodyne MCMC
    with pm.Model() as model:
-       priors = setup_priors(
-           D0_range=(100, 5000),
-           alpha_range=(-2.0, 0.0),
-           D_offset_range=(0, 500)
-       )
+       # Positive parameters use TruncatedNormal, others use Normal
+       D0 = pm.TruncatedNormal("D0", mu=1e4, sigma=1000.0, lower=1.0)  # Diffusion coefficient (positive)
+       alpha = pm.Normal("alpha", mu=-1.5, sigma=0.1)                 # Time exponent
+       D_offset = pm.Normal("D_offset", mu=0.0, sigma=10.0)            # Baseline diffusion
+       gamma_dot_t0 = pm.TruncatedNormal("gamma_dot_t0", mu=1e-3, sigma=1e-2, lower=1e-6)  # Reference shear rate (positive)
+       beta = pm.Normal("beta", mu=0.0, sigma=0.1)                     # Shear exponent
+       gamma_dot_t_offset = pm.Normal("gamma_dot_t_offset", mu=0.0, sigma=1e-3)  # Baseline shear
+       phi0 = pm.Normal("phi0", mu=0.0, sigma=5.0)                     # Angular offset
+
+**Scaling Parameters for Physical Constraints**:
+
+The MCMC implementation includes physical scaling constraints to ensure valid correlation function values:
+
+.. code-block:: python
+
+   # Scaling optimization: c2_fitted = c2_theory * contrast + offset
+   # Physical constraints: c2_fitted ∈ [1,2], c2_theory ∈ [0,1]
+   
+   with pm.Model() as model:
+       # Bounded priors for scaling parameters
+       contrast = pm.TruncatedNormal("contrast", mu=0.3, sigma=0.1, lower=0.05, upper=0.5)
+       offset = pm.TruncatedNormal("offset", mu=1.0, sigma=0.2, lower=0.05, upper=1.95)
        
-       # Use priors in likelihood
-       likelihood = setup_likelihood(priors, experimental_data)
+       # Apply scaling transformation
+       c2_fitted = c2_theory * contrast + offset
+       
+       # Physical constraint enforcement
+       pm.Potential("physical_constraint", 
+                   pt.switch(pt.and_(pt.ge(pt.min(c2_fitted), 1.0), 
+                                   pt.le(pt.max(c2_fitted), 2.0)), 
+                           0.0, -np.inf))
 
 Convergence Thresholds
 ----------------------
@@ -152,8 +176,36 @@ Configuration
          "tune": 1500,
          "chains": 4,
          "cores": 4,
-         "target_accept": 0.9,
+         "target_accept": 0.95,
          "max_treedepth": 10
+       },
+       "scaling_parameters": {
+         "fitted_range": {
+           "min": 1.0,
+           "max": 2.0,
+           "_description": "c2_fitted = c2_theory * contrast + offset, must be in [1,2]"
+         },
+         "theory_range": {
+           "min": 0.0,
+           "max": 1.0,
+           "_description": "c2_theory normalized correlation function, must be in [0,1]"
+         },
+         "contrast": {
+           "min": 0.05,
+           "max": 0.5,
+           "prior_mu": 0.3,
+           "prior_sigma": 0.1,
+           "type": "TruncatedNormal",
+           "_description": "Scaling factor for correlation strength, typically ∈ (0, 0.5]"
+         },
+         "offset": {
+           "min": 0.05,
+           "max": 1.95,
+           "prior_mu": 1.0,
+           "prior_sigma": 0.2,
+           "type": "TruncatedNormal",
+           "_description": "Baseline correlation level, typically ∈ (0, 2.0), μ ≈ 1.0"
+         }
        }
      },
      "validation_rules": {
@@ -178,5 +230,5 @@ Performance Tips
 1. **Initialization**: Use classical optimization results to initialize MCMC
 2. **Tuning**: Use adequate tuning steps (≥1000) for complex models
 3. **Chains**: Run multiple chains (4-6) to assess convergence
-4. **Acceptance Rate**: Target 0.8-0.9 acceptance rate
+4. **Acceptance Rate**: Target 0.95 acceptance rate for better constraint handling
 5. **Tree Depth**: Increase max_treedepth if you see divergences

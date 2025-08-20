@@ -117,12 +117,13 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     Returns
     -------
     np.ndarray
-        D(t) at each time point [Å²/s]
+        D(t) at each time point [Å²/s], guaranteed to be > 0
     """
     D_t = np.empty_like(time_array)
-    # Vectorized computation with parallel execution
+    # Vectorized computation with parallel execution and positivity constraint
     for i in prange(len(time_array)):
-        D_t[i] = D0 * (time_array[i] ** alpha) + D_offset
+        D_value = D0 * (time_array[i] ** alpha) + D_offset
+        D_t[i] = max(D_value, 1e-10)  # Ensure D(t) > 0 always
     return D_t
 
 
@@ -175,12 +176,13 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     Returns
     -------
     np.ndarray
-        γ̇(t) at each time point [s⁻¹]
+        γ̇(t) at each time point [s⁻¹], guaranteed to be > 0
     """
     gamma_dot_t = np.empty_like(time_array)
-    # Vectorized computation with parallel execution
+    # Vectorized computation with parallel execution and positivity constraint
     for i in prange(len(time_array)):
-        gamma_dot_t[i] = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
+        gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
+        gamma_dot_t[i] = max(gamma_value, 1e-10)  # Ensure γ̇(t) > 0 always
     return gamma_dot_t
 
 

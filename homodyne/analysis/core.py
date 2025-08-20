@@ -738,7 +738,9 @@ class HomodyneAnalysisCore:
     def calculate_diffusion_coefficient_optimized(
         self, params: np.ndarray
     ) -> np.ndarray:
-        """Calculate time-dependent diffusion coefficient."""
+        """Calculate time-dependent diffusion coefficient.
+        
+        Ensures D(t) > 0 always by applying a minimum threshold."""
         D0, alpha, D_offset = params
 
         if NUMBA_AVAILABLE:
@@ -746,10 +748,13 @@ class HomodyneAnalysisCore:
                 self.time_array, D0, alpha, D_offset
             )
         else:
-            return D0 * (self.time_array**alpha) + D_offset
+            D_t = D0 * (self.time_array**alpha) + D_offset
+            return np.maximum(D_t, 1e-10)  # Ensure D(t) > 0 always
 
     def calculate_shear_rate_optimized(self, params: np.ndarray) -> np.ndarray:
-        """Calculate time-dependent shear rate."""
+        """Calculate time-dependent shear rate.
+        
+        Ensures γ̇(t) > 0 always by applying a minimum threshold."""
         gamma_dot_t0, beta, gamma_dot_t_offset = params
 
         if NUMBA_AVAILABLE:
@@ -757,7 +762,8 @@ class HomodyneAnalysisCore:
                 self.time_array, gamma_dot_t0, beta, gamma_dot_t_offset
             )
         else:
-            return gamma_dot_t0 * (self.time_array**beta) + gamma_dot_t_offset
+            gamma_t = gamma_dot_t0 * (self.time_array**beta) + gamma_dot_t_offset
+            return np.maximum(gamma_t, 1e-10)  # Ensure γ̇(t) > 0 always
 
     def update_frame_range(self, start_frame: int, end_frame: int):
         """

@@ -28,7 +28,7 @@ class TestMCMCConfigurationReading:
                     "draws": 5000,
                     "tune": 2000,
                     "chains": 4,
-                    "target_accept": 0.85,
+                    "target_accept": 0.95,
                     "cores": 4,
                 }
             },
@@ -55,7 +55,7 @@ class TestMCMCConfigurationReading:
         assert mcmc_config.get("draws", 1000) == 5000
         assert mcmc_config.get("tune", 500) == 2000
         assert mcmc_config.get("chains", 2) == 4
-        assert mcmc_config.get("target_accept", 0.9) == 0.85
+        assert mcmc_config.get("target_accept", 0.95) == 0.95
 
         # Test that old (incorrect) access pattern would fail
         assert test_config.get("mcmc_draws", 1000) == 1000  # Default value
@@ -72,7 +72,7 @@ class TestMCMCConfigurationReading:
                     "draws": 8000,
                     "tune": 1500,
                     "chains": 6,
-                    "target_accept": 0.92,
+                    "target_accept": 0.95,
                 }
             },
             "initial_parameters": {
@@ -102,7 +102,7 @@ class TestMCMCConfigurationReading:
         assert sampler.mcmc_config.get("draws", 1000) == 8000
         assert sampler.mcmc_config.get("tune", 500) == 1500
         assert sampler.mcmc_config.get("chains", 2) == 6
-        assert sampler.mcmc_config.get("target_accept", 0.9) == 0.92
+        assert sampler.mcmc_config.get("target_accept", 0.95) == 0.95
 
     def test_mcmc_config_defaults_when_missing(self):
         """Test that proper defaults are used when MCMC configuration is missing."""
@@ -132,7 +132,7 @@ class TestMCMCConfigurationReading:
         assert mcmc_config.get("draws", 1000) == 1000  # Default
         assert mcmc_config.get("tune", 500) == 500  # Default
         assert mcmc_config.get("chains", 2) == 2  # Default
-        assert mcmc_config.get("target_accept", 0.9) == 0.9  # Default
+        assert mcmc_config.get("target_accept", 0.95) == 0.95  # Default
 
     def test_real_config_file_structure(self):
         """Test with a realistic configuration file structure."""
@@ -153,6 +153,12 @@ class TestMCMCConfigurationReading:
                     "max_treedepth": 10,
                     "return_inferencedata": True,
                 },
+                "scaling_parameters": {
+                    "fitted_range": {"min": 1.0, "max": 2.0},
+                    "theory_range": {"min": 0.0, "max": 1.0},
+                    "contrast": {"min": 0.05, "max": 0.5, "prior_mu": 0.3, "prior_sigma": 0.1, "type": "TruncatedNormal"},
+                    "offset": {"min": 0.05, "max": 1.95, "prior_mu": 1.0, "prior_sigma": 0.2, "type": "TruncatedNormal"}
+                },
             },
             "initial_parameters": {
                 "parameter_names": [
@@ -169,9 +175,9 @@ class TestMCMCConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
@@ -299,9 +305,9 @@ class TestMCMCConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                 ]
             },
         }
@@ -324,19 +330,19 @@ class TestMCMCConfigurationReading:
         assert d0_bound["name"] == "D0"
         assert d0_bound["min"] == 15000
         assert d0_bound["max"] == 20000
-        assert d0_bound["type"] == "log-uniform"
+        assert d0_bound["type"] == "Normal"
 
         alpha_bound = param_bounds[1]
         assert alpha_bound["name"] == "alpha"
         assert alpha_bound["min"] == -1.6
         assert alpha_bound["max"] == -1.5
-        assert alpha_bound["type"] == "uniform"
+        assert alpha_bound["type"] == "Normal"
 
         d_offset_bound = param_bounds[2]
         assert d_offset_bound["name"] == "D_offset"
         assert d_offset_bound["min"] == 0
         assert d_offset_bound["max"] == 5
-        assert d_offset_bound["type"] == "uniform"
+        assert d_offset_bound["type"] == "Normal"
 
     def test_mcmc_parameter_bounds_with_missing_bounds(self):
         """Test MCMC parameter bounds handling when bounds are missing."""
@@ -397,9 +403,9 @@ class TestMCMCConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "log-uniform"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "uniform"},
-                    {"name": "D_offset", "min": 0, "max": 5, "type": "uniform"},
+                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                     {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
