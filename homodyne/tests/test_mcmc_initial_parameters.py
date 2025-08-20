@@ -129,10 +129,15 @@ class TestMCMCInitialParameterHandling:
         # No classical results - explicitly set to None
         mock_analyzer.best_params_classical = None
 
-        # Mock the MCMC sampler creation
-        with patch(
-            "homodyne.optimization.mcmc.create_mcmc_sampler"
-        ) as mock_create_sampler:
+        # Mock the MCMC sampler creation and the import
+        with (
+            patch(
+                "homodyne.optimization.mcmc.create_mcmc_sampler"
+            ) as mock_create_sampler,
+            patch(
+                "homodyne.run_homodyne.create_mcmc_sampler"
+            ) as mock_create_sampler_module,
+        ):
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
                 "posterior_means": {"D0": 1100, "alpha": -0.45, "D_offset": 120},
@@ -140,6 +145,7 @@ class TestMCMCInitialParameterHandling:
                 "diagnostics": {"converged": True, "max_rhat": 1.02, "min_ess": 350},
             }
             mock_create_sampler.return_value = mock_sampler
+            mock_create_sampler_module.return_value = mock_sampler
 
             # Import and run the function
             from homodyne.run_homodyne import run_mcmc_optimization
@@ -159,7 +165,7 @@ class TestMCMCInitialParameterHandling:
             assert hasattr(mock_analyzer, "best_params_classical")
 
             # Verify MCMC was called
-            mock_create_sampler.assert_called_once_with(
+            mock_create_sampler_module.assert_called_once_with(
                 mock_analyzer, mock_analyzer.config
             )
             mock_sampler.run_mcmc_analysis.assert_called_once()
