@@ -1,11 +1,13 @@
 {
   "_template_info": {
     "name": "Homodyne Static Anisotropic Mode Configuration",
-    "version": "2.0",
+    "version": "2.1",
     "description": "Specialized configuration for static anisotropic scattering analysis",
     "based_on": "config_template.json - specialized for anisotropic static mode",
     "usage": "Copy this template for anisotropic static scattering experiments",
     "mode": "static_anisotropic",
+    "package_version": "0.6.1",
+    "template_updated": "2024-08-19",
     "key_features": [
       "Static mode with no flow effects",
       "Anisotropic scattering - uses angle selection",
@@ -33,7 +35,7 @@
 
   "metadata": {
     "_comment": "Project metadata for static anisotropic analysis",
-    "config_version": "6.0",
+    "config_version": "6.1",
     "description": "Static Anisotropic Scattering Analysis - No flow, with angular dependence",
     "analysis_mode": "static_anisotropic",
     "created_date": "YYYY-MM-DD",
@@ -41,7 +43,16 @@
     "authors": ["Your Name"],
     "institution": "Your Institution",
     "experiment_name": "Static Anisotropic Scattering Experiment",
-    "sample_description": "Sample description for static measurement with angle selection"
+    "sample_description": "Sample description for static measurement with angle selection",
+    "script_compatibility": "homodyne v0.6.1",
+    "_cli_usage": {
+      "description": "CLI usage for static anisotropic analysis",
+      "recommended_commands": [
+        "homodyne-config --mode static_anisotropic --sample SAMPLE_NAME",
+        "homodyne --config config.json --static-anisotropic --method classical",
+        "homodyne --config config.json --static-anisotropic --method all"
+      ]
+    }
   },
 
   "experimental_data": {
@@ -80,30 +91,37 @@
     
     "temporal": {
       "dt": 0.1,
-      "_dt_note": "Time step - important for diffusion analysis",
+      "_dt_note": "Time step - important for diffusion analysis (typical: 0.01-1.0s)",
       "dt_unit": "seconds",
-      "start_frame": 1001,
-      "end_frame": 2000
+      "start_frame": 100,
+      "_start_frame_note": "First frame to analyze (typical: 50-500)",
+      "end_frame": 1000,
+      "_end_frame_note": "Last frame to analyze (typical: 500-2000)"
     },
     
     "scattering": {
-      "wavevector_q": 0.0054,
-      "_wavevector_q_note": "q-vector magnitude - angle-dependent analysis",
+      "wavevector_q": 0.01,
+      "_wavevector_q_note": "q-vector magnitude for angle-dependent analysis (typical: 0.001-0.1 Å⁻¹)",
       "q_unit": "Å⁻¹"
     },
     
     "geometry": {
       "_comment": "Geometry parameters - gap kept for consistency",
-      "stator_rotor_gap": 2000000,
+      "stator_rotor_gap": 1000000,
+      "_stator_rotor_gap_note": "Gap between stator and rotor (100μm typical)",
       "gap_unit": "Å",
+      "gap_in_microns": 100,
       "_gap_note": "Gap parameter kept for consistency but not used in static mode"
     },
     
     "computational": {
-      "num_threads": 8,
+      "num_threads": "auto",
+      "_num_threads_note": "Number of CPU threads ('auto' recommended)",
       "auto_detect_cores": true,
-      "max_threads_limit": 16,
-      "memory_limit_gb": 8
+      "max_threads_limit": 12,
+      "_max_threads_limit_note": "Maximum threads limit (balanced for typical systems)",
+      "memory_limit_gb": 16,
+      "_memory_limit_gb_note": "Memory limit (adjusted for modern systems)"
     }
   },
 
@@ -112,9 +130,9 @@
     "description": "Only D0, alpha, D_offset are physically meaningful in static anisotropic mode",
     
     "values": [
-      1324.1,
-      -0.014,
-      -0.674361,
+      100.0,
+      0.0,
+      10.0,
       0.0,
       0.0,
       0.0,
@@ -214,36 +232,36 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 1e-3,
-        "max": 1e6,
+        "min": 1e-2,
+        "max": 1e4,
         "type": "log-uniform",
-        "prior_mu": 4.6,
-        "prior_sigma": 0.5,
+        "prior_mu": 2.3,
+        "prior_sigma": 1.0,
         "unit": "Å²/s",
         "physical_constraint": "positive",
-        "_note": "PRIMARY PARAMETER - reference diffusion coefficient"
+        "_note": "PRIMARY PARAMETER - reference diffusion coefficient (typical colloidal systems)"
       },
       {
         "name": "alpha",
-        "min": -2.0,
-        "max": 2.0,
+        "min": -1.5,
+        "max": 1.0,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 0.5,
+        "prior_sigma": 0.3,
         "unit": "dimensionless",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - diffusion time dependence exponent"
+        "_note": "PRIMARY PARAMETER - diffusion time dependence (sub-/superdiffusion range)"
       },
       {
         "name": "D_offset", 
-        "min": -5000,
-        "max": 5000,
+        "min": -100,
+        "max": 100,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 500.0,
+        "prior_sigma": 10.0,
         "unit": "Å²/s",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient"
+        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient (typically small vs D0)"
       },
       {
         "name": "gamma_dot_t0",

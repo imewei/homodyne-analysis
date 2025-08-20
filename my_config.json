@@ -1,18 +1,26 @@
 {
   "metadata": {
     "_comment": "Project metadata for static isotropic analysis",
-    "config_version": "6.0",
+    "config_version": "6.1",
     "description": "Static Isotropic Scattering Analysis - No flow, no angular dependence",
     "analysis_mode": "static_isotropic",
     "created_date": "2025-08-17",
-    "updated_date": "2025-08-17",
+    "updated_date": "2025-08-19",
     "authors": [
       "Wei Chen"
     ],
     "institution": "Argonne National Laboratory",
     "experiment_name": "Testing",
     "sample_description": "Simon PNAS",
-    "script_compatibility": "homodyne.py"
+    "script_compatibility": "homodyne v0.6.1",
+    "_cli_usage": {
+      "description": "CLI usage for this static isotropic analysis",
+      "recommended_commands": [
+        "homodyne --config my_config.json --static-isotropic --method classical",
+        "homodyne --config my_config.json --static-isotropic --method all",
+        "homodyne --config my_config.json --static-isotropic --method mcmc"
+      ]
+    }
   },
   "experimental_data": {
     "_comment": "Data configuration for isotropic static mode",
@@ -129,7 +137,7 @@
       ],
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 5000,
+          "maxiter": 3000,
           "_maxiter_note": "Reduced iterations since only 3 parameters to optimize",
           "xatol": 1e-08,
           "fatol": 1e-08,
@@ -144,9 +152,9 @@
       "_draws_note": "Fewer draws needed with only 3 parameters",
       "tune": 1000,
       "thin": 2,
-      "_thin_note": "Moderate thinning for static isotropic mode (effective samples: 4000)",
-      "chains": 8,
-      "cores": 8,
+      "_thin_note": "Moderate thinning for static mode (good convergence expected)",
+      "chains": 4,
+      "cores": 4,
       "target_accept": 0.95,
       "max_treedepth": 10,
       "return_inferencedata": true
@@ -157,36 +165,36 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 1.0,
-        "max": 1e6,
+        "min": 1e-2,
+        "max": 1e4,
         "type": "log-uniform",
-        "prior_mu": 1.6e4,
-        "prior_sigma": 0.5,
+        "prior_mu": 2.3,
+        "prior_sigma": 1.0,
         "unit": "Å²/s",
         "physical_constraint": "positive",
-        "_note": "PRIMARY PARAMETER - reference diffusion coefficient"
+        "_note": "PRIMARY PARAMETER - reference diffusion coefficient (typical colloidal systems)"
       },
       {
         "name": "alpha",
-        "min": -1.8,
-        "max": -1.2,
+        "min": -1.5,
+        "max": 1.0,
         "type": "uniform",
-        "prior_mu": -1.57,
-        "prior_sigma": 0.5,
+        "prior_mu": 0.0,
+        "prior_sigma": 0.3,
         "unit": "dimensionless",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - diffusion time dependence exponent. Bounds widened to avoid initialization at hard boundary."
+        "_note": "PRIMARY PARAMETER - diffusion time dependence (sub-/superdiffusion range)"
       },
       {
         "name": "D_offset",
-        "min": -5000,
-        "max": 5000,
+        "min": -100,
+        "max": 100,
         "type": "uniform",
-        "prior_mu": 3.0,
-        "prior_sigma": 0.5,
+        "prior_mu": 0.0,
+        "prior_sigma": 10.0,
         "unit": "Å²/s",
         "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient"
+        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient (typically small vs D0)"
       },
       {
         "name": "gamma_dot_t0",
@@ -298,10 +306,9 @@
       "backend": "threading"
     },
     "noise_model": {
-      "use_simple_forward_model": false,
+      "use_simple_forward_model": true,
       "sigma_prior": 0.1,
-      "_isotropic_note": "Full forward model with scaling optimization enabled for MCMC consistency",
-      "_mcmc_note": "MCMC ALWAYS uses scaling optimization to match classical/Bayesian optimization results"
+      "_isotropic_note": "Simple forward model appropriate for isotropic case"
     }
   },
   "output_settings": {
@@ -372,11 +379,9 @@
     ],
     "performance_benefits": [
       "Faster optimization (3 vs 7 parameters)",
-      "No angle file loading overhead", 
+      "No angle file loading overhead",
       "No angle filtering computational cost",
-      "Simpler parameter space for MCMC",
-      "Thinning (thin=2) reduces autocorrelation with minimal effective sample loss",
-      "Better convergence diagnostics due to more independent samples"
+      "Simpler parameter space for MCMC"
     ]
   },
   "validation_rules": {
@@ -419,14 +424,13 @@
       "ess_thresholds": {
         "_comment": "ESS thresholds for 3-parameter isotropic space with thinning",
         "excellent_threshold": 400,
-        "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space (effective samples: 4000 with thin=2)",
+        "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space",
         "good_threshold": 200,
         "_good_threshold_note": "ESS ≥ 200 good for isotropic analysis",
         "acceptable_threshold": 100,
         "_acceptable_threshold_note": "ESS ≥ 100 acceptable for static isotropic",
         "minimum_threshold": 50,
-        "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates",
-        "_thinning_note": "With thin=2, effective sample independence improved while maintaining adequate sample count"
+        "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates"
       },
       "divergence_thresholds": {
         "_comment": "Divergence criteria for simple isotropic geometry",

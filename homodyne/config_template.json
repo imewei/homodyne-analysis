@@ -1,17 +1,21 @@
 {
   "_template_info": {
     "name": "Homodyne Scattering Analysis Configuration Template",
-    "version": "2.0",
+    "version": "2.1",
     "description": "Complete configuration template for X-ray Photon Correlation Spectroscopy (XPCS) analysis",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "usage": "Copy this template, rename it, and modify the values for your specific experiment",
     "mode": "general_template",
+    "package_version": "0.6.1",
     "required_sections": ["metadata", "analyzer_parameters", "experimental_data", "optimization_config"],
     "template_created": "2024-08-16",
+    "template_updated": "2024-08-19",
     
     "key_features": [
       "Comprehensive template for all analysis modes",
       "Complete documentation and examples for all parameters",
+      "Enhanced performance with Numba JIT compilation",
+      "Stable benchmarking utilities and performance monitoring",
       "Detailed scaling optimization documentation",
       "Template selection guide for choosing appropriate specialized templates",
       "Migration notes for updating from previous versions"
@@ -41,7 +45,7 @@
 
   "metadata": {
     "_comment": "Project metadata and version information",
-    "config_version": "6.0",
+    "config_version": "6.1",
     "description": "Configuration for Homodyne Scattering Analysis - XPCS under Nonequilibrium Laminar Flow",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "created_date": "YYYY-MM-DD",
@@ -53,7 +57,14 @@
     "institution": "Your Institution",
     "experiment_name": "Your Experiment Description",
     "sample_description": "Sample details and preparation method",
-    "script_compatibility": "homodyne.py"
+    "script_compatibility": "homodyne v0.6.1",
+    "_cli_usage": {
+      "description": "Command line interface usage with homodyne v0.6.1",
+      "main_command": "homodyne --config your_config.json --method classical",
+      "config_generator": "homodyne-config --mode static_isotropic --sample SAMPLE_NAME",
+      "analysis_modes": ["--static-isotropic", "--static-anisotropic", "--laminar-flow"],
+      "optimization_methods": ["classical", "mcmc", "all"]
+    }
   },
 
   "experimental_data": {
@@ -116,52 +127,52 @@
     "temporal": {
       "_comment": "Time-related parameters",
       "dt": 0.1,
-      "_dt_note": "Time step between correlation frames (adjust based on your acquisition)",
+      "_dt_note": "Time step between correlation frames (typical range: 0.01-1.0s)",
       "dt_unit": "seconds",
       
-      "start_frame": 1001,
-      "_start_frame_note": "First frame to analyze (skip initial equilibration)",
+      "start_frame": 100,
+      "_start_frame_note": "First frame to analyze (skip initial equilibration, typical: 50-500)",
       
-      "end_frame": 2000,
-      "_end_frame_note": "Last frame to analyze (or null for all frames)",
+      "end_frame": 1000,
+      "_end_frame_note": "Last frame to analyze (null for all frames, typical analysis: 500-2000)",
       
-      "frame_description": "Analysis window within experimental data"
+      "frame_description": "Analysis window for typical XPCS experiment"
     },
     
     "scattering": {
       "_comment": "Scattering geometry parameters",
-      "wavevector_q": 0.0054,
-      "_wavevector_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "wavevector_q": 0.01,
+      "_wavevector_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ (typical: 0.001-0.1 Å⁻¹)",
       "q_unit": "Å⁻¹",
-      "q_description": "Scattering wavevector magnitude (q = 4π sin(θ/2)/λ)",
+      "q_description": "Scattering wavevector magnitude for typical XPCS setup",
       
       "typical_range": [0.001, 0.1],
-      "_typical_range_note": "Typical q-range for XPCS experiments"
+      "_typical_range_note": "Common q-range for colloidal and soft matter XPCS"
     },
     
     "geometry": {
       "_comment": "Sample geometry parameters",
-      "stator_rotor_gap": 2000000,
-      "_stator_rotor_gap_note": "Gap between stator and rotor in Angstroms",
+      "stator_rotor_gap": 1000000,
+      "_stator_rotor_gap_note": "Gap between stator and rotor in Angstroms (100μm typical)",
       "gap_unit": "Å",
-      "gap_description": "Shear cell gap between stator and rotor",
-      "gap_in_microns": 200,
-      "_gap_in_microns_note": "Same gap in microns for reference"
+      "gap_description": "Shear cell gap for flow experiments",
+      "gap_in_microns": 100,
+      "_gap_in_microns_note": "Gap in microns (typical range: 50-500μm)"
     },
     
     "computational": {
       "_comment": "Performance and resource settings",
-      "num_threads": 8,
-      "_num_threads_note": "Number of CPU threads to use (or 'auto' for automatic)",
+      "num_threads": "auto",
+      "_num_threads_note": "Number of CPU threads to use ('auto' recommended for optimal performance)",
       
       "auto_detect_cores": true,
       "_auto_detect_cores_note": "Automatically detect available CPU cores",
       
-      "max_threads_limit": 16,
-      "_max_threads_limit_note": "Maximum number of threads even with auto-detection",
+      "max_threads_limit": 12,
+      "_max_threads_limit_note": "Maximum threads limit (balanced for typical systems)",
       
-      "memory_limit_gb": 8,
-      "_memory_limit_gb_note": "Memory limit in GB (adjust based on available RAM)"
+      "memory_limit_gb": 16,
+      "_memory_limit_gb_note": "Memory limit in GB (adjusted for modern systems)"
     }
   },
 
@@ -170,13 +181,13 @@
     "description": "Starting values for optimization based on physical model",
     
     "values": [
-      23312.0668,
-      -0.803648101,
-      1070.69538,
-      0.000629448943,
-      -0.397625233,
-      -0.0000543178144,
-      0.967322591
+      100.0,
+      0.0,
+      10.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
     ],
     "_values_note": "Order: [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
     
@@ -298,29 +309,29 @@
       "sampler": "NUTS",
       "_sampler_note": "Sampling algorithm: NUTS (recommended), Metropolis, HamiltonianMC",
       
-      "draws": 10000,
-      "_draws_note": "Number of MCMC samples to draw",
+      "draws": 6000,
+      "_draws_note": "Number of MCMC samples to draw (balanced for typical use)",
       
-      "tune": 1000,
-      "_tune_note": "Number of tuning steps before sampling",
+      "tune": 1500,
+      "_tune_note": "Number of tuning steps before sampling (increased for robustness)",
       
       "thin": 1,
-      "_thin_note": "Thinning interval: keep every nth sample (1=no thinning, 2=every other sample, etc.)",
+      "_thin_note": "Thinning interval: keep every nth sample (1=no thinning recommended for NUTS)",
       
       "chains": 4,
-      "_chains_note": "Number of parallel MCMC chains",
+      "_chains_note": "Number of parallel MCMC chains (good balance for convergence diagnostics)",
       
       "cores": 4,
-      "_cores_note": "CPU cores for parallel sampling",
+      "_cores_note": "CPU cores for parallel sampling (matches chain count)",
       
-      "target_accept": 0.95,
-      "_target_accept_note": "Target acceptance rate for NUTS sampler (increased for better convergence)",
+      "target_accept": 0.90,
+      "_target_accept_note": "Target acceptance rate for NUTS sampler (optimized for efficiency)",
       
-      "max_treedepth": 10,
-      "_max_treedepth_note": "Maximum tree depth for NUTS",
+      "max_treedepth": 12,
+      "_max_treedepth_note": "Maximum tree depth for NUTS (increased for complex posteriors)",
       
       "return_inferencedata": true,
-      "_return_inferencedata_note": "Return ArviZ InferenceData object"
+      "_return_inferencedata_note": "Return ArviZ InferenceData object for analysis"
     }
   },
 
@@ -331,79 +342,85 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 1e-3,
-        "_min_note": "Lower bound - adjust based on expected diffusion rates",
-        "max": 1e6,
-        "_max_note": "Upper bound - should encompass reasonable values",
+        "min": 1e-2,
+        "_min_note": "Lower bound suitable for typical colloidal systems",
+        "max": 1e4,
+        "_max_note": "Upper bound encompassing fast diffusion processes",
         "type": "log-uniform",
-        "_type_note": "Distribution type: uniform, log-uniform, normal",
-        "prior_mu": 4.6,
-        "_prior_mu_note": "Prior mean (log scale for log-uniform)",
-        "prior_sigma": 0.5,
-        "_prior_sigma_note": "Prior standard deviation",
+        "_type_note": "Log-uniform distribution appropriate for diffusion coefficients",
+        "prior_mu": 2.3,
+        "_prior_mu_note": "Prior mean (ln(10) ≈ 2.3, centered on 10 Å²/s)",
+        "prior_sigma": 1.0,
+        "_prior_sigma_note": "Broader prior for general applicability",
         "unit": "Å²/s",
         "physical_constraint": "positive",
-        "_physical_constraint_note": "Physical constraints: positive, negative, none"
+        "_physical_constraint_note": "Diffusion coefficient must be positive"
       },
       {
         "name": "alpha",
-        "min": -2.0,
-        "max": 2.0,
+        "min": -1.5,
+        "max": 1.0,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 0.5,
+        "prior_sigma": 0.3,
         "unit": "dimensionless",
-        "physical_constraint": "none"
+        "physical_constraint": "none",
+        "_note": "Typical range for subdiffusion (negative) to superdiffusion (positive)"
       },
       {
         "name": "D_offset", 
-        "min": -5000,
-        "max": 5000,
+        "min": -100,
+        "max": 100,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 500.0,
+        "prior_sigma": 10.0,
         "unit": "Å²/s",
-        "physical_constraint": "none"
+        "physical_constraint": "none",
+        "_note": "Baseline diffusion coefficient, typically small compared to D0"
       },
       {
         "name": "gamma_dot_t0",
-        "min": 1e-6,
-        "max": 1.0,
+        "min": 1e-4,
+        "max": 10.0,
         "type": "log-uniform",
-        "prior_mu": -4.60517,
-        "prior_sigma": 0.5,
+        "prior_mu": -2.3,
+        "prior_sigma": 1.0,
         "unit": "s⁻¹",
-        "physical_constraint": "positive"
+        "physical_constraint": "positive",
+        "_note": "Typical shear rate range for XPCS experiments"
       },
       {
         "name": "beta",
-        "min": -2.0,
-        "max": 2.0,
+        "min": -1.0,
+        "max": 1.0,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 0.5,
+        "prior_sigma": 0.3,
         "unit": "dimensionless", 
-        "physical_constraint": "none"
+        "physical_constraint": "none",
+        "_note": "Shear rate evolution exponent, typically smaller range than alpha"
       },
       {
         "name": "gamma_dot_t_offset",
-        "min": -0.1,
-        "max": 0.1,
+        "min": -0.01,
+        "max": 0.01,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 0.05,
+        "prior_sigma": 0.001,
         "unit": "s⁻¹",
-        "physical_constraint": "none"
+        "physical_constraint": "none",
+        "_note": "Small baseline shear rate, often near zero"
       },
       {
         "name": "phi0",
-        "min": -15.0,
-        "max": 15.0,
+        "min": -10.0,
+        "max": 10.0,
         "type": "uniform",
         "prior_mu": 0.0,
-        "prior_sigma": 15.0,
+        "prior_sigma": 5.0,
         "unit": "degrees",
-        "physical_constraint": "angular"
+        "physical_constraint": "angular",
+        "_note": "Angular offset between flow and scattering geometry"
       }
     ]
   },
@@ -697,13 +714,23 @@
       "_enable_numba_note": "Use Numba JIT compilation for speed",
       
       "warmup_numba": true,
-      "_warmup_numba_note": "Pre-compile Numba functions on startup",
+      "_warmup_numba_note": "Pre-compile Numba functions on startup (enhanced in v0.6.1)",
       
       "parallel_numba": true,
       "_parallel_numba_note": "Enable Numba parallel processing",
       
       "cache_numba": true,
-      "_cache_numba_note": "Cache compiled Numba functions"
+      "_cache_numba_note": "Cache compiled Numba functions",
+      
+      "performance_monitoring": {
+        "_comment": "Enhanced performance monitoring (v0.6.1)",
+        "enable_profiling": false,
+        "_enable_profiling_note": "Enable detailed performance profiling (requires optional profiler module)",
+        "stable_benchmarking": false,
+        "_stable_benchmarking_note": "Use stable benchmarking with statistical outlier filtering",
+        "performance_baselines": false,
+        "_performance_baselines_note": "Track performance baselines and regression detection"
+      }
     },
     
     "noise_model": {
@@ -1067,11 +1094,16 @@
   },
 
   "_usage_examples": {
-    "_comment": "Examples of common configuration patterns",
+    "_comment": "Examples of common configuration patterns with homodyne v0.6.1",
     "description": "Common usage patterns and examples",
     
     "quick_start": {
       "description": "Minimal configuration for getting started",
+      "cli_commands": [
+        "homodyne-config --mode static_isotropic --sample YOUR_SAMPLE",
+        "homodyne --config my_config.json --method classical",
+        "homodyne --config my_config.json --method all --verbose"
+      ],
       "required_changes": [
         "Update experimental_data.data_folder_path with your data directory",
         "Update experimental_data.data_file_name with your data file", 
@@ -1082,12 +1114,14 @@
     },
     
     "high_performance": {
-      "description": "Configuration for high-performance computing",
+      "description": "Configuration for high-performance computing with v0.6.1 optimizations",
       "settings": {
         "analyzer_parameters.computational.num_threads": "auto",
         "performance_settings.caching.enable_memory_cache": true,
         "performance_settings.parallel_processing.enable_multiprocessing": true,
         "performance_settings.numba_optimization.enable_numba": true,
+        "performance_settings.numba_optimization.warmup_numba": true,
+        "performance_settings.numba_optimization.performance_monitoring.stable_benchmarking": true,
         "optimization_config.mcmc_sampling.cores": 8,
         "output_settings.plotting.general.dpi": 150
       }
@@ -1161,13 +1195,15 @@
     "_comment": "Common issues and solutions",
     "description": "Troubleshooting guide for common problems",
     
-    "optimization_not_converging": {
+      "optimization_not_converging": {
       "problem": "Optimization fails to converge or gives poor results",
       "solutions": [
         "Check initial_parameters.values - they should be reasonable estimates",
         "Adjust parameter_space.bounds to be physically meaningful",
         "Increase optimization_config.classical_optimization.method_options.maxiter",
-        "Increase maxiter if using complex parameter spaces",
+        "Try different analysis modes: homodyne --static-isotropic for simpler cases",
+        "Use config generator: homodyne-config --mode MODE --sample SAMPLE",
+        "Enable performance monitoring for debugging: performance_settings.numba_optimization.performance_monitoring.enable_profiling: true",
         "Check data quality and preprocessing settings"
       ]
     },

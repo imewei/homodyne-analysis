@@ -26,21 +26,32 @@ from typing import Optional, Dict, Any
 # Import core analysis components with graceful error handling
 # This allows the script to provide informative error messages if dependencies are missing
 try:
+    # Try relative imports first (when called as module)
     from .analysis.core import HomodyneAnalysisCore
     from .optimization.classical import ClassicalOptimizer
 except ImportError:
-    # Will be handled with specific error messages during runtime
-    HomodyneAnalysisCore = None
-    ClassicalOptimizer = None
+    try:
+        # Try absolute imports as fallback (when called as script)
+        from homodyne.analysis.core import HomodyneAnalysisCore
+        from homodyne.optimization.classical import ClassicalOptimizer
+    except ImportError:
+        # Will be handled with specific error messages during runtime
+        HomodyneAnalysisCore = None
+        ClassicalOptimizer = None
 
 # Import MCMC components - these require additional dependencies (PyMC, ArviZ)
 try:
+    # Try relative import first
     from .optimization.mcmc import create_mcmc_sampler
-
     MCMC_AVAILABLE = True
 except ImportError:
-    create_mcmc_sampler = None
-    MCMC_AVAILABLE = False
+    try:
+        # Try absolute import as fallback
+        from homodyne.optimization.mcmc import create_mcmc_sampler
+        MCMC_AVAILABLE = True
+    except ImportError:
+        create_mcmc_sampler = None
+        MCMC_AVAILABLE = False
 
 
 def setup_logging(verbose: bool, output_dir: Path) -> None:
@@ -169,15 +180,6 @@ def run_analysis(args: argparse.Namespace) -> None:
 
     logger.info(f"✓ Configuration file found: {config_path.absolute()}")
 
-    # 2. Import HomodyneAnalysisCore and create instance
-    try:
-        from .analysis.core import HomodyneAnalysisCore
-
-        logger.info("✓ Successfully imported HomodyneAnalysisCore")
-    except ImportError as e:
-        logger.error(f"❌ Failed to import HomodyneAnalysisCore: {e}")
-        logger.error("Please ensure the homodyne package is properly installed.")
-        sys.exit(1)
 
     # 3. Create analysis core instance with error handling
     try:
@@ -610,26 +612,13 @@ def run_mcmc_optimization(
     logger = logging.getLogger(__name__)
     logger.info("Running MCMC sampling...")
 
-    # Step 1: Attempt to import create_mcmc_sampler
-    try:
-        from .optimization.mcmc import create_mcmc_sampler
-
-        logger.info("✓ Successfully imported create_mcmc_sampler")
-    except ImportError as e:
-        logger.error(f"❌ Failed to import MCMC module: {e}")
-        if (
-            "pymc" in str(e).lower()
-            or "pytensor" in str(e).lower()
-            or "arviz" in str(e).lower()
-        ):
-            logger.error(
-                "❌ MCMC sampling requires PyMC and ArviZ: pip install pymc arviz"
-            )
-        else:
-            logger.error(
-                "❌ Install required dependencies: pip install pymc arviz pytensor"
-            )
+    # Step 1: Check if create_mcmc_sampler is available (imported at module level)
+    if create_mcmc_sampler is None:
+        logger.error("❌ MCMC sampling not available - missing dependencies")
+        logger.error("❌ Install required dependencies: pip install pymc arviz pytensor")
         return None
+    
+    logger.info("✓ MCMC sampler available")
 
     try:
         # Step 2.5: Set initial parameters for MCMC if not already set by classical optimization
