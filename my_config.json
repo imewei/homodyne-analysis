@@ -176,11 +176,11 @@
       },
       {
         "name": "alpha",
-        "min": -1.5,
-        "max": 1.0,
+        "min": -1.7,
+        "max": -1.4,
         "type": "uniform",
-        "prior_mu": 0.0,
-        "prior_sigma": 0.3,
+        "prior_mu": -1.55,
+        "prior_sigma": 0.1,
         "unit": "dimensionless",
         "physical_constraint": "none",
         "_note": "PRIMARY PARAMETER - diffusion time dependence (sub-/superdiffusion range)"
