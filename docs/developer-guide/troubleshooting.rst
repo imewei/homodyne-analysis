@@ -231,11 +231,13 @@ Optimization Issues
    # Try different starting points
    config["initial_parameters"]["values"] = [800, -0.3, 150]
 
-2. **Different optimization method**:
+2. **Check optimization method options**:
 
 .. code-block:: python
 
-   config["optimization_config"]["classical"]["method"] = "L-BFGS-B"
+   # Nelder-Mead is the only supported classical optimization method
+   config["optimization_config"]["classical_optimization"]["methods"] = ["Nelder-Mead"]
+   config["optimization_config"]["classical_optimization"]["method_options"]["Nelder-Mead"]["maxiter"] = 1000
 
 3. **Looser tolerances**:
 

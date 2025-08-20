@@ -33,7 +33,7 @@
     "_phi_angles_file_note": "File ignored in isotropic mode - single dummy angle used",
     "exchange_key": "exchange",
     "cache_file_path": "./data/Simon/",
-    "cache_filename_template": "cached_c2_isotropic_frames_{start_frame}_{end_frame}.npz",
+    "cache_filename_template": "cached_c2_100pa_isotropic_frames_{start_frame}_{end_frame}.npz",
     "cache_compression": true,
     "data_type": "float64",
     "file_format": "NPZ",
@@ -165,8 +165,8 @@
     "bounds": [
       {
         "name": "D0",
-        "min": 1e-2,
-        "max": 1e4,
+        "min": 1.0,
+        "max": 1e6,
         "type": "log-uniform",
         "prior_mu": 2.3,
         "prior_sigma": 1.0,

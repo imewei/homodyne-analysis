@@ -11,7 +11,7 @@ The homodyne package is designed to handle large datasets efficiently. Key perfo
 - **Memory Management**: Efficient handling of large correlation matrices
 - **Computational Optimization**: Numba JIT compilation and vectorization
 - **Parallel Processing**: Multi-core MCMC and data processing
-- **Algorithm Selection**: Choosing appropriate optimization methods
+- **Algorithm Selection**: Optimizing Nelder-Mead configuration
 
 Optimization Strategies
 -----------------------
@@ -252,9 +252,11 @@ Choose appropriate optimization algorithms:
    # For complex landscapes
    config = {
        "optimization_config": {
-           "classical": {
-               "method": "L-BFGS-B",     # Gradient-based
-               "max_iterations": 500
+           "classical_optimization": {
+               "methods": ["Nelder-Mead"],     # Derivative-free simplex method
+               "method_options": {
+                   "Nelder-Mead": {"maxiter": 500}
+               }
            }
        }
    }
@@ -501,7 +503,7 @@ Troubleshooting Performance Issues
 
 1. Enable angle filtering
 2. Check initial parameter values
-3. Try different optimization methods
+3. Adjust Nelder-Mead optimization parameters
 4. Reduce tolerance if acceptable
 
 **High Memory Usage**:

@@ -45,8 +45,13 @@ def create_time_integral_matrix_numba(time_dependent_array):
     Create time integral matrix for correlation calculations.
 
     Computes matrix of time integrals I[i,j] = |integral from t_i to t_j of f(t)dt|
-    using cumulative sum for O(n) complexity instead of O(n²).
-    Optimized with fastmath and memory-efficient layout.
+    using optimized algorithm that mimics numpy's vectorized approach.
+    
+    This implementation is equivalent to:
+    cumsum_matrix = np.tile(cumsum, (n, 1))
+    return np.abs(cumsum_matrix - cumsum_matrix.T)
+    
+    But optimized for Numba with parallel execution.
 
     Parameters
     ----------
@@ -59,18 +64,19 @@ def create_time_integral_matrix_numba(time_dependent_array):
         Matrix where element [i,j] = integral from time i to j
     """
     n = len(time_dependent_array)
-    matrix = np.empty((n, n), dtype=np.float64)  # Use empty for faster allocation
+    matrix = np.empty((n, n), dtype=np.float64)
 
-    # Compute cumulative sum using built-in cumsum for better optimization
+    # Compute cumulative sum once - O(n) operation
     cumsum = np.cumsum(time_dependent_array)
-
-    # Optimized loop with cache-friendly memory access pattern
+    
+    # Use parallel loops to fill the matrix efficiently
+    # This approach avoids the complex indexing and simply computes the difference
     for i in prange(n):
+        cumsum_i = cumsum[i]
         for j in range(n):
-            if j >= i:
-                matrix[i, j] = cumsum[j] - (cumsum[i - 1] if i > 0 else 0.0)
-            else:
-                matrix[i, j] = cumsum[i - 1] - cumsum[j] if i > 0 else -cumsum[j]
+            cumsum_j = cumsum[j]
+            # Absolute difference of cumulative sums
+            matrix[i, j] = abs(cumsum_i - cumsum_j)
 
     return matrix
 

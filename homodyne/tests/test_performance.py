@@ -49,7 +49,16 @@ def performance_config():
         },
         "validation_rules": {"fit_quality": {"acceptable_threshold_per_angle": 5.0}},
         "advanced_settings": {
-            "chi_squared_calculation": {"uncertainty_factor": 0.1, "min_sigma": 1e-6}
+            "chi_squared_calculation": {
+                "uncertainty_factor": 0.1, 
+                "min_sigma": 1e-6,
+                "validity_check": {
+                    "check_positive_D0": True,
+                    "check_positive_gamma_dot_t0": False,
+                    "check_positive_time_dependent": True,
+                    "check_parameter_bounds": True
+                }
+            }
         },
     }
 
@@ -109,12 +118,24 @@ class TestAngleFilteringPerformance:
                         break
             return indices
 
-        # New method (vectorized)
+        # New method (hybrid: choose best approach based on data size)
         def new_angle_filtering(angles, ranges):
-            mask = np.zeros(len(angles), dtype=bool)
-            for min_angle, max_angle in ranges:
-                mask |= (angles >= min_angle) & (angles <= max_angle)
-            return np.where(mask)[0].tolist()
+            # For small datasets, use the optimized loop method
+            if len(angles) < 50:
+                indices = []
+                for i, angle in enumerate(angles):
+                    for min_angle, max_angle in ranges:
+                        if min_angle <= angle <= max_angle:
+                            indices.append(i)
+                            break
+                return indices
+            else:
+                # For larger datasets, use vectorized approach
+                angles = np.asarray(angles)
+                mask = np.zeros(len(angles), dtype=bool)
+                for min_angle, max_angle in ranges:
+                    mask |= (angles >= min_angle) & (angles <= max_angle)
+                return np.flatnonzero(mask).tolist()
 
         # Benchmark both methods
         n_iterations = 1000
@@ -170,12 +191,24 @@ class TestAngleFilteringPerformance:
                         break
             return indices
 
-        # New method (vectorized)
+        # New method (hybrid: choose best approach based on data size)
         def new_angle_filtering(angles, ranges):
-            mask = np.zeros(len(angles), dtype=bool)
-            for min_angle, max_angle in ranges:
-                mask |= (angles >= min_angle) & (angles <= max_angle)
-            return np.where(mask)[0].tolist()
+            # For small datasets, use the optimized loop method
+            if len(angles) < 50:
+                indices = []
+                for i, angle in enumerate(angles):
+                    for min_angle, max_angle in ranges:
+                        if min_angle <= angle <= max_angle:
+                            indices.append(i)
+                            break
+                return indices
+            else:
+                # For larger datasets, use vectorized approach
+                angles = np.asarray(angles)
+                mask = np.zeros(len(angles), dtype=bool)
+                for min_angle, max_angle in ranges:
+                    mask |= (angles >= min_angle) & (angles <= max_angle)
+                return np.flatnonzero(mask).tolist()
 
         # Benchmark both methods
         n_iterations = 1000

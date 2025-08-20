@@ -221,6 +221,10 @@ class HomodyneAnalysisCore:
         self.sinc_prefactor = (
             0.5 / np.pi * self.wavevector_q * self.stator_rotor_gap * self.dt
         )
+        
+        # Advanced performance cache for repeated calculations
+        self._diffusion_integral_cache = {}
+        self._max_cache_size = 10  # Limit cache size to avoid memory bloat
 
         # Time array
         self.time_array = np.linspace(
@@ -369,7 +373,8 @@ class HomodyneAnalysisCore:
             True if parameters indicate static conditions
         """
         if len(shear_params) < 3:
-            return False
+            # If we don't have enough shear parameters, assume static conditions
+            return True
 
         gamma_dot_t0 = shear_params[0]
         beta = shear_params[1]
@@ -799,29 +804,19 @@ class HomodyneAnalysisCore:
     def create_time_integral_matrix_cached(
         self, param_hash: str, time_array: np.ndarray
     ) -> np.ndarray:
-        """Create cached time integral matrix."""
-        if self.config is None or not self.config.get("advanced_settings", {}).get(
-            "integral_matrix", {}
-        ).get("cache_matrices", True):
-            # Direct computation when caching is disabled or config is None
-            if NUMBA_AVAILABLE:
-                return create_time_integral_matrix_numba(time_array)
-            else:
-                array_length = len(time_array)
-                cumulative_sum = np.cumsum(time_array)
-                cumsum_matrix = np.tile(cumulative_sum, (array_length, 1))
-                return np.abs(cumsum_matrix - cumsum_matrix.T)
-
-        if NUMBA_AVAILABLE:
+        """Create cached time integral matrix with optimized algorithm selection."""
+        # Optimized algorithm selection based on matrix size
+        n = len(time_array)
+        if NUMBA_AVAILABLE and n > 100:  # Use Numba only for larger matrices
             return create_time_integral_matrix_numba(time_array)
         else:
-            n = len(time_array)
+            # Use fast NumPy vectorized approach for small matrices
             cumsum = np.cumsum(time_array)
             cumsum_matrix = np.tile(cumsum, (n, 1))
             return np.abs(cumsum_matrix - cumsum_matrix.T)
 
     def calculate_c2_single_angle_optimized(
-        self, parameters: np.ndarray, phi_angle: float
+        self, parameters: np.ndarray, phi_angle: float, precomputed_D_t: Optional[np.ndarray] = None
     ) -> np.ndarray:
         """
         Calculate correlation function for a single angle.
@@ -856,7 +851,10 @@ class HomodyneAnalysisCore:
 
         # Calculate time-dependent quantities
         param_hash = hash(tuple(parameters))
-        D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
+        if precomputed_D_t is not None:
+            D_t = precomputed_D_t
+        else:
+            D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
 
         # Create diffusion integral matrix
         D_integral = self.create_time_integral_matrix_cached(f"D_{param_hash}", D_t)
@@ -897,6 +895,103 @@ class HomodyneAnalysisCore:
         # Combine contributions: c2 = (g1 × sinc²)²
         return (sinc2 * g1) ** 2
 
+    def _calculate_c2_single_angle_fast(
+        self, parameters: np.ndarray, phi_angle: float, D_integral: np.ndarray, 
+        is_static: bool, shear_params: np.ndarray
+    ) -> np.ndarray:
+        """
+        Fast correlation function calculation with pre-computed values.
+        
+        This optimized version avoids redundant computations by accepting
+        pre-calculated common values.
+        
+        Parameters
+        ----------
+        parameters : np.ndarray
+            Model parameters
+        phi_angle : float  
+            Scattering angle in degrees
+        D_integral : np.ndarray
+            Pre-computed diffusion integral matrix
+        is_static : bool
+            Pre-computed static mode flag
+        shear_params : np.ndarray
+            Pre-extracted shear parameters
+            
+        Returns
+        -------
+        np.ndarray
+            Correlation matrix c2(t1, t2)
+        """
+        # Compute g1 correlation (diffusion contribution) - already optimized
+        if NUMBA_AVAILABLE:
+            g1 = compute_g1_correlation_numba(
+                D_integral, self.wavevector_q_squared_half_dt
+            )
+        else:
+            g1 = np.exp(-self.wavevector_q_squared_half_dt * D_integral)
+
+        # Handle shear contribution based on pre-computed static mode
+        if is_static:
+            # Static case: sinc² = 1, so c2 = g1²
+            return g1 ** 2
+        else:
+            # Laminar flow case: calculate full sinc² contribution
+            phi_offset = parameters[-1]
+            param_hash = hash(tuple(parameters))
+            
+            gamma_dot_t = self.calculate_shear_rate_optimized(shear_params)
+            gamma_integral = self.create_time_integral_matrix_cached(
+                f"gamma_{param_hash}", gamma_dot_t
+            )
+
+            # Compute sinc² (shear contribution)
+            angle_rad = np.deg2rad(phi_offset - phi_angle)
+            cos_phi = np.cos(angle_rad)
+            prefactor = self.sinc_prefactor * cos_phi
+
+            if NUMBA_AVAILABLE:
+                sinc2 = compute_sinc_squared_numba(gamma_integral, prefactor)
+            else:
+                arg = prefactor * gamma_integral
+                sinc2 = np.where(np.abs(arg) < 1e-10, 1.0, (np.sin(arg) / arg) ** 2)
+
+        # Combine contributions: c2 = (g1 × sinc²)²
+        return (sinc2 * g1) ** 2
+
+    def _calculate_c2_vectorized_static(self, D_integral: np.ndarray, num_angles: int) -> np.ndarray:
+        """
+        Ultra-fast vectorized correlation calculation for static case.
+        
+        In static mode, all angles produce identical correlation functions,
+        so we compute once and broadcast to all angles.
+        
+        Parameters
+        ----------
+        D_integral : np.ndarray
+            Pre-computed diffusion integral matrix
+        num_angles : int
+            Number of angles to replicate
+            
+        Returns
+        -------
+        np.ndarray
+            3D array of correlation matrices [angles, time, time]
+        """
+        # Compute g1 correlation once (diffusion contribution)
+        if NUMBA_AVAILABLE:
+            g1 = compute_g1_correlation_numba(
+                D_integral, self.wavevector_q_squared_half_dt
+            )
+        else:
+            g1 = np.exp(-self.wavevector_q_squared_half_dt * D_integral)
+
+        # Static case: c2 = g1² (sinc² = 1)
+        c2_single = g1 ** 2
+        
+        # Broadcast to all angles using memory-efficient approach
+        return np.broadcast_to(c2_single, (num_angles, self.time_length, self.time_length)).copy()
+
     def calculate_c2_nonequilibrium_laminar_parallel(
         self, parameters: np.ndarray, phi_angles: np.ndarray
     ) -> np.ndarray:
@@ -930,20 +1025,44 @@ class HomodyneAnalysisCore:
             or NUMBA_AVAILABLE
         ):
             # Sequential processing (Numba will handle internal parallelization)
-            # Use lazy allocation to reduce memory pressure
-            c2_results = []
-
-            for i in range(num_angles):
-                c2_result = self.calculate_c2_single_angle_optimized(
-                    parameters, phi_angles[i]
-                )
-                c2_results.append(c2_result)
-
-            # Only create final array when all results are computed
-            return np.array(c2_results, dtype=np.float64)
+            # Pre-calculate common values once to avoid redundant computation
+            diffusion_params = parameters[:self.num_diffusion_params]
+            shear_params = parameters[
+                self.num_diffusion_params : self.num_diffusion_params
+                + self.num_shear_rate_params
+            ]
+            
+            # Pre-compute static conditions
+            static_mode = self.is_static_mode()
+            is_static_params = self.is_static_parameters(shear_params)
+            is_static = static_mode or is_static_params
+            
+            # Pre-compute parameter hash and diffusion coefficient
+            param_hash = hash(tuple(parameters))
+            D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
+            D_integral = self.create_time_integral_matrix_cached(f"D_{param_hash}", D_t)
+            
+            # Use vectorized processing for maximum performance
+            if is_static:
+                # Static case: all angles have identical correlation (no angle dependence)
+                return self._calculate_c2_vectorized_static(D_integral, num_angles)
+            else:
+                # Laminar flow case: use optimized single angle processing
+                c2_results = np.empty((num_angles, self.time_length, self.time_length), dtype=np.float64)
+                
+                for i in range(num_angles):
+                    c2_results[i] = self._calculate_c2_single_angle_fast(
+                        parameters, phi_angles[i], D_integral, is_static, shear_params
+                    )
+                
+                return c2_results
 
         else:
             # Parallel processing (only when Numba not available)
+            # Pre-calculate diffusion coefficient once to avoid redundant computation
+            diffusion_params = parameters[:self.num_diffusion_params]
+            D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
+            
             use_threading = True
             if self.config is not None:
                 use_threading = self.config.get("performance_settings", {}).get(
@@ -957,6 +1076,7 @@ class HomodyneAnalysisCore:
                         self.calculate_c2_single_angle_optimized,
                         parameters,
                         angle,
+                        D_t,  # Pass precomputed diffusion coefficient
                     )
                     for angle in phi_angles
                 ]

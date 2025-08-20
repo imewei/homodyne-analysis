@@ -1,17 +1,13 @@
 """
-Classical Optimization Methods for Homodyne Scattering Analysis
-==============================================================
+Classical Optimization Method for Homodyne Scattering Analysis
+=============================================================
 
-This module contains classical optimization algorithms extracted from the
-ConfigurableHomodyneAnalysis class, including:
-- Scipy-based optimization methods (L-BFGS-B, TNC, SLSQP, etc.)
-- Parameter bounds handling
-- Multi-method optimization with fallback strategies
-- Performance tracking and logging
+This module contains the Nelder-Mead simplex optimization algorithm for
+parameter estimation in homodyne scattering analysis.
 
-The classical optimization serves as the first stage in the multi-stage
-optimization pipeline, providing good initial parameter estimates for
-subsequent Bayesian and MCMC methods.
+The Nelder-Mead method is a derivative-free optimization algorithm that
+works well for noisy objective functions and doesn't require gradient
+information, making it ideal for our correlation function fitting.
 
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
@@ -26,17 +22,17 @@ import scipy.optimize as optimize
 
 logger = logging.getLogger(__name__)
 
-# Global optimization counter for tracking iterations across all methods
+# Global optimization counter for tracking iterations
 OPTIMIZATION_COUNTER = 0
 
 
 class ClassicalOptimizer:
     """
-    Classical optimization algorithms for parameter estimation.
+    Nelder-Mead optimization algorithm for parameter estimation.
 
-    This class provides robust classical optimization using multiple scipy
-    algorithms with intelligent fallback strategies and parameter bounds
-    handling.
+    This class provides robust parameter estimation using the Nelder-Mead
+    simplex method, which is well-suited for noisy objective functions
+    and doesn't require derivative information.
     """
 
     def __init__(self, analysis_core, config: Dict[str, Any]):
@@ -67,11 +63,11 @@ class ClassicalOptimizer:
         c2_experimental: Optional[np.ndarray] = None,
     ) -> Tuple[Optional[np.ndarray], Any]:
         """
-        Run classical optimization methods.
+        Run Nelder-Mead optimization method.
 
-        This method systematically tries multiple classical optimization
-        algorithms to find the best parameter estimates. It provides robust
-        optimization with fallback strategies and comprehensive logging.
+        This method uses the Nelder-Mead simplex algorithm for parameter
+        estimation. Nelder-Mead is well-suited for noisy objective functions
+        and doesn't require gradient information.
 
         Parameters
         ----------
@@ -120,7 +116,7 @@ class ClassicalOptimizer:
         if methods is None:
             methods = self.optimization_config.get(
                 "methods",
-                ["L-BFGS-B", "TNC", "SLSQP", "Powell", "Nelder-Mead"],
+                ["Nelder-Mead"],
             )
 
         # Ensure methods is not None for type checker
@@ -160,9 +156,6 @@ class ClassicalOptimizer:
         best_chi2 = np.inf
         all_results = []  # Store all results for analysis
 
-        # Get parameter bounds using utility method (adjusted for mode)
-        bounds = self.get_parameter_bounds(effective_param_count, is_static_mode)
-
         # Create objective function using utility method
         objective = self.create_objective_function(
             phi_angles, c2_experimental, f"Classical-{analysis_mode.capitalize()}"
@@ -180,7 +173,7 @@ class ClassicalOptimizer:
                     method=method,
                     objective_func=objective,
                     initial_parameters=initial_parameters,
-                    bounds=(bounds if method in ["L-BFGS-B", "TNC", "SLSQP"] else None),
+                    bounds=None,  # Nelder-Mead doesn't use bounds
                     method_options=self.optimization_config.get(
                         "method_options", {}
                     ).get(method, {}),
@@ -272,20 +265,10 @@ class ClassicalOptimizer:
         Returns
         -------
         List[str]
-            List of available scipy optimization methods
+            List containing only Nelder-Mead method
         """
         return [
-            "L-BFGS-B",  # Limited-memory BFGS with bounds
-            "TNC",  # Truncated Newton with bounds
-            "SLSQP",  # Sequential Least Squares Programming
-            "Powell",  # Powell's method
-            "Nelder-Mead",  # Nelder-Mead simplex
-            "CG",  # Conjugate gradient
-            "BFGS",  # BFGS
-            "Newton-CG",  # Newton conjugate gradient
-            "trust-ncg",  # Newton conjugate gradient trust-region
-            "trust-exact",  # Exact trust-region
-            "trust-krylov",  # Krylov trust-region
+            "Nelder-Mead",  # Nelder-Mead simplex algorithm
         ]
 
     def validate_method_compatibility(self, method: str, has_bounds: bool) -> bool:
@@ -295,23 +278,16 @@ class ClassicalOptimizer:
         Parameters
         ----------
         method : str
-            Optimization method name
+            Optimization method name (should be "Nelder-Mead")
         has_bounds : bool
-            Whether parameter bounds are defined
+            Whether parameter bounds are defined (ignored for Nelder-Mead)
 
         Returns
         -------
         bool
-            True if method is compatible
+            True if method is Nelder-Mead
         """
-        bounds_required_methods = ["L-BFGS-B", "TNC", "SLSQP"]
-
-        if has_bounds and method in bounds_required_methods:
-            return True
-        elif not has_bounds and method not in bounds_required_methods:
-            return True
-        else:
-            return method not in bounds_required_methods
+        return method == "Nelder-Mead"
 
     def get_method_recommendations(self) -> Dict[str, List[str]]:
         """
@@ -320,15 +296,15 @@ class ClassicalOptimizer:
         Returns
         -------
         Dict[str, List[str]]
-            Dictionary mapping scenarios to lists of recommended methods
+            Dictionary mapping scenarios to Nelder-Mead (our only method)
         """
         return {
-            "with_bounds": ["L-BFGS-B", "TNC", "SLSQP"],
-            "without_bounds": ["BFGS", "Powell", "Nelder-Mead"],
-            "high_dimensional": ["L-BFGS-B", "BFGS", "CG"],
-            "low_dimensional": ["Nelder-Mead", "Powell"],
-            "noisy_objective": ["Powell", "Nelder-Mead"],
-            "smooth_objective": ["L-BFGS-B", "BFGS", "Newton-CG"],
+            "with_bounds": ["Nelder-Mead"],  # Nelder-Mead works without explicit bounds
+            "without_bounds": ["Nelder-Mead"],
+            "high_dimensional": ["Nelder-Mead"],
+            "low_dimensional": ["Nelder-Mead"],
+            "noisy_objective": ["Nelder-Mead"],  # Excellent for noisy functions
+            "smooth_objective": ["Nelder-Mead"],
         }
 
     def validate_parameters(
@@ -481,9 +457,8 @@ class ClassicalOptimizer:
                 "options": filtered_options,
             }
 
-            # Add bounds for methods that support them
-            if method in ["L-BFGS-B", "TNC", "SLSQP"] and bounds:
-                kwargs["bounds"] = bounds
+            # Nelder-Mead doesn't use explicit bounds
+            # The method handles constraints through the objective function
 
             result = optimize.minimize(**kwargs)
             return True, result
@@ -496,12 +471,12 @@ class ClassicalOptimizer:
         results: List[Tuple[str, bool, Union[optimize.OptimizeResult, Exception]]],
     ) -> Dict[str, Any]:
         """
-        Analyze and summarize optimization results from multiple methods.
+        Analyze and summarize optimization results from Nelder-Mead method.
 
         Parameters
         ----------
         results : List[Tuple[str, bool, Union[OptimizeResult, Exception]]]
-            List of (method_name, success, result_or_exception) tuples
+            List of (method_name, success, result_or_exception) tuples (typically one entry for Nelder-Mead)
 
         Returns
         -------
@@ -560,7 +535,10 @@ class ClassicalOptimizer:
         is_static_mode: Optional[bool] = None,
     ) -> List[Tuple[float, float]]:
         """
-        Extract parameter bounds from configuration, adjusted for analysis mode.
+        Extract parameter bounds from configuration (unused by Nelder-Mead).
+        
+        This method is kept for compatibility but is not used by Nelder-Mead
+        optimization since it doesn't support explicit bounds.
 
         Parameters
         ----------
@@ -572,7 +550,7 @@ class ClassicalOptimizer:
         Returns
         -------
         List[Tuple[float, float]]
-            List of (min, max) bounds for each parameter
+            List of (min, max) bounds for each parameter (not used)
         """
         bounds = []
         param_bounds = self.config.get("parameter_space", {}).get("bounds", [])
@@ -606,12 +584,12 @@ class ClassicalOptimizer:
         results: List[Tuple[str, Union[optimize.OptimizeResult, Exception]]],
     ) -> Dict[str, Any]:
         """
-        Compare optimization results from different methods.
+        Compare optimization results (typically just Nelder-Mead).
 
         Parameters
         ----------
         results : List[Tuple[str, Union[OptimizeResult, Exception]]]
-            List of (method_name, result) tuples
+            List of (method_name, result) tuples (typically one entry for Nelder-Mead)
 
         Returns
         -------

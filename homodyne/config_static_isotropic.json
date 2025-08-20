@@ -441,7 +441,7 @@
     
     "fit_quality": {
       "_comment": "Classical optimization fit quality for 3-parameter isotropic analysis",
-      "_applies_to": "Classical optimization methods only (Nelder-Mead, etc.)",
+      "_applies_to": "Classical optimization using Nelder-Mead method",
       "overall_chi_squared": {
         "excellent_threshold": 2.0,
         "acceptable_threshold": 5.0,

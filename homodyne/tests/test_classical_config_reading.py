@@ -33,7 +33,7 @@ class TestClassicalOptimizationConfigurationReading:
                 "active_parameters": ["D0", "alpha", "D_offset"],
             },
             "optimization_config": {
-                "classical_optimization": {"methods": ["L-BFGS-B", "TNC"]}
+                "classical_optimization": {"methods": ["Nelder-Mead"]}
             },
         }
 
@@ -80,7 +80,7 @@ class TestClassicalOptimizationConfigurationReading:
                 ]
             },
             "optimization_config": {
-                "classical_optimization": {"methods": ["L-BFGS-B"]}
+                "classical_optimization": {"methods": ["Nelder-Mead"]}
             },
         }
 
@@ -119,7 +119,7 @@ class TestClassicalOptimizationConfigurationReading:
                 ]
             },
             "optimization_config": {
-                "classical_optimization": {"methods": ["L-BFGS-B"]}
+                "classical_optimization": {"methods": ["Nelder-Mead"]}
             },
         }
 
@@ -219,9 +219,8 @@ class TestClassicalOptimizationConfigurationReading:
         test_config = {
             "optimization_config": {
                 "classical_optimization": {
-                    "methods": ["L-BFGS-B", "TNC", "Nelder-Mead"],
+                    "methods": ["Nelder-Mead"],
                     "method_options": {
-                        "L-BFGS-B": {"maxiter": 1000, "ftol": 1e-9},
                         "Nelder-Mead": {"maxiter": 5000, "xatol": 1e-10},
                     },
                 }
@@ -242,13 +241,11 @@ class TestClassicalOptimizationConfigurationReading:
         assert "method_options" in opt_config
 
         methods = opt_config["methods"]
-        assert "L-BFGS-B" in methods
-        assert "TNC" in methods
         assert "Nelder-Mead" in methods
+        assert len(methods) == 1  # Only Nelder-Mead should be present
 
         method_options = opt_config["method_options"]
-        assert "L-BFGS-B" in method_options
-        assert method_options["L-BFGS-B"]["maxiter"] == 1000
+        assert "Nelder-Mead" in method_options
         assert method_options["Nelder-Mead"]["maxiter"] == 5000
 
     def test_missing_configuration_sections(self):

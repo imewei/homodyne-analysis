@@ -70,7 +70,7 @@ Key Design Principles
 
 1. **Modularity**: Clear separation of concerns between modules
 2. **Performance**: Optimized for large datasets and long computations
-3. **Extensibility**: Easy to add new models and optimization methods
+3. **Extensibility**: Easy to add new models and enhance optimization parameters
 4. **Reliability**: Comprehensive testing and error handling
 5. **Usability**: Clear APIs and comprehensive documentation
 

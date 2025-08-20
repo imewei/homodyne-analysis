@@ -1,0 +1,357 @@
+{
+  "metadata": {
+    "_comment": "Project metadata for homodyne analysis testing",
+    "config_version": "6.1",
+    "description": "General Homodyne Analysis Configuration for Testing",
+    "analysis_mode": "static_anisotropic",
+    "created_date": "2025-08-20",
+    "updated_date": "2025-08-20",
+    "authors": [
+      "Wei Chen"
+    ],
+    "institution": "Argonne National Laboratory",
+    "experiment_name": "Test Suite",
+    "sample_description": "Testing Configuration",
+    "script_compatibility": "homodyne v0.6.1",
+    "_cli_usage": {
+      "description": "CLI usage for general homodyne analysis",
+      "recommended_commands": [
+        "homodyne --config homodyne_config.json --method classical",
+        "homodyne --config homodyne_config.json --method all",
+        "homodyne --config homodyne_config.json --method mcmc"
+      ]
+    }
+  },
+  "experimental_data": {
+    "_comment": "Data configuration for testing",
+    "description": "Test data source configuration",
+    "data_folder_path": "./data/Simon/",
+    "data_file_name": "test_data_file.hdf",
+    "phi_angles_path": "./data/Simon/",
+    "phi_angles_file": "phi_list.txt",
+    "exchange_key": "exchange",
+    "cache_file_path": "./data/Simon/",
+    "cache_filename_template": "cached_c2_test_frames_{start_frame}_{end_frame}.npz",
+    "cache_compression": true,
+    "data_type": "float64",
+    "file_format": "NPZ",
+    "preprocessing": {
+      "_comment": "Standard preprocessing settings",
+      "apply_diagonal_correction": true,
+      "vectorized_correction": true,
+      "cache_processed_data": true,
+      "normalize_data": true,
+      "normalization_method": "baseline"
+    }
+  },
+  "analyzer_parameters": {
+    "_comment": "Analysis parameters for testing",
+    "temporal": {
+      "dt": 0.5,
+      "_dt_note": "Time step for analysis",
+      "dt_unit": "seconds",
+      "start_frame": 400,
+      "end_frame": 1000
+    },
+    "scattering": {
+      "wavevector_q": 0.0237,
+      "_wavevector_q_note": "q-vector magnitude",
+      "q_unit": "Å⁻¹"
+    },
+    "geometry": {
+      "_comment": "Geometry parameters",
+      "stator_rotor_gap": 2000000,
+      "gap_unit": "Å",
+      "_gap_note": "Stator-rotor gap parameter"
+    },
+    "computational": {
+      "num_threads": 4,
+      "auto_detect_cores": true,
+      "max_threads_limit": 8,
+      "memory_limit_gb": 4
+    }
+  },
+  "initial_parameters": {
+    "_comment": "Initial parameters for optimization",
+    "description": "Starting values for all model parameters",
+    "values": [
+      1000,
+      -0.5,
+      100,
+      0.1,
+      -0.1,
+      0.01,
+      15.0
+    ],
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ],
+    "units": [
+      "Å²/s",
+      "dimensionless",
+      "Å²/s",
+      "s⁻¹",
+      "dimensionless",
+      "s⁻¹",
+      "degrees"
+    ],
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ]
+  },
+  "optimization_config": {
+    "_comment": "Optimization configuration",
+    "angle_filtering": {
+      "_comment": "Angle filtering settings",
+      "enabled": true,
+      "target_ranges": [
+        [10, 30],
+        [45, 75]
+      ],
+      "fallback_to_all_angles": true
+    },
+    "classical_optimization": {
+      "methods": [
+        "Nelder-Mead"
+      ],
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": 5000,
+          "xatol": 1e-08,
+          "fatol": 1e-08,
+          "adaptive": true
+        }
+      }
+    },
+    "mcmc_sampling": {
+      "enabled": true,
+      "sampler": "NUTS",
+      "draws": 2000,
+      "tune": 500,
+      "thin": 1,
+      "chains": 2,
+      "cores": 2,
+      "target_accept": 0.8,
+      "max_treedepth": 10,
+      "return_inferencedata": true
+    }
+  },
+  "parameter_space": {
+    "_comment": "Parameter bounds for optimization",
+    "bounds": [
+      {
+        "name": "D0",
+        "min": 100,
+        "max": 10000,
+        "type": "log-uniform",
+        "prior_mu": 3.0,
+        "prior_sigma": 1.0,
+        "unit": "Å²/s",
+        "physical_constraint": "positive"
+      },
+      {
+        "name": "alpha",
+        "min": -2.0,
+        "max": 0.0,
+        "type": "uniform",
+        "prior_mu": -1.0,
+        "prior_sigma": 0.5,
+        "unit": "dimensionless",
+        "physical_constraint": "none"
+      },
+      {
+        "name": "D_offset",
+        "min": 0,
+        "max": 1000,
+        "type": "uniform",
+        "prior_mu": 50.0,
+        "prior_sigma": 100.0,
+        "unit": "Å²/s",
+        "physical_constraint": "positive"
+      },
+      {
+        "name": "gamma_dot_t0",
+        "min": 0.001,
+        "max": 1.0,
+        "type": "log-uniform",
+        "prior_mu": -2.0,
+        "prior_sigma": 1.0,
+        "unit": "s⁻¹",
+        "physical_constraint": "positive"
+      },
+      {
+        "name": "beta",
+        "min": -1.0,
+        "max": 1.0,
+        "type": "uniform",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.5,
+        "unit": "dimensionless",
+        "physical_constraint": "none"
+      },
+      {
+        "name": "gamma_dot_t_offset",
+        "min": 0.0,
+        "max": 0.1,
+        "type": "uniform",
+        "prior_mu": 0.01,
+        "prior_sigma": 0.02,
+        "unit": "s⁻¹",
+        "physical_constraint": "positive"
+      },
+      {
+        "name": "phi0",
+        "min": 0,
+        "max": 90,
+        "type": "uniform",
+        "prior_mu": 45.0,
+        "prior_sigma": 25.0,
+        "unit": "degrees",
+        "physical_constraint": "positive"
+      }
+    ]
+  },
+  "analysis_settings": {
+    "_comment": "Analysis mode settings",
+    "static_mode": false,
+    "static_submode": "anisotropic",
+    "model_description": {
+      "current_mode": "laminar_flow",
+      "equation": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) × sinc²(∫ᵗ²ᵗ¹ γ̇(t)dt)",
+      "description": "Full laminar flow model with diffusion and shear contributions"
+    }
+  },
+  "advanced_settings": {
+    "data_loading": {
+      "use_diagonal_correction": true,
+      "vectorized_diagonal_fix": true
+    },
+    "chi_squared_calculation": {
+      "method": "standard",
+      "uncertainty_estimation_factor": 0.1,
+      "minimum_sigma": 1e-10,
+      "fast_computation": true,
+      "validity_check": {
+        "check_positive_D0": true,
+        "check_positive_gamma_dot_t0": true,
+        "check_positive_time_dependent": true,
+        "check_parameter_bounds": true
+      }
+    }
+  },
+  "performance_settings": {
+    "caching": {
+      "enable_memory_cache": true,
+      "enable_disk_cache": true,
+      "cache_size_limit_mb": 500,
+      "auto_cleanup": true
+    },
+    "parallel_processing": {
+      "enable_multiprocessing": true,
+      "chunk_size": "auto",
+      "backend": "threading"
+    }
+  },
+  "output_settings": {
+    "reporting": {
+      "generate_plots": true,
+      "plot_formats": [
+        "png"
+      ],
+      "detailed_summary": true
+    },
+    "plotting": {
+      "general": {
+        "create_plots": true,
+        "plot_format": "png",
+        "dpi": 150,
+        "figure_size": [
+          8,
+          6
+        ],
+        "style": "default"
+      },
+      "c2_heatmaps": {
+        "enabled": true,
+        "layout": "grid",
+        "include_experimental": true,
+        "include_theoretical": true,
+        "include_residuals": true
+      },
+      "mcmc_plots": {
+        "enabled": true,
+        "corner_plots": {
+          "enabled": true,
+          "figsize": [
+            10,
+            10
+          ]
+        },
+        "trace_plots": {
+          "enabled": true,
+          "figsize": [
+            12,
+            8
+          ]
+        }
+      }
+    }
+  },
+  "validation_rules": {
+    "_comment": "Validation rules for analysis quality",
+    "fit_quality": {
+      "_comment": "Classical optimization fit quality thresholds",
+      "overall_chi_squared": {
+        "excellent_threshold": 2.0,
+        "acceptable_threshold": 5.0,
+        "warning_threshold": 10.0,
+        "critical_threshold": 20.0
+      },
+      "per_angle_chi_squared": {
+        "excellent_threshold": 2.0,
+        "acceptable_threshold": 5.0,
+        "warning_threshold": 10.0,
+        "outlier_threshold_multiplier": 2.5,
+        "max_outlier_fraction": 0.25,
+        "min_good_angles": 3
+      }
+    },
+    "mcmc_convergence": {
+      "_comment": "MCMC convergence validation",
+      "rhat_thresholds": {
+        "excellent_threshold": 1.01,
+        "good_threshold": 1.05,
+        "acceptable_threshold": 1.1,
+        "critical_threshold": 1.15
+      },
+      "ess_thresholds": {
+        "excellent_threshold": 400,
+        "good_threshold": 200,
+        "acceptable_threshold": 100,
+        "minimum_threshold": 50
+      },
+      "divergence_thresholds": {
+        "max_divergences_fraction": 0.02,
+        "warning_divergences_fraction": 0.01
+      }
+    },
+    "parameter_validation": {
+      "_comment": "Parameter validation settings",
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true
+    }
+  }
+}

@@ -106,10 +106,15 @@ Optimization Configuration
 
    {
      "optimization_config": {
-       "classical": {
-         "method": "Nelder-Mead",
-         "max_iterations": 1000,
-         "tolerance": 1e-6
+       "classical_optimization": {
+         "methods": ["Nelder-Mead"],
+         "method_options": {
+           "Nelder-Mead": {
+             "maxiter": 1000,
+             "xatol": 1e-6,
+             "fatol": 1e-6
+           }
+         }
        }
      }
    }
