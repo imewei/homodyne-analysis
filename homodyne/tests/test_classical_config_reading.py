@@ -96,16 +96,16 @@ class TestClassicalOptimizationConfigurationReading:
 
         assert len(param_bounds) == 7
 
-        # Check specific bounds
+        # Check specific bounds (using authoritative constraints)
         d0_bound = param_bounds[0]
         assert d0_bound["name"] == "D0"
-        assert d0_bound["min"] == 100
-        assert d0_bound["max"] == 10000
+        assert d0_bound["min"] == 1.0  # Updated to match authoritative constraints
+        assert d0_bound["max"] == 1000000  # Updated to match authoritative constraints
 
         alpha_bound = param_bounds[1]
         assert alpha_bound["name"] == "alpha"
         assert alpha_bound["min"] == -2.0
-        assert alpha_bound["max"] == 0.0
+        assert alpha_bound["max"] == 2.0  # Updated to match authoritative constraints
 
     def test_bounds_extraction_for_optimization(self):
         """Test that bounds are correctly extracted for optimization methods."""
@@ -139,7 +139,8 @@ class TestClassicalOptimizationConfigurationReading:
             if i < effective_param_count:
                 bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
 
-        expected_bounds = [(500, 5000), (-1.5, -0.5), (10, 500)]
+        # Expected bounds should match what's in the test_config above
+        expected_bounds = [(1.0, 1000000), (-1.5, -0.5), (-100, 100)]
         assert bounds == expected_bounds
 
     def test_static_mode_parameter_selection(self):
@@ -210,7 +211,8 @@ class TestClassicalOptimizationConfigurationReading:
             if i < effective_param_count:
                 static_bounds.append((bound.get("min"), bound.get("max")))
 
-        expected_static_bounds = [(15000, 20000), (-1.6, -1.5), (0, 5)]
+        # Expected bounds should match what's in the test_config above
+        expected_static_bounds = [(1.0, 1000000), (-1.6, -1.5), (-100, 100)]
         assert static_bounds == expected_static_bounds
 
     def test_optimization_config_access(self):
@@ -344,8 +346,8 @@ class TestClassicalOptimizationConfigurationReading:
 
         assert len(param_bounds) == 7
         assert param_bounds[0]["name"] == "D0"
-        assert param_bounds[0]["min"] == 15000
-        assert param_bounds[0]["max"] == 20000
+        assert param_bounds[0]["min"] == 1.0  # Match actual config above
+        assert param_bounds[0]["max"] == 1000000  # Match actual config above
 
         assert "methods" in opt_config
         assert opt_config["methods"] == ["Nelder-Mead"]

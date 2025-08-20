@@ -148,7 +148,7 @@
     "mcmc_sampling": {
       "enabled": true,
       "sampler": "NUTS",
-      "draws": 8000,
+      "draws": 6000,
       "_draws_note": "Fewer draws needed with only 3 parameters",
       "tune": 1000,
       "thin": 2,
@@ -172,18 +172,18 @@
         "_description": "c2_theory normalized correlation function, must be in [0,1]"
       },
       "contrast": {
-        "min": 0.05,
+        "min": 1e-4,
         "max": 0.5,
-        "prior_mu": 0.3,
-        "prior_sigma": 0.1,
+        "prior_mu": 0.05,
+        "prior_sigma": 0.01,
         "type": "TruncatedNormal",
         "_description": "Scaling factor for correlation strength, typically ∈ (0, 0.5]"
       },
       "offset": {
-        "min": 0.05,
-        "max": 1.95,
-        "prior_mu": 1.0,
-        "prior_sigma": 0.2,
+        "min": 1.0,
+        "max": 1.5,
+        "prior_mu": 1.3,
+        "prior_sigma": 0.01,
         "type": "TruncatedNormal",
         "_description": "Baseline correlation level, typically ∈ (0, 2.0), μ ≈ 1.0"
       }
@@ -205,8 +205,8 @@
       },
       {
         "name": "alpha",
-        "min": -2.0,
-        "max": 2.0,
+        "min": -1.8,
+        "max": -1.2,
         "type": "Normal",
         "prior_mu": -1.5,
         "prior_sigma": 0.1,
@@ -216,11 +216,11 @@
       },
       {
         "name": "D_offset",
-        "min": -100,
-        "max": 100,
+        "min": -10,
+        "max": 10,
         "type": "Normal",
         "prior_mu": 0.0,
-        "prior_sigma": 10.0,
+        "prior_sigma": 1.0,
         "unit": "Å²/s",
         "physical_constraint": "none",
         "_note": "PRIMARY PARAMETER - baseline diffusion coefficient (typically small vs D0)"
