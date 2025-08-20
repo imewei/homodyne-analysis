@@ -787,6 +787,7 @@ def plot_mcmc_trace(
 
     try:
         import arviz as az
+        import numpy as np  # Import numpy at the top to ensure it's available throughout
 
         # Handle different trace data formats
         if hasattr(trace_data, "posterior"):
@@ -799,7 +800,6 @@ def plot_mcmc_trace(
         # Create trace plot with proper variable name handling
         try:
             # Set up numpy error handling to prevent underflow from causing failures
-            import numpy as np
             old_err = np.seterr(all='ignore')
             
             try:

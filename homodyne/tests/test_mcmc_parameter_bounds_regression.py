@@ -537,6 +537,9 @@ class TestMCMCBoundsIntegration:
         # Load and validate configuration
         config_manager = ConfigManager(str(config_file))
         loaded_config = config_manager.config
+        
+        # Verify configuration was loaded successfully
+        assert loaded_config is not None, "Configuration loading failed"
 
         # Verify MCMC uses full forward model (not simplified)
         noise_model = loaded_config["performance_settings"]["noise_model"]

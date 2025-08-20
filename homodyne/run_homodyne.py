@@ -183,6 +183,12 @@ def run_analysis(args: argparse.Namespace) -> None:
 
     # 3. Create analysis core instance with error handling
     try:
+        # Check if HomodyneAnalysisCore is available (import succeeded)
+        if HomodyneAnalysisCore is None:
+            logger.error("❌ HomodyneAnalysisCore is not available due to import error")
+            logger.error("Please ensure all required dependencies are installed.")
+            sys.exit(1)
+
         logger.info(f"Initializing Homodyne Analysis with config: {config_path}")
 
         # Apply mode override if specified

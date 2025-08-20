@@ -34,6 +34,12 @@ from homodyne.core.profiler import (
     assert_performance_stability
 )
 
+# Import PYMC availability check for conditional test skipping
+try:
+    from homodyne.optimization.mcmc import PYMC_AVAILABLE
+except ImportError:
+    PYMC_AVAILABLE = False
+
 
 @pytest.fixture
 def performance_config():
@@ -906,6 +912,7 @@ class TestMCMCThinningPerformance:
 
     @pytest.mark.performance
     @pytest.mark.mcmc
+    @pytest.mark.skipif(not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests")
     def test_thinning_configuration_validation(self):
         """Test performance of thinning configuration validation."""
         from homodyne.optimization.mcmc import MCMCSampler
@@ -1030,6 +1037,7 @@ class TestMCMCThinningPerformance:
 
     @pytest.mark.performance
     @pytest.mark.regression
+    @pytest.mark.skipif(not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests")
     def test_thinning_performance_regression(self):
         """Test that thinning doesn't cause performance regression in setup."""
         from homodyne.optimization.mcmc import MCMCSampler

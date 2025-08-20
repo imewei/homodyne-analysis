@@ -19,6 +19,7 @@ import tempfile
 import json
 import numpy as np
 from pathlib import Path
+from typing import Union
 from unittest.mock import Mock, patch, MagicMock
 from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 
@@ -26,8 +27,11 @@ from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 class TestMCMCConfigurationUsage:
     """Test that MCMC configuration is properly used during sampling."""
 
-    def create_test_config(self, draws=10000, chains=8, tune=1000, thin=1):
-        """Create a test configuration with specified MCMC parameters."""
+    def create_test_config(self, draws: Union[int, str] = 10000, chains: int = 8, tune: Union[int, str] = 1000, thin: int = 1):
+        """Create a test configuration with specified MCMC parameters.
+        
+        Parameters can be int or str to allow testing of type validation.
+        """
         return {
             "optimization_config": {
                 "mcmc_sampling": {
@@ -172,7 +176,7 @@ class TestMCMCConfigurationUsage:
     def test_mcmc_config_validation_with_invalid_types(self):
         """Test that MCMC configuration validation catches invalid types."""
         config = self.create_test_config(
-            draws="1000", chains=2.5, tune="500"
+            draws="1000", chains=4, tune="500"
         )  # Wrong types
         mock_core = self.create_mock_core()
 
@@ -457,7 +461,7 @@ class TestMCMCConfigurationIntegration:
 class TestMCMCThinningConfiguration:
     """Test MCMC thinning configuration and validation."""
 
-    def create_test_config(self, draws=10000, chains=4, tune=1000, thin=1):
+    def create_test_config(self, draws: Union[int, str] = 10000, chains: int = 4, tune: Union[int, str] = 1000, thin: Union[int, str] = 1):
         """Create a test configuration with specified MCMC parameters including thinning."""
         return {
             "optimization_config": {
