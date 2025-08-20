@@ -401,7 +401,7 @@ pytest -m benchmark --benchmark-only
 **CI/CD Integration:**
 - **Automated testing**: Performance tests run on every PR
 - **Regression detection**: Automatic alerts for performance degradation
-- **Multi-platform**: Tests across Python 3.10, 3.11, 3.12
+- **Multi-platform**: Tests across Python 3.12, 3.13
 - **Baseline tracking**: Performance history and trend monitoring
 
 ### Performance Documentation

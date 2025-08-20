@@ -277,7 +277,7 @@
           "Consistent results independent of sample orientation"
         ],
         "_typical_values_isotropic": {
-          "contrast": "0.5-2.0 (narrower range due to isotropic averaging)",
+          "contrast": "0.0-1.0 (narrower range due to isotropic averaging)",
           "offset": "0.01-0.05 (typically smaller due to reduced background anisotropy)"
         }
       },

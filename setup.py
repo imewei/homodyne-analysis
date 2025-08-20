@@ -66,6 +66,14 @@ MCMC_REQUIREMENTS = [
     "pytensor>=2.8.0",
 ]
 
+# Test requirements
+TEST_REQUIREMENTS = [
+    "pytest>=6.2.0",
+    "pytest-cov>=2.12.0",
+    "pytest-xdist>=2.3.0",
+    "pytest-benchmark>=4.0.0",
+]
+
 # Documentation requirements
 DOC_REQUIREMENTS = [
     "sphinx>=4.0.0",
@@ -73,6 +81,7 @@ DOC_REQUIREMENTS = [
     "myst-parser>=0.17.0",
     "sphinx-autodoc-typehints>=1.12.0",
     "numpydoc>=1.2.0",
+    "linkify-it-py>=2.0.0",
 ]
 
 # Development requirements
@@ -80,14 +89,19 @@ DEV_REQUIREMENTS = [
     "pytest>=6.2.0",
     "pytest-cov>=2.12.0",
     "pytest-xdist>=2.3.0",
+    "pytest-benchmark>=4.0.0",
     "black>=21.0.0",
     "flake8>=3.9.0",
     "mypy>=0.910",
+    "types-psutil>=5.9.0",
+    "types-Pillow>=10.0.0",
+    "types-scipy>=1.9.0",
+    "types-six>=1.16.0",
 ] + DOC_REQUIREMENTS
 
 # All optional requirements combined
 ALL_REQUIREMENTS = (
-    DATA_REQUIREMENTS + PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + DEV_REQUIREMENTS
+    DATA_REQUIREMENTS + PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + TEST_REQUIREMENTS + DEV_REQUIREMENTS
 )
 
 setup(
@@ -123,6 +137,7 @@ setup(
         "performance": PERFORMANCE_REQUIREMENTS,
         "mcmc": MCMC_REQUIREMENTS,
         "docs": DOC_REQUIREMENTS,
+        "test": TEST_REQUIREMENTS,
         "dev": DEV_REQUIREMENTS,
         "all": ALL_REQUIREMENTS,
     },
