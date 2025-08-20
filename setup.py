@@ -95,7 +95,6 @@ DEV_REQUIREMENTS = [
     "mypy>=0.910",
     "types-psutil>=5.9.0",
     "types-Pillow>=10.0.0",
-    "types-scipy>=1.9.0",
     "types-six>=1.16.0",
 ] + DOC_REQUIREMENTS
 

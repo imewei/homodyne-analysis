@@ -80,7 +80,6 @@ dev = [
     "mypy>=0.910",
     "types-psutil>=5.9.0",
     "types-Pillow>=10.0.0",
-    "types-scipy>=1.9.0",
     "types-six>=1.16.0",
     "sphinx>=4.0.0",
     "sphinx-rtd-theme>=1.0.0",
@@ -192,9 +191,6 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
-    "numpy.*",
-    "scipy.*",
-    "matplotlib.*",
     "numba.*",
     "pymc.*",
     "arviz.*",
