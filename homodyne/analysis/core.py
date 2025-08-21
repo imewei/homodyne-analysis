@@ -964,7 +964,7 @@ class HomodyneAnalysisCore:
             # Static case: sinc² = 1, so c2 = g1²
             return g1 ** 2
         else:
-            # Laminar flow case: calculate full sinc² contribution - OPTIMIZED
+            # Laminar flow case: calculate full sinc² contribution
             phi_offset = parameters[-1]
             
             # Use pre-computed gamma_integral if available, otherwise compute
@@ -1019,7 +1019,7 @@ class HomodyneAnalysisCore:
         # Static case: c2 = g1² (sinc² = 1)
         c2_single = g1 ** 2
         
-        # Broadcast to all angles using memory-efficient approach - OPTIMIZED
+        # Broadcast to all angles using memory-efficient approach
         if num_angles == 1:
             return c2_single.reshape(1, self.time_length, self.time_length)
         else:
@@ -1082,7 +1082,7 @@ class HomodyneAnalysisCore:
             D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
             D_integral = self.create_time_integral_matrix_cached(f"D_{param_hash}", D_t)
             
-            # Use vectorized processing for maximum performance - OPTIMIZED
+            # Use vectorized processing for maximum performance
             if is_static:
                 # Static case: all angles have identical correlation (no angle dependence)
                 return self._calculate_c2_vectorized_static(D_integral, num_angles)
@@ -1092,7 +1092,7 @@ class HomodyneAnalysisCore:
                     self._c2_results_pool = np.empty((num_angles, self.time_length, self.time_length), dtype=np.float64)
                 c2_results = self._c2_results_pool
                 
-                # OPTIMIZATION: Pre-compute shear integrals once if applicable
+                # Pre-compute shear integrals once if applicable
                 param_hash = hash(tuple(parameters))
                 if not is_static_params:
                     gamma_dot_t = self.calculate_shear_rate_optimized(shear_params)
@@ -1232,7 +1232,7 @@ class HomodyneAnalysisCore:
         """
         global OPTIMIZATION_COUNTER
 
-        # Parameter validation - OPTIMIZED with caching
+        # Parameter validation with caching
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
         
@@ -1249,7 +1249,7 @@ class HomodyneAnalysisCore:
             + self.num_shear_rate_params
         ]
 
-        # Quick validity checks - OPTIMIZED with early returns
+        # Quick validity checks with early returns
         if validation.get("check_positive_D0", True):
             if diffusion_params[0] <= 0:
                 return (
@@ -1301,7 +1301,7 @@ class HomodyneAnalysisCore:
                 parameters, phi_angles
             )
 
-            # Chi-squared calculation - OPTIMIZED with caching
+            # Chi-squared calculation with caching
             if not hasattr(self, '_cached_chi_config'):
                 self._cached_chi_config = self.config.get("advanced_settings", {}).get(
                     "chi_squared_calculation", {}
@@ -1336,7 +1336,7 @@ class HomodyneAnalysisCore:
                             for r in config_ranges
                         ]
 
-                # Find indices of angles in target ranges - OPTIMIZED vectorized implementation
+                # Find indices of angles in target ranges using vectorized operations
                 phi_angles_array = np.asarray(phi_angles)
                 optimization_mask = np.zeros(len(phi_angles_array), dtype=bool)
                 # Vectorized range checking for all ranges at once
@@ -1384,14 +1384,14 @@ class HomodyneAnalysisCore:
 
             optimization_chi2_angles = []
 
-            # Calculate chi-squared for all angles (for detailed results) - optimized version
+            # Calculate chi-squared for all angles (for detailed results)
             n_angles = len(phi_angles)
             angle_chi2 = np.zeros(n_angles)
             angle_chi2_reduced = np.zeros(n_angles)
             angle_data_points = []
             scaling_solutions = []
 
-            # Pre-flatten all arrays for better memory access patterns - OPTIMIZED
+            # Pre-flatten all arrays for better memory access patterns
             theory_flat = c2_theory.reshape(n_angles, -1)
             exp_flat = c2_experimental.reshape(n_angles, -1)
 
@@ -1415,7 +1415,7 @@ class HomodyneAnalysisCore:
             #
             # Mathematical implementation: solve A·x = b where A = [theory, ones], x = [contrast, offset]
 
-            # OPTIMIZED: Vectorized least squares fitting for all angles
+            # Vectorized least squares fitting for all angles
             n_data_per_angle = theory_flat.shape[1]
             angle_data_points = [n_data_per_angle] * n_angles
             
@@ -1427,7 +1427,7 @@ class HomodyneAnalysisCore:
                 theory = theory_flat[i]
                 exp = exp_flat[i]
                 
-                # Optimized least squares: A = [theory, ones]
+                # Solve least squares: A = [theory, ones]
                 A_base[:, 0] = theory
                 try:
                     scaling = np.linalg.solve(A_base.T @ A_base, A_base.T @ exp)

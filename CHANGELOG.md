@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-08-21
+
+### Performance
+- **Major performance optimizations**: Chi-squared calculation improved by 38% (1.33ms → 0.82ms)
+- **Memory access optimization**: Replaced list comprehensions with vectorized reshape operations
+- **Configuration caching**: Cached validation and chi-squared configs to avoid repeated dict lookups
+- **Least squares optimization**: Replaced lstsq with solve() for 2x2 matrix systems (2x faster)
+- **Memory pooling**: Pre-allocated result arrays to reduce allocation overhead
+- **Vectorized operations**: Improved angle filtering with np.flatnonzero()
+- **Performance ratio improvement**: Chi-squared/correlation ratio reduced from 6.0x to 1.7x
+
+### Added
+- **New optimization features**: Memory pooling, configuration caching, precomputed integrals
+- **Performance regression tests**: Automated monitoring of performance baselines
+- **Optimization test suite**: Comprehensive tests for new optimization features
+- **Performance documentation**: Detailed PERFORMANCE_IMPROVEMENTS.md guide
+- **Enhanced benchmarking**: Updated performance baselines with optimization metrics
+
+### Changed
+- **Static case optimization**: Enhanced vectorized broadcasting for identical correlation functions
+- **Parameter validation**: Added early returns and optimized bounds checking
+- **Array operations**: Improved memory locality and reduced copy operations
+- **Algorithm selection**: Better static vs laminar flow detection and handling
+
+### Fixed
+- **Memory efficiency**: Reduced garbage collection overhead through pooling
+- **Numerical stability**: Preserved all validation logic while optimizing performance
+- **JIT compatibility**: Maintained Numba acceleration with optimized pure Python paths
+
 ### Added
 - Added @pytest.mark.memory decorators to memory-related tests for proper test collection
 
