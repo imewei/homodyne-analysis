@@ -1598,6 +1598,11 @@ def main():
     conditions, supporting both static and laminar flow analysis modes
     with classical and Bayesian optimization approaches.
     """
+    # Check Python version requirement
+    if sys.version_info < (3, 12):
+        print(f"Error: Python 3.12+ is required. You are using Python {sys.version}", file=sys.stderr)
+        print("Please upgrade your Python installation or use a compatible environment.", file=sys.stderr)
+        sys.exit(1)
     parser = argparse.ArgumentParser(
         description="Run homodyne scattering analysis for XPCS under nonequilibrium conditions",
         formatter_class=argparse.RawDescriptionHelpFormatter,

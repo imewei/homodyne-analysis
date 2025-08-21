@@ -35,6 +35,14 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
 """
 
+# Check Python version requirement early
+import sys
+if sys.version_info < (3, 12):
+    raise RuntimeError(
+        f"Python 3.12+ is required. You are using Python {sys.version}. "
+        "Please upgrade your Python installation or use a compatible environment."
+    )
+
 from .core.config import ConfigManager, configure_logging, performance_monitor
 from .core.kernels import (
     create_time_integral_matrix_numba,
