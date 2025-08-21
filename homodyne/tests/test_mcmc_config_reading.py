@@ -156,8 +156,20 @@ class TestMCMCConfigurationReading:
                 "scaling_parameters": {
                     "fitted_range": {"min": 1.0, "max": 2.0},
                     "theory_range": {"min": 0.0, "max": 1.0},
-                    "contrast": {"min": 0.05, "max": 0.5, "prior_mu": 0.3, "prior_sigma": 0.1, "type": "TruncatedNormal"},
-                    "offset": {"min": 0.05, "max": 1.95, "prior_mu": 1.0, "prior_sigma": 0.2, "type": "TruncatedNormal"}
+                    "contrast": {
+                        "min": 0.05,
+                        "max": 0.5,
+                        "prior_mu": 0.3,
+                        "prior_sigma": 0.1,
+                        "type": "TruncatedNormal",
+                    },
+                    "offset": {
+                        "min": 0.05,
+                        "max": 1.95,
+                        "prior_mu": 1.0,
+                        "prior_sigma": 0.2,
+                        "type": "TruncatedNormal",
+                    },
                 },
             },
             "initial_parameters": {

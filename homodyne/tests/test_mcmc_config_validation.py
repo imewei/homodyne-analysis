@@ -27,9 +27,15 @@ from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 class TestMCMCConfigurationUsage:
     """Test that MCMC configuration is properly used during sampling."""
 
-    def create_test_config(self, draws: Union[int, str] = 10000, chains: int = 8, tune: Union[int, str] = 1000, thin: int = 1):
+    def create_test_config(
+        self,
+        draws: Union[int, str] = 10000,
+        chains: int = 8,
+        tune: Union[int, str] = 1000,
+        thin: int = 1,
+    ):
         """Create a test configuration with specified MCMC parameters.
-        
+
         Parameters can be int or str to allow testing of type validation.
         """
         return {
@@ -461,7 +467,13 @@ class TestMCMCConfigurationIntegration:
 class TestMCMCThinningConfiguration:
     """Test MCMC thinning configuration and validation."""
 
-    def create_test_config(self, draws: Union[int, str] = 10000, chains: int = 4, tune: Union[int, str] = 1000, thin: Union[int, str] = 1):
+    def create_test_config(
+        self,
+        draws: Union[int, str] = 10000,
+        chains: int = 4,
+        tune: Union[int, str] = 1000,
+        thin: Union[int, str] = 1,
+    ):
         """Create a test configuration with specified MCMC parameters including thinning."""
         return {
             "optimization_config": {

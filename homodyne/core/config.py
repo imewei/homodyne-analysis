@@ -324,6 +324,9 @@ class ConfigManager:
         """
         with performance_monitor.time_function("config_loading"):
             try:
+                if self.config_file is None:
+                    raise ValueError("Configuration file path cannot be None")
+
                 config_path = Path(self.config_file)
                 if not config_path.exists():
                     raise FileNotFoundError(

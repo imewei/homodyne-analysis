@@ -46,35 +46,35 @@ try:
 except ImportError as e:
     print(f"Warning: Could not import homodyne.plotting as plotting module: {e}")
     PLOTTING_MODULE_AVAILABLE = False
-    
+
     # Define dummy functions for type checking when plotting module is not available
     # These functions are never actually called since tests are skipped
     from typing import Any, Dict
-    
+
     def plot_c2_heatmaps(*args: Any, **kwargs: Any) -> bool:
         return False
-    
+
     def plot_diagnostic_summary(*args: Any, **kwargs: Any) -> bool:
         return False
-    
+
     def plot_mcmc_corner(*args: Any, **kwargs: Any) -> bool:
         return False
-    
+
     def plot_mcmc_trace(*args: Any, **kwargs: Any) -> bool:
         return False
-    
+
     def plot_mcmc_convergence_diagnostics(*args: Any, **kwargs: Any) -> bool:
         return False
-    
+
     def create_all_plots(*args: Any, **kwargs: Any) -> Dict[str, bool]:
         return {}
-    
+
     def get_plot_config(*args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {}
-    
+
     def setup_matplotlib_style(*args: Any, **kwargs: Any) -> None:
         pass
-    
+
     def save_fig(*args: Any, **kwargs: Any) -> bool:
         return False
 
@@ -344,19 +344,28 @@ class TestDiagnosticPlots:
                 if "NUMBA_NUM_THREADS" in str(e):
                     # Create mock diagnostic data compatible with ArviZ Dataset format
                     import xarray as xr
-                    rhat_data = xr.Dataset({
-                        param: xr.DataArray(1.01)  # Scalar value, no dims needed
-                        for param in param_names
-                    })
-                    ess_data = xr.Dataset({
-                        param: xr.DataArray(400.0)  # Scalar value, no dims needed
-                        for param in param_names
-                    })
-                    mcse_data = xr.Dataset({
-                        param: xr.DataArray(0.01)  # Scalar value, no dims needed
-                        for param in param_names
-                    })
-                    print("⚠ Using fallback diagnostic data due to Numba threading conflict")
+
+                    rhat_data = xr.Dataset(
+                        {
+                            param: xr.DataArray(1.01)  # Scalar value, no dims needed
+                            for param in param_names
+                        }
+                    )
+                    ess_data = xr.Dataset(
+                        {
+                            param: xr.DataArray(400.0)  # Scalar value, no dims needed
+                            for param in param_names
+                        }
+                    )
+                    mcse_data = xr.Dataset(
+                        {
+                            param: xr.DataArray(0.01)  # Scalar value, no dims needed
+                            for param in param_names
+                        }
+                    )
+                    print(
+                        "⚠ Using fallback diagnostic data due to Numba threading conflict"
+                    )
                 else:
                     raise
 
@@ -526,22 +535,32 @@ class TestMCMCPlots:
             if not success:
                 print(f"plot_mcmc_trace returned False")
                 print(f"temp_directory: {temp_directory}")
-                print(f"dummy_config plotting section: {dummy_config.get('output_settings', {}).get('plotting', {})}")
-            
-            assert success is True, f"plot_mcmc_trace failed to create plots in {temp_directory}"
+                print(
+                    f"dummy_config plotting section: {dummy_config.get('output_settings', {}).get('plotting', {})}"
+                )
+
+            assert (
+                success is True
+            ), f"plot_mcmc_trace failed to create plots in {temp_directory}"
 
             plot_files = list(temp_directory.glob("mcmc_trace_plots.png"))
             all_files = list(temp_directory.glob("*"))
-            
+
             if len(plot_files) != 1:
-                print(f"Expected 1 file matching 'mcmc_trace_plots.png', found {len(plot_files)}")
+                print(
+                    f"Expected 1 file matching 'mcmc_trace_plots.png', found {len(plot_files)}"
+                )
                 print(f"All files in directory: {all_files}")
-            
-            assert len(plot_files) == 1, f"Expected 1 trace plot file, found {len(plot_files)}. All files: {all_files}"
-            
+
+            assert (
+                len(plot_files) == 1
+            ), f"Expected 1 trace plot file, found {len(plot_files)}. All files: {all_files}"
+
             file_size = plot_files[0].stat().st_size
             # Reduce the size requirement as matplotlib in test environments may create smaller files
-            assert file_size > 5000, f"Trace plot file too small: {file_size} bytes (expected > 5000)"
+            assert (
+                file_size > 5000
+            ), f"Trace plot file too small: {file_size} bytes (expected > 5000)"
 
         except ImportError:
             pytest.skip("ArviZ not available")
@@ -673,23 +692,32 @@ class TestMCMCPlots:
                 if "NUMBA_NUM_THREADS" in str(e):
                     # Create mock diagnostic data compatible with ArviZ Dataset format
                     import xarray as xr
+
                     param_names = ["D0", "alpha", "D_offset"]
-                    rhat_data = xr.Dataset({
-                        param: xr.DataArray(1.01)  # Scalar value, no dims needed
-                        for param in param_names
-                    })
-                    ess_data = xr.Dataset({
-                        param: xr.DataArray(400.0)  # Scalar value, no dims needed
-                        for param in param_names
-                    })
-                    mcse_data = xr.Dataset({
-                        param: xr.DataArray(0.01)  # Scalar value, no dims needed
-                        for param in param_names
-                    })
-                    print("⚠ Using fallback diagnostic data due to Numba threading conflict")
+                    rhat_data = xr.Dataset(
+                        {
+                            param: xr.DataArray(1.01)  # Scalar value, no dims needed
+                            for param in param_names
+                        }
+                    )
+                    ess_data = xr.Dataset(
+                        {
+                            param: xr.DataArray(400.0)  # Scalar value, no dims needed
+                            for param in param_names
+                        }
+                    )
+                    mcse_data = xr.Dataset(
+                        {
+                            param: xr.DataArray(0.01)  # Scalar value, no dims needed
+                            for param in param_names
+                        }
+                    )
+                    print(
+                        "⚠ Using fallback diagnostic data due to Numba threading conflict"
+                    )
                 else:
                     raise
-            
+
             diagnostics = {
                 "rhat": rhat_data,  # ArviZ Dataset object
                 "ess": ess_data,  # ArviZ Dataset object

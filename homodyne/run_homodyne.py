@@ -43,11 +43,13 @@ except ImportError:
 try:
     # Try relative import first
     from .optimization.mcmc import create_mcmc_sampler
+
     MCMC_AVAILABLE = True
 except ImportError:
     try:
         # Try absolute import as fallback
         from homodyne.optimization.mcmc import create_mcmc_sampler
+
         MCMC_AVAILABLE = True
     except ImportError:
         create_mcmc_sampler = None
@@ -124,7 +126,9 @@ def print_banner(args: argparse.Namespace) -> None:
     print(f"Config file:      {args.config}")
     print(f"Output directory: {args.output_dir}")
     if args.quiet:
-        print(f"Logging:          File only ({'DEBUG' if args.verbose else 'INFO'} level)")
+        print(
+            f"Logging:          File only ({'DEBUG' if args.verbose else 'INFO'} level)"
+        )
     else:
         print(
             f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}"
@@ -185,7 +189,6 @@ def run_analysis(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     logger.info(f"✓ Configuration file found: {config_path.absolute()}")
-
 
     # 3. Create analysis core instance with error handling
     try:
@@ -338,9 +341,7 @@ def run_analysis(args: argparse.Namespace) -> None:
         if results:
             # Save results with their own method-specific plotting
             # Classical and MCMC methods use their own dedicated plotting functions
-            analyzer.save_results_with_config(
-                results, output_dir=str(args.output_dir)
-            )
+            analyzer.save_results_with_config(results, output_dir=str(args.output_dir))
 
             # Perform per-angle chi-squared analysis for each successful method
             successful_methods = results.get("methods_used", [])
@@ -627,9 +628,11 @@ def run_mcmc_optimization(
     # Step 1: Check if create_mcmc_sampler is available (imported at module level)
     if create_mcmc_sampler is None:
         logger.error("❌ MCMC sampling not available - missing dependencies")
-        logger.error("❌ Install required dependencies: pip install pymc arviz pytensor")
+        logger.error(
+            "❌ Install required dependencies: pip install pymc arviz pytensor"
+        )
         return None
-    
+
     logger.info("✓ MCMC sampler available")
 
     try:
@@ -1606,8 +1609,14 @@ def main():
     """
     # Check Python version requirement
     if sys.version_info < (3, 12):
-        print(f"Error: Python 3.12+ is required. You are using Python {sys.version}", file=sys.stderr)
-        print("Please upgrade your Python installation or use a compatible environment.", file=sys.stderr)
+        print(
+            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
+            file=sys.stderr,
+        )
+        print(
+            "Please upgrade your Python installation or use a compatible environment.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     parser = argparse.ArgumentParser(
         description="Run homodyne scattering analysis for XPCS under nonequilibrium conditions",
@@ -1658,7 +1667,9 @@ Method Quality Assessment:
     )
 
     parser.add_argument(
-        "--quiet", action="store_true", help="Disable console logging (file logging remains enabled)"
+        "--quiet",
+        action="store_true",
+        help="Disable console logging (file logging remains enabled)",
     )
 
     # Add analysis mode selection

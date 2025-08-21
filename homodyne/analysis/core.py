@@ -143,6 +143,9 @@ from ..core.kernels import (
     calculate_shear_rate_numba,
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
+    compute_chi_squared_with_sigma_numba,
+    solve_least_squares_batch_numba,
+    compute_chi_squared_batch_numba,
     memory_efficient_cache,
 )
 
@@ -243,7 +246,7 @@ class HomodyneAnalysisCore:
         self.sinc_prefactor = (
             0.5 / np.pi * self.wavevector_q * self.stator_rotor_gap * self.dt
         )
-        
+
         # Advanced performance cache for repeated calculations
         self._diffusion_integral_cache = {}
         self._max_cache_size = 10  # Limit cache size to avoid memory bloat
@@ -302,27 +305,31 @@ class HomodyneAnalysisCore:
             calculate_shear_rate_numba(test_time, 0.01, 0.0, 0.0)
             compute_g1_correlation_numba(test_matrix, 1.0)
             compute_sinc_squared_numba(test_matrix, 1.0)
-            
+
             # Warm up high-level correlation calculation function
             # This is crucial for stable performance testing
             test_params = np.array([1000.0, -0.1, 50.0, 0.001, -0.2, 0.0, 0.0])
             test_phi_angles = np.array([0.0, 45.0])
-            
+
             # Create minimal test configuration for warmup
             original_config = self.config
-            original_time_length = getattr(self, 'time_length', None)
-            original_time_array = getattr(self, 'time_array', None)
-            
+            original_time_length = getattr(self, "time_length", None)
+            original_time_array = getattr(self, "time_array", None)
+
             # Temporarily set minimal configuration for warmup
             self.time_length = size
             self.time_array = test_time
-            
+
             try:
                 # Warm up the main correlation calculation
-                _ = self.calculate_c2_nonequilibrium_laminar_parallel(test_params, test_phi_angles)
+                _ = self.calculate_c2_nonequilibrium_laminar_parallel(
+                    test_params, test_phi_angles
+                )
                 logger.debug("High-level correlation function warmed up")
             except Exception as warmup_error:
-                logger.debug(f"High-level warmup failed (expected in some configs): {warmup_error}")
+                logger.debug(
+                    f"High-level warmup failed (expected in some configs): {warmup_error}"
+                )
             finally:
                 # Restore original configuration
                 self.config = original_config
@@ -332,7 +339,9 @@ class HomodyneAnalysisCore:
                     self.time_array = original_time_array
 
             elapsed = time.time() - start_time
-            logger.info(f"Numba warmup completed in {elapsed:.2f}s (including high-level functions)")
+            logger.info(
+                f"Numba warmup completed in {elapsed:.2f}s (including high-level functions)"
+            )
 
         except Exception as e:
             logger.warning(f"Numba warmup failed: {e}")
@@ -761,7 +770,7 @@ class HomodyneAnalysisCore:
         self, params: np.ndarray
     ) -> np.ndarray:
         """Calculate time-dependent diffusion coefficient.
-        
+
         Ensures D(t) > 0 always by applying a minimum threshold."""
         D0, alpha, D_offset = params
 
@@ -775,7 +784,7 @@ class HomodyneAnalysisCore:
 
     def calculate_shear_rate_optimized(self, params: np.ndarray) -> np.ndarray:
         """Calculate time-dependent shear rate.
-        
+
         Ensures γ̇(t) > 0 always by applying a minimum threshold."""
         gamma_dot_t0, beta, gamma_dot_t_offset = params
 
@@ -844,7 +853,10 @@ class HomodyneAnalysisCore:
             return np.abs(cumsum_matrix - cumsum_matrix.T)
 
     def calculate_c2_single_angle_optimized(
-        self, parameters: np.ndarray, phi_angle: float, precomputed_D_t: Optional[np.ndarray] = None
+        self,
+        parameters: np.ndarray,
+        phi_angle: float,
+        precomputed_D_t: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """
         Calculate correlation function for a single angle.
@@ -924,20 +936,25 @@ class HomodyneAnalysisCore:
         return (sinc2 * g1) ** 2
 
     def _calculate_c2_single_angle_fast(
-        self, parameters: np.ndarray, phi_angle: float, D_integral: np.ndarray, 
-        is_static: bool, shear_params: np.ndarray, gamma_integral: Optional[np.ndarray] = None
+        self,
+        parameters: np.ndarray,
+        phi_angle: float,
+        D_integral: np.ndarray,
+        is_static: bool,
+        shear_params: np.ndarray,
+        gamma_integral: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """
         Fast correlation function calculation with pre-computed values.
-        
+
         This optimized version avoids redundant computations by accepting
         pre-calculated common values.
-        
+
         Parameters
         ----------
         parameters : np.ndarray
             Model parameters
-        phi_angle : float  
+        phi_angle : float
             Scattering angle in degrees
         D_integral : np.ndarray
             Pre-computed diffusion integral matrix
@@ -945,7 +962,7 @@ class HomodyneAnalysisCore:
             Pre-computed static mode flag
         shear_params : np.ndarray
             Pre-extracted shear parameters
-            
+
         Returns
         -------
         np.ndarray
@@ -962,11 +979,11 @@ class HomodyneAnalysisCore:
         # Handle shear contribution based on pre-computed static mode
         if is_static:
             # Static case: sinc² = 1, so c2 = g1²
-            return g1 ** 2
+            return g1**2
         else:
             # Laminar flow case: calculate full sinc² contribution
             phi_offset = parameters[-1]
-            
+
             # Use pre-computed gamma_integral if available, otherwise compute
             if gamma_integral is None:
                 param_hash = hash(tuple(parameters))
@@ -989,20 +1006,22 @@ class HomodyneAnalysisCore:
         # Combine contributions: c2 = (g1 × sinc²)²
         return (sinc2 * g1) ** 2
 
-    def _calculate_c2_vectorized_static(self, D_integral: np.ndarray, num_angles: int) -> np.ndarray:
+    def _calculate_c2_vectorized_static(
+        self, D_integral: np.ndarray, num_angles: int
+    ) -> np.ndarray:
         """
         Ultra-fast vectorized correlation calculation for static case.
-        
+
         In static mode, all angles produce identical correlation functions,
         so we compute once and broadcast to all angles.
-        
+
         Parameters
         ----------
         D_integral : np.ndarray
             Pre-computed diffusion integral matrix
         num_angles : int
             Number of angles to replicate
-            
+
         Returns
         -------
         np.ndarray
@@ -1017,8 +1036,8 @@ class HomodyneAnalysisCore:
             g1 = np.exp(-self.wavevector_q_squared_half_dt * D_integral)
 
         # Static case: c2 = g1² (sinc² = 1)
-        c2_single = g1 ** 2
-        
+        c2_single = g1**2
+
         # Broadcast to all angles using memory-efficient approach
         if num_angles == 1:
             return c2_single.reshape(1, self.time_length, self.time_length)
@@ -1066,53 +1085,69 @@ class HomodyneAnalysisCore:
         ):
             # Sequential processing (Numba will handle internal parallelization)
             # Pre-calculate common values once to avoid redundant computation
-            diffusion_params = parameters[:self.num_diffusion_params]
+            diffusion_params = parameters[: self.num_diffusion_params]
             shear_params = parameters[
                 self.num_diffusion_params : self.num_diffusion_params
                 + self.num_shear_rate_params
             ]
-            
+
             # Pre-compute static conditions
             static_mode = self.is_static_mode()
             is_static_params = self.is_static_parameters(shear_params)
             is_static = static_mode or is_static_params
-            
+
             # Pre-compute parameter hash and diffusion coefficient
             param_hash = hash(tuple(parameters))
             D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
             D_integral = self.create_time_integral_matrix_cached(f"D_{param_hash}", D_t)
-            
+
             # Use vectorized processing for maximum performance
             if is_static:
                 # Static case: all angles have identical correlation (no angle dependence)
                 return self._calculate_c2_vectorized_static(D_integral, num_angles)
             else:
                 # Laminar flow case: use pre-allocated memory pool for better performance
-                if not hasattr(self, '_c2_results_pool') or self._c2_results_pool.shape != (num_angles, self.time_length, self.time_length):
-                    self._c2_results_pool = np.empty((num_angles, self.time_length, self.time_length), dtype=np.float64)
+                if not hasattr(
+                    self, "_c2_results_pool"
+                ) or self._c2_results_pool.shape != (
+                    num_angles,
+                    self.time_length,
+                    self.time_length,
+                ):
+                    self._c2_results_pool = np.empty(
+                        (num_angles, self.time_length, self.time_length),
+                        dtype=np.float64,
+                    )
                 c2_results = self._c2_results_pool
-                
+
                 # Pre-compute shear integrals once if applicable
                 param_hash = hash(tuple(parameters))
                 if not is_static_params:
                     gamma_dot_t = self.calculate_shear_rate_optimized(shear_params)
-                    gamma_integral = self.create_time_integral_matrix_cached(f"gamma_{param_hash}", gamma_dot_t)
+                    gamma_integral = self.create_time_integral_matrix_cached(
+                        f"gamma_{param_hash}", gamma_dot_t
+                    )
                 else:
                     gamma_integral = None
-                
+
                 for i in range(num_angles):
                     c2_results[i] = self._calculate_c2_single_angle_fast(
-                        parameters, phi_angles[i], D_integral, is_static, shear_params, gamma_integral
+                        parameters,
+                        phi_angles[i],
+                        D_integral,
+                        is_static,
+                        shear_params,
+                        gamma_integral,
                     )
-                
+
                 return c2_results.copy()  # Return copy to avoid mutation
 
         else:
             # Parallel processing (only when Numba not available)
             # Pre-calculate diffusion coefficient once to avoid redundant computation
-            diffusion_params = parameters[:self.num_diffusion_params]
+            diffusion_params = parameters[: self.num_diffusion_params]
             D_t = self.calculate_diffusion_coefficient_optimized(diffusion_params)
-            
+
             use_threading = True
             if self.config is not None:
                 use_threading = self.config.get("performance_settings", {}).get(
@@ -1155,10 +1190,10 @@ class HomodyneAnalysisCore:
         This method computes the reduced chi-squared statistic for model validation, with optional
         detailed per-angle analysis and uncertainty quantification. The uncertainty in reduced
         chi-squared provides insight into the consistency of fit quality across different angles.
-        
+
         Performance Optimizations (v0.6.1+):
         - Configuration caching: Cached validation and chi-squared configs to avoid repeated lookups
-        - Memory optimization: Pre-allocated arrays with reshape() instead of list comprehensions  
+        - Memory optimization: Pre-allocated arrays with reshape() instead of list comprehensions
         - Least squares optimization: Replaced lstsq with solve() for 2x2 matrix systems
         - Vectorized operations: Improved angle filtering and array operations
         - Early validation: Short-circuit returns for invalid parameters
@@ -1235,12 +1270,14 @@ class HomodyneAnalysisCore:
         # Parameter validation with caching
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
-        
+
         # Cache validation config to avoid repeated dict lookups
-        if not hasattr(self, '_cached_validation_config'):
-            self._cached_validation_config = self.config.get("advanced_settings", {}).get(
-                "chi_squared_calculation", {}
-            ).get("validity_check", {})
+        if not hasattr(self, "_cached_validation_config"):
+            self._cached_validation_config = (
+                self.config.get("advanced_settings", {})
+                .get("chi_squared_calculation", {})
+                .get("validity_check", {})
+            )
         validation = self._cached_validation_config
 
         diffusion_params = parameters[: self.num_diffusion_params]
@@ -1302,7 +1339,7 @@ class HomodyneAnalysisCore:
             )
 
             # Chi-squared calculation with caching
-            if not hasattr(self, '_cached_chi_config'):
+            if not hasattr(self, "_cached_chi_config"):
                 self._cached_chi_config = self.config.get("advanced_settings", {}).get(
                     "chi_squared_calculation", {}
                 )
@@ -1341,7 +1378,9 @@ class HomodyneAnalysisCore:
                 optimization_mask = np.zeros(len(phi_angles_array), dtype=bool)
                 # Vectorized range checking for all ranges at once
                 for min_angle, max_angle in target_ranges:
-                    optimization_mask |= (phi_angles_array >= min_angle) & (phi_angles_array <= max_angle)
+                    optimization_mask |= (phi_angles_array >= min_angle) & (
+                        phi_angles_array <= max_angle
+                    )
                 optimization_indices = np.flatnonzero(optimization_mask).tolist()
 
                 logger.debug(
@@ -1418,35 +1457,33 @@ class HomodyneAnalysisCore:
             # Vectorized least squares fitting for all angles
             n_data_per_angle = theory_flat.shape[1]
             angle_data_points = [n_data_per_angle] * n_angles
-            
-            # Batch least squares computation
-            A_base = np.vstack([np.ones(n_data_per_angle), np.ones(n_data_per_angle)]).T
-            scaling_solutions = []
-            
-            for i in range(n_angles):
-                theory = theory_flat[i]
-                exp = exp_flat[i]
-                
-                # Solve least squares: A = [theory, ones]
-                A_base[:, 0] = theory
-                try:
-                    scaling = np.linalg.solve(A_base.T @ A_base, A_base.T @ exp)
-                    contrast, offset = scaling
-                    fitted = theory * contrast + offset
-                    scaling_solutions.append([contrast, offset])
-                except np.linalg.LinAlgError:
-                    # Fallback for singular matrix
-                    fitted = theory
-                    scaling_solutions.append([1.0, 0.0])
 
-                # Vectorized chi-squared calculation
-                residuals = exp - fitted
-                sigma = max(np.std(exp) * uncertainty_factor, min_sigma)
-                chi2_angle = np.sum(residuals**2) / (sigma**2)
-                dof_angle = max(n_data_per_angle - n_params, 1)
+            # Phase 3: Vectorized batch processing with Numba optimization
+            # Pre-compute variance estimates for all angles (vectorized optimization)
+            exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
+            sigma_batch = np.maximum(exp_std_batch, min_sigma)
 
-                angle_chi2[i] = chi2_angle
-                angle_chi2_reduced[i] = chi2_angle / dof_angle
+            # Batch solve least squares for all angles using Numba
+            contrast_batch, offset_batch = solve_least_squares_batch_numba(
+                theory_flat, exp_flat
+            )
+
+            # Batch compute chi-squared values using Numba
+            chi2_raw_batch = compute_chi_squared_batch_numba(
+                theory_flat, exp_flat, contrast_batch, offset_batch
+            )
+
+            # Apply sigma normalization and DOF calculation (vectorized)
+            sigma_squared_batch = sigma_batch**2
+            dof_batch = np.maximum(n_data_per_angle - n_params, 1)
+
+            angle_chi2[:] = chi2_raw_batch / sigma_squared_batch
+            angle_chi2_reduced[:] = angle_chi2 / dof_batch
+
+            # Store scaling solutions for compatibility
+            scaling_solutions = [
+                [contrast_batch[i], offset_batch[i]] for i in range(n_angles)
+            ]
 
             # Collect chi2 values for optimization angles (for averaging)
             if filter_angles_for_optimization:
@@ -2220,7 +2257,10 @@ Validation:
             logger.debug(traceback.format_exc())
 
     def _generate_analysis_plots(
-        self, results: Dict[str, Any], output_data: Dict[str, Any], skip_generic_plots: bool = False
+        self,
+        results: Dict[str, Any],
+        output_data: Dict[str, Any],
+        skip_generic_plots: bool = False,
     ) -> None:
         """
         Generate analysis plots including C2 heatmaps with experimental vs theoretical comparison.
@@ -2236,7 +2276,9 @@ Validation:
 
         # Skip generic plots if requested (for method-specific plotting)
         if skip_generic_plots:
-            logger.info("Generic plots skipped - using method-specific plotting instead")
+            logger.info(
+                "Generic plots skipped - using method-specific plotting instead"
+            )
             return
 
         # Check if plotting is enabled in configuration
@@ -2262,15 +2304,19 @@ Validation:
 
             # Extract output directory from output_data if available
             output_dir = output_data.get("output_dir")
-            
+
             # Determine output directory - use output_data, config, or default
             if output_dir is not None:
                 results_dir = Path(output_dir)
-            elif config and "output_settings" in config and "results_directory" in config["output_settings"]:
+            elif (
+                config
+                and "output_settings" in config
+                and "results_directory" in config["output_settings"]
+            ):
                 results_dir = Path(config["output_settings"]["results_directory"])
             else:
                 results_dir = Path("homodyne_results")
-            
+
             plots_dir = results_dir / "plots"
             plots_dir.mkdir(parents=True, exist_ok=True)
 

@@ -537,7 +537,7 @@ class TestMCMCBoundsIntegration:
         # Load and validate configuration
         config_manager = ConfigManager(str(config_file))
         loaded_config = config_manager.config
-        
+
         # Verify configuration was loaded successfully
         assert loaded_config is not None, "Configuration loading failed"
 

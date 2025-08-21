@@ -13,51 +13,77 @@ Recent Performance Improvements (v0.6.2-v0.6.3)
 Overview
 ---------
 
-Recent releases have delivered significant performance improvements to the homodyne scattering analysis pipeline, focusing on the most computationally intensive operations: chi-squared calculation and correlation function computation.
+Recent releases have delivered breakthrough performance improvements to the homodyne scattering analysis pipeline through a comprehensive multi-phase optimization strategy targeting the most computationally intensive operations: chi-squared calculation and correlation function computation.
 
 Performance Results
 -------------------
 
-**Before Optimization:**
+**Multi-Phase Optimization Journey:**
 
-- **Correlation calculation**: ~220 μs
-- **Chi-squared calculation**: ~1,330 μs (6x slower than correlation)
-- **Performance bottleneck**: Chi-squared dominated execution time
+- **Original baseline**: Chi-squared: ~546 μs, Correlation: ~13 μs (43x ratio)
+- **Phase 1** (variance pre-computation): Chi-squared: ~464 μs (**15% improvement**)
+- **Phase 2** (Numba integration): Chi-squared: ~444 μs (**18.7% total improvement**)
+- **Phase 3** (batch vectorization): Chi-squared: **~202 μs** (**63.1% total improvement**)
 
-**After Optimization:**
+**Final Performance Achievement:**
 
-- **Correlation calculation**: ~13 μs (**17x improvement**)
-- **Chi-squared calculation**: ~580 μs (**38% improvement**, now 30% better than baseline)
-- **Performance ratio**: Chi-squared/Correlation = **1.7x** (down from 6x)
+- **Correlation calculation**: ~13 μs (maintained excellent performance)
+- **Chi-squared calculation**: **~202 μs** (**2.71x speedup**, 63.1% improvement)
+- **Performance ratio**: Chi-squared/Correlation = **15.6x** (down from 43x - **64% reduction**)
+- **Overall impact**: Eliminated major computational bottleneck through vectorized batch processing
 
 Key Optimizations Implemented
 -----------------------------
 
-1. **Numba Parallel Processing Fixes**
-   
-   - **Problem**: Inappropriate use of ``parallel=True`` for small arrays (50 elements)
-   - **Solution**: Changed to ``parallel=False`` for small datasets
-   - **Impact**: **1,507x improvement** in chi-squared calculation
+**Phase 1: Variance Pre-computation (15% improvement)**
+
+1. **Vectorized Variance Calculation**
    
    .. code-block:: python
    
-      # Before: slow for small arrays
-      @njit(parallel=True)
-      def calculate_diffusion_coefficient(time_array, D0, alpha, D_offset):
-          # 791ms for 50 elements due to thread overhead
+      # Before: Individual std() calls in loop
+      for i in range(n_angles):
+          sigma = max(np.std(exp_flat[i]) * uncertainty_factor, min_sigma)
           
-      # After: optimized for small arrays  
-      @njit(parallel=False)
-      def calculate_diffusion_coefficient(time_array, D0, alpha, D_offset):
-          # 0.5ms for 50 elements
+      # After: Batch variance computation
+      exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
+      sigma_batch = np.maximum(exp_std_batch, min_sigma)
 
-2. **Memory Access Optimization**
+**Phase 2: Numba Kernel Integration (4.3% additional improvement)**
 
-   - **Before**: ``np.array([c2_theory[i].ravel() for i in range(n_angles)])``
-   - **After**: ``c2_theory.reshape(n_angles, -1)``
-   - **Impact**: Eliminated list comprehension overhead and improved memory locality
+2. **JIT-Compiled Chi-Squared Calculation**
+   
+   .. code-block:: python
+   
+      # Added specialized Numba kernel
+      @njit(float64(float64[:], float64[:], float64), cache=True, fastmath=True)
+      def compute_chi_squared_with_sigma_numba(observed, fitted, sigma):
+          chi2 = 0.0
+          sigma_sq = sigma * sigma
+          for i in range(observed.size):
+              residual = observed[i] - fitted[i]
+              chi2 += (residual * residual) / sigma_sq
+          return chi2
 
-3. **Configuration Caching**
+**Phase 3: Batch Vectorization (54.6% additional improvement)**
+
+3. **Advanced Batch Processing Architecture**
+   
+   .. code-block:: python
+   
+      # Revolutionary approach: Eliminate sequential processing
+      # Before: Loop-based matrix operations for each angle
+      for i in range(n_angles):
+          A_base[:, 0] = theory_flat[i]
+          scaling = np.linalg.solve(A_base.T @ A_base, A_base.T @ exp_flat[i])
+          # ... individual chi-squared calculation
+          
+      # After: Vectorized batch operations
+      contrast_batch, offset_batch = solve_least_squares_batch_numba(theory_flat, exp_flat)
+      chi2_raw_batch = compute_chi_squared_batch_numba(theory_flat, exp_flat, 
+                                                       contrast_batch, offset_batch)
+
+4. **Memory Layout Optimization**
 
    - **Optimization**: Cached validation and chi-squared configurations to avoid repeated dict lookups
    - **Implementation**: ``_cached_validation_config`` and ``_cached_chi_config`` attributes

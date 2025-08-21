@@ -37,6 +37,7 @@ Institution: Argonne National Laboratory & University of Chicago
 
 # Check Python version requirement early
 import sys
+
 if sys.version_info < (3, 12):
     raise RuntimeError(
         f"Python 3.12+ is required. You are using Python {sys.version}. "
@@ -63,7 +64,7 @@ from .core.kernels import (
 try:
     from .core.profiler import (
         profile_execution_time,
-        profile_memory_usage, 
+        profile_memory_usage,
         get_performance_summary,
         # New stable benchmarking utilities
         stable_benchmark,
@@ -74,6 +75,7 @@ try:
 except ImportError as e:
     # Profiling utilities are optional
     import logging
+
     logging.getLogger(__name__).debug(
         f"Performance profiling utilities not available: {e}"
     )
@@ -122,11 +124,11 @@ __all__ = [
     "exp_negative_vectorized",
     # Performance profiling utilities (optional)
     "profile_execution_time",
-    "profile_memory_usage", 
+    "profile_memory_usage",
     "get_performance_summary",
     # Stable benchmarking utilities (new)
     "stable_benchmark",
-    "optimize_numerical_environment", 
+    "optimize_numerical_environment",
     "assert_performance_within_bounds",
     "assert_performance_stability",
     # Optimization methods (optional)
@@ -135,7 +137,7 @@ __all__ = [
     "create_mcmc_sampler",
 ]
 
-# Version information  
+# Version information
 __version__ = "0.6.3.dev0"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"

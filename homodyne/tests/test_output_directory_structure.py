@@ -310,12 +310,12 @@ class TestBackwardCompatibility:
 
         assert default_output_dir.exists()
         assert default_output_dir.name == "homodyne_results"
-        
+
         # The test_output_directory fixture only marks directories as test artifacts
         # if they didn't exist before. If the directory already exists (user data),
         # it won't be marked, which is the correct safety behavior.
         marker_file = default_output_dir / ".test-artifact"
-        
+
         # Check if this was a pre-existing directory or newly created by the fixture
         # The fixture is smart and won't mark pre-existing directories as test artifacts
         if marker_file.exists():

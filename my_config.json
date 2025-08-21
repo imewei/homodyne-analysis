@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Project metadata for static isotropic analysis",
-    "config_version": "6.1",
+    "config_version": "0.6.3",
     "description": "Static Isotropic Scattering Analysis - No flow, no angular dependence",
     "analysis_mode": "static_isotropic",
     "created_date": "2025-08-17",
@@ -12,7 +12,7 @@
     "institution": "Argonne National Laboratory",
     "experiment_name": "Testing",
     "sample_description": "Simon PNAS",
-    "script_compatibility": "homodyne v0.6.1",
+    "script_compatibility": "homodyne v0.6.3",
     "_cli_usage": {
       "description": "CLI usage for this static isotropic analysis",
       "recommended_commands": [

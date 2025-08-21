@@ -275,7 +275,7 @@ class MCMCSampler:
         # Create PyMC model
         if pm is None:
             raise ImportError("PyMC not available - cannot create MCMC model")
-        
+
         with pm.Model() as model:
             # Define priors based on parameter bounds from configuration
             bounds = self.config.get("parameter_space", {}).get("bounds", [])
@@ -286,39 +286,58 @@ class MCMCSampler:
             )
 
             # Helper function to create priors from bounds
-            def create_prior_from_config(param_name, param_index, fallback_dist="Normal"):
+            def create_prior_from_config(
+                param_name, param_index, fallback_dist="Normal"
+            ):
                 """Create PyMC prior from configuration bounds and distribution type."""
                 if param_index < len(bounds):
                     bound = bounds[param_index]
                     if bound.get("name") == param_name:
                         min_val = bound.get("min")
-                        max_val = bound.get("max") 
+                        max_val = bound.get("max")
                         prior_type = bound.get("type", fallback_dist)
                         prior_mu = bound.get("prior_mu", 0.0)
                         prior_sigma = bound.get("prior_sigma", 1.0)
 
-                        print(f"   Using configured prior for {param_name}: {prior_type}(μ={prior_mu}, σ={prior_sigma})")
+                        print(
+                            f"   Using configured prior for {param_name}: {prior_type}(μ={prior_mu}, σ={prior_sigma})"
+                        )
 
                         if prior_type == "TruncatedNormal":
                             # Use bounds as truncation limits
                             lower = min_val if min_val is not None else -np.inf
                             upper = max_val if max_val is not None else np.inf
                             if pm is not None:
-                                return pm.TruncatedNormal(param_name, mu=prior_mu, sigma=prior_sigma, 
-                                                        lower=lower, upper=upper)  # type: ignore
+                                return pm.TruncatedNormal(
+                                    param_name,
+                                    mu=prior_mu,
+                                    sigma=prior_sigma,
+                                    lower=lower,
+                                    upper=upper,
+                                )  # type: ignore
                             else:
                                 raise ImportError("PyMC not available")
                         elif prior_type == "Normal":
                             return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)  # type: ignore
-                        elif prior_type == "LogNormal" and min_val is not None and min_val > 0:
+                        elif (
+                            prior_type == "LogNormal"
+                            and min_val is not None
+                            and min_val > 0
+                        ):
                             # Convert to log space
                             log_mu = np.log(prior_mu) if prior_mu > 0 else 0.0
                             log_sigma = prior_sigma
                             return pm.LogNormal(param_name, mu=log_mu, sigma=log_sigma)  # type: ignore
-                        elif prior_type == "Uniform" and min_val is not None and max_val is not None:
+                        elif (
+                            prior_type == "Uniform"
+                            and min_val is not None
+                            and max_val is not None
+                        ):
                             return pm.Uniform(param_name, lower=min_val, upper=max_val)  # type: ignore
                         else:
-                            print(f"   ⚠ Unknown prior type '{prior_type}' for {param_name}, using Normal")
+                            print(
+                                f"   ⚠ Unknown prior type '{prior_type}' for {param_name}, using Normal"
+                            )
                             return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)  # type: ignore
                     else:
                         logger.warning(
@@ -327,23 +346,37 @@ class MCMCSampler:
 
                 # Fallback: use hardcoded values with fallback distribution
                 fallback_params = {
-                    "D0": {"mu": 1e4, "sigma": 1000.0, "lower": 1.0, "type": "TruncatedNormal"},
+                    "D0": {
+                        "mu": 1e4,
+                        "sigma": 1000.0,
+                        "lower": 1.0,
+                        "type": "TruncatedNormal",
+                    },
                     "alpha": {"mu": -1.5, "sigma": 0.1, "type": "Normal"},
                     "D_offset": {"mu": 0.0, "sigma": 10.0, "type": "Normal"},
-                    "gamma_dot_t0": {"mu": 1e-3, "sigma": 1e-2, "lower": 1e-6, "type": "TruncatedNormal"},
+                    "gamma_dot_t0": {
+                        "mu": 1e-3,
+                        "sigma": 1e-2,
+                        "lower": 1e-6,
+                        "type": "TruncatedNormal",
+                    },
                     "beta": {"mu": 0.0, "sigma": 0.1, "type": "Normal"},
                     "gamma_dot_t_offset": {"mu": 0.0, "sigma": 1e-3, "type": "Normal"},
                     "phi0": {"mu": 0.0, "sigma": 5.0, "type": "Normal"},
                 }
-                
+
                 if param_name in fallback_params:
                     params = fallback_params[param_name]
                     print(f"   Using fallback prior for {param_name}: {params['type']}")
-                    
+
                     if params["type"] == "TruncatedNormal":
                         if pm is not None:
-                            return pm.TruncatedNormal(param_name, mu=params["mu"], sigma=params["sigma"],
-                                                    lower=params.get("lower", 1e-10))  # type: ignore
+                            return pm.TruncatedNormal(
+                                param_name,
+                                mu=params["mu"],
+                                sigma=params["sigma"],
+                                lower=params.get("lower", 1e-10),
+                            )  # type: ignore
                         else:
                             raise ImportError("PyMC not available")
                     else:
@@ -358,25 +391,25 @@ class MCMCSampler:
                 D0 = create_prior_from_config("D0", 0)
                 alpha = create_prior_from_config("alpha", 1)
                 D_offset = create_prior_from_config("D_offset", 2)
-                
+
                 # Assert that these variables are not None for type checking
                 assert D0 is not None
                 assert alpha is not None
                 assert D_offset is not None
-                
+
                 print(f"   ✓ Successfully created diffusion priors from configuration")
             except Exception as e:
                 print(f"   ⚠ Error creating priors from config: {e}")
                 # Fallback with hardcoded values
                 D0 = create_prior_from_config("D0", -1)  # Force fallback
-                alpha = create_prior_from_config("alpha", -1)  # Force fallback 
+                alpha = create_prior_from_config("alpha", -1)  # Force fallback
                 D_offset = create_prior_from_config("D_offset", -1)  # Force fallback
-                
+
                 # Assert that these variables are not None for type checking
                 assert D0 is not None
                 assert alpha is not None
                 assert D_offset is not None
-                
+
                 print(f"   ✓ Using fallback priors for diffusion parameters")
 
             if not is_static_mode and effective_param_count > 3:
@@ -384,7 +417,9 @@ class MCMCSampler:
                 try:
                     gamma_dot_t0 = create_prior_from_config("gamma_dot_t0", 3)
                     beta = create_prior_from_config("beta", 4)
-                    gamma_dot_t_offset = create_prior_from_config("gamma_dot_t_offset", 5)
+                    gamma_dot_t_offset = create_prior_from_config(
+                        "gamma_dot_t_offset", 5
+                    )
                     phi0 = create_prior_from_config("phi0", 6)
                     print(f"   ✓ Created laminar flow priors from configuration")
                 except Exception as e:
@@ -392,7 +427,9 @@ class MCMCSampler:
                     # Fallback
                     gamma_dot_t0 = create_prior_from_config("gamma_dot_t0", -1)
                     beta = create_prior_from_config("beta", -1)
-                    gamma_dot_t_offset = create_prior_from_config("gamma_dot_t_offset", -1)
+                    gamma_dot_t_offset = create_prior_from_config(
+                        "gamma_dot_t_offset", -1
+                    )
                     phi0 = create_prior_from_config("phi0", -1)
                     print(f"   ✓ Using fallback priors for laminar flow parameters")
             else:
@@ -409,7 +446,9 @@ class MCMCSampler:
             # Noise model
             noise_config = performance_config.get("noise_model", {})
             if pm is not None:
-                sigma = pm.HalfNormal("sigma", sigma=noise_config.get("sigma_prior", 0.1))
+                sigma = pm.HalfNormal(
+                    "sigma", sigma=noise_config.get("sigma_prior", 0.1)
+                )
             else:
                 raise ImportError("PyMC not available")
 
@@ -425,7 +464,7 @@ class MCMCSampler:
                 else:
                     print(f"   ⚠ All data is NaN, using fallback value 1.0")
                     c2_data = np.ones_like(c2_data)
-            
+
             # Convert to shared variables for efficiency
             c2_data_shared = shared(c2_data.astype(dtype), name="c2_data")
             phi_angles_shared = shared(
@@ -433,7 +472,7 @@ class MCMCSampler:
             )  # noqa: F841
 
             # Forward model (simplified for computational efficiency)
-        # Note: D(t) and γ̇(t) positivity is enforced at the function level
+            # Note: D(t) and γ̇(t) positivity is enforced at the function level
             if is_static_mode:
                 # Static mode: only diffusion parameters
                 params = pt.stack([D0, alpha, D_offset])  # noqa: F841
@@ -483,7 +522,7 @@ class MCMCSampler:
                     mu = pm.Deterministic("mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001)  # type: ignore[operator]
                 else:
                     raise ImportError("PyMC/PyTensor not available")
-                
+
                 # Likelihood using mean experimental value - validate first
                 # Remove any NaN values before computing mean
                 if pt is not None:
@@ -492,12 +531,14 @@ class MCMCSampler:
                 else:
                     raise ImportError("PyTensor not available")
                 if pt is not None:
-                    c2_mean = pt.switch(pt.gt(c2_data_valid.size, 0), 
-                                      pt.mean(c2_data_valid), 
-                                      pt.constant(1.0))  # fallback value
+                    c2_mean = pt.switch(
+                        pt.gt(c2_data_valid.size, 0),
+                        pt.mean(c2_data_valid),
+                        pt.constant(1.0),
+                    )  # fallback value
                 else:
                     raise ImportError("PyTensor not available")
-                
+
                 # Use more stable likelihood
                 if pm is not None:
                     likelihood = pm.Normal(  # noqa: F841
@@ -513,8 +554,12 @@ class MCMCSampler:
                     "   Properly accounting for per-angle contrast and offset scaling"
                 )
                 print("   Consistent with chi-squared calculation methodology")
-                print("   Enforcing physical constraints: c2_fitted ∈ [1,2], c2_theory ∈ [0,1]")
-                print("   Scaling parameter bounds: contrast ∈ (0, 0.5], offset ∈ (0, 2.0)")
+                print(
+                    "   Enforcing physical constraints: c2_fitted ∈ [1,2], c2_theory ∈ [0,1]"
+                )
+                print(
+                    "   Scaling parameter bounds: contrast ∈ (0, 0.5], offset ∈ (0, 2.0)"
+                )
 
                 # For each angle, implement scaling optimization in the likelihood
                 # This is a simplified but more consistent approach
@@ -540,39 +585,58 @@ class MCMCSampler:
                         raise ImportError("PyTensor not available")
                     if pt is not None:
                         # Type assertions to help Pylance understand these are not None
-                        assert c2_theory_normalized is not None and c2_exp_angle is not None
-                        c2_theory_angle = c2_theory_normalized * pt.ones_like(c2_exp_angle)
+                        assert (
+                            c2_theory_normalized is not None
+                            and c2_exp_angle is not None
+                        )
+                        c2_theory_angle = c2_theory_normalized * pt.ones_like(
+                            c2_exp_angle
+                        )
                     else:
                         raise ImportError("PyTensor not available")
 
                     # Implement scaling optimization: fitted = theory * contrast + offset
                     # Use bounded priors with realistic physical constraints from configuration
-                    scaling_config = self.config.get("optimization_config", {}).get("scaling_parameters", {})
+                    scaling_config = self.config.get("optimization_config", {}).get(
+                        "scaling_parameters", {}
+                    )
                     contrast_config = scaling_config.get("contrast", {})
                     offset_config = scaling_config.get("offset", {})
-                    
+
                     # Create contrast parameter from config or fallback
                     contrast_mu = contrast_config.get("prior_mu", 0.3)
                     contrast_sigma = contrast_config.get("prior_sigma", 0.1)
                     contrast_min = contrast_config.get("min", 0.05)
                     contrast_max = contrast_config.get("max", 0.5)
-                    
+
                     # Create offset parameter from config or fallback
                     offset_mu = offset_config.get("prior_mu", 1.0)
                     offset_sigma = offset_config.get("prior_sigma", 0.2)
                     offset_min = offset_config.get("min", 0.05)
                     offset_max = offset_config.get("max", 1.95)
-                    
-                    print(f"   Using scaling priors: contrast TruncatedNormal(μ={contrast_mu}, σ={contrast_sigma}, [{contrast_min}, {contrast_max}])")
-                    print(f"   Using scaling priors: offset TruncatedNormal(μ={offset_mu}, σ={offset_sigma}, [{offset_min}, {offset_max}])")
-                    
+
+                    print(
+                        f"   Using scaling priors: contrast TruncatedNormal(μ={contrast_mu}, σ={contrast_sigma}, [{contrast_min}, {contrast_max}])"
+                    )
+                    print(
+                        f"   Using scaling priors: offset TruncatedNormal(μ={offset_mu}, σ={offset_sigma}, [{offset_min}, {offset_max}])"
+                    )
+
                     if pm is not None:
-                        contrast = pm.TruncatedNormal(f"contrast_{angle_idx}", 
-                                                    mu=contrast_mu, sigma=contrast_sigma, 
-                                                    lower=contrast_min, upper=contrast_max)
-                        offset = pm.TruncatedNormal(f"offset_{angle_idx}", 
-                                                  mu=offset_mu, sigma=offset_sigma, 
-                                                  lower=offset_min, upper=offset_max)
+                        contrast = pm.TruncatedNormal(
+                            f"contrast_{angle_idx}",
+                            mu=contrast_mu,
+                            sigma=contrast_sigma,
+                            lower=contrast_min,
+                            upper=contrast_max,
+                        )
+                        offset = pm.TruncatedNormal(
+                            f"offset_{angle_idx}",
+                            mu=offset_mu,
+                            sigma=offset_sigma,
+                            lower=offset_min,
+                            upper=offset_max,
+                        )
                         # Type assertions to help Pylance understand these are not None
                         assert contrast is not None and offset is not None
                     else:
@@ -580,9 +644,13 @@ class MCMCSampler:
 
                     # Apply scaling
                     # Type assertions to help Pylance understand these are not None
-                    assert c2_theory_angle is not None and contrast is not None and offset is not None
+                    assert (
+                        c2_theory_angle is not None
+                        and contrast is not None
+                        and offset is not None
+                    )
                     c2_fitted_angle = c2_theory_angle * contrast + offset
-                    
+
                     # Add simplified physical constraints for c2_fitted range [1, 2]
                     # Use tensor-safe operations that work with both scalars and arrays
                     # The TruncatedNormal priors already handle contrast ∈ (0, 0.5] and offset bounds
@@ -591,14 +659,19 @@ class MCMCSampler:
                         assert c2_fitted_angle is not None
                         # Create the constraint expression with type safety
                         constraint_expr = pt.switch(
-                            pt.and_(pt.ge(pt.mean(c2_fitted_angle), 1.0), pt.le(pt.mean(c2_fitted_angle), 2.0)),  # use mean for tensor safety
+                            pt.and_(
+                                pt.ge(pt.mean(c2_fitted_angle), 1.0),
+                                pt.le(pt.mean(c2_fitted_angle), 2.0),
+                            ),  # use mean for tensor safety
                             0.0,  # Valid: log probability = 0
-                            -1e10  # Invalid: large negative log probability (avoids -inf issues)
+                            -1e10,  # Invalid: large negative log probability (avoids -inf issues)
                         )
-                        assert constraint_expr is not None  # Help Pylance understand this is not None
+                        assert (
+                            constraint_expr is not None
+                        )  # Help Pylance understand this is not None
                         pm.Potential(
                             f"fitted_range_constraint_{angle_idx}",
-                            constraint_expr  # type: ignore[arg-type]
+                            constraint_expr,  # type: ignore[arg-type]
                         )
                     else:
                         raise ImportError("PyMC/PyTensor not available")
@@ -737,32 +810,40 @@ class MCMCSampler:
 
         # Prepare initial values with priority order:
         # 1. Classical fitting results (if available)
-        # 2. Bayesian Optimization results (if available) 
+        # 2. Bayesian Optimization results (if available)
         # 3. Configuration file initial parameters
         # 4. Hardcoded fallback values (last resort)
-        
+
         initvals = None
         best_params_classical = getattr(self.core, "best_params_classical", None)
         best_params_bo = getattr(self.core, "best_params_bo", None)
-        
+
         # Priority 1: Use classical fitting results if available
-        if best_params_classical is not None and not np.any(np.isnan(best_params_classical)):
+        if best_params_classical is not None and not np.any(
+            np.isnan(best_params_classical)
+        ):
             print("     ✓ Using Classical optimization results for MCMC initialization")
             init_params = best_params_classical
-        # Priority 2: Use Bayesian Optimization results if available  
+        # Priority 2: Use Bayesian Optimization results if available
         elif best_params_bo is not None and not np.any(np.isnan(best_params_bo)):
             print("     ✓ Using Bayesian Optimization results for MCMC initialization")
             init_params = best_params_bo
         else:
             init_params = None
-        
+
         # Priority 3: Use configuration file initial parameters if no optimization results
         if init_params is None:
-            print("     Using configuration file initial parameters for MCMC initialization")
+            print(
+                "     Using configuration file initial parameters for MCMC initialization"
+            )
             try:
-                config_initial_params = self.config.get("initial_parameters", {}).get("values", None)
+                config_initial_params = self.config.get("initial_parameters", {}).get(
+                    "values", None
+                )
                 if config_initial_params is not None:
-                    init_params = np.array(config_initial_params[:effective_param_count])
+                    init_params = np.array(
+                        config_initial_params[:effective_param_count]
+                    )
                     print(f"     Configuration initialization values: {init_params}")
                 else:
                     print("     ⚠ No initial parameter values found in configuration")
@@ -770,27 +851,29 @@ class MCMCSampler:
             except Exception as e:
                 print(f"     ⚠ Error reading configuration parameters: {e}")
                 init_params = None
-        
+
         # Priority 4: Use hardcoded fallback values as last resort
         if init_params is None:
             print("     ⚠ Using hardcoded fallback values for MCMC initialization")
             # Hardcoded fallback values - should match your specified defaults
             fallback_params = [
                 16000.0,  # D0 - your specified default
-                -1.5,     # alpha - your specified default
-                1.1       # D_offset - your specified default
+                -1.5,  # alpha - your specified default
+                1.1,  # D_offset - your specified default
             ]
             if not is_static_mode:
                 # Add laminar flow parameters if needed
-                fallback_params.extend([
-                    0.01,     # gamma_dot_t0
-                    1.0,      # beta  
-                    0.0,      # gamma_dot_t_offset
-                    0.0       # phi0
-                ])
+                fallback_params.extend(
+                    [
+                        0.01,  # gamma_dot_t0
+                        1.0,  # beta
+                        0.0,  # gamma_dot_t_offset
+                        0.0,  # phi0
+                    ]
+                )
             init_params = np.array(fallback_params[:effective_param_count])
             print(f"     Hardcoded fallback initialization values: {init_params}")
-        
+
         # Validate initialization parameters against physical constraints
         print("     Validating initialization parameters for physical constraints...")
         if not self._validate_initialization_constraints(init_params, is_static_mode):
@@ -799,21 +882,29 @@ class MCMCSampler:
             if len(init_params) > 0:
                 # Use a conservative D0 value that won't violate constraints
                 adjusted_params = init_params.copy()
-                adjusted_params[0] = min(adjusted_params[0], 500.0)  # Cap D0 at 500 for safety
-                print(f"     Adjusted D0 from {init_params[0]} to {adjusted_params[0]} for constraint safety")
+                adjusted_params[0] = min(
+                    adjusted_params[0], 500.0
+                )  # Cap D0 at 500 for safety
+                print(
+                    f"     Adjusted D0 from {init_params[0]} to {adjusted_params[0]} for constraint safety"
+                )
                 init_params = adjusted_params
 
         # At this point init_params should never be None since we set defaults above
         param_names = self.config["initial_parameters"]["parameter_names"]
-        
+
         # Final validation of initialization parameters for NaN values
         if np.any(np.isnan(init_params)):
-            print(f"     ⚠ Warning: Initial parameters still contain NaN values: {init_params}")
+            print(
+                f"     ⚠ Warning: Initial parameters still contain NaN values: {init_params}"
+            )
             print("     ⚠ Using safe fallback initialization")
             # Last resort fallback with very safe values
             safe_params = [10.0, -1.5, 0.0]  # D0, alpha, D_offset
             if not is_static_mode:
-                safe_params.extend([0.001, 1.0, 0.0, 0.0])  # gamma_dot_t0, beta, gamma_dot_t_offset, phi0
+                safe_params.extend(
+                    [0.001, 1.0, 0.0, 0.0]
+                )  # gamma_dot_t0, beta, gamma_dot_t_offset, phi0
             init_params = np.array(safe_params[:effective_param_count])
 
         # Adjust initialization parameters based on mode
@@ -835,7 +926,7 @@ class MCMCSampler:
         else:
             init_params_adjusted = init_params[:effective_param_count]
             param_names_adjusted = param_names[:effective_param_count]
-        
+
         # Create initialization values for all chains
         initvals = [
             {
@@ -1354,20 +1445,22 @@ class MCMCSampler:
 
         logger.debug("MCMC configuration validated successfully")
 
-    def _validate_initialization_constraints(self, params: np.ndarray, is_static_mode: bool) -> bool:
+    def _validate_initialization_constraints(
+        self, params: np.ndarray, is_static_mode: bool
+    ) -> bool:
         """
         Validate initialization parameters against MCMC constraint requirements.
-        
-        This method checks if the initialization parameters will satisfy the 
+
+        This method checks if the initialization parameters will satisfy the
         physical constraints in the MCMC model, particularly the c2_fitted ∈ [1,2] constraint.
-        
+
         Parameters
         ----------
         params : np.ndarray
             Initialization parameter values
         is_static_mode : bool
             Whether static mode is enabled
-            
+
         Returns
         -------
         bool
@@ -1376,51 +1469,63 @@ class MCMCSampler:
         try:
             if len(params) == 0:
                 return False
-                
+
             D0 = params[0]  # First parameter is always D0
-            
+
             # Check the theoretical value calculation from the model
             # c2_theory_normalized = sigmoid(log(D0 / 1000.0)) * 0.8 + 0.1
             import math
-            theory_normalized = 1.0 / (1.0 + math.exp(-math.log(D0 / 1000.0))) * 0.8 + 0.1
-            
+
+            theory_normalized = (
+                1.0 / (1.0 + math.exp(-math.log(D0 / 1000.0))) * 0.8 + 0.1
+            )
+
             # Check if with typical scaling parameters, c2_fitted stays in [1,2]
             # fitted = theory * contrast + offset
             # Using config defaults: contrast ~0.3, offset ~1.0
             contrast_typical = 0.3
             offset_typical = 1.0
             fitted_typical = theory_normalized * contrast_typical + offset_typical
-            
+
             # Also check with range extremes
             contrast_min, contrast_max = 0.05, 0.5
             offset_min, offset_max = 0.05, 1.95
-            
+
             fitted_min = theory_normalized * contrast_min + offset_min
             fitted_max = theory_normalized * contrast_max + offset_max
-            
+
             # Check for critical constraint violations that would cause -inf log probabilities
             # Focus on the typical values and maximum violations, be more permissive on edge cases
             critical_violation = (
-                fitted_typical < 0.5 or fitted_typical > 3.0 or  # Way outside reasonable range
-                fitted_max > 3.0  # Maximum could be severely problematic
+                fitted_typical < 0.5
+                or fitted_typical > 3.0  # Way outside reasonable range
+                or fitted_max > 3.0  # Maximum could be severely problematic
             )
-            
+
             if critical_violation:
-                print(f"       D0={D0} -> theory={theory_normalized:.3f} -> fitted range [{fitted_min:.3f}, {fitted_max:.3f}]")
-                print(f"       Critical constraint violation detected - may cause sampling issues")
+                print(
+                    f"       D0={D0} -> theory={theory_normalized:.3f} -> fitted range [{fitted_min:.3f}, {fitted_max:.3f}]"
+                )
+                print(
+                    f"       Critical constraint violation detected - may cause sampling issues"
+                )
                 return False
-            
+
             # Warn about potential edge case violations but don't fail validation
             if fitted_min < 1.0 or fitted_max > 2.0:
-                print(f"       D0={D0} -> theory={theory_normalized:.3f} -> fitted range [{fitted_min:.3f}, {fitted_max:.3f}]")
-                print(f"       Note: Some edge cases may violate [1,2] constraint, but should be manageable")
-                
+                print(
+                    f"       D0={D0} -> theory={theory_normalized:.3f} -> fitted range [{fitted_min:.3f}, {fitted_max:.3f}]"
+                )
+                print(
+                    f"       Note: Some edge cases may violate [1,2] constraint, but should be manageable"
+                )
+
             return True  # Allow as long as no critical violations
-            
+
         except Exception as e:
             print(f"       Error validating initialization constraints: {e}")
             return False
-    
+
     def _validate_physical_parameters(self, params: np.ndarray) -> bool:
         """
         Validate physical parameter values.

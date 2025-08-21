@@ -63,22 +63,25 @@ except ImportError:
 
 from typing import Any, Optional
 
+
 # Define a type stub that matches the interface we need
 class _HomodyneAnalysisCoreStub:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.config: Optional[Any] = None
-    
+
     def _prepare_plot_data(self, *args: Any, **kwargs: Any) -> None:
         return None
-    
+
     def _generate_analysis_plots(self, *args: Any, **kwargs: Any) -> None:
         return None
-    
+
     def _generate_theoretical_data(self, *args: Any, **kwargs: Any) -> None:
         return None
 
+
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
+
     CORE_ANALYSIS_AVAILABLE = True
 except ImportError:
     CORE_ANALYSIS_AVAILABLE = False
@@ -928,9 +931,7 @@ class TestAnalysisWorkflowIntegration:
             param_names = config.get("initial_parameters", {}).get(
                 "parameter_names", []
             )
-            param_values = config.get("initial_parameters", {}).get(
-                "values", []
-            )
+            param_values = config.get("initial_parameters", {}).get("values", [])
             bounds = config.get("parameter_space", {}).get("bounds", [])
 
             # All should have same count

@@ -23,7 +23,7 @@ from homodyne.core.profiler import (
     assert_performance_within_bounds,
     assert_performance_stability,
     stable_benchmark,
-    optimize_numerical_environment
+    optimize_numerical_environment,
 )
 
 # Performance tracking system is available via PerformanceRecorder
@@ -110,23 +110,25 @@ def setup_performance_environment():
     """Set up consistent performance testing environment."""
     from homodyne.core.profiler import optimize_numerical_environment
     from homodyne.core.kernels import warmup_numba_kernels
-    
+
     # Use consolidated environment optimization (safe for already-initialized Numba)
     try:
         optimizations = optimize_numerical_environment()
-        print(f"✓ Performance testing environment configured ({len(optimizations)} optimizations)")
+        print(
+            f"✓ Performance testing environment configured ({len(optimizations)} optimizations)"
+        )
     except RuntimeError as e:
         if "NUMBA_NUM_THREADS" in str(e):
             print(f"⚠ Numba threads already initialized - using existing settings")
             optimizations = {}
         else:
             raise
-    
+
     # Warmup Numba kernels for stable performance
     try:
         warmup_results = warmup_numba_kernels()
-        if warmup_results.get('numba_available', False):
-            warmup_time = warmup_results.get('total_warmup_time', 0)
+        if warmup_results.get("numba_available", False):
+            warmup_time = warmup_results.get("total_warmup_time", 0)
             print(f"✓ Numba kernels warmed up in {warmup_time:.3f}s")
         else:
             print("✓ Numba not available, skipping kernel warmup")
@@ -334,7 +336,7 @@ def assert_performance_regression(
 ):
     """Assert that performance hasn't regressed beyond threshold."""
     from homodyne.core.profiler import assert_performance_within_bounds
-    
+
     is_regression = recorder.check_regression(test_name, metric_name, value, threshold)
 
     if is_regression:
@@ -386,12 +388,12 @@ def assert_memory_usage(
 # These are now imported from homodyne.core.profiler for consistency
 __all__ = [
     "PerformanceRecorder",
-    "assert_performance_regression", 
+    "assert_performance_regression",
     "assert_memory_usage",
     "assert_performance_within_bounds",  # From profiler
-    "assert_performance_stability",     # From profiler
-    "stable_benchmark",                 # From profiler
-    "optimize_numerical_environment",   # From profiler
+    "assert_performance_stability",  # From profiler
+    "stable_benchmark",  # From profiler
+    "optimize_numerical_environment",  # From profiler
 ]
 
 

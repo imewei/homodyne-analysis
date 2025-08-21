@@ -536,7 +536,7 @@ class ClassicalOptimizer:
     ) -> List[Tuple[float, float]]:
         """
         Extract parameter bounds from configuration (unused by Nelder-Mead).
-        
+
         This method is kept for compatibility but is not used by Nelder-Mead
         optimization since it doesn't support explicit bounds.
 

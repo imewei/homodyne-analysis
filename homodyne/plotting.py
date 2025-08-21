@@ -800,8 +800,8 @@ def plot_mcmc_trace(
         # Create trace plot with proper variable name handling
         try:
             # Set up numpy error handling to prevent underflow from causing failures
-            old_err = np.seterr(all='ignore')
-            
+            old_err = np.seterr(all="ignore")
+
             try:
                 # First check what variables are actually available
                 if hasattr(trace_obj, "posterior") and hasattr(
@@ -842,7 +842,7 @@ def plot_mcmc_trace(
             # Fallback: try without specifying variable names
             try:
                 # Set up numpy error handling for fallback attempt too
-                old_err = np.seterr(all='ignore')
+                old_err = np.seterr(all="ignore")
                 try:
                     axes = az.plot_trace(
                         trace_obj,
@@ -2279,7 +2279,7 @@ def plot_3d_surface(
                 T1,
                 T2,
                 residuals,
-                cmap=plt.cm.get_cmap('RdBu_r'),  # Red-Blue colormap centered at zero
+                cmap=plt.cm.get_cmap("RdBu_r"),  # Red-Blue colormap centered at zero
                 alpha=0.8,
                 linewidth=0,
                 antialiased=True,
@@ -2416,7 +2416,13 @@ def plot_3d_surface_comparison(
 
         fig = plt.figure(figsize=(6 * n_cols, 5 * n_rows))
 
-        colormaps = [plt.cm.get_cmap('viridis'), plt.cm.get_cmap('plasma'), plt.cm.get_cmap('RdBu_r'), plt.cm.get_cmap('cividis'), plt.cm.get_cmap('coolwarm')]
+        colormaps = [
+            plt.cm.get_cmap("viridis"),
+            plt.cm.get_cmap("plasma"),
+            plt.cm.get_cmap("RdBu_r"),
+            plt.cm.get_cmap("cividis"),
+            plt.cm.get_cmap("coolwarm"),
+        ]
 
         for idx, (name, data) in enumerate(c2_data_dict.items()):
             ax = fig.add_subplot(n_rows, n_cols, idx + 1, projection="3d")
