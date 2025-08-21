@@ -388,6 +388,7 @@ class TestMCMCAngleFilteringPerformance:
         assert reduction_factor == pytest.approx(5.75, rel=0.1)  # ~5.75x reduction
         assert reduction_percentage == pytest.approx(82.6, rel=1.0)  # ~82.6% reduction
 
+    @pytest.mark.memory
     def test_mcmc_memory_usage_estimation(self):
         """Test memory usage estimation for filtered vs unfiltered data."""
         # Real data dimensions

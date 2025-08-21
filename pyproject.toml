@@ -39,7 +39,7 @@ keywords = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=1.19.0",
+    "numpy>=1.24.0,<2.3.0",  # Compatible with Numba 0.61.2
     "scipy>=1.7.0",
     "matplotlib>=3.3.0",
 ]
@@ -49,7 +49,7 @@ data = [
     "xpcs-viewer>=1.0.4",  # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
 ]
 performance = [
-    "numba>=0.56.0",
+    "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
     "psutil>=5.8.0",  # For memory profiling and system monitoring
 ]
 mcmc = [
@@ -96,7 +96,7 @@ dev = [
 ]
 all = [
     "xpcs-viewer>=1.0.4",
-    "numba>=0.56.0",
+    "numba>=0.61.0,<0.62.0",
     "psutil>=5.8.0",
     "pymc>=5.0.0",
     "arviz>=0.12.0",

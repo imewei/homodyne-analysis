@@ -44,7 +44,7 @@ def read_requirements(filename):
 
 # Core requirements (always needed)
 CORE_REQUIREMENTS = [
-    "numpy>=1.19.0",
+    "numpy>=1.24.0,<2.3.0",  # Compatible with Numba 0.61.2
     "scipy>=1.7.0",
     "matplotlib>=3.3.0",
 ]
@@ -56,7 +56,7 @@ DATA_REQUIREMENTS = [
 
 # Performance requirements (recommended)
 PERFORMANCE_REQUIREMENTS = [
-    "numba>=0.56.0",
+    "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
     "psutil>=5.8.0",  # For memory profiling and system monitoring
 ]
 

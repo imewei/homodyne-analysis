@@ -1,10 +1,10 @@
 # Core requirements for the Homodyne Scattering Analysis Package
-numpy>=1.19.0           # Numerical computing
+numpy>=1.24.0,<2.3.0    # Numerical computing (compatible with Numba 0.61.2)
 scipy>=1.7.0            # Scientific computing
 matplotlib>=3.3.0       # Plotting and visualization
 
 # Performance enhancement (recommended)
-numba>=0.56.0           # Just-In-Time compiler for Python
+numba>=0.61.0,<0.62.0   # Just-In-Time compiler for Python (NumPy 2.2 compatibility)
 psutil>=5.8.0           # System and process utilities for memory profiling
 
 # Data handling and manipulation
@@ -27,6 +27,9 @@ hypothesis>=6.0.0       # Property-based testing
 black>=21.0.0           # Code formatting
 flake8>=3.9.0           # Linting
 mypy>=0.910             # Type checking
+types-psutil>=5.9.0     # Type stubs for psutil
+types-Pillow>=10.0.0    # Type stubs for Pillow
+types-six>=1.16.0       # Type stubs for six
 
 # Optional Documentation Dependencies
 sphinx>=4.0.0           # Documentation generator
@@ -34,3 +37,4 @@ sphinx-rtd-theme>=1.0.0 # Read the Docs theme for Sphinx
 myst-parser>=0.17.0     # MyST Markdown parser for Sphinx (allows Markdown in .rst files)
 sphinx-autodoc-typehints>=1.12.0 # Automatic type hints documentation
 numpydoc>=1.2.0         # NumPy-style docstring support
+linkify-it-py>=2.0.0    # Link detection for documentation

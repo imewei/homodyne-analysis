@@ -483,6 +483,7 @@ class TestDataValidation:
 class TestMemoryManagement:
     """Test memory-efficient operations and cleanup."""
 
+    @pytest.mark.memory
     def test_large_array_handling(self, temp_directory):
         """Test handling of large data arrays without excessive memory usage."""
         # Create moderately large arrays to test memory handling
@@ -519,6 +520,7 @@ class TestMemoryManagement:
             loaded = np.load(filepath)
             np.testing.assert_array_equal(loaded["data"], large_data)
 
+    @pytest.mark.memory
     def test_cleanup_after_plotting(self, temp_directory, dummy_config):
         """Test that matplotlib figures are properly cleaned up."""
         import matplotlib.pyplot as plt

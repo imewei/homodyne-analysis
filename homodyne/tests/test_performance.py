@@ -329,6 +329,7 @@ class TestCachePerformance:
         print(f"Cache stats: {cache_info}")
 
     @pytest.mark.performance
+    @pytest.mark.memory
     def test_memory_mapped_file_loading(self):
         """Test memory-mapped file loading performance."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -367,6 +368,7 @@ class TestMemoryPerformance:
     """Test memory usage optimizations."""
 
     @pytest.mark.performance
+    @pytest.mark.memory
     def test_lazy_array_allocation(self, medium_benchmark_data):
         """Test lazy array allocation vs pre-allocation."""
         n_angles = len(medium_benchmark_data["phi_angles"])
@@ -438,6 +440,7 @@ class TestMemoryPerformance:
             pytest.skip("psutil not available for memory profiling")
 
     @pytest.mark.performance
+    @pytest.mark.memory
     def test_memory_efficiency_integration(
         self, performance_config, small_benchmark_data
     ):
@@ -894,6 +897,7 @@ class TestMCMCThinningPerformance:
 
     @pytest.mark.performance
     @pytest.mark.mcmc
+    @pytest.mark.memory
     def test_thinning_memory_usage(self, small_benchmark_data):
         """Test that thinning reduces memory usage in MCMC traces."""
         c2_experimental, _, phi_angles, _ = small_benchmark_data
