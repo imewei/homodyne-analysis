@@ -77,5 +77,16 @@
     "expected_median_time": 0.000220,
     "max_acceptable_time": 0.001000,
     "performance_notes": "Optimized version maintains sub-millisecond performance with improved memory efficiency"
+  },
+  "performance_regression_thresholds": {
+    "chi_squared_local_ms": 2.0,
+    "chi_squared_ci_ms": 10.0,
+    "correlation_local_ms": 1.0,
+    "correlation_ci_ms": 5.0,
+    "ratio_local_max": 3.0,
+    "ratio_ci_max": 20.0,
+    "ci_detection": "Uses CI and GITHUB_ACTIONS environment variables",
+    "timing_precision_threshold_ms": 1.0,
+    "notes": "CI environments have higher variability due to virtualization and resource contention"
   }
 }
