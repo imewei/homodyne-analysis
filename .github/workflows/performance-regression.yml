@@ -33,12 +33,12 @@ jobs:
         fetch-depth: 0  # Full history for git tracking
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
@@ -64,7 +64,7 @@ jobs:
         fi
     
     - name: Setup performance baseline cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ci_performance_baselines.json
@@ -95,7 +95,7 @@ jobs:
         python test_performance.py --baseline --iterations 10
     
     - name: Upload performance report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-report-py${{ matrix.python-version }}
@@ -140,7 +140,7 @@ jobs:
     
     steps:
     - name: Download performance reports
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: performance-reports
     
@@ -165,7 +165,7 @@ jobs:
         echo "Generated: $(date)" >> summary.md
     
     - name: Upload summary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-summary
         path: summary.md
