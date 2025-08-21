@@ -244,6 +244,18 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "mcmc_integration: marks tests as MCMC integration tests"
     )
+    
+    # Performance testing markers
+    config.addinivalue_line(
+        "markers", "performance: mark test as a performance test that should be fast"
+    )
+    config.addinivalue_line("markers", "memory: mark test as a memory usage test")
+    config.addinivalue_line(
+        "markers", "regression: mark test as a performance regression test"
+    )
+    config.addinivalue_line(
+        "markers", "benchmark: mark test for benchmarking (requires pytest-benchmark)"
+    )
 
     # Configure warnings filters
     config.addinivalue_line("filterwarnings", "ignore::UserWarning:matplotlib.*")
@@ -390,3 +402,25 @@ def pytest_runtest_teardown(item, nextitem):
 
     # Force garbage collection to free memory
     gc.collect()
+
+
+def pytest_addoption(parser):
+    """Add command line options."""
+    parser.addoption(
+        "--update-baselines",
+        action="store_true",
+        default=False,
+        help="Update performance baselines with current results",
+    )
+    parser.addoption(
+        "--performance-threshold",
+        type=float,
+        default=1.5,
+        help="Performance regression threshold (default: 1.5x)",
+    )
+    parser.addoption(
+        "--skip-slow-performance",
+        action="store_true",
+        default=False,
+        help="Skip slow performance tests",
+    )

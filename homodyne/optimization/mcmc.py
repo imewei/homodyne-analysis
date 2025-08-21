@@ -358,6 +358,12 @@ class MCMCSampler:
                 D0 = create_prior_from_config("D0", 0)
                 alpha = create_prior_from_config("alpha", 1)
                 D_offset = create_prior_from_config("D_offset", 2)
+                
+                # Assert that these variables are not None for type checking
+                assert D0 is not None
+                assert alpha is not None
+                assert D_offset is not None
+                
                 print(f"   ✓ Successfully created diffusion priors from configuration")
             except Exception as e:
                 print(f"   ⚠ Error creating priors from config: {e}")
@@ -365,6 +371,12 @@ class MCMCSampler:
                 D0 = create_prior_from_config("D0", -1)  # Force fallback
                 alpha = create_prior_from_config("alpha", -1)  # Force fallback 
                 D_offset = create_prior_from_config("D_offset", -1)  # Force fallback
+                
+                # Assert that these variables are not None for type checking
+                assert D0 is not None
+                assert alpha is not None
+                assert D_offset is not None
+                
                 print(f"   ✓ Using fallback priors for diffusion parameters")
 
             if not is_static_mode and effective_param_count > 3:
@@ -465,14 +477,18 @@ class MCMCSampler:
                 # Create simplified deterministic relationship
                 # Use more stable computation to avoid numerical issues
                 if pm is not None and pt is not None:
-                    mu = pm.Deterministic("mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001)  # More stable
+                    # Type assertions to help Pylance understand these are not None
+                    assert D0 is not None and D_offset is not None
+                    # Use type ignore for complex PyTensor operations that Pylance doesn't fully understand
+                    mu = pm.Deterministic("mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001)  # type: ignore[operator]
                 else:
                     raise ImportError("PyMC/PyTensor not available")
                 
                 # Likelihood using mean experimental value - validate first
                 # Remove any NaN values before computing mean
                 if pt is not None:
-                    c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]
+                    # PyTensor operations on SharedVariable - type ignore for indexing and operators
+                    c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]  # type: ignore[index,operator]
                 else:
                     raise ImportError("PyTensor not available")
                 if pt is not None:
@@ -514,12 +530,17 @@ class MCMCSampler:
                     # For MCMC sampling, use a more realistic relationship that keeps theory in [0,1]
                     # This avoids constraint violations while maintaining parameter sensitivity
                     if pt is not None:
+                        # Type assertion to help Pylance understand D0 is not None
+                        assert D0 is not None
+                        # Complex PyTensor operations - use type ignore for operator issues
                         c2_theory_normalized = (
-                            pt.sigmoid(pt.log(D0 / 1000.0)) * 0.8 + 0.1
+                            pt.sigmoid(pt.log(D0 / 1000.0)) * 0.8 + 0.1  # type: ignore[operator]
                         )  # Maps D0 range to ~[0.1, 0.9]
                     else:
                         raise ImportError("PyTensor not available")
                     if pt is not None:
+                        # Type assertions to help Pylance understand these are not None
+                        assert c2_theory_normalized is not None and c2_exp_angle is not None
                         c2_theory_angle = c2_theory_normalized * pt.ones_like(c2_exp_angle)
                     else:
                         raise ImportError("PyTensor not available")
@@ -552,23 +573,32 @@ class MCMCSampler:
                         offset = pm.TruncatedNormal(f"offset_{angle_idx}", 
                                                   mu=offset_mu, sigma=offset_sigma, 
                                                   lower=offset_min, upper=offset_max)
+                        # Type assertions to help Pylance understand these are not None
+                        assert contrast is not None and offset is not None
                     else:
                         raise ImportError("PyMC not available")
 
                     # Apply scaling
+                    # Type assertions to help Pylance understand these are not None
+                    assert c2_theory_angle is not None and contrast is not None and offset is not None
                     c2_fitted_angle = c2_theory_angle * contrast + offset
                     
                     # Add simplified physical constraints for c2_fitted range [1, 2]
                     # Use tensor-safe operations that work with both scalars and arrays
                     # The TruncatedNormal priors already handle contrast ∈ (0, 0.5] and offset bounds
                     if pm is not None and pt is not None:
+                        # Type assertion to help Pylance understand c2_fitted_angle is not None
+                        assert c2_fitted_angle is not None
+                        # Create the constraint expression with type safety
+                        constraint_expr = pt.switch(
+                            pt.and_(pt.ge(pt.mean(c2_fitted_angle), 1.0), pt.le(pt.mean(c2_fitted_angle), 2.0)),  # use mean for tensor safety
+                            0.0,  # Valid: log probability = 0
+                            -1e10  # Invalid: large negative log probability (avoids -inf issues)
+                        )
+                        assert constraint_expr is not None  # Help Pylance understand this is not None
                         pm.Potential(
                             f"fitted_range_constraint_{angle_idx}",
-                            pt.switch(
-                                pt.and_(pt.ge(pt.mean(c2_fitted_angle), 1.0), pt.le(pt.mean(c2_fitted_angle), 2.0)),  # use mean for tensor safety
-                                0.0,  # Valid: log probability = 0
-                                -1e10  # Invalid: large negative log probability (avoids -inf issues)
-                            )
+                            constraint_expr  # type: ignore[arg-type]
                         )
                     else:
                         raise ImportError("PyMC/PyTensor not available")
