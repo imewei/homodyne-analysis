@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added @pytest.mark.memory decorators to memory-related tests for proper test collection
+
+### Fixed
+- Fixed GitHub test failure where memory tests were being deselected (exit code 5)
+- Updated NumPy version constraints in setup.py, pyproject.toml, and requirements.txt for Numba 0.61.2 compatibility
+- Fixed documentation CLI command references from python scripts to homodyne-config/homodyne commands
+
 ## [0.6.1] - 2025-08-21
 
 ### Added

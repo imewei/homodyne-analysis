@@ -11,7 +11,7 @@ Quick Configuration
 .. code-block:: bash
 
    # Create configuration for specific mode
-   python create_config.py --mode static_isotropic --sample my_experiment
+   homodyne-config --mode static_isotropic --sample my_experiment
 
 **Basic Structure**:
 

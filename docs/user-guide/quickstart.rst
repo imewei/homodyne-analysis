@@ -19,7 +19,7 @@ Installation
 .. code-block:: bash
 
    # Create a configuration for isotropic analysis (fastest)
-   python create_config.py --mode static_isotropic --sample my_sample
+   homodyne-config --mode static_isotropic --sample my_sample
 
 **Step 2: Prepare Your Data**
 
@@ -33,10 +33,10 @@ Ensure your experimental data is in the correct format:
 .. code-block:: bash
 
    # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
-   python run_homodyne.py --config my_sample_config.json --plot-experimental-data
+   homodyne --config my_sample_config.json --plot-experimental-data
    
    # Basic analysis (fastest, saves results to ./homodyne_results/)
-   python run_homodyne.py --config my_sample_config.json --method classical
+   homodyne --config my_sample_config.json --method classical
 
 **Step 4: View Results**
 
