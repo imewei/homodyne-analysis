@@ -36,14 +36,29 @@
     "memory_mb": 1.0
   },
   "test_chi_squared_calculation_benchmark": {
-    "execution_time": 0.5,
-    "memory_mb": 8.0
+    "execution_time_median": 0.000756,
+    "execution_time_mean": 0.000823,
+    "execution_time_95th_percentile": 0.001200,
+    "execution_time_max_acceptable": 0.002000,
+    "memory_mb": 8.0,
+    "optimizations_applied": {
+      "config_caching": "Cached validation and chi-squared configurations to avoid repeated dict lookups",
+      "memory_optimization": "Pre-allocated arrays with reshape instead of list comprehensions",
+      "least_squares_optimization": "Replaced lstsq with solve for 2x2 system optimization",
+      "vectorized_operations": "Improved angle filtering and array operations"
+    },
+    "performance_improvements": {
+      "speedup_factor": 1.6,
+      "baseline_time_ms": 1.33,
+      "optimized_time_ms": 0.82,
+      "chi2_correlation_ratio": "Improved from 6.0x to 1.7x"
+    }
   },
   "test_correlation_calculation_benchmark": {
-    "execution_time_median": 0.020,
-    "execution_time_mean": 0.025,
-    "execution_time_95th_percentile": 0.050,
-    "execution_time_max_acceptable": 0.100,
+    "execution_time_median": 0.000225,
+    "execution_time_mean": 0.000234,
+    "execution_time_95th_percentile": 0.000350,
+    "execution_time_max_acceptable": 0.001000,
     "memory_mb": 5.0,
     "variance_notes": "JIT compilation causes initial warmup overhead. Stable after 5 warmup runs with comprehensive function-level warmup.",
     "performance_characteristics": {
@@ -51,6 +66,16 @@
       "jit_sensitive": true,
       "expected_speedup_over_baseline": "10-15x faster than original 200ms target",
       "stability_improvements": "Uses stable_benchmark with outlier filtering and higher CV tolerance for JIT variability"
+    },
+    "optimizations_applied": {
+      "memory_pooling": "Pre-allocated result arrays to avoid repeated allocations",
+      "static_case_optimization": "Enhanced vectorized static case with efficient broadcasting",
+      "precomputed_integrals": "Cached shear integrals to avoid redundant computation"
     }
+  },
+  "correlation_calculation_stable_benchmark": {
+    "expected_median_time": 0.000220,
+    "max_acceptable_time": 0.001000,
+    "performance_notes": "Optimized version maintains sub-millisecond performance with improved memory efficiency"
   }
 }

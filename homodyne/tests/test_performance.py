@@ -711,6 +711,171 @@ class TestStableBenchmarking:
         print(f"Performance impact: {mean_slowdown:.2f}x (acceptable)")
 
 
+class TestOptimizationFeatures:
+    """Test new optimization features and their correctness."""
+
+    @pytest.mark.performance
+    def test_config_caching_optimization(self, performance_config):
+        """Test that configuration caching works correctly and improves performance."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+        
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = performance_config
+        analyzer.time_length = 30
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 3.0, 30)
+
+        params = np.array([0.8, -0.02, 0.1])
+        phi_angles = np.array([0.0, 30.0, 60.0, 90.0])
+        c2_exp = np.random.rand(4, 30, 30) + 1.0
+
+        # First call - should cache configs
+        start = time.time()
+        result1 = analyzer.calculate_chi_squared_optimized(params, phi_angles, c2_exp)
+        first_call_time = time.time() - start
+
+        # Verify caches are created
+        assert hasattr(analyzer, '_cached_validation_config'), "Validation config should be cached"
+        assert hasattr(analyzer, '_cached_chi_config'), "Chi-squared config should be cached"
+
+        # Second call - should use cached configs
+        start = time.time()
+        result2 = analyzer.calculate_chi_squared_optimized(params, phi_angles, c2_exp)
+        second_call_time = time.time() - start
+
+        # Results should be identical
+        assert abs(result1 - result2) < 1e-10, "Results should be identical with caching"
+        
+        # Second call should be faster or at least not significantly slower
+        # (May not always be faster due to system variance, but shouldn't be much slower)
+        assert second_call_time < first_call_time * 2.0, "Cached call shouldn't be significantly slower"
+        
+        print(f"✓ Config caching: first={first_call_time*1000:.2f}ms, second={second_call_time*1000:.2f}ms")
+
+    @pytest.mark.performance
+    def test_memory_pool_optimization(self, small_benchmark_data):
+        """Test that memory pooling works correctly."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+        
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = {"performance_settings": {"parallel_execution": True}}
+        analyzer.time_length = small_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 3.0, small_benchmark_data["time_length"])
+
+        params = np.concatenate([small_benchmark_data["parameters"], np.zeros(4)])
+        phi_angles = small_benchmark_data["phi_angles"]
+
+        # First call - should create memory pool
+        result1 = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+        
+        # Verify memory pool is created
+        assert hasattr(analyzer, '_c2_results_pool'), "Memory pool should be created"
+        pool_shape = analyzer._c2_results_pool.shape
+        assert pool_shape == (len(phi_angles), analyzer.time_length, analyzer.time_length)
+
+        # Second call with same dimensions - should reuse pool
+        result2 = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+        
+        # Pool should still exist with same shape
+        assert analyzer._c2_results_pool.shape == pool_shape
+        
+        # Results should be valid
+        assert result1.shape == result2.shape
+        assert not np.allclose(result1, result2), "Results should differ with different random params"
+        
+        print(f"✓ Memory pool: shape={pool_shape}, reused successfully")
+
+    @pytest.mark.performance  
+    def test_vectorized_least_squares_optimization(self, small_benchmark_data):
+        """Test that vectorized least squares optimization maintains correctness."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+            
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = {
+            "performance_settings": {"parallel_execution": True},
+            "advanced_settings": {
+                "chi_squared_calculation": {
+                    "uncertainty_estimation_factor": 0.1,
+                    "minimum_sigma": 1e-6,
+                    "validity_check": {"check_positive_D0": True}
+                }
+            }
+        }
+        analyzer.time_length = small_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 3.0, small_benchmark_data["time_length"])
+
+        params = small_benchmark_data["parameters"][:3]
+        phi_angles = small_benchmark_data["phi_angles"]
+        c2_exp = small_benchmark_data["c2_experimental"]
+
+        # Test with return_components to verify least squares scaling
+        result = analyzer.calculate_chi_squared_optimized(
+            params, phi_angles, c2_exp, return_components=True
+        )
+        
+        assert isinstance(result, dict), "Should return dict with components"
+        assert "valid" in result and result["valid"], "Result should be valid"
+        assert "scaling_solutions" in result, "Should include scaling solutions"
+        
+        scaling_solutions = result["scaling_solutions"]
+        assert len(scaling_solutions) == len(phi_angles), "One scaling per angle"
+        
+        # Each scaling should have contrast and offset
+        for i, scaling in enumerate(scaling_solutions):
+            assert len(scaling) == 2, f"Scaling {i} should have contrast and offset"
+            contrast, offset = scaling
+            assert isinstance(contrast, (int, float)), f"Contrast {i} should be numeric"
+            assert isinstance(offset, (int, float)), f"Offset {i} should be numeric"
+            # Reasonable scaling values
+            assert 0.01 < abs(contrast) < 100, f"Contrast {i} should be reasonable: {contrast}"
+        
+        print(f"✓ Least squares optimization: {len(scaling_solutions)} scalings computed")
+
+    @pytest.mark.performance
+    def test_precomputed_integrals_optimization(self, medium_benchmark_data):
+        """Test that precomputed integrals work correctly for laminar flow."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+            
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = {"performance_settings": {"parallel_execution": True}}
+        analyzer.time_length = medium_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 5.0, medium_benchmark_data["time_length"])
+
+        # Use laminar flow parameters (non-static)
+        params = medium_benchmark_data["parameters"]  # Should have 7 parameters for laminar
+        phi_angles = medium_benchmark_data["phi_angles"][:3]  # Use fewer angles for faster testing
+
+        # Force laminar flow mode by ensuring shear parameters are non-zero
+        if len(params) >= 7:
+            params[3] = 0.05  # gamma_dot_t0 > 0
+            params[4] = -0.01  # beta != 0
+            
+        # Test that calculation works with laminar flow parameters
+        result = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+        
+        expected_shape = (len(phi_angles), analyzer.time_length, analyzer.time_length)
+        assert result.shape == expected_shape, f"Expected shape {expected_shape}, got {result.shape}"
+        
+        # Verify result is reasonable (not all zeros or all ones)
+        assert not np.allclose(result, 0), "Result shouldn't be all zeros"
+        assert not np.allclose(result, 1), "Result shouldn't be all ones"
+        assert np.all(np.isfinite(result)), "Result should be finite"
+        assert np.all(result >= 0), "Correlation values should be non-negative"
+        
+        print(f"✓ Precomputed integrals: laminar flow calculation successful")
+
+
 class TestRegressionBenchmarks:
     """Regression tests to ensure performance doesn't degrade."""
 
@@ -843,6 +1008,163 @@ class TestRegressionBenchmarks:
             print(f"  pytest-benchmark comparison failed: {e}")
         
         print(f"✓ Stable correlation benchmark: {median_time*1000:.1f}ms median, CV={benchmark_results['std']/mean_time:.2f}")
+
+
+class TestPerformanceRegression:
+    """Performance regression tests to catch performance degradation."""
+
+    @pytest.mark.performance
+    @pytest.mark.regression
+    def test_chi_squared_performance_regression(self, performance_config):
+        """Test that chi-squared calculation doesn't regress below optimized baseline."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+            
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = performance_config
+        analyzer.time_length = 30
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 3.0, 30)
+
+        params = np.array([0.8, -0.02, 0.1])
+        phi_angles = np.array([0.0, 30.0, 60.0, 90.0])
+        c2_exp = np.random.rand(4, 30, 30) + 1.0
+
+        # Run multiple iterations to get stable timing
+        times = []
+        for _ in range(10):
+            start = time.time()
+            result = analyzer.calculate_chi_squared_optimized(params, phi_angles, c2_exp)
+            times.append(time.time() - start)
+
+        median_time = np.median(times)
+        
+        # Regression threshold: should be under 2ms (optimized baseline is ~0.8ms)
+        max_acceptable = 0.002  # 2ms
+        assert median_time < max_acceptable, (
+            f"Chi-squared calculation too slow: {median_time*1000:.2f}ms > {max_acceptable*1000:.0f}ms threshold"
+        )
+        
+        print(f"✓ Chi-squared regression test: {median_time*1000:.2f}ms (< {max_acceptable*1000:.0f}ms)")
+
+    @pytest.mark.performance
+    @pytest.mark.regression
+    def test_correlation_performance_regression(self, small_benchmark_data):
+        """Test that correlation calculation doesn't regress below baseline."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+            
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = {"performance_settings": {"parallel_execution": True}}
+        analyzer.time_length = small_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 3.0, small_benchmark_data["time_length"])
+
+        params = np.concatenate([small_benchmark_data["parameters"], np.zeros(4)])
+        phi_angles = small_benchmark_data["phi_angles"]
+
+        # Run multiple iterations to get stable timing
+        times = []
+        for _ in range(10):
+            start = time.time()
+            result = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+            times.append(time.time() - start)
+
+        median_time = np.median(times)
+        
+        # Regression threshold: should be under 1ms (baseline is ~0.23ms)
+        max_acceptable = 0.001  # 1ms
+        assert median_time < max_acceptable, (
+            f"Correlation calculation too slow: {median_time*1000:.2f}ms > {max_acceptable*1000:.0f}ms threshold"
+        )
+        
+        print(f"✓ Correlation regression test: {median_time*1000:.2f}ms (< {max_acceptable*1000:.0f}ms)")
+
+    @pytest.mark.performance
+    @pytest.mark.regression
+    def test_chi2_correlation_ratio_regression(self, performance_config, small_benchmark_data):
+        """Test that chi-squared to correlation performance ratio doesn't regress."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+            
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = performance_config
+        analyzer.time_length = small_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 3.0, small_benchmark_data["time_length"])
+
+        params = small_benchmark_data["parameters"][:3]
+        phi_angles = small_benchmark_data["phi_angles"]
+        c2_exp = small_benchmark_data["c2_experimental"]
+
+        # Measure correlation time
+        corr_times = []
+        for _ in range(5):
+            start = time.time()
+            result = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+            corr_times.append(time.time() - start)
+        
+        # Measure chi-squared time
+        chi2_times = []
+        for _ in range(5):
+            start = time.time()
+            chi2 = analyzer.calculate_chi_squared_optimized(params, phi_angles, c2_exp)
+            chi2_times.append(time.time() - start)
+
+        corr_median = np.median(corr_times)
+        chi2_median = np.median(chi2_times)
+        ratio = chi2_median / corr_median if corr_median > 0 else float('inf')
+
+        # Regression threshold: ratio should be under 3x (optimized baseline is 1.7x)
+        max_acceptable_ratio = 3.0
+        assert ratio < max_acceptable_ratio, (
+            f"Chi2/Correlation ratio too high: {ratio:.1f}x > {max_acceptable_ratio:.1f}x threshold"
+        )
+        
+        print(f"✓ Performance ratio regression test: {ratio:.1f}x (< {max_acceptable_ratio:.1f}x)")
+
+    @pytest.mark.performance
+    @pytest.mark.memory
+    def test_memory_usage_regression(self, medium_benchmark_data):
+        """Test that memory usage doesn't regress significantly."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+            
+        try:
+            import psutil
+            import os
+        except ImportError:
+            pytest.skip("psutil not available for memory testing")
+            
+        analyzer = HomodyneAnalysisCore()
+        analyzer.config = {"performance_settings": {"parallel_execution": True}}
+        analyzer.time_length = medium_benchmark_data["time_length"]
+        analyzer.wavevector_q = 0.01
+        analyzer.dt = 0.1
+        analyzer.time_array = np.linspace(0.1, 5.0, medium_benchmark_data["time_length"])
+
+        params = medium_benchmark_data["parameters"]
+        phi_angles = medium_benchmark_data["phi_angles"]
+
+        process = psutil.Process(os.getpid())
+        baseline_memory = process.memory_info().rss / 1024 / 1024  # MB
+
+        # Run correlation calculation
+        result = analyzer.calculate_c2_nonequilibrium_laminar_parallel(params, phi_angles)
+        peak_memory = process.memory_info().rss / 1024 / 1024  # MB
+        
+        memory_increase = peak_memory - baseline_memory
+        
+        # Memory regression threshold: should use less than 50MB for medium dataset
+        max_acceptable_memory = 50.0  # MB
+        assert memory_increase < max_acceptable_memory, (
+            f"Memory usage too high: {memory_increase:.1f}MB > {max_acceptable_memory:.0f}MB threshold"
+        )
+        
+        print(f"✓ Memory regression test: {memory_increase:.1f}MB (< {max_acceptable_memory:.0f}MB)")
 
 
 # Performance test configuration
