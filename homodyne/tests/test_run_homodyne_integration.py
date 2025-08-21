@@ -22,6 +22,7 @@ import subprocess
 from homodyne.tests.fixtures import (
     dummy_config,
     temp_directory,
+    test_output_directory,
     create_minimal_config_file,
 )
 

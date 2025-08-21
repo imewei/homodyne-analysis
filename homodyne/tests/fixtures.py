@@ -21,6 +21,45 @@ def temp_directory():
 
 
 @pytest.fixture
+def test_output_directory():
+    """Create a homodyne_results directory marked as a test artifact.
+    
+    This fixture creates a homodyne_results directory in the current working
+    directory and marks it as a test artifact so it will be cleaned up safely.
+    Use this instead of manually creating homodyne_results in tests.
+    
+    SAFETY: If a homodyne_results directory already exists (e.g., user data),
+    this fixture will NOT mark it as a test artifact. It will only mark
+    directories that it creates itself.
+    """
+    import time
+    from pathlib import Path
+    
+    # Import the marking function from conftest
+    from .conftest import mark_directory_as_test_artifact
+    
+    # Create homodyne_results directory in current directory
+    test_dir = Path.cwd() / "homodyne_results"
+    
+    # SAFETY CHECK: Only mark as test artifact if we create it
+    # If it already exists, assume it contains user data and preserve it
+    directory_existed_before = test_dir.exists()
+    
+    if not directory_existed_before:
+        # Directory doesn't exist - safe to create and mark as test artifact
+        mark_directory_as_test_artifact(test_dir)
+    else:
+        # Directory already exists - preserve it, don't mark as test artifact
+        # Just make sure it exists (it should already)
+        test_dir.mkdir(exist_ok=True)
+    
+    yield test_dir
+    
+    # No manual cleanup needed - conftest.py will handle it
+    # (but only if we marked it as a test artifact)
+
+
+@pytest.fixture
 def dummy_config():
     """Generate a minimal test configuration."""
     return {

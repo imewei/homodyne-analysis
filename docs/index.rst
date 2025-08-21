@@ -111,6 +111,9 @@ Key Features
 **Visualization Tools**
    Parameter evolution tracking, MCMC diagnostics, and corner plots
 
+**Performance Monitoring**
+   Comprehensive performance testing, regression detection, and automated benchmarking
+
 User Guide
 ----------
 
@@ -142,6 +145,8 @@ Developer Guide
    developer-guide/contributing
    developer-guide/testing
    developer-guide/performance
+   developer-guide/architecture
+   developer-guide/troubleshooting
 
 Theoretical Background
 ----------------------

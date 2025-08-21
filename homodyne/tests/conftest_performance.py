@@ -26,6 +26,9 @@ from homodyne.core.profiler import (
     optimize_numerical_environment
 )
 
+# Performance tracking system is available via PerformanceRecorder
+PERFORMANCE_TRACKER_AVAILABLE = True
+
 # Performance test data storage
 PERFORMANCE_BASELINE_FILE = Path(__file__).parent / "performance_baselines.json"
 
@@ -93,6 +96,13 @@ _performance_recorder = PerformanceRecorder()
 def performance_recorder():
     """Provide access to the performance recorder."""
     return _performance_recorder
+
+
+@pytest.fixture(scope="session")
+def performance_tracker():
+    """Session-scoped performance tracker for regression testing."""
+    # Use the existing PerformanceRecorder infrastructure
+    yield _performance_recorder
 
 
 @pytest.fixture(scope="session", autouse=True)

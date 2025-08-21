@@ -15,8 +15,8 @@ if os.path.exists(homodyne_path):
 project = "Homodyne Analysis"
 copyright = "2025, Wei Chen, Hongrui He"
 author = "Wei Chen, Hongrui He"
-release = "6.0"
-version = "6.0"
+release = "0.6.1"
+version = "0.6.1"
 
 # -- General configuration ---------------------------------------------------
 extensions = [

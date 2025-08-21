@@ -12,6 +12,7 @@ import warnings
 import sys
 import os
 import shutil
+import time
 from pathlib import Path
 
 # Use non-GUI matplotlib backend for testing
@@ -30,6 +31,26 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 
+def mark_directory_as_test_artifact(directory_path: Path) -> None:
+    """Mark a directory as a test artifact for safe cleanup.
+    
+    Creates a hidden .test-artifact file in the directory to indicate
+    that it was created by tests and can be safely removed during cleanup.
+    
+    Parameters
+    ----------
+    directory_path : Path
+        The directory to mark as a test artifact
+    """
+    try:
+        directory_path.mkdir(parents=True, exist_ok=True)
+        marker_file = directory_path / ".test-artifact"
+        marker_file.write_text(f"Test artifact created at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+    except Exception:
+        # Don't fail tests if marker creation fails
+        pass
+
+
 @pytest.fixture(autouse=True, scope="function")
 def cleanup_test_artifacts(request):
     """Automatically clean up test artifacts after each test.
@@ -37,8 +58,8 @@ def cleanup_test_artifacts(request):
     This fixture ensures that temporary directories created during testing
     (especially homodyne_results folders) are cleaned up automatically.
     
-    SAFETY: Only removes homodyne_results directories that were created
-    during the test execution, NOT pre-existing directories with user data.
+    SAFETY: Only removes homodyne_results directories that were explicitly
+    marked as test artifacts, NOT any pre-existing directories.
     """
     # Store initial working directory and check for pre-existing homodyne_results
     initial_cwd = Path.cwd()
@@ -47,6 +68,7 @@ def cleanup_test_artifacts(request):
     pre_existing_results_dirs = set()
     potential_paths = [
         initial_cwd / "homodyne_results",
+        initial_cwd / "homodyne" / "homodyne_results",  # Include ./homodyne/homodyne_results
     ]
     
     for path in potential_paths:
@@ -55,18 +77,24 @@ def cleanup_test_artifacts(request):
     
     yield  # Run the test
     
-    # Cleanup after test - ONLY remove directories that didn't exist before
+    # Cleanup after test - ONLY remove directories that are marked as test artifacts
     try:
         current_cwd = Path.cwd()
         cleanup_candidates = [
             initial_cwd / "homodyne_results",
             current_cwd / "homodyne_results",  # In case cwd changed during test
+            initial_cwd / "homodyne" / "homodyne_results",  # Include ./homodyne/homodyne_results
+            current_cwd / "homodyne" / "homodyne_results",   # In case cwd changed during test
         ]
         
         for cleanup_path in cleanup_candidates:
             if cleanup_path.exists() and cleanup_path.is_dir():
-                # SAFETY CHECK: Only remove if this directory wasn't there before the test
-                if cleanup_path not in pre_existing_results_dirs:
+                # CONSERVATIVE SAFETY CHECK: Only remove if:
+                # 1. This directory wasn't there before the test AND
+                # 2. The directory contains a test artifact marker
+                test_marker = cleanup_path / ".test-artifact"
+                
+                if cleanup_path not in pre_existing_results_dirs and test_marker.exists():
                     try:
                         shutil.rmtree(cleanup_path)
                         # Only print in verbose mode to avoid cluttering output
@@ -76,9 +104,12 @@ def cleanup_test_artifacts(request):
                         # Silently continue if cleanup fails
                         pass
                 else:
-                    # This directory existed before the test - preserve it
+                    # This directory existed before the test or has no test marker - preserve it
                     if getattr(request.config.option, 'verbose', 0) > 1:
-                        print(f"\n⚠ Preserved pre-existing directory: {cleanup_path}")
+                        if cleanup_path in pre_existing_results_dirs:
+                            print(f"\n⚠ Preserved pre-existing directory: {cleanup_path}")
+                        else:
+                            print(f"\n⚠ Preserved directory without test marker: {cleanup_path}")
                     
     except Exception:
         # Don't fail tests due to cleanup issues
@@ -89,32 +120,38 @@ def cleanup_test_artifacts(request):
 def cleanup_session_artifacts():
     """Clean up any remaining test artifacts after the entire test session.
     
-    SAFETY: Only removes homodyne_results in the project root that were
-    likely created during testing, not in user working directories.
+    SAFETY: Only removes homodyne_results directories that are explicitly
+    marked as test artifacts. Never removes user analysis results.
     """
     yield  # Run all tests
     
-    # Final cleanup after all tests - only clean up in the project directory
+    # Final cleanup after all tests - only clean up marked test artifacts
     try:
         project_root = Path(__file__).parent.parent.parent
-        
-        # Only clean up homodyne_results in the project root directory
-        # This is safe because users typically don't run analysis from the project root
         current_cwd = Path.cwd()
         
-        # Only clean up if we're running from the project directory itself
-        if current_cwd == project_root:
-            homodyne_results_path = project_root / "homodyne_results"
-            
+        # Check for test artifacts in both project root and current directory
+        cleanup_candidates = [
+            project_root / "homodyne_results",
+            current_cwd / "homodyne_results",
+            project_root / "homodyne" / "homodyne_results",  # Include ./homodyne/homodyne_results
+            current_cwd / "homodyne" / "homodyne_results",    # Include ./homodyne/homodyne_results
+        ]
+        
+        for homodyne_results_path in cleanup_candidates:
             if homodyne_results_path.exists() and homodyne_results_path.is_dir():
-                try:
-                    shutil.rmtree(homodyne_results_path)
-                    print(f"\n✓ Final cleanup: Removed {homodyne_results_path}")
-                except (OSError, PermissionError):
-                    print(f"\n⚠ Could not remove {homodyne_results_path} - manual cleanup may be needed")
-        else:
-            # Don't clean up homodyne_results when running from user directories
-            pass
+                # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
+                test_marker = homodyne_results_path / ".test-artifact"
+                if test_marker.exists():
+                    try:
+                        shutil.rmtree(homodyne_results_path)
+                        print(f"\n✓ Final cleanup: Removed test artifact {homodyne_results_path}")
+                    except (OSError, PermissionError):
+                        print(f"\n⚠ Could not remove test artifact {homodyne_results_path}")
+                else:
+                    # No test marker - this could be user data, preserve it
+                    print(f"\n⚠ Preserved user directory (no test marker): {homodyne_results_path}")
+                    
     except Exception:
         pass
 
@@ -122,34 +159,38 @@ def cleanup_session_artifacts():
 def pytest_sessionfinish(session, exitstatus):
     """Hook that runs after the entire test session is finished.
     
-    SAFETY: Only performs cleanup in safe contexts (project directory)
-    to avoid removing user analysis results.
+    SAFETY: Only performs cleanup for directories explicitly marked as test artifacts.
+    Never removes user analysis results.
     """
     try:
-        # Final cleanup - only in safe contexts
+        # Final cleanup - only remove directories marked as test artifacts
         current_dir = Path.cwd()
         project_root = Path(__file__).parent.parent.parent
         
-        # Only clean up homodyne_results if we're in the project directory
-        # This prevents accidental deletion of user analysis results
-        if current_dir == project_root:
-            cleanup_candidates = [
-                project_root / "homodyne_results",
-            ]
-            
-            for path in cleanup_candidates:
-                if path.exists() and path.is_dir():
+        # Check for test artifacts in both project root and current directory
+        cleanup_candidates = [
+            project_root / "homodyne_results",
+            current_dir / "homodyne_results",
+            project_root / "homodyne" / "homodyne_results",  # Include ./homodyne/homodyne_results
+            current_dir / "homodyne" / "homodyne_results",    # Include ./homodyne/homodyne_results
+        ]
+        
+        for path in cleanup_candidates:
+            if path.exists() and path.is_dir():
+                # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
+                test_marker = path / ".test-artifact"
+                if test_marker.exists():
                     try:
                         shutil.rmtree(path)
                         if session.config.option.verbose > 0:
-                            print(f"\n✓ Test cleanup: Removed {path}")
+                            print(f"\n✓ Test cleanup: Removed test artifact {path}")
                     except (OSError, PermissionError):
                         if session.config.option.verbose > 0:
-                            print(f"\n⚠ Could not clean up {path}")
-        else:
-            # Running from user directory - don't clean up homodyne_results
-            if session.config.option.verbose > 0:
-                print(f"\n⚠ Skipping cleanup in user directory: {current_dir}")
+                            print(f"\n⚠ Could not clean up test artifact {path}")
+                else:
+                    # No test marker - preserve this directory
+                    if session.config.option.verbose > 0:
+                        print(f"\n⚠ Preserved user directory (no test marker): {path}")
     except Exception:
         # Don't break test reporting due to cleanup issues
         pass

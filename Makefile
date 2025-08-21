@@ -15,8 +15,16 @@ help:
 	@echo "Testing:"
 	@echo "  test         Run tests with pytest"
 	@echo "  test-all     Run tests with all optional dependencies"
+	@echo "  test-performance     Run performance tests only"
+	@echo "  test-regression      Run performance regression tests"
+	@echo "  test-ci      Run CI-style performance tests"
 	@echo "  lint         Run code linting (flake8, mypy)"
 	@echo "  format       Format code with black"
+	@echo
+	@echo "Performance Baselines:"
+	@echo "  baseline-update      Update performance baselines"
+	@echo "  baseline-reset       Reset all performance baselines"
+	@echo "  baseline-report      Generate performance report"
 	@echo
 	@echo "Cleanup:"
 	@echo "  clean        Clean all build artifacts and cache files"
@@ -46,6 +54,37 @@ test:
 
 test-all:
 	pytest -v --cov=homodyne --cov-report=html --cov-report=term
+
+# Performance testing targets
+test-performance:
+	pytest homodyne/tests/ -v -m performance
+
+test-regression:
+	@echo "Running performance regression tests..."
+	pytest homodyne/tests/test_performance.py -v -m regression
+
+test-ci:
+	@echo "Running CI-style performance tests..."
+	pytest homodyne/tests/test_performance.py -v --tb=short
+
+# Performance baseline management
+baseline-update:
+	@echo "Updating performance baselines..."
+	pytest homodyne/tests/test_performance.py -v --update-baselines
+	@echo "✓ Baselines updated successfully"
+
+baseline-reset:
+	@echo "Resetting performance baselines..."
+	rm -f ci_performance_baselines.json
+	rm -f homodyne_test_performance_baselines.json
+	rm -f homodyne/tests/test_performance_baselines.json
+	rm -f homodyne/tests/performance_baselines.json
+	@echo "✓ Baselines reset"
+
+baseline-report:
+	@echo "Generating performance report..."
+	pytest homodyne/tests/test_performance.py -v --tb=short --durations=0
+	@echo "✓ Performance report completed"
 
 # Code quality targets
 lint:

@@ -203,14 +203,14 @@ class TestAngleFilteringCore:
         # Create mock experimental data
         n_angles = len(test_phi_angles)
         c2_experimental = (
-            np.random.rand(n_angles, 20, 20) + 1.0
+            np.random.rand(n_angles, 20, 20) + np.float64(1.0)
         )  # 20x20 correlation matrices
         parameters = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
         # Mock the theoretical calculation method
         def mock_calculate_c2(params, angles):
             # Return mock theoretical data with same shape as experimental
-            return np.random.rand(len(angles), 20, 20) + 1.0
+            return np.random.rand(len(angles), 20, 20) + np.float64(1.0)
 
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
@@ -246,12 +246,12 @@ class TestAngleFilteringCore:
 
         # Create mock experimental data
         n_angles = len(test_phi_angles)
-        c2_experimental = np.random.rand(n_angles, 10, 10) + 1.0
+        c2_experimental = np.random.rand(n_angles, 10, 10) + np.float64(1.0)
         parameters = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
         # Mock the theoretical calculation
         def mock_calculate_c2(params, angles):
-            return np.random.rand(len(angles), 10, 10) + 1.0
+            return np.random.rand(len(angles), 10, 10) + np.float64(1.0)
 
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
@@ -359,12 +359,12 @@ class TestAngleFilteringCore:
         # Create mock data with fixed seed for reproducible test
         np.random.seed(42)
         n_angles = len(test_phi_angles)
-        c2_experimental = np.random.rand(n_angles, 3, 3) + 1.0
+        c2_experimental = np.random.rand(n_angles, 3, 3) + np.float64(1.0)
         parameters = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
         # Use deterministic mock data
         def mock_calculate_c2(params, angles):
-            return np.ones((len(angles), 3, 3)) + 0.5  # Fixed data for consistency
+            return np.ones((len(angles), 3, 3)) + np.float64(0.5)  # Fixed data for consistency
 
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
@@ -393,11 +393,11 @@ class TestAngleFilteringCore:
         phi_angles_outside = np.array([30.0, 60.0, 120.0, 210.0, 240.0])
 
         n_angles = len(phi_angles_outside)
-        c2_experimental = np.random.rand(n_angles, 4, 4) + 1.0
+        c2_experimental = np.random.rand(n_angles, 4, 4) + np.float64(1.0)
         parameters = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
         def mock_calculate_c2(params, angles):
-            return np.random.rand(len(angles), 4, 4) + 1.0
+            return np.random.rand(len(angles), 4, 4) + np.float64(1.0)
 
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 

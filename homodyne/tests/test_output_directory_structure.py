@@ -21,6 +21,7 @@ import json
 from homodyne.tests.fixtures import (
     dummy_config,
     temp_directory,
+    test_output_directory,
 )
 
 
@@ -301,14 +302,28 @@ class TestBackwardCompatibility:
         # This is already tested in test_save_results.py, but we can add integration tests here
         pass
 
-    def test_default_output_directory(self, temp_directory):
+    def test_default_output_directory(self, test_output_directory):
         """Test that default output directory behavior is preserved."""
         # If no output directory is specified, should default to ./homodyne_results/
-        default_output_dir = temp_directory / "homodyne_results"
-        default_output_dir.mkdir(parents=True, exist_ok=True)
+        # Using test_output_directory fixture ensures proper cleanup
+        default_output_dir = test_output_directory
 
         assert default_output_dir.exists()
         assert default_output_dir.name == "homodyne_results"
+        
+        # The test_output_directory fixture only marks directories as test artifacts
+        # if they didn't exist before. If the directory already exists (user data),
+        # it won't be marked, which is the correct safety behavior.
+        marker_file = default_output_dir / ".test-artifact"
+        
+        # Check if this was a pre-existing directory or newly created by the fixture
+        # The fixture is smart and won't mark pre-existing directories as test artifacts
+        if marker_file.exists():
+            # Directory was created by the test fixture
+            print("\nDirectory was created by test fixture")
+        else:
+            # Directory existed before the test (user data) - this is safe
+            print("\nDirectory pre-existed (user data) - correctly preserved")
 
     def test_configuration_compatibility(self, dummy_config):
         """Test that existing configurations still work with new directory structure."""

@@ -330,10 +330,10 @@ def run_analysis(args: argparse.Namespace) -> None:
             )
 
         if results:
-            # Save results - skip default plots for classical-only methods
-            skip_plots = args.method == "classical"
+            # Save results with their own method-specific plotting
+            # Classical and MCMC methods use their own dedicated plotting functions
             analyzer.save_results_with_config(
-                results, skip_plots=skip_plots, output_dir=str(args.output_dir)
+                results, output_dir=str(args.output_dir)
             )
 
             # Perform per-angle chi-squared analysis for each successful method

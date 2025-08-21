@@ -430,9 +430,7 @@ pytest -m benchmark --benchmark-only
 ### Performance Documentation
 
 📊 **Detailed Performance Guides:**
-- [`PERFORMANCE_OPTIMIZATIONS.md`](PERFORMANCE_OPTIMIZATIONS.md) - Complete optimization details
-- [`PERFORMANCE_TESTING.md`](PERFORMANCE_TESTING.md) - Testing framework guide
-- [`PERFORMANCE_INTEGRATION_SUMMARY.md`](PERFORMANCE_INTEGRATION_SUMMARY.md) - Integration overview
+- [`docs/performance_optimization.md`](docs/performance_optimization.md) - Complete optimization details and testing framework guide
 
 ### Output Organization
 

@@ -1893,7 +1893,7 @@ class HomodyneAnalysisCore:
         return per_angle_results
 
     def save_results_with_config(
-        self, results: Dict[str, Any], skip_plots: bool = False, output_dir: Optional[str] = None
+        self, results: Dict[str, Any], output_dir: Optional[str] = None
     ) -> None:
         """
         Save optimization results along with configuration to JSON file.
@@ -1905,8 +1905,6 @@ class HomodyneAnalysisCore:
         ----------
         results : Dict[str, Any]
             Results dictionary from optimization methods
-        skip_plots : bool, optional
-            If True, skip generating analysis plots (default: False)
         output_dir : str, optional
             Output directory for saving results file (default: current directory)
         """
@@ -1975,10 +1973,6 @@ class HomodyneAnalysisCore:
         except Exception as e:
             logger.error(f"Failed to save results: {e}")
             raise
-
-        # Generate plots if enabled in configuration and not skipped
-        if not skip_plots:
-            self._generate_analysis_plots(results, output_data)
 
     def _plot_experimental_data_validation(
         self, c2_experimental: np.ndarray, phi_angles: np.ndarray
@@ -2158,7 +2152,7 @@ Validation:
             logger.debug(traceback.format_exc())
 
     def _generate_analysis_plots(
-        self, results: Dict[str, Any], output_data: Dict[str, Any]
+        self, results: Dict[str, Any], output_data: Dict[str, Any], skip_generic_plots: bool = False
     ) -> None:
         """
         Generate analysis plots including C2 heatmaps with experimental vs theoretical comparison.
@@ -2171,6 +2165,11 @@ Validation:
             Complete output data including configuration
         """
         logger = logging.getLogger(__name__)
+
+        # Skip generic plots if requested (for method-specific plotting)
+        if skip_generic_plots:
+            logger.info("Generic plots skipped - using method-specific plotting instead")
+            return
 
         # Check if plotting is enabled in configuration
         config = output_data.get("config") or {}
