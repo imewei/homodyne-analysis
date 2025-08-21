@@ -443,6 +443,8 @@ class TestMemoryPerformance:
         """Test overall memory efficiency in integrated workflow."""
         try:
             with profile_memory_usage("integrated_workflow"):
+                if HomodyneAnalysisCore is None:
+                    pytest.skip("HomodyneAnalysisCore not available")
                 analyzer = HomodyneAnalysisCore()
                 analyzer.config = performance_config
                 analyzer.time_length = small_benchmark_data["time_length"]
@@ -557,6 +559,8 @@ class TestStableBenchmarking:
         
         # Use analyzer instance to call the correlation function
         # (the function exists as a method of HomodyneAnalysisCore)
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
         analyzer = HomodyneAnalysisCore()
         analyzer.config = {"performance_settings": {"parallel_execution": True}}
         analyzer.time_length = small_benchmark_data["time_length"]
@@ -705,6 +709,8 @@ class TestRegressionBenchmarks:
         self, performance_config, medium_benchmark_data, benchmark
     ):
         """Benchmark chi-squared calculation for regression testing."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
         analyzer = HomodyneAnalysisCore()
         analyzer.config = performance_config
         analyzer.time_length = medium_benchmark_data["time_length"]
@@ -747,6 +753,8 @@ class TestRegressionBenchmarks:
         This test includes proper JIT compilation warmup to reduce performance
         variance and provide more reliable benchmark results.
         """
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
         analyzer = HomodyneAnalysisCore()
         analyzer.config = performance_config
         analyzer.time_length = small_benchmark_data["time_length"]

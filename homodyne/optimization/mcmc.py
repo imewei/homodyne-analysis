@@ -273,6 +273,9 @@ class MCMCSampler:
         phi_angles = phi_angles.astype(dtype)
 
         # Create PyMC model
+        if pm is None:
+            raise ImportError("PyMC not available - cannot create MCMC model")
+        
         with pm.Model() as model:
             # Define priors based on parameter bounds from configuration
             bounds = self.config.get("parameter_space", {}).get("bounds", [])
@@ -300,8 +303,11 @@ class MCMCSampler:
                             # Use bounds as truncation limits
                             lower = min_val if min_val is not None else -np.inf
                             upper = max_val if max_val is not None else np.inf
-                            return pm.TruncatedNormal(param_name, mu=prior_mu, sigma=prior_sigma, 
-                                                    lower=lower, upper=upper)  # type: ignore
+                            if pm is not None:
+                                return pm.TruncatedNormal(param_name, mu=prior_mu, sigma=prior_sigma, 
+                                                        lower=lower, upper=upper)  # type: ignore
+                            else:
+                                raise ImportError("PyMC not available")
                         elif prior_type == "Normal":
                             return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)  # type: ignore
                         elif prior_type == "LogNormal" and min_val is not None and min_val > 0:
@@ -335,8 +341,11 @@ class MCMCSampler:
                     print(f"   Using fallback prior for {param_name}: {params['type']}")
                     
                     if params["type"] == "TruncatedNormal":
-                        return pm.TruncatedNormal(param_name, mu=params["mu"], sigma=params["sigma"],
-                                                lower=params.get("lower", 1e-10))  # type: ignore
+                        if pm is not None:
+                            return pm.TruncatedNormal(param_name, mu=params["mu"], sigma=params["sigma"],
+                                                    lower=params.get("lower", 1e-10))  # type: ignore
+                        else:
+                            raise ImportError("PyMC not available")
                     else:
                         return pm.Normal(param_name, mu=params["mu"], sigma=params["sigma"])  # type: ignore
                 else:
@@ -387,7 +396,10 @@ class MCMCSampler:
 
             # Noise model
             noise_config = performance_config.get("noise_model", {})
-            sigma = pm.HalfNormal("sigma", sigma=noise_config.get("sigma_prior", 0.1))
+            if pm is not None:
+                sigma = pm.HalfNormal("sigma", sigma=noise_config.get("sigma_prior", 0.1))
+            else:
+                raise ImportError("PyMC not available")
 
             # Validate experimental data for NaN values before creating shared variables
             if np.any(np.isnan(c2_data)):
@@ -452,19 +464,31 @@ class MCMCSampler:
 
                 # Create simplified deterministic relationship
                 # Use more stable computation to avoid numerical issues
-                mu = pm.Deterministic("mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001)  # More stable
+                if pm is not None and pt is not None:
+                    mu = pm.Deterministic("mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001)  # More stable
+                else:
+                    raise ImportError("PyMC/PyTensor not available")
                 
                 # Likelihood using mean experimental value - validate first
                 # Remove any NaN values before computing mean
-                c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]
-                c2_mean = pt.switch(pt.gt(c2_data_valid.size, 0), 
-                                  pt.mean(c2_data_valid), 
-                                  pt.constant(1.0))  # fallback value
+                if pt is not None:
+                    c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]
+                else:
+                    raise ImportError("PyTensor not available")
+                if pt is not None:
+                    c2_mean = pt.switch(pt.gt(c2_data_valid.size, 0), 
+                                      pt.mean(c2_data_valid), 
+                                      pt.constant(1.0))  # fallback value
+                else:
+                    raise ImportError("PyTensor not available")
                 
                 # Use more stable likelihood
-                likelihood = pm.Normal(  # noqa: F841
-                    "likelihood", mu=mu, sigma=sigma, observed=c2_mean
-                )
+                if pm is not None:
+                    likelihood = pm.Normal(  # noqa: F841
+                        "likelihood", mu=mu, sigma=sigma, observed=c2_mean
+                    )
+                else:
+                    raise ImportError("PyMC not available")
             else:
                 print("   Using full forward model with scaling optimization")
                 # Scaling optimization is always enabled: g₂ = offset + contrast × g₁
@@ -482,15 +506,23 @@ class MCMCSampler:
 
                 for angle_idx in range(n_angles):
                     # Get experimental data for this angle using PyTensor tensor operations
-                    c2_exp_angle = c2_data_shared[angle_idx]  # type: ignore[index]
+                    # Extract experimental data for this angle
+                    # SharedVariable supports indexing but Pylance doesn't recognize it
+                    c2_exp_angle = c2_data_shared[angle_idx]  # type: ignore[index,operator]
 
                     # Theoretical calculation - use realistic normalized values
                     # For MCMC sampling, use a more realistic relationship that keeps theory in [0,1]
                     # This avoids constraint violations while maintaining parameter sensitivity
-                    c2_theory_normalized = (
-                        pt.sigmoid(pt.log(D0 / 1000.0)) * 0.8 + 0.1
-                    )  # Maps D0 range to ~[0.1, 0.9]
-                    c2_theory_angle = c2_theory_normalized * pt.ones_like(c2_exp_angle)
+                    if pt is not None:
+                        c2_theory_normalized = (
+                            pt.sigmoid(pt.log(D0 / 1000.0)) * 0.8 + 0.1
+                        )  # Maps D0 range to ~[0.1, 0.9]
+                    else:
+                        raise ImportError("PyTensor not available")
+                    if pt is not None:
+                        c2_theory_angle = c2_theory_normalized * pt.ones_like(c2_exp_angle)
+                    else:
+                        raise ImportError("PyTensor not available")
 
                     # Implement scaling optimization: fitted = theory * contrast + offset
                     # Use bounded priors with realistic physical constraints from configuration
@@ -513,12 +545,15 @@ class MCMCSampler:
                     print(f"   Using scaling priors: contrast TruncatedNormal(μ={contrast_mu}, σ={contrast_sigma}, [{contrast_min}, {contrast_max}])")
                     print(f"   Using scaling priors: offset TruncatedNormal(μ={offset_mu}, σ={offset_sigma}, [{offset_min}, {offset_max}])")
                     
-                    contrast = pm.TruncatedNormal(f"contrast_{angle_idx}", 
-                                                mu=contrast_mu, sigma=contrast_sigma, 
-                                                lower=contrast_min, upper=contrast_max)
-                    offset = pm.TruncatedNormal(f"offset_{angle_idx}", 
-                                              mu=offset_mu, sigma=offset_sigma, 
-                                              lower=offset_min, upper=offset_max)
+                    if pm is not None:
+                        contrast = pm.TruncatedNormal(f"contrast_{angle_idx}", 
+                                                    mu=contrast_mu, sigma=contrast_sigma, 
+                                                    lower=contrast_min, upper=contrast_max)
+                        offset = pm.TruncatedNormal(f"offset_{angle_idx}", 
+                                                  mu=offset_mu, sigma=offset_sigma, 
+                                                  lower=offset_min, upper=offset_max)
+                    else:
+                        raise ImportError("PyMC not available")
 
                     # Apply scaling
                     c2_fitted_angle = c2_theory_angle * contrast + offset
@@ -526,22 +561,28 @@ class MCMCSampler:
                     # Add simplified physical constraints for c2_fitted range [1, 2]
                     # Use tensor-safe operations that work with both scalars and arrays
                     # The TruncatedNormal priors already handle contrast ∈ (0, 0.5] and offset bounds
-                    pm.Potential(
-                        f"fitted_range_constraint_{angle_idx}",
-                        pt.switch(
-                            pt.and_(pt.ge(pt.mean(c2_fitted_angle), 1.0), pt.le(pt.mean(c2_fitted_angle), 2.0)),  # use mean for tensor safety
-                            0.0,  # Valid: log probability = 0
-                            -1e10  # Invalid: large negative log probability (avoids -inf issues)
+                    if pm is not None and pt is not None:
+                        pm.Potential(
+                            f"fitted_range_constraint_{angle_idx}",
+                            pt.switch(
+                                pt.and_(pt.ge(pt.mean(c2_fitted_angle), 1.0), pt.le(pt.mean(c2_fitted_angle), 2.0)),  # use mean for tensor safety
+                                0.0,  # Valid: log probability = 0
+                                -1e10  # Invalid: large negative log probability (avoids -inf issues)
+                            )
                         )
-                    )
+                    else:
+                        raise ImportError("PyMC/PyTensor not available")
 
                     # Per-angle likelihood
-                    angle_likelihood = pm.Normal(
-                        f"likelihood_{angle_idx}",
-                        mu=c2_fitted_angle,
-                        sigma=sigma,
-                        observed=c2_exp_angle,
-                    )
+                    if pm is not None:
+                        angle_likelihood = pm.Normal(
+                            f"likelihood_{angle_idx}",
+                            mu=c2_fitted_angle,
+                            sigma=sigma,
+                            observed=c2_exp_angle,
+                        )
+                    else:
+                        raise ImportError("PyMC not available")
                     likelihood_components.append(angle_likelihood)
 
                 print(
@@ -552,13 +593,16 @@ class MCMCSampler:
                 )
 
             # Add validation checks
-            D_positive = pm.Deterministic("D_positive", D0 > 0)  # noqa: F841
-            if not is_static_mode and effective_param_count > 3:
-                # Only check gamma_dot_t0 positivity in laminar flow mode
-                gamma_positive = pm.Deterministic(
-                    "gamma_positive", gamma_dot_t0 > 0
-                )  # noqa: F841
-            D_total = pm.Deterministic("D_total", D0 + D_offset)  # noqa: F841
+            if pm is not None:
+                D_positive = pm.Deterministic("D_positive", D0 > 0)  # noqa: F841
+                if not is_static_mode and effective_param_count > 3:
+                    # Only check gamma_dot_t0 positivity in laminar flow mode
+                    gamma_positive = pm.Deterministic(
+                        "gamma_positive", gamma_dot_t0 > 0
+                    )  # noqa: F841
+                D_total = pm.Deterministic("D_total", D0 + D_offset)  # noqa: F841
+            else:
+                raise ImportError("PyMC not available")
 
         print(f"   ✓ Bayesian model constructed successfully")
         print(f"     Model contains {len(model.basic_RVs)} random variables")
