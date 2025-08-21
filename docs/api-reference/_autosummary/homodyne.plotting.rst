@@ -1,6 +1,6 @@
 ﻿homodyne.plotting
 =================
 
-.. currentmodule:: homodyne
+.. currentmodule:: homodyne.plotting
 
-.. automodule:: plotting
+.. automodule:: homodyne.plotting

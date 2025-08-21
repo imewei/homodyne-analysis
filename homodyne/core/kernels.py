@@ -44,7 +44,7 @@ def create_time_integral_matrix_numba(time_dependent_array):
     """
     Create time integral matrix for correlation calculations.
 
-    Computes matrix of time integrals I[i,j] = |integral from t_i to t_j of f(t)dt|
+    Computes matrix of time integrals I[i,j] = |integral_{t_i}^{t_j} f(t)dt|
     using optimized algorithm that mimics numpy's vectorized approach.
     
     This implementation is equivalent to:
@@ -140,24 +140,28 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset
 
     Common experimental scenarios:
+    
     1. Creep tests: Applied constant stress → time-dependent strain rate
-
+    
        - Initially: γ̇(t) ~ t^(-n) as material yields
-        - Later: γ̇(t) ~ constant for steady-state flow
-        - Recovery: γ̇(t) → 0 with power-law or exponential decay
+       - Later: γ̇(t) ~ constant for steady-state flow
+       - Recovery: γ̇(t) → 0 with power-law or exponential decay
 
     2. Startup flows: Sudden application of shear
-        - Acceleration phase: γ̇(t) increases toward steady state
-        - Overshoot possible in viscoelastic materials
-        - Eventually: γ̇(t) → constant
+    
+       - Acceleration phase: γ̇(t) increases toward steady state
+       - Overshoot possible in viscoelastic materials
+       - Eventually: γ̇(t) → constant
 
     3. Oscillatory flows: Time-varying shear rates
-        - Can be captured by appropriate choice of β
-        - More complex forms may require Fourier series
+    
+       - Can be captured by appropriate choice of β
+       - More complex forms may require Fourier series
 
     4. Stress relaxation: Removal of applied stress
-        - Exponential or power-law decay: γ̇(t) ~ t^(-β)
-        - Long-time tail behavior depends on material properties
+       
+       - Exponential or power-law decay: γ̇(t) ~ t^(-β)
+       - Long-time tail behavior depends on material properties
 
     Parameters
     ----------
@@ -244,11 +248,14 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     - The sinc² envelope reflects the coherent averaging over the velocity distribution
 
     Mathematical origin:
-    In laminar flow between parallel plates with gap h:
+    
+    In laminar flow between parallel plates with gap h::
+    
         v(y) = γ̇ × y  (linear velocity profile)
 
     The scattering from particles at height y picks up phase φ = q⃗·v⃗(y)t
-    Coherent averaging over y gives:
+    Coherent averaging over y gives::
+    
         ⟨exp(iq⃗·v⃗(y)t)⟩ = ∫₀ʰ exp(iqy̲γ̇t)dy/h = sinc(qy̲γ̇th/2)
 
     Where qy̲ is the component of q⃗ perpendicular to flow direction.
@@ -277,8 +284,8 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     np.ndarray
         Sinc² values for shear contribution, in [0,1] with sinc²(0) = 1
 
-    Special cases:
-    --------------
+    Special cases
+    -------------
     - Zero shear (γ̇ = 0): sinc²(0) = 1 (no shear decorrelation)
     - Perpendicular scattering (cos φ = 0): sinc²(0) = 1 (no sensitivity)
     - Very small arguments: use Taylor expansion to avoid 0/0 indeterminacy
