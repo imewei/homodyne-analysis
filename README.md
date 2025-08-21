@@ -301,28 +301,28 @@ The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded par
 - **target_accept = 0.95**: High acceptance rate for constrained sampling
 - **Distribution-aware priors**: TruncatedNormal for positive parameters, Normal otherwise  
 - **Configuration-driven**: All parameters read from JSON files for consistency
-# Static Isotropic (3 parameters)
+#### Static Isotropic (3 parameters)
 {
   "draws": 8000,
   "thin": 2,        # Effective samples: 4000
   "chains": 4
 }
 
-# Static Anisotropic (3 parameters)  
+#### Static Anisotropic (3 parameters)  
 {
   "draws": 8000,
   "thin": 2,        # Good convergence expected
   "chains": 4
 }
 
-# Laminar Flow (7 parameters)
+#### Laminar Flow (7 parameters)
 {
   "draws": 10000,
   "thin": 1,        # All samples needed for complex posterior
   "chains": 6
 }
 
-# Memory-Constrained Systems
+#### Memory-Constrained Systems
 {
   "draws": 5000,
   "thin": 5,        # Effective samples: 1000
