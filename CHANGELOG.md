@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-08-21
+
 ### Added
 - Enhanced JIT warmup system with comprehensive function-level compilation
 - Stable benchmarking utilities with statistical outlier filtering
