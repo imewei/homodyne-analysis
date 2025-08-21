@@ -142,6 +142,11 @@ homodyne --plot-experimental-data --config my_config.json
 # Custom configuration and output
 homodyne --config my_experiment.json --output-dir ./results
 
+# Logging control options
+homodyne --verbose                              # Debug logging to console and file
+homodyne --quiet                               # File logging only, no console output
+homodyne --config my_config.json --quiet       # Quiet mode with custom config
+
 # Generate C2 heatmaps
 homodyne --method classical --plot-c2-heatmaps
 ```
@@ -152,6 +157,7 @@ Generate validation plots without fitting:
 
 ```bash
 homodyne --plot-experimental-data --config my_config.json --verbose
+homodyne --plot-experimental-data --config my_config.json --quiet  # Quiet mode
 ```
 
 **Output**: Creates plots in `./homodyne_results/exp_data/`:
@@ -199,6 +205,29 @@ homodyne --plot-experimental-data --verbose
 - Mean values around 1.0 ($g_2$ correlation functions)
 - Enhanced diagonal values
 - Sufficient contrast (> 0.001)
+
+### Logging Control
+
+The package provides flexible logging control for different use cases:
+
+| Option | Console Output | File Output | Use Case |
+|--------|---------------|-------------|----------|
+| **Default** | INFO level | INFO level | Normal interactive analysis |
+| **`--verbose`** | DEBUG level | DEBUG level | Detailed troubleshooting and debugging |
+| **`--quiet`** | None | INFO level | Batch processing, scripting, clean output |
+
+```bash
+# Detailed debugging information
+homodyne --verbose --method all
+
+# Quiet execution (logs only to file)
+homodyne --quiet --method classical --output-dir ./batch_results
+
+# Cannot combine conflicting options
+homodyne --verbose --quiet  # ERROR: conflicting options
+```
+
+**File Logging**: All modes save detailed logs to `output_dir/run.log` for analysis tracking and debugging, regardless of console settings.
 
 ## Performance & Testing
 

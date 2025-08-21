@@ -50,7 +50,12 @@
         "homodyne-config --mode static_anisotropic --sample SAMPLE_NAME",
         "homodyne --config config.json --static-anisotropic --method classical",
         "homodyne --config config.json --static-anisotropic --method all"
-      ]
+      ],
+      "logging_options": {
+        "verbose": "homodyne --config config.json --static-anisotropic --verbose",
+        "quiet": "homodyne --config config.json --static-anisotropic --quiet",
+        "note": "All logging modes save to output_dir/run.log for analysis tracking"
+      }
     }
   },
   "experimental_data": {

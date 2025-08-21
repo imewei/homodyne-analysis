@@ -973,6 +973,14 @@
         "_max_bytes_note": "Maximum log file size (10MB)",
         "backup_count": 3,
         "_backup_count_note": "Number of backup log files to keep"
+      },
+      "_cli_logging_options": {
+        "_comment": "Command-line logging control options",
+        "verbose_flag": "--verbose enables DEBUG level logging with detailed output",
+        "quiet_flag": "--quiet disables console logging while keeping file logging enabled",
+        "default_behavior": "INFO level logging to both console and file",
+        "conflict_resolution": "--verbose and --quiet cannot be used together",
+        "file_logging": "File logging is always enabled regardless of console settings"
       }
     }
   },

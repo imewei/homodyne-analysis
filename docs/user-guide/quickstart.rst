@@ -37,6 +37,9 @@ Ensure your experimental data is in the correct format:
    
    # Basic analysis (fastest, saves results to ./homodyne_results/)
    homodyne --config my_sample_config.json --method classical
+   
+   # Run in quiet mode (file logging only, no console output)
+   homodyne --config my_sample_config.json --method classical --quiet
 
 **Step 4: View Results**
 
@@ -139,6 +142,50 @@ Configuration Tips
        "data_type": "float32"
      }
    }
+
+Logging Control Options
+-----------------------
+
+The homodyne package provides flexible logging control for different use cases:
+
+.. list-table:: Logging Options
+   :widths: 20 25 25 30
+   :header-rows: 1
+
+   * - Option
+     - Console Output
+     - File Output
+     - Use Case
+   * - **Default**
+     - INFO level
+     - INFO level
+     - Normal interactive analysis
+   * - ``--verbose``
+     - DEBUG level
+     - DEBUG level
+     - Detailed troubleshooting
+   * - ``--quiet``
+     - None
+     - INFO level
+     - Batch processing, clean output
+
+**Examples:**
+
+.. code-block:: bash
+
+   # Normal mode with INFO-level logging
+   homodyne --config my_config.json --method classical
+   
+   # Verbose mode with detailed debugging
+   homodyne --config my_config.json --method all --verbose
+   
+   # Quiet mode for batch processing (logs only to file)
+   homodyne --config my_config.json --method classical --quiet
+   
+   # Error: Cannot combine conflicting options
+   homodyne --verbose --quiet  # ERROR
+
+**Important:** File logging is always enabled and saves to ``output_dir/run.log`` regardless of console settings.
 
 Next Steps
 ----------

@@ -54,7 +54,7 @@ except ImportError:
         MCMC_AVAILABLE = False
 
 
-def setup_logging(verbose: bool, output_dir: Path) -> None:
+def setup_logging(verbose: bool, quiet: bool, output_dir: Path) -> None:
     """
     Configure comprehensive logging for the analysis session.
 
@@ -65,6 +65,8 @@ def setup_logging(verbose: bool, output_dir: Path) -> None:
     ----------
     verbose : bool
         Enable DEBUG level logging for detailed output
+    quiet : bool
+        Disable console logging (file logging remains enabled)
     output_dir : Path
         Directory where log file will be created
     """
@@ -87,11 +89,12 @@ def setup_logging(verbose: bool, output_dir: Path) -> None:
     # Clear any existing handlers
     root_logger.handlers.clear()
 
-    # Add console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(level)
-    console_handler.setFormatter(formatter)
-    root_logger.addHandler(console_handler)
+    # Add console handler only if not in quiet mode
+    if not quiet:
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level)
+        console_handler.setFormatter(formatter)
+        root_logger.addHandler(console_handler)
 
     # 3. Add file handler that writes to output_dir/run.log
     log_file_path = output_dir / "run.log"
@@ -120,9 +123,12 @@ def print_banner(args: argparse.Namespace) -> None:
     print(f"Method:           {args.method}")
     print(f"Config file:      {args.config}")
     print(f"Output directory: {args.output_dir}")
-    print(
-        f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}"
-    )
+    if args.quiet:
+        print(f"Logging:          File only ({'DEBUG' if args.verbose else 'INFO'} level)")
+    else:
+        print(
+            f"Verbose logging:  {'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}"
+        )
 
     # Show analysis mode
     if args.static:
@@ -1612,6 +1618,7 @@ Examples:
   %(prog)s --method all --verbose             # Run all methods with debug logging  
   %(prog)s --config my_config.json            # Use custom config file
   %(prog)s --output-dir ./results --verbose   # Custom output directory with verbose logging
+  %(prog)s --quiet                            # Run with file logging only (no console output)
   %(prog)s --static-isotropic                 # Force static mode (zero shear, 3 parameters)
   %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
   %(prog)s --static-isotropic --method all    # Run all methods in static mode
@@ -1650,6 +1657,10 @@ Method Quality Assessment:
         "--verbose", action="store_true", help="Enable verbose DEBUG logging"
     )
 
+    parser.add_argument(
+        "--quiet", action="store_true", help="Disable console logging (file logging remains enabled)"
+    )
+
     # Add analysis mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
@@ -1681,8 +1692,12 @@ Method Quality Assessment:
 
     args = parser.parse_args()
 
+    # Check for conflicting logging options
+    if args.verbose and args.quiet:
+        parser.error("Cannot use --verbose and --quiet together")
+
     # Setup logging and prepare output directory
-    setup_logging(args.verbose, args.output_dir)
+    setup_logging(args.verbose, args.quiet, args.output_dir)
 
     # Create logger for this module
     logger = logging.getLogger(__name__)

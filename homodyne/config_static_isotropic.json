@@ -50,7 +50,12 @@
         "homodyne-config --mode static_isotropic --sample SAMPLE_NAME",
         "homodyne --config config.json --static-isotropic --method classical",
         "homodyne --config config.json --static-isotropic --method all"
-      ]
+      ],
+      "logging_options": {
+        "verbose": "homodyne --config config.json --static-isotropic --verbose",
+        "quiet": "homodyne --config config.json --static-isotropic --quiet",
+        "note": "All logging modes save to output_dir/run.log for analysis tracking"
+      }
     }
   },
   "experimental_data": {
@@ -410,6 +415,25 @@
           8
         ],
         "style": "publication"
+      },
+      "logging": {
+        "_comment": "Logging configuration for static isotropic mode",
+        "log_level": "INFO",
+        "_log_level_note": "Logging level: DEBUG, INFO, WARNING, ERROR",
+        "log_to_file": true,
+        "_log_to_file_note": "Save logs to file",
+        "log_to_console": true,
+        "_log_to_console_note": "Display logs in console",
+        "log_filename": "homodyne_isotropic_analysis.log",
+        "_log_filename_note": "Log file name for isotropic mode",
+        "_cli_logging_options": {
+          "_comment": "Command-line logging control options",
+          "verbose_flag": "--verbose enables DEBUG level logging with detailed output",
+          "quiet_flag": "--quiet disables console logging while keeping file logging enabled",
+          "default_behavior": "INFO level logging to both console and file",
+          "conflict_resolution": "--verbose and --quiet cannot be used together",
+          "file_logging": "File logging is always enabled regardless of console settings"
+        }
       },
       "c2_heatmaps": {
         "enabled": true,

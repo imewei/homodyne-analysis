@@ -51,7 +51,12 @@
         "homodyne-config --mode laminar_flow --sample SAMPLE_NAME",
         "homodyne --config config.json --laminar-flow --method classical",
         "homodyne --config config.json --laminar-flow --method all"
-      ]
+      ],
+      "logging_options": {
+        "verbose": "homodyne --config config.json --laminar-flow --verbose",
+        "quiet": "homodyne --config config.json --laminar-flow --quiet",
+        "note": "All logging modes save to output_dir/run.log for analysis tracking"
+      }
     }
   },
   "experimental_data": {

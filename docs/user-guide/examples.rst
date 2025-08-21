@@ -38,6 +38,9 @@ Example 1: Basic Isotropic Analysis
    
    # Generate data validation plots only (saved to ./homodyne_results/exp_data/)
    python run_homodyne.py --config isotropic_example.json --plot-experimental-data
+   
+   # Run in quiet mode for batch processing
+   python run_homodyne.py --config isotropic_example.json --method classical --quiet
 
 **Expected Output**:
 
@@ -477,6 +480,93 @@ All parameters use **Normal distributions** in the MCMC implementation:
        ]
      }
    }
+
+Example 6: Logging Control for Different Scenarios
+----------------------------------------------------
+
+**Scenario**: Using different logging modes for various use cases.
+
+**Interactive Analysis** (default logging):
+
+.. code-block:: bash
+
+   # Normal interactive analysis with console and file logging
+   homodyne --config my_config.json --method classical
+   
+   # With detailed debugging information
+   homodyne --config my_config.json --method all --verbose
+
+**Batch Processing** (quiet mode):
+
+.. code-block:: bash
+
+   # Process multiple samples quietly (logs only to files)
+   for sample in sample_01 sample_02 sample_03; do
+       homodyne --config configs/${sample}_config.json \
+               --output-dir results/${sample} \
+               --method classical \
+               --quiet
+   done
+
+**Automated Scripts** (``batch_quiet_analysis.sh``):
+
+.. code-block:: bash
+
+   #!/bin/bash
+   # Batch processing script with quiet logging
+   
+   SAMPLES_DIR="./data/samples"
+   RESULTS_DIR="./results"
+   
+   for config_file in configs/*.json; do
+       sample_name=$(basename "$config_file" .json)
+       
+       echo "Processing ${sample_name}..."
+       
+       # Run analysis in quiet mode
+       homodyne --config "$config_file" \
+               --output-dir "${RESULTS_DIR}/${sample_name}" \
+               --method classical \
+               --quiet
+       
+       # Check if analysis succeeded (logs are in file)
+       if [ -f "${RESULTS_DIR}/${sample_name}/run.log" ]; then
+           echo "✅ ${sample_name}: Check ${RESULTS_DIR}/${sample_name}/run.log"
+       else
+           echo "❌ ${sample_name}: Analysis failed"
+       fi
+   done
+   
+   echo "Batch processing complete. Check individual run.log files for details."
+
+**Debugging Mode** (verbose logging):
+
+.. code-block:: bash
+
+   # Troubleshoot analysis with detailed logging
+   homodyne --config problem_sample.json --method all --verbose
+   
+   # Debug MCMC convergence issues
+   homodyne --config mcmc_issue.json --method mcmc --verbose
+
+**Key Benefits**:
+
+- **Default mode**: Best for interactive use, shows progress and errors
+- **Verbose mode** (``--verbose``): Essential for troubleshooting and development
+- **Quiet mode** (``--quiet``): Perfect for batch processing and automation
+- **File logging**: Always enabled, provides complete analysis record
+
+**Log File Locations**:
+
+.. code-block:: text
+
+   ./output_directory/
+   ├── run.log                    # Complete analysis log
+   ├── classical/                 # Classical method results
+   ├── mcmc/                      # MCMC method results  
+   └── homodyne_analysis_results.json  # Main results
+
+**Error Handling Note**: In quiet mode, errors are only logged to files, so check ``run.log`` files for troubleshooting.
 
 Next Steps
 ----------
