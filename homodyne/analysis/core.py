@@ -10,7 +10,7 @@ nonequilibrium laminar flow systems, based on He et al. (2024).
 Physical Theory
 ---------------
 The theoretical framework describes the time-dependent intensity correlation function
-g2(φ,t₁,t₂) for X-ray photon correlation spectroscopy (XPCS) measurements of fluids
+c2(φ,t₁,t₂) for X-ray photon correlation spectroscopy (XPCS) measurements of fluids
 under nonequilibrium laminar flow conditions. The model captures the interplay between
 Brownian diffusion and advective shear flow in the two-time correlation dynamics.
 
