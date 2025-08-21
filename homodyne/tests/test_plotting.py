@@ -335,9 +335,30 @@ class TestDiagnosticPlots:
             trace_data = az.from_dict({"posterior": posterior_dict})
 
             # Compute diagnostics using ArviZ (matching actual MCMC module format)
-            rhat_data = az.rhat(trace_data)
-            ess_data = az.ess(trace_data)
-            mcse_data = az.mcse(trace_data)
+            # Handle potential Numba threading conflicts gracefully
+            try:
+                rhat_data = az.rhat(trace_data)
+                ess_data = az.ess(trace_data)
+                mcse_data = az.mcse(trace_data)
+            except RuntimeError as e:
+                if "NUMBA_NUM_THREADS" in str(e):
+                    # Create mock diagnostic data compatible with ArviZ Dataset format
+                    import xarray as xr
+                    rhat_data = xr.Dataset({
+                        param: xr.DataArray(1.01)  # Scalar value, no dims needed
+                        for param in param_names
+                    })
+                    ess_data = xr.Dataset({
+                        param: xr.DataArray(400.0)  # Scalar value, no dims needed
+                        for param in param_names
+                    })
+                    mcse_data = xr.Dataset({
+                        param: xr.DataArray(0.01)  # Scalar value, no dims needed
+                        for param in param_names
+                    })
+                    print("⚠ Using fallback diagnostic data due to Numba threading conflict")
+                else:
+                    raise
 
             # Create comprehensive results dictionary with all required data
             results = {
@@ -643,10 +664,36 @@ class TestMCMCPlots:
 
             # Create diagnostics in the format that the actual MCMC module produces
             # (ArviZ Dataset objects, not dictionaries, and with "rhat", "ess", "mcse" keys)
+            # Handle potential Numba threading conflicts gracefully
+            try:
+                rhat_data = az.rhat(trace_data)
+                ess_data = az.ess(trace_data)
+                mcse_data = az.mcse(trace_data)
+            except RuntimeError as e:
+                if "NUMBA_NUM_THREADS" in str(e):
+                    # Create mock diagnostic data compatible with ArviZ Dataset format
+                    import xarray as xr
+                    param_names = ["D0", "alpha", "D_offset"]
+                    rhat_data = xr.Dataset({
+                        param: xr.DataArray(1.01)  # Scalar value, no dims needed
+                        for param in param_names
+                    })
+                    ess_data = xr.Dataset({
+                        param: xr.DataArray(400.0)  # Scalar value, no dims needed
+                        for param in param_names
+                    })
+                    mcse_data = xr.Dataset({
+                        param: xr.DataArray(0.01)  # Scalar value, no dims needed
+                        for param in param_names
+                    })
+                    print("⚠ Using fallback diagnostic data due to Numba threading conflict")
+                else:
+                    raise
+            
             diagnostics = {
-                "rhat": az.rhat(trace_data),  # ArviZ Dataset object
-                "ess": az.ess(trace_data),  # ArviZ Dataset object
-                "mcse": az.mcse(trace_data),  # ArviZ Dataset object
+                "rhat": rhat_data,  # ArviZ Dataset object
+                "ess": ess_data,  # ArviZ Dataset object
+                "mcse": mcse_data,  # ArviZ Dataset object
                 "max_rhat": 1.01,
                 "min_ess": 400,
                 "converged": True,

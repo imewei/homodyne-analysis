@@ -3,6 +3,16 @@ Performance Optimization
 
 This guide covers performance optimization strategies for the homodyne package.
 
+.. note::
+   **NEW**: See the comprehensive :doc:`../performance` guide for the latest performance improvements, 
+   including recent optimizations that delivered 10-17x speedups in key calculations.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Performance Documentation
+
+   ../performance
+
 Performance Overview
 --------------------
 

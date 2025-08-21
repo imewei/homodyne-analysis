@@ -17,9 +17,9 @@
       "Scaling optimization critical for accurate flow parameter determination"
     ],
     "_scaling_optimization_benefits_flow": {
-      "overview": "Scaling optimization (g₂ = offset + contrast × g₁) is crucial for flow analysis",
+      "overview": "Scaling optimization (g\u2082 = offset + contrast \u00d7 g\u2081) is crucial for flow analysis",
       "flow_independence": "Scaling parameters separate instrumental effects from flow physics",
-      "parameter_accuracy": "Essential for reliable flow parameter (γ̇, β) determination",
+      "parameter_accuracy": "Essential for reliable flow parameter (\u03b3\u0307, \u03b2) determination",
       "chi_squared_validity": "Enables meaningful comparison between flow theory and experiment",
       "uncertainty_quantification": "Critical for proper uncertainty estimation in flow parameters"
     },
@@ -96,14 +96,14 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_wavevector_q_note": "q-vector magnitude - affects both diffusion and flow terms (typical: 0.001-0.1 Å⁻¹)",
-      "q_unit": "Å⁻¹"
+      "_wavevector_q_note": "q-vector magnitude - affects both diffusion and flow terms (typical: 0.001-0.1 \u00c5\u207b\u00b9)",
+      "q_unit": "\u00c5\u207b\u00b9"
     },
     "geometry": {
       "_comment": "Geometry parameters - gap is important for flow calculations",
       "stator_rotor_gap": 1000000,
-      "_stator_rotor_gap_note": "IMPORTANT: Gap size affects shear rate calculations (100μm typical)",
-      "gap_unit": "Å",
+      "_stator_rotor_gap_note": "IMPORTANT: Gap size affects shear rate calculations (100\u03bcm typical)",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 100,
       "_gap_note": "Critical parameter for flow physics - sinc argument calculation"
     },
@@ -140,12 +140,12 @@
       "phi0"
     ],
     "units": [
-      "Å²/s",
+      "\u00c5\u00b2/s",
       "dimensionless",
-      "Å²/s",
-      "s⁻¹",
+      "\u00c5\u00b2/s",
+      "s\u207b\u00b9",
       "dimensionless",
-      "s⁻¹",
+      "s\u207b\u00b9",
       "degrees"
     ],
     "physical_meaning": {
@@ -153,7 +153,7 @@
       "alpha": "Power-law exponent for D(t) evolution - ACTIVE PARAMETER",
       "D_offset": "Baseline diffusion coefficient - ACTIVE PARAMETER",
       "gamma_dot_t0": "Reference shear rate - ACTIVE PARAMETER",
-      "beta": "Power-law exponent for γ̇(t) evolution - ACTIVE PARAMETER",
+      "beta": "Power-law exponent for \u03b3\u0307(t) evolution - ACTIVE PARAMETER",
       "gamma_dot_t_offset": "Baseline shear rate - ACTIVE PARAMETER",
       "phi0": "Angular offset between flow direction and scattering vector - ACTIVE PARAMETER"
     },
@@ -169,10 +169,10 @@
     "_active_parameters_note": "All 7 parameters are optimized in laminar flow mode",
     "model_equations": {
       "_comment": "Complete mathematical model for laminar flow",
-      "diffusion": "D(t) = D₀(t/t₀)^α + D_offset",
-      "shear_rate": "γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset",
-      "correlation": "c₂ = 1 + β[exp(-q²∫D(t)dt)] × sinc²[(qh/2π)∫γ̇(t)cos(φ₀-φ)dt]",
-      "sinc_argument": "Φ = (qh/2π)cos(φ₀-φ) ∫|t₂-t₁| γ̇(t')dt'"
+      "diffusion": "D(t) = D\u2080(t/t\u2080)^\u03b1 + D_offset",
+      "shear_rate": "\u03b3\u0307(t) = \u03b3\u0307\u2080(t/t\u2080)^\u03b2 + \u03b3\u0307_offset",
+      "correlation": "c\u2082 = 1 + \u03b2[exp(-q\u00b2\u222bD(t)dt)] \u00d7 sinc\u00b2[(qh/2\u03c0)\u222b\u03b3\u0307(t)cos(\u03c6\u2080-\u03c6)dt]",
+      "sinc_argument": "\u03a6 = (qh/2\u03c0)cos(\u03c6\u2080-\u03c6) \u222b|t\u2082-t\u2081| \u03b3\u0307(t')dt'"
     }
   },
   "optimization_config": {
@@ -245,7 +245,7 @@
         "prior_mu": 0.3,
         "prior_sigma": 0.1,
         "type": "TruncatedNormal",
-        "_description": "Scaling factor for correlation strength, typically ∈ (0, 0.5]"
+        "_description": "Scaling factor for correlation strength, typically \u2208 (0, 0.5]"
       },
       "offset": {
         "min": 0.05,
@@ -253,7 +253,7 @@
         "prior_mu": 1.0,
         "prior_sigma": 0.2,
         "type": "TruncatedNormal",
-        "_description": "Baseline correlation level, typically ∈ (0, 2.0), μ ≈ 1.0"
+        "_description": "Baseline correlation level, typically \u2208 (0, 2.0), \u03bc \u2248 1.0"
       }
     }
   },
@@ -267,7 +267,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "Å²/s",
+        "unit": "\u00c5\u00b2/s",
         "physical_constraint": "positive",
         "_note": "Reference diffusion coefficient (typical colloidal systems)"
       },
@@ -289,7 +289,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "Å²/s",
+        "unit": "\u00c5\u00b2/s",
         "physical_constraint": "none",
         "_note": "Baseline diffusion coefficient (typically small vs D0)"
       },
@@ -300,7 +300,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.01,
-        "unit": "s⁻¹",
+        "unit": "s\u207b\u00b9",
         "physical_constraint": "positive",
         "_note": "Reference shear rate (typical XPCS flow experiments)"
       },
@@ -322,7 +322,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.001,
-        "unit": "s⁻¹",
+        "unit": "s\u207b\u00b9",
         "physical_constraint": "none",
         "_note": "Small baseline shear rate (often near zero)"
       },
@@ -348,16 +348,16 @@
     "_static_submode_note": "Not applicable for laminar flow mode",
     "model_description": {
       "current_mode": "laminar_flow_case",
-      "equation": "g₁(t₁,t₂) = g₁_diff(t₁,t₂) × g₁_shear(t₁,t₂)",
+      "equation": "g\u2081(t\u2081,t\u2082) = g\u2081_diff(t\u2081,t\u2082) \u00d7 g\u2081_shear(t\u2081,t\u2082)",
       "components": {
-        "g1_diff": "exp(-q² ∫ᵗ²ᵗ¹ D(t)dt) - diffusion contribution",
-        "g1_shear": "sinc²(Φ) where Φ = (qh/2π)cos(φ₀-φ)∫γ̇(t)dt - flow contribution"
+        "g1_diff": "exp(-q\u00b2 \u222b\u1d57\u00b2\u1d57\u00b9 D(t)dt) - diffusion contribution",
+        "g1_shear": "sinc\u00b2(\u03a6) where \u03a6 = (qh/2\u03c0)cos(\u03c6\u2080-\u03c6)\u222b\u03b3\u0307(t)dt - flow contribution"
       },
       "description": "Combined diffusion and flow dynamics with full angular dependence",
       "key_features": [
-        "Time-dependent diffusion D(t) = D₀(t/t₀)^α + D_offset",
-        "Time-dependent shear rate γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset",
-        "Angular dependence through cos(φ₀-φ) term",
+        "Time-dependent diffusion D(t) = D\u2080(t/t\u2080)^\u03b1 + D_offset",
+        "Time-dependent shear rate \u03b3\u0307(t) = \u03b3\u0307\u2080(t/t\u2080)^\u03b2 + \u03b3\u0307_offset",
+        "Angular dependence through cos(\u03c6\u2080-\u03c6) term",
         "7 active parameters capturing full physics",
         "Sinc function from shear-induced decorrelation"
       ]
@@ -370,7 +370,7 @@
     },
     "chi_squared_calculation": {
       "method": "standard",
-      "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
+      "_scaling_optimization_note": "Scaling optimization is always enabled: g\u2082 = offset + contrast \u00d7 g\u2081. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
       "_scaling_details": {
         "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
         "_accounts_for": [
@@ -379,8 +379,8 @@
           "detector variations",
           "normalization differences"
         ],
-        "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
-        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]",
+        "_chi_squared_formula": "\u03c7\u00b2 = \u03a3(experimental - fitted)\u00b2/\u03c3\u00b2 where fitted = theory \u00d7 contrast + offset",
+        "_implementation": "Uses numpy.linalg.lstsq to solve A\u00b7x = b where A = [theory, ones], x = [contrast, offset]",
         "_flow_mode_considerations": [
           "Flow effects influence correlation functions but not scaling relationships",
           "Scaling optimization still essential for proper comparison with flow theory",
@@ -442,6 +442,37 @@
       "backend": "threading",
       "_performance_note": "Parallelization important for complex 7-parameter optimization"
     },
+    "numba_optimization": {
+      "stability_enhancements": {
+        "enable_kernel_warmup": true,
+        "_enable_kernel_warmup_note": "Pre-compile kernels for stable performance in laminar flow analysis",
+        "optimize_memory_layout": true,
+        "_optimize_memory_layout_note": "Memory optimization critical for 7-parameter computations",
+        "environment_optimization": {
+          "auto_configure": true,
+          "_auto_configure_note": "Automatic BLAS/OpenMP optimization for complex flow calculations",
+          "max_threads": 4,
+          "_max_threads_note": "Conservative thread count for optimal stability-performance balance"
+        }
+      },
+      "performance_monitoring": {
+        "smart_caching": {
+          "enabled": true,
+          "_enabled_note": "Memory-aware LRU caching for repeated flow calculations",
+          "max_memory_mb": 500.0,
+          "_max_memory_mb_note": "Cache limit adjusted for complex 7-parameter fits"
+        },
+        "adaptive_benchmarking": {
+          "enabled": false,
+          "_enabled_note": "Disabled by default - enable for performance optimization",
+          "target_cv": 0.1,
+          "_target_cv_note": "Aggressive CV target achievable with performance rebalancing",
+          "min_runs": 5,
+          "max_runs": 30,
+          "_benchmarking_note": "Adaptive benchmarking finds optimal measurement count for consistent timing"
+        }
+      }
+    },
     "noise_model": {
       "use_simple_forward_model": false,
       "_use_simple_forward_model_note": "Full forward model recommended for flow analysis consistency",
@@ -478,22 +509,22 @@
       "rhat_thresholds": {
         "_comment": "R-hat thresholds for complex 7-parameter flow models",
         "excellent_threshold": 1.01,
-        "_excellent_threshold_note": "R̂ ≤ 1.01 indicates excellent convergence for flow parameters",
+        "_excellent_threshold_note": "R\u0302 \u2264 1.01 indicates excellent convergence for flow parameters",
         "good_threshold": 1.05,
-        "_good_threshold_note": "R̂ ≤ 1.05 indicates good convergence for complex flow model",
+        "_good_threshold_note": "R\u0302 \u2264 1.05 indicates good convergence for complex flow model",
         "acceptable_threshold": 1.1,
-        "_acceptable_threshold_note": "R̂ ≤ 1.1 indicates acceptable convergence",
+        "_acceptable_threshold_note": "R\u0302 \u2264 1.1 indicates acceptable convergence",
         "critical_threshold": 1.2,
-        "_critical_threshold_note": "R̂ > 1.2 indicates poor convergence - increase sampling"
+        "_critical_threshold_note": "R\u0302 > 1.2 indicates poor convergence - increase sampling"
       },
       "ess_thresholds": {
         "_comment": "ESS thresholds adjusted for 7-parameter complexity",
         "excellent_threshold": 500,
-        "_excellent_threshold_note": "ESS ≥ 500 excellent for complex flow parameter space",
+        "_excellent_threshold_note": "ESS \u2265 500 excellent for complex flow parameter space",
         "good_threshold": 300,
-        "_good_threshold_note": "ESS ≥ 300 good for 7-parameter flow analysis",
+        "_good_threshold_note": "ESS \u2265 300 good for 7-parameter flow analysis",
         "acceptable_threshold": 150,
-        "_acceptable_threshold_note": "ESS ≥ 150 acceptable minimum for flow parameters",
+        "_acceptable_threshold_note": "ESS \u2265 150 acceptable minimum for flow parameters",
         "minimum_threshold": 100,
         "_minimum_threshold_note": "ESS < 100 inadequate for reliable flow estimates"
       },
@@ -506,9 +537,9 @@
       },
       "quality_assessment": {
         "_comment": "Flow-specific MCMC quality criteria",
-        "excellent_criteria": "R̂ < 1.01 AND ESS > 500 AND divergences < 1%",
-        "good_criteria": "R̂ < 1.05 AND ESS > 300 AND divergences < 2%",
-        "acceptable_criteria": "R̂ < 1.1 AND ESS > 150 AND divergences < 3%",
+        "excellent_criteria": "R\u0302 < 1.01 AND ESS > 500 AND divergences < 1%",
+        "good_criteria": "R\u0302 < 1.05 AND ESS > 300 AND divergences < 2%",
+        "acceptable_criteria": "R\u0302 < 1.1 AND ESS > 150 AND divergences < 3%",
         "poor_criteria": "Any criterion fails to meet acceptable threshold",
         "_flow_note": "Complex 7-parameter flow models may need higher ESS for reliable estimates"
       }
@@ -521,7 +552,7 @@
       "_flow_constraints": [
         "D0 must be positive (physical diffusion)",
         "gamma_dot_t0 must be positive (physical shear rate)",
-        "Time-dependent functions D(t) and γ̇(t) should remain positive",
+        "Time-dependent functions D(t) and \u03b3\u0307(t) should remain positive",
         "phi0 should be within reasonable angular range"
       ]
     }

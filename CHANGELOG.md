@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New optimization features**: Memory pooling, configuration caching, precomputed integrals
 - **Performance regression tests**: Automated monitoring of performance baselines
 - **Optimization test suite**: Comprehensive tests for new optimization features
-- **Performance documentation**: Detailed PERFORMANCE_IMPROVEMENTS.md guide
+- **Performance documentation**: Comprehensive performance guide (docs/performance.rst)
 - **Enhanced benchmarking**: Updated performance baselines with optimization metrics
 
 ### Changed

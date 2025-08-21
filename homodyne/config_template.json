@@ -662,19 +662,54 @@
       "enable_numba": true,
       "_enable_numba_note": "Use Numba JIT compilation for speed",
       "warmup_numba": true,
-      "_warmup_numba_note": "Pre-compile Numba functions on startup (enhanced in v0.6.1)",
+      "_warmup_numba_note": "Pre-compile Numba functions on startup (enhanced in v0.6.3)",
       "parallel_numba": true,
       "_parallel_numba_note": "Enable Numba parallel processing",
       "cache_numba": true,
       "_cache_numba_note": "Cache compiled Numba functions",
+      "stability_enhancements": {
+        "_comment": "Performance stability enhancements (v0.6.3)",
+        "enable_kernel_warmup": true,
+        "_enable_kernel_warmup_note": "Systematic JIT warmup for all computational kernels",
+        "warmup_iterations": 5,
+        "_warmup_iterations_note": "Number of warmup iterations per kernel",
+        "optimize_memory_layout": true,
+        "_optimize_memory_layout_note": "Ensure C-contiguous arrays for optimal performance",
+        "enable_nogil": true,
+        "_enable_nogil_note": "Enable no-GIL mode for better parallel performance",
+        "environment_optimization": {
+          "_comment": "Automatic numerical environment optimization",
+          "auto_configure": true,
+          "_auto_configure_note": "Automatically optimize BLAS/threading settings",
+          "max_threads": 4,
+          "_max_threads_note": "Conservative thread count for optimal stability-performance balance",
+          "gc_optimization": true,
+          "_gc_optimization_note": "Optimize garbage collection for consistent memory"
+        }
+      },
       "performance_monitoring": {
-        "_comment": "Enhanced performance monitoring (v0.6.1)",
+        "_comment": "Enhanced performance monitoring (v0.6.3)",
         "enable_profiling": false,
-        "_enable_profiling_note": "Enable detailed performance profiling (requires optional profiler module)",
+        "_enable_profiling_note": "Enable detailed performance profiling with advanced monitoring",
         "stable_benchmarking": false,
         "_stable_benchmarking_note": "Use stable benchmarking with statistical outlier filtering",
+        "adaptive_benchmarking": false,
+        "_adaptive_benchmarking_note": "Use adaptive benchmarking with target coefficient of variation",
         "performance_baselines": false,
-        "_performance_baselines_note": "Track performance baselines and regression detection"
+        "_performance_baselines_note": "Track performance baselines and regression detection",
+        "target_cv": 0.10,
+        "_target_cv_note": "Aggressive CV target achievable with performance rebalancing (10%)",
+        "memory_monitoring": true,
+        "_memory_monitoring_note": "Monitor memory usage and trigger automatic cleanup",
+        "smart_caching": {
+          "_comment": "Memory-aware performance caching",
+          "enabled": true,
+          "_enabled_note": "Enable smart LRU cache with memory management",
+          "max_items": 100,
+          "_max_items_note": "Maximum number of cached items",
+          "max_memory_mb": 500.0,
+          "_max_memory_mb_note": "Maximum cache memory usage in MB"
+        }
       }
     },
     "noise_model": {

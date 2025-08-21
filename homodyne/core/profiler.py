@@ -346,6 +346,8 @@ def optimize_numerical_environment() -> Dict[str, str]:
     - Controlling threading in BLAS libraries
     - Setting consistent random seeds
     - Optimizing garbage collection
+    - Configuring JIT compilation settings
+    - Setting CPU affinity and memory optimizations
     
     Returns
     -------
@@ -361,15 +363,38 @@ def optimize_numerical_environment() -> Dict[str, str]:
     
     optimizations = {}
     
-    # Threading optimizations for consistency
+    # Conservative threading optimizations for maximum stability
+    import multiprocessing
+    n_cores = min(multiprocessing.cpu_count() // 2, 4)  # Use half cores, cap at 4 for stability
+    
     threading_vars = {
-        'OPENBLAS_NUM_THREADS': '1',
-        'MKL_NUM_THREADS': '1', 
-        'NUMEXPR_NUM_THREADS': '1',
-        'OMP_NUM_THREADS': '1'
+        'OPENBLAS_NUM_THREADS': str(n_cores),
+        'MKL_NUM_THREADS': str(n_cores), 
+        'NUMEXPR_NUM_THREADS': str(n_cores),
+        'OMP_NUM_THREADS': str(n_cores),
+        'NUMBA_NUM_THREADS': str(n_cores)
     }
     
     for var, value in threading_vars.items():
+        if var not in os.environ:
+            os.environ[var] = value
+            optimizations[var] = value
+            logger.debug(f"Set {var}={value}")
+        else:
+            logger.debug(f"Skipped {var} (already set to {os.environ[var]})")
+    
+    # Numba JIT optimization settings balanced for performance and stability
+    numba_vars = {
+        'NUMBA_CACHE_DIR': os.path.join(os.path.expanduser('~'), '.numba_cache'),
+        'NUMBA_DISABLE_INTEL_SVML': '1',  # Disable SVML for consistent performance
+        'NUMBA_DISABLE_TBB': '0',  # Enable TBB for better parallel performance
+        'NUMBA_BOUNDSCHECK': '0',  # Disable bounds checking for performance
+        'NUMBA_FASTMATH': '0',  # Disable fast math for better numerical stability
+        'NUMBA_LOOP_VECTORIZE': '1',  # Enable loop vectorization (stable)
+        'NUMBA_OPT': '2',  # Moderate optimization level for balance
+    }
+    
+    for var, value in numba_vars.items():
         if var not in os.environ:
             os.environ[var] = value
             optimizations[var] = value
@@ -387,6 +412,13 @@ def optimize_numerical_environment() -> Dict[str, str]:
         old_settings = np.seterr(all='warn')  # Store old settings
         optimizations['numpy_error_handling'] = 'configured'
         
+        # Set BLAS threading model
+        try:
+            np.show_config()  # This helps ensure BLAS is properly configured
+            optimizations['numpy_blas_check'] = 'verified'
+        except:
+            pass
+        
         logger.debug("Configured NumPy for consistent performance")
         
     except ImportError:
@@ -394,8 +426,14 @@ def optimize_numerical_environment() -> Dict[str, str]:
         
     # Garbage collection optimization for consistent memory behavior
     old_threshold = gc.get_threshold()
-    gc.set_threshold(700, 10, 10)  # More frequent GC for consistent memory
-    optimizations['gc_threshold'] = f"{old_threshold} -> (700, 10, 10)"
+    gc.set_threshold(1000, 15, 15)  # Slightly less aggressive GC for performance
+    optimizations['gc_threshold'] = f"{old_threshold} -> (1000, 15, 15)"
+    
+    # Python optimization settings
+    import sys
+    if hasattr(sys, 'setswitchinterval'):
+        sys.setswitchinterval(0.01)  # Reduce thread switching overhead
+        optimizations['python_switch_interval'] = '0.01'
     
     logger.info(f"Applied {len(optimizations)} numerical environment optimizations")
     return optimizations
@@ -533,7 +571,466 @@ def assert_performance_stability(times: list,
     logger.debug(f"Performance stability assertion passed: {test_name} CV = {cv:.3f} (max {max_cv:.3f})")
 
 
+def jit_warmup(func: Callable, *args, warmup_runs: int = 5, **kwargs) -> Any:
+    """
+    Perform JIT compilation warmup for Numba-compiled functions.
+    
+    This function helps stabilize performance by ensuring JIT compilation
+    is complete before benchmarking or critical calculations.
+    
+    Parameters
+    ----------
+    func : callable
+        Function to warm up (should be JIT-compiled)
+    *args : tuple
+        Arguments to pass to the function
+    warmup_runs : int, default=5
+        Number of warmup calls to perform
+    **kwargs : dict
+        Keyword arguments to pass to the function
+        
+    Returns
+    -------
+    Any
+        Result of the last warmup call
+        
+    Examples
+    --------
+    >>> @njit
+    >>> def compute_matrix(x):
+    ...     return x @ x.T
+    >>> x = np.random.rand(100, 100)
+    >>> result = jit_warmup(compute_matrix, x, warmup_runs=3)
+    """
+    logger.debug(f"JIT warmup: performing {warmup_runs} warmup calls for {func.__name__}")
+    
+    result = None
+    for i in range(warmup_runs):
+        try:
+            result = func(*args, **kwargs)
+            if i == 0:
+                logger.debug(f"JIT warmup: first call completed for {func.__name__}")
+            gc.collect()  # Clean up after each warmup call
+        except Exception as e:
+            logger.warning(f"JIT warmup failed on call {i+1}/{warmup_runs} for {func.__name__}: {e}")
+            if i == warmup_runs - 1:  # Last attempt
+                raise
+    
+    logger.debug(f"JIT warmup completed for {func.__name__}")
+    return result
+
+
+def create_stable_benchmark_config(test_type: str = "default") -> Dict[str, int]:
+    """
+    Create stable benchmarking configuration based on test type.
+    
+    Different types of tests need different benchmarking strategies for
+    optimal stability vs. speed tradeoff.
+    
+    Parameters
+    ----------
+    test_type : str, default="default"
+        Type of test: "quick", "default", "thorough", "ci"
+        
+    Returns
+    -------
+    dict
+        Benchmarking configuration with warmup_runs, measurement_runs, etc.
+        
+    Examples
+    --------
+    >>> config = create_stable_benchmark_config("thorough")
+    >>> results = stable_benchmark(func, **config)
+    """
+    import os
+    
+    # Detect CI environment
+    is_ci = any(var in os.environ for var in ['CI', 'GITHUB_ACTIONS', 'TRAVIS', 'APPVEYOR'])
+    
+    configs = {
+        "quick": {
+            "warmup_runs": 2,
+            "measurement_runs": 5,
+            "outlier_threshold": 3.0
+        },
+        "default": {
+            "warmup_runs": 5,
+            "measurement_runs": 10,
+            "outlier_threshold": 2.5
+        },
+        "thorough": {
+            "warmup_runs": 10,
+            "measurement_runs": 20,
+            "outlier_threshold": 2.0
+        },
+        "ci": {
+            "warmup_runs": 8,
+            "measurement_runs": 15,
+            "outlier_threshold": 3.0  # More tolerance for CI variability
+        }
+    }
+    
+    # Override with CI config if in CI environment
+    if is_ci and test_type != "ci":
+        logger.debug(f"CI environment detected, using CI config instead of {test_type}")
+        test_type = "ci"
+    
+    config = configs.get(test_type, configs["default"])
+    logger.debug(f"Created {test_type} benchmark config: {config}")
+    return config
+
+
+def adaptive_stable_benchmark(func: Callable, 
+                              initial_runs: int = 5,
+                              target_cv: float = 0.15,
+                              max_runs: int = 50,
+                              min_runs: int = 10) -> Dict[str, Any]:
+    """
+    Perform adaptive benchmarking that continues until stable results are achieved.
+    
+    This function automatically determines the optimal number of measurement runs
+    needed to achieve stable performance measurements within a target CV.
+    
+    Parameters
+    ----------
+    func : callable
+        Function to benchmark
+    initial_runs : int, default=5
+        Initial number of measurement runs
+    target_cv : float, default=0.15
+        Target coefficient of variation (15%)
+    max_runs : int, default=50
+        Maximum number of measurement runs
+    min_runs : int, default=10
+        Minimum number of measurement runs
+        
+    Returns
+    -------
+    dict
+        Benchmark results with adaptive statistics
+        
+    Examples
+    --------
+    >>> def compute_something():
+    ...     return np.sum(np.random.rand(1000, 1000))
+    >>> results = adaptive_stable_benchmark(compute_something, target_cv=0.1)
+    >>> print(f"Achieved CV: {results['cv']:.3f} in {results['total_runs']} runs")
+    """
+    import numpy as np
+    
+    logger.debug(f"Starting adaptive benchmark with target CV={target_cv:.3f}")
+    
+    # Initial warmup
+    config = create_stable_benchmark_config("quick")
+    for _ in range(config["warmup_runs"]):
+        try:
+            _ = func()
+            gc.collect()
+        except Exception as e:
+            logger.warning(f"Adaptive benchmark warmup failed: {e}")
+    
+    # Collect initial measurements
+    times = []
+    result = None
+    
+    for run in range(max_runs):
+        gc.collect()
+        start_time = time.perf_counter()
+        result = func()
+        end_time = time.perf_counter()
+        times.append(end_time - start_time)
+        
+        # Check if we have enough runs to assess stability
+        if len(times) >= min_runs:
+            times_array = np.array(times)
+            mean_time = np.mean(times_array)
+            std_time = np.std(times_array)
+            cv = std_time / mean_time if mean_time > 0 else float('inf')
+            
+            # Check if we've achieved target stability
+            if cv <= target_cv:
+                logger.debug(f"Adaptive benchmark achieved target CV={cv:.3f} in {len(times)} runs")
+                break
+                
+            # Also check if we've done enough runs
+            if len(times) >= initial_runs * 2 and cv <= target_cv * 1.5:
+                logger.debug(f"Adaptive benchmark achieved acceptable CV={cv:.3f} in {len(times)} runs")
+                break
+    
+    # Calculate final statistics
+    times_array = np.array(times)
+    mean_time = np.mean(times_array)
+    std_time = np.std(times_array)
+    cv = std_time / mean_time if mean_time > 0 else float('inf')
+    
+    # Filter outliers for final analysis
+    outlier_threshold = 2.0
+    outlier_mask = np.abs(times_array - mean_time) > outlier_threshold * std_time
+    filtered_times = times_array[~outlier_mask]
+    
+    return {
+        'result': result,
+        'times': times_array,
+        'mean': mean_time,
+        'median': np.median(times_array),
+        'std': std_time,
+        'cv': cv,
+        'total_runs': len(times),
+        'target_cv': target_cv,
+        'achieved_target': cv <= target_cv,
+        'outlier_count': np.sum(outlier_mask),
+        'filtered_mean': np.mean(filtered_times) if len(filtered_times) > 0 else mean_time,
+        'percentile_95': np.percentile(times_array, 95),
+    }
+
+
+def memory_efficient_operation(max_memory_mb: float = 1000.0):
+    """
+    Decorator to ensure operations don't exceed memory limits.
+    
+    This decorator monitors memory usage and triggers garbage collection
+    if memory usage exceeds the specified threshold.
+    
+    Parameters
+    ----------
+    max_memory_mb : float, default=1000.0
+        Maximum memory usage in MB before triggering cleanup
+        
+    Examples
+    --------
+    >>> @memory_efficient_operation(max_memory_mb=500.0)
+    >>> def process_large_array(arr):
+    ...     return arr @ arr.T
+    """
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                import psutil
+                import os
+                
+                process = psutil.Process(os.getpid())
+                initial_memory = process.memory_info().rss / 1024 / 1024
+                
+                result = func(*args, **kwargs)
+                
+                current_memory = process.memory_info().rss / 1024 / 1024
+                memory_diff = current_memory - initial_memory
+                
+                if current_memory > max_memory_mb:
+                    logger.debug(f"Memory threshold exceeded ({current_memory:.1f}MB > {max_memory_mb:.1f}MB), triggering GC")
+                    gc.collect()
+                    
+                    # Check memory again after GC
+                    post_gc_memory = process.memory_info().rss / 1024 / 1024
+                    logger.debug(f"Memory after GC: {post_gc_memory:.1f}MB (freed {current_memory - post_gc_memory:.1f}MB)")
+                
+                return result
+                
+            except ImportError:
+                # Fallback without memory monitoring
+                return func(*args, **kwargs)
+            
+        return wrapper
+    return decorator
+
+
+class PerformanceCache:
+    """
+    Smart performance-aware cache with automatic cleanup.
+    
+    This cache implementation considers both memory usage and access patterns
+    to optimize performance while preventing memory bloat.
+    """
+    
+    def __init__(self, max_items: int = 100, max_memory_mb: float = 500.0):
+        self.max_items = max_items
+        self.max_memory_mb = max_memory_mb
+        self.cache = {}
+        self.access_times = {}
+        self.memory_usage = {}
+        self._total_memory = 0.0
+        
+    def _estimate_memory(self, obj) -> float:
+        """Estimate memory usage of an object in MB."""
+        try:
+            import sys
+            size_bytes = sys.getsizeof(obj)
+            
+            # For numpy arrays, use more accurate size
+            if hasattr(obj, 'nbytes'):
+                size_bytes = obj.nbytes
+            
+            return size_bytes / 1024 / 1024  # Convert to MB
+        except:
+            return 1.0  # Fallback estimate
+    
+    def _cleanup_cache(self):
+        """Remove least recently used items to free memory."""
+        if not self.cache:
+            return
+            
+        # Sort by access time (oldest first)
+        items_by_access = sorted(self.access_times.items(), key=lambda x: x[1])
+        
+        # Remove oldest items until we're under limits
+        for key, _ in items_by_access:
+            if (len(self.cache) <= self.max_items * 0.8 and 
+                self._total_memory <= self.max_memory_mb * 0.8):
+                break
+                
+            if key in self.cache:
+                memory_freed = self.memory_usage.get(key, 0)
+                del self.cache[key]
+                del self.access_times[key]
+                if key in self.memory_usage:
+                    del self.memory_usage[key]
+                self._total_memory -= memory_freed
+                
+        logger.debug(f"Cache cleanup: {len(self.cache)} items, {self._total_memory:.1f}MB")
+    
+    def get(self, key: str, default=None):
+        """Get item from cache with access time tracking."""
+        if key in self.cache:
+            self.access_times[key] = time.time()
+            return self.cache[key]
+        return default
+    
+    def put(self, key: str, value):
+        """Put item in cache with memory tracking."""
+        memory_size = self._estimate_memory(value)
+        
+        # Remove existing item if present
+        if key in self.cache:
+            self._total_memory -= self.memory_usage.get(key, 0)
+        
+        # Add new item
+        self.cache[key] = value
+        self.access_times[key] = time.time()
+        self.memory_usage[key] = memory_size
+        self._total_memory += memory_size
+        
+        # Cleanup if necessary
+        if (len(self.cache) > self.max_items or 
+            self._total_memory > self.max_memory_mb):
+            self._cleanup_cache()
+    
+    def clear(self):
+        """Clear all cache entries."""
+        self.cache.clear()
+        self.access_times.clear()
+        self.memory_usage.clear()
+        self._total_memory = 0.0
+        
+    def stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        return {
+            'items': len(self.cache),
+            'memory_mb': self._total_memory,
+            'max_items': self.max_items,
+            'max_memory_mb': self.max_memory_mb,
+            'utilization': len(self.cache) / self.max_items if self.max_items > 0 else 0,
+            'memory_utilization': self._total_memory / self.max_memory_mb if self.max_memory_mb > 0 else 0
+        }
+
+
+# Global performance cache instance
+_performance_cache = PerformanceCache()
+
+
+def get_performance_cache() -> PerformanceCache:
+    """Get the global performance cache instance."""
+    return _performance_cache
+
+
+def performance_monitor(monitor_memory: bool = True, 
+                       monitor_time: bool = True,
+                       log_threshold_seconds: float = 1.0):
+    """
+    Advanced performance monitoring decorator.
+    
+    This decorator provides comprehensive performance monitoring including
+    memory usage, execution time, and stability tracking.
+    
+    Parameters
+    ----------
+    monitor_memory : bool, default=True
+        Whether to monitor memory usage
+    monitor_time : bool, default=True
+        Whether to monitor execution time
+    log_threshold_seconds : float, default=1.0
+        Threshold for logging slow operations
+        
+    Examples
+    --------
+    >>> @performance_monitor(monitor_memory=True, log_threshold_seconds=0.5)
+    >>> def heavy_computation(data):
+    ...     return process_data(data)
+    """
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.perf_counter() if monitor_time else None
+            initial_memory = None
+            
+            if monitor_memory:
+                try:
+                    import psutil
+                    import os
+                    process = psutil.Process(os.getpid())
+                    initial_memory = process.memory_info().rss / 1024 / 1024
+                except ImportError:
+                    pass
+            
+            try:
+                result = func(*args, **kwargs)
+                
+                # Performance logging
+                if monitor_time and start_time is not None:
+                    execution_time = time.perf_counter() - start_time
+                    
+                    # Update global stats
+                    func_name = func.__name__
+                    if func_name not in _performance_stats["function_times"]:
+                        _performance_stats["function_times"][func_name] = []
+                        _performance_stats["function_calls"][func_name] = 0
+                        
+                    _performance_stats["function_times"][func_name].append(execution_time)
+                    _performance_stats["function_calls"][func_name] += 1
+                    
+                    # Log if above threshold
+                    if execution_time >= log_threshold_seconds:
+                        logger.info(f"Performance monitor: {func_name} took {execution_time:.3f}s")
+                        
+                if monitor_memory and initial_memory is not None:
+                    try:
+                        final_memory = process.memory_info().rss / 1024 / 1024
+                        memory_diff = final_memory - initial_memory
+                        
+                        if abs(memory_diff) > 50:  # Log significant memory changes (>50MB)
+                            logger.info(f"Memory monitor: {func.__name__} changed memory by {memory_diff:+.1f}MB")
+                            
+                    except:
+                        pass
+                
+                return result
+                
+            except Exception as e:
+                if monitor_time and start_time is not None:
+                    execution_time = time.perf_counter() - start_time
+                    logger.error(f"Function {func.__name__} failed after {execution_time:.3f}s: {e}")
+                raise
+                
+        return wrapper
+    return decorator
+
+
 # Auto-cleanup when module is garbage collected
 import atexit
 
-atexit.register(clear_performance_stats)
+def cleanup_performance_resources():
+    """Clean up performance monitoring resources."""
+    clear_performance_stats()
+    _performance_cache.clear()
+
+atexit.register(cleanup_performance_resources)

@@ -5,26 +5,31 @@ Pytest Configuration for Rheo-SAXS-XPCS Tests
 Configuration and shared fixtures for the test suite.
 """
 
+import os
+import sys
+from pathlib import Path
+
+# CRITICAL: Set threading environment variables BEFORE any imports that might use Numba
+# This must happen before importing pytest, numpy, matplotlib, etc.
+os.environ["PYTHONWARNINGS"] = "ignore"
+# Conservative threading for test stability (consistent with performance settings)  
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+os.environ["MKL_NUM_THREADS"] = "2" 
+os.environ["NUMBA_NUM_THREADS"] = "2"  # ArviZ will respect this if set early
+os.environ["NUMBA_DISABLE_INTEL_SVML"] = "1"
+os.environ["NUMBA_FASTMATH"] = "0"  # Conservative JIT for stability
+
+# Now safe to import everything else
 import pytest
 import numpy as np
 import matplotlib
 import warnings
-import sys
-import os
 import shutil
 import time
-from pathlib import Path
 
 # Use non-GUI matplotlib backend for testing
 matplotlib.use("Agg")
-
-# Suppress LAPACK/DLASCL warnings by setting environment variables
-os.environ["PYTHONWARNINGS"] = "ignore"
-# Some BLAS/LAPACK libraries respect these
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMBA_DISABLE_INTEL_SVML"] = "1"
 
 # Add the project root directory to Python path for imports
 project_root = Path(__file__).parent.parent.parent

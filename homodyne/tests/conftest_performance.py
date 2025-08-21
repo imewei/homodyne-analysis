@@ -109,10 +109,29 @@ def performance_tracker():
 def setup_performance_environment():
     """Set up consistent performance testing environment."""
     from homodyne.core.profiler import optimize_numerical_environment
+    from homodyne.core.kernels import warmup_numba_kernels
     
-    # Use consolidated environment optimization
-    optimizations = optimize_numerical_environment()
-    print(f"✓ Performance testing environment configured ({len(optimizations)} optimizations)")
+    # Use consolidated environment optimization (safe for already-initialized Numba)
+    try:
+        optimizations = optimize_numerical_environment()
+        print(f"✓ Performance testing environment configured ({len(optimizations)} optimizations)")
+    except RuntimeError as e:
+        if "NUMBA_NUM_THREADS" in str(e):
+            print(f"⚠ Numba threads already initialized - using existing settings")
+            optimizations = {}
+        else:
+            raise
+    
+    # Warmup Numba kernels for stable performance
+    try:
+        warmup_results = warmup_numba_kernels()
+        if warmup_results.get('numba_available', False):
+            warmup_time = warmup_results.get('total_warmup_time', 0)
+            print(f"✓ Numba kernels warmed up in {warmup_time:.3f}s")
+        else:
+            print("✓ Numba not available, skipping kernel warmup")
+    except Exception as e:
+        print(f"⚠ Kernel warmup failed: {e}")
 
     yield
 

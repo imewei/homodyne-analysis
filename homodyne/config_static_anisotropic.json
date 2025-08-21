@@ -17,7 +17,7 @@
       "Per-angle scaling optimization for accurate anisotropic analysis"
     ],
     "_scaling_optimization_benefits_anisotropic": {
-      "overview": "Per-angle scaling optimization (g₂ = offset + contrast × g₁) essential for anisotropic analysis",
+      "overview": "Per-angle scaling optimization (g\u2082 = offset + contrast \u00d7 g\u2081) essential for anisotropic analysis",
       "per_angle_scaling": "Independent scaling for each scattering angle accounts for angular variations",
       "anisotropy_detection": "Variations in scaling parameters may reveal sample anisotropy",
       "robust_analysis": "Proper chi-squared calculation across all scattering angles"
@@ -95,14 +95,14 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_wavevector_q_note": "q-vector magnitude for angle-dependent analysis (typical: 0.001-0.1 Å⁻¹)",
-      "q_unit": "Å⁻¹"
+      "_wavevector_q_note": "q-vector magnitude for angle-dependent analysis (typical: 0.001-0.1 \u00c5\u207b\u00b9)",
+      "q_unit": "\u00c5\u207b\u00b9"
     },
     "geometry": {
       "_comment": "Geometry parameters - gap kept for consistency",
       "stator_rotor_gap": 1000000,
-      "_stator_rotor_gap_note": "Gap between stator and rotor (100μm typical)",
-      "gap_unit": "Å",
+      "_stator_rotor_gap_note": "Gap between stator and rotor (100\u03bcm typical)",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 100,
       "_gap_note": "Gap parameter kept for consistency but not used in static mode"
     },
@@ -139,12 +139,12 @@
       "phi0"
     ],
     "units": [
-      "Å²/s",
+      "\u00c5\u00b2/s",
       "dimensionless",
-      "Å²/s",
-      "s⁻¹",
+      "\u00c5\u00b2/s",
+      "s\u207b\u00b9",
       "dimensionless",
-      "s⁻¹",
+      "s\u207b\u00b9",
       "degrees"
     ],
     "physical_meaning": {
@@ -230,7 +230,7 @@
         "prior_mu": 0.3,
         "prior_sigma": 0.1,
         "type": "TruncatedNormal",
-        "_description": "Scaling factor for correlation strength, typically ∈ (0, 0.5]"
+        "_description": "Scaling factor for correlation strength, typically \u2208 (0, 0.5]"
       },
       "offset": {
         "min": 0.05,
@@ -238,7 +238,7 @@
         "prior_mu": 1.0,
         "prior_sigma": 0.2,
         "type": "TruncatedNormal",
-        "_description": "Baseline correlation level, typically ∈ (0, 2.0), μ ≈ 1.0"
+        "_description": "Baseline correlation level, typically \u2208 (0, 2.0), \u03bc \u2248 1.0"
       }
     }
   },
@@ -252,7 +252,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "Å²/s",
+        "unit": "\u00c5\u00b2/s",
         "physical_constraint": "positive",
         "_note": "PRIMARY PARAMETER - reference diffusion coefficient (typical colloidal systems)"
       },
@@ -274,7 +274,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "Å²/s",
+        "unit": "\u00c5\u00b2/s",
         "physical_constraint": "none",
         "_note": "PRIMARY PARAMETER - baseline diffusion coefficient (typically small vs D0)"
       },
@@ -284,7 +284,7 @@
         "max": 0.0,
         "_bounds_note": "Fixed at 0 in static mode",
         "type": "fixed",
-        "unit": "s⁻¹",
+        "unit": "s\u207b\u00b9",
         "physical_constraint": "fixed_zero",
         "_reference_min": 1e-06,
         "_reference_max": 1.0,
@@ -312,7 +312,7 @@
         "max": 0.0,
         "_bounds_note": "Fixed at 0 in static mode",
         "type": "fixed",
-        "unit": "s⁻¹",
+        "unit": "s\u207b\u00b9",
         "physical_constraint": "fixed_zero",
         "_reference_min": -0.01,
         "_reference_max": 0.01,
@@ -344,12 +344,12 @@
     "_static_submode_note": "REQUIRED: Must be 'anisotropic' for this template",
     "model_description": {
       "current_mode": "static_anisotropic_case",
-      "equation": "g₁(t₁,t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt), g₂(t₁,t₂) ~ [g₁(t₁,t₂)]²",
+      "equation": "g\u2081(t\u2081,t\u2082) = exp(-q\u00b2 \u222b\u1d57\u00b2\u1d57\u00b9 D(t)dt), g\u2082(t\u2081,t\u2082) ~ [g\u2081(t\u2081,t\u2082)]\u00b2",
       "description": "Pure diffusion with angle filtering for optimization efficiency",
       "key_features": [
-        "No flow effects (γ̇ = 0)",
+        "No flow effects (\u03b3\u0307 = 0)",
         "Uses angle selection for optimization efficiency",
-        "Only diffusion dynamics D(t) = D₀(t/t₀)^α + D_offset",
+        "Only diffusion dynamics D(t) = D\u2080(t/t\u2080)^\u03b1 + D_offset",
         "3 active parameters: D0, alpha, D_offset",
         "Angle filtering reduces computational cost"
       ]
@@ -362,7 +362,7 @@
     },
     "chi_squared_calculation": {
       "method": "standard",
-      "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
+      "_scaling_optimization_note": "Scaling optimization is always enabled: g\u2082 = offset + contrast \u00d7 g\u2081. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
       "_scaling_details": {
         "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
         "_accounts_for": [
@@ -371,8 +371,8 @@
           "detector variations",
           "normalization differences"
         ],
-        "_chi_squared_formula": "χ² = Σ(experimental - fitted)²/σ² where fitted = theory × contrast + offset",
-        "_implementation": "Uses numpy.linalg.lstsq to solve A·x = b where A = [theory, ones], x = [contrast, offset]",
+        "_chi_squared_formula": "\u03c7\u00b2 = \u03a3(experimental - fitted)\u00b2/\u03c3\u00b2 where fitted = theory \u00d7 contrast + offset",
+        "_implementation": "Uses numpy.linalg.lstsq to solve A\u00b7x = b where A = [theory, ones], x = [contrast, offset]",
         "_anisotropic_mode_considerations": [
           "Per-angle scaling optimization accounts for angular variations",
           "Different contrast/offset values expected for different scattering angles",
@@ -413,6 +413,37 @@
       "enable_multiprocessing": true,
       "chunk_size": "auto",
       "backend": "threading"
+    },
+    "numba_optimization": {
+      "stability_enhancements": {
+        "enable_kernel_warmup": true,
+        "_enable_kernel_warmup_note": "Pre-compile kernels for consistent anisotropic analysis performance",
+        "optimize_memory_layout": true,
+        "_optimize_memory_layout_note": "Memory layout optimization for multi-angle processing",
+        "environment_optimization": {
+          "auto_configure": true,
+          "_auto_configure_note": "Automatic environment optimization for anisotropic calculations",
+          "max_threads": 4,
+          "_max_threads_note": "Conservative thread count for optimal stability-performance balance"
+        }
+      },
+      "performance_monitoring": {
+        "smart_caching": {
+          "enabled": true,
+          "_enabled_note": "Memory-aware caching for repeated angle-dependent calculations",
+          "max_memory_mb": 300.0,
+          "_max_memory_mb_note": "Reduced cache limit for simpler 3-parameter model"
+        },
+        "adaptive_benchmarking": {
+          "enabled": false,
+          "_enabled_note": "Disabled by default - enable for performance optimization",
+          "target_cv": 0.1,
+          "_target_cv_note": "Aggressive CV target achievable with performance rebalancing",
+          "min_runs": 5,
+          "max_runs": 25,
+          "_benchmarking_note": "Faster convergence expected for 3-parameter optimization"
+        }
+      }
     },
     "noise_model": {
       "use_simple_forward_model": false,
@@ -493,7 +524,7 @@
       "Maintains full angle information while optimizing efficiency"
     ],
     "angle_filtering_notes": [
-      "Target angles around 0° and 180° are typical for scattering",
+      "Target angles around 0\u00b0 and 180\u00b0 are typical for scattering",
       "Fallback to all angles if no targets found prevents failures",
       "Can be adjusted based on your specific angular requirements",
       "Reduces computational cost while maintaining accuracy"
@@ -528,22 +559,22 @@
       "rhat_thresholds": {
         "_comment": "R-hat thresholds for 3-parameter anisotropic model with angle filtering",
         "excellent_threshold": 1.01,
-        "_excellent_threshold_note": "R̂ ≤ 1.01 indicates excellent convergence",
+        "_excellent_threshold_note": "R\u0302 \u2264 1.01 indicates excellent convergence",
         "good_threshold": 1.05,
-        "_good_threshold_note": "R̂ ≤ 1.05 indicates good convergence for anisotropic model",
+        "_good_threshold_note": "R\u0302 \u2264 1.05 indicates good convergence for anisotropic model",
         "acceptable_threshold": 1.1,
-        "_acceptable_threshold_note": "R̂ ≤ 1.1 indicates acceptable convergence",
+        "_acceptable_threshold_note": "R\u0302 \u2264 1.1 indicates acceptable convergence",
         "critical_threshold": 1.15,
-        "_critical_threshold_note": "R̂ > 1.15 indicates poor convergence"
+        "_critical_threshold_note": "R\u0302 > 1.15 indicates poor convergence"
       },
       "ess_thresholds": {
         "_comment": "ESS thresholds for 3-parameter anisotropic space with angle filtering",
         "excellent_threshold": 400,
-        "_excellent_threshold_note": "ESS ≥ 400 excellent for 3-parameter space",
+        "_excellent_threshold_note": "ESS \u2265 400 excellent for 3-parameter space",
         "good_threshold": 200,
-        "_good_threshold_note": "ESS ≥ 200 good for anisotropic analysis",
+        "_good_threshold_note": "ESS \u2265 200 good for anisotropic analysis",
         "acceptable_threshold": 100,
-        "_acceptable_threshold_note": "ESS ≥ 100 acceptable for static anisotropic",
+        "_acceptable_threshold_note": "ESS \u2265 100 acceptable for static anisotropic",
         "minimum_threshold": 50,
         "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates"
       },
@@ -556,9 +587,9 @@
       },
       "quality_assessment": {
         "_comment": "Anisotropic-specific MCMC quality criteria",
-        "excellent_criteria": "R̂ < 1.01 AND ESS > 400 AND divergences < 0.5%",
-        "good_criteria": "R̂ < 1.05 AND ESS > 200 AND divergences < 1%",
-        "acceptable_criteria": "R̂ < 1.1 AND ESS > 100 AND divergences < 1%",
+        "excellent_criteria": "R\u0302 < 1.01 AND ESS > 400 AND divergences < 0.5%",
+        "good_criteria": "R\u0302 < 1.05 AND ESS > 200 AND divergences < 1%",
+        "acceptable_criteria": "R\u0302 < 1.1 AND ESS > 100 AND divergences < 1%",
         "poor_criteria": "Any criterion fails to meet acceptable threshold",
         "_anisotropic_note": "3-parameter anisotropic model with angle filtering should converge efficiently"
       }

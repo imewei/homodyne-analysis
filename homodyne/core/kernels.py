@@ -39,7 +39,7 @@ except ImportError:
     float64 = int64 = DummyType()
 
 
-@njit(float64[:, :](float64[:]), parallel=True, cache=True, fastmath=True)
+@njit(float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True)
 def create_time_integral_matrix_numba(time_dependent_array):
     """
     Create time integral matrix for correlation calculations.
@@ -71,7 +71,7 @@ def create_time_integral_matrix_numba(time_dependent_array):
     
     # Use parallel loops to fill the matrix efficiently
     # This approach avoids the complex indexing and simply computes the difference
-    for i in prange(n):
+    for i in range(n):
         cumsum_i = cumsum[i]
         for j in range(n):
             cumsum_j = cumsum[j]
@@ -85,7 +85,8 @@ def create_time_integral_matrix_numba(time_dependent_array):
     float64[:](float64[:], float64, float64, float64),
     cache=True,
     fastmath=True,
-    parallel=True,
+    parallel=False,
+    nogil=True,
 )
 def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     """
@@ -120,10 +121,14 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
         D(t) at each time point [Å²/s], guaranteed to be > 0
     """
     D_t = np.empty_like(time_array)
-    # Vectorized computation with parallel execution and positivity constraint
-    for i in prange(len(time_array)):
+    # Vectorized computation with positivity constraint
+    for i in range(len(time_array)):
         D_value = D0 * (time_array[i] ** alpha) + D_offset
-        D_t[i] = max(D_value, 1e-10)  # Ensure D(t) > 0 always
+        # Ensure D(t) > 0 always using conditional (Numba-compatible)
+        if D_value > 1e-10:
+            D_t[i] = D_value
+        else:
+            D_t[i] = 1e-10
     return D_t
 
 
@@ -131,7 +136,7 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     float64[:](float64[:], float64, float64, float64),
     cache=True,
     fastmath=True,
-    parallel=True,
+    parallel=False,
 )
 def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
     """
@@ -183,14 +188,18 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
         γ̇(t) at each time point [s⁻¹], guaranteed to be > 0
     """
     gamma_dot_t = np.empty_like(time_array)
-    # Vectorized computation with parallel execution and positivity constraint
-    for i in prange(len(time_array)):
+    # Vectorized computation with positivity constraint
+    for i in range(len(time_array)):
         gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
-        gamma_dot_t[i] = max(gamma_value, 1e-10)  # Ensure γ̇(t) > 0 always
+        # Ensure γ̇(t) > 0 always using conditional (Numba-compatible)
+        if gamma_value > 1e-10:
+            gamma_dot_t[i] = gamma_value
+        else:
+            gamma_dot_t[i] = 1e-10
     return gamma_dot_t
 
 
-@njit(float64[:, :](float64[:, :], float64), parallel=True, cache=True, fastmath=True)
+@njit(float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True)
 def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
     """
     Compute field correlation function g₁ from diffusion.
@@ -217,7 +226,7 @@ def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
     g1 = np.empty(shape, dtype=np.float64)
 
     # Optimized computation with fastmath and cache-friendly access
-    for i in prange(shape[0]):
+    for i in range(shape[0]):
         for j in range(shape[1]):
             exponent = -wavevector_factor * diffusion_integral_matrix[i, j]
             g1[i, j] = np.exp(exponent)
@@ -225,7 +234,7 @@ def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
     return g1
 
 
-@njit(float64[:, :](float64[:, :], float64), parallel=True, cache=True, fastmath=True)
+@njit(float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True)
 def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     """
     Compute sinc² function for shear flow contributions (Numba-optimized).
@@ -297,7 +306,7 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     # Pre-compute pi for efficiency
     pi = np.pi
 
-    for i in prange(shape[0]):
+    for i in range(shape[0]):
         for j in range(shape[1]):
             argument = prefactor * shear_integral_matrix[i, j]
 
@@ -529,10 +538,10 @@ def apply_scaling_vectorized(data, contrast, offset):
     return result
 
 
-@njit(float64(float64[:], float64[:]), parallel=False, cache=True, fastmath=True)
+@njit(float64(float64[:], float64[:]), parallel=False, cache=True, fastmath=False)
 def compute_chi_squared_fast(observed, expected):
     """
-    Fast chi-squared calculation with optimized numerics.
+    Fast chi-squared calculation with optimized numerics and stable performance.
 
     Parameters
     ----------
@@ -546,19 +555,28 @@ def compute_chi_squared_fast(observed, expected):
     float
         Chi-squared statistic
     """
-    chi2 = 0.0
     n = len(observed)
-
+    
+    # Use vectorized operations for better stability and performance
+    diff = observed - expected
+    # Use expected value as variance estimate (Poisson-like) with minimum threshold
+    variance = np.maximum(expected, 1e-12)
+    chi2_terms = (diff * diff) / variance
+    
+    # Sum using Kahan summation for numerical stability
+    chi2 = 0.0
+    c = 0.0  # Compensation for lost low-order bits
+    
     for i in range(n):
-        diff = observed[i] - expected[i]
-        # Use expected value as variance estimate (Poisson-like)
-        variance = max(expected[i], 1e-12)  # Avoid division by zero
-        chi2 += (diff * diff) / variance
-
+        y = chi2_terms[i] - c
+        t = chi2 + y
+        c = (t - chi2) - y
+        chi2 = t
+    
     return chi2
 
 
-@njit(float64[:](float64[:], float64), parallel=True, cache=True, fastmath=True)
+@njit(float64[:](float64[:], float64), parallel=True, cache=True, fastmath=True, nogil=True)
 def exp_negative_vectorized(input_array, scale_factor):
     """
     Vectorized computation of exp(-scale_factor * input_array).
@@ -581,3 +599,156 @@ def exp_negative_vectorized(input_array, scale_factor):
         result[i] = np.exp(-scale_factor * input_array[i])
 
     return result
+
+
+def warmup_numba_kernels():
+    """
+    Warmup all Numba-compiled kernels for stable performance.
+    
+    This function pre-compiles all JIT kernels with representative data
+    to eliminate JIT compilation overhead during actual computations.
+    
+    Returns
+    -------
+    dict
+        Dictionary with warmup results and timing information
+    """
+    import time
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.debug("Starting Numba kernel warmup...")
+    
+    warmup_results = {}
+    overall_start = time.perf_counter()
+    
+    try:
+        # Warmup create_time_integral_matrix_numba
+        start_time = time.perf_counter()
+        test_array = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        if NUMBA_AVAILABLE:
+            _ = create_time_integral_matrix_numba(test_array)
+        warmup_results['create_time_integral_matrix_numba'] = time.perf_counter() - start_time
+        
+        # Warmup calculate_diffusion_coefficient_numba
+        start_time = time.perf_counter()
+        test_time_array = np.linspace(0.1, 2.0, 10)
+        if NUMBA_AVAILABLE:
+            _ = calculate_diffusion_coefficient_numba(test_time_array, 1.0, -0.1, 0.5)
+        warmup_results['calculate_diffusion_coefficient_numba'] = time.perf_counter() - start_time
+        
+        # Warmup exp_negative_vectorized
+        start_time = time.perf_counter()
+        test_input = np.linspace(0, 5, 20)
+        if NUMBA_AVAILABLE:
+            _ = exp_negative_vectorized(test_input, 0.5)
+        warmup_results['exp_negative_vectorized'] = time.perf_counter() - start_time
+        
+        # Warmup compute_chi_squared_fast
+        start_time = time.perf_counter()
+        observed = np.array([1.1, 2.2, 3.1, 4.0, 5.2])
+        expected = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        if NUMBA_AVAILABLE:
+            _ = compute_chi_squared_fast(observed, expected)
+        warmup_results['compute_chi_squared_fast'] = time.perf_counter() - start_time
+        
+        overall_time = time.perf_counter() - overall_start
+        warmup_results['total_warmup_time'] = overall_time
+        warmup_results['numba_available'] = NUMBA_AVAILABLE
+        
+        logger.info(f"Numba kernel warmup completed in {overall_time:.3f}s (numba_available={NUMBA_AVAILABLE})")
+        
+    except Exception as e:
+        logger.error(f"Numba kernel warmup failed: {e}")
+        warmup_results['error'] = str(e)
+        warmup_results['numba_available'] = NUMBA_AVAILABLE
+    
+    return warmup_results
+
+
+def get_kernel_performance_config():
+    """
+    Get performance configuration for computational kernels.
+    
+    Returns
+    -------
+    dict
+        Configuration dictionary with optimization settings
+    """
+    import os
+    
+    config = {
+        'numba_available': NUMBA_AVAILABLE,
+        'parallel_enabled': True,
+        'fastmath_enabled': True,
+        'cache_enabled': True,
+        'nogil_enabled': True,
+    }
+    
+    # Check environment variables for kernel optimization
+    if 'NUMBA_DISABLE_JIT' in os.environ:
+        config['jit_disabled'] = True
+        config['parallel_enabled'] = False
+    else:
+        config['jit_disabled'] = False
+    
+    if os.environ.get('NUMBA_NUM_THREADS'):
+        config['num_threads'] = int(os.environ.get('NUMBA_NUM_THREADS'))
+    else:
+        import multiprocessing
+        config['num_threads'] = min(multiprocessing.cpu_count(), 8)
+    
+    return config
+
+
+def optimize_kernel_memory_layout(array: np.ndarray) -> np.ndarray:
+    """
+    Optimize array memory layout for kernel performance.
+    
+    This function ensures arrays have optimal memory layout (C-contiguous)
+    and data types for maximum kernel performance.
+    
+    Parameters
+    ----------
+    array : np.ndarray
+        Input array to optimize
+        
+    Returns
+    -------
+    np.ndarray
+        Optimized array with optimal memory layout
+    """
+    # Ensure C-contiguous memory layout
+    if not array.flags.c_contiguous:
+        array = np.ascontiguousarray(array)
+    
+    # Ensure float64 for numerical stability
+    if array.dtype != np.float64:
+        array = array.astype(np.float64)
+    
+    return array
+
+
+# Performance tracking for kernels
+_kernel_performance_stats = {
+    'warmup_completed': False,
+    'warmup_time': 0.0,
+    'kernel_calls': {},
+    'total_kernel_time': 0.0
+}
+
+
+def get_kernel_performance_stats():
+    """Get performance statistics for computational kernels."""
+    return _kernel_performance_stats.copy()
+
+
+def reset_kernel_performance_stats():
+    """Reset kernel performance statistics."""
+    global _kernel_performance_stats
+    _kernel_performance_stats = {
+        'warmup_completed': False,
+        'warmup_time': 0.0,
+        'kernel_calls': {},
+        'total_kernel_time': 0.0
+    }
