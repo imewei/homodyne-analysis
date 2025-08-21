@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Placeholder for next version
+
+## [0.6.3] - 2025-08-21
+
+### Added
 - **Advanced batch processing**: New `solve_least_squares_batch_numba` for vectorized least squares solving
 - **Vectorized chi-squared computation**: Added `compute_chi_squared_batch_numba` for batch chi-squared calculation
 - **Comprehensive optimization test suite**: Extended performance tests for Phase 3 batch optimizations
