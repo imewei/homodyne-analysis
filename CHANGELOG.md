@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Placeholder for next version
+- Features for next release will be documented here
+
+### Changed
+- Changes for next release will be documented here
+
+### Fixed
+- Bug fixes for next release will be documented here
+
+### Performance
+- Performance improvements for next release will be documented here
 
 ## [0.6.3] - 2025-08-21
 
