@@ -6,8 +6,9 @@ Command-line interface for running homodyne scattering analysis in X-ray Photon
 Correlation Spectroscopy (XPCS) under nonequilibrium conditions.
 
 This script provides a unified interface for:
-- Classical optimization (Nelder-Mead) for fast parameter estimation
+- Classical optimization (Nelder-Mead, Gurobi, Robust methods) for fast parameter estimation
 - Bayesian MCMC sampling (NUTS) for full posterior distributions
+- Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal) for noise resistance
 - Dual analysis modes: Static (3 params) and Laminar Flow (7 params)
 - Comprehensive data validation and quality control
 - Automated result saving and visualization
@@ -335,6 +336,11 @@ def run_analysis(args: argparse.Namespace) -> None:
             results = run_mcmc_optimization(
                 analyzer, initial_params, phi_angles, c2_exp, args.output_dir
             )
+        elif args.method == "robust":
+            methods_attempted = ["Robust"]
+            results = run_robust_optimization(
+                analyzer, initial_params, phi_angles, c2_exp, args.output_dir
+            )
         elif args.method == "all":
             methods_attempted = ["Classical", "MCMC"]
             results = run_all_methods(
@@ -491,11 +497,13 @@ def run_classical_optimization(
     analyzer, initial_params, phi_angles, c2_exp, output_dir=None
 ):
     """
-    Execute classical optimization using Nelder-Mead simplex method.
+    Execute classical optimization using all configured methods.
 
-    Provides fast parameter estimation with point estimates and goodness-of-fit
-    statistics. Uses scipy.optimize for robust convergence with intelligent
-    angle filtering for performance on large datasets.
+    Runs all methods specified in configuration file (Nelder-Mead, Gurobi, 
+    Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal) and returns 
+    the best result. Provides fast parameter estimation with point estimates 
+    and goodness-of-fit statistics. Uses intelligent angle filtering for 
+    performance on large datasets.
 
     Parameters
     ----------
@@ -544,8 +552,18 @@ def run_classical_optimization(
 
         # Save experimental and fitted data to classical directory
         if output_dir is not None and best_params is not None:
+            # Create time arrays using correct dt from analyzer
+            dt = analyzer.dt
+            n_angles, n_t2, n_t1 = c2_exp.shape
+            t2 = np.arange(n_t2) * dt
+            t1 = np.arange(n_t1) * dt
+            
             _save_classical_fitted_data(
                 analyzer, best_params, phi_angles, c2_exp, output_dir
+            )
+            # Save individual method results with uncertainties
+            _save_individual_method_results(
+                analyzer, result, phi_angles, c2_exp, output_dir, t1, t2
             )
             # Generate classical-specific plots
             _generate_classical_plots(
@@ -593,6 +611,143 @@ def run_classical_optimization(
         error_msg = f"Classical optimization failed - unexpected error: {e}"
         logger.error(error_msg)
         logger.error("❌ Please check your data files and configuration")
+        return None
+
+
+def run_robust_optimization(
+    analyzer, initial_params, phi_angles, c2_exp, output_dir=None
+):
+    """
+    Execute robust optimization using all available robust methods.
+
+    Runs the three robust optimization methods (Robust-Wasserstein, Robust-Scenario,
+    Robust-Ellipsoidal) and returns the best result. Provides parameter estimation
+    with uncertainty resistance against measurement noise and outliers.
+
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    initial_params : list
+        Starting parameter values for optimization
+    phi_angles : ndarray
+        Angular coordinates for the scattering data
+    c2_exp : ndarray
+        Experimental correlation function data
+    output_dir : Path, optional
+        Directory for saving robust results and fitted data
+
+    Returns
+    -------
+    dict or None
+        Dictionary containing optimization results and metadata,
+        or None if all robust methods fail
+    """
+    logger = logging.getLogger(__name__)
+    logger.info("Running robust optimization...")
+
+    try:
+        if ClassicalOptimizer is None:
+            logger.error(
+                "❌ ClassicalOptimizer is not available. Please ensure the "
+                "homodyne.optimization.classical module is installed and accessible."
+            )
+            return None
+
+        # Create optimizer with robust methods only
+        optimizer = ClassicalOptimizer(analyzer, analyzer.config)
+        
+        # Override methods to only use robust methods
+        robust_methods = ["Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"]
+        
+        # Check if robust optimization is available
+        available_methods = optimizer.get_available_methods()
+        robust_available = [method for method in robust_methods if method in available_methods]
+        
+        if not robust_available:
+            logger.error("❌ No robust optimization methods available. Please install CVXPY: pip install cvxpy")
+            return None
+        
+        if len(robust_available) < len(robust_methods):
+            missing = set(robust_methods) - set(robust_available)
+            logger.warning(f"⚠️ Some robust methods not available: {missing}")
+        
+        logger.info(f"Available robust methods: {robust_available}")
+        
+        best_params, result = optimizer.run_classical_optimization_optimized(
+            initial_parameters=initial_params,
+            methods=robust_available,  # Only run robust methods
+            phi_angles=phi_angles,
+            c2_experimental=c2_exp,
+        )
+
+        # Store best parameters on analyzer core for potential MCMC initialization
+        if (
+            hasattr(optimizer, "best_params_classical")
+            and optimizer.best_params_classical is not None
+        ):
+            analyzer.best_params_robust = optimizer.best_params_classical  # Store as robust params
+            logger.info("✓ Robust results stored for potential MCMC initialization")
+
+        # Save experimental and fitted data to robust directory
+        if output_dir is not None and best_params is not None:
+            # Create time arrays using correct dt from analyzer
+            dt = analyzer.dt
+            n_angles, n_t2, n_t1 = c2_exp.shape
+            t2 = np.arange(n_t2) * dt
+            t1 = np.arange(n_t1) * dt
+            
+            _save_robust_fitted_data(
+                analyzer, best_params, phi_angles, c2_exp, output_dir
+            )
+            # Save individual robust method results with uncertainties
+            _save_individual_robust_method_results(
+                analyzer, result, phi_angles, c2_exp, output_dir, t1, t2
+            )
+            # Generate robust-specific plots
+            _generate_robust_plots(
+                analyzer, best_params, result, phi_angles, c2_exp, output_dir
+            )
+
+        return {
+            "robust_optimization": {
+                "parameters": best_params,
+                "chi_squared": result.fun,
+                "success": result.success,
+                "message": result.message,
+                "iterations": getattr(result, "nit", None),
+                "function_evaluations": getattr(result, "nfev", None),
+            },
+            "robust_summary": {
+                "parameters": best_params,
+                "chi_squared": result.fun,
+                "method": "Robust",
+                "evaluation_metric": "chi_squared",
+                "_note": "Robust optimization uses chi-squared with uncertainty resistance",
+            },
+            "methods_used": ["Robust"],
+        }
+    except ImportError as e:
+        error_msg = f"Robust optimization failed - missing dependencies: {e}"
+        logger.error(error_msg)
+        if "cvxpy" in str(e).lower():
+            logger.error("❌ Install CVXPY: pip install cvxpy")
+        elif "gurobipy" in str(e).lower():
+            logger.error("⚠️  Gurobi not available, using default solver (still works)")
+        else:
+            logger.error("❌ Install robust optimization dependencies: pip install cvxpy")
+        return None
+    except (ValueError, KeyError) as e:
+        error_msg = f"Robust optimization failed - configuration error: {e}"
+        logger.error(error_msg)
+        logger.error(
+            "❌ Please check your configuration file has robust_optimization settings"
+        )
+        return None
+    except Exception as e:
+        error_msg = f"Robust optimization failed - unexpected error: {e}"
+        logger.error(error_msg)
+        logger.exception("Full traceback for robust optimization failure:")
         return None
 
 
@@ -1255,6 +1410,702 @@ def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, outpu
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
+def _save_individual_method_results(analyzer, result, phi_angles, c2_exp, output_dir, t1=None, t2=None):
+    """
+    Save individual analysis results for each classical optimization method.
+    
+    Saves fitted parameters with uncertainties, chi-squared values, and 
+    convergence information for each method (Nelder-Mead, Gurobi, 
+    Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal).
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    result : OptimizeResult
+        Optimization result object containing method_results dictionary
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving classical results
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from pathlib import Path
+        import numpy as np
+        import json
+        
+        # Create classical subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+        
+        classical_dir = output_dir / "classical"
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Get method results
+        method_results = getattr(result, 'method_results', {})
+        if not method_results:
+            logger.warning("No method-specific results to save")
+            return
+        
+        # Get parameter names from config
+        param_names = analyzer.config.get("initial_parameters", {}).get(
+            "parameter_names", []
+        )
+        if not param_names:
+            # Generate default names based on parameter count
+            n_params = len(result.x) if hasattr(result, 'x') else 3
+            param_names = [f"param_{i}" for i in range(n_params)]
+        
+        # Initialize storage for all methods
+        all_methods_data = {}
+        
+        # Process each method
+        for method_name, method_data in method_results.items():
+            if not method_data.get('success', False):
+                logger.info(f"  Skipping failed method: {method_name}")
+                continue
+                
+            method_params = method_data.get('parameters')
+            if method_params is None:
+                continue
+                
+            logger.info(f"  Saving results for {method_name}...")
+            
+            # Convert parameters to numpy array if needed
+            if not isinstance(method_params, np.ndarray):
+                method_params = np.array(method_params)
+            
+            # Calculate fitted C2 correlation for this method
+            c2_fitted = analyzer.compute_c2_correlation_optimized(
+                method_params, phi_angles
+            )
+            
+            # Calculate residuals and statistics
+            residuals = c2_exp - c2_fitted
+            chi_squared = np.sum(residuals**2)
+            rms_error = np.sqrt(np.mean(residuals**2))
+            max_abs_error = np.max(np.abs(residuals))
+            
+            # Estimate parameter uncertainties (simplified - using chi-squared curvature)
+            # For a more rigorous approach, we'd calculate the Hessian
+            uncertainties = _estimate_parameter_uncertainties(
+                analyzer, method_params, phi_angles, c2_exp, chi_squared
+            )
+            
+            # Create method-specific data dictionary
+            method_info = {
+                "method_name": method_name,
+                "parameters": {
+                    name: {
+                        "value": float(method_params[i]),
+                        "uncertainty": float(uncertainties[i]),
+                        "unit": analyzer.config.get("initial_parameters", {}).get(
+                            "parameter_units", {}
+                        ).get(name, "dimensionless")
+                    }
+                    for i, name in enumerate(param_names)
+                },
+                "goodness_of_fit": {
+                    "chi_squared": float(chi_squared),
+                    "chi_squared_per_dof": float(chi_squared / (c2_exp.size - len(method_params))),
+                    "rms_error": float(rms_error),
+                    "max_abs_error": float(max_abs_error),
+                },
+                "convergence_info": {
+                    "success": method_data.get('success', False),
+                    "iterations": method_data.get('iterations'),
+                    "function_evaluations": method_data.get('function_evaluations'),
+                    "termination_reason": method_data.get('message', 'Not provided'),
+                },
+                "data_info": {
+                    "n_angles": len(phi_angles),
+                    "n_data_points": c2_exp.size,
+                    "n_parameters": len(method_params),
+                    "degrees_of_freedom": c2_exp.size - len(method_params),
+                }
+            }
+            
+            # Save method-specific files
+            method_dir = classical_dir / method_name.lower().replace("-", "_")
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save parameters with uncertainties as JSON for easy reading
+            params_file = method_dir / "parameters.json"
+            with open(params_file, 'w') as f:
+                json.dump(method_info, f, indent=2)
+            
+            # Validate that t1 and t2 are provided
+            if t1 is None or t2 is None:
+                raise ValueError("t1 and t2 time arrays must be provided")
+            
+            # Save numerical data as compressed numpy arrays
+            np.savez_compressed(
+                method_dir / "fitted_data.npz",
+                c2_fitted=c2_fitted,
+                c2_experimental=c2_exp,
+                residuals=residuals,
+                phi_angles=phi_angles,
+                parameters=method_params,
+                uncertainties=uncertainties,
+                parameter_names=param_names,
+                chi_squared=chi_squared,
+                t1=t1,
+                t2=t2,
+            )
+            
+            # Save numerical data as compressed numpy arrays
+            np.savez_compressed(
+                method_dir / "fitted_data.npz",
+                c2_fitted=c2_fitted,
+                c2_experimental=c2_exp,
+                residuals=residuals,
+                phi_angles=phi_angles,
+                parameters=method_params,
+                uncertainties=uncertainties,
+                parameter_names=param_names,
+                chi_squared=chi_squared,
+                t1=t1,
+                t2=t2,
+            )
+            
+            # Store in all_methods collection
+            all_methods_data[method_name] = method_info
+            
+            logger.info(f"    ✓ Saved to {method_dir}/")
+        
+        # Save combined summary for all methods
+        if all_methods_data:
+            summary_file = classical_dir / "all_methods_summary.json"
+            with open(summary_file, 'w') as f:
+                json.dump({
+                    "analysis_type": "Classical Optimization",
+                    "methods_analyzed": list(all_methods_data.keys()),
+                    "best_method": getattr(result, 'best_method', 'unknown'),
+                    "results": all_methods_data,
+                }, f, indent=2)
+            
+            logger.info(f"✓ All method results saved to {classical_dir}/")
+            logger.info(f"  - Summary: {summary_file}")
+            logger.info(f"  - Individual method folders: {', '.join(all_methods_data.keys())}")
+        
+    except Exception as e:
+        logger.error(f"Failed to save individual method results: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
+def _estimate_parameter_uncertainties(analyzer, params, phi_angles, c2_exp, chi_squared_min):
+    """
+    Estimate parameter uncertainties using finite differences.
+    
+    This is a simplified approach that estimates uncertainties from the
+    curvature of the chi-squared surface near the minimum.
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Analysis engine for computing correlation functions
+    params : np.ndarray
+        Optimized parameter values
+    phi_angles : np.ndarray
+        Angular coordinates
+    c2_exp : np.ndarray
+        Experimental data
+    chi_squared_min : float
+        Chi-squared value at the minimum
+        
+    Returns
+    -------
+    np.ndarray
+        Estimated uncertainties for each parameter
+    """
+    import numpy as np
+    
+    n_params = len(params)
+    uncertainties = np.zeros(n_params)
+    
+    # Use 1% perturbation or small fixed value
+    delta = 0.01
+    
+    for i in range(n_params):
+        # Perturb parameter i
+        params_plus = params.copy()
+        params_plus[i] *= (1 + delta)
+        
+        # Calculate chi-squared at perturbed point
+        c2_theory_plus = analyzer.compute_c2_correlation_optimized(
+            params_plus, phi_angles
+        )
+        residuals_plus = c2_exp - c2_theory_plus
+        chi_squared_plus = np.sum(residuals_plus**2)
+        
+        # Estimate second derivative (curvature)
+        # d²χ²/dp² ≈ (χ²(p+δp) - χ²(p)) / (δp)²
+        second_derivative = (chi_squared_plus - chi_squared_min) / (params[i] * delta)**2
+        
+        # Uncertainty estimate: σ ≈ sqrt(2 / d²χ²/dp²)
+        # This assumes χ² increases by 1 at 1-sigma confidence
+        if second_derivative > 0:
+            uncertainties[i] = np.sqrt(2.0 / second_derivative)
+        else:
+            # If curvature is negative or zero, use 10% as fallback
+            uncertainties[i] = 0.1 * abs(params[i])
+    
+    return uncertainties
+
+
+def _save_individual_robust_method_results(analyzer, result, phi_angles, c2_exp, output_dir, t1=None, t2=None):
+    """
+    Save individual analysis results for each robust optimization method.
+    
+    Saves fitted parameters with uncertainties, chi-squared values, and 
+    convergence information for each robust method (Robust-Wasserstein, 
+    Robust-Scenario, Robust-Ellipsoidal).
+    
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    result : OptimizeResult
+        Optimization result object containing method_results dictionary
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving robust results
+    t1 : np.ndarray
+        Time delay array for t1 dimension (t1 = np.arange(n_t1) * dt)
+    t2 : np.ndarray
+        Time delay array for t2 dimension (t2 = np.arange(n_t2) * dt)
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from pathlib import Path
+        import numpy as np
+        import json
+        
+        # Create robust subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+        
+        robust_dir = output_dir / "robust"
+        robust_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Get method results
+        method_results = getattr(result, 'method_results', {})
+        if not method_results:
+            logger.warning("No robust method-specific results to save")
+            return
+        
+        # Get parameter names from config
+        param_names = analyzer.config.get("initial_parameters", {}).get(
+            "parameter_names", []
+        )
+        if not param_names:
+            # Generate default names based on parameter count
+            n_params = len(result.x) if hasattr(result, 'x') else 3
+            param_names = [f"param_{i}" for i in range(n_params)]
+        
+        # Initialize storage for all robust methods
+        all_robust_methods_data = {}
+        
+        # Process each robust method
+        for method_name, method_data in method_results.items():
+            if not method_data.get('success', False):
+                logger.info(f"  Skipping failed robust method: {method_name}")
+                continue
+                
+            method_params = method_data.get('parameters')
+            if method_params is None:
+                continue
+                
+            logger.info(f"  Saving robust results for {method_name}...")
+            
+            # Convert parameters to numpy array if needed
+            if not isinstance(method_params, np.ndarray):
+                method_params = np.array(method_params)
+            
+            # Calculate fitted C2 correlation for this method
+            c2_fitted = analyzer.compute_c2_correlation_optimized(
+                method_params, phi_angles
+            )
+            
+            # Calculate residuals and statistics
+            residuals = c2_exp - c2_fitted
+            chi_squared = np.sum(residuals**2)
+            rms_error = np.sqrt(np.mean(residuals**2))
+            max_abs_error = np.max(np.abs(residuals))
+            
+            # Estimate parameter uncertainties for robust methods
+            # Robust methods often have different uncertainty structures
+            uncertainties = _estimate_parameter_uncertainties(
+                analyzer, method_params, phi_angles, c2_exp, chi_squared
+            )
+            
+            # Get robust-specific information
+            robust_info = method_data.get('robust_info', {})
+            
+            # Create method-specific data dictionary
+            method_info = {
+                "method_name": method_name,
+                "method_type": "Robust Optimization",
+                "parameters": {
+                    name: {
+                        "value": float(method_params[i]),
+                        "uncertainty": float(uncertainties[i]),
+                        "unit": analyzer.config.get("initial_parameters", {}).get(
+                            "parameter_units", {}
+                        ).get(name, "dimensionless")
+                    }
+                    for i, name in enumerate(param_names)
+                },
+                "goodness_of_fit": {
+                    "chi_squared": float(chi_squared),
+                    "chi_squared_per_dof": float(chi_squared / (c2_exp.size - len(method_params))),
+                    "rms_error": float(rms_error),
+                    "max_abs_error": float(max_abs_error),
+                },
+                "robust_specific": {
+                    "uncertainty_radius": robust_info.get('uncertainty_radius'),
+                    "n_scenarios": robust_info.get('n_scenarios'),
+                    "worst_case_value": robust_info.get('worst_case_value'),
+                    "regularization_alpha": robust_info.get('regularization_alpha'),
+                },
+                "convergence_info": {
+                    "success": method_data.get('success', False),
+                    "iterations": method_data.get('iterations'),
+                    "solve_time": method_data.get('solve_time'),
+                    "solver_status": method_data.get('status', 'Not provided'),
+                },
+                "data_info": {
+                    "n_angles": len(phi_angles),
+                    "n_data_points": c2_exp.size,
+                    "n_parameters": len(method_params),
+                    "degrees_of_freedom": c2_exp.size - len(method_params),
+                }
+            }
+            
+            # Save method-specific files
+            method_dir = robust_dir / method_name.lower().replace("-", "_")
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save parameters with uncertainties as JSON for easy reading
+            params_file = method_dir / "parameters.json"
+            with open(params_file, 'w') as f:
+                json.dump(method_info, f, indent=2)
+            
+            # Validate that t1 and t2 are provided
+            if t1 is None or t2 is None:
+                raise ValueError("t1 and t2 time arrays must be provided")
+            
+            # Save numerical data as compressed numpy arrays
+            np.savez_compressed(
+                method_dir / "fitted_data.npz",
+                c2_fitted=c2_fitted,
+                c2_experimental=c2_exp,
+                residuals=residuals,
+                phi_angles=phi_angles,
+                parameters=method_params,
+                uncertainties=uncertainties,
+                parameter_names=param_names,
+                chi_squared=chi_squared,
+                t1=t1,
+                t2=t2,
+            )
+            
+            # Store in all_methods collection
+            all_robust_methods_data[method_name] = method_info
+            
+            logger.info(f"    ✓ Saved to {method_dir}/")
+        
+        # Save combined summary for all robust methods
+        if all_robust_methods_data:
+            summary_file = robust_dir / "all_robust_methods_summary.json"
+            with open(summary_file, 'w') as f:
+                json.dump({
+                    "analysis_type": "Robust Optimization",
+                    "methods_analyzed": list(all_robust_methods_data.keys()),
+                    "best_method": getattr(result, 'best_method', 'unknown'),
+                    "results": all_robust_methods_data,
+                }, f, indent=2)
+            
+            logger.info(f"✓ All robust method results saved to {robust_dir}/")
+            logger.info(f"  - Summary: {summary_file}")
+            logger.info(f"  - Individual method folders: {', '.join(all_robust_methods_data.keys())}")
+        
+    except Exception as e:
+        logger.error(f"Failed to save individual robust method results: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
+def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, output_dir):
+    """
+    Generate method-specific plots for robust optimization results.
+    
+    This function creates separate C2 correlation heatmaps for each successful
+    robust optimization method (e.g., Robust-Wasserstein, Robust-Scenario, 
+    Robust-Ellipsoidal), allowing visual comparison of results.
+
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    best_params : np.ndarray
+        Best optimized parameters from robust optimization (used as fallback)
+    result : OptimizeResult
+        Robust optimization result object containing method_results dictionary
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving robust results
+
+    Returns
+    -------
+    bool
+        True if plots were generated successfully, False otherwise
+
+    Notes
+    -----
+    - Method names are included in plot filenames (e.g., "c2_heatmaps_Robust-Wasserstein_phi_0.0deg.png")
+    - Falls back to single plot with best parameters if method_results unavailable
+    - All plots are saved to output_dir/robust/ subdirectory
+    
+    See Also
+    --------
+    homodyne.plotting.plot_c2_heatmaps : Underlying plotting function
+    ClassicalOptimizer.run_classical_optimization_optimized : Method that generates method_results
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        from pathlib import Path
+        import numpy as np
+        from .plotting import plot_c2_heatmaps
+
+        # Create robust subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+
+        robust_dir = output_dir / "robust"
+        robust_dir.mkdir(parents=True, exist_ok=True)
+
+        # Check if plotting is enabled
+        config = analyzer.config
+        reporting = config.get("reporting", {})
+
+        if not reporting.get("generate_plots", True):
+            logger.info(
+                "Plotting disabled in configuration - skipping robust plot generation"
+            )
+            return
+
+        logger.info("Generating robust optimization plots...")
+
+        # Initialize time arrays for plotting using correct dt from analyzer
+        dt = analyzer.dt
+        n_angles, n_t2, n_t1 = c2_exp.shape
+        t2 = np.arange(n_t2) * dt
+        t1 = np.arange(n_t1) * dt
+
+        # Generate theoretical data with best parameters
+        c2_theory = analyzer.compute_c2_correlation_optimized(best_params, phi_angles)
+
+        # Check if method-specific results are available
+        if hasattr(result, 'method_results') and result.method_results:
+            # Generate plots for each successful method
+            logger.info("Generating method-specific robust plots...")
+            
+            success_count = 0
+            total_methods = len(result.method_results)
+            
+            for method_name, method_data in result.method_results.items():
+                if method_data.get('success', False) and method_data.get('parameters'):
+                    try:
+                        method_params = np.array(method_data['parameters'])
+                        method_c2 = analyzer.compute_c2_correlation_optimized(method_params, phi_angles)
+                        
+                        # Generate method-specific plots
+                        plot_success = plot_c2_heatmaps(
+                            c2_exp,
+                            method_c2,
+                            phi_angles,
+                            robust_dir,
+                            config,
+                            t2=t2,
+                            method_name=method_name,  # This adds method name to filename
+                        )
+                        
+                        if plot_success:
+                            success_count += 1
+                            logger.info(f"  ✓ {method_name} plots generated")
+                        else:
+                            logger.warning(f"  ⚠ {method_name} plots failed to generate")
+                            
+                    except Exception as e:
+                        logger.warning(f"  ⚠ {method_name} plot generation failed: {e}")
+            
+            if success_count > 0:
+                logger.info(f"✓ Robust method-specific plots generated ({success_count}/{total_methods} methods)")
+            else:
+                logger.warning("⚠ All robust method-specific plots failed - generating fallback plot")
+                # Generate fallback plot with best parameters
+                plot_success = plot_c2_heatmaps(
+                    c2_exp,
+                    c2_theory,
+                    phi_angles,
+                    robust_dir,
+                    config,
+                    t2=t2,
+                    method_name="Robust-Best",
+                )
+                if plot_success:
+                    logger.info("✓ Robust fallback plot generated successfully")
+                else:
+                    logger.warning("⚠ Robust fallback plot failed to generate")
+        else:
+            # Generate single plot with best parameters (fallback)
+            logger.info("No method-specific results available - generating single robust plot")
+            plot_success = plot_c2_heatmaps(
+                c2_exp,
+                c2_theory,
+                phi_angles,
+                robust_dir,
+                config,
+                t2=t2,
+                method_name="Robust",
+            )
+            if plot_success:
+                logger.info("✓ Robust C2 heatmaps generated successfully")
+            else:
+                logger.warning("⚠ Robust C2 heatmaps failed to generate")
+
+    except Exception as e:
+        logger.error(f"Failed to generate robust plots: {e}")
+        import traceback
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
+def _save_robust_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
+    """
+    Calculate fitted data and save experimental and fitted data to robust directory.
+
+    Parameters
+    ----------
+    analyzer : HomodyneAnalysisCore
+        Main analysis engine with loaded configuration
+    best_params : np.ndarray
+        Optimized parameters from robust optimization
+    phi_angles : np.ndarray
+        Angular coordinates for the scattering data
+    c2_exp : np.ndarray
+        Experimental correlation function data
+    output_dir : Path
+        Output directory for saving robust results
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        from pathlib import Path
+        import numpy as np
+
+        # Create robust subdirectory
+        if output_dir is None:
+            output_dir = Path("./homodyne_results")
+        else:
+            output_dir = Path(output_dir)
+
+        robust_dir = output_dir / "robust"
+        robust_dir.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Calculating fitted data for robust optimization results...")
+
+        # Calculate theoretical data with optimized parameters
+        c2_fitted = analyzer.compute_c2_correlation_optimized(best_params, phi_angles)
+
+        # Initialize time arrays using correct dt from analyzer
+        dt = analyzer.dt
+        n_angles, n_t2, n_t1 = c2_exp.shape
+        t2 = np.arange(n_t2) * dt
+        t1 = np.arange(n_t1) * dt
+
+        # Calculate residuals
+        residuals = c2_exp - c2_fitted
+        chi_squared = np.sum(residuals**2) / c2_exp.size
+
+        logger.info(f"  - Chi-squared: {chi_squared:.6e}")
+        logger.info(f"  - RMS residual: {np.sqrt(np.mean(residuals**2)):.6e}")
+        logger.info(f"  - Max residual: {np.max(np.abs(residuals)):.6e}")
+
+        # Save data files
+        exp_file = robust_dir / "experimental_data.npz"
+        fitted_file = robust_dir / "fitted_data.npz"
+        residuals_file = robust_dir / "residuals_data.npz"
+
+        np.savez_compressed(
+            exp_file,
+            c2_experimental=c2_exp,
+            phi_angles=phi_angles,
+            t1=t1,
+            t2=t2,
+            # Metadata as separate arrays
+            data_shape=np.array(c2_exp.shape),
+            n_angles=np.array([len(phi_angles)]),
+            n_time_points=np.array([c2_exp.shape[1]]),
+        )
+
+        np.savez_compressed(
+            fitted_file,
+            c2_fitted=c2_fitted,
+            best_parameters=best_params,
+            phi_angles=phi_angles,
+            t1=t1,
+            t2=t2,
+            chi_squared=chi_squared,
+            # Metadata as separate arrays
+            optimization_method=np.array(["Robust"], dtype='U20'),
+        )
+
+        np.savez_compressed(
+            residuals_file,
+            residuals=residuals,
+            chi_squared=chi_squared,
+            rms_residual=np.sqrt(np.mean(residuals**2)),
+            max_residual=np.max(np.abs(residuals)),
+            phi_angles=phi_angles,
+            t1=t1,
+            t2=t2,
+            # Quality metrics as separate arrays
+            quality_rms_residual=np.array([float(np.sqrt(np.mean(residuals**2)))]),
+            quality_max_residual=np.array([float(np.max(np.abs(residuals)))]),
+        )
+
+        logger.info(f"✓ Robust fitting data saved to {robust_dir}/")
+        logger.info(f"  - Experimental data: {exp_file}")
+        logger.info(f"  - Fitted data: {fitted_file}")
+        logger.info(f"  - Residuals data: {residuals_file}")
+
+    except Exception as e:
+        logger.error(f"Failed to save robust fitted data: {e}")
+        import traceback
+
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
+
+
 def _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
     """
     Calculate fitted data and save experimental and fitted data to mcmc directory.
@@ -1694,26 +2545,30 @@ def main():
         epilog="""
 Examples:
   %(prog)s                                    # Run with default classical method
+  %(prog)s --method robust                    # Run only robust optimization methods
   %(prog)s --method all --verbose             # Run all methods with debug logging  
   %(prog)s --config my_config.json            # Use custom config file
   %(prog)s --output-dir ./homodyne_results --verbose   # Custom output directory with verbose logging
   %(prog)s --quiet                            # Run with file logging only (no console output)
   %(prog)s --static-isotropic                 # Force static mode (zero shear, 3 parameters)
   %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
+  %(prog)s --static-isotropic --method robust # Run robust methods in static mode
   %(prog)s --static-isotropic --method all    # Run all methods in static mode
 
 Method Quality Assessment:
   Classical: Uses chi-squared goodness-of-fit (lower is better)
+  Robust:    Uses chi-squared with uncertainty resistance (robust to measurement noise)
   MCMC:      Uses convergence diagnostics (R̂ < 1.1, ESS > 100 for acceptable quality)
   
   Note: When running --method all, results use different evaluation criteria.
         Do not directly compare chi-squared values to convergence diagnostics.
+        Robust methods provide noise resistance at computational cost.
         """,
     )
 
     parser.add_argument(
         "--method",
-        choices=["classical", "mcmc", "all"],
+        choices=["classical", "mcmc", "robust", "all"],
         default="classical",
         help="Analysis method to use (default: %(default)s)",
     )

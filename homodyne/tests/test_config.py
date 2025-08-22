@@ -198,9 +198,17 @@ def test_config_manager_default_config():
 
 def test_config_manager_real_config_file():
     """Test with the actual homodyne_config.json file if it exists."""
-    config_path = Path(__file__).parent.parent.parent / "homodyne_config.json"
-
-    if config_path.exists():
+    # Check both project root and tests directory for config file
+    project_root_path = Path(__file__).parent.parent.parent / "homodyne_config.json"
+    tests_dir_path = Path(__file__).parent / "homodyne_config.json"
+    
+    config_path = None
+    if project_root_path.exists():
+        config_path = project_root_path
+    elif tests_dir_path.exists():
+        config_path = tests_dir_path
+    
+    if config_path:
         manager = ConfigManager(str(config_path))
         assert manager.config is not None
         assert manager.get("metadata") is not None

@@ -1,18 +1,19 @@
 {
   "metadata": {
     "_comment": "Project metadata for homodyne analysis testing",
-    "config_version": "0.6.3",
+    "config_version": "0.6.5.dev0",
     "description": "General Homodyne Analysis Configuration for Testing",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "analysis_mode": "static_anisotropic",
     "created_date": "2025-08-20",
-    "updated_date": "2025-08-20",
+    "updated_date": "2025-01-22",
     "authors": [
       "Wei Chen"
     ],
     "institution": "Argonne National Laboratory",
     "experiment_name": "Test Suite",
     "sample_description": "Testing Configuration",
-    "script_compatibility": "homodyne v0.6.3",
+    "script_compatibility": "homodyne v0.6.5.dev0",
     "_cli_usage": {
       "description": "CLI usage for general homodyne analysis",
       "recommended_commands": [
@@ -101,6 +102,15 @@
       "s⁻¹",
       "degrees"
     ],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s",
+      "gamma_dot_t0": "s⁻¹",
+      "beta": "dimensionless",
+      "gamma_dot_t_offset": "s⁻¹",
+      "phi0": "degrees"
+    },
     "active_parameters": [
       "D0",
       "alpha",
@@ -129,12 +139,15 @@
       "fallback_to_all_angles": true
     },
     "classical_optimization": {
-      "methods": [
-        "Nelder-Mead",
-        "Gurobi"
-      ],
-      "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
-      "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
+      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
+      "_methods_note": "Available: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
+      "_cli_usage": {
+        "--method classical": "Runs ALL 5 methods above (classical + robust)",
+        "--method robust": "Runs ONLY Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+        "--method all": "Runs classical methods + MCMC (if available)"
+      },
+      "_gurobi_availability": "Gurobi provides quadratic programming alternative. Requires license: pip install gurobipy",
+      "_robust_availability": "Robust methods require CVXPY: pip install cvxpy. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 5000,
@@ -158,6 +171,60 @@
           "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
           "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
         }
+      },
+      "robust_optimization": {
+        "_comment": "Robust optimization settings using CVXPY + Gurobi",
+        "_example_usage": [
+          "python run_homodyne.py --method robust --static-anisotropic  # Robust in static mode",
+          "python run_homodyne.py --method classical  # All 5 methods including robust"
+        ],
+        "solver_config": {
+          "primary_solver": "GUROBI",
+          "fallback_solver": "ECOS",
+          "solver_options": {
+            "_comment": "Gurobi solver configuration optimized for XPCS problems",
+            "OutputFlag": 0,
+            "TimeLimit": 300,
+            "MIPGap": 1e-4,
+            "NumericFocus": 3,
+            "Presolve": 2,
+            "Method": 2,
+            "_OutputFlag_note": "0=silent, 1=normal output",
+            "_TimeLimit_note": "Maximum solve time in seconds",
+            "_MIPGap_note": "Mixed-integer gap tolerance",
+            "_NumericFocus_note": "3=maximum numerical precision",
+            "_Presolve_note": "2=aggressive presolve for better performance",
+            "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex"
+          }
+        },
+        "methods": {
+          "Robust-Wasserstein": {
+            "_description": "Distributionally Robust Optimization with Wasserstein uncertainty sets",
+            "uncertainty_radius": 0.1,
+            "regularization_alpha": 0.01,
+            "_uncertainty_radius_note": "Wasserstein uncertainty set radius (0.05-0.2 typical)",
+            "_regularization_alpha_note": "L2 regularization parameter for stability"
+          },
+          "Robust-Scenario": {
+            "_description": "Scenario-based robust optimization with bootstrap resampling",
+            "n_scenarios": 50,
+            "scenario_generation": "bootstrap",
+            "confidence_level": 0.95,
+            "_n_scenarios_note": "Number of worst-case scenarios to consider (20-100 typical)",
+            "_scenario_generation_note": "Method: bootstrap, monte_carlo, or grid_based",
+            "_confidence_level_note": "Statistical confidence level for robustness"
+          },
+          "Robust-Ellipsoidal": {
+            "_description": "Ellipsoidal uncertainty sets with confidence bounds",
+            "uncertainty_set": "ellipsoidal",
+            "ellipsoid_radius": 0.15,
+            "confidence_level": 0.95,
+            "_ellipsoid_radius_note": "Ellipsoidal uncertainty set radius",
+            "_confidence_level_note": "Statistical confidence level for uncertainty bounds"
+          }
+        },
+        "_performance_note": "Robust methods typically 2-5x slower than classical but provide uncertainty resistance",
+        "_requirements": "Requires CVXPY (pip install cvxpy). Gurobi license recommended for best performance."
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"

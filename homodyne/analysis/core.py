@@ -1466,15 +1466,61 @@ class HomodyneAnalysisCore:
             exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
             sigma_batch = np.maximum(exp_std_batch, min_sigma)
 
-            # Batch solve least squares for all angles using Numba
-            contrast_batch, offset_batch = solve_least_squares_batch_numba(
-                theory_flat, exp_flat
-            )
+            # Batch solve least squares for all angles using Numba with fallback
+            try:
+                contrast_batch, offset_batch = solve_least_squares_batch_numba(
+                    theory_flat, exp_flat
+                )
+            except RuntimeError as e:
+                if "NUMBA_NUM_THREADS" in str(e):
+                    # Fallback to non-Numba implementation for threading conflicts
+                    logger.debug("Using fallback least squares due to NUMBA threading conflict")
+                    contrast_batch = np.zeros(n_angles, dtype=np.float64)
+                    offset_batch = np.zeros(n_angles, dtype=np.float64)
+                    
+                    # Manual implementation of batch least squares
+                    for i in range(n_angles):
+                        theory_vec = theory_flat[i]
+                        exp_vec = exp_flat[i]
+                        
+                        # Solve: min ||A*x - b||^2 where A = [theory, ones], x = [contrast, offset]
+                        A = np.column_stack([theory_vec, np.ones(len(theory_vec))])
+                        try:
+                            # Use least squares solver
+                            x, _, _, _ = np.linalg.lstsq(A, exp_vec, rcond=None)
+                            contrast_batch[i] = x[0]
+                            offset_batch[i] = x[1]
+                        except np.linalg.LinAlgError:
+                            # Fallback values if linear algebra fails
+                            contrast_batch[i] = 0.5
+                            offset_batch[i] = 1.0
+                else:
+                    raise
 
-            # Batch compute chi-squared values using Numba
-            chi2_raw_batch = compute_chi_squared_batch_numba(
-                theory_flat, exp_flat, contrast_batch, offset_batch
-            )
+            # Batch compute chi-squared values using Numba with fallback
+            try:
+                chi2_raw_batch = compute_chi_squared_batch_numba(
+                    theory_flat, exp_flat, contrast_batch, offset_batch
+                )
+            except RuntimeError as e:
+                if "NUMBA_NUM_THREADS" in str(e):
+                    # Fallback to non-Numba implementation for threading conflicts
+                    logger.debug("Using fallback chi-squared computation due to NUMBA threading conflict")
+                    chi2_raw_batch = np.zeros(n_angles, dtype=np.float64)
+                    
+                    # Manual implementation of batch chi-squared
+                    for i in range(n_angles):
+                        theory_vec = theory_flat[i]
+                        exp_vec = exp_flat[i]
+                        contrast = contrast_batch[i]
+                        offset = offset_batch[i]
+                        
+                        # Compute fitted values and chi-squared
+                        fitted_vec = contrast * theory_vec + offset
+                        residuals = exp_vec - fitted_vec
+                        chi2_raw_batch[i] = np.sum(residuals**2)
+                else:
+                    raise
 
             # Apply sigma normalization and DOF calculation (vectorized)
             sigma_squared_batch = sigma_batch**2

@@ -13,7 +13,8 @@ Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in c
 
 **Key Features:**
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Bayesian MCMC (NUTS)
+- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+- **Noise-resistant analysis**: Robust optimization methods for measurement uncertainty and outlier resistance
 - **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations, and optimized memory usage
 - **Performance monitoring**: Comprehensive regression testing and automated benchmarking
 - **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper $\chi^2$ calculations
@@ -25,6 +26,7 @@ Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in c
 - [Quick Start](#quick-start)
 - [Analysis Modes](#analysis-modes)
 - [Usage Examples](#usage-examples)
+- [Robust Optimization](#robust-optimization)
 - [Configuration](#configuration)
 - [Performance & Testing](#performance--testing)
 - [Theoretical Background](#theoretical-background)
@@ -52,8 +54,15 @@ pip install -e .[all]
 - **Core**: `numpy`, `scipy`, `matplotlib`
 - **Performance**: `numba` (3-5x speedup via JIT compilation)
 - **Bayesian Analysis**: `pymc`, `arviz`, `pytensor` (for MCMC sampling)
-- **Optimization**: `gurobipy` (optional, requires license for Gurobi solver)
+- **Classical Optimization**: `gurobipy` (optional, requires license for Gurobi solver)
+- **Robust Optimization**: `cvxpy` (required for `--method robust`, distributionally robust optimization)
 - **Optional**: `pytest`, `sphinx` (testing and documentation)
+
+**Installation for Robust Optimization:**
+```bash
+pip install cvxpy                    # Required for robust methods
+pip install gurobipy                 # Optional, for best performance
+```
 
 ## Quick Start
 
@@ -66,6 +75,9 @@ homodyne-config --mode laminar_flow --sample my_sample
 
 # Run analysis
 homodyne --config my_config.json --method all
+
+# Run only robust optimization (noise-resistant)
+homodyne --config my_config.json --method robust
 ```
 
 **Python API:**
@@ -75,8 +87,9 @@ from homodyne import HomodyneAnalysisCore, ConfigManager
 
 config = ConfigManager("config.json")
 analysis = HomodyneAnalysisCore(config)
-results = analysis.optimize_classical()  # Fast
-results = analysis.optimize_all()        # Classical + MCMC
+results = analysis.optimize_classical()  # Fast (includes robust methods)
+results = analysis.optimize_robust()     # Robust methods only
+results = analysis.optimize_all()        # Classical + Robust + MCMC
 ```
 
 ## Analysis Modes
@@ -134,8 +147,13 @@ The homodyne analysis package supports three distinct analysis modes, each optim
 ```bash
 # Basic analysis
 homodyne --static-isotropic --method classical
-homodyne --static-anisotropic --method mcmc
+homodyne --static-anisotropic --method robust    # NEW: Robust optimization only
 homodyne --laminar-flow --method all
+
+# Robust optimization examples (noise-resistant)
+homodyne --method robust                         # Run all robust methods
+homodyne --method robust --static-isotropic      # Robust in static mode
+homodyne --method robust --config noisy_data.json # Robust for noisy data
 
 # Data validation only
 homodyne --plot-experimental-data --config my_config.json
@@ -165,6 +183,66 @@ homodyne --plot-experimental-data --config my_config.json --quiet  # Quiet mode
 - 2D correlation function heatmaps $g_2(t_1,t_2)$
 - Diagonal slices $g_2(t,t)$ showing decay
 - Statistical summaries and quality metrics
+
+## Robust Optimization
+
+**NEW**: Dedicated robust optimization methods for noise-resistant parameter estimation.
+
+### Overview
+
+The `--method robust` flag runs only robust optimization methods, designed to handle:
+- **Measurement noise** and experimental uncertainties
+- **Outliers** in correlation function data  
+- **Model misspecification** and systematic errors
+
+### Available Robust Methods
+
+| Method | Description | Best For |
+|--------|-------------|----------|
+| **Robust-Wasserstein** | Distributionally Robust Optimization with Wasserstein uncertainty sets | Noisy experimental data with theoretical guarantees |
+| **Robust-Scenario** | Bootstrap scenario-based robust optimization | Data with outliers and non-Gaussian noise |
+| **Robust-Ellipsoidal** | Ellipsoidal uncertainty sets optimization | Well-characterized noise levels |
+
+### Usage
+
+```bash
+# Run only robust methods (recommended for noisy data)
+homodyne --method robust
+
+# Robust optimization in different modes
+homodyne --method robust --static-isotropic     # 3-parameter static
+homodyne --method robust --laminar-flow         # 7-parameter flow
+
+# Custom configuration for robust analysis
+homodyne --method robust --config robust_config.json
+```
+
+### Key Features
+
+- **Dedicated output**: Results saved to `/robust/` directory
+- **Method comparison**: All three robust methods run, best chi-squared selected
+- **Noise resistance**: 3-8% uncertainty tolerance (configurable)
+- **Performance**: ~2-5x slower than classical, but uncertainty-resistant
+
+### Dependencies
+
+```bash
+pip install cvxpy        # Required for all robust methods
+pip install gurobipy     # Optional, for best performance
+```
+
+### When to Use Robust Optimization
+
+✅ **Use `--method robust` when:**
+- Data has significant measurement noise (>2%)
+- Outliers are present in correlation functions
+- Systematic errors suspected in experimental setup
+- Need uncertainty-resistant parameter estimates
+
+❌ **Use `--method classical` when:**  
+- Clean, low-noise data (<1% uncertainty)
+- Fast parameter estimation needed
+- Comparing with previous classical results
 
 ## Configuration
 
@@ -576,10 +654,29 @@ pytest -m benchmark --benchmark-only
 ├── run.log                         # Detailed execution log
 ├── classical/                      # Classical method outputs
 │   ├── analysis_results_*.json     # Timestamped classical results
+│   ├── all_methods_summary.json    # NEW: Summary of all classical methods
 │   ├── experimental_data.npz
 │   ├── fitted_data.npz
 │   ├── residuals_data.npz
-│   └── c2_heatmaps_*.png          # Method-specific heatmaps
+│   ├── c2_heatmaps_*.png          # Method-specific heatmaps
+│   ├── nelder_mead/                # NEW: Individual method results
+│   │   ├── parameters.json         # Parameters with uncertainties
+│   │   └── fitted_data.npz         # Method-specific fitted data
+│   ├── gurobi/                     # NEW: Gurobi results
+│   │   ├── parameters.json
+│   │   └── fitted_data.npz
+│   └── robust_*/                   # NEW: Robust method results
+│       ├── parameters.json
+│       └── fitted_data.npz
+├── robust/                          # Robust-only optimization outputs
+│   ├── all_robust_methods_summary.json  # NEW: Summary of robust methods
+│   ├── experimental_data.npz
+│   ├── fitted_data.npz
+│   ├── residuals_data.npz
+│   ├── c2_heatmaps_*.png          # Method-specific heatmaps
+│   └── [method_name]/              # NEW: Individual robust method results
+│       ├── parameters.json         # Parameters with uncertainties
+│       └── fitted_data.npz
 ├── mcmc/                           # MCMC method outputs  
 │   ├── mcmc_summary.json
 │   ├── mcmc_trace.nc
@@ -592,8 +689,286 @@ pytest -m benchmark --benchmark-only
 **File Organization:**
 - `homodyne_analysis_results.json`: Summary of all analysis methods (stays in root directory)
 - `analysis_results_*.json`: Timestamped results for classical-only runs (saved to `classical/` subdirectory)
+- **NEW**: Individual method results saved with parameters, uncertainties, and goodness-of-fit metrics
+- **NEW**: `parameters.json` contains fitted parameters with uncertainties, chi-squared values, and convergence information
+- **NEW**: Method-specific directories for detailed analysis of each optimization approach
 - Per-angle chi-squared results are included in the main analysis results JSON files
 - When multiple classical optimization methods are used (e.g., Nelder-Mead and Gurobi), separate heatmap plots are generated for each method
+
+## Common Output Structure for All 5 Classical Methods
+
+Each of the 5 optimization methods (`Nelder-Mead`, `Gurobi`, `Robust-Wasserstein`, `Robust-Scenario`, `Robust-Ellipsoidal`) generates standardized outputs for consistent analysis and comparison.
+
+### Individual Method Directory Structure
+```
+./homodyne_results/classical/
+├── nelder_mead/
+├── gurobi/
+├── robust_wasserstein/
+├── robust_scenario/
+└── robust_ellipsoidal/
+```
+
+### Per-Method Files
+
+Each method directory contains:
+
+#### `parameters.json` - Human-readable parameter results
+```json
+{
+  "method_name": "Nelder-Mead",
+  "method_type": "Classical Optimization",
+  "parameters": {
+    "amplitude": {
+      "value": 1.234,
+      "uncertainty": 0.056,
+      "unit": "arb"
+    },
+    "frequency": {
+      "value": 2.678,
+      "uncertainty": 0.123,
+      "unit": "Hz"
+    },
+    "phase": {
+      "value": 0.789,
+      "uncertainty": 0.034,
+      "unit": "rad"
+    }
+  },
+  "goodness_of_fit": {
+    "chi_squared": 0.523,
+    "degrees_of_freedom": 397,
+    "reduced_chi_squared": 0.00132
+  },
+  "convergence_info": {
+    "success": true,
+    "iterations": 150,
+    "function_evaluations": 280,
+    "message": "Optimization terminated successfully"
+  },
+  "data_info": {
+    "n_data_points": 400,
+    "n_angles": 4,
+    "n_time_points": 100
+  }
+}
+```
+
+#### `fitted_data.npz` - Numerical data archive
+Contains:
+- **`c2_fitted`**: Fitted correlation data `(n_angles, n_t2, n_t1)`
+- **`c2_experimental`**: Original experimental data `(n_angles, n_t2, n_t1)`
+- **`residuals`**: Fitting residuals `(n_angles, n_t2, n_t1)`
+- **`parameters`**: Fitted parameter values
+- **`uncertainties`**: Parameter uncertainties
+- **`chi_squared`**: Chi-squared goodness-of-fit
+- **`t1`**: Time array for first correlation time `(n_t1,)`
+- **`t2`**: Time array for second correlation time `(n_t2,)`
+
+### Method-Specific Characteristics
+
+#### **Nelder-Mead**
+```json
+{
+  "method_name": "Nelder-Mead",
+  "method_type": "Classical Optimization",
+  "convergence_info": {
+    "success": true,
+    "iterations": 150,
+    "function_evaluations": 280,
+    "message": "Optimization terminated successfully",
+    "termination_reason": "ftol achieved"
+  }
+}
+```
+
+#### **Gurobi**
+```json
+{
+  "method_name": "Gurobi",
+  "method_type": "Classical Optimization", 
+  "convergence_info": {
+    "success": true,
+    "iterations": 50,
+    "function_evaluations": 100,
+    "message": "Optimal solution found",
+    "solve_time": 1.23,
+    "solver_status": "OPTIMAL"
+  }
+}
+```
+
+#### **Robust-Wasserstein**
+```json
+{
+  "method_name": "Robust-Wasserstein",
+  "method_type": "Robust Optimization",
+  "robust_specific": {
+    "uncertainty_radius": 0.03,
+    "regularization_alpha": 0.01,
+    "wasserstein_distance": 0.025
+  },
+  "convergence_info": {
+    "success": true,
+    "solve_time": 2.5,
+    "status": "optimal"
+  }
+}
+```
+
+#### **Robust-Scenario**
+```json
+{
+  "method_name": "Robust-Scenario",
+  "method_type": "Robust Optimization",
+  "robust_specific": {
+    "n_scenarios": 50,
+    "worst_case_value": 0.65,
+    "scenario_weights": "uniform"
+  },
+  "convergence_info": {
+    "success": true,
+    "solve_time": 3.2,
+    "status": "optimal"
+  }
+}
+```
+
+#### **Robust-Ellipsoidal**
+```json
+{
+  "method_name": "Robust-Ellipsoidal",
+  "method_type": "Robust Optimization",
+  "robust_specific": {
+    "uncertainty_set": "ellipsoidal",
+    "ellipsoid_radius": 0.04,
+    "confidence_level": 0.95
+  },
+  "convergence_info": {
+    "success": true,
+    "solve_time": 1.8,
+    "status": "optimal"
+  }
+}
+```
+
+### Summary Files
+
+#### `all_methods_summary.json` - Cross-method comparison
+```json
+{
+  "analysis_type": "Classical Optimization",
+  "timestamp": "2025-01-15T10:30:45Z",
+  "methods_analyzed": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
+  "best_method": "Gurobi",
+  "results": {
+    "Nelder-Mead": {
+      "chi_squared": 0.523,
+      "parameters": [1.234, 2.678, 0.789],
+      "success": true
+    },
+    "Gurobi": {
+      "chi_squared": 0.501,
+      "parameters": [1.245, 2.689, 0.785],
+      "success": true
+    },
+    "Robust-Wasserstein": {
+      "chi_squared": 0.534,
+      "parameters": [1.228, 2.665, 0.792],
+      "success": true
+    }
+  }
+}
+```
+
+### Key Differences Between Methods
+
+**Classical Methods (Nelder-Mead, Gurobi)**
+- Point estimates only with deterministic convergence metrics
+- Faster execution with iterations and function evaluations tracking
+- No built-in uncertainty quantification from optimization method
+
+**Robust Methods (Wasserstein, Scenario, Ellipsoidal)**
+- Robust optimization against data uncertainty with worst-case guarantees
+- Additional robust-specific parameters (uncertainty radius, scenarios, confidence levels)
+- Convex optimization solver status codes and solve times
+- Enhanced reliability under data perturbations
+
+## Diagnostic Summary Images Structure
+
+The diagnostic summary images are comprehensive visualizations that combine multiple analysis components into a single figure. Here's what they typically contain:
+
+### 1. Main Diagnostic Summary Plot (`diagnostic_summary.png`)
+
+A **2×3 grid layout** containing:
+
+#### Subplot 1: Method Comparison (Top Left)
+- **Bar chart** comparing chi-squared values across different optimization methods
+- **Y-axis**: Chi-squared values (log scale)
+- **X-axis**: Method names (Nelder-Mead, Gurobi, Robust-Wasserstein, etc.)
+- **Value labels** showing exact chi-squared values in scientific notation
+- **Color coding** for different methods (C0, C1, C2, C3)
+
+#### Subplot 2: Parameter Uncertainties (Top Middle)
+- **Horizontal bar chart** showing parameter uncertainties
+- **Y-axis**: Parameter names (amplitude, frequency, phase, etc.)
+- **X-axis**: Uncertainty values (σ)
+- **Includes grid lines** for better readability
+- Shows **"No uncertainty data available"** if uncertainties aren't computed
+
+#### Subplot 3: MCMC Convergence Diagnostics (Top Right)
+- **Horizontal bar chart** of R̂ (R-hat) values for convergence assessment
+- **Y-axis**: Parameter names
+- **X-axis**: R̂ values (convergence metric)
+- **Color coding**: Green (R̂ < 1.1), Orange (1.1 ≤ R̂ < 1.2), Red (R̂ ≥ 1.2)
+- **Red dashed line** at R̂ = 1.1 (convergence threshold)
+- Shows **"No MCMC convergence diagnostics available"** for classical-only methods
+
+#### Subplot 4: Residuals Distribution Analysis (Bottom, Full Width)
+- **Histogram** of residuals (experimental - theoretical data)
+- **Overlay** of fitted normal distribution curve
+- **Statistics**: Mean (μ) and standard deviation (σ) displayed
+- **X-axis**: Residual values
+- **Y-axis**: Probability density
+- Shows **"No residuals data available"** if data is missing
+
+### 2. Method-Specific Diagnostic Summaries
+
+For each optimization method, individual diagnostic summaries are generated:
+- `nelder_mead_diagnostic_summary.png`
+- `gurobi_diagnostic_summary.png`
+- `robust_wasserstein_diagnostic_summary.png`
+- `robust_scenario_diagnostic_summary.png`
+- `robust_ellipsoidal_diagnostic_summary.png`
+
+### 3. Additional Diagnostic/Visualization Outputs
+
+#### C2 Correlation Heatmaps (`c2_heatmaps_*.png`)
+- **2D heatmaps** showing experimental vs theoretical correlation functions
+- **Individual plots** for each scattering angle (φ = 0°, 45°, 90°, 135°)
+- **Method-specific** versions for each optimization approach
+- **Time axes**: t₁ and t₂ (correlation delay times)
+- **Color mapping**: Viridis colormap showing correlation intensity
+
+#### MCMC-Specific Plots (when applicable)
+- **`trace_plot.png`**: MCMC chain traces for each parameter
+- **`corner_plot.png`**: Parameter posterior distributions and correlations
+
+#### Data Validation Plots (`data_validation_*.png`)
+- **Experimental data validation** plots
+- **Individual plots** for each scattering angle
+- **Full 2D heatmaps** and **cross-sections** of experimental data
+- **Statistical summaries** and **quality metrics**
+
+### Key Features of Diagnostic Summaries:
+
+1. **Adaptive Content**: Shows appropriate placeholders when data is unavailable
+2. **Cross-Method Comparison**: Allows comparison of different optimization approaches
+3. **Quality Assessment**: Provides convergence and fitting quality metrics
+4. **Statistical Analysis**: Includes residuals analysis and uncertainty quantification
+5. **Professional Formatting**: Consistent styling with grid lines, proper labels, and legends
+
+These diagnostic summaries provide researchers with a comprehensive overview of their analysis quality, method performance, and parameter uncertainties all in a single visualization.
 
 ## Theoretical Background
 

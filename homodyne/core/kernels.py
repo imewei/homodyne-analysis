@@ -15,6 +15,11 @@ from functools import wraps
 # Numba imports with fallbacks
 try:
     from numba import jit, njit, prange, float64, int64, types
+    try:
+        from numba.types import Tuple  # type: ignore
+    except (ImportError, AttributeError):
+        # Fallback for older numba versions or different import paths
+        Tuple = getattr(types, 'Tuple', types.UniTuple)  # type: ignore
 
     NUMBA_AVAILABLE = True
 except ImportError:
@@ -36,7 +41,7 @@ except ImportError:
         def __call__(self, *args, **kwargs):
             return self
 
-    float64 = int64 = DummyType()
+    float64 = int64 = types = Tuple = DummyType()
 
 
 @njit(float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True)
@@ -617,8 +622,6 @@ def compute_chi_squared_with_sigma_numba(observed, fitted, sigma):
 
 
 @njit(
-    types.Tuple((float64[:], float64[:]))(float64[:, :], float64[:, :]),
-    parallel=False,
     cache=True,
     fastmath=True,
     nogil=True,
@@ -643,8 +646,8 @@ def solve_least_squares_batch_numba(theory_batch, exp_batch):
         offset_batch : shape (n_angles,) - offset values
     """
     n_angles, n_data = theory_batch.shape
-    contrast_batch = np.zeros(n_angles, dtype=float64)
-    offset_batch = np.zeros(n_angles, dtype=float64)
+    contrast_batch = np.zeros(n_angles, dtype=np.float64)
+    offset_batch = np.zeros(n_angles, dtype=np.float64)
 
     for i in range(n_angles):
         theory = theory_batch[i]
@@ -712,7 +715,7 @@ def compute_chi_squared_batch_numba(
         Chi-squared values for each angle
     """
     n_angles, n_data = theory_batch.shape
-    chi2_batch = np.zeros(n_angles, dtype=float64)
+    chi2_batch = np.zeros(n_angles, dtype=np.float64)
 
     for i in range(n_angles):
         theory = theory_batch[i]
@@ -844,7 +847,8 @@ def get_kernel_performance_config():
     """
     import os
 
-    config = {
+    from typing import Dict, Any
+    config: Dict[str, Any] = {
         "numba_available": NUMBA_AVAILABLE,
         "parallel_enabled": True,
         "fastmath_enabled": True,
@@ -859,8 +863,9 @@ def get_kernel_performance_config():
     else:
         config["jit_disabled"] = False
 
-    if os.environ.get("NUMBA_NUM_THREADS"):
-        config["num_threads"] = int(os.environ.get("NUMBA_NUM_THREADS"))
+    num_threads_env = os.environ.get("NUMBA_NUM_THREADS")
+    if num_threads_env:
+        config["num_threads"] = int(num_threads_env)
     else:
         import multiprocessing
 

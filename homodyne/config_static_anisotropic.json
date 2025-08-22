@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Static Anisotropic Mode Configuration - 3 parameter optimization with angle filtering",
-    "config_version": "0.6.4",
+    "config_version": "0.6.5.dev0",
     "description": "Static anisotropic homodyne scattering analysis - 3-parameter model with angular dependence",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "analysis_mode": "static_anisotropic",
@@ -71,7 +71,12 @@
       "alpha": "Power-law exponent for D(t) evolution",
       "D_offset": "Baseline diffusion coefficient"
     },
-    "active_parameters": ["D0", "alpha", "D_offset"]
+    "active_parameters": ["D0", "alpha", "D_offset"],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s"
+    }
   },
   
   "optimization_config": {
@@ -89,8 +94,13 @@
       "_fallback_note": "Use all angles if no angles found in target ranges"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
       "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "_usage_flags": {
+        "--method classical": "Runs all methods above in sequence, selects best result",
+        "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
+        "--method all": "Runs classical (including robust) + MCMC for complete analysis"
+      },
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
         "Nelder-Mead": {

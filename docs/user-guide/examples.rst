@@ -443,6 +443,143 @@ Starting from version 6.0, the analysis results are organized into method-specif
 - **Fitted data calculation**: Both methods use least squares scaling optimization (``fitted = contrast * theory + offset``)
 - **Plotting behavior**: The ``--plot-experimental-data`` flag now skips all fitting and exits immediately after plotting
 
+Diagnostic Summary Visualizations
+----------------------------------
+
+The package automatically generates comprehensive diagnostic summary plots that combine multiple analysis components into a single visualization. These provide researchers with immediate feedback on analysis quality and method performance.
+
+Main Diagnostic Summary Plot
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each analysis generates a ``diagnostic_summary.png`` file with a **2×3 grid layout** containing:
+
+**Subplot 1: Method Comparison (Top Left)**
+  - Bar chart comparing χ² values across optimization methods
+  - Log-scale Y-axis with scientific notation value labels
+  - Color-coded methods (Nelder-Mead, Gurobi, Robust-Wasserstein, etc.)
+
+**Subplot 2: Parameter Uncertainties (Top Middle)**
+  - Horizontal bar chart of parameter uncertainties (σ)
+  - Parameter names on Y-axis (amplitude, frequency, phase, etc.)
+  - Grid lines for enhanced readability
+  - Shows placeholder if uncertainties unavailable
+
+**Subplot 3: MCMC Convergence Diagnostics (Top Right)**
+  - R̂ (R-hat) convergence assessment for MCMC methods
+  - Color coding: Green (R̂ < 1.1), Orange (1.1 ≤ R̂ < 1.2), Red (R̂ ≥ 1.2)
+  - Dashed red line at R̂ = 1.1 convergence threshold
+  - Shows placeholder for classical-only methods
+
+**Subplot 4: Residuals Distribution Analysis (Bottom, Full Width)**
+  - Histogram of residuals (experimental - theoretical)
+  - Overlaid normal distribution curve for comparison
+  - Statistical summary with mean (μ) and standard deviation (σ)
+  - Shows placeholder if residuals data unavailable
+
+Method-Specific Diagnostic Summaries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Individual diagnostic summaries are generated for each optimization method:
+
+- ``nelder_mead_diagnostic_summary.png``
+- ``gurobi_diagnostic_summary.png`` 
+- ``robust_wasserstein_diagnostic_summary.png``
+- ``robust_scenario_diagnostic_summary.png``
+- ``robust_ellipsoidal_diagnostic_summary.png``
+
+Additional Visualization Outputs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**C2 Correlation Heatmaps** (``c2_heatmaps_*.png``)
+  - 2D heatmaps of experimental vs theoretical correlation functions
+  - Individual plots for each scattering angle (φ = 0°, 45°, 90°, 135°)
+  - Method-specific versions for each optimization approach
+  - Time axes (t₁, t₂) showing correlation delay times
+  - Viridis colormap for correlation intensity visualization
+
+**MCMC-Specific Plots** (when applicable)
+  - ``trace_plot.png``: MCMC chain traces for convergence assessment
+  - ``corner_plot.png``: Parameter posterior distributions and correlations
+
+**Data Validation Plots** (``data_validation_*.png``)
+  - Experimental data quality assessment plots
+  - Individual plots for each scattering angle
+  - 2D heatmaps and cross-sections of raw experimental data
+  - Statistical summaries and data quality metrics
+
+Key Features
+~~~~~~~~~~~~
+
+1. **Adaptive Content**: Appropriate placeholders shown when data unavailable
+2. **Cross-Method Comparison**: Easy comparison of different optimization approaches  
+3. **Quality Assessment**: Convergence and fitting quality metrics at a glance
+4. **Statistical Analysis**: Residuals analysis and uncertainty quantification
+5. **Professional Formatting**: Consistent styling with grid lines, proper labels, and legends
+
+These diagnostic summaries provide immediate visual feedback on analysis quality, method performance, and parameter reliability, enabling researchers to quickly assess their results and identify potential issues.
+
+Common Output Structure for All 5 Classical Methods
+----------------------------------------------------
+
+Each of the 5 optimization methods (``Nelder-Mead``, ``Gurobi``, ``Robust-Wasserstein``, ``Robust-Scenario``, ``Robust-Ellipsoidal``) generates standardized outputs for consistent analysis and comparison.
+
+Individual Method Directory Structure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+   ./homodyne_results/classical/
+   ├── nelder_mead/
+   ├── gurobi/
+   ├── robust_wasserstein/
+   ├── robust_scenario/
+   └── robust_ellipsoidal/
+
+Per-Method Files
+~~~~~~~~~~~~~~~~
+
+Each method directory contains two primary files:
+
+**parameters.json** - Human-readable parameter results
+  Contains fitted parameter values with uncertainties, goodness-of-fit metrics (chi-squared, degrees of freedom), convergence information (iterations, function evaluations, termination status), and data statistics.
+
+**fitted_data.npz** - Numerical data archive
+  Contains fitted correlation data, original experimental data, fitting residuals, parameter values and uncertainties, chi-squared values, and time arrays (t₁, t₂) with proper dt-based discretization.
+
+Method-Specific Characteristics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Classical Methods (Nelder-Mead, Gurobi)**
+  - Point estimates only with deterministic convergence metrics
+  - Faster execution with iterations and function evaluations tracking  
+  - Termination reasons and solver-specific status information
+  - No built-in uncertainty quantification from optimization method
+
+**Robust Methods (Wasserstein, Scenario, Ellipsoidal)**
+  - Robust optimization against data uncertainty with worst-case guarantees
+  - Additional robust-specific parameters (uncertainty radius, scenarios, confidence levels)
+  - Convex optimization solver status codes and solve times
+  - Enhanced reliability under data perturbations
+
+Cross-Method Comparison
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``all_methods_summary.json`` file provides easy comparison across all methods with:
+  - Analysis timestamp and methods analyzed
+  - Best method selection based on chi-squared values
+  - Consolidated results showing parameters and goodness-of-fit for each method
+  - Success status for each optimization approach
+
+Data Array Structure
+~~~~~~~~~~~~~~~~~~~~
+
+All methods use consistent data array dimensions:
+  - **Correlation data**: ``(n_angles, n_t2, n_t1)`` format
+  - **Time arrays**: ``t1 = np.arange(n_t1) * dt`` and ``t2 = np.arange(n_t2) * dt``
+  - **Individual angles**: ``(n_t2, n_t1)`` where rows=t₂, columns=t₁
+
+This standardized structure enables direct comparison of optimization performance and facilitates automated analysis workflows across different methods.
+
 MCMC Prior Distributions
 ------------------------
 

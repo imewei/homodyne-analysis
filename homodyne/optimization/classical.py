@@ -40,6 +40,15 @@ except ImportError:
     gp = None  # type: ignore
     GRB = None  # type: ignore
 
+# Import robust optimization with graceful degradation
+try:
+    from .robust import RobustHomodyneOptimizer, create_robust_optimizer  # type: ignore
+    ROBUST_OPTIMIZATION_AVAILABLE = True
+except ImportError:
+    RobustHomodyneOptimizer = None  # type: ignore
+    create_robust_optimizer = None  # type: ignore
+    ROBUST_OPTIMIZATION_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # Global optimization counter for tracking iterations
@@ -342,6 +351,8 @@ class ClassicalOptimizer:
         methods = ["Nelder-Mead"]  # Nelder-Mead simplex algorithm
         if GUROBI_AVAILABLE:
             methods.append("Gurobi")  # Gurobi quadratic programming solver
+        if ROBUST_OPTIMIZATION_AVAILABLE:
+            methods.extend(["Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"])
         return methods
 
     def validate_method_compatibility(self, method: str, has_bounds: bool = True) -> bool:
@@ -525,6 +536,10 @@ class ClassicalOptimizer:
             if method == "Gurobi":
                 return self._run_gurobi_optimization(
                     objective_func, initial_parameters, bounds, method_options
+                )
+            elif method.startswith("Robust-"):
+                return self._run_robust_optimization(
+                    method, objective_func, initial_parameters, bounds, method_options
                 )
             else:
                 # Filter out comment fields (keys starting with '_' and ending with '_note')
@@ -764,6 +779,106 @@ class ClassicalOptimizer:
                         return False, result
                         
         except Exception as e:
+            return False, e
+            
+    def _run_robust_optimization(
+        self,
+        method: str,
+        objective_func,
+        initial_parameters: np.ndarray,
+        bounds: Optional[List[Tuple[float, float]]] = None,  # Used by robust optimizer internally
+        method_options: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[bool, Union[optimize.OptimizeResult, Exception]]:
+        """
+        Run robust optimization using CVXPY + Gurobi.
+        
+        Parameters
+        ----------
+        method : str
+            Robust optimization method ("Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal")
+        objective_func : callable
+            Chi-squared objective function to minimize
+        initial_parameters : np.ndarray
+            Starting parameters
+        bounds : List[Tuple[float, float]], optional
+            Parameter bounds for optimization
+        method_options : Dict[str, Any], optional
+            Robust optimization specific options
+            
+        Returns
+        -------
+        Tuple[bool, Union[OptimizeResult, Exception]]
+            (success, result_or_exception)
+        """
+        try:
+            if not ROBUST_OPTIMIZATION_AVAILABLE or create_robust_optimizer is None:
+                raise ImportError("Robust optimization not available. Please install cvxpy.")
+                
+            # Create robust optimizer instance
+            robust_optimizer = create_robust_optimizer(self.core, self.config)
+            
+            # Extract phi_angles and c2_experimental from the objective function context
+            # This is a limitation - we need these for robust optimization
+            # For now, we'll extract them from the core analysis
+            phi_angles = getattr(self.core, 'phi_angles', None)
+            c2_experimental = getattr(self.core, 'c2_experimental', None)
+            
+            if phi_angles is None or c2_experimental is None:
+                raise ValueError(
+                    "Robust optimization requires phi_angles and c2_experimental "
+                    "to be available in the analysis core"
+                )
+            
+            # Map method names to robust optimization types
+            method_mapping = {
+                "Robust-Wasserstein": "wasserstein",
+                "Robust-Scenario": "scenario", 
+                "Robust-Ellipsoidal": "ellipsoidal"
+            }
+            
+            robust_method = method_mapping.get(method)
+            if robust_method is None:
+                raise ValueError(f"Unknown robust optimization method: {method}")
+            
+            # Run robust optimization
+            optimal_params, info = robust_optimizer.run_robust_optimization(
+                initial_parameters=initial_parameters,
+                phi_angles=phi_angles,
+                c2_experimental=c2_experimental,
+                method=robust_method,
+                **(method_options or {})
+            )
+            
+            if optimal_params is not None:
+                # Create OptimizeResult compatible object
+                result = optimize.OptimizeResult(
+                    x=optimal_params,
+                    fun=info.get("final_chi_squared", objective_func(optimal_params)),
+                    success=True,
+                    status=info.get("status", "success"),
+                    message=f"Robust optimization ({robust_method}) converged",
+                    nit=info.get("n_iterations"),
+                    nfev=info.get("function_evaluations", None),
+                    method=f"Robust-{robust_method.capitalize()}"
+                )
+                
+                return True, result
+            else:
+                # Optimization failed
+                error_msg = info.get("error", f"Robust optimization ({robust_method}) failed")
+                result = optimize.OptimizeResult(
+                    x=initial_parameters,
+                    fun=float('inf'),
+                    success=False,
+                    status=info.get("status", "failed"),
+                    message=error_msg,
+                    method=f"Robust-{robust_method.capitalize()}"
+                )
+                
+                return False, result
+                
+        except Exception as e:
+            logger.error(f"Robust optimization error: {e}")
             return False, e
 
     def analyze_optimization_results(

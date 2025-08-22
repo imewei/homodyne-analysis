@@ -1335,6 +1335,16 @@ def plot_diagnostic_summary(
 ) -> bool:
     """
     Create a comprehensive diagnostic summary plot combining multiple visualizations.
+    
+    Generates a 2×3 grid layout containing:
+    - Method comparison with chi-squared values
+    - Parameter uncertainties visualization
+    - MCMC convergence diagnostics (R-hat values)
+    - Residuals distribution analysis with normal distribution overlay
+    
+    Features adaptive content with appropriate placeholders when data is unavailable,
+    professional formatting with consistent styling, and cross-method comparison
+    capabilities for quality assessment.
 
     Args:
         results (Dict[str, Any]): Complete analysis results dictionary

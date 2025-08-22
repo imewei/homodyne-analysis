@@ -379,8 +379,18 @@ def optimize_numerical_environment() -> Dict[str, str]:
         "MKL_NUM_THREADS": str(n_cores),
         "NUMEXPR_NUM_THREADS": str(n_cores),
         "OMP_NUM_THREADS": str(n_cores),
-        "NUMBA_NUM_THREADS": str(n_cores),
     }
+    
+    # Never modify NUMBA_NUM_THREADS if it's already set to avoid
+    # "Cannot set NUMBA_NUM_THREADS to a different value" errors.
+    # This is critical for test stability and prevents runtime errors.
+    current_numba_threads = os.environ.get("NUMBA_NUM_THREADS")
+    if current_numba_threads is None:
+        # Only set if not already configured
+        threading_vars["NUMBA_NUM_THREADS"] = str(n_cores)
+    else:
+        # Log that we're respecting the existing setting
+        logger.debug(f"Preserving existing NUMBA_NUM_THREADS={current_numba_threads} (not changing to {n_cores})")
 
     for var, value in threading_vars.items():
         if var not in os.environ:
@@ -1014,6 +1024,7 @@ def performance_monitor(
             start_time = time.perf_counter() if monitor_time else None
             initial_memory = None
 
+            process = None
             if monitor_memory:
                 try:
                     import psutil
@@ -1048,7 +1059,7 @@ def performance_monitor(
                             f"Performance monitor: {func_name} took {execution_time:.3f}s"
                         )
 
-                if monitor_memory and initial_memory is not None:
+                if monitor_memory and initial_memory is not None and process is not None:
                     try:
                         final_memory = process.memory_info().rss / 1024 / 1024
                         memory_diff = final_memory - initial_memory

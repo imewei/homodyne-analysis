@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Laminar Flow Configuration - 7 parameter optimization for flow analysis",
-    "config_version": "0.6.4",
+    "config_version": "0.6.5.dev0",
     "description": "Laminar flow homodyne scattering analysis - comprehensive 7-parameter nonequilibrium model",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (full flow model)",
     "analysis_mode": "laminar_flow",
@@ -75,7 +75,16 @@
       "gamma_dot_t_offset": "Baseline shear rate",
       "phi0": "Angular offset between flow and scattering"
     },
-    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
+    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s",
+      "gamma_dot_t0": "s⁻¹",
+      "beta": "dimensionless",
+      "gamma_dot_t_offset": "s⁻¹",
+      "phi0": "degrees"
+    }
   },
   
   "optimization_config": {
@@ -92,8 +101,13 @@
       "_performance_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
       "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "_usage_flags": {
+        "--method classical": "Runs all methods above in sequence, selects best result",
+        "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
+        "--method all": "Runs classical (including robust) + MCMC for complete analysis"
+      },
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
         "Nelder-Mead": {

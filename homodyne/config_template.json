@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Project metadata and version information",
-    "config_version": "0.6.4",
+    "config_version": "0.6.5.dev0",
     "description": "Homodyne Scattering Analysis Configuration - XPCS under Nonequilibrium Conditions",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "created_date": "YYYY-MM-DD",
@@ -78,7 +78,16 @@
       "gamma_dot_t_offset": "Baseline shear rate",
       "phi0": "Angular offset between flow and scattering"
     },
-    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
+    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s",
+      "gamma_dot_t0": "s⁻¹",
+      "beta": "dimensionless",
+      "gamma_dot_t_offset": "s⁻¹",
+      "phi0": "degrees"
+    }
   },
   
   "optimization_config": {
@@ -92,9 +101,17 @@
       "fallback_to_all_angles": true
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
-      "_methods_note": "Available: Nelder-Mead (always), Gurobi (if licensed)",
+      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
+      "_methods_note": "Available: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
+      "_usage_flags": {
+        "--method classical": "Runs all methods listed above in sequence, selects best result",
+        "--method robust": "Runs ONLY Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+        "--method mcmc": "Runs Bayesian MCMC sampling for uncertainty quantification",
+        "--method all": "Runs classical methods (including robust) followed by MCMC"
+      },
       "_gurobi_availability": "Gurobi provides quadratic programming alternative. Requires license: pip install gurobipy",
+      "_robust_availability": "Robust methods require CVXPY: pip install cvxpy. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+      "_robust_flag_note": "Use --method robust to run ONLY robust methods for noise-resistant parameter estimation",
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 5000,
@@ -142,6 +159,59 @@
         "prior_mu": 1.0,
         "prior_sigma": 0.2,
         "type": "TruncatedNormal"
+      }
+    },
+    "robust_optimization": {
+      "_comment": "Robust optimization settings using CVXPY + Gurobi",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # Run only robust methods",
+        "python run_homodyne.py --method robust --static-isotropic  # Robust in static mode",
+        "python run_homodyne.py --method classical  # Run all methods including robust",
+        "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
+      ],
+      "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
+      "enabled": true,
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
+      "uncertainty_radius": 0.05,
+      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set (0.01-0.1 typical)",
+      "n_scenarios": 50,
+      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization",
+      "regularization_alpha": 0.01,
+      "_regularization_alpha_note": "L2 regularization strength for parameter stability",
+      "regularization_beta": 0.001,
+      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
+      "solver_settings": {
+        "Method": 2,
+        "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex",
+        "CrossOver": 0,
+        "_CrossOver_note": "Skip crossover for numerical stability",
+        "BarHomogeneous": 1,
+        "_BarHomogeneous_note": "Use homogeneous barrier method",
+        "TimeLimit": 600,
+        "_TimeLimit_note": "Maximum solve time in seconds",
+        "MIPGap": 1e-6,
+        "_MIPGap_note": "Optimality gap tolerance",
+        "NumericFocus": 3,
+        "_NumericFocus_note": "Maximum numerical stability focus",
+        "OutputFlag": 0,
+        "_OutputFlag_note": "Suppress solver output"
+      },
+      "method_options": {
+        "wasserstein": {
+          "uncertainty_radius": 0.05,
+          "regularization_alpha": 0.01
+        },
+        "scenario": {
+          "n_scenarios": 50,
+          "bootstrap_method": "residual",
+          "parallel_scenarios": true
+        },
+        "ellipsoidal": {
+          "gamma": 0.1,
+          "l1_regularization": 0.001,
+          "l2_regularization": 0.01
+        }
       }
     }
   },

@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Robust Optimization Framework**: Complete implementation of robust optimization methods for noise-resistant parameter estimation
+  - Three robust methods: Robust-Wasserstein (DRO), Robust-Scenario (Bootstrap), Robust-Ellipsoidal (Bounded uncertainty)
+  - Integration with CVXPY + Gurobi for convex optimization
+  - Dedicated `--method robust` command-line flag for robust-only analysis
+  - Comprehensive test coverage with 29 unit tests and 15 performance benchmarks
+- **NEW Command-Line Interface**: Added `--method robust` flag for dedicated robust optimization
+  - Runs only robust methods (Wasserstein, Scenario, Ellipsoidal) 
+  - Saves results to dedicated `/robust/` output directory
+  - Method-specific plotting and comparison features
+- **Enhanced Configuration Support**: Updated all configuration files with robust optimization settings
+  - Usage examples and method selection guidance
+  - Robust-only optimization recommendations
+  - Conservative first-run parameter settings
+- **Comprehensive Documentation**: Updated README.md, ROBUST_OPTIMIZATION_QUICKSTART.md with new features
+  - Dedicated Robust Optimization section in main documentation
+  - When-to-use guidance for different optimization methods
+  - Dependencies and installation instructions for robust optimization
+- **Individual Method Results Saving**: NEW comprehensive saving of analysis results for all optimization methods
+  - Saves fitted parameters with statistical uncertainties for each method individually
+  - Method-specific directories (nelder_mead/, gurobi/, robust_wasserstein/, etc.)
+  - JSON files with parameters, uncertainties, goodness-of-fit metrics, and convergence information
+  - NumPy archives with full numerical data for each method
+  - Summary files for easy method comparison (all_methods_summary.json, all_robust_methods_summary.json)
+- **Comprehensive Diagnostic Summary Visualization**: NEW advanced diagnostic plots for analysis quality assessment
+  - 2×3 grid layout combining method comparison, parameter uncertainties, convergence diagnostics, and residuals analysis
+  - Method-specific diagnostic summaries for each optimization approach (nelder_mead_diagnostic_summary.png, etc.)
+  - Cross-method comparison with chi-squared values, parameter uncertainties, and MCMC convergence metrics
+  - Residuals distribution analysis with normal distribution overlay and statistical summaries
+  - Adaptive content showing appropriate placeholders when data is unavailable
+  - Professional formatting with consistent styling, grid lines, and color coding
+- **Standardized Output Structure Documentation**: Comprehensive documentation of all 5 classical method outputs
+  - Detailed JSON structure specifications for parameters.json files with method-specific characteristics
+  - NumPy archive (fitted_data.npz) contents documentation with proper array dimensions
+  - Method-specific convergence information (Classical: iterations/evaluations, Robust: solve times/status)
+  - Cross-method comparison capabilities with all_methods_summary.json structure
+  - Data array dimension specifications: (n_angles, n_t2, n_t1) with proper t1/t2 time discretization
+
+### Changed
+- **Method Selection**: Classical optimization now includes robust methods by default
+- **Output Structure**: Robust methods create separate output directories for cleaner organization
+- **Help Documentation**: Updated command-line help with robust method examples and usage
+- **Configuration Files**: Added parameter_units dictionary to all configuration files for better metadata support
+- **Package Documentation**: Updated __init__.py docstring to reflect robust optimization capabilities
+
 ## [0.6.4] - 2025-08-22
 
 ### Added

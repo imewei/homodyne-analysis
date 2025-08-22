@@ -1,9 +1,11 @@
 {
   "metadata": {
     "_comment": "User Custom Configuration - Static Isotropic Mode",
-    "config_version": "0.6.4",
+    "config_version": "0.6.5.dev0",
     "description": "Custom static isotropic configuration for user experiments",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
+    "created_date": "2025-08-20",
+    "updated_date": "2025-01-22",
     "analysis_mode": "static_isotropic",
     "parameters_optimized": [
       "D0",
@@ -11,7 +13,7 @@
       "D_offset"
     ],
     "user_customized": true,
-    "script_compatibility": "homodyne v0.6.4"
+    "script_compatibility": "homodyne v0.6.5.dev0"
   },
   "experimental_data": {
     "_comment": "User's experimental data configuration",
@@ -91,7 +93,12 @@
       "D0",
       "alpha",
       "D_offset"
-    ]
+    ],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s"
+    }
   },
   "optimization_config": {
     "_comment": "Optimization settings for user's static isotropic analysis",
@@ -104,10 +111,20 @@
     "classical_optimization": {
       "methods": [
         "Nelder-Mead",
-        "Gurobi"
+        "Gurobi",
+        "Robust-Wasserstein",
+        "Robust-Scenario",
+        "Robust-Ellipsoidal"
       ],
-      "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "_methods_note": "Available methods: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
+      "_usage_flags": {
+        "--method classical": "Runs all methods above in sequence, selects best result",
+        "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
+        "--method all": "Runs classical (including robust) + MCMC for complete analysis"
+      },
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
+      "_robust_availability": "Robust optimization methods require CVXPY (pip install cvxpy). Provides measurement noise resistance. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+      "_robust_flag_note": "NEW: Use --method robust to run ONLY robust methods for dedicated noise-resistant estimation",
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 5000,
@@ -135,6 +152,87 @@
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
+    },
+    "robust_optimization": {
+      "_comment": "Robust optimization settings using CVXPY + Gurobi for measurement noise resistance",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # NEW: Run only robust methods",
+        "python run_homodyne.py --method robust --static-isotropic  # Robust in static mode",
+        "python run_homodyne.py --method classical  # Run all methods including robust"
+      ],
+      "_robust_flag_benefits": "NEW --method robust flag runs ONLY robust methods for dedicated noise-resistant estimation",
+      "enabled": true,
+      "_enabled_note": "Set to false to disable robust optimization methods",
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Primary method: wasserstein (DRO), scenario (bootstrap), ellipsoidal (bounded uncertainty)",
+      "uncertainty_radius": 0.03,
+      "_uncertainty_radius_note": "Conservative 3% uncertainty for first run - adjust based on data quality (0.01-0.1 typical)",
+      "n_scenarios": 30,
+      "_n_scenarios_note": "Moderate scenario count for balanced performance vs robustness (20-50 recommended)",
+      "regularization_alpha": 0.01,
+      "_regularization_alpha_note": "L2 regularization for parameter stability - higher values = more conservative",
+      "regularization_beta": 0.001,
+      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations - promotes simple solutions",
+      "solver_settings": {
+        "_comment": "Gurobi solver configuration optimized for XPCS problems",
+        "Method": 2,
+        "_Method_note": "Barrier method (2) recommended for robust QP/SOCP problems",
+        "CrossOver": 0,
+        "_CrossOver_note": "Skip crossover for numerical stability with experimental data",
+        "BarHomogeneous": 1,
+        "_BarHomogeneous_note": "Use homogeneous barrier method for better convergence",
+        "TimeLimit": 300,
+        "_TimeLimit_note": "5 minute limit - sufficient for 3-parameter static problems",
+        "MIPGap": 1e-6,
+        "_MIPGap_note": "High precision tolerance for accurate parameter estimation",
+        "NumericFocus": 3,
+        "_NumericFocus_note": "Maximum numerical stability focus for experimental data",
+        "OutputFlag": 0,
+        "_OutputFlag_note": "Silent mode - change to 1 for debug output"
+      },
+      "method_options": {
+        "_comment": "Method-specific parameters for different robust optimization approaches",
+        "wasserstein": {
+          "_description": "Distributionally Robust Optimization with Wasserstein uncertainty sets",
+          "uncertainty_radius": 0.03,
+          "_uncertainty_radius_note": "Lower radius for initial testing - provides theoretical robustness guarantees",
+          "regularization_alpha": 0.01,
+          "_advantages": "Theoretical guarantees, handles measurement noise well, smooth convergence",
+          "_best_for": "Noisy experimental data, when measurement uncertainty is well-characterized"
+        },
+        "scenario": {
+          "_description": "Scenario-based robust optimization using bootstrap resampling",
+          "n_scenarios": 30,
+          "_n_scenarios_note": "Moderate count for first run - increase for higher precision",
+          "bootstrap_method": "residual",
+          "_bootstrap_method_note": "Resample from correlation function residuals",
+          "parallel_scenarios": true,
+          "_advantages": "Outlier resistance, computationally intuitive, handles model misspecification",
+          "_best_for": "Data with outliers, when correlation function model may be approximate"
+        },
+        "ellipsoidal": {
+          "_description": "Ellipsoidal uncertainty sets for bounded data uncertainty",
+          "gamma": 0.05,
+          "_gamma_note": "Uncertainty bound as fraction of data norm - conservative for first run",
+          "l1_regularization": 0.001,
+          "l2_regularization": 0.01,
+          "_advantages": "Bounded uncertainty, efficient computation, parameter sparsity control",
+          "_best_for": "Well-characterized noise levels, when uncertainty bounds are known"
+        }
+      },
+      "_first_run_recommendation": "Start with wasserstein method for theoretical guarantees and smooth convergence",
+      "_performance_note": "Robust methods typically 2-5x slower than classical but provide uncertainty resistance",
+      "_requirements": "Requires CVXPY (pip install cvxpy). Gurobi license recommended for best performance.",
+      "_robust_only_recommendations": {
+        "when_to_use_robust_flag": "Use --method robust when you specifically want noise-resistant estimation without classical methods",
+        "optimal_settings_for_robust_only": {
+          "uncertainty_radius": "0.05-0.08 for noisy data, 0.03 for clean data",
+          "n_scenarios": "30-50 for balanced performance, increase for higher precision",
+          "time_limit": "5-10 minutes sufficient for 3-parameter problems"
+        },
+        "expected_output": "Results saved to /robust/ directory with method-specific plots",
+        "comparison_strategy": "All three robust methods run, best chi-squared selected automatically"
+      }
     },
     "mcmc_sampling": {
       "enabled": true,
