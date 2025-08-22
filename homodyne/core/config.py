@@ -24,7 +24,7 @@ Configuration Structure:
 - performance_settings: Computational optimization flags
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 import json

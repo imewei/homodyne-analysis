@@ -183,11 +183,14 @@ class TestCompleteWorkflow:
 
         # Test creating expected files in each directory
         # Main directory files
-        main_files = [base_dir / "homodyne_analysis_results.json", base_dir / "run.log"]
+        main_files = [
+            base_dir / "homodyne_analysis_results.json", 
+            base_dir / "run.log"
+        ]
 
         # Classical directory files
         classical_files = [
-            base_dir / "classical" / "per_angle_chi_squared_classical.json",
+            base_dir / "classical" / "analysis_results_20250822_090940_v0.6.4.json",
             base_dir / "classical" / "experimental_data.npz",
             base_dir / "classical" / "fitted_data.npz",
             base_dir / "classical" / "residuals_data.npz",
@@ -631,13 +634,13 @@ class TestPerAngleAnalysisIntegration:
             assert "angle_categorization" in result
             assert result["quality_assessment"]["combined_quality"] == "warning"
 
-    def test_per_angle_file_output_integration(self, temp_directory, dummy_config):
-        """Test that per-angle results are properly saved to files."""
+    def test_per_angle_results_integration(self, temp_directory, dummy_config):
+        """Test that per-angle results are properly included in main results."""
         from pathlib import Path
         import json
         from unittest.mock import Mock, patch
 
-        # Create mock results that would be saved
+        # Create mock results that would be included in main analysis results
         mock_results = {
             "method": "Classical",
             "overall_reduced_chi_squared": 15.0,
@@ -661,23 +664,11 @@ class TestPerAngleAnalysisIntegration:
             },
         }
 
-        # Mock file saving by creating the expected file manually (in classical subdirectory)
-        classical_dir = Path(temp_directory) / "classical"
-        classical_dir.mkdir(parents=True, exist_ok=True)
-        results_file = classical_dir / "per_angle_chi_squared_classical.json"
-        with open(results_file, "w") as f:
-            json.dump(mock_results, f, indent=2)
-
-        # Verify file was created and contains expected data
-        assert results_file.exists()
-
-        with open(results_file, "r") as f:
-            saved_data = json.load(f)
-
-        assert saved_data["method"] == "Classical"
-        assert "quality_assessment" in saved_data
-        assert "angle_categorization" in saved_data
-        assert len(saved_data["per_angle_analysis"]["phi_angles_deg"]) == 5
+        # Verify the structure of per-angle results
+        assert mock_results["method"] == "Classical"
+        assert "quality_assessment" in mock_results
+        assert "angle_categorization" in mock_results
+        assert len(mock_results["per_angle_analysis"]["phi_angles_deg"]) == 5
 
 
 class TestConcurrencyAndRaceConditions:

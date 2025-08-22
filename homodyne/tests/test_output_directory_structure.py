@@ -94,7 +94,7 @@ class TestOutputDirectoryStructure:
             "homodyne_analysis_results.json": "file",
             "run.log": "file",
             "classical": {
-                "per_angle_chi_squared_classical.json": "file",
+                "analysis_results_20250822_090940_v0.6.4.json": "file",
                 "experimental_data.npz": "file",
                 "fitted_data.npz": "file",
                 "residuals_data.npz": "file",
@@ -125,6 +125,7 @@ class TestOutputDirectoryStructure:
         assert base_dir.exists()
         assert (base_dir / "homodyne_analysis_results.json").exists()
         assert (base_dir / "classical").is_dir()
+        assert (base_dir / "classical" / "analysis_results_20250822_090940_v0.6.4.json").exists()
         assert (base_dir / "exp_data").is_dir()
         assert (base_dir / "classical" / "experimental_data.npz").exists()
         assert (base_dir / "classical" / "fitted_data.npz").exists()
@@ -534,7 +535,7 @@ class TestMCMCOutputDirectoryStructure:
             "homodyne_analysis_results.json": "file",
             "run.log": "file",
             "classical": {
-                "per_angle_chi_squared_classical.json": "file",
+                "analysis_results_20250822_090940_v0.6.4.json": "file",
                 "experimental_data.npz": "file",
                 "fitted_data.npz": "file",
                 "residuals_data.npz": "file",
@@ -575,6 +576,7 @@ class TestMCMCOutputDirectoryStructure:
         assert base_dir.exists()
         assert (base_dir / "homodyne_analysis_results.json").exists()
         assert (base_dir / "classical").is_dir()
+        assert (base_dir / "classical" / "analysis_results_20250822_090940_v0.6.4.json").exists()
         assert (base_dir / "mcmc").is_dir()
         assert (base_dir / "exp_data").is_dir()
 

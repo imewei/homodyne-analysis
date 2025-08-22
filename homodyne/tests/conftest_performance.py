@@ -6,7 +6,7 @@ This module provides shared fixtures and configuration for performance testing.
 It extends the main conftest.py with performance-specific utilities.
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 import pytest

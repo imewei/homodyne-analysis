@@ -18,7 +18,7 @@ For detailed performance analysis:
     pytest -m performance --benchmark-only
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 import pytest

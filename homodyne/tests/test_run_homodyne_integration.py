@@ -107,7 +107,7 @@ class TestRunHomodyneIntegration:
         results_dir = temp_directory / "homodyne_results"
         results_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create mock main results file
+        # Create mock main results file (homodyne_analysis_results.json stays in root)
         results_file = results_dir / "homodyne_analysis_results.json"
 
         mock_results = {
@@ -120,7 +120,7 @@ class TestRunHomodyneIntegration:
         with open(results_file, "w") as f:
             json.dump(mock_results, f, indent=2)
 
-        # Verify file is in output directory, not current directory
+        # Verify file is in output directory
         assert results_file.exists()
         assert results_file.parent == results_dir
         assert results_file.name == "homodyne_analysis_results.json"
@@ -144,9 +144,6 @@ class TestRunHomodyneIntegration:
 
         # Create main results files
         main_results = base_dir / "homodyne_analysis_results.json"
-        per_angle_results = (
-            base_dir / "classical" / "per_angle_chi_squared_classical.json"
-        )
         log_file = base_dir / "run.log"
 
         # Mock main results
@@ -173,9 +170,6 @@ class TestRunHomodyneIntegration:
 
         with open(main_results, "w") as f:
             json.dump(main_results_data, f, indent=2)
-
-        with open(per_angle_results, "w") as f:
-            json.dump(per_angle_data, f, indent=2)
 
         log_file.write_text(
             "2025-08-18 10:57:33 - __main__ - INFO - Analysis completed successfully\n"
@@ -210,7 +204,6 @@ class TestRunHomodyneIntegration:
 
         # Verify main files
         assert main_results.exists()
-        assert per_angle_results.exists()
         assert log_file.exists()
 
         # Verify classical files

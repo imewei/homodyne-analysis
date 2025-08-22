@@ -428,6 +428,7 @@
   
   "output_settings": {
     "_comment": "Output and reporting configuration",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Classical-only analysis_results_*.json files saved to classical/ subdirectory along with experimental_data.npz, fitted_data.npz, residuals_data.npz, and method-specific C2 heatmaps. MCMC: results saved to mcmc/ subdirectory. Per-angle chi-squared results are included in the main analysis JSON, not saved separately.",
     "results_directory": "./homodyne_results",
     "file_formats": {
       "results_format": "json",

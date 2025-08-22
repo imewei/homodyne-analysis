@@ -13,6 +13,9 @@ This script provides a unified interface for:
 - Automated result saving and visualization
 """
 
+__author__ = 'Wei Chen, Hongrui He'
+__credits__ = 'Argonne National Laboratory'
+
 import argparse
 import logging
 import os

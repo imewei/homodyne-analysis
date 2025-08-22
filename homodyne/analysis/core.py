@@ -97,8 +97,11 @@ He, H., Chen, W., et al. (2024). "Time-dependent dynamics in nonequilibrium
 laminar flow systems via X-ray photon correlation spectroscopy."
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
+
+__author__ = 'Wei Chen, Hongrui He'
+__credits__ = 'Argonne National Laboratory'
 
 import logging
 import multiprocessing as mp
@@ -1658,8 +1661,8 @@ class HomodyneAnalysisCore:
         The method uses configuration-driven thresholds from validation_rules.fit_quality
         for consistent quality assessment across the package.
 
-        Files saved (if save_to_file=True):
-        - per_angle_chi_squared_{method_name.lower()}.json: Detailed analysis results
+        Note: Per-angle chi-squared results are included in the main analysis results.
+        No separate file is saved.
 
         See Also
         --------
@@ -1914,20 +1917,11 @@ class HomodyneAnalysisCore:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
 
-            # Save detailed per-angle results
-            angle_results_file = (
-                output_path / f"per_angle_chi_squared_{method_name.lower()}.json"
+            # Per-angle chi-squared results are now included in the main analysis results
+            # No separate file saving needed as requested by user
+            logger.debug(
+                f"Per-angle chi-squared analysis completed for {method_name}"
             )
-            try:
-                import json  # noqa: F811
-
-                with open(angle_results_file, "w") as f:
-                    json.dump(per_angle_results, f, indent=2, default=str)
-                logger.info(
-                    f"Per-angle chi-squared analysis saved to: {angle_results_file}"
-                )
-            except Exception as e:
-                logger.error(f"Failed to save per-angle results: {e}")
 
         # Log summary with quality assessment
         logger.info(f"Per-angle chi-squared analysis [{method_name}]:")

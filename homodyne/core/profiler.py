@@ -12,7 +12,7 @@ Features:
 - Batch operation profiling
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 import time

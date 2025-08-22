@@ -6,7 +6,7 @@ mathematical operations in homodyne scattering calculations.
 
 Created for: Rheo-SAXS-XPCS Homodyne Analysis
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 import numpy as np

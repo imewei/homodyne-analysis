@@ -27,8 +27,11 @@ Safety Features:
 - Logging of all operations for debugging and audit trails
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
+
+__author__ = 'Wei Chen, Hongrui He'
+__credits__ = 'Argonne National Laboratory'
 
 import json
 import pickle
@@ -580,7 +583,8 @@ def save_analysis_results(
     File Organization:
     - Timestamped base filename for chronological organization
     - Format-specific suffixes: .json, _data.npz, _full.pkl
-    - Method-specific files for classical optimization methods
+    - Classical-only results saved to classical/ subdirectory
+    - Multi-method and MCMC results saved to main output directory
     - Automatic directory creation and organization
     - Consistent naming across all output files
 
@@ -645,21 +649,47 @@ def save_analysis_results(
             save_status.update(classical_save_status)
 
     # Save main results as JSON
-    json_path = output_dir / f"{filename_base}.json"
+    # For classical-only results, save to classical subdirectory
+    if ("classical_optimization" in results and 
+        "mcmc_optimization" not in results and 
+        "mcmc_summary" not in results and
+        results.get("methods_used", []) == ["Classical"]):
+        # This is a classical-only result, save to classical subdirectory
+        classical_dir = output_dir / "classical"
+        classical_dir.mkdir(parents=True, exist_ok=True)
+        json_path = classical_dir / f"{filename_base}.json"
+    else:
+        # This is a multi-method result or MCMC result, save to main directory
+        json_path = output_dir / f"{filename_base}.json"
+    
     save_status["json"] = save_json(results, json_path)
 
     # Save NumPy arrays if present
     if "correlation_data" in results and isinstance(
         results["correlation_data"], np.ndarray
     ):
-        npz_path = output_dir / f"{filename_base}_data.npz"
+        # Use same directory logic as main JSON file
+        if ("classical_optimization" in results and 
+            "mcmc_optimization" not in results and 
+            "mcmc_summary" not in results and
+            results.get("methods_used", []) == ["Classical"]):
+            npz_path = (output_dir / "classical") / f"{filename_base}_data.npz"
+        else:
+            npz_path = output_dir / f"{filename_base}_data.npz"
         save_status["numpy"] = save_numpy(results["correlation_data"], npz_path)
 
     # Save complex objects as pickle
     if any(
         key.startswith("mcmc_") or key.startswith("bayesian_") for key in results.keys()
     ):
-        pkl_path = output_dir / f"{filename_base}_full.pkl"
+        # Use same directory logic as main JSON file
+        if ("classical_optimization" in results and 
+            "mcmc_optimization" not in results and 
+            "mcmc_summary" not in results and
+            results.get("methods_used", []) == ["Classical"]):
+            pkl_path = (output_dir / "classical") / f"{filename_base}_full.pkl"
+        else:
+            pkl_path = output_dir / f"{filename_base}_full.pkl"
         save_status["pickle"] = save_pickle(results, pkl_path)
 
     logger.info(f"Analysis results saved with base name: {filename_base}")

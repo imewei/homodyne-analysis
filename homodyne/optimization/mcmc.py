@@ -13,7 +13,7 @@ MCMC methods provide full Bayesian uncertainty quantification by sampling
 from the posterior distribution of model parameters.
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 import time

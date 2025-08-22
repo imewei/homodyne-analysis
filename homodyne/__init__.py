@@ -33,7 +33,7 @@ Core Modules:
 - plotting: Comprehensive visualization for data validation and diagnostics
 
 Authors: Wei Chen, Hongrui He
-Institution: Argonne National Laboratory & University of Chicago
+Institution: Argonne National Laboratory
 """
 
 # Check Python version requirement early
@@ -142,7 +142,7 @@ __all__ = [
 __version__ = "0.6.4.dev0"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
-__institution__ = "Argonne National Laboratory & University of Chicago"
+__institution__ = "Argonne National Laboratory"
 
 # Recent improvements (v0.6.2)
 # - Major performance optimizations: Chi-squared calculation 38% faster

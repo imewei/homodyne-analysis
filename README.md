@@ -572,17 +572,28 @@ pytest -m benchmark --benchmark-only
 
 ```
 ./homodyne_results/
-├── classical/                    # Classical method outputs
+├── homodyne_analysis_results.json  # Main analysis results (all methods)
+├── run.log                         # Detailed execution log
+├── classical/                      # Classical method outputs
+│   ├── analysis_results_*.json     # Timestamped classical results
 │   ├── experimental_data.npz
 │   ├── fitted_data.npz
-│   └── residuals_data.npz
-├── mcmc/                         # MCMC method outputs  
+│   ├── residuals_data.npz
+│   └── c2_heatmaps_*.png          # Method-specific heatmaps
+├── mcmc/                           # MCMC method outputs  
 │   ├── mcmc_summary.json
 │   ├── mcmc_trace.nc
 │   ├── trace_plot.png
 │   └── corner_plot.png
-└── exp_data/                     # Data validation plots
+└── exp_data/                       # Data validation plots
+    └── data_validation_*.png
 ```
+
+**File Organization:**
+- `homodyne_analysis_results.json`: Summary of all analysis methods (stays in root directory)
+- `analysis_results_*.json`: Timestamped results for classical-only runs (saved to `classical/` subdirectory)
+- Per-angle chi-squared results are included in the main analysis results JSON files
+- When multiple classical optimization methods are used (e.g., Nelder-Mead and Gurobi), separate heatmap plots are generated for each method
 
 ## Theoretical Background
 
