@@ -107,9 +107,13 @@ def cleanup_test_artifacts(request):
                 # 2. The directory contains a test artifact marker
                 test_marker = cleanup_path / ".test-artifact"
 
+                # Special case: Always clean up ./homodyne/homodyne_results if it was created during tests
+                # This directory should never exist in a clean project structure
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(cleanup_path)
+                
                 if (
-                    cleanup_path not in pre_existing_results_dirs
-                    and test_marker.exists()
+                    (cleanup_path not in pre_existing_results_dirs and test_marker.exists())
+                    or (is_nested_homodyne_results and cleanup_path not in pre_existing_results_dirs)
                 ):
                     try:
                         shutil.rmtree(cleanup_path)
@@ -122,13 +126,13 @@ def cleanup_test_artifacts(request):
                         # Silently continue if cleanup fails
                         pass
                 else:
-                    # This directory existed before the test or has no test marker - preserve it
+                    # This directory existed before the test - preserve it
                     if getattr(request.config.option, "verbose", 0) > 1:
                         if cleanup_path in pre_existing_results_dirs:
                             print(
                                 f"\n⚠ Preserved pre-existing directory: {cleanup_path}"
                             )
-                        else:
+                        elif not is_nested_homodyne_results:
                             print(
                                 f"\n⚠ Preserved directory without test marker: {cleanup_path}"
                             )
@@ -166,9 +170,14 @@ def cleanup_session_artifacts():
 
         for homodyne_results_path in cleanup_candidates:
             if homodyne_results_path.exists() and homodyne_results_path.is_dir():
+                # Special case: Always clean up ./homodyne/homodyne_results
+                # This directory should never exist in a clean project structure
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(homodyne_results_path)
+                
                 # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
+                # OR if it's the nested homodyne/homodyne_results directory
                 test_marker = homodyne_results_path / ".test-artifact"
-                if test_marker.exists():
+                if test_marker.exists() or is_nested_homodyne_results:
                     try:
                         shutil.rmtree(homodyne_results_path)
                         print(
@@ -179,7 +188,7 @@ def cleanup_session_artifacts():
                             f"\n⚠ Could not remove test artifact {homodyne_results_path}"
                         )
                 else:
-                    # No test marker - this could be user data, preserve it
+                    # No test marker and not nested - this could be user data, preserve it
                     print(
                         f"\n⚠ Preserved user directory (no test marker): {homodyne_results_path}"
                     )
@@ -213,9 +222,13 @@ def pytest_sessionfinish(session, exitstatus):
 
         for path in cleanup_candidates:
             if path.exists() and path.is_dir():
+                # Special case: Always clean up ./homodyne/homodyne_results
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(path)
+                
                 # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
+                # OR if it's the nested homodyne/homodyne_results directory
                 test_marker = path / ".test-artifact"
-                if test_marker.exists():
+                if test_marker.exists() or is_nested_homodyne_results:
                     try:
                         shutil.rmtree(path)
                         if session.config.option.verbose > 0:
@@ -224,8 +237,8 @@ def pytest_sessionfinish(session, exitstatus):
                         if session.config.option.verbose > 0:
                             print(f"\n⚠ Could not clean up test artifact {path}")
                 else:
-                    # No test marker - preserve this directory
-                    if session.config.option.verbose > 0:
+                    # No test marker and not nested - preserve this directory
+                    if session.config.option.verbose > 0 and not is_nested_homodyne_results:
                         print(f"\n⚠ Preserved user directory (no test marker): {path}")
     except Exception:
         # Don't break test reporting due to cleanup issues

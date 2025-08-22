@@ -65,6 +65,13 @@ You can install specific feature sets using pip extras:
 
    pip install homodyne-analysis[dev]
 
+**For Gurobi Optimization (Requires License):**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[gurobi]
+   # or manually: pip install gurobipy
+
 **All Dependencies:**
 
 .. code-block:: bash
@@ -141,6 +148,20 @@ For optimal performance, install the performance extras:
 
    pip install homodyne-analysis[performance]
    python -c "import numba; print(f'Numba version: {numba.__version__}')"
+
+**Gurobi License Issues:**
+
+Gurobi optimization requires a valid license. For academic users, free licenses are available:
+
+.. code-block:: bash
+
+   # Install Gurobi
+   pip install gurobipy
+   
+   # Verify license (should not raise errors)
+   python -c "import gurobipy as gp; m = gp.Model(); print('✅ Gurobi license valid')"
+
+For licensing help, visit `Gurobi Academic Licenses <https://www.gurobi.com/academia/academic-program-and-licenses/>`_.
 
 **Package Not Found:**
 

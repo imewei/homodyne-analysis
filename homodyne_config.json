@@ -130,16 +130,37 @@
     },
     "classical_optimization": {
       "methods": [
-        "Nelder-Mead"
+        "Nelder-Mead",
+        "Gurobi"
       ],
+      "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 5000,
           "xatol": 1e-08,
           "fatol": 1e-08,
           "adaptive": true
+        },
+        "Gurobi": {
+          "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
+          "max_iterations": 1000,
+          "_max_iterations_note": "Maximum number of optimization iterations",
+          "tolerance": 1e-06,
+          "_tolerance_note": "Convergence tolerance for optimization",
+          "output_flag": 0,
+          "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
+          "method": 2,
+          "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
+          "time_limit": 300,
+          "_time_limit_note": "Time limit in seconds for optimization",
+          "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
+          "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
+          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
         }
-      }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
     },
     "mcmc_sampling": {
       "enabled": true,

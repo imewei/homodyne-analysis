@@ -34,6 +34,10 @@ keywords = [
     "soft matter",
     "nonequilibrium dynamics",
     "transport coefficients",
+    "optimization",
+    "Nelder-Mead",
+    "Gurobi", 
+    "quadratic programming",
     "Bayesian analysis",
     "MCMC",
 ]
@@ -57,6 +61,9 @@ mcmc = [
     "arviz>=0.12.0",
     "pytensor>=2.8.0",
     "corner>=2.2.0",  # For enhanced MCMC corner plots
+]
+gurobi = [
+    "gurobipy>=11.0.0",  # Gurobi optimization solver (requires license)
 ]
 docs = [
     "sphinx>=4.0.0",
@@ -102,6 +109,7 @@ all = [
     "arviz>=0.12.0",
     "pytensor>=2.8.0",
     "corner>=2.2.0",
+    "gurobipy>=11.0.0",
     "sphinx>=4.0.0",
     "sphinx-rtd-theme>=1.0.0",
     "myst-parser>=0.17.0",
@@ -167,6 +175,7 @@ addopts = [
     "--strict-markers",
     "--color=yes",
     "-v",
+    "-rs",  # Show reasons for skipped tests in summary
 ]
 testpaths = ["homodyne/tests"]
 markers = [

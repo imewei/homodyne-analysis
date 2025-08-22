@@ -172,11 +172,27 @@ Optimization Configuration
              "maxiter": 1000,
              "xatol": 1e-6,
              "fatol": 1e-6
+           },
+           "Gurobi": {
+             "max_iterations": 1000,
+             "tolerance": 1e-6,
+             "output_flag": 0,
+             "method": 2,
+             "time_limit": 300
            }
          }
        }
      }
    }
+
+**Available Optimization Methods**:
+
+- **Nelder-Mead**: Derivative-free simplex method, robust for noisy functions
+- **Gurobi**: Quadratic programming solver (requires license), good for smooth functions with bounds
+
+.. note::
+   Gurobi is automatically detected if installed and licensed. It uses quadratic approximation 
+   via finite differences and excels with smooth objective functions and bounds constraints.
 
 **MCMC Configuration**:
 

@@ -154,6 +154,7 @@ def plot_c2_heatmaps(
     config: Optional[Dict] = None,
     t2: Optional[np.ndarray] = None,
     t1: Optional[np.ndarray] = None,
+    method_name: Optional[str] = None,
 ) -> bool:
     """
     Create side-by-side heatmaps comparing experimental and theoretical C2 correlation functions,
@@ -167,6 +168,7 @@ def plot_c2_heatmaps(
         config (Optional[Dict]): Configuration dictionary
         t2 (Optional[np.ndarray]): Time lag values (t₂) for y-axis
         t1 (Optional[np.ndarray]): Delay time values (t₁) for x-axis
+        method_name (Optional[str]): Optimization method name for filename prefix
 
     Returns:
         bool: True if plots were created successfully
@@ -361,7 +363,8 @@ def plot_c2_heatmaps(
             )
 
             # Save the plot
-            filename = f"c2_heatmaps_phi_{phi:.1f}deg.{plot_config['plot_format']}"
+            method_prefix = f"{method_name.lower()}_" if method_name else ""
+            filename = f"{method_prefix}c2_heatmaps_phi_{phi:.1f}deg.{plot_config['plot_format']}"
             filepath = outdir / filename
 
             if save_fig(
@@ -1328,6 +1331,7 @@ def plot_diagnostic_summary(
     results: Dict[str, Any],
     outdir: Union[str, Path],
     config: Optional[Dict] = None,
+    method_name: Optional[str] = None,
 ) -> bool:
     """
     Create a comprehensive diagnostic summary plot combining multiple visualizations.
@@ -1336,6 +1340,7 @@ def plot_diagnostic_summary(
         results (Dict[str, Any]): Complete analysis results dictionary
         outdir (Union[str, Path]): Output directory for saved plots
         config (Optional[Dict]): Configuration dictionary
+        method_name (Optional[str]): Optimization method name for filename prefix
 
     Returns:
         bool: True if diagnostic plots were created successfully
@@ -1366,8 +1371,8 @@ def plot_diagnostic_summary(
 
         for key, value in results.items():
             if "chi_squared" in key or "chi2" in key:
-                method_name = key.replace("_chi_squared", "").replace("_chi2", "")
-                methods.append(method_name.replace("_", " ").title())
+                chi2_method_name = key.replace("_chi_squared", "").replace("_chi2", "")
+                methods.append(chi2_method_name.replace("_", " ").title())
                 chi2_values.append(value)
 
         if chi2_values:
@@ -1669,7 +1674,8 @@ def plot_diagnostic_summary(
         fig.suptitle("Analysis Diagnostic Summary", fontsize=18, y=0.98)
 
         # Save the plot
-        filename = f"diagnostic_summary.{plot_config['plot_format']}"
+        method_prefix = f"{method_name.lower()}_" if method_name else ""
+        filename = f"{method_prefix}diagnostic_summary.{plot_config['plot_format']}"
         filepath = outdir / filename
 
         success = save_fig(
@@ -1701,6 +1707,7 @@ def create_all_plots(
 ) -> Dict[str, bool]:
     """
     Create all available plots based on the results dictionary.
+    For classical optimization results, creates method-specific plots.
 
     Args:
         results (Dict[str, Any]): Complete analysis results dictionary
@@ -1713,19 +1720,55 @@ def create_all_plots(
     logger.info("Creating all available plots")
 
     plot_status = {}
-
-    # C2 heatmaps (if correlation data available)
-    if all(
-        key in results
-        for key in ["experimental_data", "theoretical_data", "phi_angles"]
-    ):
-        plot_status["c2_heatmaps"] = plot_c2_heatmaps(
-            results["experimental_data"],
-            results["theoretical_data"],
-            results["phi_angles"],
-            outdir,
-            config,
-        )
+    
+    # Handle method-specific plotting for classical optimization
+    method_results = results.get("method_results", {})
+    best_method = results.get("best_method")
+    
+    # If we have method-specific results, create plots for each method
+    if method_results:
+        for method_name, method_data in method_results.items():
+            method_outdir = Path(outdir) / f"plots_{method_name.lower()}"
+            method_outdir.mkdir(parents=True, exist_ok=True)
+            
+            # Create method-specific results dict for plotting
+            method_results_dict = results.copy()
+            method_results_dict.update(method_data)
+            
+            # C2 heatmaps (if correlation data available)
+            if all(
+                key in method_results_dict
+                for key in ["experimental_data", "theoretical_data", "phi_angles"]
+            ):
+                plot_key = f"c2_heatmaps_{method_name.lower()}"
+                plot_status[plot_key] = plot_c2_heatmaps(
+                    method_results_dict["experimental_data"],
+                    method_results_dict["theoretical_data"],
+                    method_results_dict["phi_angles"],
+                    method_outdir,
+                    config,
+                    method_name=method_name,
+                )
+            
+            # Diagnostic summary for each method
+            plot_key = f"diagnostic_summary_{method_name.lower()}"
+            plot_status[plot_key] = plot_diagnostic_summary(
+                method_results_dict, method_outdir, config, method_name=method_name
+            )
+    else:
+        # Fallback to standard plotting without method specificity
+        # C2 heatmaps (if correlation data available)
+        if all(
+            key in results
+            for key in ["experimental_data", "theoretical_data", "phi_angles"]
+        ):
+            plot_status["c2_heatmaps"] = plot_c2_heatmaps(
+                results["experimental_data"],
+                results["theoretical_data"],
+                results["phi_angles"],
+                outdir,
+                config,
+            )
 
     # Parameter evolution plot - DISABLED
     # This plot has never been working correctly, so it's disabled
@@ -1739,38 +1782,39 @@ def create_all_plots(
     #         optimization_history=results.get("optimization_history"),
     #     )
 
-    # MCMC plots (if trace data available)
-    if "mcmc_trace" in results:
-        # MCMC corner plot
-        plot_status["mcmc_corner"] = plot_mcmc_corner(
-            results["mcmc_trace"],
-            outdir,
-            config,
-            param_names=results.get("parameter_names"),
-            param_units=results.get("parameter_units"),
-        )
-
-        # MCMC trace plots
-        plot_status["mcmc_trace"] = plot_mcmc_trace(
-            results["mcmc_trace"],
-            outdir,
-            config,
-            param_names=results.get("parameter_names"),
-            param_units=results.get("parameter_units"),
-        )
-
-        # MCMC convergence diagnostics (if diagnostics available)
-        if "mcmc_diagnostics" in results:
-            plot_status["mcmc_convergence"] = plot_mcmc_convergence_diagnostics(
+        # MCMC plots (if trace data available) - these are not method-specific
+        if "mcmc_trace" in results:
+            # MCMC corner plot
+            plot_status["mcmc_corner"] = plot_mcmc_corner(
                 results["mcmc_trace"],
-                results["mcmc_diagnostics"],
                 outdir,
                 config,
                 param_names=results.get("parameter_names"),
+                param_units=results.get("parameter_units"),
             )
 
-    # Diagnostic summary
-    plot_status["diagnostic_summary"] = plot_diagnostic_summary(results, outdir, config)
+            # MCMC trace plots
+            plot_status["mcmc_trace"] = plot_mcmc_trace(
+                results["mcmc_trace"],
+                outdir,
+                config,
+                param_names=results.get("parameter_names"),
+                param_units=results.get("parameter_units"),
+            )
+
+            # MCMC convergence diagnostics (if diagnostics available)
+            if "mcmc_diagnostics" in results:
+                plot_status["mcmc_convergence"] = plot_mcmc_convergence_diagnostics(
+                    results["mcmc_trace"],
+                    results["mcmc_diagnostics"],
+                    outdir,
+                    config,
+                    param_names=results.get("parameter_names"),
+                )
+
+        # Diagnostic summary (if not method-specific)
+        if not method_results:
+            plot_status["diagnostic_summary"] = plot_diagnostic_summary(results, outdir, config)
 
     # Log summary
     successful_plots = sum(plot_status.values())

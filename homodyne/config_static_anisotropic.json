@@ -1,80 +1,28 @@
 {
-  "_template_info": {
-    "name": "Homodyne Static Anisotropic Mode Configuration",
-    "version": "2.1",
-    "description": "Specialized configuration for static anisotropic scattering analysis",
-    "based_on": "config_template.json - specialized for anisotropic static mode",
-    "usage": "Copy this template for anisotropic static scattering experiments",
-    "mode": "static_anisotropic",
-    "package_version": "0.6.3",
-    "template_updated": "2024-08-19",
-    "key_features": [
-      "Static mode with no flow effects",
-      "Anisotropic scattering - uses angle selection",
-      "phi_angles_file loaded for angle information",
-      "Angle filtering enabled for optimization",
-      "Only diffusion parameters (D0, alpha, D_offset) are relevant",
-      "Per-angle scaling optimization for accurate anisotropic analysis"
-    ],
-    "_scaling_optimization_benefits_anisotropic": {
-      "overview": "Per-angle scaling optimization (g\u2082 = offset + contrast \u00d7 g\u2081) essential for anisotropic analysis",
-      "per_angle_scaling": "Independent scaling for each scattering angle accounts for angular variations",
-      "anisotropy_detection": "Variations in scaling parameters may reveal sample anisotropy",
-      "robust_analysis": "Proper chi-squared calculation across all scattering angles"
-    },
-    "_when_to_use_this_template": [
-      "Sample exhibits angular dependence in scattering",
-      "No flow but orientation or structure anisotropy expected",
-      "Need angle-resolved analysis with 3-parameter diffusion model",
-      "Crystalline samples, oriented fibers, or structured materials",
-      "Want to detect and quantify anisotropic effects"
-    ]
-  },
   "metadata": {
-    "_comment": "Project metadata for static anisotropic analysis",
-    "config_version": "0.6.3",
-    "description": "Static Anisotropic Scattering Analysis - No flow, with angular dependence",
+    "_comment": "Static Anisotropic Mode Configuration - 3 parameter optimization with angle filtering",
+    "config_version": "0.6.4",
+    "description": "Static anisotropic homodyne scattering analysis - 3-parameter model with angular dependence",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "analysis_mode": "static_anisotropic",
-    "created_date": "YYYY-MM-DD",
-    "updated_date": "YYYY-MM-DD",
-    "authors": [
-      "Your Name"
-    ],
-    "institution": "Your Institution",
-    "experiment_name": "Static Anisotropic Scattering Experiment",
-    "sample_description": "Sample description for static measurement with angle selection",
-    "script_compatibility": "homodyne v0.6.3",
-    "_cli_usage": {
-      "description": "CLI usage for static anisotropic analysis",
-      "recommended_commands": [
-        "homodyne-config --mode static_anisotropic --sample SAMPLE_NAME",
-        "homodyne --config config.json --static-anisotropic --method classical",
-        "homodyne --config config.json --static-anisotropic --method all"
-      ],
-      "logging_options": {
-        "verbose": "homodyne --config config.json --static-anisotropic --verbose",
-        "quiet": "homodyne --config config.json --static-anisotropic --quiet",
-        "note": "All logging modes save to output_dir/run.log for analysis tracking"
-      }
-    }
+    "parameters_optimized": ["D0", "alpha", "D_offset"],
+    "angle_filtering": "enabled",
+    "script_compatibility": "homodyne v0.6.4"
   },
+  
   "experimental_data": {
-    "_comment": "Data configuration for anisotropic static mode",
-    "description": "Data source configuration - phi_angles_file loaded for angle selection",
+    "_comment": "Data source and loading configuration",
     "data_folder_path": "./data/SAMPLE_NAME/",
     "data_file_name": "your_data_file.hdf",
     "phi_angles_path": "./data/phi_angles/",
-    "_phi_angles_path_note": "Directory containing scattering angle information",
     "phi_angles_file": "phi_list.txt",
-    "_phi_angles_file_note": "File with phi angles - loaded in anisotropic mode",
     "exchange_key": "exchange",
     "cache_file_path": "./data/SAMPLE_NAME/",
-    "cache_filename_template": "cached_c2_anisotropic_frames_{start_frame}_{end_frame}.npz",
+    "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
     "cache_compression": true,
     "data_type": "float64",
     "file_format": "NPZ",
     "preprocessing": {
-      "_comment": "Standard preprocessing for anisotropic mode",
       "apply_diagonal_correction": true,
       "vectorized_correction": true,
       "cache_processed_data": true,
@@ -82,121 +30,95 @@
       "normalization_method": "baseline"
     }
   },
+  
   "analyzer_parameters": {
-    "_comment": "Analysis parameters for static anisotropic mode",
+    "_comment": "Core analysis parameters - static anisotropic mode",
     "temporal": {
       "dt": 0.1,
-      "_dt_note": "Time step - important for diffusion analysis (typical: 0.01-1.0s)",
+      "_dt_note": "Time step between frames in seconds",
       "dt_unit": "seconds",
       "start_frame": 100,
-      "_start_frame_note": "First frame to analyze (typical: 50-500)",
       "end_frame": 1000,
-      "_end_frame_note": "Last frame to analyze (typical: 500-2000)"
+      "frame_description": "Analysis window for static experiment"
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_wavevector_q_note": "q-vector magnitude for angle-dependent analysis (typical: 0.001-0.1 \u00c5\u207b\u00b9)",
-      "q_unit": "\u00c5\u207b\u00b9"
+      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
+      "typical_range": [0.001, 0.1]
     },
     "geometry": {
-      "_comment": "Geometry parameters - gap kept for consistency",
       "stator_rotor_gap": 1000000,
-      "_stator_rotor_gap_note": "Gap between stator and rotor (100\u03bcm typical)",
-      "gap_unit": "\u00c5",
-      "gap_in_microns": 100,
-      "_gap_note": "Gap parameter kept for consistency but not used in static mode"
+      "_gap_note": "Gap in Angstroms (not critical for static anisotropic)",
+      "gap_unit": "Å",
+      "gap_in_microns": 100
     },
     "computational": {
       "num_threads": "auto",
-      "_num_threads_note": "Number of CPU threads ('auto' recommended)",
       "auto_detect_cores": true,
-      "max_threads_limit": 12,
-      "_max_threads_limit_note": "Maximum threads limit (balanced for typical systems)",
-      "memory_limit_gb": 16,
-      "_memory_limit_gb_note": "Memory limit (adjusted for modern systems)"
+      "max_threads_limit": 8,
+      "memory_limit_gb": 12
     }
   },
+  
   "initial_parameters": {
-    "_comment": "Initial parameters for static anisotropic mode - only diffusion parameters matter",
-    "description": "Only D0, alpha, D_offset are physically meaningful in static anisotropic mode",
-    "values": [
-      100.0,
-      0.0,
-      10.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0
-    ],
-    "_values_note": "Last 4 parameters (shear + phi0) automatically set to 0 in static mode",
-    "parameter_names": [
-      "D0",
-      "alpha",
-      "D_offset",
-      "gamma_dot_t0",
-      "beta",
-      "gamma_dot_t_offset",
-      "phi0"
-    ],
-    "units": [
-      "\u00c5\u00b2/s",
-      "dimensionless",
-      "\u00c5\u00b2/s",
-      "s\u207b\u00b9",
-      "dimensionless",
-      "s\u207b\u00b9",
-      "degrees"
-    ],
+    "_comment": "Starting values for 3-parameter static anisotropic optimization [D0, alpha, D_offset]",
+    "values": [100.0, 0.0, 10.0],
+    "parameter_names": ["D0", "alpha", "D_offset"],
+    "units": ["Å²/s", "dimensionless", "Å²/s"],
     "physical_meaning": {
-      "D0": "Reference diffusion coefficient - PRIMARY PARAMETER",
-      "alpha": "Power-law exponent for D(t) evolution - PRIMARY PARAMETER",
-      "D_offset": "Baseline diffusion coefficient - PRIMARY PARAMETER",
-      "gamma_dot_t0": "Ignored in static mode (automatically set to 0)",
-      "beta": "Ignored in static mode (automatically set to 0)",
-      "gamma_dot_t_offset": "Ignored in static mode (automatically set to 0)",
-      "phi0": "Ignored in static mode (automatically set to 0)"
+      "D0": "Reference diffusion coefficient",
+      "alpha": "Power-law exponent for D(t) evolution",
+      "D_offset": "Baseline diffusion coefficient"
     },
-    "active_parameters": [
-      "D0",
-      "alpha",
-      "D_offset"
-    ],
-    "_active_parameters_note": "Only these 3 parameters are optimized in static anisotropic mode"
+    "active_parameters": ["D0", "alpha", "D_offset"]
   },
+  
   "optimization_config": {
-    "_comment": "Optimization for static anisotropic mode with angle filtering",
+    "_comment": "Optimization configuration with angle filtering for anisotropic mode",
     "angle_filtering": {
-      "_comment": "Angle filtering enabled in anisotropic mode for optimization efficiency",
       "enabled": true,
-      "_enabled_note": "Enabled to focus optimization on specific angular ranges",
+      "_anisotropic_note": "Angle filtering enabled for anisotropic analysis to focus on flow directions",
       "target_ranges": [
-        {
-          "min_angle": -10.0,
-          "max_angle": 10.0,
-          "_note": "Primary angular range around 0 degrees"
-        },
-        {
-          "min_angle": 170.0,
-          "max_angle": 190.0,
-          "_note": "Secondary angular range around 180 degrees"
-        }
+        {"min_angle": -10.0, "max_angle": 10.0},
+        {"min_angle": 80.0, "max_angle": 100.0},
+        {"min_angle": 170.0, "max_angle": 190.0},
+        {"min_angle": 260.0, "max_angle": 280.0}
       ],
       "fallback_to_all_angles": true,
       "_fallback_note": "Use all angles if no angles found in target ranges"
     },
     "classical_optimization": {
-      "methods": [
-        "Nelder-Mead"
-      ],
+      "methods": ["Nelder-Mead", "Gurobi"],
+      "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 3000,
-          "_maxiter_note": "Reduced iterations since only 3 parameters to optimize",
+          "_maxiter_note": "Reduced iterations for 3-parameter optimization",
           "xatol": 1e-08,
           "fatol": 1e-08,
           "adaptive": true
+        },
+        "Gurobi": {
+          "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
+          "max_iterations": 500,
+          "_max_iterations_note": "Fewer iterations needed for 3-parameter anisotropic case",
+          "tolerance": 1e-06,
+          "_tolerance_note": "Convergence tolerance for optimization",
+          "output_flag": 0,
+          "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
+          "method": 2,
+          "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
+          "time_limit": 120,
+          "_time_limit_note": "Shorter time limit for simple 3-parameter problem",
+          "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
+          "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
+          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
         }
-      }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
     },
     "mcmc_sampling": {
       "enabled": true,
@@ -213,37 +135,28 @@
       "return_inferencedata": true
     },
     "scaling_parameters": {
-      "_comment": "Physical scaling constraints for c2 fitting",
-      "fitted_range": {
-        "min": 1.0,
-        "max": 2.0,
-        "_description": "c2_fitted = c2_theory * contrast + offset, must be in [1,2]"
-      },
-      "theory_range": {
-        "min": 0.0,
-        "max": 1.0,
-        "_description": "c2_theory normalized correlation function, must be in [0,1]"
-      },
+      "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
+      "fitted_range": {"min": 1.0, "max": 2.0},
+      "theory_range": {"min": 0.0, "max": 1.0},
       "contrast": {
-        "min": 0.05,
+        "min": 1e-4,
         "max": 0.5,
-        "prior_mu": 0.3,
-        "prior_sigma": 0.1,
-        "type": "TruncatedNormal",
-        "_description": "Scaling factor for correlation strength, typically \u2208 (0, 0.5]"
+        "prior_mu": 0.05,
+        "prior_sigma": 0.01,
+        "type": "TruncatedNormal"
       },
       "offset": {
-        "min": 0.05,
-        "max": 1.95,
-        "prior_mu": 1.0,
-        "prior_sigma": 0.2,
-        "type": "TruncatedNormal",
-        "_description": "Baseline correlation level, typically \u2208 (0, 2.0), \u03bc \u2248 1.0"
+        "min": 1.0,
+        "max": 1.5,
+        "prior_mu": 1.3,
+        "prior_sigma": 0.01,
+        "type": "TruncatedNormal"
       }
     }
   },
+  
   "parameter_space": {
-    "_comment": "Parameter bounds - only first 3 are used in static anisotropic mode",
+    "_comment": "Parameter bounds for 3-parameter static anisotropic optimization",
     "bounds": [
       {
         "name": "D0",
@@ -252,9 +165,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "\u00c5\u00b2/s",
-        "physical_constraint": "positive",
-        "_note": "PRIMARY PARAMETER - reference diffusion coefficient (typical colloidal systems)"
+        "unit": "Å²/s"
       },
       {
         "name": "alpha",
@@ -263,9 +174,7 @@
         "type": "Normal",
         "prior_mu": -1.5,
         "prior_sigma": 0.1,
-        "unit": "dimensionless",
-        "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - diffusion time dependence (sub-/superdiffusion range)"
+        "unit": "dimensionless"
       },
       {
         "name": "D_offset",
@@ -274,139 +183,65 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "\u00c5\u00b2/s",
-        "physical_constraint": "none",
-        "_note": "PRIMARY PARAMETER - baseline diffusion coefficient (typically small vs D0)"
-      },
-      {
-        "name": "gamma_dot_t0",
-        "min": 0.0,
-        "max": 0.0,
-        "_bounds_note": "Fixed at 0 in static mode",
-        "type": "fixed",
-        "unit": "s\u207b\u00b9",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": 1e-06,
-        "_reference_max": 1.0,
-        "_reference_type": "TruncatedNormal",
-        "_reference_prior_mu": 0.001,
-        "_reference_prior_sigma": 0.01
-      },
-      {
-        "name": "beta",
-        "min": 0.0,
-        "max": 0.0,
-        "_bounds_note": "Fixed at 0 in static mode",
-        "type": "fixed",
-        "unit": "dimensionless",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": -2.0,
-        "_reference_max": 2.0,
-        "_reference_type": "Normal",
-        "_reference_prior_mu": 0.0,
-        "_reference_prior_sigma": 0.1
-      },
-      {
-        "name": "gamma_dot_t_offset",
-        "min": 0.0,
-        "max": 0.0,
-        "_bounds_note": "Fixed at 0 in static mode",
-        "type": "fixed",
-        "unit": "s\u207b\u00b9",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": -0.01,
-        "_reference_max": 0.01,
-        "_reference_type": "Normal",
-        "_reference_prior_mu": 0.0,
-        "_reference_prior_sigma": 0.001
-      },
-      {
-        "name": "phi0",
-        "min": 0.0,
-        "max": 0.0,
-        "_bounds_note": "Fixed at 0 in static mode",
-        "type": "fixed",
-        "unit": "degrees",
-        "physical_constraint": "fixed_zero",
-        "_reference_min": -10,
-        "_reference_max": 10,
-        "_reference_type": "Normal",
-        "_reference_prior_mu": 0.0,
-        "_reference_prior_sigma": 5.0
+        "unit": "Å²/s"
       }
     ]
   },
+  
   "analysis_settings": {
     "_comment": "Static anisotropic mode configuration",
     "static_mode": true,
-    "_static_mode_note": "REQUIRED: Must be true for static analysis",
+    "_static_mode_note": "True for static analysis (only D0, alpha, D_offset)",
     "static_submode": "anisotropic",
-    "_static_submode_note": "REQUIRED: Must be 'anisotropic' for this template",
+    "_submode_note": "Anisotropic mode - includes angle filtering for directional sensitivity",
     "model_description": {
-      "current_mode": "static_anisotropic_case",
-      "equation": "g\u2081(t\u2081,t\u2082) = exp(-q\u00b2 \u222b\u1d57\u00b2\u1d57\u00b9 D(t)dt), g\u2082(t\u2081,t\u2082) ~ [g\u2081(t\u2081,t\u2082)]\u00b2",
-      "description": "Pure diffusion with angle filtering for optimization efficiency",
-      "key_features": [
-        "No flow effects (\u03b3\u0307 = 0)",
-        "Uses angle selection for optimization efficiency",
-        "Only diffusion dynamics D(t) = D\u2080(t/t\u2080)^\u03b1 + D_offset",
-        "3 active parameters: D0, alpha, D_offset",
-        "Angle filtering reduces computational cost"
-      ]
+      "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering for anisotropic behavior"
     }
   },
+  
   "advanced_settings": {
+    "_comment": "Advanced computational settings",
     "data_loading": {
       "use_diagonal_correction": true,
       "vectorized_diagonal_fix": true
     },
     "chi_squared_calculation": {
       "method": "standard",
-      "_scaling_optimization_note": "Scaling optimization is always enabled: g\u2082 = offset + contrast \u00d7 g\u2081. This is essential for proper chi-squared calculation regardless of mode or number of angles.",
-      "_scaling_details": {
-        "_purpose": "Performs least squares fitting to determine contrast and offset parameters",
-        "_accounts_for": [
-          "instrumental response",
-          "background signals",
-          "detector variations",
-          "normalization differences"
-        ],
-        "_chi_squared_formula": "\u03c7\u00b2 = \u03a3(experimental - fitted)\u00b2/\u03c3\u00b2 where fitted = theory \u00d7 contrast + offset",
-        "_implementation": "Uses numpy.linalg.lstsq to solve A\u00b7x = b where A = [theory, ones], x = [contrast, offset]",
-        "_anisotropic_mode_considerations": [
-          "Per-angle scaling optimization accounts for angular variations",
-          "Different contrast/offset values expected for different scattering angles",
-          "Angular dependence in scaling factors may reveal sample anisotropy",
-          "More robust fitting quality assessment across angular range"
-        ],
-        "_typical_values_anisotropic": {
-          "contrast": "0.2-5.0 (wider range due to angular variations)",
-          "offset": "0.0-0.1 (may vary significantly with angle)",
-          "angular_variation": "contrast and offset values may show systematic angular dependence"
-        },
-        "_interpretation_guidelines": [
-          "Systematic angular variation in contrast may indicate sample anisotropy",
-          "Large offset variations suggest angle-dependent background signals",
-          "Check for correlation between contrast values and scattering angle"
-        ]
-      },
+      "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
       "uncertainty_estimation_factor": 0.1,
       "minimum_sigma": 1e-10,
       "fast_computation": true,
+      "uncertainty_calculation": {
+        "enable_uncertainty": true,
+        "report_uncertainty": true,
+        "minimum_angles_for_uncertainty": 2
+      },
       "validity_check": {
         "check_positive_D0": true,
         "check_positive_gamma_dot_t0": false,
-        "_check_positive_gamma_dot_t0_note": "Disabled - parameter fixed at 0",
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true
       }
+    },
+    "numerical_integration": {
+      "method": "simpson",
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-12
+    },
+    "optimization_controls": {
+      "convergence_tolerance": 1e-08,
+      "max_function_evaluations": 5000,
+      "parameter_scaling": "auto",
+      "finite_difference_step": 1e-08
     }
   },
+  
   "performance_settings": {
+    "_comment": "Performance settings optimized for 3-parameter static anisotropic case",
     "caching": {
       "enable_memory_cache": true,
       "enable_disk_cache": true,
-      "cache_size_limit_mb": 1000,
+      "cache_size_limit_mb": 750,
       "auto_cleanup": true
     },
     "parallel_processing": {
@@ -414,133 +249,69 @@
       "chunk_size": "auto",
       "backend": "threading"
     },
+    "memory_management": {
+      "low_memory_mode": false,
+      "garbage_collection_frequency": 10,
+      "memory_monitoring": false
+    },
     "numba_optimization": {
+      "enable_numba": true,
+      "warmup_numba": true,
+      "parallel_numba": true,
+      "cache_numba": true,
       "stability_enhancements": {
         "enable_kernel_warmup": true,
-        "_enable_kernel_warmup_note": "Pre-compile kernels for consistent anisotropic analysis performance",
+        "warmup_iterations": 3,
         "optimize_memory_layout": true,
-        "_optimize_memory_layout_note": "Memory layout optimization for multi-angle processing",
+        "enable_nogil": true,
         "environment_optimization": {
           "auto_configure": true,
-          "_auto_configure_note": "Automatic environment optimization for anisotropic calculations",
-          "max_threads": 4,
-          "_max_threads_note": "Conservative thread count for optimal stability-performance balance"
+          "max_threads": 3,
+          "gc_optimization": true
         }
       },
       "performance_monitoring": {
+        "enable_profiling": false,
+        "stable_benchmarking": false,
+        "adaptive_benchmarking": false,
+        "performance_baselines": false,
+        "target_cv": 0.10,
+        "memory_monitoring": true,
         "smart_caching": {
           "enabled": true,
-          "_enabled_note": "Memory-aware caching for repeated angle-dependent calculations",
-          "max_memory_mb": 300.0,
-          "_max_memory_mb_note": "Reduced cache limit for simpler 3-parameter model"
-        },
-        "adaptive_benchmarking": {
-          "enabled": false,
-          "_enabled_note": "Disabled by default - enable for performance optimization",
-          "target_cv": 0.1,
-          "_target_cv_note": "Aggressive CV target achievable with performance rebalancing",
-          "min_runs": 5,
-          "max_runs": 25,
-          "_benchmarking_note": "Faster convergence expected for 3-parameter optimization"
+          "max_items": 75,
+          "max_memory_mb": 375.0
         }
       }
     },
     "noise_model": {
       "use_simple_forward_model": false,
-      "sigma_prior": 0.1,
-      "_anisotropic_note": "Simple forward model with per-angle considerations"
+      "_note": "False uses full forward model consistent with classical optimization",
+      "sigma_prior": 0.1
     }
   },
-  "output_settings": {
-    "reporting": {
-      "generate_plots": true,
-      "plot_formats": [
-        "png",
-        "pdf"
-      ],
-      "detailed_summary": true
-    },
-    "plotting": {
-      "general": {
-        "create_plots": true,
-        "plot_format": "png",
-        "dpi": 300,
-        "figure_size": [
-          10,
-          8
-        ],
-        "style": "publication"
-      },
-      "c2_heatmaps": {
-        "enabled": true,
-        "_enabled_note": "Multi-angle heatmaps for anisotropic mode",
-        "layout": "single_row",
-        "include_experimental": true,
-        "include_theoretical": true,
-        "include_residuals": true,
-        "title_prefix": "C2 Anisotropic Static Mode"
-      },
-      "mcmc_plots": {
-        "enabled": true,
-        "corner_plots": {
-          "enabled": true,
-          "figsize": [
-            8,
-            8
-          ],
-          "_figsize_note": "Compact size for 3x3 parameter space"
-        },
-        "trace_plots": {
-          "enabled": true,
-          "figsize": [
-            10,
-            6
-          ],
-          "_figsize_note": "Compact layout for 3 parameters"
-        }
-      }
-    }
-  },
-  "_usage_notes": {
-    "description": "Specific usage notes for static anisotropic mode",
-    "key_differences": [
-      "phi_angles_file is loaded and used for angle selection",
-      "Angle filtering is enabled for optimization efficiency",
-      "Only 3 parameters (D0, alpha, D_offset) are optimized",
-      "Shear and phi0 parameters are automatically set to 0",
-      "Uses per-angle scaling optimization",
-      "Computational cost reduced via angle filtering"
-    ],
-    "when_to_use": [
-      "Static samples with no applied flow or rotation",
-      "When angle-dependent optimization efficiency is desired",
-      "Systems where angle filtering can reduce computational cost",
-      "Cases where you want to focus on specific scattering angles"
-    ],
-    "performance_benefits": [
-      "Faster optimization (3 vs 7 parameters)",
-      "Angle filtering reduces data points processed",
-      "Per-angle scaling for better fit quality",
-      "Maintains full angle information while optimizing efficiency"
-    ],
-    "angle_filtering_notes": [
-      "Target angles around 0\u00b0 and 180\u00b0 are typical for scattering",
-      "Fallback to all angles if no targets found prevents failures",
-      "Can be adjusted based on your specific angular requirements",
-      "Reduces computational cost while maintaining accuracy"
-    ]
-  },
+  
   "validation_rules": {
-    "_comment": "Validation rules for static anisotropic mode",
+    "_comment": "Validation rules for static anisotropic analysis",
+    "data_quality": {
+      "check_data_range": true,
+      "correlation_minimum": 0.0,
+      "correlation_maximum": 10.0,
+      "check_nan_values": true,
+      "nan_handling": "raise"
+    },
+    "parameter_validation": {
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true
+    },
     "fit_quality": {
-      "_comment": "Classical optimization fit quality for 3-parameter anisotropic analysis",
-      "_applies_to": "Classical optimization using Nelder-Mead method",
+      "_comment": "Quality thresholds for 3-parameter optimization",
       "overall_chi_squared": {
         "excellent_threshold": 2.0,
         "acceptable_threshold": 5.0,
         "warning_threshold": 10.0,
-        "critical_threshold": 20.0,
-        "_anisotropic_note": "Anisotropic analysis may show higher chi-squared due to angle selection"
+        "critical_threshold": 20.0
       },
       "per_angle_chi_squared": {
         "excellent_threshold": 2.0,
@@ -548,64 +319,164 @@
         "warning_threshold": 10.0,
         "outlier_threshold_multiplier": 2.5,
         "max_outlier_fraction": 0.25,
-        "min_good_angles": 3,
-        "_min_good_angles_note": "Minimum 3 angles needed for reliable anisotropic analysis"
+        "min_good_angles": 3
       }
     },
     "mcmc_convergence": {
-      "_comment": "MCMC convergence validation for 3-parameter static anisotropic analysis",
-      "_applies_to": "MCMC/NUTS sampling methods only",
-      "_note": "Anisotropic mode uses MCMC convergence diagnostics instead of chi-squared",
+      "_comment": "MCMC convergence criteria for 3-parameter case",
       "rhat_thresholds": {
-        "_comment": "R-hat thresholds for 3-parameter anisotropic model with angle filtering",
         "excellent_threshold": 1.01,
-        "_excellent_threshold_note": "R\u0302 \u2264 1.01 indicates excellent convergence",
         "good_threshold": 1.05,
-        "_good_threshold_note": "R\u0302 \u2264 1.05 indicates good convergence for anisotropic model",
         "acceptable_threshold": 1.1,
-        "_acceptable_threshold_note": "R\u0302 \u2264 1.1 indicates acceptable convergence",
-        "critical_threshold": 1.15,
-        "_critical_threshold_note": "R\u0302 > 1.15 indicates poor convergence"
+        "critical_threshold": 1.2
       },
       "ess_thresholds": {
-        "_comment": "ESS thresholds for 3-parameter anisotropic space with angle filtering",
         "excellent_threshold": 400,
-        "_excellent_threshold_note": "ESS \u2265 400 excellent for 3-parameter space",
         "good_threshold": 200,
-        "_good_threshold_note": "ESS \u2265 200 good for anisotropic analysis",
         "acceptable_threshold": 100,
-        "_acceptable_threshold_note": "ESS \u2265 100 acceptable for static anisotropic",
-        "minimum_threshold": 50,
-        "_minimum_threshold_note": "ESS < 50 inadequate for parameter estimates"
+        "minimum_threshold": 50
       },
       "divergence_thresholds": {
-        "_comment": "Divergence criteria for anisotropic geometry with angle filtering",
-        "max_divergences_fraction": 0.01,
-        "_max_divergences_fraction_note": "1% max divergences for 3-parameter anisotropic model",
-        "warning_divergences_fraction": 0.005,
-        "_warning_divergences_fraction_note": "0.5% divergences warrants investigation"
-      },
-      "quality_assessment": {
-        "_comment": "Anisotropic-specific MCMC quality criteria",
-        "excellent_criteria": "R\u0302 < 1.01 AND ESS > 400 AND divergences < 0.5%",
-        "good_criteria": "R\u0302 < 1.05 AND ESS > 200 AND divergences < 1%",
-        "acceptable_criteria": "R\u0302 < 1.1 AND ESS > 100 AND divergences < 1%",
-        "poor_criteria": "Any criterion fails to meet acceptable threshold",
-        "_anisotropic_note": "3-parameter anisotropic model with angle filtering should converge efficiently"
+        "max_divergences_fraction": 0.05,
+        "warning_divergences_fraction": 0.01
       }
     },
-    "parameter_validation": {
-      "_comment": "Parameter validation for static anisotropic mode",
-      "check_bounds": true,
-      "physics_constraints": true,
-      "correlation_checks": true,
-      "_anisotropic_constraints": [
-        "D0 must be positive (physical diffusion)",
-        "Only D0, alpha, D_offset are optimized",
-        "Flow parameters automatically set to 0",
-        "phi0 automatically set to 0 (irrelevant in static mode)",
-        "Angle filtering applied during optimization"
-      ]
+    "frame_range": {
+      "minimum_frames": 10,
+      "maximum_frames": null,
+      "check_continuity": true
+    }
+  },
+  
+  "workflow_integration": {
+    "_comment": "Analysis workflow settings",
+    "analysis_workflow": {
+      "auto_generate_plots": true,
+      "plot_integration_enabled": true,
+      "plot_experimental_data_on_load": false,
+      "cache_plot_data": true,
+      "save_intermediate_plots": false
+    },
+    "mcmc_integration": {
+      "auto_save_traces": true,
+      "trace_file_format": "netcdf",
+      "include_warmup_in_traces": false,
+      "convergence_diagnostics_auto": true,
+      "plot_mcmc_results": true
+    },
+    "data_management": {
+      "experimental_data_cache": true,
+      "theoretical_data_cache": true,
+      "cache_directory": "./cache",
+      "auto_cleanup_cache": false,
+      "cache_retention_days": 30
+    },
+    "error_handling": {
+      "continue_on_plot_errors": true,
+      "log_plot_errors": true,
+      "fallback_plotting": true,
+      "validate_plot_data": true
+    }
+  },
+  
+  "output_settings": {
+    "_comment": "Output and reporting configuration",
+    "results_directory": "./homodyne_results",
+    "file_formats": {
+      "results_format": "json",
+      "save_intermediate": false,
+      "compression": true,
+      "precision": "float64"
+    },
+    "file_naming": {
+      "timestamp_format": "%Y%m%d_%H%M%S",
+      "include_config_name": true,
+      "include_chi_squared": true
+    },
+    "reporting": {
+      "generate_plots": true,
+      "plot_formats": ["png", "pdf"],
+      "detailed_summary": true,
+      "convergence_diagnostics": true
+    },
+    "plotting": {
+      "_comment": "Plotting configuration for static anisotropic mode",
+      "general": {
+        "create_plots": true,
+        "plot_format": "png",
+        "dpi": 300,
+        "figure_size": [10, 8],
+        "style": "publication",
+        "save_plots": true,
+        "show_plots": false
+      },
+      "c2_heatmaps": {
+        "enabled": true,
+        "layout": "single_row",
+        "include_experimental": true,
+        "include_theoretical": true,
+        "include_residuals": true,
+        "colormap": "viridis",
+        "colorbar_position": "right",
+        "title_prefix": "C2 Correlation Function (Static Anisotropic)",
+        "figsize": [15, 5]
+      },
+      "mcmc_plots": {
+        "enabled": true,
+        "corner_plots": {
+          "enabled": true,
+          "show_titles": true,
+          "quantiles": [0.16, 0.5, 0.84],
+          "show_truths": false,
+          "use_arviz": true,
+          "figsize": [9, 9]
+        },
+        "trace_plots": {
+          "enabled": true,
+          "show_chains": true,
+          "show_warmup": false,
+          "compact_layout": true,
+          "figsize": [10, 6]
+        },
+        "convergence_diagnostics": {
+          "enabled": true,
+          "show_rhat": true,
+          "show_ess": true,
+          "show_mcse": true,
+          "show_energy": true,
+          "rhat_threshold": 1.1,
+          "ess_threshold": 100
+        }
+      },
+      "diagnostic_plots": {
+        "enabled": true,
+        "chi_squared_summary": true,
+        "parameter_correlations": true,
+        "residual_analysis": true,
+        "convergence_history": true
+      },
+      "output": {
+        "base_directory": "./plots",
+        "subdirectories": {
+          "c2_heatmaps": "c2_correlation",
+          "parameter_plots": "parameters",
+          "mcmc_plots": "mcmc_analysis",
+          "diagnostics": "diagnostics"
+        },
+        "filename_template": "{analysis_type}_{timestamp}_{method}",
+        "include_timestamp": true,
+        "overwrite_existing": false
+      }
+    },
+    "logging": {
+      "log_level": "INFO",
+      "log_to_file": true,
+      "log_to_console": true,
+      "log_filename": "homodyne_static_anisotropic.log",
+      "rotation": {
+        "max_bytes": 10485760,
+        "backup_count": 3
+      }
     }
   }
 }

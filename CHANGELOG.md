@@ -8,16 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Features for next release will be documented here
+- **Gurobi Optimization Support**: Added Gurobi quadratic programming solver as alternative to Nelder-Mead
+  - Automatic detection and graceful fallback when Gurobi not available
+  - Quadratic approximation of chi-squared objective function using finite differences
+  - Optimized configurations for different analysis modes (static 3-param, laminar flow 7-param)
+  - Comprehensive test coverage with bounds constraint validation
+- **Enhanced Documentation**: Updated all configuration templates with Gurobi options and usage guidance
+- **Optimization Method Consistency**: All methods (Nelder-Mead, Gurobi, MCMC) use identical parameter bounds
+- **Test Output Summary**: Added `-rs` flag to pytest configuration for always showing skip reasons
+- **Performance Baselines**: Added comprehensive performance_baselines.json for regression tracking
 
 ### Changed
-- Changes for next release will be documented here
+- **Classical Optimization Architecture**: Expanded from single-method to multi-method framework
+- **Configuration Templates**: All JSON templates now include Gurobi method options
+- **Package Dependencies**: Added optional Gurobi support in pyproject.toml and requirements.txt
+- **Method Selection**: Best optimization result automatically selected based on chi-squared value
+- **Test Cleanup**: Enhanced cleanup of test-generated homodyne_results directories
 
 ### Fixed
-- Bug fixes for next release will be documented here
+- **Type Safety**: Resolved all Pylance type checking issues for optional Gurobi imports
+- **Parameter Bounds**: Ensured consistent bounds across all optimization methods
+- **Test Performance**: Fixed config caching test parameter bounds validation
+- **Performance Test Ratio**: Improved chi2_correlation_ratio_regression test with workload scaling
+- **Test Cleanup**: Fixed automatic cleanup of homodyne/homodyne_results test artifacts
+- **Performance Baselines Path**: Corrected baseline file path resolution in performance tests
 
 ### Performance
-- Performance improvements for next release will be documented here
+- **Bounds Constraints**: Gurobi provides native support for parameter bounds (unlike Nelder-Mead)
+- **Quadratic Programming**: Potentially faster convergence for smooth, well-conditioned problems
+- **Test Stability**: Improved performance test reliability with JIT warmup and deterministic data
 
 ## [0.6.3] - 2025-08-21
 

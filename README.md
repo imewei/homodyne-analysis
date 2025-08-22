@@ -13,7 +13,7 @@ Analyzes time-dependent intensity correlation functions $c_2(\phi,t_1,t_2)$ in c
 
 **Key Features:**
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
+- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Bayesian MCMC (NUTS)
 - **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations, and optimized memory usage
 - **Performance monitoring**: Comprehensive regression testing and automated benchmarking
 - **Scientific accuracy**: Automatic $g_2 = \text{offset} + \text{contrast} \times g_1$ fitting for proper $\chi^2$ calculations
@@ -52,6 +52,7 @@ pip install -e .[all]
 - **Core**: `numpy`, `scipy`, `matplotlib`
 - **Performance**: `numba` (3-5x speedup via JIT compilation)
 - **Bayesian Analysis**: `pymc`, `arviz`, `pytensor` (for MCMC sampling)
+- **Optimization**: `gurobipy` (optional, requires license for Gurobi solver)
 - **Optional**: `pytest`, `sphinx` (testing and documentation)
 
 ## Quick Start
@@ -336,8 +337,9 @@ Performance baselines and regression detection:
 
 ### Optimization Methods
 
-**Classical (Fast)**
-- Algorithm: Nelder-Mead simplex with vectorized operations
+**Classical Optimization (Fast)**
+- **Nelder-Mead**: Derivative-free simplex algorithm, robust for noisy functions
+- **Gurobi**: Quadratic programming solver (requires license), excellent for smooth functions with bounds constraints
 - Speed: ~minutes (optimized with lazy imports and memory-efficient operations)
 - Use: Exploratory analysis, parameter screening
 - Command: `--method classical`
@@ -352,6 +354,8 @@ Performance baselines and regression detection:
 **Combined**
 - Workflow: Classical → MCMC refinement
 - Command: `--method all`
+
+**Note**: Gurobi is automatically detected if installed and licensed. Both classical methods are attempted if available, with the best result selected based on chi-squared value. All optimization methods (Nelder-Mead, Gurobi, MCMC) use the same parameter bounds defined in the configuration for consistency.
 
 ### Performance Optimizations
 

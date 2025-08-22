@@ -1,13 +1,23 @@
 """
-Classical Optimization Method for Homodyne Scattering Analysis
-=============================================================
+Classical Optimization Methods for Homodyne Scattering Analysis
+===============================================================
 
-This module contains the Nelder-Mead simplex optimization algorithm for
-parameter estimation in homodyne scattering analysis.
+This module contains multiple classical optimization algorithms for
+parameter estimation in homodyne scattering analysis:
 
-The Nelder-Mead method is a derivative-free optimization algorithm that
-works well for noisy objective functions and doesn't require gradient
-information, making it ideal for our correlation function fitting.
+1. **Nelder-Mead Simplex**: Derivative-free optimization algorithm that
+   works well for noisy objective functions and doesn't require gradient
+   information, making it ideal for correlation function fitting.
+
+2. **Gurobi Quadratic Programming**: Advanced optimization using quadratic
+   approximation of the chi-squared objective function. Particularly effective
+   for smooth problems with parameter bounds constraints. Requires Gurobi license.
+
+Key Features:
+- Consistent parameter bounds with MCMC for all methods
+- Automatic Gurobi detection and graceful fallback
+- Optimized configurations for different analysis modes
+- Comprehensive error handling and status reporting
 
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory & University of Chicago
@@ -20,6 +30,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import scipy.optimize as optimize
 
+try:
+    import gurobipy as gp
+    from gurobipy import GRB
+    GUROBI_AVAILABLE = True
+except ImportError:
+    GUROBI_AVAILABLE = False
+    # Type stubs for when Gurobi is not available
+    gp = None  # type: ignore
+    GRB = None  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 # Global optimization counter for tracking iterations
@@ -28,11 +48,26 @@ OPTIMIZATION_COUNTER = 0
 
 class ClassicalOptimizer:
     """
-    Nelder-Mead optimization algorithm for parameter estimation.
+    Classical optimization algorithms for parameter estimation.
 
-    This class provides robust parameter estimation using the Nelder-Mead
-    simplex method, which is well-suited for noisy objective functions
-    and doesn't require derivative information.
+    This class provides robust parameter estimation using multiple optimization
+    algorithms:
+    
+    1. Nelder-Mead simplex method: Well-suited for noisy objective functions
+       and doesn't require derivative information.
+    
+    2. Gurobi quadratic programming (optional): Uses quadratic approximation
+       of the chi-squared objective function for potentially faster convergence
+       on smooth problems with bounds constraints. Requires Gurobi license.
+    
+    The Gurobi method approximates the objective function using finite differences
+    to estimate gradients and Hessian, then solves the resulting quadratic program.
+    This approach can be particularly effective for least squares problems where
+    the objective function is approximately quadratic near the optimum.
+    
+    Important: Both optimization methods use the same parameter bounds defined in
+    the configuration's parameter_space.bounds section, ensuring consistency with
+    MCMC and maintaining the same physical constraints across all optimization methods.
     """
 
     def __init__(self, analysis_core, config: Dict[str, Any]):
@@ -114,9 +149,12 @@ class ClassicalOptimizer:
 
         # Load defaults if not provided
         if methods is None:
+            available_methods = ["Nelder-Mead"]
+            if GUROBI_AVAILABLE:
+                available_methods.append("Gurobi")
             methods = self.optimization_config.get(
                 "methods",
-                ["Nelder-Mead"],
+                available_methods,
             )
 
         # Ensure methods is not None for type checker
@@ -154,6 +192,7 @@ class ClassicalOptimizer:
         best_result = None
         best_params = None
         best_chi2 = np.inf
+        best_method = None  # Track which method produced the best result
         all_results = []  # Store all results for analysis
 
         # Create objective function using utility method
@@ -191,6 +230,7 @@ class ClassicalOptimizer:
                         best_result = result
                         best_params = result.x
                         best_chi2 = result.fun
+                        best_method = method  # Track which method produced this result
                         print(
                             f"    ✓ New best: χ²_red = {result.fun:.6e} ({elapsed:.1f}s)"
                         )
@@ -216,14 +256,41 @@ class ClassicalOptimizer:
         ):
             total_time = time.time() - start_time
 
+            # best_method is already tracked when the best result was found
+            if best_method is None:
+                best_method = 'Unknown'
+            
             # Generate comprehensive summary (for future use)
-            _ = self.get_optimization_summary(best_params, best_result, total_time)
+            summary = self.get_optimization_summary(best_params, best_result, total_time, best_method)
+            summary['optimization_method'] = best_method
+            summary['all_methods_tried'] = [method for method, _ in all_results]
+            
+            # Create method-specific results dictionary
+            method_results = {}
+            for method, result in all_results:
+                if hasattr(result, 'fun'):  # Successful result
+                    method_results[method] = {
+                        'parameters': result.x.tolist() if hasattr(result, 'x') else None,
+                        'chi_squared': result.fun,
+                        'success': result.success if hasattr(result, 'success') else True,
+                        'iterations': getattr(result, 'nit', None),
+                        'function_evaluations': getattr(result, 'nfev', None),
+                        'message': getattr(result, 'message', ''),
+                        'method': getattr(result, 'method', method)
+                    }
+                else:  # Failed result (exception)
+                    method_results[method] = {
+                        'parameters': None,
+                        'chi_squared': float('inf'),
+                        'success': False,
+                        'error': str(result)
+                    }
 
             # Log results
             logger.info(
-                f"Classical optimization completed in {total_time:.2f}s, best χ²_red = {best_chi2:.6e}"
+                f"Classical optimization completed in {total_time:.2f}s, best χ²_red = {best_chi2:.6e} (method: {best_method})"
             )
-            print(f"  Best result: χ²_red = {best_chi2:.6e}")
+            print(f"  Best result: χ²_red = {best_chi2:.6e} (method: {best_method})")
 
             # Store best parameters
             self.best_params_classical = best_params
@@ -239,7 +306,12 @@ class ClassicalOptimizer:
                 )
                 logger.debug(f"Classical optimization analysis: {analysis}")
 
-            return best_params, best_result
+            # Return enhanced result with method information
+            enhanced_result = best_result
+            enhanced_result.method_results = method_results  # Add method-specific results
+            enhanced_result.best_method = best_method       # Add best method info
+
+            return best_params, enhanced_result
         else:
             total_time = time.time() - start_time
 
@@ -265,29 +337,37 @@ class ClassicalOptimizer:
         Returns
         -------
         List[str]
-            List containing only Nelder-Mead method
+            List containing available optimization methods
         """
-        return [
-            "Nelder-Mead",  # Nelder-Mead simplex algorithm
-        ]
+        methods = ["Nelder-Mead"]  # Nelder-Mead simplex algorithm
+        if GUROBI_AVAILABLE:
+            methods.append("Gurobi")  # Gurobi quadratic programming solver
+        return methods
 
-    def validate_method_compatibility(self, method: str, has_bounds: bool) -> bool:
+    def validate_method_compatibility(self, method: str, has_bounds: bool = True) -> bool:
         """
         Validate if optimization method is compatible with current setup.
 
         Parameters
         ----------
         method : str
-            Optimization method name (should be "Nelder-Mead")
+            Optimization method name
         has_bounds : bool
-            Whether parameter bounds are defined (ignored for Nelder-Mead)
+            Whether parameter bounds are defined (unused but kept for compatibility)
 
         Returns
         -------
         bool
-            True if method is Nelder-Mead
+            True if method is supported
         """
-        return method == "Nelder-Mead"
+        # Note: has_bounds parameter is unused but kept for API compatibility
+        _ = has_bounds  # Explicitly mark as unused for type checker
+        
+        if method == "Nelder-Mead":
+            return True
+        elif method == "Gurobi":
+            return GUROBI_AVAILABLE
+        return False
 
     def get_method_recommendations(self) -> Dict[str, List[str]]:
         """
@@ -296,16 +376,17 @@ class ClassicalOptimizer:
         Returns
         -------
         Dict[str, List[str]]
-            Dictionary mapping scenarios to Nelder-Mead (our only method)
+            Dictionary mapping scenarios to recommended methods
         """
-        return {
-            "with_bounds": ["Nelder-Mead"],  # Nelder-Mead works without explicit bounds
+        recommendations = {
+            "with_bounds": ["Gurobi", "Nelder-Mead"] if GUROBI_AVAILABLE else ["Nelder-Mead"],
             "without_bounds": ["Nelder-Mead"],
             "high_dimensional": ["Nelder-Mead"],
-            "low_dimensional": ["Nelder-Mead"],
+            "low_dimensional": ["Gurobi", "Nelder-Mead"] if GUROBI_AVAILABLE else ["Nelder-Mead"],
             "noisy_objective": ["Nelder-Mead"],  # Excellent for noisy functions
-            "smooth_objective": ["Nelder-Mead"],
+            "smooth_objective": ["Gurobi", "Nelder-Mead"] if GUROBI_AVAILABLE else ["Nelder-Mead"],
         }
+        return recommendations
 
     def validate_parameters(
         self, parameters: np.ndarray, method_name: str = ""
@@ -441,28 +522,247 @@ class ClassicalOptimizer:
             (success, result_or_exception)
         """
         try:
-            # Filter out comment fields (keys starting with '_' and ending with '_note')
-            filtered_options = {}
+            if method == "Gurobi":
+                return self._run_gurobi_optimization(
+                    objective_func, initial_parameters, bounds, method_options
+                )
+            else:
+                # Filter out comment fields (keys starting with '_' and ending with '_note')
+                filtered_options = {}
+                if method_options:
+                    filtered_options = {
+                        k: v
+                        for k, v in method_options.items()
+                        if not (k.startswith("_") and k.endswith("_note"))
+                    }
+
+                kwargs = {
+                    "fun": objective_func,
+                    "x0": initial_parameters,
+                    "method": method,
+                    "options": filtered_options,
+                }
+
+                # Nelder-Mead doesn't use explicit bounds
+                # The method handles constraints through the objective function
+
+                result = optimize.minimize(**kwargs)
+                return True, result
+
+        except Exception as e:
+            return False, e
+
+    def _run_gurobi_optimization(
+        self,
+        objective_func,
+        initial_parameters: np.ndarray,
+        bounds: Optional[List[Tuple[float, float]]] = None,
+        method_options: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[bool, Union[optimize.OptimizeResult, Exception]]:
+        """
+        Run Gurobi optimization for least squares fitting.
+        
+        This method approximates the chi-squared objective function using a quadratic model
+        and solves it with Gurobi's quadratic programming solver. It uses the same parameter
+        bounds as MCMC for consistency between optimization methods.
+        
+        Parameters
+        ----------
+        objective_func : callable
+            Chi-squared objective function to minimize
+        initial_parameters : np.ndarray
+            Starting parameters
+        bounds : List[Tuple[float, float]], optional
+            Parameter bounds for optimization. If None, extracts bounds from the same
+            configuration section used by MCMC (parameter_space.bounds).
+        method_options : Dict[str, Any], optional
+            Gurobi-specific options
+            
+        Returns
+        -------
+        Tuple[bool, Union[OptimizeResult, Exception]]
+            (success, result_or_exception)
+            
+        Notes
+        -----
+        For consistency with MCMC, this method uses the same parameter bounds defined
+        in the configuration's parameter_space.bounds section. This ensures that both
+        classical and Bayesian optimization methods respect the same physical constraints.
+        """
+        try:
+            if not GUROBI_AVAILABLE or gp is None or GRB is None:
+                raise ImportError("Gurobi is not available. Please install gurobipy.")
+                
+            # Get parameter bounds
+            if bounds is None:
+                bounds = self.get_parameter_bounds()
+                
+            n_params = len(initial_parameters)
+            
+            # Default Gurobi options
+            gurobi_options = {
+                "max_iterations": 1000,
+                "tolerance": 1e-6,
+                "output_flag": 0,  # Suppress output by default
+                "method": 2,  # Use barrier method for QP
+                "time_limit": 300,  # 5 minute time limit
+            }
+            
+            # Update with user options
             if method_options:
                 filtered_options = {
                     k: v
                     for k, v in method_options.items()
                     if not (k.startswith("_") and k.endswith("_note"))
                 }
-
-            kwargs = {
-                "fun": objective_func,
-                "x0": initial_parameters,
-                "method": method,
-                "options": filtered_options,
-            }
-
-            # Nelder-Mead doesn't use explicit bounds
-            # The method handles constraints through the objective function
-
-            result = optimize.minimize(**kwargs)
-            return True, result
-
+                gurobi_options.update(filtered_options)
+            
+            # Build quadratic approximation around initial point
+            x0 = initial_parameters.copy()
+            f0 = objective_func(x0)
+            
+            # Estimate gradient using finite differences
+            epsilon = 1e-8
+            grad = np.zeros(n_params)
+            for i in range(n_params):
+                x_plus = x0.copy()
+                x_plus[i] += epsilon
+                x_minus = x0.copy()
+                x_minus[i] -= epsilon
+                grad[i] = (objective_func(x_plus) - objective_func(x_minus)) / (2 * epsilon)
+            
+            # Estimate Hessian using finite differences
+            hessian = np.zeros((n_params, n_params))
+            for i in range(n_params):
+                for j in range(i, n_params):
+                    if i == j:
+                        # Diagonal elements
+                        x_plus = x0.copy()
+                        x_plus[i] += epsilon
+                        x_minus = x0.copy()
+                        x_minus[i] -= epsilon
+                        hessian[i, j] = (objective_func(x_plus) - 2*f0 + objective_func(x_minus)) / (epsilon**2)
+                    else:
+                        # Off-diagonal elements
+                        x_pp = x0.copy()
+                        x_pp[i] += epsilon
+                        x_pp[j] += epsilon
+                        x_pm = x0.copy()
+                        x_pm[i] += epsilon
+                        x_pm[j] -= epsilon
+                        x_mp = x0.copy()
+                        x_mp[i] -= epsilon
+                        x_mp[j] += epsilon
+                        x_mm = x0.copy()
+                        x_mm[i] -= epsilon
+                        x_mm[j] -= epsilon
+                        hessian[i, j] = (objective_func(x_pp) - objective_func(x_pm) - 
+                                       objective_func(x_mp) + objective_func(x_mm)) / (4 * epsilon**2)
+                        hessian[j, i] = hessian[i, j]  # Symmetric
+            
+            # Ensure Hessian is positive definite for QP
+            eigenvals = np.linalg.eigvals(hessian)
+            if np.min(eigenvals) <= 0:
+                # Add regularization to make positive definite
+                regularization = abs(np.min(eigenvals)) + 1e-6
+                hessian += regularization * np.eye(n_params)
+            
+            # Create Gurobi model
+            with gp.Env(empty=True) as env:
+                if gurobi_options.get("output_flag", 0) == 0:
+                    env.setParam('OutputFlag', 0)
+                env.start()
+                
+                with gp.Model(env=env) as model:
+                    # Set Gurobi parameters
+                    for param, value in gurobi_options.items():
+                        if param == "max_iterations":
+                            model.setParam(GRB.Param.IterationLimit, int(value))
+                        elif param == "tolerance":
+                            model.setParam(GRB.Param.OptimalityTol, float(value))
+                        elif param == "output_flag":
+                            model.setParam(GRB.Param.OutputFlag, int(value))
+                        elif param == "method":
+                            model.setParam(GRB.Param.Method, int(value))
+                        elif param == "time_limit":
+                            model.setParam(GRB.Param.TimeLimit, float(value))
+                    
+                    # Create decision variables
+                    x = model.addVars(n_params, lb=-gp.GRB.INFINITY, ub=gp.GRB.INFINITY, name="x")
+                    
+                    # Add bounds constraints
+                    for i in range(n_params):
+                        if i < len(bounds):
+                            lb, ub = bounds[i]
+                            if lb != -np.inf:
+                                x[i].setAttr(GRB.Attr.LB, lb)
+                            if ub != np.inf:
+                                x[i].setAttr(GRB.Attr.UB, ub)
+                    
+                    # Build quadratic objective: f0 + grad^T(x-x0) + 0.5*(x-x0)^T*H*(x-x0)
+                    obj = f0
+                    
+                    # Linear terms
+                    for i in range(n_params):
+                        obj += grad[i] * (x[i] - x0[i])
+                    
+                    # Quadratic terms
+                    for i in range(n_params):
+                        for j in range(n_params):
+                            obj += 0.5 * hessian[i, j] * (x[i] - x0[i]) * (x[j] - x0[j])
+                    
+                    model.setObjective(obj, GRB.MINIMIZE)
+                    
+                    # Optimize
+                    model.optimize()
+                    
+                    # Extract results
+                    if model.status == GRB.OPTIMAL:
+                        optimal_params = np.array([x[i].x for i in range(n_params)])  # type: ignore
+                        optimal_value = objective_func(optimal_params)  # Evaluate true objective
+                        
+                        # Create OptimizeResult-like object
+                        result = optimize.OptimizeResult(
+                            x=optimal_params,
+                            fun=optimal_value,
+                            success=True,
+                            status=0,
+                            message="Optimization terminated successfully.",
+                            nit=model.getAttr(GRB.Attr.IterCount),
+                            nfev=model.getAttr(GRB.Attr.IterCount) + n_params * (n_params + 3) // 2 + 1,  # Approximate function evaluations
+                            method="Gurobi-QP"
+                        )
+                        
+                        return True, result
+                    else:
+                        status_messages = {
+                            GRB.INFEASIBLE: "Model is infeasible",
+                            GRB.INF_OR_UNBD: "Model is infeasible or unbounded", 
+                            GRB.UNBOUNDED: "Model is unbounded",
+                            GRB.CUTOFF: "Objective cutoff reached",
+                            GRB.ITERATION_LIMIT: "Iteration limit reached",
+                            GRB.NODE_LIMIT: "Node limit reached",
+                            GRB.TIME_LIMIT: "Time limit reached",
+                            GRB.SOLUTION_LIMIT: "Solution limit reached",
+                            GRB.INTERRUPTED: "Optimization interrupted",
+                            GRB.NUMERIC: "Numerical issues encountered",
+                            GRB.SUBOPTIMAL: "Suboptimal solution found",
+                        }
+                        message = status_messages.get(model.status, f"Unknown status: {model.status}")
+                        
+                        result = optimize.OptimizeResult(
+                            x=initial_parameters,
+                            fun=f0,
+                            success=False,
+                            status=model.status,
+                            message=message,
+                            nit=model.getAttr(GRB.Attr.IterCount) if hasattr(model, 'IterCount') else 0,
+                            nfev=n_params * (n_params + 3) // 2 + 1,
+                            method="Gurobi-QP"
+                        )
+                        
+                        return False, result
+                        
         except Exception as e:
             return False, e
 
@@ -545,13 +845,16 @@ class ClassicalOptimizer:
         effective_param_count : int, optional
             Number of parameters to use (3 for static, 7 for laminar flow)
         is_static_mode : bool, optional
-            Whether static mode is enabled
+            Whether static mode is enabled (unused, kept for compatibility)
 
         Returns
         -------
         List[Tuple[float, float]]
-            List of (min, max) bounds for each parameter (not used)
+            List of (min, max) bounds for each parameter
         """
+        # Note: is_static_mode parameter is unused but kept for API compatibility  
+        _ = is_static_mode  # Explicitly mark as unused for type checker
+        
         bounds = []
         param_bounds = self.config.get("parameter_space", {}).get("bounds", [])
 
@@ -637,6 +940,7 @@ class ClassicalOptimizer:
         best_params: np.ndarray,
         best_result: optimize.OptimizeResult,
         total_time: float,
+        method_name: str = "unknown",
     ) -> Dict[str, Any]:
         """
         Generate comprehensive optimization summary.
@@ -669,7 +973,7 @@ class ClassicalOptimizer:
                 for i, param in enumerate(best_params)
             },
             "optimization_details": {
-                "method": getattr(best_result, "method", "unknown"),
+                "method": method_name,
                 "converged": best_result.success,
                 "iterations": getattr(best_result, "nit", None),
                 "function_evaluations": getattr(best_result, "nfev", None),

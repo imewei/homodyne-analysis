@@ -341,7 +341,7 @@ class TestOutputDirectory:
         try:
             result = get_output_directory(None)
             assert result.exists()
-            assert result.name == "results"
+            assert result.name == "homodyne_results"
         finally:
             os.chdir(original_cwd)
 
@@ -352,7 +352,7 @@ class TestOutputDirectory:
         try:
             result = get_output_directory({})
             assert result.exists()
-            assert result.name == "results"
+            assert result.name == "homodyne_results"
         finally:
             os.chdir(Path(__file__).parent.parent)
 
@@ -403,7 +403,7 @@ class TestAnalysisResultsSaving:
             assert save_status["json"] is True
 
             # Check results directory was created
-            results_dir = temp_directory / "results"
+            results_dir = temp_directory / "homodyne_results"
             assert results_dir.exists()
 
         finally:

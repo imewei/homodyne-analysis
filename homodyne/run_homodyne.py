@@ -556,7 +556,7 @@ def run_classical_optimization(
                 "optimization_time": getattr(result, "execution_time", 0),
                 "total_time": 0,
                 "success": result.success,
-                "method": getattr(result, "method", "unknown"),
+                "method": getattr(result, "best_method", "unknown"),
                 "iterations": getattr(result, "nit", None),
                 "function_evaluations": getattr(result, "nfev", None),
             },
@@ -1626,7 +1626,7 @@ Examples:
   %(prog)s                                    # Run with default classical method
   %(prog)s --method all --verbose             # Run all methods with debug logging  
   %(prog)s --config my_config.json            # Use custom config file
-  %(prog)s --output-dir ./results --verbose   # Custom output directory with verbose logging
+  %(prog)s --output-dir ./homodyne_results --verbose   # Custom output directory with verbose logging
   %(prog)s --quiet                            # Run with file logging only (no console output)
   %(prog)s --static-isotropic                 # Force static mode (zero shear, 3 parameters)
   %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC

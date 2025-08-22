@@ -409,6 +409,37 @@ Run comprehensive performance diagnostics:
    # Update baselines after improvements
    pytest homodyne/tests/test_performance.py --update-baselines
 
+**Recent Testing Infrastructure Improvements**
+
+**Test Stability Enhancements:**
+
+- **JIT Warmup Integration**: Automatic Numba kernel warmup eliminates JIT compilation variance in benchmarks
+- **Performance Ratio Testing**: Improved chi2_correlation_ratio_regression with automatic workload scaling for ultra-fast operations
+- **Test Cleanup**: Enhanced automatic cleanup of test-generated homodyne_results directories
+- **Skip Reason Visibility**: Added ``-rs`` flag to pytest configuration for always showing skip reasons
+
+**Performance Baseline Management:**
+
+The testing framework now includes comprehensive performance baselines stored in ``performance_baselines.json``:
+
+.. code-block:: bash
+
+   # Performance baselines are automatically loaded
+   pytest homodyne/tests/test_performance.py::TestStableBenchmarking -v
+   
+   # All tests show detailed performance comparisons
+   pytest -m benchmark --benchmark-only
+
+**Benchmark Color Interpretation:**
+
+pytest-benchmark uses relative color coding:
+
+- **🟢 GREEN**: Fastest test in the comparison group (baseline)
+- **⚪ WHITE**: Moderate performance relative to the group  
+- **🔴 RED**: Slowest in group (not necessarily bad performance)
+
+**Important**: Red color indicates relative ranking, not absolute performance issues. All homodyne operations achieve sub-millisecond performance.
+
 Algorithm Optimization
 ======================
 
