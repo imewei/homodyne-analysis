@@ -460,6 +460,7 @@
       },
       "c2_heatmaps": {
         "enabled": true,
+        "_method_specific_note": "When multiple optimization methods are used (e.g., Nelder-Mead + Gurobi), separate heatmaps are generated for each method with method names in filenames",
         "layout": "single_row",
         "include_experimental": true,
         "include_theoretical": true,
@@ -514,6 +515,7 @@
           "diagnostics": "diagnostics"
         },
         "filename_template": "{analysis_type}_{timestamp}_{method}",
+        "_filename_template_note": "Method-specific plotting: {method} will be replaced with optimization method name (e.g., Nelder-Mead, Gurobi) for easy identification",
         "include_timestamp": true,
         "overwrite_existing": false
       }

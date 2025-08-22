@@ -546,7 +546,7 @@ def run_classical_optimization(
             )
             # Generate classical-specific plots
             _generate_classical_plots(
-                analyzer, best_params, phi_angles, c2_exp, output_dir
+                analyzer, best_params, result, phi_angles, c2_exp, output_dir
             )
 
         return {
@@ -965,22 +965,47 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     return None
 
 
-def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_dir):
+def _generate_classical_plots(analyzer, best_params, result, phi_angles, c2_exp, output_dir):
     """
-    Generate plots specifically for classical optimization results.
+    Generate method-specific plots for classical optimization results.
+    
+    This function creates separate C2 correlation heatmaps for each successful
+    optimization method (e.g., Nelder-Mead, Gurobi), allowing visual comparison
+    of results from different optimization algorithms. Each method's plots are
+    saved with method-specific filenames for easy identification.
 
     Parameters
     ----------
     analyzer : HomodyneAnalysisCore
         Main analysis engine with loaded configuration
     best_params : np.ndarray
-        Optimized parameters from classical optimization
+        Best optimized parameters from classical optimization (used as fallback)
+    result : OptimizeResult
+        Classical optimization result object containing method_results dictionary
+        with individual method results and parameters
     phi_angles : np.ndarray
         Angular coordinates for the scattering data
     c2_exp : np.ndarray
         Experimental correlation function data
     output_dir : Path
         Output directory for saving classical results
+
+    Returns
+    -------
+    None
+        Function performs plotting operations and saves files to disk
+
+    Notes
+    -----
+    - If result.method_results is available, generates plots for each successful method
+    - Method names are included in plot filenames (e.g., "c2_heatmaps_Gurobi_phi_0.0deg.png")
+    - Falls back to single plot with best parameters if method_results unavailable
+    - All plots are saved to output_dir/classical/ subdirectory
+    
+    See Also
+    --------
+    homodyne.plotting.plot_c2_heatmaps : Underlying plotting function
+    ClassicalOptimizer.run_classical_optimization_optimized : Method that generates method_results
     """
     logger = logging.getLogger(__name__)
 
@@ -1015,32 +1040,74 @@ def _generate_classical_plots(analyzer, best_params, phi_angles, c2_exp, output_
         t2 = np.arange(n_t2) * dt
         t1 = np.arange(n_t1) * dt
 
-        # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-            best_params, phi_angles
-        )
-
-        # Generate C2 heatmaps in classical directory
+        # Generate plots for each successful optimization method
         try:
             from .plotting import plot_c2_heatmaps
 
-            # Time arrays already initialized at function start
-
-            logger.info("Generating C2 correlation heatmaps for classical results...")
-            success = plot_c2_heatmaps(
-                c2_exp,
-                c2_theory,
-                phi_angles,
-                classical_dir,
-                config,
-                t2=t2,
-                t1=t1,
-            )
-
-            if success:
-                logger.info("✓ Classical C2 heatmaps generated successfully")
+            # Check if method_results are available
+            method_results = getattr(result, 'method_results', {})
+            if not method_results or method_results is None:
+                # Fallback to single plot with best parameters
+                logger.info("No method_results available, generating single plot with best parameters...")
+                c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                    best_params, phi_angles
+                )
+                success = plot_c2_heatmaps(
+                    c2_exp,
+                    c2_theory,
+                    phi_angles,
+                    classical_dir,
+                    config,
+                    t2=t2,
+                    t1=t1,
+                    method_name="best"
+                )
+                if success:
+                    logger.info("✓ Classical C2 heatmaps generated successfully")
+                else:
+                    logger.warning("⚠ Some classical C2 heatmaps failed to generate")
             else:
-                logger.warning("⚠ Some classical C2 heatmaps failed to generate")
+                # Generate plots for each successful method
+                logger.info(f"Generating C2 correlation heatmaps for {len(method_results)} optimization methods...")
+                all_success = True
+                
+                for method_name, method_data in method_results.items():
+                    if method_data.get('success', False):
+                        method_params = method_data.get('parameters')
+                        if method_params is not None:
+                            logger.info(f"  Generating plots for {method_name}...")
+                            
+                            # Calculate theoretical data for this method
+                            c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                                method_params, phi_angles
+                            )
+                            
+                            # Generate method-specific plots
+                            success = plot_c2_heatmaps(
+                                c2_exp,
+                                c2_theory,
+                                phi_angles,
+                                classical_dir,
+                                config,
+                                t2=t2,
+                                t1=t1,
+                                method_name=method_name
+                            )
+                            
+                            if success:
+                                logger.info(f"  ✓ {method_name} C2 heatmaps generated successfully")
+                            else:
+                                logger.warning(f"  ⚠ Some {method_name} C2 heatmaps failed to generate")
+                                all_success = False
+                        else:
+                            logger.warning(f"  ⚠ No parameters found for {method_name}, skipping plots")
+                    else:
+                        logger.info(f"  ⚠ {method_name} was not successful, skipping plots")
+                
+                if all_success:
+                    logger.info("✓ All method-specific C2 heatmaps generated successfully")
+                else:
+                    logger.warning("⚠ Some method-specific C2 heatmaps failed to generate")
 
         except Exception as e:
             logger.error(f"Failed to generate classical C2 heatmaps: {e}")

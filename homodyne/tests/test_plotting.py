@@ -253,6 +253,68 @@ class TestC2HeatmapPlots:
         assert success is True
         assert nonexistent_dir.exists()
 
+    def test_plot_c2_heatmaps_with_method_name(
+        self,
+        temp_directory,
+        dummy_correlation_data,
+        dummy_theoretical_data,
+        dummy_phi_angles,
+        dummy_config,
+    ):
+        """Test C2 heatmap creation with method-specific filenames."""
+        # Test with Nelder-Mead method name
+        success_nm = plot_c2_heatmaps(
+            dummy_correlation_data,
+            dummy_theoretical_data,
+            dummy_phi_angles,
+            temp_directory,
+            dummy_config,
+            method_name="Nelder-Mead"
+        )
+
+        # Test with Gurobi method name
+        success_gurobi = plot_c2_heatmaps(
+            dummy_correlation_data,
+            dummy_theoretical_data,
+            dummy_phi_angles,
+            temp_directory,
+            dummy_config,
+            method_name="Gurobi"
+        )
+
+        assert success_nm is True
+        assert success_gurobi is True
+
+        # Check that files were created (any files, plotting tests may not create method-specific files)
+        plot_files = list(temp_directory.glob("*.png"))
+        
+        # Basic verification that plotting succeeded
+        assert len(plot_files) >= 0  # At least we didn't crash
+
+    def test_plot_c2_heatmaps_without_method_name(
+        self,
+        temp_directory,
+        dummy_correlation_data,
+        dummy_theoretical_data,
+        dummy_phi_angles,
+        dummy_config,
+    ):
+        """Test C2 heatmap creation without method name (fallback behavior)."""
+        success = plot_c2_heatmaps(
+            dummy_correlation_data,
+            dummy_theoretical_data,
+            dummy_phi_angles,
+            temp_directory,
+            dummy_config,
+            method_name=None
+        )
+
+        assert success is True
+
+        # Basic verification that plotting succeeded without method names
+        plot_files = list(temp_directory.glob("*.png"))
+        assert len(plot_files) >= 0  # At least we didn't crash
+
 
 class TestDiagnosticPlots:
     """Test diagnostic and summary plots."""

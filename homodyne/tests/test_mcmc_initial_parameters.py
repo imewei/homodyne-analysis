@@ -47,6 +47,9 @@ class TestMCMCInitialParameterHandling:
                 "values": [1000, -0.5, 100],
                 "active_parameters": ["D0", "alpha", "D_offset"],
             },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
+            },
             "parameter_space": {
                 "bounds": [
                     {"name": "D0", "min": 100, "max": 10000},
@@ -62,13 +65,14 @@ class TestMCMCInitialParameterHandling:
 
         # Mock the MCMC sampler creation and initialization detection
         with patch(
-            "homodyne.optimization.mcmc.create_mcmc_sampler"
+            "homodyne.run_homodyne.create_mcmc_sampler"
         ) as mock_create_sampler:
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
                 "posterior_means": {"D0": 5100, "alpha": -1.15, "D_offset": 480},
                 "trace": None,
                 "diagnostics": {"converged": True, "max_rhat": 1.01, "min_ess": 400},
+                "chi_squared": 1.5,  # Add chi_squared to avoid comparison issues
             }
             mock_create_sampler.return_value = mock_sampler
 
@@ -117,6 +121,12 @@ class TestMCMCInitialParameterHandling:
                 "values": [1000, -0.5, 100],
                 "active_parameters": ["D0", "alpha", "D_offset"],
             },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
+            },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
+            },
             "parameter_space": {
                 "bounds": [
                     {"name": "D0", "min": 100, "max": 10000},
@@ -132,7 +142,7 @@ class TestMCMCInitialParameterHandling:
         # Mock the MCMC sampler creation and the import
         with (
             patch(
-                "homodyne.optimization.mcmc.create_mcmc_sampler"
+                "homodyne.run_homodyne.create_mcmc_sampler"
             ) as mock_create_sampler,
             patch(
                 "homodyne.run_homodyne.create_mcmc_sampler"
@@ -188,6 +198,12 @@ class TestMCMCInitialParameterHandling:
                 "parameter_names": ["D0", "alpha", "D_offset"],
                 "values": [1000, -0.5, 100],
                 "active_parameters": ["D0", "alpha", "D_offset"],
+            },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
+            },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
             },
             "parameter_space": {
                 "bounds": [
@@ -270,6 +286,9 @@ class TestMCMCInitialParameterHandling:
                 "values": [1000, -0.5, 100],
                 "active_parameters": ["D0", "alpha", "D_offset"],
             },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
+            },
             "parameter_space": {
                 "bounds": [
                     {"name": "D0", "min": 100, "max": 10000},
@@ -349,7 +368,7 @@ class TestMCMCInitialParameterHandling:
 
         with (
             patch(
-                "homodyne.optimization.mcmc.create_mcmc_sampler"
+                "homodyne.run_homodyne.create_mcmc_sampler"
             ) as mock_create_sampler,
             patch("logging.getLogger") as mock_logger,
         ):
@@ -401,7 +420,7 @@ class TestMCMCInitialParameterHandling:
 
         with (
             patch(
-                "homodyne.optimization.mcmc.create_mcmc_sampler"
+                "homodyne.run_homodyne.create_mcmc_sampler"
             ) as mock_create_sampler,
             patch("logging.getLogger") as mock_logger,
         ):
@@ -504,6 +523,9 @@ class TestMCMCInitialParameterHandling:
                 "parameter_names": ["D0", "alpha", "D_offset"],
                 "values": initial_params,
                 "active_parameters": ["D0", "alpha", "D_offset"],
+            },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.5, "start_frame": 1, "end_frame": 100}
             }
         }
 
