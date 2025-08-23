@@ -137,11 +137,41 @@ class MockAnalysisCorePerformance:
         residuals = c2_experimental - c2_theory
         return np.sum(residuals**2) / c2_experimental.size  # Normalized chi-squared
     
+    def calculate_c2_nonequilibrium_laminar_parallel(self, params, phi_angles):
+        """Mock method for robust optimization compatibility."""
+        n_angles = len(phi_angles)
+        time_delays = np.linspace(0, 10, self.n_times)
+        
+        D0, alpha, D_offset = params[0], params[1], params[2]
+        # Return shape (n_angles, n_times, n_times) for compatibility
+        c2_theory = np.zeros((n_angles, self.n_times, self.n_times))
+        
+        # Vectorized computation
+        D_eff = D0 * time_delays**abs(alpha) + D_offset * time_delays
+        
+        for i, phi in enumerate(phi_angles):
+            angular_factor = 1.0 + 0.1 * np.cos(np.radians(phi))
+            contrast = 0.25 * angular_factor
+            
+            # Fill 3D correlation matrix
+            for j in range(self.n_times):
+                for k in range(self.n_times):
+                    tau = abs(time_delays[j] - time_delays[k])
+                    decay = np.exp(-0.01 * D_eff[min(j,k)])
+                    c2_theory[i, j, k] = 1.0 + contrast * decay
+                    
+        return c2_theory
+    
     def is_static_mode(self):
         return True
     
     def get_effective_parameter_count(self):
         return 3
+        
+    @property
+    def time_length(self):
+        """Mock time length property."""
+        return self.n_times
 
 
 @pytest.fixture
@@ -250,9 +280,9 @@ class TestRobustOptimizationPerformance:
         end_time = time.time()
         avg_correlation_time = (end_time - start_time) / 30
         
-        # Theoretical correlation should be fast (< 10ms for 20x100 data)
-        assert avg_correlation_time < 0.01, f"Theoretical correlation too slow: {avg_correlation_time:.4f}s"
-        assert c2_theory.shape == (len(phi_angles), performance_mock_core.n_times)
+        # Theoretical correlation should be fast (< 200ms for 20x100x100 data)
+        assert avg_correlation_time < 0.2, f"Theoretical correlation too slow: {avg_correlation_time:.4f}s"
+        assert c2_theory.shape == (len(phi_angles), performance_mock_core.n_times, performance_mock_core.n_times)
     
     def test_jacobian_computation_performance(self, performance_mock_core):
         """Test performance of Jacobian computation for linearization."""
@@ -265,13 +295,13 @@ class TestRobustOptimizationPerformance:
         # Timing test
         start_time = time.time()
         
-        c2_theory, jacobian = optimizer._compute_linearized_correlation(test_params, phi_angles)
+        c2_theory, jacobian = optimizer._compute_linearized_correlation(test_params, phi_angles, performance_mock_core.c2_experimental)
         
         end_time = time.time()
         jacobian_time = end_time - start_time
         
-        # Jacobian computation involves finite differences, should be reasonable (< 100ms)
-        assert jacobian_time < 0.1, f"Jacobian computation too slow: {jacobian_time:.4f}s"
+        # Jacobian computation involves finite differences, should be reasonable (< 2s for 3D data)
+        assert jacobian_time < 2.0, f"Jacobian computation too slow: {jacobian_time:.4f}s"
         assert jacobian.shape[1] == len(test_params)
         assert jacobian.shape[0] == c2_theory.size
     
@@ -514,10 +544,10 @@ class TestRobustOptimizationMemoryUsage:
         phi_angles = large_scale_mock_core.phi_angles
         
         # Compute Jacobian for large dataset
-        c2_theory, jacobian = optimizer._compute_linearized_correlation(test_params, phi_angles)
+        c2_theory, jacobian = optimizer._compute_linearized_correlation(test_params, phi_angles, large_scale_mock_core.c2_experimental)
         
         # Check dimensions
-        expected_data_size = len(phi_angles) * large_scale_mock_core.n_times
+        expected_data_size = len(phi_angles) * large_scale_mock_core.n_times * large_scale_mock_core.n_times
         assert jacobian.shape == (expected_data_size, len(test_params))
         assert c2_theory.size == expected_data_size
         

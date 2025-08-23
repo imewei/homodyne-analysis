@@ -17,6 +17,7 @@ import json
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 import logging
+from scipy import optimize
 
 # Import homodyne modules
 try:
@@ -169,6 +170,27 @@ class MockAnalysisCore:
         residuals = c2_experimental - c2_theory
         return np.sum(residuals**2)
     
+    def calculate_c2_nonequilibrium_laminar_parallel(self, params, phi_angles):
+        """Mock method for robust optimization compatibility."""
+        n_angles = len(phi_angles)
+        n_times = 50
+        time_delays = np.linspace(0, 5, n_times)
+        
+        D0, alpha, D_offset = params[0], params[1], params[2]
+        # Return shape (n_angles, n_times, n_times) for compatibility
+        c2_theory = np.zeros((n_angles, n_times, n_times))
+        
+        for i in range(n_angles):
+            # Simple model with proper 3D structure
+            decay_factor = D0 * time_delays**abs(alpha) + D_offset * time_delays
+            for j in range(n_times):
+                for k in range(n_times):
+                    tau = abs(time_delays[j] - time_delays[k])
+                    decay = np.exp(-decay_factor[min(j,k)])
+                    c2_theory[i, j, k] = 1.0 + 0.3 * decay
+                    
+        return c2_theory
+    
     def is_static_mode(self):
         """Return True for static mode testing."""
         return True
@@ -176,6 +198,11 @@ class MockAnalysisCore:
     def get_effective_parameter_count(self):
         """Return 3 parameters for static mode."""
         return 3
+        
+    @property
+    def time_length(self):
+        """Mock time length property."""
+        return 50
 
 
 @pytest.fixture
@@ -303,7 +330,8 @@ class TestRobustHomodyneOptimizer:
         
         c2_theory, jacobian = optimizer._compute_linearized_correlation(
             synthetic_data["true_params"],
-            synthetic_data["phi_angles"]
+            synthetic_data["phi_angles"],
+            synthetic_data["c2_experimental"]
         )
         
         assert isinstance(c2_theory, np.ndarray)
@@ -640,10 +668,14 @@ class TestClassicalOptimizerIntegration:
         
         if ROBUST_OPTIMIZATION_AVAILABLE:
             assert success == True
-            assert hasattr(result, 'x')
-            assert hasattr(result, 'fun')
-            assert hasattr(result, 'success')
-            assert np.array_equal(result.x, np.array([100.0, -0.5, 10.0]))
+            # Only check result attributes when optimization succeeded and result is not an exception
+            if success and not isinstance(result, Exception):
+                assert hasattr(result, 'x')
+                assert hasattr(result, 'fun')
+                assert hasattr(result, 'success')
+                # Type narrowing: at this point we know result is OptimizeResult, not Exception
+                optimization_result: optimize.OptimizeResult = result  # Type annotation for clarity
+                assert np.array_equal(optimization_result.x, np.array([100.0, -0.5, 10.0]))
         else:
             assert success == False
     

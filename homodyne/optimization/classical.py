@@ -818,16 +818,24 @@ class ClassicalOptimizer:
             robust_optimizer = create_robust_optimizer(self.core, self.config)
             
             # Extract phi_angles and c2_experimental from the objective function context
-            # This is a limitation - we need these for robust optimization
-            # For now, we'll extract them from the core analysis
+            # Check both the direct attributes and the cached versions
             phi_angles = getattr(self.core, 'phi_angles', None)
             c2_experimental = getattr(self.core, 'c2_experimental', None)
+            
+            # If not found, try the cached versions from load_experimental_data
+            if phi_angles is None:
+                phi_angles = getattr(self.core, '_last_phi_angles', None)
+            if c2_experimental is None:
+                c2_experimental = getattr(self.core, '_last_experimental_data', None)
             
             if phi_angles is None or c2_experimental is None:
                 raise ValueError(
                     "Robust optimization requires phi_angles and c2_experimental "
-                    "to be available in the analysis core"
+                    "to be available in the analysis core. "
+                    f"Found phi_angles: {'present' if phi_angles is not None else 'missing'}, "
+                    f"c2_experimental: {'present' if c2_experimental is not None else 'missing'}"
                 )
+                
             
             # Map method names to robust optimization types
             method_mapping = {
@@ -1097,7 +1105,7 @@ class ClassicalOptimizer:
             "timing": {
                 "total_time_seconds": total_time,
                 "average_evaluation_time": (
-                    total_time / getattr(best_result, "nfev", 1)
+                    total_time / (getattr(best_result, "nfev", None) or 1)
                 ),
             },
             "parameter_validation": {},

@@ -104,10 +104,10 @@
       "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
       "_methods_note": "Available: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
       "_usage_flags": {
-        "--method classical": "Runs all methods listed above in sequence, selects best result",
+        "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
         "--method robust": "Runs ONLY Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
         "--method mcmc": "Runs Bayesian MCMC sampling for uncertainty quantification",
-        "--method all": "Runs classical methods (including robust) followed by MCMC"
+        "--method all": "Runs all methods listed above (classical + robust) followed by MCMC"
       },
       "_gurobi_availability": "Gurobi provides quadratic programming alternative. Requires license: pip install gurobipy",
       "_robust_availability": "Robust methods require CVXPY: pip install cvxpy. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",

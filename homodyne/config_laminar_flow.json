@@ -104,9 +104,9 @@
       "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
       "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
       "_usage_flags": {
-        "--method classical": "Runs all methods above in sequence, selects best result",
+        "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
         "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
-        "--method all": "Runs classical (including robust) + MCMC for complete analysis"
+        "--method all": "Runs all methods above (classical + robust) + MCMC for complete analysis"
       },
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
