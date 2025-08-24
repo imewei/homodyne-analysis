@@ -146,7 +146,6 @@ from ..core.kernels import (
     calculate_shear_rate_numba,
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
-    compute_chi_squared_with_sigma_numba,
     solve_least_squares_batch_numba,
     compute_chi_squared_batch_numba,
     memory_efficient_cache,
@@ -1802,7 +1801,7 @@ class HomodyneAnalysisCore:
         poor_angles = [angles[i] for i in poor_indices]
         poor_chi2 = [angle_chi2_reduced[i] for i in poor_indices]
 
-        # Legacy compatibility
+        # Compatibility aliases for test suite and external users
         unacceptable_angles = poor_angles
         unacceptable_chi2 = poor_chi2
         good_angles = acceptable_angles
@@ -1930,7 +1929,7 @@ class HomodyneAnalysisCore:
                     "fraction": len(poor_angles) / len(angles),
                     "criteria": f"χ²_red > {warning_per_angle}",
                 },
-                # Legacy compatibility
+                # Standard output format for test suite and external users
                 "good_angles": {
                     "angles_deg": good_angles,
                     "count": num_good_angles,
@@ -2133,7 +2132,7 @@ class HomodyneAnalysisCore:
             any('test' in arg for arg in sys.argv) and 'pytest' in ' '.join(sys.argv)
         )
         
-        # Note: Legacy file saving removed - new method-specific saving in run_homodyne.py 
+        # Note: File saving handled by run_homodyne.py with proper directory structure 
         # handles all file outputs with proper directory structure
 
     def _plot_experimental_data_validation(

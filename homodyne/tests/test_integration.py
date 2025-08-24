@@ -1094,7 +1094,7 @@ class TestAnalysisWorkflowIntegration:
 
         # Should have attempted multiple plot types
         expected_basic_plots = ["c2_heatmaps", "diagnostic_summary"]
-        # parameter_evolution has been removed due to persistent issues
+        # Note: parameter_evolution functionality has been removed
         for plot_type in expected_basic_plots:
             if plot_type in plot_status:
                 assert isinstance(plot_status[plot_type], bool)

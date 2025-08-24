@@ -918,7 +918,7 @@ class TestCompleteWorkflow:
             "c2_heatmaps",
             "diagnostic_summary",
         ]
-        # parameter_evolution is disabled due to persistent issues
+        # Note: parameter_evolution functionality has been removed
         # MCMC plots are optional depending on data availability
         optional_plots = ["mcmc_corner", "mcmc_trace", "mcmc_convergence"]
 

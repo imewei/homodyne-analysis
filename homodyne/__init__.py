@@ -56,33 +56,9 @@ from .core.kernels import (
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
     memory_efficient_cache,
-    # Optimized performance kernels
-    create_symmetric_matrix_optimized,
-    matrix_vector_multiply_optimized,
-    apply_scaling_vectorized,
-    compute_chi_squared_fast,
-    exp_negative_vectorized,
 )
 
-# Performance profiling utilities (enhanced)
-try:
-    from .core.profiler import (
-        profile_execution_time,
-        profile_memory_usage,
-        get_performance_summary,
-        # New stable benchmarking utilities
-        stable_benchmark,
-        optimize_numerical_environment,
-        assert_performance_within_bounds,
-        assert_performance_stability,
-    )
-except ImportError as e:
-    # Profiling utilities are optional
-    import logging
-
-    logging.getLogger(__name__).debug(
-        f"Performance profiling utilities not available: {e}"
-    )
+# Performance profiling utilities removed - functionality available via core.config.performance_monitor
 from .analysis.core import HomodyneAnalysisCore
 
 # Optional optimization modules with graceful degradation
@@ -131,21 +107,6 @@ __all__ = [
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
     "memory_efficient_cache",
-    # Performance optimized kernels
-    "create_symmetric_matrix_optimized",
-    "matrix_vector_multiply_optimized",
-    "apply_scaling_vectorized",
-    "compute_chi_squared_fast",
-    "exp_negative_vectorized",
-    # Performance profiling utilities (optional)
-    "profile_execution_time",
-    "profile_memory_usage",
-    "get_performance_summary",
-    # Stable benchmarking utilities (new)
-    "stable_benchmark",
-    "optimize_numerical_environment",
-    "assert_performance_within_bounds",
-    "assert_performance_stability",
     # Optimization methods (optional)
     "ClassicalOptimizer",
     "RobustHomodyneOptimizer",

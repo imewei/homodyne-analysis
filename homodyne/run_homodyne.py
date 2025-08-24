@@ -214,11 +214,7 @@ def print_banner(args: argparse.Namespace) -> None:
         )
 
     # Show analysis mode
-    if args.static:
-        print(
-            f"Analysis mode:    Static anisotropic (3 parameters, with angle selection)"
-        )
-    elif args.static_isotropic:
+    if args.static_isotropic:
         print(f"Analysis mode:    Static isotropic (3 parameters, no angle selection)")
     elif args.static_anisotropic:
         print(
@@ -281,21 +277,7 @@ def run_analysis(args: argparse.Namespace) -> None:
 
         # Apply mode override if specified
         config_override: Optional[Dict[str, Any]] = None
-        if args.static:
-            # Keep backward compatibility: --static maps to static anisotropic
-            config_override = {
-                "analysis_settings": {
-                    "static_mode": True,
-                    "static_submode": "anisotropic",
-                }
-            }
-            logger.info(
-                "Using command-line override: static anisotropic mode (3 parameters, with angle selection)"
-            )
-            logger.warning(
-                "Note: --static is deprecated, use --static-anisotropic instead"
-            )
-        elif args.static_isotropic:
+        if args.static_isotropic:
             config_override = {
                 "analysis_settings": {
                     "static_mode": True,
@@ -2545,11 +2527,6 @@ Method Quality Assessment:
     # Add analysis mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
-        "--static",
-        action="store_true",
-        help="Force static anisotropic mode analysis (3 parameters, with angle selection) [deprecated: use --static-anisotropic]",
-    )
-    mode_group.add_argument(
         "--static-isotropic",
         action="store_true",
         help="Force static isotropic mode analysis (3 parameters, no angle selection)",
@@ -2594,12 +2571,7 @@ Method Quality Assessment:
     logger.info(f"Log file: {args.output_dir / 'run.log'}")
 
     # Log analysis mode selection
-    if args.static:
-        logger.info(
-            "Command-line mode: static anisotropic (3 parameters, with angle selection)"
-        )
-        logger.warning("Note: --static is deprecated, use --static-anisotropic instead")
-    elif args.static_isotropic:
+    if args.static_isotropic:
         logger.info(
             "Command-line mode: static isotropic (3 parameters, no angle selection)"
         )
