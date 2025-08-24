@@ -624,7 +624,9 @@ def save_analysis_results(
     save_status = {}
 
     # Handle classical optimization results with method-specific saving
-    if "classical_optimization" in results:
+    # ONLY for true classical methods, not for robust methods that use ClassicalOptimizer internally
+    if ("classical_optimization" in results and 
+        results.get("methods_used", []) == ["Classical"]):
         classical_results = results["classical_optimization"]
         method_results = None
         

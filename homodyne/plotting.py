@@ -363,8 +363,17 @@ def plot_c2_heatmaps(
             )
 
             # Save the plot
-            method_prefix = f"{method_name.lower()}_" if method_name else ""
-            filename = f"{method_prefix}c2_heatmaps_phi_{phi:.1f}deg.{plot_config['plot_format']}"
+            # Use simplified filename format when saving in method directories
+            if method_name and len(str(outdir).split('/')) > 1 and str(outdir).split('/')[-1] in ['nelder_mead', 'gurobi', 'wasserstein', 'scenario', 'ellipsoidal']:
+                # Simplified format for method directories: c2_heatmaps_[method_name].png
+                if len(phi_angles) == 1:
+                    filename = f"c2_heatmaps_{method_name}.{plot_config['plot_format']}"
+                else:
+                    filename = f"c2_heatmaps_{method_name}_phi_{phi:.1f}deg.{plot_config['plot_format']}"
+            else:
+                # Original format for backward compatibility
+                method_prefix = f"{method_name.lower()}_" if method_name else ""
+                filename = f"{method_prefix}c2_heatmaps_phi_{phi:.1f}deg.{plot_config['plot_format']}"
             filepath = outdir / filename
 
             if save_fig(
@@ -1760,11 +1769,8 @@ def create_all_plots(
                     method_name=method_name,
                 )
             
-            # Diagnostic summary for each method
-            plot_key = f"diagnostic_summary_{method_name.lower()}"
-            plot_status[plot_key] = plot_diagnostic_summary(
-                method_results_dict, method_outdir, config, method_name=method_name
-            )
+            # Note: Method-specific diagnostic summary plots removed - only main 
+            # diagnostic_summary.png for --method all is generated
     else:
         # Fallback to standard plotting without method specificity
         # C2 heatmaps (if correlation data available)

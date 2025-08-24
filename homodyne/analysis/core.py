@@ -2133,19 +2133,8 @@ class HomodyneAnalysisCore:
             any('test' in arg for arg in sys.argv) and 'pytest' in ' '.join(sys.argv)
         )
         
-        if not is_testing:
-            try:
-                from ..core.io_utils import save_analysis_results
-                # Temporarily modify config to use the specified output directory
-                temp_config = self.config.copy() if self.config else {}
-                if output_dir:
-                    if "output_settings" not in temp_config:
-                        temp_config["output_settings"] = {}
-                    temp_config["output_settings"]["results_directory"] = output_dir
-                save_status = save_analysis_results(results, temp_config)
-                logger.info(f"Enhanced method-specific results saved: {save_status}")
-            except Exception as io_error:
-                logger.warning(f"Method-specific saving failed: {io_error}")
+        # Note: Legacy file saving removed - new method-specific saving in run_homodyne.py 
+        # handles all file outputs with proper directory structure
 
     def _plot_experimental_data_validation(
         self, c2_experimental: np.ndarray, phi_angles: np.ndarray
@@ -2484,16 +2473,20 @@ Validation:
             else:
                 logger.debug("MCMC trace data not available - skipping MCMC plots")
 
-            # Generate diagnostic summary plot
-            logger.info("Generating diagnostic summary plot...")
-            try:
-                success = plot_diagnostic_summary(plot_data, plots_dir, config)
-                if success:
-                    logger.info("✓ Diagnostic summary plot generated successfully")
-                else:
-                    logger.warning("⚠ Diagnostic summary plot failed to generate")
-            except Exception as e:
-                logger.error(f"Failed to generate diagnostic summary plot: {e}")
+            # Generate diagnostic summary plot only for --method all (multiple methods)
+            methods_used = results.get("methods_used", [])
+            if len(methods_used) > 1:
+                logger.info("Generating diagnostic summary plot...")
+                try:
+                    success = plot_diagnostic_summary(plot_data, plots_dir, config)
+                    if success:
+                        logger.info("✓ Diagnostic summary plot generated successfully")
+                    else:
+                        logger.warning("⚠ Diagnostic summary plot failed to generate")
+                except Exception as e:
+                    logger.error(f"Failed to generate diagnostic summary plot: {e}")
+            else:
+                logger.info("Skipping diagnostic summary plot - only generated for --method all (multiple methods)")
 
             logger.info(f"Plots saved to: {plots_dir}")
 

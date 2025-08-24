@@ -13,12 +13,13 @@ from pathlib import Path
 # This must happen before importing pytest, numpy, matplotlib, etc.
 os.environ["PYTHONWARNINGS"] = "ignore"
 # Conservative threading for test stability (consistent with performance settings)
-os.environ["OMP_NUM_THREADS"] = "2"
-os.environ["OPENBLAS_NUM_THREADS"] = "2"
-os.environ["MKL_NUM_THREADS"] = "2"
-os.environ["NUMBA_NUM_THREADS"] = "2"  # ArviZ will respect this if set early
+os.environ["OMP_NUM_THREADS"] = "1"  # Use single thread to avoid conflicts
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMBA_NUM_THREADS"] = "1"  # Single thread for test stability
 os.environ["NUMBA_DISABLE_INTEL_SVML"] = "1"
 os.environ["NUMBA_FASTMATH"] = "0"  # Conservative JIT for stability
+os.environ["NUMBA_THREADING_LAYER"] = "safe"  # Use safe threading layer
 
 # Now safe to import everything else
 import pytest

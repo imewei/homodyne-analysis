@@ -218,7 +218,7 @@ class TestMethodResultsSaving:
                 assert dt_t2 > 0, "dt should be positive"
         
         # Check for summary file
-        summary_file = classical_dir / "all_methods_summary.json"
+        summary_file = classical_dir / "all_classical_methods_summary.json"
         assert summary_file.exists()
         
         with open(summary_file, 'r') as f:
@@ -244,8 +244,8 @@ class TestMethodResultsSaving:
         robust_dir = tmp_path / "robust"
         assert robust_dir.exists()
         
-        # Check for each method's directory
-        for method_name in ["robust_wasserstein", "robust_scenario"]:
+        # Check for each method's directory (using actual naming convention)
+        for method_name in ["wasserstein", "scenario"]:
             method_dir = robust_dir / method_name
             assert method_dir.exists(), f"Directory for {method_name} not created"
             

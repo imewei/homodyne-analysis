@@ -406,21 +406,36 @@ Starting from version 6.0, the analysis results are organized into method-specif
 .. code-block:: text
 
    ./homodyne_results/
-   ├── homodyne_analysis_results.json    # Main results file (moved from root directory)
+   ├── homodyne_analysis_results.json    # Main results file
    ├── run.log                           # Analysis log file
    ├── exp_data/                         # Experimental data plots (--plot-experimental-data)
    │   ├── data_validation_phi_*.png
    │   └── summary_statistics.txt
    ├── classical/                       # Classical method outputs (--method classical)
-   │   ├── per_angle_chi_squared_classical.json  # Per-angle analysis results
-   │   ├── experimental_data.npz         # Original experimental correlation data
-   │   ├── fitted_data.npz              # Fitted data (contrast * theory + offset)
-   │   ├── residuals_data.npz           # Residuals (experimental - fitted)
-   │   └── c2_heatmaps_phi_*.png        # C2 correlation heatmaps (--plot-c2-heatmaps)
+   │   ├── all_classical_methods_summary.json  # Summary of all classical methods
+   │   ├── nelder_mead/                  # Nelder-Mead method results
+   │   │   ├── analysis_results_nelder_mead.json
+   │   │   ├── parameters.json           # Parameters with uncertainties
+   │   │   ├── fitted_data.npz          # Complete data (experimental, fitted, residuals)
+   │   │   └── c2_heatmaps_nelder_mead.png
+   │   └── gurobi/                      # Gurobi method results
+   │       ├── analysis_results_gurobi.json
+   │       ├── parameters.json
+   │       ├── fitted_data.npz
+   │       └── c2_heatmaps_gurobi.png
+   ├── robust/                          # Robust method outputs (--method robust)
+   │   ├── all_robust_methods_summary.json  # Summary of all robust methods
+   │   ├── wasserstein/                 # Wasserstein robust method
+   │   │   ├── analysis_results_wasserstein.json
+   │   │   ├── parameters.json
+   │   │   ├── fitted_data.npz
+   │   │   └── c2_heatmaps_wasserstein.png
+   │   ├── scenario/                    # Scenario-based robust method
+   │   │   └── [similar structure]
+   │   └── ellipsoidal/                 # Ellipsoidal robust method
+   │       └── [similar structure]
    └── mcmc/                            # MCMC method outputs (--method mcmc)
-       ├── experimental_data.npz         # Original experimental correlation data
-       ├── fitted_data.npz              # Fitted data (contrast * posterior_means + offset)
-       ├── residuals_data.npz           # Residuals (experimental - fitted)
+       ├── fitted_data.npz              # Consolidated data (experimental, fitted, residuals, parameters)
        ├── mcmc_summary.json            # MCMC convergence diagnostics and posterior statistics
        ├── mcmc_trace.nc                # NetCDF trace data (ArviZ format)
        ├── c2_heatmaps_phi_*.png        # C2 correlation heatmaps using posterior means
@@ -451,7 +466,7 @@ The package automatically generates comprehensive diagnostic summary plots that 
 Main Diagnostic Summary Plot
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each analysis generates a ``diagnostic_summary.png`` file with a **2×3 grid layout** containing:
+Each analysis generates a main ``diagnostic_summary.png`` file in the root results directory (``./homodyne_results/diagnostic_summary.png``) with a **2×3 grid layout** containing:
 
 **Subplot 1: Method Comparison (Top Left)**
   - Bar chart comparing χ² values across optimization methods
@@ -476,16 +491,10 @@ Each analysis generates a ``diagnostic_summary.png`` file with a **2×3 grid lay
   - Statistical summary with mean (μ) and standard deviation (σ)
   - Shows placeholder if residuals data unavailable
 
-Method-Specific Diagnostic Summaries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Method-Specific Diagnostic Summaries (Removed)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Individual diagnostic summaries are generated for each optimization method:
-
-- ``nelder_mead_diagnostic_summary.png``
-- ``gurobi_diagnostic_summary.png`` 
-- ``robust_wasserstein_diagnostic_summary.png``
-- ``robust_scenario_diagnostic_summary.png``
-- ``robust_ellipsoidal_diagnostic_summary.png``
+**Note:** Method-specific diagnostic summary plots have been removed to reduce redundant output. Only the main ``diagnostic_summary.png`` is generated for ``--method all`` to provide meaningful cross-method comparisons.
 
 Additional Visualization Outputs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -543,8 +552,44 @@ Each method directory contains two primary files:
 **parameters.json** - Human-readable parameter results
   Contains fitted parameter values with uncertainties, goodness-of-fit metrics (chi-squared, degrees of freedom), convergence information (iterations, function evaluations, termination status), and data statistics.
 
-**fitted_data.npz** - Numerical data archive
-  Contains fitted correlation data, original experimental data, fitting residuals, parameter values and uncertainties, chi-squared values, and time arrays (t₁, t₂) with proper dt-based discretization.
+**fitted_data.npz** - Consolidated Numerical Data Archive
+
+Complete data structure for each method:
+
+.. code-block:: python
+
+   import numpy as np
+   
+   # Load method-specific data
+   data = np.load("fitted_data.npz")
+   
+   # Primary correlation function data
+   c2_fitted = data["c2_fitted"]           # Method-specific fitted data (n_angles, n_t2, n_t1)
+   c2_experimental = data["c2_experimental"] # Original experimental data (n_angles, n_t2, n_t1)
+   residuals = data["residuals"]           # Method-specific residuals (n_angles, n_t2, n_t1)
+   
+   # Parameter and fit results
+   parameters = data["parameters"]         # Fitted parameter values (n_params,)
+   uncertainties = data["uncertainties"]   # Parameter uncertainties (n_params,)
+   chi_squared = data["chi_squared"]       # Chi-squared goodness-of-fit (scalar)
+   
+   # Coordinate arrays
+   phi_angles = data["phi_angles"]         # Angular coordinates (n_angles,) [degrees]
+   t1 = data["t1"]                        # First correlation time array (n_t1,) [seconds]
+   t2 = data["t2"]                        # Second correlation time array (n_t2,) [seconds]
+
+**Key Features:**
+  - **Consolidated structure**: All method-specific data in a single NPZ file per method
+  - **Complete data access**: Experimental, fitted, and residual data together
+  - **Coordinate information**: Full time and angular coordinate arrays included
+  - **Statistical metadata**: Parameter uncertainties and goodness-of-fit metrics
+  - **Consistent format**: Same structure across all optimization methods (classical, robust, MCMC)
+
+**Array Dimensions:**
+  - **Correlation functions**: ``(n_angles, n_t2, n_t1)`` - typically ``(4, 60-100, 60-100)``
+  - **Parameters**: ``(n_params,)`` - 3 for static modes, 7 for laminar flow
+  - **Time arrays**: ``(n_t1,)``, ``(n_t2,)`` - discretized with ``dt`` spacing
+  - **Angles**: ``(n_angles,)`` - typically ``[0°, 45°, 90°, 135°]``
 
 Method-Specific Characteristics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -564,7 +609,7 @@ Method-Specific Characteristics
 Cross-Method Comparison
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``all_methods_summary.json`` file provides easy comparison across all methods with:
+The ``all_classical_methods_summary.json`` and ``all_robust_methods_summary.json`` files provide easy comparison across all methods with:
   - Analysis timestamp and methods analyzed
   - Best method selection based on chi-squared values
   - Consolidated results showing parameters and goodness-of-fit for each method

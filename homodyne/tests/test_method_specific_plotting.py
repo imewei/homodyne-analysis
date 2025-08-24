@@ -116,12 +116,12 @@ class TestMethodSpecificPlotting:
             # Should have been called once for each successful method
             assert mock_plot_c2.call_count == 2
             
-            # Check that method names were passed
+            # Check that method names were passed (standardized format)
             calls = mock_plot_c2.call_args_list
             method_names = [call.kwargs.get('method_name') for call in calls]
             
-            assert 'Nelder-Mead' in method_names
-            assert 'Gurobi' in method_names
+            assert 'nelder_mead' in method_names
+            assert 'gurobi' in method_names
 
     @patch('homodyne.plotting.plot_c2_heatmaps')
     def test_generate_classical_plots_without_method_results(
@@ -182,9 +182,9 @@ class TestMethodSpecificPlotting:
             # Should have been called only once (for successful method)
             assert mock_plot_c2.call_count == 1
             
-            # Check that only Nelder-Mead was processed
+            # Check that only Nelder-Mead was processed (standardized format)
             call = mock_plot_c2.call_args_list[0]
-            assert call.kwargs.get('method_name') == 'Nelder-Mead'
+            assert call.kwargs.get('method_name') == 'nelder_mead'
 
     @patch('homodyne.plotting.plot_c2_heatmaps')
     def test_generate_classical_plots_handles_missing_parameters(
@@ -221,9 +221,9 @@ class TestMethodSpecificPlotting:
             # Should have been called only once (for method with parameters)
             assert mock_plot_c2.call_count == 1
             
-            # Check that only Nelder-Mead was processed
+            # Check that only Nelder-Mead was processed (standardized format)
             call = mock_plot_c2.call_args_list[0]
-            assert call.kwargs.get('method_name') == 'Nelder-Mead'
+            assert call.kwargs.get('method_name') == 'nelder_mead'
 
     def test_generate_classical_plots_creates_classical_directory(
         self, mock_analyzer, mock_result_with_methods, test_data

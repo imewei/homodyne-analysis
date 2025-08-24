@@ -46,15 +46,17 @@ Ensure your experimental data is in the correct format:
 Results are saved to the ``homodyne_results/`` directory with organized subdirectories:
 
 - **Main results**: ``homodyne_analysis_results.json`` with parameter estimates and fit quality
-- **Classical output**: ``./classical/`` subdirectory with ``.npz`` data files and C2 heatmaps
+- **Classical output**: ``./classical/`` subdirectory with method-specific directories (``nelder_mead/``, ``gurobi/``)
+- **Robust output**: ``./robust/`` subdirectory with method-specific directories (``wasserstein/``, ``scenario/``, ``ellipsoidal/``)
 - **MCMC output**: ``./mcmc/`` subdirectory with posterior distributions, trace data, diagnostics, and 3D visualizations
 - **Experimental plots**: ``./exp_data/`` subdirectory with validation plots (if using ``--plot-experimental-data``)
 
 **Method-Specific Outputs**:
 
-- **Classical** (``./classical/``): Fast point estimates, fitted data files, residuals analysis
+- **Classical** (``./classical/``): Method-specific directories with fast point estimates, consolidated ``fitted_data.npz`` files
+- **Robust** (``./robust/``): Noise-resistant optimization with method-specific directories (wasserstein, scenario, ellipsoidal)
 - **MCMC** (``./mcmc/``): Full posterior distributions, convergence diagnostics, trace plots, corner plots, 3D surface plots  
-- **Both methods**: Save experimental, fitted, and residuals data as compressed ``.npz`` files for further analysis
+- **All methods**: Save experimental, fitted, and residuals data in consolidated ``fitted_data.npz`` files per method
 
 Python API Example
 -------------------

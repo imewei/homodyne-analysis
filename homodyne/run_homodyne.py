@@ -105,15 +105,18 @@ try:
     # Try relative imports first (when called as module)
     from .analysis.core import HomodyneAnalysisCore
     from .optimization.classical import ClassicalOptimizer
+    from .optimization.robust import create_robust_optimizer
 except ImportError:
     try:
         # Try absolute imports as fallback (when called as script)
         from homodyne.analysis.core import HomodyneAnalysisCore
         from homodyne.optimization.classical import ClassicalOptimizer
+        from homodyne.optimization.robust import create_robust_optimizer
     except ImportError:
         # Will be handled with specific error messages during runtime
         HomodyneAnalysisCore = None
         ClassicalOptimizer = None
+        create_robust_optimizer = None
 
 # Import MCMC components - these require additional dependencies (PyMC, ArviZ)
 try:
@@ -397,6 +400,10 @@ def run_analysis(args: argparse.Namespace) -> None:
     results = None
     methods_attempted = []
 
+    # Store the method being used for context-aware directory creation
+    import os
+    os.environ['HOMODYNE_METHOD'] = args.method
+    
     try:
         if args.method == "classical":
             methods_attempted = ["Classical"]
@@ -637,7 +644,7 @@ def run_classical_optimization(
             analyzer.best_params_classical = optimizer.best_params_classical
             logger.info("✓ Classical results stored for MCMC initialization")
 
-        # Save experimental and fitted data to classical directory
+        # Save method-specific results with modern directory structure
         if output_dir is not None and best_params is not None:
             # Create time arrays using correct dt from analyzer
             dt = analyzer.dt
@@ -645,9 +652,6 @@ def run_classical_optimization(
             t2 = np.arange(n_t2) * dt
             t1 = np.arange(n_t1) * dt
             
-            _save_classical_fitted_data(
-                analyzer, best_params, phi_angles, c2_exp, output_dir
-            )
             # Save individual method results with uncertainties
             _save_individual_method_results(
                 analyzer, result, phi_angles, c2_exp, output_dir, t1, t2
@@ -741,46 +745,86 @@ def run_robust_optimization(
     logger.info("Running robust optimization...")
 
     try:
-        if ClassicalOptimizer is None:
+        if create_robust_optimizer is None:
             logger.error(
-                "❌ ClassicalOptimizer is not available. Please ensure the "
-                "homodyne.optimization.classical module is installed and accessible."
+                "❌ RobustOptimizer is not available. Please ensure the "
+                "homodyne.optimization.robust module is installed and accessible."
             )
             return None
 
-        # Create optimizer with robust methods only
-        optimizer = ClassicalOptimizer(analyzer, analyzer.config)
+        # Create dedicated robust optimizer (bypasses classical infrastructure)
+        robust_optimizer = create_robust_optimizer(analyzer, analyzer.config)
         
-        # Override methods to only use robust methods
-        robust_methods = ["Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"]
-        
-        # Check if robust optimization is available
-        available_methods = optimizer.get_available_methods()
-        robust_available = [method for method in robust_methods if method in available_methods]
-        
-        if not robust_available:
-            logger.error("❌ No robust optimization methods available. Please install CVXPY: pip install cvxpy")
+        if robust_optimizer is None:
+            logger.error("❌ Failed to create robust optimizer. Please install CVXPY: pip install cvxpy")
             return None
         
-        if len(robust_available) < len(robust_methods):
-            missing = set(robust_methods) - set(robust_available)
-            logger.warning(f"⚠️ Some robust methods not available: {missing}")
+        logger.info("✓ Created dedicated robust optimizer - no classical optimization called")
         
-        logger.info(f"Available robust methods: {robust_available}")
+        # Run all robust methods and collect results
+        robust_methods = ["wasserstein", "scenario", "ellipsoidal"]
+        method_results = {}
+        best_chi_squared = float("inf")
+        best_params = None
+        best_method = None
         
-        best_params, result = optimizer.run_classical_optimization_optimized(
-            initial_parameters=initial_params,
-            methods=robust_available,  # Only run robust methods
-            phi_angles=phi_angles,
-            c2_experimental=c2_exp,
-        )
+        logger.info(f"Running robust methods: {robust_methods}")
+        
+        for method in robust_methods:
+            try:
+                logger.info(f"  Trying Robust-{method.capitalize()}...")
+                
+                # Run individual robust method
+                params, method_info = robust_optimizer.run_robust_optimization(
+                    initial_parameters=initial_params,
+                    phi_angles=phi_angles,
+                    c2_experimental=c2_exp,
+                    method=method
+                )
+                
+                if params is not None:
+                    chi_squared = method_info.get("final_chi_squared", float("inf"))
+                    
+                    # Store method result in classical-compatible format
+                    method_name = f"Robust-{method.capitalize()}"
+                    method_results[method_name] = {
+                        "parameters": params.tolist() if hasattr(params, 'tolist') else params,
+                        "chi_squared": chi_squared,
+                        "success": True,
+                        "method": method,
+                        "info": method_info
+                    }
+                    
+                    # Track best result
+                    if chi_squared < best_chi_squared:
+                        best_chi_squared = chi_squared
+                        best_params = params
+                        best_method = method_name
+                        
+                    logger.info(f"  ✓ {method_name}: χ²={chi_squared:.6f}")
+                else:
+                    logger.warning(f"  ⚠ Robust-{method.capitalize()} failed")
+                    
+            except Exception as e:
+                logger.error(f"  ❌ Robust-{method.capitalize()} error: {e}")
+        
+        # Create result object with method_results (compatible with existing code)
+        if best_params is not None:
+            result = type('MockResult', (), {
+                'method_results': method_results,
+                'best_method': best_method,
+                'x': best_params,
+                'fun': best_chi_squared,
+                'success': True
+            })()
+            logger.info(f"✓ Best robust method: {best_method} with χ²={best_chi_squared:.6f}")
+        else:
+            result = None
+            logger.error("❌ All robust methods failed")
 
         # Store best parameters on analyzer core for potential MCMC initialization
-        if (
-            hasattr(optimizer, "best_params_classical")
-            and optimizer.best_params_classical is not None
-        ):
-            analyzer.best_params_robust = optimizer.best_params_classical  # Store as robust params
+        if best_params is not None:
+            analyzer.best_params_robust = best_params
             logger.info("✓ Robust results stored for potential MCMC initialization")
 
         # Save experimental and fitted data to robust directory
@@ -791,9 +835,6 @@ def run_robust_optimization(
             t2 = np.arange(n_t2) * dt
             t1 = np.arange(n_t1) * dt
             
-            _save_robust_fitted_data(
-                analyzer, best_params, phi_angles, c2_exp, output_dir
-            )
             # Save individual robust method results with uncertainties
             _save_individual_robust_method_results(
                 analyzer, result, phi_angles, c2_exp, output_dir, t1, t2
@@ -803,18 +844,30 @@ def run_robust_optimization(
                 analyzer, best_params, result, phi_angles, c2_exp, output_dir
             )
 
+        # Handle result format (now compatible with classical optimizer format)
+        if result and hasattr(result, 'fun'):
+            chi_squared = result.fun
+            success = result.success
+            message = f"Best method: {best_method}"
+            method_results_dict = result.method_results
+        else:
+            chi_squared = float("inf")
+            success = False
+            message = "All robust methods failed"
+            method_results_dict = {}
+        
         return {
             "robust_optimization": {
                 "parameters": best_params,
-                "chi_squared": result.fun,
-                "success": result.success,
-                "message": result.message,
-                "iterations": getattr(result, "nit", None),
-                "function_evaluations": getattr(result, "nfev", None),
+                "chi_squared": chi_squared,
+                "success": success,
+                "message": message,
+                "method_results": method_results_dict,
+                "best_method": best_method,
             },
             "robust_summary": {
                 "parameters": best_params,
-                "chi_squared": result.fun,
+                "chi_squared": chi_squared,
                 "method": "Robust",
                 "evaluation_metric": "chi_squared",
                 "_note": "Robust optimization uses chi-squared with uncertainty resistance",
@@ -1003,12 +1056,8 @@ def run_mcmc_optimization(
             posterior_means = mcmc_results["posterior_means"]
             best_params = [posterior_means.get(name, 0.0) for name in param_names]
 
-        # Save experimental and fitted data to mcmc directory
+        # Generate mcmc-specific plots and save data
         if output_dir is not None and best_params is not None:
-            _save_mcmc_fitted_data(
-                analyzer, best_params, phi_angles, c2_exp, output_dir
-            )
-            # Generate mcmc-specific plots
             _generate_mcmc_plots(
                 analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results
             )
@@ -1303,18 +1352,23 @@ def _generate_classical_plots(analyzer, best_params, result, phi_angles, c2_exp,
     """
     logger = logging.getLogger(__name__)
 
+    # Check if classical directories should be created
+    import os
+    current_method = os.environ.get('HOMODYNE_METHOD', 'classical')
+    logger.info(f"_generate_classical_plots called with HOMODYNE_METHOD={current_method}")
+    if current_method not in ['classical', 'all']:
+        logger.info(f"Classical directory creation disabled for method '{current_method}' - skipping classical plot generation")
+        return
+
     try:
         from pathlib import Path
         import numpy as np
 
-        # Create classical subdirectory
+        # Set up output directory path (but don't create it yet)
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
-
-        classical_dir = output_dir / "classical"
-        classical_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if plotting is enabled
         config = analyzer.config
@@ -1325,8 +1379,6 @@ def _generate_classical_plots(analyzer, best_params, result, phi_angles, c2_exp,
                 "Plotting disabled in configuration - skipping classical plot generation"
             )
             return
-
-        logger.info("Generating classical optimization plots...")
 
         # Initialize time arrays for plotting
         dt = analyzer.dt
@@ -1341,8 +1393,12 @@ def _generate_classical_plots(analyzer, best_params, result, phi_angles, c2_exp,
             # Check if method_results are available
             method_results = getattr(result, 'method_results', {})
             if not method_results or method_results is None:
-                # Fallback to single plot with best parameters
+                # Fallback to single plot with best parameters - create directory only if needed
                 logger.info("No method_results available, generating single plot with best parameters...")
+                classical_dir = output_dir / "classical"
+                classical_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("Generating classical optimization plots...")
+                
                 c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
                     best_params, phi_angles
                 )
@@ -1361,42 +1417,58 @@ def _generate_classical_plots(analyzer, best_params, result, phi_angles, c2_exp,
                 else:
                     logger.warning("⚠ Some classical C2 heatmaps failed to generate")
             else:
+                # Check if there are any successful methods with parameters first
+                successful_methods = []
+                for method_name, method_data in method_results.items():
+                    if method_data.get('success', False) and method_data.get('parameters') is not None:
+                        successful_methods.append((method_name, method_data))
+                
+                if not successful_methods:
+                    logger.info("No successful methods with parameters found, skipping classical plot generation")
+                    return
+                
+                # Create classical directory only if there are successful methods to plot
+                classical_dir = output_dir / "classical"
+                classical_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("Generating classical optimization plots...")
+                
                 # Generate plots for each successful method
-                logger.info(f"Generating C2 correlation heatmaps for {len(method_results)} optimization methods...")
+                logger.info(f"Generating C2 correlation heatmaps for {len(successful_methods)} optimization methods...")
                 all_success = True
                 
-                for method_name, method_data in method_results.items():
-                    if method_data.get('success', False):
-                        method_params = method_data.get('parameters')
-                        if method_params is not None:
-                            logger.info(f"  Generating plots for {method_name}...")
-                            
-                            # Calculate theoretical data for this method
-                            c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                                method_params, phi_angles
-                            )
-                            
-                            # Generate method-specific plots
-                            success = plot_c2_heatmaps(
-                                c2_exp,
-                                c2_theory,
-                                phi_angles,
-                                classical_dir,
-                                config,
-                                t2=t2,
-                                t1=t1,
-                                method_name=method_name
-                            )
-                            
-                            if success:
-                                logger.info(f"  ✓ {method_name} C2 heatmaps generated successfully")
-                            else:
-                                logger.warning(f"  ⚠ Some {method_name} C2 heatmaps failed to generate")
-                                all_success = False
-                        else:
-                            logger.warning(f"  ⚠ No parameters found for {method_name}, skipping plots")
+                for method_name, method_data in successful_methods:
+                    method_params = method_data.get('parameters')
+                    logger.info(f"  Generating plots for {method_name}...")
+                    
+                    # Calculate theoretical data for this method
+                    c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                        method_params, phi_angles
+                    )
+                    
+                    # Create method-specific directory for plots
+                    method_plot_dir = classical_dir / method_name.lower().replace("-", "_")
+                    method_plot_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Generate method-specific plots in method directory
+                    success = plot_c2_heatmaps(
+                        c2_exp,
+                        c2_theory,
+                        phi_angles,
+                        method_plot_dir,  # Use method-specific directory
+                        config,
+                        t2=t2,
+                        t1=t1,
+                        method_name=method_name.lower().replace("-", "_")  # Standardize method name
+                    )
+                    
+                    if success:
+                        logger.info(f"  ✓ {method_name} C2 heatmaps generated successfully")
                     else:
-                        logger.info(f"  ⚠ {method_name} was not successful, skipping plots")
+                        logger.warning(f"  ⚠ Some {method_name} C2 heatmaps failed to generate")
+                        all_success = False
+                    
+                    # Note: Method-specific diagnostic summary plots removed - only main 
+                    # diagnostic_summary.png for --method all is generated
                 
                 if all_success:
                     logger.info("✓ All method-specific C2 heatmaps generated successfully")
@@ -1416,134 +1488,8 @@ def _generate_classical_plots(analyzer, best_params, result, phi_angles, c2_exp,
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
-def _save_classical_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
-    """
-    Calculate fitted data and save experimental and fitted data to classical directory.
-
-    Parameters
-    ----------
-    analyzer : HomodyneAnalysisCore
-        Main analysis engine with loaded configuration
-    best_params : np.ndarray
-        Optimized parameters from classical optimization
-    phi_angles : np.ndarray
-        Angular coordinates for the scattering data
-    c2_exp : np.ndarray
-        Experimental correlation function data
-    output_dir : Path
-        Output directory for saving classical results
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        from pathlib import Path
-        import numpy as np
-
-        # Create classical subdirectory
-        if output_dir is None:
-            output_dir = Path("./homodyne_results")
-        else:
-            output_dir = Path(output_dir)
-
-        classical_dir = output_dir / "classical"
-        classical_dir.mkdir(parents=True, exist_ok=True)
-
-        logger.info(f"Calculating fitted data for classical optimization results...")
-
-        # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-            best_params, phi_angles
-        )
-
-        # Calculate fitted data for each angle using scaling optimization
-        n_angles, n_t2, n_t1 = c2_exp.shape
-        c2_fitted = np.zeros_like(c2_exp)
-
-        uncertainty_factor = (
-            analyzer.config.get("advanced_settings", {})
-            .get("chi_squared_calculation", {})
-            .get("uncertainty_estimation_factor", 0.1)
-        )
-        min_sigma = (
-            analyzer.config.get("advanced_settings", {})
-            .get("chi_squared_calculation", {})
-            .get("minimum_sigma", 1e-10)
-        )
-
-        for i in range(n_angles):
-            # Flatten the 2D correlation data for least squares fitting
-            exp_flat = c2_exp[i].flatten()
-            theory_flat = c2_theory[i].flatten()
-
-            # Perform scaling optimization: fitted = theory * contrast + offset
-            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
-            try:
-                scaling, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
-                if len(scaling) == 2:
-                    contrast, offset = scaling
-                    c2_fitted[i] = c2_theory[i] * contrast + offset
-                    logger.debug(
-                        f"Angle {i} (φ={phi_angles[i]:.1f}°): contrast={contrast:.3f}, offset={offset:.4f}"
-                    )
-                else:
-                    c2_fitted[i] = c2_theory[i]
-                    logger.debug(
-                        f"Angle {i} (φ={phi_angles[i]:.1f}°): using unscaled theory (no scaling solution)"
-                    )
-            except np.linalg.LinAlgError:
-                c2_fitted[i] = c2_theory[i]
-                logger.warning(
-                    f"Scaling optimization failed for angle {i}, using unscaled theory"
-                )
-
-        # Calculate residuals: experimental - fitted
-        c2_residuals = c2_exp - c2_fitted
-
-        # Save data files
-        exp_file = classical_dir / "experimental_data.npz"
-        fitted_file = classical_dir / "fitted_data.npz"
-        residuals_file = classical_dir / "residuals_data.npz"
-
-        np.savez_compressed(
-            exp_file,
-            c2_experimental=c2_exp,
-            phi_angles=phi_angles,
-            parameters=best_params,
-            parameter_names=analyzer.config.get("initial_parameters", {}).get(
-                "parameter_names", []
-            ),
-        )
-
-        np.savez_compressed(
-            fitted_file,
-            c2_fitted=c2_fitted,
-            phi_angles=phi_angles,
-            parameters=best_params,
-            parameter_names=analyzer.config.get("initial_parameters", {}).get(
-                "parameter_names", []
-            ),
-        )
-
-        np.savez_compressed(
-            residuals_file,
-            c2_residuals=c2_residuals,
-            phi_angles=phi_angles,
-            parameters=best_params,
-            parameter_names=analyzer.config.get("initial_parameters", {}).get(
-                "parameter_names", []
-            ),
-        )
-
-        logger.info(f"✓ Classical fitting data saved to {classical_dir}/")
-        logger.info(f"  - Experimental data: {exp_file}")
-        logger.info(f"  - Fitted data: {fitted_file}")
-        logger.info(f"  - Residuals data: {residuals_file}")
-
-    except Exception as e:
-        logger.error(f"Failed to save classical fitted data: {e}")
-        import traceback
-
-        logger.debug(f"Full traceback: {traceback.format_exc()}")
+# Note: _save_classical_fitted_data function removed - old format saving replaced 
+# by method-specific saving in _save_individual_method_results
 
 
 def _save_individual_method_results(analyzer, result, phi_angles, c2_exp, output_dir, t1=None, t2=None):
@@ -1569,25 +1515,34 @@ def _save_individual_method_results(analyzer, result, phi_angles, c2_exp, output
     """
     logger = logging.getLogger(__name__)
     
+    # Check if classical directories should be created
+    import os
+    current_method = os.environ.get('HOMODYNE_METHOD', 'classical')
+    logger.info(f"_save_individual_method_results called with HOMODYNE_METHOD={current_method}")
+    if current_method not in ['classical', 'all']:
+        logger.info(f"Classical directory creation disabled for method '{current_method}' - skipping classical data saving")
+        return
+    
     try:
         from pathlib import Path
         import numpy as np
         import json
         
-        # Create classical subdirectory
+        # Set up output directory path (but don't create it yet)
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
         
-        classical_dir = output_dir / "classical"
-        classical_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Get method results
+        # Check if there are method results before creating directories
         method_results = getattr(result, 'method_results', {})
         if not method_results:
             logger.warning("No method-specific results to save")
             return
+        
+        # Create classical subdirectory only if there are results to save
+        classical_dir = output_dir / "classical"
+        classical_dir.mkdir(parents=True, exist_ok=True)
         
         # Get parameter names from config
         param_names = analyzer.config.get("initial_parameters", {}).get(
@@ -1680,6 +1635,11 @@ def _save_individual_method_results(analyzer, result, phi_angles, c2_exp, output
             method_dir = classical_dir / method_name.lower().replace("-", "_")
             method_dir.mkdir(parents=True, exist_ok=True)
             
+            # Save method-specific analysis results
+            analysis_results_file = method_dir / f"analysis_results_{method_name.lower().replace('-', '_')}.json"
+            with open(analysis_results_file, 'w') as f:
+                json.dump(method_info, f, indent=2)
+            
             # Save parameters with uncertainties as JSON for easy reading
             params_file = method_dir / "parameters.json"
             with open(params_file, 'w') as f:
@@ -1704,21 +1664,6 @@ def _save_individual_method_results(analyzer, result, phi_angles, c2_exp, output
                 t2=t2,
             )
             
-            # Save numerical data as compressed numpy arrays
-            np.savez_compressed(
-                method_dir / "fitted_data.npz",
-                c2_fitted=c2_fitted,
-                c2_experimental=c2_exp,
-                residuals=residuals,
-                phi_angles=phi_angles,
-                parameters=method_params,
-                uncertainties=uncertainties,
-                parameter_names=param_names,
-                chi_squared=chi_squared,
-                t1=t1,
-                t2=t2,
-            )
-            
             # Store in all_methods collection
             all_methods_data[method_name] = method_info
             
@@ -1726,7 +1671,7 @@ def _save_individual_method_results(analyzer, result, phi_angles, c2_exp, output
         
         # Save combined summary for all methods
         if all_methods_data:
-            summary_file = classical_dir / "all_methods_summary.json"
+            summary_file = classical_dir / "all_classical_methods_summary.json"
             with open(summary_file, 'w') as f:
                 json.dump({
                     "analysis_type": "Classical Optimization",
@@ -1842,20 +1787,21 @@ def _save_individual_robust_method_results(analyzer, result, phi_angles, c2_exp,
         import numpy as np
         import json
         
-        # Create robust subdirectory
+        # Set up output directory path (but don't create it yet)
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
         
-        robust_dir = output_dir / "robust"
-        robust_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Get method results
+        # Check if there are method results before creating directories
         method_results = getattr(result, 'method_results', {})
         if not method_results:
             logger.warning("No robust method-specific results to save")
             return
+        
+        # Create robust subdirectory only if there are results to save
+        robust_dir = output_dir / "robust"
+        robust_dir.mkdir(parents=True, exist_ok=True)
         
         # Get parameter names from config
         param_names = analyzer.config.get("initial_parameters", {}).get(
@@ -1955,8 +1901,20 @@ def _save_individual_robust_method_results(analyzer, result, phi_angles, c2_exp,
             }
             
             # Save method-specific files
-            method_dir = robust_dir / method_name.lower().replace("-", "_")
+            # Use same mapping as plotting for consistency
+            method_name_map = {
+                "Robust-Wasserstein": "wasserstein",
+                "Robust-Scenario": "scenario", 
+                "Robust-Ellipsoidal": "ellipsoidal"
+            }
+            standardized_method_name = method_name_map.get(method_name, method_name.lower().replace("-", "_"))
+            method_dir = robust_dir / standardized_method_name
             method_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save method-specific analysis results
+            analysis_results_file = method_dir / f"analysis_results_{standardized_method_name}.json"
+            with open(analysis_results_file, 'w') as f:
+                json.dump(method_info, f, indent=2)
             
             # Save parameters with uncertainties as JSON for easy reading
             params_file = method_dir / "parameters.json"
@@ -2054,16 +2012,13 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
         import numpy as np
         from .plotting import plot_c2_heatmaps
 
-        # Create robust subdirectory
+        # Set up output directory path (but don't create it yet)
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
 
-        robust_dir = output_dir / "robust"
-        robust_dir.mkdir(parents=True, exist_ok=True)
-
-        # Check if plotting is enabled
+        # Check if plotting is enabled before creating directories
         config = analyzer.config
         reporting = config.get("reporting", {})
 
@@ -2072,6 +2027,10 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
                 "Plotting disabled in configuration - skipping robust plot generation"
             )
             return
+
+        # Create robust subdirectory only if plotting is enabled
+        robust_dir = output_dir / "robust"
+        robust_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("Generating robust optimization plots...")
 
@@ -2099,21 +2058,37 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
                         method_c2 = analyzer.calculate_c2_single_angle_optimized(method_params, phi_angles)
                         
                         # Generate method-specific plots
+                        # Map robust method names to standardized directory names (same as data saving)
+                        method_name_map = {
+                            "Robust-Wasserstein": "wasserstein",
+                            "Robust-Scenario": "scenario", 
+                            "Robust-Ellipsoidal": "ellipsoidal"
+                        }
+                        standardized_name = method_name_map.get(method_name, method_name.lower().replace("-", "_"))
+                        
+                        # Create method directory for plots (same as data saving)
+                        method_dir = robust_dir / standardized_name
+                        method_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        # Generate method-specific plots in method directory
                         plot_success = plot_c2_heatmaps(
                             c2_exp,
                             method_c2,
                             phi_angles,
-                            robust_dir,
+                            method_dir,  # Save in method directory instead of robust_dir
                             config,
                             t2=t2,
-                            method_name=method_name,  # This adds method name to filename
-                        )
-                        
+                            t1=t1,  # Added missing t1 parameter
+                            method_name=standardized_name,  # Use standardized name for filename
+                        )                        
                         if plot_success:
                             success_count += 1
-                            logger.info(f"  ✓ {method_name} plots generated")
+                            logger.info(f"  ✓ {method_name} heatmaps generated")
                         else:
-                            logger.warning(f"  ⚠ {method_name} plots failed to generate")
+                            logger.warning(f"  ⚠ {method_name} heatmaps failed to generate")
+                        
+                        # Note: Method-specific diagnostic summary plots removed - only main 
+                        # diagnostic_summary.png for --method all is generated
                             
                     except Exception as e:
                         logger.warning(f"  ⚠ {method_name} plot generation failed: {e}")
@@ -2130,8 +2105,8 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
                     robust_dir,
                     config,
                     t2=t2,
-                    method_name="Robust-Best",
-                )
+                    t1=t1,  # Added missing t1 parameter
+                    method_name="Robust-Best",                )
                 if plot_success:
                     logger.info("✓ Robust fallback plot generated successfully")
                 else:
@@ -2146,6 +2121,7 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
                 robust_dir,
                 config,
                 t2=t2,
+                t1=t1,  # Added missing t1 parameter
                 method_name="Robust",
             )
             if plot_success:
@@ -2159,203 +2135,12 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
-def _save_robust_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
-    """
-    Calculate fitted data and save experimental and fitted data to robust directory.
-
-    Parameters
-    ----------
-    analyzer : HomodyneAnalysisCore
-        Main analysis engine with loaded configuration
-    best_params : np.ndarray
-        Optimized parameters from robust optimization
-    phi_angles : np.ndarray
-        Angular coordinates for the scattering data
-    c2_exp : np.ndarray
-        Experimental correlation function data
-    output_dir : Path
-        Output directory for saving robust results
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        from pathlib import Path
-        import numpy as np
-
-        # Create robust subdirectory
-        if output_dir is None:
-            output_dir = Path("./homodyne_results")
-        else:
-            output_dir = Path(output_dir)
-
-        robust_dir = output_dir / "robust"
-        robust_dir.mkdir(parents=True, exist_ok=True)
-
-        logger.info(f"Calculating fitted data for robust optimization results...")
-
-        # Calculate theoretical data with optimized parameters
-        c2_fitted = analyzer.calculate_c2_single_angle_optimized(best_params, phi_angles)
-
-        # Initialize time arrays using correct dt from analyzer
-        dt = analyzer.dt
-        n_angles, n_t2, n_t1 = c2_exp.shape
-        t2 = np.arange(n_t2) * dt
-        t1 = np.arange(n_t1) * dt
-
-        # Calculate residuals
-        residuals = c2_exp - c2_fitted
-        chi_squared = np.sum(residuals**2) / c2_exp.size
-
-        logger.info(f"  - Chi-squared: {chi_squared:.6e}")
-        logger.info(f"  - RMS residual: {np.sqrt(np.mean(residuals**2)):.6e}")
-        logger.info(f"  - Max residual: {np.max(np.abs(residuals)):.6e}")
-
-        # Save data files
-        exp_file = robust_dir / "experimental_data.npz"
-        fitted_file = robust_dir / "fitted_data.npz"
-        residuals_file = robust_dir / "residuals_data.npz"
-
-        np.savez_compressed(
-            exp_file,
-            c2_experimental=c2_exp,
-            phi_angles=phi_angles,
-            t1=t1,
-            t2=t2,
-            # Metadata as separate arrays
-            data_shape=np.array(c2_exp.shape),
-            n_angles=np.array([len(phi_angles)]),
-            n_time_points=np.array([c2_exp.shape[1]]),
-        )
-
-        np.savez_compressed(
-            fitted_file,
-            c2_fitted=c2_fitted,
-            best_parameters=best_params,
-            phi_angles=phi_angles,
-            t1=t1,
-            t2=t2,
-            chi_squared=chi_squared,
-            # Metadata as separate arrays
-            optimization_method=np.array(["Robust"], dtype='U20'),
-        )
-
-        np.savez_compressed(
-            residuals_file,
-            residuals=residuals,
-            chi_squared=chi_squared,
-            rms_residual=np.sqrt(np.mean(residuals**2)),
-            max_residual=np.max(np.abs(residuals)),
-            phi_angles=phi_angles,
-            t1=t1,
-            t2=t2,
-            # Quality metrics as separate arrays
-            quality_rms_residual=np.array([float(np.sqrt(np.mean(residuals**2)))]),
-            quality_max_residual=np.array([float(np.max(np.abs(residuals)))]),
-        )
-
-        logger.info(f"✓ Robust fitting data saved to {robust_dir}/")
-        logger.info(f"  - Experimental data: {exp_file}")
-        logger.info(f"  - Fitted data: {fitted_file}")
-        logger.info(f"  - Residuals data: {residuals_file}")
-
-    except Exception as e:
-        logger.error(f"Failed to save robust fitted data: {e}")
-        import traceback
-
-        logger.debug(f"Full traceback: {traceback.format_exc()}")
+# Note: _save_robust_fitted_data function removed - old format saving replaced 
+# by method-specific saving in _save_individual_robust_method_results
 
 
-def _save_mcmc_fitted_data(analyzer, best_params, phi_angles, c2_exp, output_dir):
-    """
-    Calculate fitted data and save experimental and fitted data to mcmc directory.
-
-    Parameters
-    ----------
-    analyzer : HomodyneAnalysisCore
-        Analysis engine with loaded configuration
-    best_params : np.ndarray
-        Optimized parameters from MCMC posterior means
-    phi_angles : np.ndarray
-        Angular coordinates for the scattering data
-    c2_exp : np.ndarray
-        Experimental correlation function data
-    output_dir : Path
-        Output directory for saving MCMC results
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        from pathlib import Path
-        import numpy as np
-
-        # Create mcmc subdirectory
-        if output_dir is None:
-            output_dir = Path("./homodyne_results")
-        else:
-            output_dir = Path(output_dir)
-
-        mcmc_dir = output_dir / "mcmc"
-        mcmc_dir.mkdir(parents=True, exist_ok=True)
-
-        logger.info("Calculating fitted data for MCMC optimization results...")
-
-        # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-            best_params, phi_angles
-        )
-
-        # Calculate fitted data using least squares scaling for each angle
-        # fitted = contrast * theory + offset
-        c2_fitted = np.zeros_like(c2_exp)
-        c2_residuals = np.zeros_like(c2_exp)
-
-        for angle_idx in range(c2_exp.shape[0]):
-            # Flatten data for least squares
-            theory_flat = c2_theory[angle_idx].flatten()
-            exp_flat = c2_exp[angle_idx].flatten()
-
-            # Create design matrix for least squares: [theory, ones]
-            A = np.vstack([theory_flat, np.ones(len(theory_flat))]).T
-
-            try:
-                # Solve for scaling parameters
-                scaling_params, residuals, rank, s = np.linalg.lstsq(
-                    A, exp_flat, rcond=None
-                )
-                contrast, offset = scaling_params
-
-                # Calculate fitted data
-                fitted_flat = theory_flat * contrast + offset
-                c2_fitted[angle_idx] = fitted_flat.reshape(c2_theory[angle_idx].shape)
-
-                # Calculate residuals
-                c2_residuals[angle_idx] = c2_exp[angle_idx] - c2_fitted[angle_idx]
-
-            except np.linalg.LinAlgError as e:
-                logger.warning(f"Least squares failed for angle {angle_idx}: {e}")
-                # Fallback: use theory as fitted data
-                c2_fitted[angle_idx] = c2_theory[angle_idx]
-                c2_residuals[angle_idx] = c2_exp[angle_idx] - c2_theory[angle_idx]
-
-        # Save data as compressed NPZ files
-        experimental_file = mcmc_dir / "experimental_data.npz"
-        fitted_file = mcmc_dir / "fitted_data.npz"
-        residuals_file = mcmc_dir / "residuals_data.npz"
-
-        np.savez_compressed(experimental_file, data=c2_exp)
-        np.savez_compressed(fitted_file, data=c2_fitted)
-        np.savez_compressed(residuals_file, data=c2_residuals)
-
-        logger.info("✓ MCMC fitting data saved to homodyne_results/mcmc/")
-        logger.info(f"  - Experimental data: {experimental_file}")
-        logger.info(f"  - Fitted data: {fitted_file}")
-        logger.info(f"  - Residuals data: {residuals_file}")
-
-    except Exception as e:
-        logger.error(f"Failed to save MCMC fitted data: {e}")
-        import traceback
-
-        logger.debug(f"Full traceback: {traceback.format_exc()}")
+# Note: _save_mcmc_fitted_data function removed - MCMC now saves data through 
+# _generate_mcmc_plots function which has the proper consolidated fitted_data.npz format
 
 
 def _generate_mcmc_plots(
@@ -2385,16 +2170,13 @@ def _generate_mcmc_plots(
         from pathlib import Path
         import numpy as np
 
-        # Create mcmc subdirectory
+        # Set up output directory path (but don't create it yet)
         if output_dir is None:
             output_dir = Path("./homodyne_results")
         else:
             output_dir = Path(output_dir)
 
-        mcmc_dir = output_dir / "mcmc"
-        mcmc_dir.mkdir(parents=True, exist_ok=True)
-
-        # Check if plotting is enabled
+        # Check if plotting is enabled before creating directories
         config = analyzer.config
         output_settings = config.get("output_settings", {})
         reporting = output_settings.get("reporting", {})
@@ -2403,6 +2185,10 @@ def _generate_mcmc_plots(
                 "Plotting disabled in configuration - skipping MCMC plot generation"
             )
             return
+
+        # Create mcmc subdirectory only if plotting is enabled
+        mcmc_dir = output_dir / "mcmc"
+        mcmc_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("Generating MCMC optimization plots...")
 

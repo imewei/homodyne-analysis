@@ -1,7 +1,7 @@
 # Homodyne Analysis Package - Development Makefile
 # ================================================
 
-.PHONY: help clean clean-build clean-pyc clean-test install dev-install test test-all lint format docs docs-serve build upload check
+.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv install dev-install test test-all lint format docs docs-serve build upload check
 
 # Default target
 help:
@@ -27,10 +27,12 @@ help:
 	@echo "  baseline-report      Generate performance report"
 	@echo
 	@echo "Cleanup:"
-	@echo "  clean        Clean all build artifacts and cache files"
+	@echo "  clean        Clean all build artifacts and cache files (preserves virtual environment)"
+	@echo "  clean-all    Clean everything including virtual environment"
 	@echo "  clean-build  Remove build artifacts"
 	@echo "  clean-pyc    Remove Python bytecode files"
 	@echo "  clean-test   Remove test and coverage artifacts"
+	@echo "  clean-venv   Remove virtual environment"
 	@echo
 	@echo "Documentation:"
 	@echo "  docs         Build documentation"
@@ -119,6 +121,15 @@ clean-test:
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	rm -rf .benchmarks/
+
+clean-venv:
+	rm -rf venv/
+	rm -rf .venv/
+	rm -rf env/
+	rm -rf .env/
+
+clean-all: clean-build clean-pyc clean-test clean-venv
+	@echo "Cleaned all build artifacts, cache files, and virtual environment"
 
 # Documentation targets
 docs:

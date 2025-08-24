@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Diagnostic Summary Plot Generation**: The main `diagnostic_summary.png` plot is now only generated for `--method all` to provide meaningful cross-method comparisons. Individual methods now only generate their method-specific diagnostic plots.
+- **Method-Specific Diagnostic Plots Removed**: Individual method diagnostic summary plots (e.g., `nelder_mead_diagnostic_summary.png`, `wasserstein_diagnostic_summary.png`) are no longer generated to reduce redundant output and focus on meaningful cross-method comparisons.
+
 ### Added
 - **Robust Optimization Framework**: Complete implementation of robust optimization methods for noise-resistant parameter estimation
   - Three robust methods: Robust-Wasserstein (DRO), Robust-Scenario (Bootstrap), Robust-Ellipsoidal (Bounded uncertainty)
@@ -30,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Method-specific directories (nelder_mead/, gurobi/, robust_wasserstein/, etc.)
   - JSON files with parameters, uncertainties, goodness-of-fit metrics, and convergence information
   - NumPy archives with full numerical data for each method
-  - Summary files for easy method comparison (all_methods_summary.json, all_robust_methods_summary.json)
+  - Summary files for easy method comparison (all_classical_methods_summary.json, all_robust_methods_summary.json)
 - **Comprehensive Diagnostic Summary Visualization**: NEW advanced diagnostic plots for analysis quality assessment
   - 2×3 grid layout combining method comparison, parameter uncertainties, convergence diagnostics, and residuals analysis
   - Method-specific diagnostic summaries for each optimization approach (nelder_mead_diagnostic_summary.png, etc.)
@@ -42,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detailed JSON structure specifications for parameters.json files with method-specific characteristics
   - NumPy archive (fitted_data.npz) contents documentation with proper array dimensions
   - Method-specific convergence information (Classical: iterations/evaluations, Robust: solve times/status)
-  - Cross-method comparison capabilities with all_methods_summary.json structure
+  - Cross-method comparison capabilities with all_classical_methods_summary.json structure
   - Data array dimension specifications: (n_angles, n_t2, n_t1) with proper t1/t2 time discretization
 
 ### Changed

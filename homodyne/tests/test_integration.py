@@ -167,10 +167,12 @@ class TestCompleteWorkflow:
         """Test the new organized output directory structure."""
         base_dir = temp_directory / "homodyne_results"
 
-        # Create the new expected directory structure
+        # Create the new expected directory structure with method-specific directories
         expected_structure = [
             base_dir,  # Main output directory
             base_dir / "classical",  # Classical method results
+            base_dir / "classical" / "nelder_mead",  # Nelder-Mead method
+            base_dir / "classical" / "gurobi",  # Gurobi method
             base_dir / "exp_data",  # Experimental data plots
         ]
 
@@ -188,14 +190,22 @@ class TestCompleteWorkflow:
             base_dir / "run.log"
         ]
 
-        # Classical directory files
-        classical_files = [
-            base_dir / "classical" / "analysis_results_20250822_090940_v0.6.4.json",
-            base_dir / "classical" / "experimental_data.npz",
-            base_dir / "classical" / "fitted_data.npz",
-            base_dir / "classical" / "residuals_data.npz",
-            base_dir / "classical" / "c2_heatmaps_phi_0.0deg.png",
-        ]
+        # Create method-specific files in classical subdirectories
+        method_names = ["nelder_mead", "gurobi"]
+        classical_files = []
+        
+        for method_name in method_names:
+            method_dir = base_dir / "classical" / method_name
+            method_files = [
+                method_dir / f"analysis_results_{method_name}.json",
+                method_dir / "parameters.json",
+                method_dir / "fitted_data.npz",  # Consolidated data
+                method_dir / f"c2_heatmaps_{method_name}.png",
+            ]
+            classical_files.extend(method_files)
+        
+        # Summary file in classical directory
+        classical_files.append(base_dir / "classical" / "all_classical_methods_summary.json")
 
         # Experimental data directory files
         exp_data_files = [
@@ -207,12 +217,46 @@ class TestCompleteWorkflow:
         all_files = main_files + classical_files + exp_data_files
         for file_path in all_files:
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.touch()
+            if file_path.suffix == ".npz":
+                # Create realistic NPZ files with consolidated data
+                mock_experimental_data = np.random.rand(3, 20, 30)
+                mock_fitted_data = np.random.rand(3, 20, 30)
+                mock_residuals_data = mock_experimental_data - mock_fitted_data
+                
+                np.savez_compressed(
+                    file_path,
+                    c2_experimental=mock_experimental_data,
+                    c2_fitted=mock_fitted_data,
+                    residuals=mock_residuals_data,
+                    parameters=np.array([1.5, 2.0, 0.5]),
+                    uncertainties=np.array([0.1, 0.1, 0.1]),
+                    chi_squared=np.array([0.5])
+                )
+            else:
+                file_path.touch()
             assert file_path.exists()
 
         # Verify directory organization
         assert len(list(base_dir.glob("*.json"))) >= 1  # Main results files
-        assert len(list((base_dir / "classical").glob("*.npz"))) >= 3  # NPZ data files
+        
+        # Verify method-specific directories and files
+        for method_name in method_names:
+            method_dir = base_dir / "classical" / method_name
+            assert method_dir.exists()
+            assert (method_dir / "fitted_data.npz").exists()  # Consolidated data
+            assert (method_dir / "parameters.json").exists()
+            assert (method_dir / f"c2_heatmaps_{method_name}.png").exists()
+            
+            # Verify NPZ file structure
+            data = np.load(method_dir / "fitted_data.npz")
+            assert "c2_experimental" in data
+            assert "c2_fitted" in data
+            assert "residuals" in data
+        
+        # Verify summary file
+        assert (base_dir / "classical" / "all_classical_methods_summary.json").exists()
+        
+        # Verify experimental data plots
         assert len(list((base_dir / "exp_data").glob("*.png"))) >= 1  # Validation plots
 
 

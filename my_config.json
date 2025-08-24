@@ -55,10 +55,10 @@
       ]
     },
     "geometry": {
-      "stator_rotor_gap": 1000000,
+      "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms (modify as needed for your setup)",
       "gap_unit": "Å",
-      "gap_in_microns": 100
+      "gap_in_microns": 200
     },
     "computational": {
       "num_threads": "auto",

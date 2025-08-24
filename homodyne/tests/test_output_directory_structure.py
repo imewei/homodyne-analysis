@@ -34,22 +34,40 @@ class TestOutputDirectoryStructure:
         classical_dir = temp_directory / "homodyne_results" / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
 
-        # Expected files in classical directory
-        expected_files = [
-            "experimental_data.npz",
-            "fitted_data.npz",
-            "residuals_data.npz",
-            "c2_heatmaps_phi_0.0deg.png",  # Example C2 heatmap
+        # Expected files and directories in new classical structure
+        summary_file = "all_classical_methods_summary.json"
+        
+        # Create method directories and files
+        method_dirs = ["nelder_mead", "gurobi"]
+        method_files = [
+            "analysis_results_{method}.json",
+            "parameters.json",
+            "fitted_data.npz",  # Contains experimental, fitted, residuals
+            "c2_heatmaps_{method}.png"
         ]
 
-        # Create mock files
-        for filename in expected_files:
-            (classical_dir / filename).touch()
+        # Create summary file
+        (classical_dir / summary_file).touch()
+
+        # Create method directories and files
+        for method in method_dirs:
+            method_dir = classical_dir / method
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            for file_template in method_files:
+                filename = file_template.format(method=method)
+                (method_dir / filename).touch()
 
         # Verify structure
         assert classical_dir.exists()
-        for filename in expected_files:
-            assert (classical_dir / filename).exists()
+        assert (classical_dir / summary_file).exists()
+        
+        for method in method_dirs:
+            method_dir = classical_dir / method
+            assert method_dir.exists()
+            for file_template in method_files:
+                filename = file_template.format(method=method)
+                assert (method_dir / filename).exists()
 
     def test_experimental_data_output_directory_structure(self, temp_directory):
         """Test that experimental data plots create the correct directory structure."""
@@ -89,17 +107,50 @@ class TestOutputDirectoryStructure:
         """Test the complete expected directory structure."""
         base_dir = temp_directory / "homodyne_results"
 
-        # Create complete expected structure
+        # Create complete expected structure with new method-specific directories
         structure = {
             "homodyne_analysis_results.json": "file",
             "run.log": "file",
             "classical": {
-                "analysis_results_20250822_090940_v0.6.4.json": "file",
-                "experimental_data.npz": "file",
-                "fitted_data.npz": "file",
-                "residuals_data.npz": "file",
-                "c2_heatmaps_phi_0.0deg.png": "file",
-                "c2_heatmaps_phi_45.0deg.png": "file",
+                "all_classical_methods_summary.json": "file",
+                "nelder_mead": {
+                    "analysis_results_nelder_mead.json": "file",
+                    "parameters.json": "file",
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_nelder_mead.png": "file",  # Single phi angle case
+                    "nelder_mead_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
+                "gurobi": {
+                    "analysis_results_gurobi.json": "file", 
+                    "parameters.json": "file",
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_gurobi.png": "file",  # Single phi angle case
+                    "gurobi_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
+            },
+            "robust": {
+                "all_robust_methods_summary.json": "file",
+                "wasserstein": {
+                    "analysis_results_wasserstein.json": "file",
+                    "parameters.json": "file", 
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_wasserstein.png": "file",  # Single phi angle case
+                    "wasserstein_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
+                "scenario": {
+                    "analysis_results_scenario.json": "file",
+                    "parameters.json": "file",
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_scenario.png": "file",  # Single phi angle case
+                    "scenario_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
+                "ellipsoidal": {
+                    "analysis_results_ellipsoidal.json": "file",
+                    "parameters.json": "file",
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_ellipsoidal.png": "file",  # Single phi angle case
+                    "ellipsoidal_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
             },
             "exp_data": {
                 "data_validation_phi_0.0deg.png": "file",
@@ -124,55 +175,133 @@ class TestOutputDirectoryStructure:
         # Verify complete structure
         assert base_dir.exists()
         assert (base_dir / "homodyne_analysis_results.json").exists()
+        
+        # Verify classical structure
         assert (base_dir / "classical").is_dir()
-        assert (base_dir / "classical" / "analysis_results_20250822_090940_v0.6.4.json").exists()
+        assert (base_dir / "classical" / "all_classical_methods_summary.json").exists()
+        assert (base_dir / "classical" / "nelder_mead").is_dir()
+        assert (base_dir / "classical" / "nelder_mead" / "analysis_results_nelder_mead.json").exists()
+        assert (base_dir / "classical" / "nelder_mead" / "fitted_data.npz").exists()
+        assert (base_dir / "classical" / "gurobi").is_dir()
+        assert (base_dir / "classical" / "gurobi" / "analysis_results_gurobi.json").exists()
+        assert (base_dir / "classical" / "gurobi" / "fitted_data.npz").exists()
+        
+        # Verify robust structure
+        assert (base_dir / "robust").is_dir()
+        assert (base_dir / "robust" / "all_robust_methods_summary.json").exists()
+        assert (base_dir / "robust" / "wasserstein").is_dir()
+        assert (base_dir / "robust" / "wasserstein" / "analysis_results_wasserstein.json").exists()
+        assert (base_dir / "robust" / "wasserstein" / "fitted_data.npz").exists()
+        
+        # Verify experimental data plots structure (unchanged)
         assert (base_dir / "exp_data").is_dir()
-        assert (base_dir / "classical" / "experimental_data.npz").exists()
-        assert (base_dir / "classical" / "fitted_data.npz").exists()
-        assert (base_dir / "classical" / "residuals_data.npz").exists()
         assert (base_dir / "exp_data" / "data_validation_phi_0.0deg.png").exists()
+
+    def test_multiple_phi_angles_heatmap_naming(self, temp_directory):
+        """Test that heatmap files are named correctly for multiple phi angles."""
+        base_dir = temp_directory / "homodyne_results"
+        classical_dir = base_dir / "classical"
+        
+        # Create classical method directories
+        for method in ["nelder_mead", "gurobi"]:
+            method_dir = classical_dir / method
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            # For multiple phi angles, heatmaps should include phi angle in filename
+            test_angles = [0.0, 45.0, 90.0]
+            for angle in test_angles:
+                heatmap_file = method_dir / f"c2_heatmaps_{method}_phi_{angle}deg.png"
+                heatmap_file.touch()
+                assert heatmap_file.exists()
+                
+        # Test robust methods too
+        robust_dir = base_dir / "robust"
+        for method in ["wasserstein", "scenario", "ellipsoidal"]:
+            method_dir = robust_dir / method
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            # For multiple phi angles, heatmaps should include phi angle in filename
+            test_angles = [0.0, 45.0]
+            for angle in test_angles:
+                heatmap_file = method_dir / f"c2_heatmaps_{method}_phi_{angle}deg.png"
+                heatmap_file.touch()
+                assert heatmap_file.exists()
+
+    def test_diagnostic_summary_plots(self, temp_directory):
+        """Test that diagnostic summary plots are generated for each method."""
+        base_dir = temp_directory / "homodyne_results"
+        
+        # Test classical method diagnostic plots
+        classical_dir = base_dir / "classical"
+        for method in ["nelder_mead", "gurobi"]:
+            method_dir = classical_dir / method
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            diag_file = method_dir / f"{method}_diagnostic_summary.png"
+            diag_file.touch()
+            assert diag_file.exists()
+            
+        # Test robust method diagnostic plots
+        robust_dir = base_dir / "robust"
+        for method in ["wasserstein", "scenario", "ellipsoidal"]:
+            method_dir = robust_dir / method
+            method_dir.mkdir(parents=True, exist_ok=True)
+            
+            diag_file = method_dir / f"{method}_diagnostic_summary.png"
+            diag_file.touch()
+            assert diag_file.exists()
 
 
 class TestNPZDataFiles:
     """Test NPZ data file creation for classical method."""
 
     def test_npz_data_structure(self, temp_directory):
-        """Test the structure of NPZ data files."""
+        """Test the structure of NPZ data files in method-specific directories."""
         classical_dir = temp_directory / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create method directory
+        method_dir = classical_dir / "nelder_mead"
+        method_dir.mkdir(parents=True, exist_ok=True)
 
         # Create mock correlation data
         n_angles, n_t2, n_t1 = 3, 20, 30
         mock_experimental_data = np.random.rand(n_angles, n_t2, n_t1) + 1.0
         mock_fitted_data = np.random.rand(n_angles, n_t2, n_t1) + 1.0
         mock_residuals_data = mock_experimental_data - mock_fitted_data
+        mock_parameters = np.array([1.5, 2.0, 0.5])
+        mock_uncertainties = np.array([0.1, 0.2, 0.05])
 
-        # Save NPZ files
-        experimental_file = classical_dir / "experimental_data.npz"
-        fitted_file = classical_dir / "fitted_data.npz"
-        residuals_file = classical_dir / "residuals_data.npz"
+        # Save combined NPZ file (new structure: all data in one file per method)
+        fitted_file = method_dir / "fitted_data.npz"
+        
+        np.savez_compressed(
+            fitted_file, 
+            c2_experimental=mock_experimental_data,
+            c2_fitted=mock_fitted_data,
+            residuals=mock_residuals_data,
+            parameters=mock_parameters,
+            uncertainties=mock_uncertainties,
+            chi_squared=np.array([0.5]),
+        )
 
-        np.savez_compressed(experimental_file, data=mock_experimental_data)
-        np.savez_compressed(fitted_file, data=mock_fitted_data)
-        np.savez_compressed(residuals_file, data=mock_residuals_data)
-
-        # Verify files exist and contain expected data
-        assert experimental_file.exists()
+        # Verify file exists and contains expected data
         assert fitted_file.exists()
-        assert residuals_file.exists()
 
-        # Load and verify data
-        exp_loaded = np.load(experimental_file)
-        fitted_loaded = np.load(fitted_file)
-        residuals_loaded = np.load(residuals_file)
+        # Load and verify combined data structure
+        data_loaded = np.load(fitted_file)
 
-        assert "data" in exp_loaded
-        assert "data" in fitted_loaded
-        assert "data" in residuals_loaded
+        assert "c2_experimental" in data_loaded
+        assert "c2_fitted" in data_loaded
+        assert "residuals" in data_loaded
+        assert "parameters" in data_loaded
+        assert "uncertainties" in data_loaded
 
-        assert exp_loaded["data"].shape == (n_angles, n_t2, n_t1)
-        assert fitted_loaded["data"].shape == (n_angles, n_t2, n_t1)
-        assert residuals_loaded["data"].shape == (n_angles, n_t2, n_t1)
+        assert data_loaded["c2_experimental"].shape == (n_angles, n_t2, n_t1)
+        assert data_loaded["c2_fitted"].shape == (n_angles, n_t2, n_t1)
+        assert data_loaded["residuals"].shape == (n_angles, n_t2, n_t1)
+        assert data_loaded["parameters"].shape == (3,)
+        assert data_loaded["uncertainties"].shape == (3,)
 
     def test_fitted_data_calculation(self, temp_directory):
         """Test that fitted data follows the expected scaling relationship."""
@@ -530,16 +659,26 @@ class TestMCMCOutputDirectoryStructure:
         """Test the complete expected directory structure including MCMC."""
         base_dir = temp_directory / "homodyne_results"
 
-        # Create complete expected structure
+        # Create complete expected structure with new classical/robust structure + MCMC
         structure = {
             "homodyne_analysis_results.json": "file",
             "run.log": "file",
             "classical": {
-                "analysis_results_20250822_090940_v0.6.4.json": "file",
-                "experimental_data.npz": "file",
-                "fitted_data.npz": "file",
-                "residuals_data.npz": "file",
-                "c2_heatmaps_phi_0.0deg.png": "file",
+                "all_classical_methods_summary.json": "file",
+                "nelder_mead": {
+                    "analysis_results_nelder_mead.json": "file",
+                    "parameters.json": "file",
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_nelder_mead.png": "file",  # Single phi angle case
+                    "nelder_mead_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
+                "gurobi": {
+                    "analysis_results_gurobi.json": "file",
+                    "parameters.json": "file",
+                    "fitted_data.npz": "file",  # Contains experimental, fitted, residuals
+                    "c2_heatmaps_gurobi.png": "file",  # Single phi angle case
+                    "gurobi_diagnostic_summary.png": "file",  # Method-specific diagnostic
+                },
             },
             "mcmc": {
                 "experimental_data.npz": "file",
@@ -576,14 +715,16 @@ class TestMCMCOutputDirectoryStructure:
         assert base_dir.exists()
         assert (base_dir / "homodyne_analysis_results.json").exists()
         assert (base_dir / "classical").is_dir()
-        assert (base_dir / "classical" / "analysis_results_20250822_090940_v0.6.4.json").exists()
         assert (base_dir / "mcmc").is_dir()
         assert (base_dir / "exp_data").is_dir()
 
-        # Verify classical files
-        assert (base_dir / "classical" / "experimental_data.npz").exists()
-        assert (base_dir / "classical" / "fitted_data.npz").exists()
-        assert (base_dir / "classical" / "residuals_data.npz").exists()
+        # Verify new classical method-specific structure
+        assert (base_dir / "classical" / "all_classical_methods_summary.json").exists()
+        assert (base_dir / "classical" / "nelder_mead").is_dir()
+        assert (base_dir / "classical" / "nelder_mead" / "analysis_results_nelder_mead.json").exists()
+        assert (base_dir / "classical" / "nelder_mead" / "fitted_data.npz").exists()
+        assert (base_dir / "classical" / "gurobi").is_dir()
+        assert (base_dir / "classical" / "gurobi" / "fitted_data.npz").exists()
 
         # Verify mcmc files
         assert (base_dir / "mcmc" / "experimental_data.npz").exists()

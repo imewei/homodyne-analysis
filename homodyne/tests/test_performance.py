@@ -74,6 +74,49 @@ except ImportError:
     PYMC_AVAILABLE = False
 
 
+def handle_numba_threading_error(func, *args, **kwargs):
+    """
+    Handle NUMBA threading configuration errors gracefully.
+    
+    This function attempts to execute a NUMBA function and provides
+    better error handling for threading configuration conflicts.
+    
+    Parameters
+    ----------
+    func : callable
+        The NUMBA function to execute
+    *args : tuple
+        Arguments to pass to the function
+    **kwargs : dict
+        Keyword arguments to pass to the function
+        
+    Returns
+    -------
+    result : any
+        The result of the function call
+        
+    Raises
+    ------
+    pytest.skip
+        If NUMBA threading configuration conflicts are encountered
+    RuntimeError
+        For other runtime errors not related to threading
+    """
+    try:
+        return func(*args, **kwargs)
+    except RuntimeError as e:
+        error_msg = str(e).lower()
+        if any(keyword in error_msg for keyword in [
+            "numba_num_threads", "threading", "parallel", "tbb", "omp"
+        ]):
+            pytest.skip(
+                "Skipping due to NUMBA threading configuration conflict in test environment. "
+                f"Error: {str(e)}"
+            )
+        else:
+            raise
+
+
 @pytest.fixture
 def performance_config():
     """Standard configuration for performance tests."""
@@ -2056,29 +2099,17 @@ class TestNumbaCompilationDiagnostics:
         test_time_array = np.linspace(0.1, 2.0, 50)
 
         # Warm up with fallback for NUMBA threading issues
-        try:
-            _ = calculate_diffusion_coefficient_numba(test_time_array, 1000.0, -0.1, 100.0)
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        handle_numba_threading_error(
+            calculate_diffusion_coefficient_numba, test_time_array, 1000.0, -0.1, 100.0
+        )
 
         # Measure diffusion coefficient with NUMBA threading fallback
-        try:
-            start = time.perf_counter()
-            for _ in range(1000):
-                _ = calculate_diffusion_coefficient_numba(
-                    test_time_array, 1000.0, -0.1, 100.0
-                )
-            diffusion_time = (time.perf_counter() - start) / 1000
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        start = time.perf_counter()
+        for _ in range(1000):
+            handle_numba_threading_error(
+                calculate_diffusion_coefficient_numba, test_time_array, 1000.0, -0.1, 100.0
+            )
+        diffusion_time = (time.perf_counter() - start) / 1000
 
         print(f"\n=== Performance vs Baselines ===")
         print(
@@ -2149,17 +2180,16 @@ class TestBatchOptimizationFeatures:
             exp_batch[i] = theory_batch[i] * contrast_true[i] + offset_true[i]
             exp_batch[i] += np.random.normal(0, 0.01, n_data)  # Add small noise
 
-        # Test batch solver with fallback for NUMBA threading issues
-        try:
-            contrast_batch, offset_batch = solve_least_squares_batch_numba(
-                theory_batch, exp_batch
-            )
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        # Test batch solver with NUMBA function warmup
+        # Warm up the NUMBA function with small data first to ensure proper compilation
+        warmup_theory = np.random.rand(2, 10)
+        warmup_exp = np.random.rand(2, 10)
+        handle_numba_threading_error(solve_least_squares_batch_numba, warmup_theory, warmup_exp)
+        
+        # Now run the actual test
+        contrast_batch, offset_batch = handle_numba_threading_error(
+            solve_least_squares_batch_numba, theory_batch, exp_batch
+        )
 
         # Verify results
         assert contrast_batch.shape == (
@@ -2196,16 +2226,10 @@ class TestBatchOptimizationFeatures:
         offset_batch = np.array([1.0, 0.98, 1.02])
 
         # Test batch chi-squared computation with fallback for NUMBA threading issues
-        try:
-            chi2_batch = compute_chi_squared_batch_numba(
-                theory_batch, exp_batch, contrast_batch, offset_batch
-            )
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        chi2_batch = handle_numba_threading_error(
+            compute_chi_squared_batch_numba,
+            theory_batch, exp_batch, contrast_batch, offset_batch
+        )
 
         # Verify results
         assert chi2_batch.shape == (
@@ -2282,25 +2306,31 @@ class TestBatchOptimizationFeatures:
             return chi2_results
 
         # Warm up both approaches with NUMBA threading fallback
-        try:
-            _ = batch_processing()
-            _ = sequential_processing()
+        # Warm up NUMBA functions with small data first
+        warmup_theory = np.random.rand(2, 10)
+        warmup_exp = np.random.rand(2, 10)
+        
+        # Warm up both NUMBA functions used in batch processing
+        warmup_contrast, warmup_offset = handle_numba_threading_error(
+            solve_least_squares_batch_numba, warmup_theory, warmup_exp
+        )
+        handle_numba_threading_error(
+            compute_chi_squared_batch_numba, warmup_theory, warmup_exp, warmup_contrast, warmup_offset
+        )
+        
+        # Now warm up the actual test functions
+        handle_numba_threading_error(batch_processing)
+        handle_numba_threading_error(sequential_processing)
 
-            # Benchmark batch processing
-            batch_result = benchmark(batch_processing)
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        # Benchmark batch processing
+        batch_result = handle_numba_threading_error(benchmark, batch_processing)
 
         # Time sequential processing manually (since we can only benchmark one function)
         import time
 
         start = time.perf_counter()
         for _ in range(10):  # Multiple runs for averaging
-            sequential_result = sequential_processing()
+            sequential_result = handle_numba_threading_error(sequential_processing)
         sequential_time = (time.perf_counter() - start) / 10
 
         # Verify results are equivalent
@@ -2340,19 +2370,23 @@ class TestBatchOptimizationFeatures:
         exp_batch = np.random.rand(n_angles, n_data)
 
         # Run batch operations with NUMBA threading fallback
-        try:
-            contrast_batch, offset_batch = solve_least_squares_batch_numba(
-                theory_batch, exp_batch
-            )
-            chi2_batch = compute_chi_squared_batch_numba(
-                theory_batch, exp_batch, contrast_batch, offset_batch
-            )
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        # Warm up NUMBA functions with small data first
+        warmup_theory = np.random.rand(2, 10)
+        warmup_exp = np.random.rand(2, 10)
+        warmup_contrast, warmup_offset = handle_numba_threading_error(
+            solve_least_squares_batch_numba, warmup_theory, warmup_exp
+        )
+        handle_numba_threading_error(
+            compute_chi_squared_batch_numba, warmup_theory, warmup_exp, warmup_contrast, warmup_offset
+        )
+        
+        # Now run the actual test
+        contrast_batch, offset_batch = handle_numba_threading_error(
+            solve_least_squares_batch_numba, theory_batch, exp_batch
+        )
+        chi2_batch = handle_numba_threading_error(
+            compute_chi_squared_batch_numba, theory_batch, exp_batch, contrast_batch, offset_batch
+        )
 
         # Check final memory usage
         final_memory = process.memory_info().rss / 1024 / 1024  # MB
@@ -2388,16 +2422,15 @@ class TestBatchOptimizationFeatures:
         theory_batch = np.ones((n_angles, n_data)) * 1e-10  # Very small values
         exp_batch = np.ones((n_angles, n_data)) * 1e-9
 
-        try:
-            contrast_batch, offset_batch = solve_least_squares_batch_numba(
-                theory_batch, exp_batch
-            )
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        # Warm up NUMBA function with small data first
+        warmup_theory = np.random.rand(2, 5)
+        warmup_exp = np.random.rand(2, 5)
+        handle_numba_threading_error(solve_least_squares_batch_numba, warmup_theory, warmup_exp)
+        
+        # Now run the actual test
+        contrast_batch, offset_batch = handle_numba_threading_error(
+            solve_least_squares_batch_numba, theory_batch, exp_batch
+        )
 
         # Should fallback to reasonable values for singular cases
         assert np.all(
@@ -2411,16 +2444,9 @@ class TestBatchOptimizationFeatures:
         theory_batch = np.random.rand(n_angles, n_data) * 1e6
         exp_batch = np.random.rand(n_angles, n_data) * 1e6
 
-        try:
-            contrast_batch, offset_batch = solve_least_squares_batch_numba(
-                theory_batch, exp_batch
-            )
-        except RuntimeError as e:
-            if "NUMBA_NUM_THREADS" in str(e):
-                # Skip this test if we hit NUMBA threading conflicts during testing
-                pytest.skip("Skipping due to NUMBA threading configuration conflict in test environment")
-            else:
-                raise
+        contrast_batch, offset_batch = handle_numba_threading_error(
+            solve_least_squares_batch_numba, theory_batch, exp_batch
+        )
 
         assert np.all(
             np.isfinite(contrast_batch)
