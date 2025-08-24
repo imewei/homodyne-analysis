@@ -528,7 +528,7 @@ def run_analysis(args: argparse.Namespace) -> None:
                                 logger.warning(
                                     f"Failed to log MCMC diagnostics for {method}: {e}"
                                 )
-                        else:
+                        elif method.upper() == "CLASSICAL":
                             # For classical optimization methods, use chi-squared analysis
                             try:
                                 # Save classical results to classical subdirectory
@@ -2055,7 +2055,7 @@ def _generate_robust_plots(analyzer, best_params, result, phi_angles, c2_exp, ou
                 if method_data.get('success', False) and method_data.get('parameters'):
                     try:
                         method_params = np.array(method_data['parameters'])
-                        method_c2 = analyzer.calculate_c2_single_angle_optimized(method_params, phi_angles)
+                        method_c2 = analyzer.calculate_c2_nonequilibrium_laminar_parallel(method_params, phi_angles)
                         
                         # Generate method-specific plots
                         # Map robust method names to standardized directory names (same as data saving)

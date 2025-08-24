@@ -511,6 +511,7 @@ def save_classical_optimization_results(
         Dict[str, bool]: Save status for each method and combined results
     """
     output_dir = get_output_directory(config) / "classical"
+    
     output_dir.mkdir(parents=True, exist_ok=True)
     save_status = {}
 
@@ -658,6 +659,7 @@ def save_analysis_results(
         results.get("methods_used", []) == ["Classical"]):
         # This is a classical-only result, save to classical subdirectory
         classical_dir = output_dir / "classical"
+        
         classical_dir.mkdir(parents=True, exist_ok=True)
         json_path = classical_dir / f"{filename_base}.json"
     else:
