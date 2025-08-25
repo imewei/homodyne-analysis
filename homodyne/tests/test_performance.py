@@ -751,7 +751,7 @@ class TestStableBenchmarking:
                 is_ci = os.getenv("CI", "").lower() in ("true", "1") or os.getenv(
                     "GITHUB_ACTIONS", ""
                 ).lower() in ("true", "1")
-                
+
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
                 )  # 10ms default
@@ -761,7 +761,9 @@ class TestStableBenchmarking:
 
                 # Assert performance within bounds - use sanity check instead of strict bounds
                 # Performance can vary significantly across different environments
-                max_acceptable_multiplier = 50.0 if is_ci else 20.0  # More lenient for CI
+                max_acceptable_multiplier = (
+                    50.0 if is_ci else 20.0
+                )  # More lenient for CI
                 assert median_time < expected_median * max_acceptable_multiplier, (
                     f"Test correlation_calculation_stable_benchmark: Execution time "
                     f"{median_time:.4f}s is {median_time/expected_median:.1f}x baseline "
