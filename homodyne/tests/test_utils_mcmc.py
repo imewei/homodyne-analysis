@@ -15,6 +15,7 @@ import pytest
 try:
     import pymc as pm
     import arviz as az
+
     PYMC_AVAILABLE = True
 except ImportError:
     PYMC_AVAILABLE = False
@@ -23,7 +24,8 @@ except ImportError:
 
 
 pytestmark = pytest.mark.skipif(
-    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+    not PYMC_AVAILABLE,
+    reason="PyMC is required for MCMC sampling but is not available.",
 )
 
 

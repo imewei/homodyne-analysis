@@ -27,7 +27,8 @@ except ImportError:
 
 
 pytestmark = pytest.mark.skipif(
-    not mcmc_available, reason="PyMC is required for MCMC sampling but is not available."
+    not mcmc_available,
+    reason="PyMC is required for MCMC sampling but is not available.",
 )
 
 

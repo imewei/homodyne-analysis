@@ -10,6 +10,7 @@ Institution: Argonne National Laboratory
 """
 
 from functools import wraps
+from typing import Any, Callable, Dict, Tuple, TypeVar, Union
 
 import numpy as np
 
@@ -18,29 +19,31 @@ try:
     from numba import float64, int64, jit, njit, prange, types
 
     try:
-        from numba.types import Tuple  # type: ignore
+        from numba.types import Tuple
     except (ImportError, AttributeError):
         # Fallback for older numba versions or different import paths
-        Tuple = getattr(types, "Tuple", types.UniTuple)  # type: ignore
+        Tuple = getattr(types, "Tuple", types.UniTuple)
 
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
 
     # Fallback decorators when Numba is unavailable
-    def jit(*args, **kwargs):
+    F = TypeVar("F", bound=Callable[..., Any])
+
+    def jit(*args: Any, **kwargs: Any) -> Union[F, Callable[[F], F]]:
         return args[0] if args and callable(args[0]) else lambda f: f
 
-    def njit(*args, **kwargs):
+    def njit(*args: Any, **kwargs: Any) -> Union[F, Callable[[F], F]]:
         return args[0] if args and callable(args[0]) else lambda f: f
 
     prange = range
 
     class DummyType:
-        def __getitem__(self, item):
+        def __getitem__(self, item: Any) -> "DummyType":
             return self
 
-        def __call__(self, *args, **kwargs):
+        def __call__(self, *args: Any, **kwargs: Any) -> "DummyType":
             return self
 
     float64 = int64 = types = Tuple = DummyType()
@@ -48,8 +51,11 @@ except ImportError:
 
 # Define fallback implementations for when numba is not available
 def _compute_chi_squared_batch_fallback(
-    theory_batch, exp_batch, contrast_batch, offset_batch
-):
+    theory_batch: np.ndarray,
+    exp_batch: np.ndarray,
+    contrast_batch: np.ndarray,
+    offset_batch: np.ndarray,
+) -> np.ndarray:
     """Pure numpy fallback for compute_chi_squared_batch_numba when numba is unavailable."""
     n_angles, n_data = theory_batch.shape
     chi2_batch = np.zeros(n_angles, dtype=np.float64)
@@ -67,7 +73,9 @@ def _compute_chi_squared_batch_fallback(
     return chi2_batch
 
 
-def _solve_least_squares_batch_fallback(theory_batch, exp_batch):
+def _solve_least_squares_batch_fallback(
+    theory_batch: np.ndarray, exp_batch: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """Pure numpy fallback for solve_least_squares_batch_numba when numba is unavailable."""
     n_angles, n_data = theory_batch.shape
     contrast_batch = np.zeros(n_angles, dtype=np.float64)
@@ -98,7 +106,7 @@ def _solve_least_squares_batch_fallback(theory_batch, exp_batch):
     return contrast_batch, offset_batch
 
 
-def _create_time_integral_matrix_impl(time_dependent_array):
+def _create_time_integral_matrix_impl(time_dependent_array: np.ndarray) -> np.ndarray:
     """
     Create time integral matrix for correlation calculations.
 

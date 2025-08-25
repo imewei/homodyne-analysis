@@ -320,13 +320,11 @@ class MCMCSampler:
                                     sigma=prior_sigma,
                                     lower=lower,
                                     upper=upper,
-                                )  # type: ignore
+                                )
                             else:
                                 raise ImportError("PyMC not available")
                         elif prior_type == "Normal":
-                            return pm.Normal(
-                                param_name, mu=prior_mu, sigma=prior_sigma
-                            )  # type: ignore
+                            return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)
                         elif (
                             prior_type == "LogNormal"
                             and min_val is not None
@@ -335,24 +333,18 @@ class MCMCSampler:
                             # Convert to log space
                             log_mu = np.log(prior_mu) if prior_mu > 0 else 0.0
                             log_sigma = prior_sigma
-                            return pm.LogNormal(
-                                param_name, mu=log_mu, sigma=log_sigma
-                            )  # type: ignore
+                            return pm.LogNormal(param_name, mu=log_mu, sigma=log_sigma)
                         elif (
                             prior_type == "Uniform"
                             and min_val is not None
                             and max_val is not None
                         ):
-                            return pm.Uniform(
-                                param_name, lower=min_val, upper=max_val
-                            )  # type: ignore
+                            return pm.Uniform(param_name, lower=min_val, upper=max_val)
                         else:
                             print(
                                 f"   ⚠ Unknown prior type '{prior_type}' for {param_name}, using Normal"
                             )
-                            return pm.Normal(
-                                param_name, mu=prior_mu, sigma=prior_sigma
-                            )  # type: ignore
+                            return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)
                     else:
                         logger.warning(
                             f"Parameter name mismatch: expected {param_name}, got {
@@ -394,16 +386,16 @@ class MCMCSampler:
                                 mu=params["mu"],
                                 sigma=params["sigma"],
                                 lower=params.get("lower", 1e-10),
-                            )  # type: ignore
+                            )
                         else:
                             raise ImportError("PyMC not available")
                     else:
                         return pm.Normal(
                             param_name, mu=params["mu"], sigma=params["sigma"]
-                        )  # type: ignore
+                        )
                 else:
                     print(f"   Using default Normal prior for {param_name}")
-                    return pm.Normal(param_name, mu=0.0, sigma=1.0)  # type: ignore
+                    return pm.Normal(param_name, mu=0.0, sigma=1.0)
 
             # Always include diffusion parameters (first 3) using configuration
             try:
@@ -550,16 +542,14 @@ class MCMCSampler:
                     # Pylance doesn't fully understand
                     mu = pm.Deterministic(
                         "mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001
-                    )  # type: ignore[operator]
+                    )
                 else:
                     raise ImportError("PyMC/PyTensor not available")
 
                 # Likelihood using mean experimental value - validate first
                 # Remove any NaN values before computing mean
                 if pt is not None:
-                    # PyTensor operations on SharedVariable - type ignore for
-                    # indexing and operators
-                    # type: ignore[index,operator]
+                    # PyTensor operations on SharedVariable
                     c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]
                 else:
                     raise ImportError("PyTensor not available")
@@ -602,9 +592,7 @@ class MCMCSampler:
                 for angle_idx in range(n_angles):
                     # Get experimental data for this angle using PyTensor tensor operations
                     # Extract experimental data for this angle
-                    # SharedVariable supports indexing but Pylance doesn't
-                    # recognize it
-                    # type: ignore[index,operator]
+                    # SharedVariable supports indexing but Pylance doesn't recognize it
                     c2_exp_angle = c2_data_shared[angle_idx]
 
                     # Theoretical calculation - use realistic normalized values
@@ -618,8 +606,7 @@ class MCMCSampler:
                         # Complex PyTensor operations - use type ignore for
                         # operator issues
                         c2_theory_normalized = (
-                            pt.sigmoid(pt.log(D0 / 1000.0)) * 0.8
-                            + 0.1  # type: ignore[operator]
+                            pt.sigmoid(pt.log(D0 / 1000.0)) * 0.8 + 0.1
                         )  # Maps D0 range to ~[0.1, 0.9]
                     else:
                         raise ImportError("PyTensor not available")
@@ -719,7 +706,7 @@ class MCMCSampler:
                         )  # Help Pylance understand this is not None
                         pm.Potential(
                             f"fitted_range_constraint_{angle_idx}",
-                            constraint_expr,  # type: ignore[arg-type]
+                            constraint_expr,
                         )
                     else:
                         raise ImportError("PyMC/PyTensor not available")
@@ -1037,9 +1024,7 @@ class MCMCSampler:
         for var_name in param_names_effective:
             posterior = getattr(trace, "posterior", None)
             if posterior is not None and var_name in posterior:
-                posterior_means[var_name] = float(
-                    posterior[var_name].mean()  # type: ignore[attr-defined]
-                )
+                posterior_means[var_name] = float(posterior[var_name].mean())
 
         # Calculate chi-squared for the posterior mean parameters
         chi_squared = None
@@ -1210,9 +1195,9 @@ class MCMCSampler:
             # Overall convergence assessment
             try:
                 max_rhat = (
-                    float(rhat.to_array().max())  # type: ignore[attr-defined]
+                    float(rhat.to_array().max())
                     if hasattr(rhat, "to_array")
-                    else float(np.max(rhat))  # type: ignore[arg-type]
+                    else float(np.max(rhat))
                 )
             except (AttributeError, TypeError):
                 max_rhat = 1.0
@@ -1271,9 +1256,7 @@ class MCMCSampler:
             posterior_stats = {}
 
             for param in param_names:
-                # type: ignore[attr-defined]
                 if hasattr(trace, "posterior") and param in trace.posterior:
-                    # type: ignore[attr-defined]
                     samples = trace.posterior[param].values.flatten()
                     posterior_stats[param] = {
                         "mean": float(np.mean(samples)),
@@ -1288,7 +1271,6 @@ class MCMCSampler:
             return {
                 "summary_table": summary,
                 "parameter_statistics": posterior_stats,
-                # type: ignore[attr-defined]
                 "total_samples": (
                     (len(trace.posterior.chain) * len(trace.posterior.draw))
                     if hasattr(trace, "posterior")
@@ -1330,7 +1312,6 @@ class MCMCSampler:
             for param in param_names:
                 posterior = getattr(self.mcmc_trace, "posterior", None)
                 if posterior is not None and param in posterior:
-                    # type: ignore[attr-defined]
                     param_samples = posterior[param].values.flatten()
                     # Randomly subsample if more samples available than
                     # requested
@@ -1386,7 +1367,6 @@ class MCMCSampler:
                     trace_len = (
                         len(trace.posterior.draw)
                         if hasattr(
-                            # type: ignore[attr-defined]
                             trace,
                             "posterior",
                         )
@@ -1829,7 +1809,6 @@ class MCMCSampler:
             for param in param_names:
                 posterior = getattr(self.mcmc_trace, "posterior", None)
                 if posterior is not None and param in posterior:
-                    # type: ignore[attr-defined]
                     samples = posterior[param].values.flatten()
                     uncertainties[param] = float(np.std(samples))
 

@@ -665,7 +665,7 @@ class ConfigManager:
                 )
             return False
 
-        return self.get_angle_filtering_config().get("enabled", True)
+        return bool(self.get_angle_filtering_config().get("enabled", True))
 
     def get_target_angle_ranges(self) -> List[Tuple[float, float]]:
         """
@@ -690,7 +690,9 @@ class ConfigManager:
         bool
             True if should fallback to all angles, False to raise error
         """
-        return self.get_angle_filtering_config().get("fallback_to_all_angles", True)
+        return bool(
+            self.get_angle_filtering_config().get("fallback_to_all_angles", True)
+        )
 
     def get_test_config(self, test_name: str) -> Dict[str, Any]:
         """
@@ -716,7 +718,10 @@ class ConfigManager:
             available = list(configs.keys())
             raise ValueError(f"Test '{test_name}' not found. Available: {available}")
 
-        return configs[test_name]
+        config_result = configs[test_name]
+        if not isinstance(config_result, dict):
+            raise ValueError(f"Test configuration '{test_name}' is not a dictionary")
+        return config_result
 
     def is_static_mode_enabled(self) -> bool:
         """
@@ -729,7 +734,7 @@ class ConfigManager:
         """
         # Use cached value for performance
         if hasattr(self, "_cached_values") and "static_mode" in self._cached_values:
-            return self._cached_values["static_mode"]
+            return bool(self._cached_values["static_mode"])
 
         result = self.get("analysis_settings", "static_mode", default=False)
         return bool(result)
@@ -749,7 +754,8 @@ class ConfigManager:
 
         # Use cached value for performance
         if hasattr(self, "_cached_values") and "static_submode" in self._cached_values:
-            return self._cached_values["static_submode"]
+            cached_value = self._cached_values["static_submode"]
+            return str(cached_value) if cached_value is not None else None
 
         # Get submode from configuration (case-insensitive)
         raw_submode = self.get(
@@ -864,7 +870,7 @@ class ConfigManager:
             hasattr(self, "_cached_values")
             and "effective_param_count" in self._cached_values
         ):
-            return self._cached_values["effective_param_count"]
+            return int(self._cached_values["effective_param_count"])
 
         # Get active parameters from configuration
         active_params = self.get_active_parameters()

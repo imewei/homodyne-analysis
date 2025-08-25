@@ -209,7 +209,7 @@ def _json_serializer(obj):
         return obj.tolist()
     elif isinstance(obj, (np.integer, np.floating)):
         return obj.item()
-    elif isinstance(obj, (np.complex64, np.complex128, complex)):  # type: ignore
+    elif isinstance(obj, (np.complex64, np.complex128, complex)):
         # Don't serialize complex numbers - let them fail for testing
         raise TypeError(
             f"Object of type {
