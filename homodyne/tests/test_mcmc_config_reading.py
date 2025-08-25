@@ -13,20 +13,21 @@ from pathlib import Path
 
 import pytest
 
-# Test PyMC availability
-try:
-    from homodyne.optimization.mcmc import MCMCSampler
+# Test PyMC availability - dynamic check
+def _check_pymc_available():
+    try:
+        import pymc
+        return True
+    except ImportError:
+        return False
 
-    PYMC_AVAILABLE = True
-except ImportError:
-    PYMC_AVAILABLE = False
-    MCMCSampler = None
+PYMC_AVAILABLE = _check_pymc_available()
 
 
-pytestmark = pytest.mark.skipif(
-    not PYMC_AVAILABLE,
-    reason="PyMC is required for MCMC sampling but is not available.",
-)
+# pytestmark = pytest.mark.skipif(
+#     not PYMC_AVAILABLE,
+#     reason="PyMC is required for MCMC sampling but is not available.",
+# )
 
 
 class TestMCMCConfigurationReading:
@@ -77,6 +78,7 @@ class TestMCMCConfigurationReading:
         assert test_config.get("mcmc_chains", 2) == 2  # Default value
         assert test_config.get("mcmc_tune", 500) == 500  # Default value
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_mcmc_sampler_reads_config_correctly(self):
         """Test that MCMCSampler class reads configuration correctly."""
 
@@ -230,6 +232,7 @@ class TestMCMCConfigurationReading:
         assert mcmc_config.get("sampler", "NUTS") == "NUTS"
         assert mcmc_config.get("max_treedepth", 10) == 10
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_config_validation_with_correct_keys(self):
         """Test that configuration validation works with the correct key names."""
 
@@ -318,6 +321,7 @@ class TestMCMCConfigurationReading:
         assert new_chains == 4
         assert new_tune == 2000
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_mcmc_parameter_bounds_usage(self):
         """Test that MCMC module uses parameter bounds correctly for PyMC priors."""
 
@@ -371,6 +375,7 @@ class TestMCMCConfigurationReading:
         assert d_offset_bound["max"] == 5
         assert d_offset_bound["type"] == "Normal"
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_mcmc_parameter_bounds_with_missing_bounds(self):
         """Test MCMC parameter bounds handling when bounds are missing."""
 
@@ -402,6 +407,7 @@ class TestMCMCConfigurationReading:
         # MCMC sampler should still be created successfully
         assert sampler.config == test_config
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_mcmc_real_config_parameter_bounds_compatibility(self):
         """Test with realistic parameter bounds matching the project configuration."""
 

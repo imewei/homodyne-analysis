@@ -23,21 +23,20 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-# Test PyMC availability
-try:
-    from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+# Test PyMC availability - dynamic check
+def _check_pymc_available():
+    try:
+        import pymc
+        return True
+    except ImportError:
+        return False
 
-    PYMC_AVAILABLE = True
-except ImportError:
-    PYMC_AVAILABLE = False
-    MCMCSampler = None
-    create_mcmc_sampler = None
+PYMC_AVAILABLE = _check_pymc_available()
 
-
-pytestmark = pytest.mark.skipif(
-    not PYMC_AVAILABLE,
-    reason="PyMC is required for MCMC sampling but is not available.",
-)
+# pytestmark = pytest.mark.skipif(
+#     not PYMC_AVAILABLE,
+#     reason="PyMC is required for MCMC sampling but is not available.",
+# )
 try:
     from homodyne.tests.test_utils_mcmc import (
         create_mock_analysis_core,
@@ -58,6 +57,7 @@ except ImportError:
 class TestMCMCConfigurationRegression:
     """Regression tests for the specific MCMC configuration issue that was fixed."""
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_simon_config_exact_reproduction(self):
         """Test the exact scenario from my_config_simon.json that caused the issue."""
         # This is the exact configuration that was causing problems
@@ -161,6 +161,7 @@ class TestMCMCConfigurationRegression:
         plot_text_old = f"Chains: {chain_count_old} Draws: {draw_count_old}"
         assert plot_text_old == "Chains: 2 Draws: 1000"  # This was the problem!
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_mcmc_sampler_factory_with_simon_config(self):
         """Test the create_mcmc_sampler factory with Simon's configuration."""
         config = create_realistic_user_config()
@@ -174,6 +175,7 @@ class TestMCMCConfigurationRegression:
         assert sampler.mcmc_config["chains"] == 8
         assert sampler.mcmc_config["tune"] == 1000
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_config_file_persistence(self):
         """Test that configuration persists correctly through file loading."""
         # Create configuration and save to temporary file
@@ -200,6 +202,7 @@ class TestMCMCConfigurationRegression:
         finally:
             Path(temp_path).unlink()
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_default_fallback_regression(self):
         """Test that defaults are only used when configuration is actually missing."""
         # Config with missing MCMC section (should use defaults)
@@ -222,6 +225,7 @@ class TestMCMCConfigurationRegression:
         assert mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
         assert mcmc_config.get("tune", defaults["tune"]) == defaults["tune"]
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_configuration_validation_regression(self):
         """Test that configuration validation works correctly."""
         config = create_realistic_user_config()
@@ -237,6 +241,7 @@ class TestMCMCConfigurationRegression:
         assert sampler.mcmc_config is not None
         assert len(sampler.mcmc_config) > 0
 
+    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
     def test_config_path_hierarchy_regression(self):
         """Test that the correct configuration path hierarchy is used."""
         config = create_realistic_user_config()
