@@ -46,6 +46,7 @@ dependencies = [
     "numpy>=1.24.0,<2.3.0",  # Compatible with Numba 0.61.2
     "scipy>=1.7.0",
     "matplotlib>=3.3.0",
+    "typing_extensions>=4.0.0; python_version<'3.13'",
 ]
 
 [project.optional-dependencies]
@@ -93,6 +94,7 @@ dev = [
     "hypothesis>=6.0.0",
     "black>=21.0.0",
     "flake8>=3.9.0",
+    "isort>=5.0.0",
     "mypy>=0.910",
     "types-psutil>=5.9.0",
     "types-Pillow>=10.0.0",

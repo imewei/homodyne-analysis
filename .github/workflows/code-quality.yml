@@ -218,12 +218,7 @@ jobs:
 
     - name: Run comprehensive test suite with coverage
       run: |
-        coverage run -m pytest homodyne/tests/ \
-          --html=test_report.html \
-          --self-contained-html \
-          -v \
-          --tb=long \
-          --durations=10
+        coverage run -m pytest homodyne/tests/ --html=test_report.html --self-contained-html -v --tb=long --durations=10
 
     - name: Generate coverage reports
       run: |

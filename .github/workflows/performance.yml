@@ -61,48 +61,25 @@ jobs:
 
     - name: Run quick performance tests
       run: |
-        pytest -m "performance and not slow" \
-               --tb=short \
-               --disable-warnings \
-               -v \
-               homodyne/tests/test_performance.py
+        pytest -m "performance and not slow" --tb=short --disable-warnings -v homodyne/tests/test_performance.py
 
     - name: Run performance regression tests
       run: |
-        pytest -m "performance and regression" \
-               --tb=short \
-               --disable-warnings \
-               --performance-threshold=2.0 \
-               -v \
-               homodyne/tests/test_performance.py
+        pytest -m "performance and regression" --tb=short --disable-warnings --performance-threshold=2.0 -v homodyne/tests/test_performance.py
 
     - name: Run benchmark tests (if pytest-benchmark is available)
       continue-on-error: true
       run: |
-        pytest -m "benchmark" \
-               --benchmark-only \
-               --benchmark-sort=mean \
-               --benchmark-columns=min,max,mean,stddev \
-               --benchmark-warmup=on \
-               --benchmark-warmup-iterations=3 \
-               --tb=short \
-               homodyne/tests/test_performance.py
+        pytest -m "benchmark" --benchmark-only --benchmark-sort=mean --benchmark-columns=min,max,mean,stddev --benchmark-warmup=on --benchmark-warmup-iterations=3 --tb=short homodyne/tests/test_performance.py
 
     - name: Run memory profiling tests
       run: |
-        pytest -m "memory" \
-               --tb=short \
-               --disable-warnings \
-               -v \
-               homodyne/tests/test_performance.py
+        pytest -m "memory" --tb=short --disable-warnings -v homodyne/tests/test_performance.py
 
     - name: Update performance baselines (if requested)
       if: github.event.inputs.update_baselines == 'true' && github.ref == 'refs/heads/main'
       run: |
-        pytest -m "performance" \
-               --update-baselines \
-               --tb=short \
-               homodyne/tests/test_performance.py
+        pytest -m "performance" --update-baselines --tb=short homodyne/tests/test_performance.py
 
     - name: Upload performance results
       if: always()
@@ -180,20 +157,12 @@ jobs:
     - name: Run baseline performance tests (main branch)
       run: |
         git checkout origin/main
-        pytest -m "performance and not slow" \
-               --tb=short \
-               --disable-warnings \
-               --json-report --json-report-file=baseline-performance.json \
-               homodyne/tests/test_performance.py || true
+        pytest -m "performance and not slow" --tb=short --disable-warnings --json-report --json-report-file=baseline-performance.json homodyne/tests/test_performance.py || true
 
     - name: Run current performance tests (PR branch)
       run: |
         git checkout ${{ github.event.pull_request.head.sha }}
-        pytest -m "performance and not slow" \
-               --tb=short \
-               --disable-warnings \
-               --json-report --json-report-file=current-performance.json \
-               homodyne/tests/test_performance.py || true
+        pytest -m "performance and not slow" --tb=short --disable-warnings --json-report --json-report-file=current-performance.json homodyne/tests/test_performance.py || true
 
     - name: Compare performance results
       run: |

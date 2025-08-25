@@ -10,6 +10,7 @@ Institution: Argonne National Laboratory
 """
 
 import logging
+import os
 import time
 from unittest.mock import Mock
 
@@ -331,10 +332,11 @@ class TestRobustOptimizationPerformance:
         jacobian_time = end_time - start_time
 
         # Jacobian computation involves finite differences, should be
-        # reasonable (< 2s for 3D data)
+        # reasonable (< 2s for 3D data, more lenient in CI)
+        max_time = 5.0 if os.getenv('CI') else 2.0
         assert (
-            jacobian_time < 2.0
-        ), f"Jacobian computation too slow: {jacobian_time:.4f}s"
+            jacobian_time < max_time
+        ), f"Jacobian computation too slow: {jacobian_time:.4f}s (max: {max_time:.1f}s)"
         assert jacobian.shape[1] == len(test_params)
         assert jacobian.shape[0] == c2_theory.size
 
