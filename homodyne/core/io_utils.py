@@ -30,8 +30,8 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-__author__ = 'Wei Chen, Hongrui He'
-__credits__ = 'Argonne National Laboratory'
+__author__ = "Wei Chen, Hongrui He"
+__credits__ = "Argonne National Laboratory"
 
 import json
 import pickle
@@ -210,7 +210,9 @@ def _json_serializer(obj):
         return obj.item()
     elif isinstance(obj, (np.complex64, np.complex128, complex)):  # type: ignore
         # Don't serialize complex numbers - let them fail for testing
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+        raise TypeError(
+            f"Object of type {
+                type(obj).__name__} is not JSON serializable")
     elif hasattr(obj, "__dict__"):
         return str(obj)  # Convert complex objects to string
     else:
@@ -260,7 +262,10 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
         ensure_dir(filepath.parent)
 
         # Set default JSON parameters with custom serializer
-        json_kwargs = {"indent": 2, "ensure_ascii": False, "default": _json_serializer}
+        json_kwargs = {
+            "indent": 2,
+            "ensure_ascii": False,
+            "default": _json_serializer}
         json_kwargs.update(kwargs)
 
         # Save JSON file
@@ -473,7 +478,8 @@ def get_output_directory(config: Optional[Dict] = None) -> Path:
     default_dir = "./homodyne_results"
 
     if config and "output_settings" in config:
-        output_dir = config["output_settings"].get("results_directory", default_dir)
+        output_dir = config["output_settings"].get(
+            "results_directory", default_dir)
     else:
         output_dir = default_dir
         logger.warning(
@@ -500,7 +506,7 @@ def save_classical_optimization_results(
     - classical_results_nelder_mead_TIMESTAMP.json
     - classical_results_gurobi_TIMESTAMP.json
     - classical_results_all_methods_TIMESTAMP.json (combined)
-    
+
     Args:
         results (Dict): Main optimization results
         method_results (Dict): Method-specific results dictionary
@@ -511,52 +517,58 @@ def save_classical_optimization_results(
         Dict[str, bool]: Save status for each method and combined results
     """
     output_dir = get_output_directory(config) / "classical"
-    
+
     output_dir.mkdir(parents=True, exist_ok=True)
     save_status = {}
 
     if method_results:
-        logger.info(f"Saving method-specific results for: {list(method_results.keys())}")
+        logger.info(
+            f"Saving method-specific results for: {list(method_results.keys())}"
+        )
         # Save individual method results
         for method, method_data in method_results.items():
-            success = method_data.get('success', False)
+            success = method_data.get("success", False)
             if success:
-                method_name = method.lower().replace('-', '_')
-                chi2 = method_data.get('chi_squared')
-                filename_base = timestamped_filename(f"{base_name}_{method_name}", chi2, config)
-                
+                method_name = method.lower().replace("-", "_")
+                chi2 = method_data.get("chi_squared")
+                filename_base = timestamped_filename(
+                    f"{base_name}_{method_name}", chi2, config
+                )
+
                 # Create method-specific result structure
                 method_result = {
                     "optimization_method": method,
-                    "parameters": method_data.get('parameters'),
+                    "parameters": method_data.get("parameters"),
                     "chi_squared": chi2,
-                    "success": method_data.get('success'),
-                    "iterations": method_data.get('iterations'),
-                    "function_evaluations": method_data.get('function_evaluations'),
-                    "message": method_data.get('message', ''),
+                    "success": method_data.get("success"),
+                    "iterations": method_data.get("iterations"),
+                    "function_evaluations": method_data.get("function_evaluations"),
+                    "message": method_data.get("message", ""),
                     "timestamp": datetime.now().isoformat(),
-                    **{k: v for k, v in results.items() if k not in ['method_results']}
+                    **{k: v for k, v in results.items() if k not in ["method_results"]},
                 }
-                
+
                 json_path = output_dir / f"{filename_base}.json"
-                save_status[f"{method}_json"] = save_json(method_result, json_path)
-                
+                save_status[f"{method}_json"] = save_json(
+                    method_result, json_path)
+
                 logger.info(f"✓ Saved {method} results to: {json_path.name}")
             else:
                 logger.debug(f"Skipped {method} (not successful)")
                 save_status[f"{method}_skipped"] = True
 
     # Save combined results with all methods
-    combined_filename = timestamped_filename(f"{base_name}_all_methods", 
-                                           results.get("best_chi_squared"), config)
+    combined_filename = timestamped_filename(
+        f"{base_name}_all_methods", results.get("best_chi_squared"), config
+    )
     combined_path = output_dir / f"{combined_filename}.json"
-    
+
     combined_results = {
         **results,
         "method_results": method_results,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
-    
+
     save_status["combined_json"] = save_json(combined_results, combined_path)
     logger.info(f"Saved combined results to: {combined_path.name}")
 
@@ -572,7 +584,7 @@ def save_analysis_results(
     Orchestrate comprehensive saving of analysis results in multiple formats.
 
     Enhanced to handle method-specific classical optimization results, preventing
-    overwrites between Nelder-Mead and Gurobi methods. Intelligently saves 
+    overwrites between Nelder-Mead and Gurobi methods. Intelligently saves
     analysis results using optimal formats for different data types.
 
     Save Strategy:
@@ -625,47 +637,54 @@ def save_analysis_results(
     save_status = {}
 
     # Handle classical optimization results with method-specific saving
-    # ONLY for true classical methods, not for robust methods that use ClassicalOptimizer internally
-    if ("classical_optimization" in results and 
-        results.get("methods_used", []) == ["Classical"]):
+    # ONLY for true classical methods, not for robust methods that use
+    # ClassicalOptimizer internally
+    if "classical_optimization" in results and results.get("methods_used", []) == [
+            "Classical"]:
         classical_results = results["classical_optimization"]
         method_results = None
-        
-        # Check if enhanced classical results with method information are available
-        if hasattr(classical_results, 'get') and isinstance(classical_results, dict):
-            method_results = classical_results.get('method_results')
-        elif hasattr(classical_results, 'method_results'):
+
+        # Check if enhanced classical results with method information are
+        # available
+        if hasattr(
+                classical_results,
+                "get") and isinstance(
+                classical_results,
+                dict):
+            method_results = classical_results.get("method_results")
+        elif hasattr(classical_results, "method_results"):
             # Results from enhanced classical optimizer
-            method_results = getattr(classical_results, 'method_results', None)
-        
+            method_results = getattr(classical_results, "method_results", None)
+
         if method_results:
             # Save method-specific results
             # Create a results dict with basic info for the saving function
             results_for_save = {
-                "best_chi_squared": getattr(classical_results, 'fun', None),
+                "best_chi_squared": getattr(classical_results, "fun", None),
                 "timestamp": results.get("timestamp", ""),
-                "success": getattr(classical_results, 'success', True)
+                "success": getattr(classical_results, "success", True),
             }
             classical_save_status = save_classical_optimization_results(
-                results_for_save, method_results, config, "classical_optimization"
-            )
+                results_for_save, method_results, config, "classical_optimization")
             save_status.update(classical_save_status)
 
     # Save main results as JSON
     # For classical-only results, save to classical subdirectory
-    if ("classical_optimization" in results and 
-        "mcmc_optimization" not in results and 
-        "mcmc_summary" not in results and
-        results.get("methods_used", []) == ["Classical"]):
+    if (
+        "classical_optimization" in results
+        and "mcmc_optimization" not in results
+        and "mcmc_summary" not in results
+        and results.get("methods_used", []) == ["Classical"]
+    ):
         # This is a classical-only result, save to classical subdirectory
         classical_dir = output_dir / "classical"
-        
+
         classical_dir.mkdir(parents=True, exist_ok=True)
         json_path = classical_dir / f"{filename_base}.json"
     else:
         # This is a multi-method result or MCMC result, save to main directory
         json_path = output_dir / f"{filename_base}.json"
-    
+
     save_status["json"] = save_json(results, json_path)
 
     # Save NumPy arrays if present
@@ -673,24 +692,28 @@ def save_analysis_results(
         results["correlation_data"], np.ndarray
     ):
         # Use same directory logic as main JSON file
-        if ("classical_optimization" in results and 
-            "mcmc_optimization" not in results and 
-            "mcmc_summary" not in results and
-            results.get("methods_used", []) == ["Classical"]):
+        if (
+            "classical_optimization" in results
+            and "mcmc_optimization" not in results
+            and "mcmc_summary" not in results
+            and results.get("methods_used", []) == ["Classical"]
+        ):
             npz_path = (output_dir / "classical") / f"{filename_base}_data.npz"
         else:
             npz_path = output_dir / f"{filename_base}_data.npz"
-        save_status["numpy"] = save_numpy(results["correlation_data"], npz_path)
+        save_status["numpy"] = save_numpy(
+            results["correlation_data"], npz_path)
 
     # Save complex objects as pickle
-    if any(
-        key.startswith("mcmc_") or key.startswith("bayesian_") for key in results.keys()
-    ):
+    if any(key.startswith("mcmc_") or key.startswith("bayesian_")
+            for key in results.keys()):
         # Use same directory logic as main JSON file
-        if ("classical_optimization" in results and 
-            "mcmc_optimization" not in results and 
-            "mcmc_summary" not in results and
-            results.get("methods_used", []) == ["Classical"]):
+        if (
+            "classical_optimization" in results
+            and "mcmc_optimization" not in results
+            and "mcmc_summary" not in results
+            and results.get("methods_used", []) == ["Classical"]
+        ):
             pkl_path = (output_dir / "classical") / f"{filename_base}_full.pkl"
         else:
             pkl_path = output_dir / f"{filename_base}_full.pkl"

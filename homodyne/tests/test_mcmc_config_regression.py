@@ -100,19 +100,25 @@ class TestMCMCConfigurationRegression:
         old_trace_chains, old_trace_draws = 2, 1000
 
         # Create mock traces
-        correct_trace = create_mock_trace(chains=config_chains, draws=config_draws)
-        old_trace = create_mock_trace(chains=old_trace_chains, draws=old_trace_draws)
+        correct_trace = create_mock_trace(
+            chains=config_chains, draws=config_draws)
+        old_trace = create_mock_trace(
+            chains=old_trace_chains,
+            draws=old_trace_draws)
 
         # Validation should pass for correct trace
         assert (
-            validate_trace_dimensions(correct_trace, config_chains, config_draws)
-            == True
-        )
+            validate_trace_dimensions(
+                correct_trace,
+                config_chains,
+                config_draws))
 
         # Validation should fail for old trace
         assert (
-            validate_trace_dimensions(old_trace, config_chains, config_draws) == False
-        )
+            validate_trace_dimensions(
+                old_trace,
+                config_chains,
+                config_draws) == False)
 
         # This mismatch is what was causing the plotting issue
         assert old_trace.posterior.sizes["chain"] != config_chains
@@ -198,7 +204,8 @@ class TestMCMCConfigurationRegression:
         defaults = get_mcmc_defaults()
 
         assert mcmc_config.get("draws", defaults["draws"]) == defaults["draws"]
-        assert mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
+        assert mcmc_config.get(
+            "chains", defaults["chains"]) == defaults["chains"]
         assert mcmc_config.get("tune", defaults["tune"]) == defaults["tune"]
 
     def test_configuration_validation_regression(self):
@@ -252,7 +259,8 @@ class TestMCMCTraceFileRegression:
         old_file_chains, old_file_draws = 2, 1000
 
         # This mismatch caused the plotting issue
-        old_trace = create_mock_trace(chains=old_file_chains, draws=old_file_draws)
+        old_trace = create_mock_trace(
+            chains=old_file_chains, draws=old_file_draws)
 
         # Extract values the way plotting functions do
         plot_chains = old_trace.posterior.sizes.get("chain", "Unknown")
@@ -272,7 +280,8 @@ class TestMCMCTraceFileRegression:
         config_chains, config_draws = 8, 10000
 
         # Fresh trace created with current config (after fix)
-        fresh_trace = create_mock_trace(chains=config_chains, draws=config_draws)
+        fresh_trace = create_mock_trace(
+            chains=config_chains, draws=config_draws)
 
         # Extract values the way plotting functions do
         plot_chains = fresh_trace.posterior.sizes.get("chain", "Unknown")
@@ -291,6 +300,6 @@ class TestMCMCTraceFileRegression:
         wrong_trace = create_mock_trace(chains=2, draws=1000)
 
         # Validation should work correctly
-        assert validate_trace_dimensions(correct_trace, 8, 10000) == True
+        assert validate_trace_dimensions(correct_trace, 8, 10000)
         assert validate_trace_dimensions(wrong_trace, 8, 10000) == False
-        assert validate_trace_dimensions(wrong_trace, 2, 1000) == True
+        assert validate_trace_dimensions(wrong_trace, 2, 1000)

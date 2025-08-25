@@ -15,11 +15,11 @@ import gc
 import json
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import numpy as np
 
 # Import performance monitoring utilities
-from homodyne.core.config import performance_monitor, PerformanceMonitor
+from homodyne.core.config import performance_monitor
 
 # Performance tracking system is available via PerformanceRecorder
 PERFORMANCE_TRACKER_AVAILABLE = True
@@ -29,6 +29,7 @@ def optimize_numerical_environment():
     """Optimize numerical environment for consistent performance."""
     try:
         import os
+
         optimizations = {
             "numba_threads": os.environ.get("NUMBA_NUM_THREADS", "4"),
             "openblas_threads": os.environ.get("OPENBLAS_NUM_THREADS", "1"),
@@ -39,49 +40,67 @@ def optimize_numerical_environment():
         return {}
 
 
-def stable_benchmark(func, *args, warmup_runs=1, benchmark_runs=3, measurement_runs=3, outlier_threshold=2.0, target_cv=None, **kwargs):
+def stable_benchmark(
+    func,
+    *args,
+    warmup_runs=1,
+    benchmark_runs=3,
+    measurement_runs=3,
+    outlier_threshold=2.0,
+    target_cv=None,
+    **kwargs,
+):
     """Run a stable benchmark of a function."""
     # Remove benchmark-specific parameters from kwargs before calling func
-    benchmark_params = ['warmup_runs', 'benchmark_runs', 'measurement_runs', 'outlier_threshold', 'target_cv']
-    func_kwargs = {k: v for k, v in kwargs.items() if k not in benchmark_params}
-    
+    benchmark_params = [
+        "warmup_runs",
+        "benchmark_runs",
+        "measurement_runs",
+        "outlier_threshold",
+        "target_cv",
+    ]
+    func_kwargs = {
+        k: v for k,
+        v in kwargs.items() if k not in benchmark_params}
+
     # Warmup runs
     for _ in range(warmup_runs):
         func(*args, **func_kwargs)
-    
+
     # Clear previous timings
     performance_monitor.reset_timings()
-    
+
     # Benchmark runs
     result = None
     times = []
     for _ in range(measurement_runs):
         with performance_monitor.time_function(func.__name__):
             result = func(*args, **func_kwargs)
-        
+
         # Get the latest timing
         summary = performance_monitor.get_timing_summary()
         if func.__name__ in summary:
             times.append(summary[func.__name__]["mean"])
-    
+
     # Return result in expected format with comprehensive statistics
     import numpy as np
-    
+
     mean_time = sum(times) / len(times) if times else 0.0
     sorted_times = sorted(times) if times else [0.0]
     median_time = sorted_times[len(sorted_times) // 2]
-    std_time = (sum((t - mean_time) ** 2 for t in times) / len(times)) ** 0.5 if times else 0.0
-    
+    std_time = ((sum((t - mean_time) ** 2 for t in times) /
+                 len(times)) ** 0.5 if times else 0.0)
+
     # Calculate percentiles
     times_array = np.array(times) if times else np.array([0.0])
     percentile_5 = np.percentile(times_array, 5)
     percentile_95 = np.percentile(times_array, 95)
-    
+
     # Calculate outlier ratio (min/max ratio)
     min_time = min(times) if times else 1.0
     max_time = max(times) if times else 1.0
     outlier_ratio = min_time / max_time if max_time > 0 else 1.0
-    
+
     # Count outliers (simple threshold-based approach)
     if times and len(times) > 1:
         q1 = np.percentile(times_array, 25)
@@ -89,10 +108,11 @@ def stable_benchmark(func, *args, warmup_runs=1, benchmark_runs=3, measurement_r
         iqr = q3 - q1
         outlier_lower = q1 - 1.5 * iqr
         outlier_upper = q3 + 1.5 * iqr
-        outlier_count = sum(1 for t in times if t < outlier_lower or t > outlier_upper)
+        outlier_count = sum(1 for t in times if t <
+                            outlier_lower or t > outlier_upper)
     else:
         outlier_count = 0
-    
+
     return {
         "result": result,
         "mean": mean_time,
@@ -106,16 +126,23 @@ def stable_benchmark(func, *args, warmup_runs=1, benchmark_runs=3, measurement_r
         "outlier_count": outlier_count,
         "times": times_array,  # Convert to numpy array as expected by tests
         "outlier_threshold": outlier_threshold,
-        "num_measurements": len(times)
+        "num_measurements": len(times),
     }
 
 
-def assert_performance_within_bounds(execution_time, expected_time, tolerance=0.5, tolerance_factor=None, test_name="performance", **kwargs):
+def assert_performance_within_bounds(
+    execution_time,
+    expected_time,
+    tolerance=0.5,
+    tolerance_factor=None,
+    test_name="performance",
+    **kwargs,
+):
     """Assert that execution time is within expected bounds."""
     # Use tolerance_factor if provided, otherwise use tolerance
     if tolerance_factor is not None:
         tolerance = tolerance_factor
-    
+
     lower_bound = expected_time * (1 - tolerance)
     upper_bound = expected_time * (1 + tolerance)
     assert lower_bound <= execution_time <= upper_bound, (
@@ -124,23 +151,29 @@ def assert_performance_within_bounds(execution_time, expected_time, tolerance=0.
     )
 
 
-def assert_performance_stability(times, cv_threshold=0.3, max_cv=None, **kwargs):
+def assert_performance_stability(
+        times,
+        cv_threshold=0.3,
+        max_cv=None,
+        **kwargs):
     """Assert that performance measurements are stable."""
     if max_cv is not None:
         cv_threshold = max_cv
-        
+
     if len(times) < 2:
         return
     mean_time = sum(times) / len(times)
     variance = sum((t - mean_time) ** 2 for t in times) / len(times)
-    std_dev = variance ** 0.5
+    std_dev = variance**0.5
     cv = std_dev / mean_time if mean_time > 0 else 0
-    assert cv <= cv_threshold, (
-        f"Coefficient of variation {cv:.3f} exceeds threshold {cv_threshold}"
-    )
+    assert (
+        cv <= cv_threshold
+    ), f"Coefficient of variation {cv:.3f} exceeds threshold {cv_threshold}"
+
 
 # Performance test data storage
-PERFORMANCE_BASELINE_FILE = Path(__file__).parent / "performance_baselines.json"
+PERFORMANCE_BASELINE_FILE = Path(
+    __file__).parent / "performance_baselines.json"
 
 
 class PerformanceRecorder:
@@ -175,8 +208,11 @@ class PerformanceRecorder:
         self.current_results[test_name][metric_name] = value
 
     def check_regression(
-        self, test_name: str, metric_name: str, value: float, threshold: float = 1.5
-    ) -> bool:
+            self,
+            test_name: str,
+            metric_name: str,
+            value: float,
+            threshold: float = 1.5) -> bool:
         """Check if a performance metric shows regression."""
         baseline = self.baselines.get(test_name, {}).get(metric_name)
         if baseline is None:
@@ -191,7 +227,9 @@ class PerformanceRecorder:
 
     def update_baseline(self, test_name: str, metric_name: str, value: float):
         """Update baseline if current performance is better."""
-        baseline = self.baselines.get(test_name, {}).get(metric_name, float("inf"))
+        baseline = self.baselines.get(
+            test_name, {}).get(
+            metric_name, float("inf"))
         if value < baseline * 0.9:  # 10% improvement
             if test_name not in self.baselines:
                 self.baselines[test_name] = {}
@@ -218,19 +256,21 @@ def performance_tracker():
 @pytest.fixture(scope="session", autouse=True)
 def setup_performance_environment():
     """Set up consistent performance testing environment."""
+
     # Local warmup implementation
     def warmup_numba_kernels():
         return {"numba_available": True, "total_warmup_time": 0.1}
 
-    # Use consolidated environment optimization (safe for already-initialized Numba)
+    # Use consolidated environment optimization (safe for already-initialized
+    # Numba)
     try:
         optimizations = optimize_numerical_environment()
         print(
-            f"✓ Performance testing environment configured ({len(optimizations)} optimizations)"
-        )
+            f"✓ Performance testing environment configured ({
+                len(optimizations)} optimizations)")
     except RuntimeError as e:
         if "NUMBA_NUM_THREADS" in str(e):
-            print(f"⚠ Numba threads already initialized - using existing settings")
+            print("⚠ Numba threads already initialized - using existing settings")
             optimizations = {}
         else:
             raise
@@ -447,7 +487,8 @@ def assert_performance_regression(
 ):
     """Assert that performance hasn't regressed beyond threshold."""
 
-    is_regression = recorder.check_regression(test_name, metric_name, value, threshold)
+    is_regression = recorder.check_regression(
+        test_name, metric_name, value, threshold)
 
     if is_regression:
         baseline = recorder.baselines[test_name][metric_name]
@@ -487,7 +528,7 @@ def assert_memory_usage(
             pytest.fail(
                 f"Memory regression in {test_name}: "
                 f"{memory_mb:.1f} MB vs baseline {baseline_memory:.1f} MB "
-                f"({memory_mb/baseline_memory:.2f}x increase)"
+                f"({memory_mb / baseline_memory:.2f}x increase)"
             )
 
     # Record memory usage
@@ -511,15 +552,17 @@ __all__ = [
 def pytest_configure(config):
     """Configure performance test markers and options."""
     config.addinivalue_line(
-        "markers", "performance: mark test as a performance test that should be fast"
-    )
-    config.addinivalue_line("markers", "memory: mark test as a memory usage test")
+        "markers",
+        "performance: mark test as a performance test that should be fast")
+    config.addinivalue_line(
+        "markers",
+        "memory: mark test as a memory usage test")
     config.addinivalue_line(
         "markers", "regression: mark test as a performance regression test"
     )
     config.addinivalue_line(
-        "markers", "benchmark: mark test for benchmarking (requires pytest-benchmark)"
-    )
+        "markers",
+        "benchmark: mark test for benchmarking (requires pytest-benchmark)")
 
 
 def pytest_runtest_setup(item):

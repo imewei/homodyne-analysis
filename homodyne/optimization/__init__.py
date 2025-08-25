@@ -4,7 +4,7 @@ Optimization methods for homodyne scattering analysis.
 This subpackage provides various optimization approaches for fitting
 theoretical models to experimental data:
 
-- **Classical optimization**: Multiple methods including Nelder-Mead simplex 
+- **Classical optimization**: Multiple methods including Nelder-Mead simplex
   and Gurobi quadratic programming (with automatic detection)
 - **MCMC sampling**: Bayesian uncertainty quantification using NUTS sampler
 

@@ -72,14 +72,14 @@ class TestRunHomodyneIntegration:
         for method_name in method_dirs:
             method_dir = classical_dir / method_name
             method_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Create consolidated fitted_data.npz with all data
             mock_experimental_data = np.random.rand(3, 20, 30)
             mock_fitted_data = np.random.rand(3, 20, 30)
             mock_residuals_data = mock_experimental_data - mock_fitted_data
             mock_parameters = np.array([1.5, 2.0, 0.5])
             mock_uncertainties = np.array([0.1, 0.1, 0.1])
-            
+
             np.savez_compressed(
                 method_dir / "fitted_data.npz",
                 c2_experimental=mock_experimental_data,
@@ -87,19 +87,19 @@ class TestRunHomodyneIntegration:
                 residuals=mock_residuals_data,
                 parameters=mock_parameters,
                 uncertainties=mock_uncertainties,
-                chi_squared=np.array([0.5])
+                chi_squared=np.array([0.5]),
             )
-            
+
             # Create method-specific plot files
             (method_dir / f"c2_heatmaps_{method_name}.png").touch()
-            
+
             # Create parameters.json
             method_info = {
                 "parameters": {"param_0": {"value": 1.5, "uncertainty": 0.1}},
                 "goodness_of_fit": {"chi_squared": 0.5},
-                "convergence_info": {"success": True}
+                "convergence_info": {"success": True},
             }
-            
+
             with open(method_dir / "parameters.json", "w") as f:
                 json.dump(method_info, f, indent=2)
 
@@ -107,9 +107,9 @@ class TestRunHomodyneIntegration:
         summary_data = {
             "analysis_type": "Classical Optimization",
             "methods_analyzed": method_dirs,
-            "results": {}
+            "results": {},
         }
-        
+
         with open(classical_dir / "all_classical_methods_summary.json", "w") as f:
             json.dump(summary_data, f, indent=2)
 
@@ -122,12 +122,12 @@ class TestRunHomodyneIntegration:
             method_dir = classical_dir / method_name
             assert method_dir.exists()
             assert method_dir.is_dir()
-            
+
             # Verify files in method directory
             assert (method_dir / "fitted_data.npz").exists()
             assert (method_dir / "parameters.json").exists()
             assert (method_dir / f"c2_heatmaps_{method_name}.png").exists()
-            
+
             # Verify NPZ file contains consolidated data
             data = np.load(method_dir / "fitted_data.npz")
             assert "c2_experimental" in data
@@ -146,14 +146,22 @@ class TestRunHomodyneIntegration:
         results_dir = temp_directory / "homodyne_results"
         results_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create mock main results file (homodyne_analysis_results.json stays in root)
+        # Create mock main results file (homodyne_analysis_results.json stays
+        # in root)
         results_file = results_dir / "homodyne_analysis_results.json"
 
         mock_results = {
             "timestamp": "2025-08-18T16:06:09.710366+00:00",
-            "config": {"test": "config"},
-            "results": {"classical_optimization": {"parameters": [1.0, 2.0, 3.0]}},
-            "execution_metadata": {"analysis_success": True},
+            "config": {
+                "test": "config"},
+            "results": {
+                "classical_optimization": {
+                    "parameters": [
+                        1.0,
+                        2.0,
+                        3.0]}},
+            "execution_metadata": {
+                "analysis_success": True},
         }
 
         with open(results_file, "w") as f:
@@ -217,18 +225,18 @@ class TestRunHomodyneIntegration:
         # Create classical method directories and files
         classical_dir = base_dir / "classical"
         method_dirs = ["nelder_mead", "gurobi"]
-        
+
         for method_name in method_dirs:
             method_dir = classical_dir / method_name
             method_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Create consolidated fitted_data.npz
             mock_experimental_data = np.random.rand(1, 60, 60) + 1.0
             mock_fitted_data = np.random.rand(1, 60, 60) + 1.0
             mock_residuals_data = mock_experimental_data - mock_fitted_data
             mock_parameters = np.array([1.5, 2.0, 0.5])
             mock_uncertainties = np.array([0.1, 0.1, 0.1])
-            
+
             np.savez_compressed(
                 method_dir / "fitted_data.npz",
                 c2_experimental=mock_experimental_data,
@@ -236,31 +244,33 @@ class TestRunHomodyneIntegration:
                 residuals=mock_residuals_data,
                 parameters=mock_parameters,
                 uncertainties=mock_uncertainties,
-                chi_squared=np.array([0.5])
+                chi_squared=np.array([0.5]),
             )
-            
+
             # Create method-specific plots and parameters
             (method_dir / f"c2_heatmaps_{method_name}.png").touch()
-            
+
             method_info = {
                 "parameters": {"param_0": {"value": 1.5, "uncertainty": 0.1}},
-                "goodness_of_fit": {"chi_squared": 0.5}
+                "goodness_of_fit": {"chi_squared": 0.5},
             }
-            
+
             with open(method_dir / "parameters.json", "w") as f:
                 json.dump(method_info, f, indent=2)
-        
+
         # Create summary file
         summary_data = {
             "analysis_type": "Classical Optimization",
-            "methods_analyzed": method_dirs
+            "methods_analyzed": method_dirs,
         }
-        
+
         with open(classical_dir / "all_classical_methods_summary.json", "w") as f:
             json.dump(summary_data, f, indent=2)
 
         # Create experimental data files
-        exp_data_files = ["data_validation_phi_0.0deg.png", "summary_statistics.txt"]
+        exp_data_files = [
+            "data_validation_phi_0.0deg.png",
+            "summary_statistics.txt"]
 
         for filename in exp_data_files:
             (base_dir / "exp_data" / filename).touch()
@@ -282,7 +292,7 @@ class TestRunHomodyneIntegration:
             assert (method_dir / "fitted_data.npz").exists()
             assert (method_dir / "parameters.json").exists()
             assert (method_dir / f"c2_heatmaps_{method_name}.png").exists()
-        
+
         # Verify summary file
         assert (classical_dir / "all_classical_methods_summary.json").exists()
 
@@ -294,7 +304,8 @@ class TestRunHomodyneIntegration:
 class TestRunHomodyneMockExecution:
     """Test run_homodyne.py execution with mocked components."""
 
-    def test_plot_experimental_data_early_exit_simulation(self, temp_directory):
+    def test_plot_experimental_data_early_exit_simulation(
+            self, temp_directory):
         """Simulate the early exit behavior of --plot-experimental-data."""
 
         def mock_run_homodyne_with_plot_experimental_data():
@@ -328,7 +339,9 @@ class TestRunHomodyneMockExecution:
 
             # Early exit - no fitting performed
             if plot_experimental_data:
-                return {"status": "experimental_data_plotted", "exit_early": True}
+                return {
+                    "status": "experimental_data_plotted",
+                    "exit_early": True}
 
             # This code would not be reached with --plot-experimental-data
             return {"status": "full_analysis_completed", "exit_early": False}
@@ -380,7 +393,7 @@ class TestRunHomodyneMockExecution:
             for method_name in method_dirs:
                 method_dir = classical_dir / method_name
                 method_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 # Save consolidated data in fitted_data.npz
                 np.savez_compressed(
                     method_dir / "fitted_data.npz",
@@ -389,27 +402,31 @@ class TestRunHomodyneMockExecution:
                     residuals=mock_residuals_data,
                     parameters=mock_parameters,
                     uncertainties=np.array([0.1, 0.1, 0.1]),
-                    chi_squared=np.array([mock_chi_squared])
+                    chi_squared=np.array([mock_chi_squared]),
                 )
-                
+
                 # Create method-specific plots and parameters
                 (method_dir / f"c2_heatmaps_{method_name}.png").touch()
-                
+
                 method_info = {
-                    "parameters": {"param_0": {"value": mock_parameters[0], "uncertainty": 0.1}},
-                    "goodness_of_fit": {"chi_squared": mock_chi_squared}
+                    "parameters": {
+                        "param_0": {
+                            "value": mock_parameters[0],
+                            "uncertainty": 0.1}},
+                    "goodness_of_fit": {
+                        "chi_squared": mock_chi_squared},
                 }
-                
+
                 with open(method_dir / "parameters.json", "w") as f:
                     json.dump(method_info, f, indent=2)
-            
+
             # Create summary file
             summary_data = {
                 "analysis_type": "Classical Optimization",
                 "methods_analyzed": method_dirs,
-                "best_method": "nelder_mead"
+                "best_method": "nelder_mead",
             }
-            
+
             with open(classical_dir / "all_classical_methods_summary.json", "w") as f:
                 json.dump(summary_data, f, indent=2)
 
@@ -467,7 +484,7 @@ class TestRunHomodyneMockExecution:
             assert (method_dir / "fitted_data.npz").exists()
             assert (method_dir / "parameters.json").exists()
             assert (method_dir / f"c2_heatmaps_{method_name}.png").exists()
-            
+
             # Verify consolidated NPZ file content
             data = np.load(method_dir / "fitted_data.npz")
             assert "c2_experimental" in data
@@ -477,7 +494,7 @@ class TestRunHomodyneMockExecution:
             assert "uncertainties" in data
             assert "chi_squared" in data
             assert data["c2_experimental"].shape == (1, 60, 60)
-        
+
         # Verify summary file
         assert (classical_dir / "all_classical_methods_summary.json").exists()
 
@@ -510,7 +527,8 @@ class TestBackwardCompatibilityIntegration:
         assert loaded_config["analysis_settings"]["static_mode"] is True
 
         # The system should automatically create new directory structure
-        # even with old configuration files (this would be tested in actual execution)
+        # even with old configuration files (this would be tested in actual
+        # execution)
 
     def test_results_file_backward_compatibility(self, temp_directory):
         """Test that results files maintain expected format while changing location."""
@@ -539,7 +557,11 @@ class TestBackwardCompatibilityIntegration:
         with open(results_file, "r") as f:
             loaded_data = json.load(f)
 
-        required_keys = ["timestamp", "config", "results", "execution_metadata"]
+        required_keys = [
+            "timestamp",
+            "config",
+            "results",
+            "execution_metadata"]
         for key in required_keys:
             assert key in loaded_data
 
@@ -571,7 +593,7 @@ class TestMCMCIntegration:
                 mock_experimental_data = np.random.rand(3, 20, 30)
                 mock_fitted_data = np.random.rand(3, 20, 30)
                 mock_residuals_data = mock_experimental_data - mock_fitted_data
-                
+
                 np.savez_compressed(
                     mcmc_dir / filename,
                     c2_experimental=mock_experimental_data,
@@ -579,7 +601,7 @@ class TestMCMCIntegration:
                     residuals=mock_residuals_data,
                     parameters=np.array([1.5, 2.0, 0.5]),
                     uncertainties=np.array([0.1, 0.1, 0.1]),
-                    chi_squared=np.array([0.5])
+                    chi_squared=np.array([0.5]),
                 )
             else:
                 # Create empty files for plots and summaries
@@ -629,7 +651,10 @@ class TestMCMCIntegration:
             mock_exp_data = np.random.rand(1, 60, 60) + 1.0
 
             # 2. Run MCMC sampling (mock posterior means)
-            mock_posterior_means = {"D0": 850.0, "alpha": -0.021, "D_offset": -780.0}
+            mock_posterior_means = {
+                "D0": 850.0,
+                "alpha": -0.021,
+                "D_offset": -780.0}
             mock_parameters = [850.0, -0.021, -780.0]
 
             # 3. Calculate fitted data from posterior means
@@ -645,7 +670,7 @@ class TestMCMCIntegration:
                 residuals=mock_residuals_data,
                 parameters=mock_parameters,
                 uncertainties=np.array([0.1, 0.1, 0.1]),
-                chi_squared=np.array([0.5])
+                chi_squared=np.array([0.5]),
             )
 
             # 5. Create MCMC-specific files
@@ -760,16 +785,16 @@ class TestMCMCIntegration:
         # Create method-specific files
         # Classical files in method directories
         method_dirs = ["nelder_mead", "gurobi"]
-        
+
         for method_name in method_dirs:
             method_dir = classical_dir / method_name
             method_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Create consolidated fitted_data.npz
             mock_experimental_data = np.random.rand(2, 30, 40) + 1.0
             mock_fitted_data = np.random.rand(2, 30, 40) + 1.0
             mock_residuals_data = mock_experimental_data - mock_fitted_data
-            
+
             np.savez_compressed(
                 method_dir / "fitted_data.npz",
                 c2_experimental=mock_experimental_data,
@@ -777,9 +802,9 @@ class TestMCMCIntegration:
                 residuals=mock_residuals_data,
                 parameters=np.array([1.5, 2.0, 0.5]),
                 uncertainties=np.array([0.1, 0.1, 0.1]),
-                chi_squared=np.array([0.5])
+                chi_squared=np.array([0.5]),
             )
-            
+
             # Create method-specific plots
             (method_dir / f"c2_heatmaps_{method_name}.png").touch()
 
@@ -799,7 +824,7 @@ class TestMCMCIntegration:
                 mock_experimental_data = np.random.rand(2, 30, 40) + 1.0
                 mock_fitted_data = np.random.rand(2, 30, 40) + 1.0
                 mock_residuals_data = mock_experimental_data - mock_fitted_data
-                
+
                 np.savez_compressed(
                     mcmc_dir / filename,
                     c2_experimental=mock_experimental_data,
@@ -807,7 +832,7 @@ class TestMCMCIntegration:
                     residuals=mock_residuals_data,
                     parameters=np.array([1.5, 2.0, 0.5]),
                     uncertainties=np.array([0.1, 0.1, 0.1]),
-                    chi_squared=np.array([0.5])
+                    chi_squared=np.array([0.5]),
                 )
             elif filename.endswith(".json"):
                 mock_summary = {"method": "MCMC_NUTS", "converged": True}
@@ -821,12 +846,13 @@ class TestMCMCIntegration:
         assert mcmc_dir.exists()
         assert classical_dir != mcmc_dir
 
-        # Verify fitted_data.npz exists in method directories and MCMC directory
+        # Verify fitted_data.npz exists in method directories and MCMC
+        # directory
         for method_name in method_dirs:
             method_dir = classical_dir / method_name
             assert (method_dir / "fitted_data.npz").exists()
             assert (method_dir / f"c2_heatmaps_{method_name}.png").exists()
-        
+
         # Verify MCMC files exist
         assert (mcmc_dir / "fitted_data.npz").exists()
         assert (mcmc_dir / "c2_heatmaps_phi_0.0deg.png").exists()

@@ -308,4 +308,9 @@ def get_mcmc_defaults():
     dict
         Dictionary with default MCMC configuration values
     """
-    return {"draws": 1000, "tune": 500, "chains": 2, "target_accept": 0.9, "cores": 1}
+    return {
+        "draws": 1000,
+        "tune": 500,
+        "chains": 2,
+        "target_accept": 0.9,
+        "cores": 1}

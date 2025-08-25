@@ -191,7 +191,7 @@ class TestConfigurationIntegration:
 
         # Check fallback setting
         should_fallback = config_manager.should_fallback_to_all_angles()
-        assert should_fallback == True
+        assert should_fallback
 
         # With fallback enabled, should use all angles
         if not optimization_indices and should_fallback:
@@ -253,7 +253,7 @@ class TestConfigurationIntegration:
         else:
             error_expected = False
 
-        assert error_expected == True
+        assert error_expected
 
     def test_optimization_methods_integration(
         self, temp_directory, config_with_custom_angle_filtering
@@ -284,14 +284,16 @@ class TestConfigurationIntegration:
             )
 
             # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=5.0)
-            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(
+                return_value=5.0)
+            test_params = np.array(
+                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 
             # Verify that angle filtering was enabled (from config)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
-            assert call_args[1]["filter_angles_for_optimization"] == True
+            assert call_args[1]["filter_angles_for_optimization"]
             assert result == 5.0
 
         except ImportError:
@@ -312,7 +314,7 @@ class TestConfigurationIntegration:
             fallback = config_manager.should_fallback_to_all_angles()
 
             # Verify config values are as expected
-            assert enabled == True
+            assert enabled
             assert ranges == [(-15.0, 15.0), (165.0, 195.0)]
             assert fallback == False
 
@@ -329,9 +331,10 @@ class TestConfigurationIntegration:
             # Explicitly ensure no config_manager attribute exists
 
             optimizer = ClassicalOptimizer(
-                mock_analyzer,
-                {"optimization_config": {"angle_filtering": {"enabled": True}}},
-            )
+                mock_analyzer, {
+                    "optimization_config": {
+                        "angle_filtering": {
+                            "enabled": True}}}, )
 
             phi_angles = np.array([0.0, 90.0, 180.0])
             c2_experimental = np.random.rand(3, 5, 5)
@@ -341,14 +344,16 @@ class TestConfigurationIntegration:
             )
 
             # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=3.0)
-            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(
+                return_value=3.0)
+            test_params = np.array(
+                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 
             # Should still use angle filtering (from config dict)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
-            assert call_args[1]["filter_angles_for_optimization"] == True
+            assert call_args[1]["filter_angles_for_optimization"]
             assert result == 3.0
 
         except ImportError:

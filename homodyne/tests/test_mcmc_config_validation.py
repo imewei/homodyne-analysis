@@ -114,7 +114,8 @@ class TestMCMCConfigurationUsage:
 
         sampler = MCMCSampler(mock_core, config)
 
-        # Should get empty dict, which will trigger defaults in the sampling code
+        # Should get empty dict, which will trigger defaults in the sampling
+        # code
         assert sampler.mcmc_config == {}
 
     def test_config_values_passed_to_pymc_sample(self):
@@ -161,7 +162,8 @@ class TestMCMCConfigurationUsage:
                     except Exception:
                         pass  # Expected to fail due to mocking, but we'll check the calls
 
-                    # Verify that pm.sample was called with our configuration values
+                    # Verify that pm.sample was called with our configuration
+                    # values
                     if mock_pm.sample.called:
                         call_args = mock_pm.sample.call_args
                         assert call_args[1]["draws"] == 1000
@@ -324,7 +326,8 @@ class TestMCMCConfigurationUsage:
         """Regression test for the specific config path issue that was fixed."""
         # Test both the old (wrong) and new (correct) config access patterns
 
-        # Config with values in both old and new locations (simulating migration)
+        # Config with values in both old and new locations (simulating
+        # migration)
         config_with_both = {
             # Old (wrong) location - at root level
             "mcmc_draws": 999,
@@ -349,7 +352,8 @@ class TestMCMCConfigurationUsage:
         mock_core = self.create_mock_core()
         sampler = MCMCSampler(mock_core, config_with_both)
 
-        # The MCMCSampler should use the correct path and ignore the wrong values
+        # The MCMCSampler should use the correct path and ignore the wrong
+        # values
         assert (
             sampler.mcmc_config["draws"] == 10000
         ), "Should read from optimization_config.mcmc_sampling.draws"
@@ -397,7 +401,8 @@ class TestMCMCTraceFileValidation:
         # Mock trace with wrong dimensions (the issue that was happening)
         mock_trace = Mock()
         mock_trace.posterior = Mock()
-        mock_trace.posterior.sizes = {"chain": trace_chains, "draw": trace_draws}
+        mock_trace.posterior.sizes = {
+            "chain": trace_chains, "draw": trace_draws}
 
         # This should detect the mismatch
         assert (
@@ -523,7 +528,8 @@ class TestMCMCThinningConfiguration:
 
     def test_thinning_parameter_extraction(self):
         """Test that MCMCSampler correctly extracts thinning parameter."""
-        config = self.create_test_config(draws=2000, chains=4, tune=500, thin=3)
+        config = self.create_test_config(
+            draws=2000, chains=4, tune=500, thin=3)
         mock_core = self.create_mock_core()
 
         sampler = MCMCSampler(mock_core, config)
@@ -605,7 +611,8 @@ class TestMCMCThinningConfiguration:
 
     def test_thinning_passed_to_pymc_sample(self):
         """Test that thinning parameter is passed to PyMC's sample function."""
-        config = self.create_test_config(draws=1000, chains=2, tune=500, thin=3)
+        config = self.create_test_config(
+            draws=1000, chains=2, tune=500, thin=3)
         mock_core = self.create_mock_core()
 
         # Create dummy data
@@ -657,7 +664,8 @@ class TestMCMCThinningConfiguration:
 
     def test_thinning_warning_for_low_effective_samples(self):
         """Test that validation warns when thinning reduces effective samples too much."""
-        config = self.create_test_config(draws=2000, thin=5)  # Effective = 400 samples
+        config = self.create_test_config(
+            draws=2000, thin=5)  # Effective = 400 samples
         mock_core = self.create_mock_core()
 
         sampler = MCMCSampler(mock_core, config)

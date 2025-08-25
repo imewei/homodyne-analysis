@@ -34,7 +34,6 @@ Generated Configuration Includes:
 """
 
 import json
-import shutil
 import sys
 from pathlib import Path
 import argparse
@@ -99,8 +98,10 @@ def create_config_from_template(
 
     if mode not in valid_modes:
         raise ValueError(
-            f"Invalid mode '{mode}'. Valid modes: {list(valid_modes.keys())[:-1]}"
-        )
+            f"Invalid mode '{mode}'. Valid modes: {
+                list(
+                    valid_modes.keys())[
+                    :-1]}")
 
     # Get template path (now that we're inside the homodyne package)
     template_dir = Path(__file__).parent
@@ -156,9 +157,9 @@ def create_config_from_template(
 
         # Update cache filename template based on mode
         cache_templates = {
-            "static_isotropic": f"cached_c2_isotropic_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
-            "static_anisotropic": f"cached_c2_anisotropic_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
-            "laminar_flow": f"cached_c2_flow_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
+            "static_isotropic": f"cached_c2_isotropic_{sample_name}_{start_frame} _{end_frame} .npz",
+            "static_anisotropic": f"cached_c2_anisotropic_{sample_name}_{start_frame} _{end_frame} .npz",
+            "laminar_flow": f"cached_c2_flow_{sample_name}_{start_frame} _{end_frame} .npz",
         }
         if mode in cache_templates:
             config["experimental_data"]["cache_filename_template"] = cache_templates[
@@ -204,7 +205,8 @@ def create_config_from_template(
 
     # Provide next steps
     print("\nNext steps:")
-    print(f"1. Edit {output_path} and customize the parameters for your experiment")
+    print(
+        f"1. Edit {output_path} and customize the parameters for your experiment")
     print("2. Replace placeholder values (YOUR_*) with actual values")
     print("3. Adjust initial_parameters.values based on your system")
     if mode == "static_isotropic":
@@ -220,7 +222,7 @@ def create_config_from_template(
         print("5. Verify initial parameter estimates for all 7 parameters")
         print(f"6. Run analysis with: homodyne --config {output_path}")
 
-    print(f"\nDocumentation: CONFIGURATION_MODES.md")
+    print("\nDocumentation: CONFIGURATION_MODES.md")
     print(f"Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
 
 
@@ -243,20 +245,20 @@ def main():
         epilog="""
 Analysis Modes:
   static_isotropic   - Fastest: Single dummy angle, no angle filtering, 3 parameters
-  static_anisotropic - Static with angle filtering optimization, 3 parameters  
+  static_anisotropic - Static with angle filtering optimization, 3 parameters
   laminar_flow       - Full flow analysis with 7 parameters (default)
 
 Examples:
   # Create laminar flow configuration (default)
   homodyne-config --output my_flow_config.json
-  
-  # Create isotropic static configuration  
+
+  # Create isotropic static configuration
   homodyne-config --mode static_isotropic --sample protein_01
-  
+
   # Create anisotropic static configuration with metadata
   homodyne-config --mode static_anisotropic --sample collagen \
                           --author "Your Name" --experiment "Collagen static analysis"
-  
+
   # Create flow analysis configuration
   homodyne-config --mode laminar_flow --sample microgel \
                           --experiment "Microgel dynamics under shear"
@@ -278,7 +280,10 @@ Examples:
         help="Output configuration file name (default: my_config.json)",
     )
 
-    parser.add_argument("--sample", "-s", help="Sample name (used in data paths)")
+    parser.add_argument(
+        "--sample",
+        "-s",
+        help="Sample name (used in data paths)")
 
     parser.add_argument("--experiment", "-e", help="Experiment description")
 

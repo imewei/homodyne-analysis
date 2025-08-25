@@ -321,7 +321,8 @@ class TestDataSaving:
 class TestOutputDirectory:
     """Test output directory management."""
 
-    def test_get_output_directory_from_config(self, temp_directory, dummy_config):
+    def test_get_output_directory_from_config(
+            self, temp_directory, dummy_config):
         """Test getting output directory from configuration."""
         dummy_config["output_settings"]["results_directory"] = str(
             temp_directory / "custom_results"
@@ -360,7 +361,8 @@ class TestOutputDirectory:
 class TestAnalysisResultsSaving:
     """Test complete analysis results saving."""
 
-    def test_save_analysis_results_complete(self, temp_directory, dummy_config):
+    def test_save_analysis_results_complete(
+            self, temp_directory, dummy_config):
         """Test saving complete analysis results."""
         dummy_config["output_settings"]["results_directory"] = str(
             temp_directory / "test_output"
@@ -373,7 +375,8 @@ class TestAnalysisResultsSaving:
             "mcmc_trace": {"param1": [1, 2, 3], "param2": [4, 5, 6]},
         }
 
-        save_status = save_analysis_results(results, dummy_config, "test_analysis")
+        save_status = save_analysis_results(
+            results, dummy_config, "test_analysis")
 
         # Check that various save operations were attempted
         assert "json" in save_status

@@ -6,6 +6,7 @@ including proper handling of None configurations, timezone-aware timestamps,
 and uncertainty field preservation.
 """
 
+from homodyne.analysis.core import HomodyneAnalysisCore
 import pytest
 import json
 import tempfile
@@ -16,8 +17,6 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from homodyne.analysis.core import HomodyneAnalysisCore
-
 
 class TestSaveResultsWithConfig:
     """Test the save_results_with_config method implementation."""
@@ -27,7 +26,9 @@ class TestSaveResultsWithConfig:
         """Create a minimal analyzer instance for testing."""
         analyzer = HomodyneAnalysisCore.__new__(HomodyneAnalysisCore)
         analyzer.config = {
-            "output_settings": {"file_formats": {"results_format": "json"}},
+            "output_settings": {
+                "file_formats": {
+                    "results_format": "json"}},
             "advanced_settings": {
                 "chi_squared_calculation": {
                     "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
@@ -35,8 +36,7 @@ class TestSaveResultsWithConfig:
                         "enable_uncertainty": True,
                         "report_uncertainty": True,
                     },
-                }
-            },
+                }},
         }
         return analyzer
 
@@ -95,7 +95,8 @@ class TestSaveResultsWithConfig:
         with patch("builtins.open", mock_open()) as mock_file:
             with patch("json.dump") as mock_json:
                 # This should not raise an exception
-                analyzer.save_results_with_config(sample_results_with_uncertainty)
+                analyzer.save_results_with_config(
+                    sample_results_with_uncertainty)
 
                 # Verify it was called (meaning no exception was raised)
                 assert mock_json.called
@@ -113,7 +114,8 @@ class TestSaveResultsWithConfig:
         """Test that timestamps are timezone-aware and properly formatted."""
         with patch("builtins.open", mock_open()):
             with patch("json.dump") as mock_json:
-                mock_analyzer.save_results_with_config(sample_results_with_uncertainty)
+                mock_analyzer.save_results_with_config(
+                    sample_results_with_uncertainty)
 
                 call_args = mock_json.call_args
                 saved_data = call_args[0][0]
@@ -129,7 +131,8 @@ class TestSaveResultsWithConfig:
                     # Should have timezone info
                     assert parsed_time.tzinfo is not None
                 except ValueError:
-                    pytest.fail(f"Timestamp {timestamp_str} is not in valid ISO format")
+                    pytest.fail(
+                        f"Timestamp {timestamp_str} is not in valid ISO format")
 
     def test_different_result_formats(self, mock_analyzer):
         """Test saving with different output format configurations."""
@@ -151,7 +154,8 @@ class TestSaveResultsWithConfig:
         """Test that execution metadata has correct structure."""
         with patch("builtins.open", mock_open()):
             with patch("json.dump") as mock_json:
-                mock_analyzer.save_results_with_config(sample_results_with_uncertainty)
+                mock_analyzer.save_results_with_config(
+                    sample_results_with_uncertainty)
 
                 call_args = mock_json.call_args
                 saved_data = call_args[0][0]
@@ -211,15 +215,20 @@ class TestSaveResultsWithConfig:
                         sample_results_with_uncertainty
                     )
 
-                    # Should be called twice - once for main file, once for backup
+                    # Should be called twice - once for main file, once for
+                    # backup
                     assert mock_file.call_count >= 1
 
-    def test_error_handling(self, mock_analyzer, sample_results_with_uncertainty):
+    def test_error_handling(
+            self,
+            mock_analyzer,
+            sample_results_with_uncertainty):
         """Test error handling in save_results_with_config."""
         with patch("builtins.open", side_effect=PermissionError("Access denied")):
             # Should raise the PermissionError
             with pytest.raises(PermissionError):
-                mock_analyzer.save_results_with_config(sample_results_with_uncertainty)
+                mock_analyzer.save_results_with_config(
+                    sample_results_with_uncertainty)
 
     def test_json_serialization_compatibility(self, mock_analyzer):
         """Test that results are JSON serializable."""
@@ -240,7 +249,8 @@ class TestSaveResultsWithConfig:
                 # Should not raise an exception due to numpy types
                 mock_analyzer.save_results_with_config(test_results)
 
-                # Check that json.dump was called with default=str for numpy compatibility
+                # Check that json.dump was called with default=str for numpy
+                # compatibility
                 call_args = mock_json.call_args
                 call_kwargs = call_args[1]
                 assert "default" in call_kwargs
@@ -256,8 +266,7 @@ class TestSaveResultsWithConfig:
                 with patch("json.dump") as mock_json:
                     # Test with output_dir parameter
                     mock_analyzer.save_results_with_config(
-                        sample_results_with_uncertainty, output_dir=custom_output_dir
-                    )
+                        sample_results_with_uncertainty, output_dir=custom_output_dir)
 
                     # Verify json.dump was called
                     assert mock_json.called
@@ -280,7 +289,8 @@ class TestSaveResultsWithConfig:
         with patch("builtins.open", mock_open()) as mock_file:
             with patch("json.dump") as mock_json:
                 # Test without output_dir parameter (backward compatibility)
-                mock_analyzer.save_results_with_config(sample_results_with_uncertainty)
+                mock_analyzer.save_results_with_config(
+                    sample_results_with_uncertainty)
 
                 # Should work the same as before
                 assert mock_json.called

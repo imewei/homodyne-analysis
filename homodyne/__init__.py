@@ -18,7 +18,7 @@ dynamics in soft matter", Proc. Natl. Acad. Sci. U.S.A. 121 (31) e2401162121 (20
 Key Features:
 - Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params),
   Laminar Flow (7 params)
-- Multiple optimization methods: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, 
+- Multiple optimization methods: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO,
   Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 - Noise-resistant analysis: Robust optimization for measurement uncertainty and outliers
 - High performance: Numba JIT compilation with 3-5x speedup and smart angle filtering
@@ -58,7 +58,8 @@ from .core.kernels import (
     memory_efficient_cache,
 )
 
-# Performance profiling utilities removed - functionality available via core.config.performance_monitor
+# Performance profiling utilities removed - functionality available via
+# core.config.performance_monitor
 from .analysis.core import HomodyneAnalysisCore
 
 # Optional optimization modules with graceful degradation
@@ -116,7 +117,7 @@ __all__ = [
 ]
 
 # Version information
-__version__ = "0.6.5.dev0"
+__version__ = "0.6.5"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"
@@ -129,7 +130,7 @@ __institution__ = "Argonne National Laboratory"
 # - Seamless integration with existing classical optimization workflow
 # - Comprehensive configuration support for robust methods
 # - Enhanced error handling and graceful degradation for optional dependencies
-# 
+#
 # Previous improvements (v0.6.2):
 # - Major performance optimizations: Chi-squared calculation 38% faster
 # - Memory access optimizations with vectorized operations

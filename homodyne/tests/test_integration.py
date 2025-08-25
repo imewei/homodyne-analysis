@@ -116,7 +116,8 @@ class TestCompleteWorkflow:
         assert save_status["json"] is True
 
         # Step 3: Create plots
-        plot_status = create_all_plots(dummy_analysis_results, output_dir, dummy_config)
+        plot_status = create_all_plots(
+            dummy_analysis_results, output_dir, dummy_config)
         successful_plots = sum(1 for status in plot_status.values() if status)
         assert successful_plots >= 1
 
@@ -167,7 +168,8 @@ class TestCompleteWorkflow:
         """Test the new organized output directory structure."""
         base_dir = temp_directory / "homodyne_results"
 
-        # Create the new expected directory structure with method-specific directories
+        # Create the new expected directory structure with method-specific
+        # directories
         expected_structure = [
             base_dir,  # Main output directory
             base_dir / "classical",  # Classical method results
@@ -186,14 +188,15 @@ class TestCompleteWorkflow:
         # Test creating expected files in each directory
         # Main directory files
         main_files = [
-            base_dir / "homodyne_analysis_results.json", 
-            base_dir / "run.log"
-        ]
+            base_dir /
+            "homodyne_analysis_results.json",
+            base_dir /
+            "run.log"]
 
         # Create method-specific files in classical subdirectories
         method_names = ["nelder_mead", "gurobi"]
         classical_files = []
-        
+
         for method_name in method_names:
             method_dir = base_dir / "classical" / method_name
             method_files = [
@@ -203,9 +206,11 @@ class TestCompleteWorkflow:
                 method_dir / f"c2_heatmaps_{method_name}.png",
             ]
             classical_files.extend(method_files)
-        
+
         # Summary file in classical directory
-        classical_files.append(base_dir / "classical" / "all_classical_methods_summary.json")
+        classical_files.append(
+            base_dir / "classical" / "all_classical_methods_summary.json"
+        )
 
         # Experimental data directory files
         exp_data_files = [
@@ -222,7 +227,7 @@ class TestCompleteWorkflow:
                 mock_experimental_data = np.random.rand(3, 20, 30)
                 mock_fitted_data = np.random.rand(3, 20, 30)
                 mock_residuals_data = mock_experimental_data - mock_fitted_data
-                
+
                 np.savez_compressed(
                     file_path,
                     c2_experimental=mock_experimental_data,
@@ -230,7 +235,7 @@ class TestCompleteWorkflow:
                     residuals=mock_residuals_data,
                     parameters=np.array([1.5, 2.0, 0.5]),
                     uncertainties=np.array([0.1, 0.1, 0.1]),
-                    chi_squared=np.array([0.5])
+                    chi_squared=np.array([0.5]),
                 )
             else:
                 file_path.touch()
@@ -238,26 +243,31 @@ class TestCompleteWorkflow:
 
         # Verify directory organization
         assert len(list(base_dir.glob("*.json"))) >= 1  # Main results files
-        
+
         # Verify method-specific directories and files
         for method_name in method_names:
             method_dir = base_dir / "classical" / method_name
             assert method_dir.exists()
-            assert (method_dir / "fitted_data.npz").exists()  # Consolidated data
+            # Consolidated data
+            assert (method_dir / "fitted_data.npz").exists()
             assert (method_dir / "parameters.json").exists()
             assert (method_dir / f"c2_heatmaps_{method_name}.png").exists()
-            
+
             # Verify NPZ file structure
             data = np.load(method_dir / "fitted_data.npz")
             assert "c2_experimental" in data
             assert "c2_fitted" in data
             assert "residuals" in data
-        
+
         # Verify summary file
-        assert (base_dir / "classical" / "all_classical_methods_summary.json").exists()
-        
+        assert (
+            base_dir /
+            "classical" /
+            "all_classical_methods_summary.json").exists()
+
         # Verify experimental data plots
-        assert len(list((base_dir / "exp_data").glob("*.png"))) >= 1  # Validation plots
+        assert len(list((base_dir / "exp_data").glob("*.png"))
+                   ) >= 1  # Validation plots
 
 
 class TestMockedHeavyComputation:
@@ -349,11 +359,13 @@ class TestMockedHeavyComputation:
             assert data["experimental_data"].shape == mock_correlation_data.shape
             assert np.array_equal(data["phi_angles"], mock_phi_angles)
 
-    @pytest.mark.skipif(not PLOTTING_AVAILABLE, reason="Plotting module not available")
+    @pytest.mark.skipif(not PLOTTING_AVAILABLE,
+                        reason="Plotting module not available")
     def test_plotting_workflow_integration(self, temp_directory, dummy_config):
         """Test plotting workflow integration without parameter evolution."""
 
-        # Test that plotting works without the removed parameter evolution function
+        # Test that plotting works without the removed parameter evolution
+        # function
         from homodyne.plotting import plot_c2_heatmaps
         import numpy as np
 
@@ -392,7 +404,8 @@ class TestErrorHandlingIntegration:
 
         # Save should succeed
         if IO_UTILS_AVAILABLE:
-            save_status = save_analysis_results(partial_results, config, "partial_test")
+            save_status = save_analysis_results(
+                partial_results, config, "partial_test")
             assert save_status["json"] is True
 
         # Plotting should handle missing data gracefully
@@ -448,9 +461,12 @@ class TestErrorHandlingIntegration:
             # Attempt to save results should fail gracefully
             if IO_UTILS_AVAILABLE:
                 results = {"test": "data"}
-                config = {"output_settings": {"results_directory": str(readonly_dir)}}
+                config = {
+                    "output_settings": {
+                        "results_directory": str(readonly_dir)}}
 
-                save_status = save_analysis_results(results, config, "permission_test")
+                save_status = save_analysis_results(
+                    results, config, "permission_test")
 
                 # Should handle permission error gracefully
                 assert save_status["json"] is False
@@ -470,13 +486,15 @@ class TestDataValidation:
         valid_data = np.random.rand(3, 20, 30)  # angles x t2 x t1
         assert valid_data.shape[0] == len(dummy_phi_angles)
         assert not np.any(np.isnan(valid_data))
-        assert np.all(valid_data >= 0)  # Correlation data should be non-negative
+        # Correlation data should be non-negative
+        assert np.all(valid_data >= 0)
 
         # Invalid data shapes
         wrong_angles = np.random.rand(5, 20, 30)  # Too many angles
         assert wrong_angles.shape[0] != len(dummy_phi_angles)
 
-        wrong_dimensions = np.random.rand(3, 20)  # Missing delay time dimension
+        wrong_dimensions = np.random.rand(
+            3, 20)  # Missing delay time dimension
         assert len(wrong_dimensions.shape) != 3
 
         # Invalid data values
@@ -501,7 +519,8 @@ class TestDataValidation:
 
             # Check physical constraints for specific parameters
             if bound["name"] in ["D0", "gamma_dot_t0"]:
-                assert bound["min"] > 0, f"{bound['name']} must have positive minimum"
+                assert bound["min"] > 0, f"{
+                    bound['name']} must have positive minimum"
 
             # Check that bounds are reasonable
             assert not np.isinf(bound["min"])
@@ -649,9 +668,15 @@ class TestPerAngleAnalysisIntegration:
                     "quality_issues": ["Overall chi-squared above warning threshold"],
                 },
                 "angle_categorization": {
-                    "good_angles": {"count": 8, "fraction": 0.8},
-                    "unacceptable_angles": {"count": 2, "fraction": 0.2},
-                    "statistical_outliers": {"count": 1, "fraction": 0.1},
+                    "good_angles": {
+                        "count": 8,
+                        "fraction": 0.8},
+                    "unacceptable_angles": {
+                        "count": 2,
+                        "fraction": 0.2},
+                    "statistical_outliers": {
+                        "count": 1,
+                        "fraction": 0.1},
                 },
             }
 
@@ -741,7 +766,10 @@ class TestConcurrencyAndRaceConditions:
         subdirs = [f"subdir_{i}" for i in range(5)]
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(create_directory, subdir) for subdir in subdirs]
+            futures = [
+                executor.submit(
+                    create_directory,
+                    subdir) for subdir in subdirs]
 
             # Wait for all to complete
             for future in futures:
@@ -773,7 +801,8 @@ class TestConcurrencyAndRaceConditions:
         file_ids = list(range(5))
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(save_test_file, fid) for fid in file_ids]
+            futures = [executor.submit(save_test_file, fid)
+                       for fid in file_ids]
             results = [future.result() for future in futures]
 
         # All saves should succeed
@@ -794,14 +823,14 @@ class TestConcurrencyAndRaceConditions:
 class TestAnalysisWorkflowIntegration:
     """Test integration of analysis workflow with plotting."""
 
-    @pytest.mark.skipif(
-        not CORE_ANALYSIS_AVAILABLE, reason="Core analysis module not available"
-    )
+    @pytest.mark.skipif(not CORE_ANALYSIS_AVAILABLE,
+                        reason="Core analysis module not available")
     def test_analysis_plotting_integration(self, temp_directory):
         """Test that analysis workflow integrates properly with plotting."""
         from homodyne.tests.fixtures import create_minimal_config_file
 
-        config_file = create_minimal_config_file(temp_directory / "test_config.json")
+        config_file = create_minimal_config_file(
+            temp_directory / "test_config.json")
 
         try:
             # Initialize analyzer
@@ -826,7 +855,8 @@ class TestAnalysisWorkflowIntegration:
             }
 
             # Test plot data preparation
-            plot_data = analyzer._prepare_plot_data(mock_results, analyzer.config or {})
+            plot_data = analyzer._prepare_plot_data(
+                mock_results, analyzer.config or {})
             assert plot_data is not None
             assert "best_parameters" in plot_data
             assert "parameter_bounds" in plot_data
@@ -860,7 +890,8 @@ class TestAnalysisWorkflowIntegration:
 
             posterior_dict = {}
             for param in param_names:
-                posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
+                posterior_dict[param] = np.random.normal(
+                    0, 1, (n_chains, n_draws))
 
             trace_data = az.from_dict({"posterior": posterior_dict})
 
@@ -886,7 +917,8 @@ class TestAnalysisWorkflowIntegration:
             }
 
             # Test MCMC plot data preparation
-            plot_data = analyzer._prepare_plot_data(mcmc_results, analyzer.config or {})
+            plot_data = analyzer._prepare_plot_data(
+                mcmc_results, analyzer.config or {})
             assert plot_data is not None
             assert "mcmc_diagnostics" in plot_data
             assert "parameter_names" in plot_data
@@ -932,7 +964,8 @@ class TestAnalysisWorkflowIntegration:
                 param_names=param_names,
             )
 
-            # At least one plot should succeed (depending on available packages)
+            # At least one plot should succeed (depending on available
+            # packages)
             assert any([corner_success, trace_success, diag_success])
 
             # Check for created files
@@ -947,9 +980,8 @@ class TestAnalysisWorkflowIntegration:
             else:
                 raise
 
-    @pytest.mark.skipif(
-        not CORE_ANALYSIS_AVAILABLE, reason="Core analysis module not available"
-    )
+    @pytest.mark.skipif(not CORE_ANALYSIS_AVAILABLE,
+                        reason="Core analysis module not available")
     def test_configuration_consistency_integration(self, temp_directory):
         """Test that configuration is consistent across analysis workflow."""
         from homodyne.tests.fixtures import create_minimal_config_file
@@ -966,13 +998,16 @@ class TestAnalysisWorkflowIntegration:
             param_names = config.get("initial_parameters", {}).get(
                 "parameter_names", []
             )
-            param_values = config.get("initial_parameters", {}).get("values", [])
+            param_values = config.get(
+                "initial_parameters", {}).get(
+                "values", [])
             bounds = config.get("parameter_space", {}).get("bounds", [])
 
             # All should have same count
             assert len(param_names) == len(param_values) == len(bounds)
 
-            # Parameter names should match between initial parameters and bounds
+            # Parameter names should match between initial parameters and
+            # bounds
             bound_names = [bound.get("name", "") for bound in bounds]
             assert param_names == bound_names
 
@@ -1087,7 +1122,8 @@ class TestAnalysisWorkflowIntegration:
         plots_dir = temp_directory / "comprehensive_plots"
         plots_dir.mkdir(exist_ok=True)
 
-        plot_status = create_all_plots(comprehensive_results, plots_dir, dummy_config)
+        plot_status = create_all_plots(
+            comprehensive_results, plots_dir, dummy_config)
 
         # Check results
         assert isinstance(plot_status, dict)

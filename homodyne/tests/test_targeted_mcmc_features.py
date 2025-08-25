@@ -10,6 +10,7 @@ Simplified, focused tests that cover the three specific requirements:
 These tests avoid complex dependencies and focus on the core functionality.
 """
 
+from homodyne.tests.fixtures import dummy_config
 import pytest
 import numpy as np
 import sys
@@ -19,8 +20,6 @@ import time
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from homodyne.tests.fixtures import dummy_config
 
 
 class TestPyMCImportHandling:
@@ -80,7 +79,7 @@ class TestPyMCImportHandling:
         # Test flag consistency - this would check the actual modules if they were importable
         # For this test, we're just verifying the concept works
         if actual_available:
-            assert actual_available == True
+            assert actual_available
             print(f"✓ PyMC availability flag consistent: {actual_available}")
         else:
             assert actual_available == False
@@ -126,7 +125,8 @@ class TestMCMCFunctionBehavior:
         }
 
         # Simulate the _run_mcmc_nuts_optimized function behavior
-        def simulate_run_mcmc_nuts_optimized(c2_experimental, phi_angles, config):
+        def simulate_run_mcmc_nuts_optimized(
+                c2_experimental, phi_angles, config):
             """Simulate the MCMC function with mocked components."""
             # Check PyMC availability (would normally check PYMC_AVAILABLE)
             if not hasattr(sys.modules.get("pymc", None), "sample"):
@@ -160,7 +160,8 @@ class TestMCMCFunctionBehavior:
             posterior_means = {}
             for var_name in param_names:
                 if var_name in trace.posterior:
-                    posterior_means[var_name] = float(trace.posterior[var_name].mean())
+                    posterior_means[var_name] = float(
+                        trace.posterior[var_name].mean())
 
             # Return expected dictionary structure
             return {
@@ -178,7 +179,8 @@ class TestMCMCFunctionBehavior:
         with patch.dict("sys.modules", {"pymc": mock_pm}):
 
             # Call the simulated function
-            result = simulate_run_mcmc_nuts_optimized(c2_data, phi_angles, mcmc_config)
+            result = simulate_run_mcmc_nuts_optimized(
+                c2_data, phi_angles, mcmc_config)
 
             # Verify the result structure - this is the key requirement
             assert isinstance(result, dict), "Result must be a dictionary"
@@ -237,7 +239,8 @@ class TestChiSquaredRegression:
         # Fixed seed for reproducibility
         FIXED_SEED = 42
 
-        def calculate_mock_chi_squared(params, phi_angles, c2_experimental, seed):
+        def calculate_mock_chi_squared(
+                params, phi_angles, c2_experimental, seed):
             """Mock chi-squared calculation that's deterministic with seed."""
             np.random.seed(seed)
 
@@ -249,14 +252,16 @@ class TestChiSquaredRegression:
                 for j in range(n_time):
                     for k in range(n_time):
                         # Use params and data to compute deterministic result
-                        theoretical = params[0] * np.exp(-params[1] * abs(j - k))
+                        theoretical = params[0] * \
+                            np.exp(-params[1] * abs(j - k))
                         experimental = c2_experimental[i, j, k]
                         residual = (experimental - theoretical) ** 2
                         chi_squared += residual
 
             # Add deterministic component based on angles
             for i, phi in enumerate(phi_angles):
-                chi_squared += np.cos(np.radians(phi)) * params[i % len(params)]
+                chi_squared += np.cos(np.radians(phi)) * \
+                    params[i % len(params)]
 
             # Normalize
             chi_squared = chi_squared / (n_angles * n_time * n_time)
@@ -274,9 +279,8 @@ class TestChiSquaredRegression:
             for j in range(n_time):
                 for k in range(n_time):
                     # Deterministic structure based on indices
-                    value = (
-                        1.0 + 0.5 * np.exp(-0.1 * abs(j - k)) + 0.01 * np.sin(i + j + k)
-                    )
+                    value = (1.0 + 0.5 * np.exp(-0.1 * abs(j - k)) +
+                             0.01 * np.sin(i + j + k))
                     c2_experimental[i, j, k] = value
 
         # Test parameters
@@ -300,7 +304,7 @@ class TestChiSquaredRegression:
         results_list = list(version_results.items())
         base_version, base_chi_squared = results_list[0]
 
-        print(f"Chi-squared regression test results:")
+        print("Chi-squared regression test results:")
         print(f"  Base version ({base_version}): {base_chi_squared:.12e}")
 
         for version, chi_squared in results_list[1:]:
@@ -400,9 +404,10 @@ class TestIntegrationScenarios:
                     "trace": mock_trace,
                     "time": 1.234,
                     "posterior_means": {
-                        name: 50.0 + i * 5.0 for i, name in enumerate(param_names)
-                    },
-                    "config": {"mcmc_draws": 100},
+                        name: 50.0 + i * 5.0 for i,
+                        name in enumerate(param_names)},
+                    "config": {
+                        "mcmc_draws": 100},
                 }
                 return result
 
@@ -410,7 +415,8 @@ class TestIntegrationScenarios:
         def test_mcmc_unavailable():
             with patch.dict("sys.modules", {"pymc": None}):
                 try:
-                    # This would normally check PYMC_AVAILABLE and raise ImportError
+                    # This would normally check PYMC_AVAILABLE and raise
+                    # ImportError
                     raise ImportError("PyMC not available for MCMC")
                 except ImportError as e:
                     return {"error": str(e)}
@@ -429,8 +435,9 @@ class TestIntegrationScenarios:
         assert "PyMC not available" in result_unavailable["error"]
 
         print("✓ Complete MCMC workflow test PASSED")
-        print(f"  - Available scenario: {len(result_available)} keys in result")
-        print(f"  - Unavailable scenario: proper error handling")
+        print(
+            f"  - Available scenario: {len(result_available)} keys in result")
+        print("  - Unavailable scenario: proper error handling")
 
     def test_version_consistency_mock(self):
         """Test that different versions would produce consistent results."""
@@ -445,7 +452,8 @@ class TestIntegrationScenarios:
                 data = np.random.rand(10, 10)
                 result = np.sum(data**2) / data.size
             elif version_name == "updated":
-                # Updated version calculation (should be identical for regression test)
+                # Updated version calculation (should be identical for
+                # regression test)
                 data = np.random.rand(10, 10)
                 result = np.sum(data**2) / data.size
             else:

@@ -26,7 +26,8 @@ class TestConfigManager:
             "optimization_config": {"method": "test"},
         }
 
-    def test_config_manager_init_with_file(self, temp_directory, minimal_config):
+    def test_config_manager_init_with_file(
+            self, temp_directory, minimal_config):
         """Test initialization with config file."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -46,10 +47,14 @@ class TestConfigManager:
 
         manager = ConfigManager(str(config_file))
         assert manager.get("analyzer_parameters", "nested", "value") == "test"
-        assert manager.get("analyzer_parameters", "nested") == {"value": "test"}
+        assert manager.get(
+            "analyzer_parameters",
+            "nested") == {
+            "value": "test"}
         assert manager.get("nonexistent", default="default") == "default"
 
-    def test_config_manager_get_with_default(self, temp_directory, minimal_config):
+    def test_config_manager_get_with_default(
+            self, temp_directory, minimal_config):
         """Test getting values with default fallback."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -91,10 +96,12 @@ class TestConfigManager:
         with pytest.raises(ValueError, match="Missing required sections"):
             ConfigManager(str(config_file))
 
-    def test_config_manager_invalid_frame_range(self, temp_directory, minimal_config):
+    def test_config_manager_invalid_frame_range(
+            self, temp_directory, minimal_config):
         """Test validation with invalid frame range."""
         minimal_config["analyzer_parameters"]["start_frame"] = 100
-        minimal_config["analyzer_parameters"]["end_frame"] = 50  # Invalid: start > end
+        # Invalid: start > end
+        minimal_config["analyzer_parameters"]["end_frame"] = 50
 
         config_file = temp_directory / "invalid_range.json"
         with open(config_file, "w") as f:
@@ -134,7 +141,8 @@ class TestConfigManager:
 
         manager = ConfigManager(str(config_file))
 
-        # Test static mode detection - defaults to anisotropic when submode not specified
+        # Test static mode detection - defaults to anisotropic when submode not
+        # specified
         assert manager.is_static_mode_enabled() is True
         assert manager.get_analysis_mode() == "static_anisotropic"
         assert manager.get_effective_parameter_count() == 3
@@ -199,15 +207,16 @@ def test_config_manager_default_config():
 def test_config_manager_real_config_file():
     """Test with the actual homodyne_config.json file if it exists."""
     # Check both project root and tests directory for config file
-    project_root_path = Path(__file__).parent.parent.parent / "homodyne_config.json"
+    project_root_path = Path(
+        __file__).parent.parent.parent / "homodyne_config.json"
     tests_dir_path = Path(__file__).parent / "homodyne_config.json"
-    
+
     config_path = None
     if project_root_path.exists():
         config_path = project_root_path
     elif tests_dir_path.exists():
         config_path = tests_dir_path
-    
+
     if config_path:
         manager = ConfigManager(str(config_path))
         assert manager.config is not None
@@ -329,7 +338,7 @@ class TestConfigManagerAngleFiltering:
             json.dump(config_with_angle_filtering, f)
 
         manager = ConfigManager(str(config_file))
-        assert manager.is_angle_filtering_enabled() == True
+        assert manager.is_angle_filtering_enabled()
 
     def test_angle_filtering_enabled_without_config(
         self, temp_directory, config_without_angle_filtering
@@ -340,7 +349,7 @@ class TestConfigManagerAngleFiltering:
             json.dump(config_without_angle_filtering, f)
 
         manager = ConfigManager(str(config_file))
-        assert manager.is_angle_filtering_enabled() == True  # Default value
+        assert manager.is_angle_filtering_enabled()  # Default value
 
     def test_angle_filtering_enabled_custom(
         self, temp_directory, config_with_custom_angle_filtering
@@ -404,7 +413,7 @@ class TestConfigManagerAngleFiltering:
             json.dump(config_with_angle_filtering, f)
 
         manager = ConfigManager(str(config_file))
-        assert manager.should_fallback_to_all_angles() == True
+        assert manager.should_fallback_to_all_angles()
 
     def test_should_fallback_to_all_angles_custom(
         self, temp_directory, config_with_custom_angle_filtering
@@ -434,9 +443,9 @@ class TestConfigManagerAngleFiltering:
         assert "fallback_to_all_angles" in angle_config
 
         # Check values
-        assert angle_config["enabled"] == True
+        assert angle_config["enabled"]
         assert len(angle_config["target_ranges"]) == 2
-        assert angle_config["fallback_to_all_angles"] == True
+        assert angle_config["fallback_to_all_angles"]
 
     def test_get_angle_filtering_config_defaults(
         self, temp_directory, config_without_angle_filtering
@@ -450,9 +459,9 @@ class TestConfigManagerAngleFiltering:
         angle_config = manager.get_angle_filtering_config()
 
         # Should provide defaults
-        assert angle_config["enabled"] == True
+        assert angle_config["enabled"]
         assert len(angle_config["target_ranges"]) == 2
-        assert angle_config["fallback_to_all_angles"] == True
+        assert angle_config["fallback_to_all_angles"]
 
         # Check default ranges
         expected_ranges = [
@@ -627,7 +636,8 @@ class TestPlottingConfigurationConsistency:
         assert param_names == bound_names
         assert len(param_names) == len(bound_names) == 7
 
-    def test_parameter_count_consistency(self, temp_directory, plotting_config):
+    def test_parameter_count_consistency(
+            self, temp_directory, plotting_config):
         """Test that parameter counts are consistent across all sections."""
         config_file = temp_directory / "count_test.json"
         with open(config_file, "w") as f:
@@ -647,7 +657,8 @@ class TestPlottingConfigurationConsistency:
         effective_count = manager.get_effective_parameter_count()
         assert len(param_names) == effective_count
 
-    def test_plotting_configuration_validation(self, temp_directory, plotting_config):
+    def test_plotting_configuration_validation(
+            self, temp_directory, plotting_config):
         """Test plotting configuration validation."""
         config_file = temp_directory / "plot_config_test.json"
         with open(config_file, "w") as f:
@@ -656,8 +667,10 @@ class TestPlottingConfigurationConsistency:
         manager = ConfigManager(str(config_file))
 
         # Test plotting settings
-        generate_plots = manager.get("output_settings", "reporting", "generate_plots")
-        plot_formats = manager.get("output_settings", "reporting", "plot_formats")
+        generate_plots = manager.get(
+            "output_settings", "reporting", "generate_plots")
+        plot_formats = manager.get(
+            "output_settings", "reporting", "plot_formats")
         plot_format = manager.get("output_settings", "plotting", "plot_format")
 
         assert isinstance(generate_plots, bool)

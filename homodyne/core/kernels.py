@@ -15,11 +15,12 @@ from functools import wraps
 # Numba imports with fallbacks
 try:
     from numba import jit, njit, prange, float64, int64, types
+
     try:
         from numba.types import Tuple  # type: ignore
     except (ImportError, AttributeError):
         # Fallback for older numba versions or different import paths
-        Tuple = getattr(types, 'Tuple', types.UniTuple)  # type: ignore
+        Tuple = getattr(types, "Tuple", types.UniTuple)  # type: ignore
 
     NUMBA_AVAILABLE = True
 except ImportError:
@@ -44,7 +45,8 @@ except ImportError:
     float64 = int64 = types = Tuple = DummyType()
 
 
-@njit(float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True)
+@njit(float64[:, :](float64[:]), parallel=False,
+      cache=True, fastmath=True, nogil=True)
 def create_time_integral_matrix_numba(time_dependent_array):
     """
     Create time integral matrix for correlation calculations.
@@ -75,7 +77,8 @@ def create_time_integral_matrix_numba(time_dependent_array):
     cumsum = np.cumsum(time_dependent_array)
 
     # Use parallel loops to fill the matrix efficiently
-    # This approach avoids the complex indexing and simply computes the difference
+    # This approach avoids the complex indexing and simply computes the
+    # difference
     for i in range(n):
         cumsum_i = cumsum[i]
         for j in range(n):
@@ -143,7 +146,11 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     fastmath=True,
     parallel=False,
 )
-def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
+def calculate_shear_rate_numba(
+        time_array,
+        gamma_dot_t0,
+        beta,
+        gamma_dot_t_offset):
     """
     Calculate time-dependent shear rate.
 
@@ -195,7 +202,8 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     gamma_dot_t = np.empty_like(time_array)
     # Vectorized computation with positivity constraint
     for i in range(len(time_array)):
-        gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
+        gamma_value = gamma_dot_t0 * \
+            (time_array[i] ** beta) + gamma_dot_t_offset
         # Ensure γ̇(t) > 0 always using conditional (Numba-compatible)
         if gamma_value > 1e-10:
             gamma_dot_t[i] = gamma_value
@@ -204,7 +212,8 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     return gamma_dot_t
 
 
-@njit(float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True)
+@njit(float64[:, :](float64[:, :], float64),
+      parallel=False, cache=True, fastmath=True)
 def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
     """
     Compute field correlation function g₁ from diffusion.
@@ -239,7 +248,8 @@ def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
     return g1
 
 
-@njit(float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True)
+@njit(float64[:, :](float64[:, :], float64),
+      parallel=False, cache=True, fastmath=True)
 def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
     """
     Compute sinc² function for shear flow contributions (Numba-optimized).
@@ -360,12 +370,16 @@ def memory_efficient_cache(maxsize=128):
             for arg in args:
                 if isinstance(arg, np.ndarray):
                     # Use faster hash-based key generation
-                    array_info = (arg.shape, arg.dtype.str, hash(arg.data.tobytes()))
+                    array_info = (
+                        arg.shape, arg.dtype.str, hash(
+                            arg.data.tobytes()))
                     key_parts.append(str(array_info))
                 elif hasattr(arg, "__array__"):
                     # Handle array-like objects
                     arr = np.asarray(arg)
-                    array_info = (arr.shape, arr.dtype.str, hash(arr.data.tobytes()))
+                    array_info = (
+                        arr.shape, arr.dtype.str, hash(
+                            arr.data.tobytes()))
                     key_parts.append(str(array_info))
                 else:
                     key_parts.append(str(arg))
@@ -438,7 +452,8 @@ def memory_efficient_cache(maxsize=128):
                     return self
                 else:
                     # Return a bound method
-                    return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
+                    return lambda *args, **kwargs: self._func(
+                        instance, *args, **kwargs)
 
         return CachedFunction(wrapper)
 
@@ -446,16 +461,6 @@ def memory_efficient_cache(maxsize=128):
 
 
 # Additional optimized kernels for improved performance
-
-
-
-
-
-
-
-
-
-
 
 
 @njit(
@@ -511,7 +516,8 @@ def solve_least_squares_batch_numba(theory_batch, exp_batch):
         det = sum_theory_sq * n_data - sum_theory * sum_theory
 
         if abs(det) > 1e-12:  # Non-singular matrix
-            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
+            contrast_batch[i] = (
+                n_data * sum_theory_exp - sum_theory * sum_exp) / det
             offset_batch[i] = (
                 sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
             ) / det
@@ -569,13 +575,3 @@ def compute_chi_squared_batch_numba(
         chi2_batch[i] = chi2
 
     return chi2_batch
-
-
-
-
-
-
-
-
-
-

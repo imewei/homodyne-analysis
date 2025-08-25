@@ -5,6 +5,13 @@ Pytest Configuration for Rheo-SAXS-XPCS Tests
 Configuration and shared fixtures for the test suite.
 """
 
+from .fixtures import *
+import time
+import shutil
+import warnings
+import matplotlib
+import numpy as np
+import pytest
 import os
 import sys
 from pathlib import Path
@@ -12,7 +19,8 @@ from pathlib import Path
 # CRITICAL: Set threading environment variables BEFORE any imports that might use Numba
 # This must happen before importing pytest, numpy, matplotlib, etc.
 os.environ["PYTHONWARNINGS"] = "ignore"
-# Conservative threading for test stability (consistent with performance settings)
+# Conservative threading for test stability (consistent with performance
+# settings)
 os.environ["OMP_NUM_THREADS"] = "1"  # Use single thread to avoid conflicts
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -22,12 +30,6 @@ os.environ["NUMBA_FASTMATH"] = "0"  # Conservative JIT for stability
 os.environ["NUMBA_THREADING_LAYER"] = "safe"  # Use safe threading layer
 
 # Now safe to import everything else
-import pytest
-import numpy as np
-import matplotlib
-import warnings
-import shutil
-import time
 
 # Use non-GUI matplotlib backend for testing
 matplotlib.use("Agg")
@@ -69,7 +71,8 @@ def cleanup_test_artifacts(request):
     SAFETY: Only removes homodyne_results directories that were explicitly
     marked as test artifacts, NOT any pre-existing directories.
     """
-    # Store initial working directory and check for pre-existing homodyne_results
+    # Store initial working directory and check for pre-existing
+    # homodyne_results
     initial_cwd = Path.cwd()
 
     # Track which homodyne_results directories existed before the test
@@ -87,7 +90,8 @@ def cleanup_test_artifacts(request):
 
     yield  # Run the test
 
-    # Cleanup after test - ONLY remove directories that are marked as test artifacts
+    # Cleanup after test - ONLY remove directories that are marked as test
+    # artifacts
     try:
         current_cwd = Path.cwd()
         cleanup_candidates = [
@@ -109,20 +113,24 @@ def cleanup_test_artifacts(request):
                 test_marker = cleanup_path / ".test-artifact"
 
                 # Special case: Always clean up ./homodyne/homodyne_results if it was created during tests
-                # This directory should never exist in a clean project structure
-                is_nested_homodyne_results = "homodyne/homodyne_results" in str(cleanup_path)
-                
+                # This directory should never exist in a clean project
+                # structure
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(
+                    cleanup_path)
+
                 if (
-                    (cleanup_path not in pre_existing_results_dirs and test_marker.exists())
-                    or (is_nested_homodyne_results and cleanup_path not in pre_existing_results_dirs)
+                    cleanup_path not in pre_existing_results_dirs
+                    and test_marker.exists()
+                ) or (
+                    is_nested_homodyne_results
+                    and cleanup_path not in pre_existing_results_dirs
                 ):
                     try:
                         shutil.rmtree(cleanup_path)
                         # Only print in verbose mode to avoid cluttering output
                         if getattr(request.config.option, "verbose", 0) > 1:
                             print(
-                                f"\n✓ Cleaned up test-created artifact: {cleanup_path}"
-                            )
+                                f"\n✓ Cleaned up test-created artifact: {cleanup_path}")
                     except (OSError, PermissionError):
                         # Silently continue if cleanup fails
                         pass
@@ -131,12 +139,10 @@ def cleanup_test_artifacts(request):
                     if getattr(request.config.option, "verbose", 0) > 1:
                         if cleanup_path in pre_existing_results_dirs:
                             print(
-                                f"\n⚠ Preserved pre-existing directory: {cleanup_path}"
-                            )
+                                f"\n⚠ Preserved pre-existing directory: {cleanup_path}")
                         elif not is_nested_homodyne_results:
                             print(
-                                f"\n⚠ Preserved directory without test marker: {cleanup_path}"
-                            )
+                                f"\n⚠ Preserved directory without test marker: {cleanup_path}")
 
     except Exception:
         # Don't fail tests due to cleanup issues
@@ -172,9 +178,11 @@ def cleanup_session_artifacts():
         for homodyne_results_path in cleanup_candidates:
             if homodyne_results_path.exists() and homodyne_results_path.is_dir():
                 # Special case: Always clean up ./homodyne/homodyne_results
-                # This directory should never exist in a clean project structure
-                is_nested_homodyne_results = "homodyne/homodyne_results" in str(homodyne_results_path)
-                
+                # This directory should never exist in a clean project
+                # structure
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(
+                    homodyne_results_path)
+
                 # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
                 # OR if it's the nested homodyne/homodyne_results directory
                 test_marker = homodyne_results_path / ".test-artifact"
@@ -182,17 +190,15 @@ def cleanup_session_artifacts():
                     try:
                         shutil.rmtree(homodyne_results_path)
                         print(
-                            f"\n✓ Final cleanup: Removed test artifact {homodyne_results_path}"
-                        )
+                            f"\n✓ Final cleanup: Removed test artifact {homodyne_results_path}")
                     except (OSError, PermissionError):
                         print(
-                            f"\n⚠ Could not remove test artifact {homodyne_results_path}"
-                        )
+                            f"\n⚠ Could not remove test artifact {homodyne_results_path}")
                 else:
-                    # No test marker and not nested - this could be user data, preserve it
+                    # No test marker and not nested - this could be user data,
+                    # preserve it
                     print(
-                        f"\n⚠ Preserved user directory (no test marker): {homodyne_results_path}"
-                    )
+                        f"\n⚠ Preserved user directory (no test marker): {homodyne_results_path}")
 
     except Exception:
         pass
@@ -224,8 +230,9 @@ def pytest_sessionfinish(session, exitstatus):
         for path in cleanup_candidates:
             if path.exists() and path.is_dir():
                 # Special case: Always clean up ./homodyne/homodyne_results
-                is_nested_homodyne_results = "homodyne/homodyne_results" in str(path)
-                
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(
+                    path)
+
                 # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
                 # OR if it's the nested homodyne/homodyne_results directory
                 test_marker = path / ".test-artifact"
@@ -233,14 +240,20 @@ def pytest_sessionfinish(session, exitstatus):
                     try:
                         shutil.rmtree(path)
                         if session.config.option.verbose > 0:
-                            print(f"\n✓ Test cleanup: Removed test artifact {path}")
+                            print(
+                                f"\n✓ Test cleanup: Removed test artifact {path}")
                     except (OSError, PermissionError):
                         if session.config.option.verbose > 0:
-                            print(f"\n⚠ Could not clean up test artifact {path}")
+                            print(
+                                f"\n⚠ Could not clean up test artifact {path}")
                 else:
                     # No test marker and not nested - preserve this directory
-                    if session.config.option.verbose > 0 and not is_nested_homodyne_results:
-                        print(f"\n⚠ Preserved user directory (no test marker): {path}")
+                    if (
+                        session.config.option.verbose > 0
+                        and not is_nested_homodyne_results
+                    ):
+                        print(
+                            f"\n⚠ Preserved user directory (no test marker): {path}")
     except Exception:
         # Don't break test reporting due to cleanup issues
         pass
@@ -266,17 +279,23 @@ warnings.filterwarnings(
     "ignore", category=UserWarning, message=".*SUBSCRIPT.*missing from font.*"
 )
 warnings.filterwarnings(
-    "ignore", category=UserWarning, message=".*SUPERSCRIPT.*missing from font.*"
-)
+    "ignore",
+    category=UserWarning,
+    message=".*SUPERSCRIPT.*missing from font.*")
 
 # Suppress all matplotlib UserWarnings to catch font issues
-import matplotlib
 
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib.*")
 
 # Suppress font warnings from homodyne modules that use matplotlib
-warnings.filterwarnings("ignore", category=UserWarning, module="homodyne.core.io_utils")
-warnings.filterwarnings("ignore", category=UserWarning, module="homodyne.plotting")
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module="homodyne.core.io_utils")
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module="homodyne.plotting")
 
 
 def pytest_configure(config):
@@ -285,7 +304,9 @@ def pytest_configure(config):
         "markers",
         "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
-    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+    config.addinivalue_line(
+        "markers",
+        "integration: marks tests as integration tests")
     config.addinivalue_line(
         "markers", "plotting: marks tests that require plotting functionality"
     )
@@ -298,18 +319,22 @@ def pytest_configure(config):
 
     # Performance testing markers
     config.addinivalue_line(
-        "markers", "performance: mark test as a performance test that should be fast"
-    )
-    config.addinivalue_line("markers", "memory: mark test as a memory usage test")
+        "markers",
+        "performance: mark test as a performance test that should be fast")
+    config.addinivalue_line(
+        "markers",
+        "memory: mark test as a memory usage test")
     config.addinivalue_line(
         "markers", "regression: mark test as a performance regression test"
     )
     config.addinivalue_line(
-        "markers", "benchmark: mark test for benchmarking (requires pytest-benchmark)"
-    )
+        "markers",
+        "benchmark: mark test for benchmarking (requires pytest-benchmark)")
 
     # Configure warnings filters
-    config.addinivalue_line("filterwarnings", "ignore::UserWarning:matplotlib.*")
+    config.addinivalue_line(
+        "filterwarnings",
+        "ignore::UserWarning:matplotlib.*")
     config.addinivalue_line("filterwarnings", "ignore::UserWarning:homodyne.*")
     config.addinivalue_line(
         "filterwarnings", "ignore:.*Glyph.*missing from font.*:UserWarning"
@@ -383,7 +408,6 @@ def sample_config_path():
 
 
 # Import all fixtures from fixtures.py to make them available
-from .fixtures import *
 
 
 def pytest_report_header(config):

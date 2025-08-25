@@ -10,6 +10,7 @@ analysis for Bayesian methods, including:
 - Configuration-driven validation thresholds
 """
 
+from run_homodyne import main as run_homodyne_main
 import numpy as np
 import pytest
 import tempfile
@@ -21,8 +22,6 @@ import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-
-from run_homodyne import main as run_homodyne_main
 
 
 class TestMCMCConvergenceDiagnostics:
@@ -87,7 +86,8 @@ class TestMCMCConvergenceDiagnostics:
             }
         }
 
-    def test_mcmc_quality_assessment_excellent(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_excellent(
+            self, mock_config_with_mcmc_thresholds):
         """Test MCMC quality assessment for excellent convergence."""
         # Mock excellent convergence metrics
         diagnostics = {
@@ -127,7 +127,8 @@ class TestMCMCConvergenceDiagnostics:
 
         assert quality == "excellent"
 
-    def test_mcmc_quality_assessment_good(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_good(
+            self, mock_config_with_mcmc_thresholds):
         """Test MCMC quality assessment for good convergence."""
         # Mock good convergence metrics
         diagnostics = {
@@ -167,7 +168,8 @@ class TestMCMCConvergenceDiagnostics:
 
         assert quality == "good"
 
-    def test_mcmc_quality_assessment_acceptable(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_acceptable(
+            self, mock_config_with_mcmc_thresholds):
         """Test MCMC quality assessment for acceptable convergence."""
         # Mock acceptable convergence metrics
         diagnostics = {
@@ -207,7 +209,8 @@ class TestMCMCConvergenceDiagnostics:
 
         assert quality == "acceptable"
 
-    def test_mcmc_quality_assessment_poor(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_poor(
+            self, mock_config_with_mcmc_thresholds):
         """Test MCMC quality assessment for poor convergence."""
         # Mock poor convergence metrics
         diagnostics = {
@@ -269,7 +272,8 @@ class TestMCMCConvergenceDiagnostics:
         assert isinstance(diagnostics["max_rhat"], (int, float))
         assert isinstance(diagnostics["min_ess"], (int, float))
 
-    def test_mcmc_config_validation_thresholds(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_config_validation_thresholds(
+            self, mock_config_with_mcmc_thresholds):
         """Test that MCMC configuration contains proper validation thresholds."""
         mcmc_config = mock_config_with_mcmc_thresholds["validation_rules"][
             "mcmc_convergence"
@@ -277,12 +281,10 @@ class TestMCMCConvergenceDiagnostics:
 
         # Verify R-hat thresholds
         rhat_thresholds = mcmc_config["rhat_thresholds"]
-        assert (
-            rhat_thresholds["excellent_threshold"] < rhat_thresholds["good_threshold"]
-        )
-        assert (
-            rhat_thresholds["good_threshold"] < rhat_thresholds["acceptable_threshold"]
-        )
+        assert (rhat_thresholds["excellent_threshold"]
+                < rhat_thresholds["good_threshold"])
+        assert (rhat_thresholds["good_threshold"] <
+                rhat_thresholds["acceptable_threshold"])
         assert (
             rhat_thresholds["acceptable_threshold"]
             < rhat_thresholds["critical_threshold"]
@@ -292,9 +294,8 @@ class TestMCMCConvergenceDiagnostics:
         ess_thresholds = mcmc_config["ess_thresholds"]
         assert ess_thresholds["excellent_threshold"] > ess_thresholds["good_threshold"]
         assert ess_thresholds["good_threshold"] > ess_thresholds["acceptable_threshold"]
-        assert (
-            ess_thresholds["acceptable_threshold"] > ess_thresholds["minimum_threshold"]
-        )
+        assert (ess_thresholds["acceptable_threshold"]
+                > ess_thresholds["minimum_threshold"])
 
         # Verify divergence thresholds
         div_thresholds = mcmc_config["divergence_thresholds"]
@@ -312,12 +313,12 @@ class TestMCMCConvergenceDiagnostics:
 
         # Mock the logger calls that would happen in run_homodyne.py
         expected_log_calls = [
-            f"MCMC convergence diagnostics [MCMC]:",
+            "MCMC convergence diagnostics [MCMC]:",
             f"  Convergence status: {diagnostics['assessment']}",
             f"  Maximum R̂ (R-hat): {diagnostics['max_rhat']:.4f}",
             f"  Minimum ESS: {diagnostics['min_ess']:.0f}",
-            f"  MCMC quality: GOOD",  # Based on the mock values
-            f"  Sampling completed with posterior analysis available",
+            "  MCMC quality: GOOD",  # Based on the mock values
+            "  Sampling completed with posterior analysis available",
         ]
 
         # This test verifies the expected log format structure
@@ -345,13 +346,19 @@ class TestMCMCConvergenceDiagnostics:
         ess_thresholds = mcmc_config.get("ess_thresholds", {})
 
         # Test that defaults are used
-        assert rhat_thresholds.get("excellent_threshold", 1.01) == excellent_rhat
+        assert rhat_thresholds.get(
+            "excellent_threshold",
+            1.01) == excellent_rhat
         assert rhat_thresholds.get("good_threshold", 1.05) == good_rhat
-        assert rhat_thresholds.get("acceptable_threshold", 1.1) == acceptable_rhat
+        assert rhat_thresholds.get(
+            "acceptable_threshold",
+            1.1) == acceptable_rhat
 
         assert ess_thresholds.get("excellent_threshold", 400) == excellent_ess
         assert ess_thresholds.get("good_threshold", 200) == good_ess
-        assert ess_thresholds.get("acceptable_threshold", 100) == acceptable_ess
+        assert ess_thresholds.get(
+            "acceptable_threshold",
+            100) == acceptable_ess
 
 
 if __name__ == "__main__":

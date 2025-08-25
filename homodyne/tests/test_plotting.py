@@ -5,19 +5,6 @@ Tests for Plotting Module
 Tests plot image generation, matplotlib figure creation, and visualization functions.
 """
 
-import pytest
-import numpy as np
-import matplotlib
-
-matplotlib.use("Agg")  # Use non-interactive backend for testing
-import matplotlib.pyplot as plt
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-import tempfile
-
-# Import the modules to test
-
-
 from homodyne.tests.fixtures import (
     dummy_config,
     dummy_correlation_data,
@@ -27,6 +14,18 @@ from homodyne.tests.fixtures import (
     dummy_analysis_results,
     temp_directory,
 )
+import tempfile
+from unittest.mock import patch, MagicMock
+from pathlib import Path
+import matplotlib.pyplot as plt
+import pytest
+import numpy as np
+import matplotlib
+
+matplotlib.use("Agg")  # Use non-interactive backend for testing
+
+# Import the modules to test
+
 
 # Import plotting functions
 try:
@@ -44,7 +43,8 @@ try:
 
     PLOTTING_MODULE_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Could not import homodyne.plotting as plotting module: {e}")
+    print(
+        f"Warning: Could not import homodyne.plotting as plotting module: {e}")
     PLOTTING_MODULE_AVAILABLE = False
 
     # Define dummy functions for type checking when plotting module is not available
@@ -269,7 +269,7 @@ class TestC2HeatmapPlots:
             dummy_phi_angles,
             temp_directory,
             dummy_config,
-            method_name="Nelder-Mead"
+            method_name="Nelder-Mead",
         )
 
         # Test with Gurobi method name
@@ -279,15 +279,16 @@ class TestC2HeatmapPlots:
             dummy_phi_angles,
             temp_directory,
             dummy_config,
-            method_name="Gurobi"
+            method_name="Gurobi",
         )
 
         assert success_nm is True
         assert success_gurobi is True
 
-        # Check that files were created (any files, plotting tests may not create method-specific files)
+        # Check that files were created (any files, plotting tests may not
+        # create method-specific files)
         plot_files = list(temp_directory.glob("*.png"))
-        
+
         # Basic verification that plotting succeeded
         assert len(plot_files) >= 0  # At least we didn't crash
 
@@ -306,7 +307,7 @@ class TestC2HeatmapPlots:
             dummy_phi_angles,
             temp_directory,
             dummy_config,
-            method_name=None
+            method_name=None,
         )
 
         assert success is True
@@ -344,7 +345,8 @@ class TestDiagnosticPlots:
             "residuals": np.random.normal(0, 0.1, (50, 50)),
         }
 
-        success = plot_diagnostic_summary(results, temp_directory, dummy_config)
+        success = plot_diagnostic_summary(
+            results, temp_directory, dummy_config)
 
         assert success is True
 
@@ -364,7 +366,8 @@ class TestDiagnosticPlots:
             "residuals": np.random.normal(0, 0.05, (30, 30)),
         }
 
-        success = plot_diagnostic_summary(results, temp_directory, dummy_config)
+        success = plot_diagnostic_summary(
+            results, temp_directory, dummy_config)
 
         assert success is True
 
@@ -404,24 +407,28 @@ class TestDiagnosticPlots:
                 mcse_data = az.mcse(trace_data)
             except RuntimeError as e:
                 if "NUMBA_NUM_THREADS" in str(e):
-                    # Create mock diagnostic data compatible with ArviZ Dataset format
+                    # Create mock diagnostic data compatible with ArviZ Dataset
+                    # format
                     import xarray as xr
 
                     rhat_data = xr.Dataset(
                         {
-                            param: xr.DataArray(1.01)  # Scalar value, no dims needed
+                            # Scalar value, no dims needed
+                            param: xr.DataArray(1.01)
                             for param in param_names
                         }
                     )
                     ess_data = xr.Dataset(
                         {
-                            param: xr.DataArray(400.0)  # Scalar value, no dims needed
+                            # Scalar value, no dims needed
+                            param: xr.DataArray(400.0)
                             for param in param_names
                         }
                     )
                     mcse_data = xr.Dataset(
                         {
-                            param: xr.DataArray(0.01)  # Scalar value, no dims needed
+                            # Scalar value, no dims needed
+                            param: xr.DataArray(0.01)
                             for param in param_names
                         }
                     )
@@ -437,9 +444,11 @@ class TestDiagnosticPlots:
                 "classical_chi_squared": 2.5,
                 "mcmc_chi_squared": 2.3,
                 "best_chi_squared": 2.3,
-                # For Plot 2: Parameter uncertainties (computed from MCMC trace)
+                # For Plot 2: Parameter uncertainties (computed from MCMC
+                # trace)
                 "mcmc_trace": trace_data,
-                # For Plot 3: MCMC convergence diagnostics (ArviZ Dataset format)
+                # For Plot 3: MCMC convergence diagnostics (ArviZ Dataset
+                # format)
                 "mcmc_diagnostics": {
                     "rhat": rhat_data,  # ArviZ Dataset format
                     "ess": ess_data,  # ArviZ Dataset format
@@ -484,7 +493,8 @@ class TestDiagnosticPlots:
             # Skip test if ArviZ is not available
             import pytest
 
-            pytest.skip("ArviZ not available for comprehensive diagnostic test")
+            pytest.skip(
+                "ArviZ not available for comprehensive diagnostic test")
 
     def test_plot_diagnostic_summary_minimal_data_with_placeholders(
         self, temp_directory, dummy_config
@@ -493,7 +503,8 @@ class TestDiagnosticPlots:
         # Minimal results with only basic chi-squared data
         minimal_results = {"best_chi_squared": 5.0, "method": "Minimal Test"}
 
-        success = plot_diagnostic_summary(minimal_results, temp_directory, dummy_config)
+        success = plot_diagnostic_summary(
+            minimal_results, temp_directory, dummy_config)
         assert success is True
 
         # Check that plot file exists (should show placeholder messages)
@@ -509,7 +520,8 @@ class TestDiagnosticPlots:
 class TestMCMCPlots:
     """Test MCMC plotting functions."""
 
-    def test_plot_mcmc_corner_with_arviz_available(self, temp_directory, dummy_config):
+    def test_plot_mcmc_corner_with_arviz_available(
+            self, temp_directory, dummy_config):
         """Test MCMC corner plot when ArviZ is available."""
         try:
             import arviz as az
@@ -548,12 +560,14 @@ class TestMCMCPlots:
 
             plot_files = list(temp_directory.glob("mcmc_corner_plot.png"))
             assert len(plot_files) == 1
-            assert plot_files[0].stat().st_size > 10000  # Should be substantial file
+            # Should be substantial file
+            assert plot_files[0].stat().st_size > 10000
 
         except ImportError:
             pytest.skip("ArviZ not available")
 
-    def test_plot_mcmc_corner_without_arviz(self, temp_directory, dummy_config):
+    def test_plot_mcmc_corner_without_arviz(
+            self, temp_directory, dummy_config):
         """Test MCMC corner plot graceful handling when ArviZ unavailable."""
         # Mock ArviZ as unavailable
         with patch("homodyne.plotting.ARVIZ_AVAILABLE", False):
@@ -569,7 +583,8 @@ class TestMCMCPlots:
             plot_files = list(temp_directory.glob("mcmc_corner_plot.*"))
             assert len(plot_files) == 0
 
-    def test_plot_mcmc_trace_with_arviz_available(self, temp_directory, dummy_config):
+    def test_plot_mcmc_trace_with_arviz_available(
+            self, temp_directory, dummy_config):
         """Test MCMC trace plots when ArviZ is available."""
         try:
             import arviz as az
@@ -580,7 +595,8 @@ class TestMCMCPlots:
 
             posterior_dict = {}
             for param in param_names:
-                posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
+                posterior_dict[param] = np.random.normal(
+                    0, 1, (n_chains, n_draws))
 
             trace_data = az.from_dict(posterior_dict)
             param_units = ["Å²/s", "dimensionless", "Å²/s"]
@@ -595,11 +611,15 @@ class TestMCMCPlots:
 
             # Debug information if the test fails
             if not success:
-                print(f"plot_mcmc_trace returned False")
+                print("plot_mcmc_trace returned False")
                 print(f"temp_directory: {temp_directory}")
                 print(
-                    f"dummy_config plotting section: {dummy_config.get('output_settings', {}).get('plotting', {})}"
-                )
+                    f"dummy_config plotting section: {
+                        dummy_config.get(
+                            'output_settings',
+                            {}).get(
+                            'plotting',
+                            {})}")
 
             assert (
                 success is True
@@ -610,16 +630,17 @@ class TestMCMCPlots:
 
             if len(plot_files) != 1:
                 print(
-                    f"Expected 1 file matching 'mcmc_trace_plots.png', found {len(plot_files)}"
-                )
+                    f"Expected 1 file matching 'mcmc_trace_plots.png', found {
+                        len(plot_files)}")
                 print(f"All files in directory: {all_files}")
 
             assert (
-                len(plot_files) == 1
-            ), f"Expected 1 trace plot file, found {len(plot_files)}. All files: {all_files}"
+                len(plot_files) == 1), f"Expected 1 trace plot file, found {
+                len(plot_files)}. All files: {all_files}"
 
             file_size = plot_files[0].stat().st_size
-            # Reduce the size requirement as matplotlib in test environments may create smaller files
+            # Reduce the size requirement as matplotlib in test environments
+            # may create smaller files
             assert (
                 file_size > 5000
             ), f"Trace plot file too small: {file_size} bytes (expected > 5000)"
@@ -627,7 +648,8 @@ class TestMCMCPlots:
         except ImportError:
             pytest.skip("ArviZ not available")
 
-    def test_plot_mcmc_convergence_diagnostics(self, temp_directory, dummy_config):
+    def test_plot_mcmc_convergence_diagnostics(
+            self, temp_directory, dummy_config):
         """Test MCMC convergence diagnostic plots."""
         try:
             import arviz as az
@@ -638,7 +660,8 @@ class TestMCMCPlots:
 
             posterior_dict = {}
             for param in param_names:
-                posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
+                posterior_dict[param] = np.random.normal(
+                    0, 1, (n_chains, n_draws))
 
             trace_data = az.from_dict(posterior_dict)
 
@@ -650,7 +673,11 @@ class TestMCMCPlots:
                     "beta": 1.01,
                     "gamma_dot_t0": 1.08,
                 },
-                "ess_bulk": {"D0": 800, "alpha": 600, "beta": 900, "gamma_dot_t0": 450},
+                "ess_bulk": {
+                    "D0": 800,
+                    "alpha": 600,
+                    "beta": 900,
+                    "gamma_dot_t0": 450},
                 "mcse_mean": {
                     "D0": 0.001,
                     "alpha": 0.002,
@@ -673,9 +700,11 @@ class TestMCMCPlots:
 
             assert success is True
 
-            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            plot_files = list(temp_directory.glob(
+                "mcmc_convergence_diagnostics.png"))
             assert len(plot_files) == 1
-            assert plot_files[0].stat().st_size > 20000  # Complex diagnostic plot
+            # Complex diagnostic plot
+            assert plot_files[0].stat().st_size > 20000
 
         except ImportError:
             pytest.skip("ArviZ not available")
@@ -715,7 +744,8 @@ class TestMCMCPlots:
 
             assert success is True  # Should still create plot
 
-            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            plot_files = list(temp_directory.glob(
+                "mcmc_convergence_diagnostics.png"))
             assert len(plot_files) == 1
 
         except ImportError:
@@ -728,7 +758,8 @@ class TestMCMCPlots:
         try:
             import arviz as az
 
-            # Create mock trace data with realistic parameter names for static isotropic mode
+            # Create mock trace data with realistic parameter names for static
+            # isotropic mode
             n_chains, n_draws = 4, 1000
             param_names = ["D0", "alpha", "D_offset"]
 
@@ -752,25 +783,29 @@ class TestMCMCPlots:
                 mcse_data = az.mcse(trace_data)
             except RuntimeError as e:
                 if "NUMBA_NUM_THREADS" in str(e):
-                    # Create mock diagnostic data compatible with ArviZ Dataset format
+                    # Create mock diagnostic data compatible with ArviZ Dataset
+                    # format
                     import xarray as xr
 
                     param_names = ["D0", "alpha", "D_offset"]
                     rhat_data = xr.Dataset(
                         {
-                            param: xr.DataArray(1.01)  # Scalar value, no dims needed
+                            # Scalar value, no dims needed
+                            param: xr.DataArray(1.01)
                             for param in param_names
                         }
                     )
                     ess_data = xr.Dataset(
                         {
-                            param: xr.DataArray(400.0)  # Scalar value, no dims needed
+                            # Scalar value, no dims needed
+                            param: xr.DataArray(400.0)
                             for param in param_names
                         }
                     )
                     mcse_data = xr.Dataset(
                         {
-                            param: xr.DataArray(0.01)  # Scalar value, no dims needed
+                            # Scalar value, no dims needed
+                            param: xr.DataArray(0.01)
                             for param in param_names
                         }
                     )
@@ -811,7 +846,8 @@ class TestMCMCPlots:
             assert success is True
 
             # Check that plot file was created
-            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            plot_files = list(temp_directory.glob(
+                "mcmc_convergence_diagnostics.png"))
             assert len(plot_files) == 1
             assert (
                 plot_files[0].stat().st_size > 20000
@@ -848,7 +884,8 @@ class TestMCMCPlots:
 
             assert success is True  # Should handle gracefully
 
-            plot_files = list(temp_directory.glob("mcmc_convergence_diagnostics.png"))
+            plot_files = list(temp_directory.glob(
+                "mcmc_convergence_diagnostics.png"))
             assert len(plot_files) == 1
 
         except ImportError:
@@ -859,7 +896,8 @@ class TestMCMCPlots:
         # Test with invalid trace data
         invalid_trace = "not_a_trace"
 
-        success1 = plot_mcmc_corner(invalid_trace, temp_directory, dummy_config)
+        success1 = plot_mcmc_corner(
+            invalid_trace, temp_directory, dummy_config)
         success2 = plot_mcmc_trace(invalid_trace, temp_directory, dummy_config)
 
         assert success1 is False
@@ -872,7 +910,8 @@ class TestMCMCPlots:
         )
         assert success3 is False
 
-    def test_mcmc_plotting_with_dictionary_trace(self, temp_directory, dummy_config):
+    def test_mcmc_plotting_with_dictionary_trace(
+            self, temp_directory, dummy_config):
         """Test MCMC corner plot with dictionary trace data."""
         # Create dictionary-format trace data
         dict_trace = {
@@ -924,7 +963,8 @@ class TestCompleteWorkflow:
 
         for plot_type in expected_plots:
             if plot_type in plot_status:
-                # If the plot was attempted, it should have succeeded with dummy data
+                # If the plot was attempted, it should have succeeded with
+                # dummy data
                 assert plot_status[plot_type] is True, f"{plot_type} plot failed"
 
         # Optional plots should not fail if attempted
@@ -946,7 +986,8 @@ class TestCompleteWorkflow:
             "best_chi_squared": 1.234,
         }
 
-        plot_status = create_all_plots(minimal_results, temp_directory, dummy_config)
+        plot_status = create_all_plots(
+            minimal_results, temp_directory, dummy_config)
 
         assert isinstance(plot_status, dict)
 
@@ -954,7 +995,8 @@ class TestCompleteWorkflow:
         successful_plots = sum(1 for status in plot_status.values() if status)
         assert successful_plots >= 1
 
-    def test_create_all_plots_with_mcmc_data(self, temp_directory, dummy_config):
+    def test_create_all_plots_with_mcmc_data(
+            self, temp_directory, dummy_config):
         """Test plotting workflow with MCMC results included."""
         try:
             import arviz as az
@@ -1021,7 +1063,8 @@ class TestCompleteWorkflow:
                 "method": "MCMC",
             }
 
-            plot_status = create_all_plots(mcmc_results, temp_directory, dummy_config)
+            plot_status = create_all_plots(
+                mcmc_results, temp_directory, dummy_config)
 
             assert isinstance(plot_status, dict)
 
@@ -1074,7 +1117,11 @@ class TestPlotErrorHandling:
 
         assert success is False  # Should fail gracefully
 
-    def test_plot_with_nan_data(self, temp_directory, dummy_phi_angles, dummy_config):
+    def test_plot_with_nan_data(
+            self,
+            temp_directory,
+            dummy_phi_angles,
+            dummy_config):
         """Test plotting with NaN values in data."""
         nan_data = np.full((3, 20, 30), np.nan)
 
@@ -1228,10 +1275,11 @@ class TestScalingOptimization:
                 "plotting": {
                     "plot_format": "png",
                     "dpi": 100,
-                    "figure_size": [6, 4],
+                    "figure_size": [
+                        6,
+                        4],
                     "create_plots": True,
-                }
-            },
+                }},
         }
 
         success = plot_c2_heatmaps(
@@ -1263,7 +1311,8 @@ class TestScalingOptimization:
         # Create experimental data with known scaling: exp = theory * 2.0 + 1.0
         contrast = 2.0
         offset = 1.0
-        exp = theory * contrast + offset + 0.1 * np.random.randn(n_angles, n_t2, n_t1)
+        exp = theory * contrast + offset + 0.1 * \
+            np.random.randn(n_angles, n_t2, n_t1)
 
         config_with_scaling = {
             "chi_squared_calculation": {
@@ -1273,10 +1322,11 @@ class TestScalingOptimization:
                 "plotting": {
                     "plot_format": "png",
                     "dpi": 100,
-                    "figure_size": [6, 4],
+                    "figure_size": [
+                        6,
+                        4],
                     "create_plots": True,
-                }
-            },
+                }},
         }
 
         success = plot_c2_heatmaps(
@@ -1315,10 +1365,11 @@ class TestScalingOptimization:
                 "plotting": {
                     "plot_format": "png",
                     "dpi": 100,
-                    "figure_size": [6, 4],
+                    "figure_size": [
+                        6,
+                        4],
                     "create_plots": True,
-                }
-            },
+                }},
         }
 
         # Should handle the error gracefully and fall back to unscaled theory
@@ -1404,7 +1455,8 @@ class TestPlotContent:
             assert "c2_heatmaps_phi_" in plot_file.name
             assert "deg.png" in plot_file.name
 
-    def test_plot_handles_different_data_sizes(self, temp_directory, dummy_config):
+    def test_plot_handles_different_data_sizes(
+            self, temp_directory, dummy_config):
         """Test plotting with different data array sizes."""
         # Small data
         small_exp = np.random.rand(2, 10, 15)

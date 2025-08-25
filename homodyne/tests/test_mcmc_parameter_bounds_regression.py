@@ -45,7 +45,8 @@ class TestMCMCParameterBoundsRegression:
                 "cache_filename_template": "test_cache_{start_frame}_{end_frame}.npz",
             },
             "initial_parameters": {
-                "values": [16000, -1.5, 1.1, 0.0, 0.0, 0.0, 0.0],  # alpha at boundary
+                # alpha at boundary
+                "values": [16000, -1.5, 1.1, 0.0, 0.0, 0.0, 0.0],
                 "parameter_names": [
                     "D0",
                     "alpha",
@@ -67,7 +68,8 @@ class TestMCMCParameterBoundsRegression:
                         "type": "Normal",
                     },  # Narrow range, initial at boundary
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {"name": "gamma_dot_t0", "min": 0.0,
+                        "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -114,7 +116,8 @@ class TestMCMCParameterBoundsRegression:
                 "cache_filename_template": "test_cache_{start_frame}_{end_frame}.npz",
             },
             "initial_parameters": {
-                "values": [16000, -1.5, 1.1, 0.0, 0.0, 0.0, 0.0],  # alpha in center
+                # alpha in center
+                "values": [16000, -1.5, 1.1, 0.0, 0.0, 0.0, 0.0],
                 "parameter_names": [
                     "D0",
                     "alpha",
@@ -136,7 +139,8 @@ class TestMCMCParameterBoundsRegression:
                         "type": "Normal",
                     },  # Wider range, initial in center
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {"name": "gamma_dot_t0", "min": 0.0,
+                        "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -191,7 +195,8 @@ class TestMCMCParameterBoundsRegression:
         # Verify characteristics that made this configuration problematic
         assert abs(bounds_width - 0.1) < 1e-10  # Very narrow bounds
         assert alpha_initial == alpha_bound["max"]  # Initial at max boundary
-        assert abs(distance_from_center - 0.05) < 1e-10  # At boundary, not centered
+        # At boundary, not centered
+        assert abs(distance_from_center - 0.05) < 1e-10
 
         # This configuration was problematic because:
         # 1. Very narrow parameter space (width = 0.1)
@@ -201,8 +206,8 @@ class TestMCMCParameterBoundsRegression:
         print("✓ Boundary alpha configuration analysis completed")
         print(f"  Bounds width: {bounds_width:.3f} (problematically narrow)")
         print(
-            f"  Initial position: at max boundary (distance from center: {distance_from_center:.3f})"
-        )
+            f"  Initial position: at max boundary (distance from center: {
+                distance_from_center:.3f})")
 
     def test_mcmc_parameter_bounds_analysis_safe_alpha(self):
         """Test that demonstrates analysis of safe alpha parameter configuration."""
@@ -242,14 +247,18 @@ class TestMCMCParameterBoundsRegression:
         # This configuration is safe because:
         # 1. Wide parameter space (width = 0.6, 6x larger than problematic case)
         # 2. Initial value exactly at center (-1.5 = center of [-1.8, -1.2])
-        # 3. Plenty of room for PyMC jittering during initialization (0.3 on each side)
+        # 3. Plenty of room for PyMC jittering during initialization (0.3 on
+        # each side)
 
         print("✓ Safe alpha configuration analysis completed")
         print(f"  Bounds width: {bounds_width:.3f} (safe and wide)")
         print(
-            f"  Initial position: exactly at center (distance from center: {distance_from_center:.3f})"
-        )
-        print(f"  Jittering room: {room_below:.1f} below, {room_above:.1f} above")
+            f"  Initial position: exactly at center (distance from center: {
+                distance_from_center:.3f})")
+        print(
+            f"  Jittering room: {
+                room_below:.1f} below, {
+                room_above:.1f} above")
 
     def test_alpha_bounds_configuration_comparison(self, temp_directory):
         """Test that demonstrates the difference between problematic and safe alpha bounds."""
@@ -266,7 +275,8 @@ class TestMCMCParameterBoundsRegression:
                     }  # Width: 0.1
                 ]
             },
-            "initial_parameters": {"values": [16000, -1.5, 1.1]},  # At max boundary
+            # At max boundary
+            "initial_parameters": {"values": [16000, -1.5, 1.1]},
         }
 
         # Test safe configuration (wider bounds, initial in center)
@@ -309,22 +319,27 @@ class TestMCMCParameterBoundsRegression:
             abs(safe_width - 0.6) < 1e-10
         )  # Much wider (within floating point precision)
         assert safe_alpha == safe_mid  # At center
-        assert safe_bound["min"] < safe_alpha < safe_bound["max"]  # Within bounds
+        # Within bounds
+        assert safe_bound["min"] < safe_alpha < safe_bound["max"]
 
         print(
-            f"✓ Problematic alpha bounds: width={prob_width:.1f}, initial at boundary"
-        )
-        print(f"✓ Safe alpha bounds: width={safe_width:.1f}, initial at center")
+            f"✓ Problematic alpha bounds: width={
+                prob_width:.1f}, initial at boundary")
+        print(
+            f"✓ Safe alpha bounds: width={
+                safe_width:.1f}, initial at center")
 
     def test_mcmc_bounds_validation_edge_cases(self):
         """Test edge cases for MCMC parameter bounds validation."""
 
         # Test case 1: Initial value exactly at lower bound
-        bounds_at_min = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
+        bounds_at_min = [{"name": "alpha", "min": -
+                          2.0, "max": -1.0, "type": "Normal"}]
         initial_at_min = [-2.0]  # Exactly at minimum
 
         # Test case 2: Initial value exactly at upper bound
-        bounds_at_max = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
+        bounds_at_max = [{"name": "alpha", "min": -
+                          2.0, "max": -1.0, "type": "Normal"}]
         initial_at_max = [-1.0]  # Exactly at maximum
 
         # Test case 3: Initial value safely in middle
@@ -344,9 +359,9 @@ class TestMCMCParameterBoundsRegression:
 
             # Check if value is within bounds (inclusive)
             within_bounds = bound["min"] <= value <= bound["max"]
-            assert (
-                within_bounds
-            ), f"Value {value} should be within bounds [{bound['min']}, {bound['max']}] for case {case_name}"
+            assert (within_bounds), f"Value {value} should be within bounds [{
+                bound['min']}, {
+                bound['max']}] for case {case_name}"
 
             # Check distance from boundaries
             dist_from_min = abs(value - bound["min"])
@@ -356,11 +371,11 @@ class TestMCMCParameterBoundsRegression:
             if case_name == "centered":
                 assert (
                     min_dist == 0.5
-                ), f"Centered case should be 0.5 from each boundary"
+                ), "Centered case should be 0.5 from each boundary"
             else:
                 assert (
                     min_dist == 0.0
-                ), f"Boundary cases should be at distance 0 from a boundary"
+                ), "Boundary cases should be at distance 0 from a boundary"
 
         print("✓ Parameter bounds validation logic verified for edge cases")
 
@@ -498,7 +513,8 @@ class TestMCMCBoundsIntegration:
                     {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
                     {"name": "alpha", "min": -1.8, "max": -1.2, "type": "Normal"},
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {"name": "gamma_dot_t0", "min": 0.0,
+                        "max": 0.0, "type": "fixed"},
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -553,7 +569,8 @@ class TestMCMCBoundsIntegration:
         mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"]["enabled"]
         assert mcmc_enabled is True, "MCMC sampling must be enabled for this test"
 
-        # Verify scaling optimization is available (standard chi-squared method)
+        # Verify scaling optimization is available (standard chi-squared
+        # method)
         chi_sq_method = loaded_config["advanced_settings"]["chi_squared_calculation"][
             "method"
         ]
