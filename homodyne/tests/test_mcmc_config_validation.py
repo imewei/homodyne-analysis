@@ -23,7 +23,19 @@ from unittest.mock import MagicMock, Mock, patch
 import numpy as np
 import pytest
 
-from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+# Test PyMC availability
+try:
+    from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    MCMCSampler = None
+    create_mcmc_sampler = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
 
 
 class TestMCMCConfigurationUsage:

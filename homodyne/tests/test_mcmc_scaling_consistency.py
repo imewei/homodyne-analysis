@@ -26,6 +26,11 @@ except ImportError:
     MCMCSampler = None
 
 
+pytestmark = pytest.mark.skipif(
+    not mcmc_available, reason="PyMC is required for MCMC sampling but is not available."
+)
+
+
 class TestMCMCScalingConsistency:
     """Test MCMC scaling optimization consistency detection and warnings."""
 

@@ -13,7 +13,18 @@ from pathlib import Path
 
 import pytest
 
-from homodyne.optimization.mcmc import MCMCSampler
+# Test PyMC availability
+try:
+    from homodyne.optimization.mcmc import MCMCSampler
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    MCMCSampler = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
 
 
 class TestMCMCConfigurationReading:

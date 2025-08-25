@@ -9,6 +9,22 @@ These utilities help ensure consistent testing across different MCMC test files.
 from unittest.mock import Mock
 
 import numpy as np
+import pytest
+
+# Test PyMC availability
+try:
+    import pymc as pm
+    import arviz as az
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    pm = None
+    az = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
 
 
 def create_minimal_mcmc_config(draws=1000, chains=2, tune=500, **kwargs):

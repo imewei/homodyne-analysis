@@ -21,6 +21,21 @@ from homodyne.tests.fixtures import dummy_config
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Test PyMC availability
+try:
+    import pymc as pm
+    import arviz as az
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    pm = None
+    az = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
+
 
 class TestMCMC3DPlottingIntegration:
     """Test integration of 3D surface plotting in MCMC workflow."""

@@ -30,6 +30,22 @@ from unittest.mock import MagicMock, Mock, patch
 import numpy as np
 import pytest
 
+# Test PyMC availability
+try:
+    import pymc as pm
+    import arviz as az
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    pm = None
+    az = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
+import pytest
+
 
 class TestMCMCInitialParameterHandling:
     """Test MCMC initial parameter handling from classical results and fallbacks."""

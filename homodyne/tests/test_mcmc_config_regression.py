@@ -23,14 +23,34 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
-from homodyne.tests.test_utils_mcmc import (
-    create_mock_analysis_core,
-    create_mock_trace,
-    create_realistic_user_config,
-    get_mcmc_defaults,
-    validate_trace_dimensions,
+# Test PyMC availability
+try:
+    from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    MCMCSampler = None
+    create_mcmc_sampler = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
 )
+try:
+    from homodyne.tests.test_utils_mcmc import (
+        create_mock_analysis_core,
+        create_mock_trace,
+        create_realistic_user_config,
+        get_mcmc_defaults,
+        validate_trace_dimensions,
+    )
+except ImportError:
+    # Test utilities may not be available without PyMC
+    create_mock_analysis_core = None
+    create_mock_trace = None
+    create_realistic_user_config = None
+    get_mcmc_defaults = None
+    validate_trace_dimensions = None
 
 
 class TestMCMCConfigurationRegression:

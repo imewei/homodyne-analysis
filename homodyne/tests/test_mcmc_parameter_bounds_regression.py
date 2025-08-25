@@ -18,6 +18,21 @@ import pytest
 from homodyne.analysis.core import HomodyneAnalysisCore
 from homodyne.core.config import ConfigManager
 
+# Test PyMC availability
+try:
+    import pymc as pm
+    import arviz as az
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    pm = None
+    az = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
+
 
 class TestMCMCParameterBoundsRegression:
     """Regression tests for MCMC parameter bounds initialization issues."""

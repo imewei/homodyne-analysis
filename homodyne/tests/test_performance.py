@@ -423,7 +423,7 @@ class TestCachePerformance:
 
         cache_time = time.perf_counter() - start_time
         denominator = n_iterations * len(test_arrays)
-        avg_cache_time = cache_time / denominator if denominator > 0 else float('inf')
+        avg_cache_time = cache_time / denominator if denominator > 0 else float("inf")
 
         # Cache hits should be very fast
         assert (
@@ -794,11 +794,8 @@ class TestStableBenchmarking:
         print(
             f"Outliers detected: {benchmark_results['outlier_count']}/{len(benchmark_results['times'])}"
         )
-        print(
-            f"Performance variance (CV): {
-                benchmark_results['std'] /
-                mean_time:.2f}"
-        )
+        cv = benchmark_results["std"] / mean_time if mean_time > 0 else float("inf")
+        print(f"Performance variance (CV): {cv:.2f}")
 
         # Additional checks for performance regression
         if mean_time > 0.1:  # Flag if slower than 100ms
@@ -927,9 +924,13 @@ class TestOptimizationFeatures:
 
         # Results should be identical
         # Extract numeric values if results are dictionaries
-        result1_value = result1.get('chi2', result1) if isinstance(result1, dict) else result1
-        result2_value = result2.get('chi2', result2) if isinstance(result2, dict) else result2
-        
+        result1_value = (
+            result1.get("chi2", result1) if isinstance(result1, dict) else result1
+        )
+        result2_value = (
+            result2.get("chi2", result2) if isinstance(result2, dict) else result2
+        )
+
         assert (
             abs(float(result1_value) - float(result2_value)) < 1e-10
         ), "Results should be identical with caching"
@@ -1319,12 +1320,11 @@ class TestRegressionBenchmarks:
         assert np.isfinite(result), "Chi-squared result should be finite"
         assert result >= 0, "Chi-squared should be non-negative"
 
+        cv = benchmark_results["std"] / mean_time if mean_time > 0 else float("inf")
         print(
             f"✓ Chi-squared benchmark completed: {
                 mean_time *
-                1000:.2f}ms mean, CV={
-                benchmark_results['std'] /
-                mean_time:.2f}"
+                1000:.2f}ms mean, CV={cv:.2f}"
         )
 
         # Store result for pytest-benchmark (call the benchmark function once
@@ -1469,12 +1469,11 @@ class TestRegressionBenchmarks:
         assert np.all(np.isfinite(result)), "All results should be finite"
         assert not np.allclose(result, 0), "Results shouldn't be all zeros"
 
+        cv = benchmark_results["std"] / mean_time if mean_time > 0 else float("inf")
         print(
             f"✓ Correlation benchmark completed: {
                 mean_time *
-                1000:.2f}ms mean, CV={
-                benchmark_results['std'] /
-                mean_time:.2f}"
+                1000:.2f}ms mean, CV={cv:.2f}"
         )
 
         # Performance validation with realistic expectations for JIT-compiled code
@@ -1507,12 +1506,11 @@ class TestRegressionBenchmarks:
         # for compatibility)
         benchmark(correlation_calculation)
 
+        cv = benchmark_results["std"] / mean_time if mean_time > 0 else float("inf")
         print(
             f"✓ Stable correlation benchmark: {
                 median_time *
-                1000:.1f}ms median, CV={
-                benchmark_results['std'] /
-                mean_time:.2f}"
+                1000:.1f}ms median, CV={cv:.2f}"
         )
 
 
@@ -1554,8 +1552,8 @@ class TestPerformanceRegression:
 
         if is_ci:
             # CI environments: more lenient threshold due to virtualization
-            # overhead
-            max_acceptable = 0.010  # 10ms for CI
+            # overhead (up to 20x slower as per baselines)
+            max_acceptable = 0.040  # 40ms for CI (20x the 2ms local threshold)
             baseline_description = "CI environment"
         else:
             # Local development: stricter threshold
@@ -1611,8 +1609,8 @@ class TestPerformanceRegression:
         ).lower() in ("true", "1")
 
         if is_ci:
-            # CI environments: more lenient threshold
-            max_acceptable = 0.005  # 5ms for CI
+            # CI environments: more lenient threshold (up to 20x slower as per baselines)
+            max_acceptable = 0.020  # 20ms for CI (20x the 1ms local threshold)
             baseline_description = "CI environment"
         else:
             # Local development: stricter threshold
@@ -1703,7 +1701,11 @@ class TestPerformanceRegression:
             # Scale up by running multiple iterations in each timing
             # measurement
             iterations_per_measurement = max(
-                10, int(min_reliable_time / max(float(corr_median), float(chi2_median), 1e-6))
+                10,
+                int(
+                    min_reliable_time
+                    / max(float(corr_median), float(chi2_median), 1e-6)
+                ),
             )
 
             # Re-measure with scaled workload
@@ -2124,8 +2126,12 @@ class TestMCMCThinningPerformance:
             thinning_times.append(time.time() - start_time)
 
         # Calculate average times
-        avg_baseline = sum(baseline_times) / len(baseline_times) if len(baseline_times) > 0 else 0
-        avg_thinning = sum(thinning_times) / len(thinning_times) if len(thinning_times) > 0 else 0
+        avg_baseline = (
+            sum(baseline_times) / len(baseline_times) if len(baseline_times) > 0 else 0
+        )
+        avg_thinning = (
+            sum(thinning_times) / len(thinning_times) if len(thinning_times) > 0 else 0
+        )
 
         # Thinning should not significantly slow down setup
         # Allow up to 50% overhead for thinning configuration
@@ -2333,26 +2339,32 @@ class TestNumbaCompilationDiagnostics:
         # Check signatures exist (indicates successful compilation)
         # Only check signatures if numba is available and functions are compiled
         try:
-            if hasattr(calculate_diffusion_coefficient_numba, 'signatures'):
-                signatures = getattr(calculate_diffusion_coefficient_numba, 'signatures', [])
+            if hasattr(calculate_diffusion_coefficient_numba, "signatures"):
+                signatures = getattr(
+                    calculate_diffusion_coefficient_numba, "signatures", []
+                )
                 print(f"1. Diffusion coef signatures: {len(signatures)}")
                 assert len(signatures) > 0, "Diffusion function not compiled"
             else:
                 print("1. Diffusion coef: Using Python fallback (numba not available)")
-                
-            if hasattr(calculate_shear_rate_numba, 'signatures'):
-                signatures = getattr(calculate_shear_rate_numba, 'signatures', [])
+
+            if hasattr(calculate_shear_rate_numba, "signatures"):
+                signatures = getattr(calculate_shear_rate_numba, "signatures", [])
                 print(f"2. Shear rate signatures: {len(signatures)}")
                 assert len(signatures) > 0, "Shear rate function not compiled"
             else:
                 print("2. Shear rate: Using Python fallback (numba not available)")
-                
-            if hasattr(create_time_integral_matrix_numba, 'signatures'):
-                signatures = getattr(create_time_integral_matrix_numba, 'signatures', [])
+
+            if hasattr(create_time_integral_matrix_numba, "signatures"):
+                signatures = getattr(
+                    create_time_integral_matrix_numba, "signatures", []
+                )
                 print(f"3. Time integral matrix signatures: {len(signatures)}")
                 assert len(signatures) > 0, "Matrix function not compiled"
             else:
-                print("3. Time integral matrix: Using Python fallback (numba not available)")
+                print(
+                    "3. Time integral matrix: Using Python fallback (numba not available)"
+                )
         except AttributeError:
             print("Numba signatures not available - using Python fallback functions")
 
@@ -2396,9 +2408,11 @@ class TestNumbaCompilationDiagnostics:
         )
 
         # Performance should meet or exceed baselines
-        performance_factor = diffusion_time / (
-            baselines["diffusion_coefficient_ms"] / 1000
-        )
+        baseline_time_seconds = baselines["diffusion_coefficient_ms"] / 1000
+        if baseline_time_seconds > 0:
+            performance_factor = diffusion_time / baseline_time_seconds
+        else:
+            performance_factor = float("inf")  # Handle zero baseline gracefully
         print(
             f"Performance factor: {
                 performance_factor:.2f}x (1.0 = baseline)"
@@ -2431,7 +2445,7 @@ def run_basic_performance_regression_test() -> bool:
     """
     print("Running performance tests using existing codebase infrastructure...")
     print("The original homodyne codebase has comprehensive performance optimizations:")
-    
+
     # Placeholder implementation - always return True for now
     return True
 
@@ -2627,7 +2641,7 @@ class TestBatchOptimizationFeatures:
         # Time sequential processing manually (since we can only benchmark one
         # function)
         import time
-        
+
         # Initialize sequential_result
         sequential_result = None
         start = time.perf_counter()
@@ -2832,11 +2846,13 @@ class TestBatchOptimizationFeatures:
             # Create a temporary config file since HomodyneAnalysisCore expects a file path
             import tempfile
             import json
-            
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False
+            ) as f:
                 json.dump(test_config, f, indent=2)
                 temp_config_path = f.name
-            
+
                 try:
                     analyzer = HomodyneAnalysisCore(temp_config_path)
 
@@ -2863,10 +2879,13 @@ class TestBatchOptimizationFeatures:
                     assert len(offset_batch) == n_angles
                     assert len(chi2_batch) == n_angles
 
-                    print("✓ Phase 3 integration test passed - batch functions work correctly")
+                    print(
+                        "✓ Phase 3 integration test passed - batch functions work correctly"
+                    )
                 finally:
                     # Clean up temporary file
                     import os
+
                     try:
                         os.unlink(temp_config_path)
                     except OSError:

@@ -14,10 +14,23 @@ from unittest.mock import MagicMock, Mock, patch
 import numpy as np
 import pytest
 
-from homodyne.run_homodyne import _generate_classical_plots
+# Check plotting dependencies
+try:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from homodyne.run_homodyne import _generate_classical_plots
+    PLOTTING_AVAILABLE = True
+except ImportError:
+    PLOTTING_AVAILABLE = False
+    _generate_classical_plots = None
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+pytestmark = pytest.mark.skipif(
+    not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+)
 
 
 class TestMethodSpecificPlotting:

@@ -23,6 +23,21 @@ from run_homodyne import main as run_homodyne_main
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
+# Test PyMC availability
+try:
+    import pymc as pm
+    import arviz as az
+    PYMC_AVAILABLE = True
+except ImportError:
+    PYMC_AVAILABLE = False
+    pm = None
+    az = None
+
+
+pytestmark = pytest.mark.skipif(
+    not PYMC_AVAILABLE, reason="PyMC is required for MCMC sampling but is not available."
+)
+
 
 class TestMCMCConvergenceDiagnostics:
     """Test MCMC convergence diagnostics and quality assessment."""
