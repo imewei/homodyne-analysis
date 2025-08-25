@@ -9,10 +9,12 @@ Covers both Nelder-Mead and Gurobi optimization methods, including automatic
 detection, configuration handling, and parameter bounds consistency with MCMC.
 """
 
-import pytest
-import numpy as np
 from unittest.mock import Mock
-from homodyne.optimization.classical import ClassicalOptimizer, GUROBI_AVAILABLE
+
+import numpy as np
+import pytest
+
+from homodyne.optimization.classical import GUROBI_AVAILABLE, ClassicalOptimizer
 
 
 class TestClassicalOptimizationConfigurationReading:
@@ -48,8 +50,7 @@ class TestClassicalOptimizationConfigurationReading:
         optimizer = ClassicalOptimizer(mock_core, test_config)
 
         # Test that it can access initial parameters correctly
-        expected_values = np.array(
-            [1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0])
+        expected_values = np.array([1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0])
         actual_values = np.array(
             test_config["initial_parameters"]["values"], dtype=np.float64
         )
@@ -145,8 +146,7 @@ class TestClassicalOptimizationConfigurationReading:
 
         for i, bound in enumerate(param_bounds):
             if i < effective_param_count:
-                bounds.append((bound.get("min", -np.inf),
-                              bound.get("max", np.inf)))
+                bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
 
         # Expected bounds should match what's in the test_config above
         expected_bounds = [(1.0, 1000000), (-1.5, -0.5), (-100, 100)]
@@ -212,8 +212,7 @@ class TestClassicalOptimizationConfigurationReading:
         static_parameters = initial_parameters[:effective_param_count]
 
         expected_static_params = np.array([18000, -1.59, 3.10])
-        np.testing.assert_array_equal(
-            static_parameters, expected_static_params)
+        np.testing.assert_array_equal(static_parameters, expected_static_params)
 
         # Test bounds for static mode
         param_bounds = test_config.get("parameter_space", {}).get("bounds", [])
@@ -348,9 +347,7 @@ class TestClassicalOptimizationConfigurationReading:
         initial_params = np.array(
             realistic_config["initial_parameters"]["values"], dtype=np.float64
         )
-        param_bounds = realistic_config.get(
-            "parameter_space", {}).get(
-            "bounds", [])
+        param_bounds = realistic_config.get("parameter_space", {}).get("bounds", [])
         opt_config = optimizer.optimization_config
 
         # Verify values match expected configuration
@@ -511,9 +508,9 @@ class TestGurobiIntegration:
         assert success, f"Gurobi optimization should succeed, got: {result}"
         assert hasattr(result, "x"), "Result should have optimal parameters"
         assert hasattr(result, "fun"), "Result should have optimal value"
-        assert hasattr(
-            result,
-            "method") and result.method == "Gurobi-QP"  # type: ignore
+        assert (
+            hasattr(result, "method") and result.method == "Gurobi-QP"
+        )  # type: ignore
 
     @pytest.mark.skipif(not GUROBI_AVAILABLE, reason="Gurobi not available")
     def test_gurobi_with_bounds_constraints(self):
@@ -525,8 +522,9 @@ class TestGurobiIntegration:
             # Optimum at x=10, but we'll constrain to [0,5]
             return (x - 10) ** 2
 
-        test_config = {"parameter_space": {
-            "bounds": [{"name": "x", "min": 0.0, "max": 5.0}]}}
+        test_config = {
+            "parameter_space": {"bounds": [{"name": "x", "min": 0.0, "max": 5.0}]}
+        }
 
         mock_core = Mock()
         optimizer = ClassicalOptimizer(mock_core, test_config)
@@ -541,8 +539,7 @@ class TestGurobiIntegration:
         if success:
             # Should find optimum at boundary x=5 (closest to true optimum
             # x=10)
-            assert hasattr(
-                result, "x"), "Result should have x attribute on success"
+            assert hasattr(result, "x"), "Result should have x attribute on success"
             # type: ignore
             assert 0.0 <= result.x[0] <= 5.0, "Solution should respect bounds"
 

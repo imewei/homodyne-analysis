@@ -2,9 +2,10 @@
 Type stubs for pyxpcsviewer XPCS data handling library.
 """
 
-from typing import Any, Dict, List, Optional, Union
-import numpy as np
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import numpy as np
 
 class DataExtractor:
     def __init__(self, file_path: Union[str, Path]) -> None: ...

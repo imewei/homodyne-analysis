@@ -5,14 +5,16 @@ This module tests the enhanced plotting capabilities that generate separate
 plots for each optimization method (e.g., Nelder-Mead, Gurobi).
 """
 
-from homodyne.run_homodyne import _generate_classical_plots
-import pytest
-import numpy as np
+import os
+import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import sys
-import os
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
+import pytest
+
+from homodyne.run_homodyne import _generate_classical_plots
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -128,7 +130,8 @@ class TestMethodSpecificPlotting:
 
     @patch("homodyne.plotting.plot_c2_heatmaps")
     def test_generate_classical_plots_without_method_results(
-            self, mock_plot_c2, mock_analyzer, mock_result_without_methods, test_data):
+        self, mock_plot_c2, mock_analyzer, mock_result_without_methods, test_data
+    ):
         """Test fallback behavior when method_results not available."""
         mock_plot_c2.return_value = True
         best_params, phi_angles, c2_exp = test_data
@@ -181,12 +184,8 @@ class TestMethodSpecificPlotting:
 
             # Call the function
             _generate_classical_plots(
-                mock_analyzer,
-                best_params,
-                result,
-                phi_angles,
-                c2_exp,
-                output_dir)
+                mock_analyzer, best_params, result, phi_angles, c2_exp, output_dir
+            )
 
             # Should have been called only once (for successful method)
             assert mock_plot_c2.call_count == 1
@@ -223,12 +222,8 @@ class TestMethodSpecificPlotting:
 
             # Call the function
             _generate_classical_plots(
-                mock_analyzer,
-                best_params,
-                result,
-                phi_angles,
-                c2_exp,
-                output_dir)
+                mock_analyzer, best_params, result, phi_angles, c2_exp, output_dir
+            )
 
             # Should have been called only once (for method with parameters)
             assert mock_plot_c2.call_count == 1

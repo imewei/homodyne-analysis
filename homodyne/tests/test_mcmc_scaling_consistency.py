@@ -6,18 +6,19 @@ system that ensures users are aware when MCMC and classical optimization methods
 use different scaling approaches.
 """
 
-import pytest
-import numpy as np
-from unittest.mock import Mock, patch
 import logging
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Import MCMC module and check availability
 try:
-    from homodyne.optimization.mcmc import MCMCSampler, PYMC_AVAILABLE
+    from homodyne.optimization.mcmc import PYMC_AVAILABLE, MCMCSampler
 
     mcmc_available = PYMC_AVAILABLE
 except ImportError:
@@ -118,8 +119,7 @@ class TestMCMCScalingConsistency:
         }
 
     @pytest.mark.skipif(not mcmc_available, reason="PyMC not available")
-    def test_mcmc_sampler_initialization_with_scaling_config(
-            self, mock_analysis_core):
+    def test_mcmc_sampler_initialization_with_scaling_config(self, mock_analysis_core):
         """Test that MCMC sampler initializes correctly with scaling configuration."""
         if MCMCSampler is None:
             pytest.skip("MCMCSampler not available")
@@ -145,9 +145,7 @@ class TestMCMCScalingConsistency:
             mock_analysis_core.config = config_with_scaling_inconsistency
             if MCMCSampler is None:
                 pytest.skip("MCMCSampler not available")
-            sampler = MCMCSampler(
-                mock_analysis_core,
-                config_with_scaling_inconsistency)
+            sampler = MCMCSampler(mock_analysis_core, config_with_scaling_inconsistency)
 
             # Mock PyMC model building to avoid actual computation
             with patch.object(sampler, "_build_bayesian_model_optimized") as mock_build:
@@ -187,9 +185,7 @@ class TestMCMCScalingConsistency:
         mock_analysis_core.config = config_with_scaling_consistency
         if MCMCSampler is None:
             pytest.skip("MCMCSampler not available")
-        sampler = MCMCSampler(
-            mock_analysis_core,
-            config_with_scaling_consistency)
+        sampler = MCMCSampler(mock_analysis_core, config_with_scaling_consistency)
 
         # Check that configuration indicates full forward model
         chi_config = sampler.config.get("advanced_settings", {}).get(
@@ -241,16 +237,13 @@ class TestMCMCScalingConsistency:
     def test_config_keys_exist(self):
         """Test that all required configuration keys exist in our expected structure."""
         required_keys = [
-            ("advanced_settings",
-             "chi_squared_calculation",
-             "_scaling_optimization_note",
-             ),
-            ("performance_settings",
-             "noise_model",
-             "use_simple_forward_model"),
-            ("performance_settings",
-             "noise_model",
-             "sigma_prior"),
+            (
+                "advanced_settings",
+                "chi_squared_calculation",
+                "_scaling_optimization_note",
+            ),
+            ("performance_settings", "noise_model", "use_simple_forward_model"),
+            ("performance_settings", "noise_model", "sigma_prior"),
         ]
 
         test_config = {
@@ -284,9 +277,7 @@ class TestConfigurationConsistency:
         }
 
         # This would be validated against actual config files
-        test_noise_config = {
-            "use_simple_forward_model": True,
-            "sigma_prior": 0.1}
+        test_noise_config = {"use_simple_forward_model": True, "sigma_prior": 0.1}
 
         for key, expected_type in expected_structure.items():
             assert key in test_noise_config

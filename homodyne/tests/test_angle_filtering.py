@@ -9,16 +9,17 @@ This module tests the enhanced chi-squared calculation that includes:
 - Integration with optimization methods
 """
 
-from homodyne.analysis.core import HomodyneAnalysisCore
+import json
+import os
+import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
 import numpy as np
 import pytest
-import tempfile
-import json
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
-import sys
-import os
+from homodyne.analysis.core import HomodyneAnalysisCore
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -29,84 +30,95 @@ class TestAngleFilteringCore:
     @pytest.fixture
     def mock_config_with_angles(self):
         """Configuration for angle filtering tests."""
-        return {"metadata": {"config_version": "5.1",
-                             "description": "Test configuration for angle filtering",
-                             },
-                "analyzer_parameters": {"temporal": {"dt": 0.1,
-                                                     "start_frame": 1,
-                                                     "end_frame": 100},
-                                        "scattering": {"wavevector_q": 0.005},
-                                        "geometry": {"stator_rotor_gap": 2000000},
-                                        "computational": {"num_threads": 4},
-                                        },
-                "experimental_data": {"data_folder_path": "./test_data/",
-                                      "data_file_name": "test_data.hdf",
-                                      "phi_angles_path": "./test_data/",
-                                      "phi_angles_file": "phi_angles.txt",
-                                      },
-                "initial_parameters": {"values": [1000.0,
-                                                  -0.1,
-                                                  50.0,
-                                                  0.01,
-                                                  -0.5,
-                                                  0.001,
-                                                  0.0],
-                                       "parameter_names": ["D0",
-                                                           "alpha",
-                                                           "D_offset",
-                                                           "gamma_dot_t0",
-                                                           "beta",
-                                                           "gamma_dot_t_offset",
-                                                           "phi0",
-                                                           ],
-                                       },
-                "advanced_settings": {"data_loading": {"use_diagonal_correction": True},
-                                      "chi_squared_calculation": {"validity_check": {"check_positive_D0": True},
-                                                                  "uncertainty_estimation_factor": 0.1,
-                                                                  "minimum_sigma": 1e-10,
-                                                                  "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
-                                                                  },
-                                      },
-                "parameter_space": {"bounds": [{"name": "D0",
-                                    "min": 1e-3,
-                                                "max": 1e6,
-                                                "type": "Normal",
-                                                },
-                                               {"name": "alpha",
-                                                "min": -2.0,
-                                                "max": 2.0,
-                                                "type": "Normal",
-                                                },
-                                               {"name": "D_offset",
-                                                "min": -5000,
-                                                "max": 5000,
-                                                "type": "Normal",
-                                                },
-                                               {"name": "gamma_dot_t0",
-                                                "min": 1e-6,
-                                                "max": 1.0,
-                                                "type": "Normal",
-                                                },
-                                               {"name": "beta",
-                                                "min": -2.0,
-                                                "max": 2.0,
-                                                "type": "Normal",
-                                                },
-                                               {"name": "gamma_dot_t_offset",
-                                                "min": -0.1,
-                                                "max": 0.1,
-                                                "type": "Normal",
-                                                },
-                                               {"name": "phi0",
-                                                "min": -10.0,
-                                                "max": 10.0,
-                                                "type": "Normal",
-                                                },
-                                               ]},
-                "performance_settings": {"optimization_counter_log_frequency": 100,
-                                         "parallel_execution": True,
-                                         },
-                }
+        return {
+            "metadata": {
+                "config_version": "5.1",
+                "description": "Test configuration for angle filtering",
+            },
+            "analyzer_parameters": {
+                "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 100},
+                "scattering": {"wavevector_q": 0.005},
+                "geometry": {"stator_rotor_gap": 2000000},
+                "computational": {"num_threads": 4},
+            },
+            "experimental_data": {
+                "data_folder_path": "./test_data/",
+                "data_file_name": "test_data.hdf",
+                "phi_angles_path": "./test_data/",
+                "phi_angles_file": "phi_angles.txt",
+            },
+            "initial_parameters": {
+                "values": [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0],
+                "parameter_names": [
+                    "D0",
+                    "alpha",
+                    "D_offset",
+                    "gamma_dot_t0",
+                    "beta",
+                    "gamma_dot_t_offset",
+                    "phi0",
+                ],
+            },
+            "advanced_settings": {
+                "data_loading": {"use_diagonal_correction": True},
+                "chi_squared_calculation": {
+                    "validity_check": {"check_positive_D0": True},
+                    "uncertainty_estimation_factor": 0.1,
+                    "minimum_sigma": 1e-10,
+                    "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
+                },
+            },
+            "parameter_space": {
+                "bounds": [
+                    {
+                        "name": "D0",
+                        "min": 1e-3,
+                        "max": 1e6,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "D_offset",
+                        "min": -5000,
+                        "max": 5000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 1e-6,
+                        "max": 1.0,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "beta",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "gamma_dot_t_offset",
+                        "min": -0.1,
+                        "max": 0.1,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "phi0",
+                        "min": -10.0,
+                        "max": 10.0,
+                        "type": "Normal",
+                    },
+                ]
+            },
+            "performance_settings": {
+                "optimization_counter_log_frequency": 100,
+                "parallel_execution": True,
+            },
+        }
 
     @pytest.fixture
     def test_phi_angles(self):
@@ -186,8 +198,7 @@ class TestAngleFilteringCore:
 
         assert optimization_indices == expected_optimization_indices
 
-    def test_chi_squared_angle_filtering_mock(
-            self, mock_analyzer, test_phi_angles):
+    def test_chi_squared_angle_filtering_mock(self, mock_analyzer, test_phi_angles):
         """Test chi-squared calculation with angle filtering using mocked data."""
 
         # Create mock experimental data
@@ -231,8 +242,7 @@ class TestAngleFilteringCore:
         # They should be different (unless by coincidence)
         assert chi2_all != chi2_filtered
 
-    def test_detailed_chi_squared_with_filtering(
-            self, mock_analyzer, test_phi_angles):
+    def test_detailed_chi_squared_with_filtering(self, mock_analyzer, test_phi_angles):
         """Test detailed chi-squared results with angle filtering."""
 
         # Create mock experimental data
@@ -286,8 +296,7 @@ class TestAngleFilteringCore:
         # Total chi-squared should be different
         assert result_all["chi_squared"] != result_filtered["chi_squared"]
 
-    def test_degrees_of_freedom_calculation(
-            self, mock_analyzer, test_phi_angles):
+    def test_degrees_of_freedom_calculation(self, mock_analyzer, test_phi_angles):
         """Test that degrees of freedom are calculated correctly for filtered angles."""
 
         # Create simple mock data
@@ -315,8 +324,7 @@ class TestAngleFilteringCore:
         expected_data_points_filtered = (
             len(optimization_indices) * 25
         )  # 25 points per angle
-        expected_dof_filtered = max(
-            expected_data_points_filtered - n_params, 1)
+        expected_dof_filtered = max(expected_data_points_filtered - n_params, 1)
 
         expected_data_points_all = n_angles * 25
         expected_dof_all = max(expected_data_points_all - n_params, 1)
@@ -459,7 +467,7 @@ class TestAngleFilteringOptimizationIntegration:
     def test_mcmc_sampler_uses_angle_filtering(self):
         """Test that MCMC sampler uses angle filtering by default."""
         try:
-            from homodyne.optimization.mcmc import MCMCSampler, PYMC_AVAILABLE
+            from homodyne.optimization.mcmc import PYMC_AVAILABLE, MCMCSampler
 
             if not PYMC_AVAILABLE:
                 pytest.skip("PyMC not available")
@@ -519,8 +527,7 @@ class TestAngleFilteringOptimizationIntegration:
 
             for method_name in methods_to_check:
                 if hasattr(sampler, method_name):
-                    method_sig = inspect.signature(
-                        getattr(sampler, method_name))
+                    method_sig = inspect.signature(getattr(sampler, method_name))
                     assert (
                         "filter_angles_for_optimization" in method_sig.parameters
                     ), f"Missing parameter in {method_name}"
@@ -555,10 +562,8 @@ class TestAngleFilteringOptimizationIntegration:
             )
 
             # Mock the core method to capture the call
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=10.0)
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=10.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
 
@@ -572,7 +577,7 @@ class TestAngleFilteringOptimizationIntegration:
 
         # Test MCMC
         try:
-            from homodyne.optimization.mcmc import MCMCSampler, PYMC_AVAILABLE
+            from homodyne.optimization.mcmc import PYMC_AVAILABLE, MCMCSampler
 
             if PYMC_AVAILABLE:
                 import inspect
@@ -654,7 +659,8 @@ class TestAngleFilteringEdgeCases:
                     break
 
             assert (
-                is_included == should_include), f"Angle {angle}° should be {
+                is_included == should_include
+            ), f"Angle {angle}° should be {
                 'included' if should_include else 'excluded'}"
 
     def test_optimization_methods_use_config_manager(self):
@@ -680,10 +686,8 @@ class TestAngleFilteringEdgeCases:
             )
 
             # Mock the core method to capture the call
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=10.0)
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=10.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
 

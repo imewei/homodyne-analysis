@@ -5,25 +5,26 @@ Tests for JSON Configuration and Parameter Validation
 Tests JSON parsing, configuration validation, and parameter correctness.
 """
 
-import pytest
 import json
-import numpy as np
-from pathlib import Path
-from unittest.mock import patch, mock_open
 import tempfile
-
-# Import the modules to test
-
-
-from homodyne.tests.fixtures import (
-    dummy_config,
-    temp_directory,
-    create_minimal_config_file,
-    create_invalid_config_file,
-)
+from pathlib import Path
 
 # Import config management from homodyne module
 from typing import Any
+from unittest.mock import mock_open, patch
+
+import numpy as np
+import pytest
+
+from homodyne.tests.fixtures import (
+    create_invalid_config_file,
+    create_minimal_config_file,
+    dummy_config,
+    temp_directory,
+)
+
+# Import the modules to test
+
 
 try:
     from homodyne import ConfigManager as _HomodyneConfigManager
@@ -137,8 +138,7 @@ class TestJSONParsing:
             else:
                 # This is acceptable - some implementations might raise
                 # FileNotFoundError
-                assert "not found" in str(e).lower(
-                ) or "no such file" in str(e).lower()
+                assert "not found" in str(e).lower() or "no such file" in str(e).lower()
         finally:
             os.chdir(original_cwd)
 
@@ -149,8 +149,9 @@ class TestParameterValidation:
     def test_parameter_names_consistency(self, dummy_config):
         """Test that parameter names are consistent across configuration sections."""
         initial_params = dummy_config["initial_parameters"]["parameter_names"]
-        bounds_params = [bound["name"]
-                         for bound in dummy_config["parameter_space"]["bounds"]]
+        bounds_params = [
+            bound["name"] for bound in dummy_config["parameter_space"]["bounds"]
+        ]
 
         # All initial parameters should have corresponding bounds
         for param in initial_params:
@@ -178,7 +179,8 @@ class TestParameterValidation:
             assert "min" in bound
             assert "max" in bound
             assert (
-                bound["min"] < bound["max"]), f"Invalid bound for {
+                bound["min"] < bound["max"]
+            ), f"Invalid bound for {
                 bound['name']}: {
                 bound['min']} >= {
                 bound['max']}"
@@ -201,7 +203,8 @@ class TestParameterValidation:
         initial_values = dummy_config["initial_parameters"]["values"]
         parameter_names = dummy_config["initial_parameters"]["parameter_names"]
         bounds = {
-            bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]}
+            bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]
+        }
 
         for param_name, value in zip(parameter_names, initial_values):
             if param_name in bounds:
@@ -339,16 +342,19 @@ class TestParameterTypes:
                 # LogNormal parameters should have positive bounds
                 if bound["type"] == "LogNormal":
                     assert (
-                        bound["min"] > 0), f"LogNormal parameter {
+                        bound["min"] > 0
+                    ), f"LogNormal parameter {
                         bound['name']} must have positive min bound"
                     assert (
-                        bound["max"] > 0), f"LogNormal parameter {
+                        bound["max"] > 0
+                    ), f"LogNormal parameter {
                         bound['name']} must have positive max bound"
 
     def test_physical_parameter_constraints(self, dummy_config):
         """Test physical constraints on specific parameters."""
         bounds = {
-            bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]}
+            bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]
+        }
 
         # Diffusion coefficient constraints
         if "D0" in bounds:
@@ -370,8 +376,7 @@ class TestParameterTypes:
         if "phi0" in bounds:
             phi_bound = bounds["phi0"]
             # Angle should be in reasonable range
-            assert phi_bound["min"] >= - \
-                180, "phi0 minimum should be >= -180 degrees"
+            assert phi_bound["min"] >= -180, "phi0 minimum should be >= -180 degrees"
             assert phi_bound["max"] <= 180, "phi0 maximum should be <= 180 degrees"
 
 
@@ -434,8 +439,7 @@ class TestConfigurationValidation:
 
                 if "figure_size" in plotting:
                     fig_size = plotting["figure_size"]
-                    assert isinstance(
-                        fig_size, list), "Figure size should be a list"
+                    assert isinstance(fig_size, list), "Figure size should be a list"
                     assert (
                         len(fig_size) == 2
                     ), "Figure size should have exactly 2 elements"
@@ -478,10 +482,8 @@ class TestJSONSchemaCompliance:
         # Check temporal parameters
         temporal = dummy_config["analyzer_parameters"]["temporal"]
         assert isinstance(temporal["dt"], (int, float)), "dt must be numeric"
-        assert isinstance(temporal["start_frame"],
-                          int), "start_frame must be integer"
-        assert isinstance(temporal["end_frame"],
-                          int), "end_frame must be integer"
+        assert isinstance(temporal["start_frame"], int), "start_frame must be integer"
+        assert isinstance(temporal["end_frame"], int), "end_frame must be integer"
 
     def test_string_fields_in_config(self, dummy_config):
         """Test that string fields are properly typed."""
@@ -495,8 +497,7 @@ class TestJSONSchemaCompliance:
 
         for field in string_fields:
             if field in exp_data:
-                assert isinstance(
-                    exp_data[field], str), f"{field} should be a string"
+                assert isinstance(exp_data[field], str), f"{field} should be a string"
                 assert len(exp_data[field]) > 0, f"{field} should not be empty"
 
     def test_boolean_fields_in_config(self, dummy_config):
@@ -518,7 +519,8 @@ class TestJSONSchemaCompliance:
                     ):
                         # These should probably be booleans
                         assert isinstance(
-                            value, bool), f"{current_path} should be boolean but is {
+                            value, bool
+                        ), f"{current_path} should be boolean but is {
                             type(value)}"
                     else:
                         check_boolean_recursive(value, current_path)

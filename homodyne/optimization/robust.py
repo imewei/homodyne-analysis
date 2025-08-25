@@ -30,8 +30,8 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -98,8 +98,7 @@ class RobustHomodyneOptimizer:
 
         # Check dependencies
         if not CVXPY_AVAILABLE:
-            logger.warning(
-                "CVXPY not available - robust optimization disabled")
+            logger.warning("CVXPY not available - robust optimization disabled")
         if not GUROBI_AVAILABLE:
             logger.warning("Gurobi not available - using CVXPY default solver")
 
@@ -181,8 +180,7 @@ class RobustHomodyneOptimizer:
                     initial_parameters, phi_angles, c2_experimental, **kwargs
                 )
             else:
-                raise ValueError(
-                    f"Unknown robust optimization method: {method}")
+                raise ValueError(f"Unknown robust optimization method: {method}")
 
             optimization_time = time.time() - start_time
 
@@ -190,7 +188,8 @@ class RobustHomodyneOptimizer:
                 self.best_params_robust = result[0]
                 logger.info(
                     f"Robust optimization completed in {
-                        optimization_time:.2f}s")
+                        optimization_time:.2f}s"
+                )
             else:
                 logger.warning("Robust optimization failed to converge")
 
@@ -253,8 +252,7 @@ class RobustHomodyneOptimizer:
         try:
             # Check CVXPY availability
             if cp is None:
-                raise ImportError(
-                    "CVXPY not available for robust optimization")
+                raise ImportError("CVXPY not available for robust optimization")
 
             # CVXPY variables
             theta = cp.Variable(n_params)
@@ -272,8 +270,7 @@ class RobustHomodyneOptimizer:
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
             linear_correction = jacobian @ delta_theta
-            linear_correction_reshaped = linear_correction.reshape(
-                c2_fitted_init.shape)
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
             # Perturbed experimental data
@@ -314,14 +311,14 @@ class RobustHomodyneOptimizer:
 
             # Try CLARABEL first (most reliable open-source solver)
             try:
-                logger.debug(
-                    "Attempting to solve with CLARABEL (primary solver)")
+                logger.debug("Attempting to solve with CLARABEL (primary solver)")
                 problem.solve(solver=cp.CLARABEL)
                 if problem.status in ["optimal", "optimal_inaccurate"]:
                     solver_success = True
                     logger.debug(
                         f"CLARABEL succeeded with status: {
-                            problem.status}")
+                            problem.status}"
+                    )
             except Exception as e:
                 logger.debug(f"CLARABEL failed: {str(e)}")
 
@@ -334,7 +331,8 @@ class RobustHomodyneOptimizer:
                         solver_success = True
                         logger.debug(
                             f"CVXOPT succeeded with status: {
-                                problem.status}")
+                                problem.status}"
+                        )
                 except Exception as e:
                     logger.debug(f"CVXOPT failed: {str(e)}")
 
@@ -347,7 +345,8 @@ class RobustHomodyneOptimizer:
                         solver_success = True
                         logger.debug(
                             f"SCS succeeded with status: {
-                                problem.status}")
+                                problem.status}"
+                        )
                 except Exception as e:
                     logger.debug(f"SCS failed: {str(e)}")
 
@@ -361,7 +360,8 @@ class RobustHomodyneOptimizer:
 
                 if total_variables <= gurobi_size_limit:
                     logger.info(
-                        f"SCS failed. Trying Gurobi (problem size {total_variables} within limit).")
+                        f"SCS failed. Trying Gurobi (problem size {total_variables} within limit)."
+                    )
                     gurobi_configs = [
                         {
                             "QCPDual": 1,
@@ -396,27 +396,30 @@ class RobustHomodyneOptimizer:
                                 config_debug = config.copy()
                                 config_debug["OutputFlag"] = 1
                                 problem.solve(
-                                    solver=cp.GUROBI, verbose=True, **config_debug)
+                                    solver=cp.GUROBI, verbose=True, **config_debug
+                                )
                             else:
                                 problem.solve(solver=cp.GUROBI, **config)
 
-                            if problem.status in [
-                                    "optimal", "optimal_inaccurate"]:
+                            if problem.status in ["optimal", "optimal_inaccurate"]:
                                 solver_success = True
                                 logger.info(
                                     f"Gurobi succeeded with config {
-                                        i + 1}")
+                                        i + 1}"
+                                )
                                 break
                         except Exception as e:
                             logger.debug(
                                 f"Gurobi config {
                                     i +
                                     1} failed: {
-                                    str(e)}")
+                                    str(e)}"
+                            )
                             continue
                 else:
                     logger.info(
-                        f"Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)")
+                        f"Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)"
+                    )
 
             if not solver_success:
                 logger.error("All solvers failed to find a solution")
@@ -432,17 +435,16 @@ class RobustHomodyneOptimizer:
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
-                    percent_improvement = (
-                        improvement / initial_chi_squared) * 100
+                    percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
                         f"DRO final χ²: {
                             final_chi_squared:.6f} (improvement: {
                             improvement:.6f}, {
-                            percent_improvement:.2f}%)")
+                            percent_improvement:.2f}%)"
+                    )
                 else:
                     final_chi_squared = float("inf")
-                    logger.warning(
-                        "DRO optimization failed to find valid parameters")
+                    logger.warning("DRO optimization failed to find valid parameters")
 
                 info = {
                     "method": "distributionally_robust",
@@ -451,26 +453,19 @@ class RobustHomodyneOptimizer:
                     "final_chi_squared": final_chi_squared,
                     "uncertainty_radius": epsilon,
                     "n_iterations": getattr(
-                        getattr(
-                            problem,
-                            "solver_stats",
-                            {}),
-                        "num_iters",
-                        None),
+                        getattr(problem, "solver_stats", {}), "num_iters", None
+                    ),
                     "solve_time": getattr(
-                        getattr(
-                            problem,
-                            "solver_stats",
-                            {}),
-                        "solve_time",
-                        None),
+                        getattr(problem, "solver_stats", {}), "solve_time", None
+                    ),
                 }
 
                 return optimal_params, info
             else:
                 logger.error(
                     f"DRO optimization failed with status: {
-                        problem.status}")
+                        problem.status}"
+                )
                 return None, {
                     "status": problem.status,
                     "method": "distributionally_robust",
@@ -518,8 +513,7 @@ class RobustHomodyneOptimizer:
         initial_chi_squared = self._compute_chi_squared(
             theta_init, phi_angles, c2_experimental
         )
-        logger.info(
-            f"Scenario-based optimization with {n_scenarios} scenarios")
+        logger.info(f"Scenario-based optimization with {n_scenarios} scenarios")
         logger.info(f"Scenario initial χ²: {initial_chi_squared:.6f}")
 
         # Ensure n_scenarios is an int
@@ -542,8 +536,7 @@ class RobustHomodyneOptimizer:
         try:
             # Check CVXPY availability
             if cp is None:
-                raise ImportError(
-                    "CVXPY not available for robust optimization")
+                raise ImportError("CVXPY not available for robust optimization")
 
             # CVXPY variables
             theta = cp.Variable(n_params)
@@ -565,7 +558,8 @@ class RobustHomodyneOptimizer:
             for scenario_data in scenarios:
                 # Linearized fitted correlation function for scenario
                 c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                    theta_init, phi_angles, c2_experimental)
+                    theta_init, phi_angles, c2_experimental
+                )
                 delta_theta = theta - theta_init
                 # Reshape jacobian @ delta_theta to match c2_fitted_init shape
                 linear_correction = jacobian @ delta_theta
@@ -602,7 +596,8 @@ class RobustHomodyneOptimizer:
                     solver_success = True
                     logger.debug(
                         f"Scenario: CLARABEL succeeded with status: {
-                            problem.status}")
+                            problem.status}"
+                    )
             except Exception as e:
                 logger.debug(f"Scenario: CLARABEL failed: {str(e)}")
 
@@ -615,7 +610,8 @@ class RobustHomodyneOptimizer:
                         solver_success = True
                         logger.debug(
                             f"Scenario: CVXOPT succeeded with status: {
-                                problem.status}")
+                                problem.status}"
+                        )
                 except Exception as e:
                     logger.debug(f"Scenario: CVXOPT failed: {str(e)}")
 
@@ -628,7 +624,8 @@ class RobustHomodyneOptimizer:
                         solver_success = True
                         logger.debug(
                             f"Scenario: SCS succeeded with status: {
-                                problem.status}")
+                                problem.status}"
+                        )
                 except Exception as e:
                     logger.debug(f"Scenario: SCS failed: {str(e)}")
 
@@ -642,7 +639,8 @@ class RobustHomodyneOptimizer:
 
                 if total_variables <= gurobi_size_limit:
                     logger.info(
-                        f"Scenario: SCS failed. Trying Gurobi (problem size {total_variables} within limit).")
+                        f"Scenario: SCS failed. Trying Gurobi (problem size {total_variables} within limit)."
+                    )
                     gurobi_configs = [
                         {
                             "QCPDual": 1,
@@ -679,17 +677,18 @@ class RobustHomodyneOptimizer:
                                 solver_opts_debug = solver_opts.copy()
                                 solver_opts_debug["OutputFlag"] = 1
                                 problem.solve(
-                                    solver=cp.GUROBI, verbose=True, **solver_opts_debug)
+                                    solver=cp.GUROBI, verbose=True, **solver_opts_debug
+                                )
                             else:
                                 problem.solve(solver=cp.GUROBI, **solver_opts)
 
-                            if problem.status in [
-                                    "optimal", "optimal_inaccurate"]:
+                            if problem.status in ["optimal", "optimal_inaccurate"]:
                                 logger.info(
                                     f"Scenario: Gurobi succeeded with config {
                                         i +
                                         1}, status: {
-                                        problem.status}")
+                                        problem.status}"
+                                )
                                 gurobi_success = True
                                 solver_success = True
                                 break
@@ -702,16 +701,17 @@ class RobustHomodyneOptimizer:
                                 f"Scenario Gurobi config {
                                     i +
                                     1} exception: {
-                                    str(e)}")
+                                    str(e)}"
+                            )
                             continue
 
                     if not gurobi_success:
-                        logger.info(
-                            "Scenario: All Gurobi configurations failed.")
+                        logger.info("Scenario: All Gurobi configurations failed.")
                         solver_success = False
                 else:
                     logger.info(
-                        f"Scenario: Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)")
+                        f"Scenario: Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)"
+                    )
 
             if not solver_success:
                 logger.error("Scenario: All solvers failed to find a solution")
@@ -727,13 +727,13 @@ class RobustHomodyneOptimizer:
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
-                    percent_improvement = (
-                        improvement / initial_chi_squared) * 100
+                    percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
                         f"Scenario final χ²: {
                             final_chi_squared:.6f} (improvement: {
                             improvement:.6f}, {
-                            percent_improvement:.2f}%)")
+                            percent_improvement:.2f}%)"
+                    )
                 else:
                     final_chi_squared = float("inf")
                     logger.warning(
@@ -747,21 +747,17 @@ class RobustHomodyneOptimizer:
                     "final_chi_squared": final_chi_squared,
                     "n_scenarios": n_scenarios,
                     "solve_time": getattr(
-                        getattr(
-                            problem,
-                            "solver_stats",
-                            {}),
-                        "solve_time",
-                        None),
+                        getattr(problem, "solver_stats", {}), "solve_time", None
+                    ),
                 }
 
                 return optimal_params, info
             else:
                 logger.error(
                     f"Scenario optimization failed with status: {
-                        problem.status}")
-                return None, {"status": problem.status,
-                              "method": "scenario_robust"}
+                        problem.status}"
+                )
+                return None, {"status": problem.status, "method": "scenario_robust"}
 
         except Exception as e:
             logger.error(f"Scenario optimization error: {e}")
@@ -806,7 +802,8 @@ class RobustHomodyneOptimizer:
         )
         logger.info(
             f"Ellipsoidal robust optimization with uncertainty bound: {
-                gamma:.6f}")
+                gamma:.6f}"
+        )
         logger.info(f"Ellipsoidal initial χ²: {initial_chi_squared:.6f}")
 
         n_params = len(theta_init)
@@ -815,8 +812,7 @@ class RobustHomodyneOptimizer:
         try:
             # Check CVXPY availability
             if cp is None:
-                raise ImportError(
-                    "CVXPY not available for robust optimization")
+                raise ImportError("CVXPY not available for robust optimization")
 
             # CVXPY variables
             theta = cp.Variable(n_params)
@@ -829,8 +825,7 @@ class RobustHomodyneOptimizer:
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
             linear_correction = jacobian @ delta_theta
-            linear_correction_reshaped = linear_correction.reshape(
-                c2_fitted_init.shape)
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
             # Robust residuals (experimental - fitted)
@@ -859,8 +854,7 @@ class RobustHomodyneOptimizer:
             l1_reg = beta * cp.norm(delta_theta, 1)
 
             # Objective: robust least squares with regularization
-            objective = cp.Minimize(
-                cp.sum_squares(residuals) + l2_reg + l1_reg)
+            objective = cp.Minimize(cp.sum_squares(residuals) + l2_reg + l1_reg)
             problem = cp.Problem(objective, constraints)
 
             # Solve with progressive fallback chain: CLARABEL -> CVXOPT -> SCS
@@ -877,7 +871,8 @@ class RobustHomodyneOptimizer:
                     solver_success = True
                     logger.debug(
                         f"Ellipsoidal: CLARABEL succeeded with status: {
-                            problem.status}")
+                            problem.status}"
+                    )
             except Exception as e:
                 logger.debug(f"Ellipsoidal: CLARABEL failed: {str(e)}")
 
@@ -890,7 +885,8 @@ class RobustHomodyneOptimizer:
                         solver_success = True
                         logger.debug(
                             f"Ellipsoidal: CVXOPT succeeded with status: {
-                                problem.status}")
+                                problem.status}"
+                        )
                 except Exception as e:
                     logger.debug(f"Ellipsoidal: CVXOPT failed: {str(e)}")
 
@@ -903,7 +899,8 @@ class RobustHomodyneOptimizer:
                         solver_success = True
                         logger.debug(
                             f"Ellipsoidal: SCS succeeded with status: {
-                                problem.status}")
+                                problem.status}"
+                        )
                 except Exception as e:
                     logger.debug(f"Ellipsoidal: SCS failed: {str(e)}")
 
@@ -917,7 +914,8 @@ class RobustHomodyneOptimizer:
 
                 if total_variables <= gurobi_size_limit:
                     logger.info(
-                        f"Ellipsoidal: SCS failed. Trying Gurobi (problem size {total_variables} within limit).")
+                        f"Ellipsoidal: SCS failed. Trying Gurobi (problem size {total_variables} within limit)."
+                    )
                     gurobi_configs = [
                         {
                             "QCPDual": 1,
@@ -957,17 +955,18 @@ class RobustHomodyneOptimizer:
                                 config_debug = config.copy()
                                 config_debug["OutputFlag"] = 1
                                 problem.solve(
-                                    solver=cp.GUROBI, verbose=True, **config_debug)
+                                    solver=cp.GUROBI, verbose=True, **config_debug
+                                )
                             else:
                                 problem.solve(solver=cp.GUROBI, **config)
 
-                            if problem.status in [
-                                    "optimal", "optimal_inaccurate"]:
+                            if problem.status in ["optimal", "optimal_inaccurate"]:
                                 logger.info(
                                     f"Ellipsoidal: Gurobi succeeded with configuration {
                                         i +
                                         1}, status: {
-                                        problem.status}")
+                                        problem.status}"
+                                )
                                 gurobi_success = True
                                 solver_success = True
                                 break
@@ -980,20 +979,20 @@ class RobustHomodyneOptimizer:
                                 f"Ellipsoidal: Gurobi configuration {
                                     i +
                                     1} exception: {
-                                    str(e)}")
+                                    str(e)}"
+                            )
                             continue
 
                     if not gurobi_success:
-                        logger.info(
-                            "Ellipsoidal: All Gurobi configurations failed.")
+                        logger.info("Ellipsoidal: All Gurobi configurations failed.")
                         solver_success = False
                 else:
                     logger.info(
-                        f"Ellipsoidal: Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)")
+                        f"Ellipsoidal: Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)"
+                    )
 
             if not solver_success:
-                logger.error(
-                    "Ellipsoidal: All solvers failed to find a solution")
+                logger.error("Ellipsoidal: All solvers failed to find a solution")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -1006,13 +1005,13 @@ class RobustHomodyneOptimizer:
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
-                    percent_improvement = (
-                        improvement / initial_chi_squared) * 100
+                    percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
                         f"Ellipsoidal final χ²: {
                             final_chi_squared:.6f} (improvement: {
                             improvement:.6f}, {
-                            percent_improvement:.2f}%)")
+                            percent_improvement:.2f}%)"
+                    )
                 else:
                     final_chi_squared = float("inf")
                     logger.warning(
@@ -1026,21 +1025,17 @@ class RobustHomodyneOptimizer:
                     "final_chi_squared": final_chi_squared,
                     "uncertainty_bound": gamma,
                     "solve_time": getattr(
-                        getattr(
-                            problem,
-                            "solver_stats",
-                            {}),
-                        "solve_time",
-                        None),
+                        getattr(problem, "solver_stats", {}), "solve_time", None
+                    ),
                 }
 
                 return optimal_params, info
             else:
                 logger.error(
                     f"Ellipsoidal optimization failed with status: {
-                        problem.status}")
-                return None, {"status": problem.status,
-                              "method": "ellipsoidal_robust"}
+                        problem.status}"
+                )
+                return None, {"status": problem.status, "method": "ellipsoidal_robust"}
 
         except Exception as e:
             logger.error(f"Ellipsoidal optimization error: {e}")
@@ -1088,8 +1083,7 @@ class RobustHomodyneOptimizer:
                     lambda x: resample(x, n_samples=len(x)), -1, residuals
                 )
             else:
-                resampled_residuals = resample(
-                    residuals, n_samples=len(residuals))
+                resampled_residuals = resample(residuals, n_samples=len(residuals))
 
             # Create scenario by adding resampled residuals to fitted
             # correlation
@@ -1122,8 +1116,7 @@ class RobustHomodyneOptimizer:
             (fitted_correlation_function, jacobian_matrix)
         """
         # Compute fitted correlation function at theta (with scaling applied)
-        c2_fitted = self._compute_fitted_correlation(
-            theta, phi_angles, c2_experimental)
+        c2_fitted = self._compute_fitted_correlation(theta, phi_angles, c2_experimental)
 
         # Estimate Jacobian using finite differences on FITTED correlation
         epsilon = 1e-8
@@ -1143,8 +1136,7 @@ class RobustHomodyneOptimizer:
                 theta_minus, phi_angles, c2_experimental
             )
 
-            jacobian[:, i] = (c2_plus.flatten() -
-                              c2_minus.flatten()) / (2 * epsilon)
+            jacobian[:, i] = (c2_plus.flatten() - c2_minus.flatten()) / (2 * epsilon)
 
         return c2_fitted, jacobian
 
@@ -1179,11 +1171,13 @@ class RobustHomodyneOptimizer:
                 # Use the standard calculation method - it already handles
                 # static isotropic
                 c2_theory = self.core.calculate_c2_nonequilibrium_laminar_parallel(
-                    theta, phi_angles)
+                    theta, phi_angles
+                )
             else:
                 # Standard calculation for other modes
                 c2_theory = self.core.calculate_c2_nonequilibrium_laminar_parallel(
-                    theta, phi_angles)
+                    theta, phi_angles
+                )
             return c2_theory
         except Exception as e:
             logger.error(f"Error computing theoretical correlation: {e}")
@@ -1195,10 +1189,8 @@ class RobustHomodyneOptimizer:
             return np.zeros((n_angles, n_times, n_times))
 
     def _compute_fitted_correlation(
-            self,
-            theta: np.ndarray,
-            phi_angles: np.ndarray,
-            c2_experimental: np.ndarray) -> np.ndarray:
+        self, theta: np.ndarray, phi_angles: np.ndarray, c2_experimental: np.ndarray
+    ) -> np.ndarray:
         """
         Compute fitted correlation function with proper scaling: fitted = contrast * theory + offset.
 
@@ -1221,8 +1213,7 @@ class RobustHomodyneOptimizer:
         """
         try:
             # Get raw theoretical correlation
-            c2_theory = self._compute_theoretical_correlation(
-                theta, phi_angles)
+            c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
 
             # Apply scaling transformation using least squares
             # This mimics what calculate_chi_squared_optimized does internally
@@ -1261,10 +1252,8 @@ class RobustHomodyneOptimizer:
             return self._compute_theoretical_correlation(theta, phi_angles)
 
     def _compute_fitted_correlation_2d(
-            self,
-            theta: np.ndarray,
-            phi_angles: np.ndarray,
-            c2_experimental: np.ndarray) -> np.ndarray:
+        self, theta: np.ndarray, phi_angles: np.ndarray, c2_experimental: np.ndarray
+    ) -> np.ndarray:
         """
         Compute 2D fitted correlation function for bootstrap scenarios.
 
@@ -1304,8 +1293,7 @@ class RobustHomodyneOptimizer:
                     # = exp
                     A = np.column_stack([theory_i, np.ones(len(theory_i))])
                     try:
-                        scaling_params = np.linalg.lstsq(
-                            A, exp_i, rcond=None)[0]
+                        scaling_params = np.linalg.lstsq(A, exp_i, rcond=None)[0]
                         contrast, offset = scaling_params[0], scaling_params[1]
                     except np.linalg.LinAlgError:
                         # Fallback if least squares fails
@@ -1325,10 +1313,8 @@ class RobustHomodyneOptimizer:
             return np.ones_like(c2_experimental)
 
     def _compute_chi_squared(
-            self,
-            theta: np.ndarray,
-            phi_angles: np.ndarray,
-            c2_experimental: np.ndarray) -> float:
+        self, theta: np.ndarray, phi_angles: np.ndarray, c2_experimental: np.ndarray
+    ) -> float:
         """
         Compute chi-squared goodness of fit.
 
@@ -1370,9 +1356,7 @@ class RobustHomodyneOptimizer:
         try:
             # Extract bounds from configuration (same format as classical
             # optimization)
-            bounds_config = self.config.get(
-                "parameter_space", {}).get(
-                "bounds", [])
+            bounds_config = self.config.get("parameter_space", {}).get("bounds", [])
 
             # Get effective parameter count
             n_params = self.core.get_effective_parameter_count()

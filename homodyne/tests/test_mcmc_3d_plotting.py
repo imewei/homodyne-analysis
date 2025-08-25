@@ -7,14 +7,16 @@ into the MCMC workflow, including posterior sample processing and confidence
 interval generation.
 """
 
-from homodyne.tests.fixtures import dummy_config
-import pytest
-import numpy as np
+import json
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock, Mock
-import json
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
+import pytest
+
+from homodyne.tests.fixtures import dummy_config
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -35,8 +37,9 @@ class TestMCMC3DPlottingIntegration:
 
     def test_generate_mcmc_plots_with_3d_integration(self):
         """Test that _generate_mcmc_plots includes 3D plotting functionality."""
-        from run_homodyne import _generate_mcmc_plots
         import inspect
+
+        from run_homodyne import _generate_mcmc_plots
 
         # Get source code of the function
         source = inspect.getsource(_generate_mcmc_plots)
@@ -50,8 +53,7 @@ class TestMCMC3DPlottingIntegration:
         print("✓ _generate_mcmc_plots contains 3D plotting integration")
 
     @patch("homodyne.plotting.plot_3d_surface")
-    def test_mcmc_3d_plotting_with_trace_data(
-            self, mock_plot_3d, dummy_config):
+    def test_mcmc_3d_plotting_with_trace_data(self, mock_plot_3d, dummy_config):
         """Test 3D plotting functionality with MCMC trace data."""
         from run_homodyne import _generate_mcmc_plots
 
@@ -72,7 +74,8 @@ class TestMCMC3DPlottingIntegration:
 
         # Return the theory data when called
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel.return_value = (
-            c2_theory)
+            c2_theory
+        )
 
         # Create MCMC results without trace (simpler test case)
         mcmc_results = {"trace": None}
@@ -80,11 +83,9 @@ class TestMCMC3DPlottingIntegration:
         # Mock the config to include parameter names and ensure plotting is
         # enabled
         mock_analyzer.config = {
-            "initial_parameters": {
-                "parameter_names": [
-                    "D0", "alpha", "D_offset"]}, "output_settings": {
-                "reporting": {
-                    "generate_plots": True}}, }
+            "initial_parameters": {"parameter_names": ["D0", "alpha", "D_offset"]},
+            "output_settings": {"reporting": {"generate_plots": True}},
+        }
 
         # Create temporary output directory
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -111,8 +112,7 @@ class TestMCMC3DPlottingIntegration:
                 pytest.fail(f"_generate_mcmc_plots failed: {e}")
 
     @patch("homodyne.plotting.plot_3d_surface")
-    def test_mcmc_3d_plotting_without_trace_data(
-            self, mock_plot_3d, dummy_config):
+    def test_mcmc_3d_plotting_without_trace_data(self, mock_plot_3d, dummy_config):
         """Test 3D plotting functionality without MCMC trace data (fallback mode)."""
         from run_homodyne import _generate_mcmc_plots
 
@@ -132,7 +132,8 @@ class TestMCMC3DPlottingIntegration:
         best_params = np.array([1000, -0.5, 100])
 
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel.return_value = (
-            c2_theory)
+            c2_theory
+        )
 
         # MCMC results without trace data
         mcmc_results = {"trace": None}
@@ -165,13 +166,13 @@ class TestMCMC3DPlottingIntegration:
                 )
 
             except Exception as e:
-                pytest.fail(
-                    f"_generate_mcmc_plots failed in fallback mode: {e}")
+                pytest.fail(f"_generate_mcmc_plots failed in fallback mode: {e}")
 
     def test_3d_plotting_output_directory_structure(self, dummy_config):
         """Test that 3D plots are saved to the correct MCMC directory."""
-        from run_homodyne import _generate_mcmc_plots
         import tempfile
+
+        from run_homodyne import _generate_mcmc_plots
 
         # Create mock components
         mock_analyzer = Mock()
@@ -185,7 +186,8 @@ class TestMCMC3DPlottingIntegration:
         best_params = np.array([1000, -0.5, 100])
 
         mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel.return_value = (
-            c2_theory)
+            c2_theory
+        )
         mcmc_results = {"trace": None}  # No trace for simplicity
 
         # Create temporary output directory
@@ -221,8 +223,9 @@ class TestMCMC3DPlottingIntegration:
 
     def test_3d_plotting_configuration_integration(self, dummy_config):
         """Test that 3D plotting respects configuration settings."""
-        from run_homodyne import _generate_mcmc_plots
         import tempfile
+
+        from run_homodyne import _generate_mcmc_plots
 
         # Test with plotting disabled
         mock_analyzer = Mock()
@@ -261,10 +264,7 @@ class TestMCMCPosteriorSampleProcessing:
 
         # Mock trace structure similar to ArviZ InferenceData
         mock_trace = Mock()
-        mock_trace.posterior = {
-            "D0": Mock(),
-            "alpha": Mock(),
-            "D_offset": Mock()}
+        mock_trace.posterior = {"D0": Mock(), "alpha": Mock(), "D_offset": Mock()}
 
         # Mock parameter data with realistic shape (chains, draws)
         n_chains, n_draws = 4, 1000
@@ -296,11 +296,7 @@ class TestMCMCPosteriorSampleProcessing:
 
         # Test subsampling logic
         n_samples = min(500, param_samples_array.shape[0])
-        indices = np.linspace(
-            0,
-            param_samples_array.shape[0] - 1,
-            n_samples,
-            dtype=int)
+        indices = np.linspace(0, param_samples_array.shape[0] - 1, n_samples, dtype=int)
         param_samples_subset = param_samples_array[indices]
 
         assert param_samples_subset.shape == (n_samples, 3)
@@ -339,14 +335,13 @@ class TestMCMCPosteriorSampleProcessing:
         # Mean should generally be between CI bounds
         sample_mean = np.mean(c2_samples, axis=0)
         # Allow some tolerance for edge cases
-        within_ci_ratio = np.mean(
-            (sample_mean >= lower_ci) & (
-                sample_mean <= upper_ci))
+        within_ci_ratio = np.mean((sample_mean >= lower_ci) & (sample_mean <= upper_ci))
         assert within_ci_ratio > 0.8  # Most points should be within CI
 
         print(
             f"✓ Confidence interval calculation: {
-                within_ci_ratio:.1%} of mean points within CI")
+                within_ci_ratio:.1%} of mean points within CI"
+        )
 
 
 if __name__ == "__main__":

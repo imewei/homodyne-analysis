@@ -27,10 +27,10 @@ Usage Scenarios:
 - Release validation: Full test suite execution with coverage
 """
 
-import sys
-import subprocess
-from pathlib import Path
 import argparse
+import subprocess
+import sys
+from pathlib import Path
 
 
 def main():
@@ -56,11 +56,7 @@ def main():
         action="store_true",
         help="Run only fast tests (exclude slow integration tests)",
     )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Verbose output")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument(
         "--coverage", action="store_true", help="Run with coverage reporting"
     )

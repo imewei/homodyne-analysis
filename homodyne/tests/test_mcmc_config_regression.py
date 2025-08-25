@@ -16,18 +16,20 @@ This regression test ensures:
 4. Users can identify when they need to re-run MCMC analysis
 """
 
-import pytest
-import tempfile
 import json
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
+
 from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 from homodyne.tests.test_utils_mcmc import (
-    create_realistic_user_config,
     create_mock_analysis_core,
     create_mock_trace,
-    validate_trace_dimensions,
+    create_realistic_user_config,
     get_mcmc_defaults,
+    validate_trace_dimensions,
 )
 
 
@@ -100,25 +102,16 @@ class TestMCMCConfigurationRegression:
         old_trace_chains, old_trace_draws = 2, 1000
 
         # Create mock traces
-        correct_trace = create_mock_trace(
-            chains=config_chains, draws=config_draws)
-        old_trace = create_mock_trace(
-            chains=old_trace_chains,
-            draws=old_trace_draws)
+        correct_trace = create_mock_trace(chains=config_chains, draws=config_draws)
+        old_trace = create_mock_trace(chains=old_trace_chains, draws=old_trace_draws)
 
         # Validation should pass for correct trace
-        assert (
-            validate_trace_dimensions(
-                correct_trace,
-                config_chains,
-                config_draws))
+        assert validate_trace_dimensions(correct_trace, config_chains, config_draws)
 
         # Validation should fail for old trace
         assert (
-            validate_trace_dimensions(
-                old_trace,
-                config_chains,
-                config_draws) == False)
+            validate_trace_dimensions(old_trace, config_chains, config_draws) == False
+        )
 
         # This mismatch is what was causing the plotting issue
         assert old_trace.posterior.sizes["chain"] != config_chains
@@ -204,8 +197,7 @@ class TestMCMCConfigurationRegression:
         defaults = get_mcmc_defaults()
 
         assert mcmc_config.get("draws", defaults["draws"]) == defaults["draws"]
-        assert mcmc_config.get(
-            "chains", defaults["chains"]) == defaults["chains"]
+        assert mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
         assert mcmc_config.get("tune", defaults["tune"]) == defaults["tune"]
 
     def test_configuration_validation_regression(self):
@@ -259,8 +251,7 @@ class TestMCMCTraceFileRegression:
         old_file_chains, old_file_draws = 2, 1000
 
         # This mismatch caused the plotting issue
-        old_trace = create_mock_trace(
-            chains=old_file_chains, draws=old_file_draws)
+        old_trace = create_mock_trace(chains=old_file_chains, draws=old_file_draws)
 
         # Extract values the way plotting functions do
         plot_chains = old_trace.posterior.sizes.get("chain", "Unknown")
@@ -280,8 +271,7 @@ class TestMCMCTraceFileRegression:
         config_chains, config_draws = 8, 10000
 
         # Fresh trace created with current config (after fix)
-        fresh_trace = create_mock_trace(
-            chains=config_chains, draws=config_draws)
+        fresh_trace = create_mock_trace(chains=config_chains, draws=config_draws)
 
         # Extract values the way plotting functions do
         plot_chains = fresh_trace.posterior.sizes.get("chain", "Unknown")

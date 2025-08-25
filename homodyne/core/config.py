@@ -27,14 +27,15 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
+import gc
 import json
 import logging
 import multiprocessing as mp
 import time
-import gc
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict, cast
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union, cast
+
 from typing_extensions import NotRequired
 
 # Default parallelization setting - balance performance and resource usage
@@ -183,12 +184,7 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
         module_logger.removeHandler(handler)
 
     # Parse configuration
-    log_level = getattr(
-        logging,
-        cfg.get(
-            "level",
-            "INFO").upper(),
-        logging.INFO)
+    log_level = getattr(logging, cfg.get("level", "INFO").upper(), logging.INFO)
     format_str = cfg.get(
         "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -207,8 +203,7 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
     if cfg.get("log_to_file", False):
         filename = cfg.get("log_filename", "homodyne_analysis.log")
         rotation_config = cfg.get("rotation", {})
-        max_bytes = rotation_config.get(
-            "max_bytes", 10 * 1024 * 1024)  # 10MB default
+        max_bytes = rotation_config.get("max_bytes", 10 * 1024 * 1024)  # 10MB default
         backup_count = rotation_config.get("backup_count", 3)
 
         try:
@@ -228,7 +223,8 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
                 f"RotatingFileHandler({filename}, {
                     max_bytes //
                     1024 //
-                    1024}MB, {backup_count} backups)")
+                    1024}MB, {backup_count} backups)"
+            )
 
         except (OSError, IOError) as e:
             logger.warning(f"Failed to create file handler: {e}")
@@ -254,7 +250,8 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
             f"Logging configured: {handler_list} (level={
                 cfg.get(
                     'level',
-                    'INFO')})")
+                    'INFO')})"
+        )
 
         # Log initial message to verify setup
         module_logger.info(f"Logging system initialized: {handler_list}")
@@ -353,8 +350,7 @@ class ConfigManager:
 
                 # Display version information if available
                 if isinstance(self.config, dict) and "metadata" in self.config:
-                    version = self.config["metadata"].get(
-                        "config_version", "Unknown")
+                    version = self.config["metadata"].get("config_version", "Unknown")
                     logger.info(f"Configuration version: {version}")
 
             except json.JSONDecodeError as e:
@@ -363,8 +359,7 @@ class ConfigManager:
                 self.config = self._get_default_config()
             except Exception as e:
                 logger.error(f"Failed to load configuration: {e}")
-                logger.exception(
-                    "Full traceback for configuration loading failure:")
+                logger.exception("Full traceback for configuration loading failure:")
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
 
@@ -402,8 +397,7 @@ class ConfigManager:
         # Cache analysis settings
         if "analysis_settings" in self.config:
             analysis = self.config["analysis_settings"]
-            self._cached_values["static_mode"] = analysis.get(
-                "static_mode", False)
+            self._cached_values["static_mode"] = analysis.get("static_mode", False)
 
             # Cache static submode if static mode is enabled
             if self._cached_values["static_mode"]:
@@ -491,7 +485,8 @@ class ConfigManager:
         if end - start < min_frames:
             raise ValueError(
                 f"Insufficient frames: {
-                    end - start} < {min_frames}")
+                    end - start} < {min_frames}"
+            )
 
         # Validate physical parameters
         self._validate_physical_parameters()
@@ -566,8 +561,7 @@ class ConfigManager:
             return configured_logger
         except Exception as e:
             logger.warning(f"Failed to configure logging: {e}")
-            logger.exception(
-                "Full traceback for logging configuration failure:")
+            logger.exception("Full traceback for logging configuration failure:")
             logger.info("Continuing without logging...")
             return None
 
@@ -608,10 +602,7 @@ class ConfigManager:
             - target_ranges: list of dicts with min_angle and max_angle
             - fallback_to_all_angles: bool, whether to use all angles if no targets found
         """
-        angle_filtering = self.get(
-            "optimization_config",
-            "angle_filtering",
-            default={})
+        angle_filtering = self.get("optimization_config", "angle_filtering", default={})
 
         # Ensure angle_filtering is a dictionary for unpacking
         if not isinstance(angle_filtering, dict):
@@ -646,8 +637,7 @@ class ConfigManager:
                         }
                     )
                 else:
-                    logger.warning(
-                        f"Invalid angle range configuration: {range_config}")
+                    logger.warning(f"Invalid angle range configuration: {range_config}")
             result["target_ranges"] = valid_ranges
 
         return result
@@ -724,8 +714,7 @@ class ConfigManager:
 
         if test_name not in configs:
             available = list(configs.keys())
-            raise ValueError(
-                f"Test '{test_name}' not found. Available: {available}")
+            raise ValueError(f"Test '{test_name}' not found. Available: {available}")
 
         return configs[test_name]
 
@@ -739,9 +728,7 @@ class ConfigManager:
             True if static mode is enabled, False otherwise
         """
         # Use cached value for performance
-        if hasattr(
-                self,
-                "_cached_values") and "static_mode" in self._cached_values:
+        if hasattr(self, "_cached_values") and "static_mode" in self._cached_values:
             return self._cached_values["static_mode"]
 
         result = self.get("analysis_settings", "static_mode", default=False)
@@ -761,9 +748,7 @@ class ConfigManager:
             return None
 
         # Use cached value for performance
-        if hasattr(
-                self,
-                "_cached_values") and "static_submode" in self._cached_values:
+        if hasattr(self, "_cached_values") and "static_submode" in self._cached_values:
             return self._cached_values["static_submode"]
 
         # Get submode from configuration (case-insensitive)
@@ -780,7 +765,8 @@ class ConfigManager:
                 submode = "anisotropic"
             else:
                 logger.warning(
-                    f"Invalid static_submode '{raw_submode}', defaulting to 'anisotropic'")
+                    f"Invalid static_submode '{raw_submode}', defaulting to 'anisotropic'"
+                )
                 submode = "anisotropic"
 
         return submode
@@ -794,8 +780,9 @@ class ConfigManager:
         bool
             True if analysis mode is static isotropic, False otherwise
         """
-        return (self.is_static_mode_enabled()
-                and self.get_static_submode() == "isotropic")
+        return (
+            self.is_static_mode_enabled() and self.get_static_submode() == "isotropic"
+        )
 
     def is_static_anisotropic_enabled(self) -> bool:
         """
@@ -806,8 +793,9 @@ class ConfigManager:
         bool
             True if analysis mode is static anisotropic, False otherwise
         """
-        return (self.is_static_mode_enabled()
-                and self.get_static_submode() == "anisotropic")
+        return (
+            self.is_static_mode_enabled() and self.get_static_submode() == "anisotropic"
+        )
 
     def get_analysis_mode(self) -> str:
         """
@@ -838,15 +826,11 @@ class ConfigManager:
             Falls back to all parameters if not specified in configuration.
         """
         initial_params = self.get("initial_parameters", default={})
-        active_params = cast(
-            List[str], initial_params.get(
-                "active_parameters", []))
+        active_params = cast(List[str], initial_params.get("active_parameters", []))
 
         # If no active_parameters specified, use all parameter names
         if not active_params:
-            param_names = cast(
-                List[str], initial_params.get(
-                    "parameter_names", []))
+            param_names = cast(List[str], initial_params.get("parameter_names", []))
             if param_names:
                 active_params = param_names
             else:
@@ -1099,9 +1083,7 @@ class PerformanceMonitor:
         self.timings: Dict[str, List[float]] = {}
         self.memory_usage: Dict[str, float] = {}
 
-    def time_function(
-            self,
-            func_name: str) -> "PerformanceMonitor._TimingContext":
+    def time_function(self, func_name: str) -> "PerformanceMonitor._TimingContext":
         """
         Context manager for timing function execution.
 
@@ -1119,10 +1101,7 @@ class PerformanceMonitor:
         return self._TimingContext(self, func_name)
 
     class _TimingContext:
-        def __init__(
-                self,
-                monitor: "PerformanceMonitor",
-                func_name: str) -> None:
+        def __init__(self, monitor: "PerformanceMonitor", func_name: str) -> None:
             self.monitor = monitor
             self.func_name = func_name
             self.start_time: Optional[float] = None
@@ -1160,8 +1139,7 @@ class PerformanceMonitor:
         self.timings.clear()
         self.memory_usage.clear()
 
-    def log_performance_summary(
-            self, logger: Optional[logging.Logger] = None) -> None:
+    def log_performance_summary(self, logger: Optional[logging.Logger] = None) -> None:
         """Log performance summary to logger."""
         if logger is None:
             logger = logging.getLogger(__name__)

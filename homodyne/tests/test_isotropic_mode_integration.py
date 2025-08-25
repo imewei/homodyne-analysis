@@ -6,12 +6,13 @@ Comprehensive integration tests that verify the isotropic static mode works
 end-to-end including data loading, analysis, and plotting with dummy phi angles.
 """
 
-import pytest
-import numpy as np
-import tempfile
 import json
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
 
 from homodyne.analysis.core import HomodyneAnalysisCore
 from homodyne.core.config import ConfigManager
@@ -99,8 +100,7 @@ class TestIsotropicModeIntegration:
         # Test angle filtering is automatically disabled
         assert manager.is_angle_filtering_enabled() is False
 
-    def test_isotropic_mode_core_initialization(
-            self, temp_directory, isotropic_config):
+    def test_isotropic_mode_core_initialization(self, temp_directory, isotropic_config):
         """Test HomodyneAnalysisCore initialization with isotropic mode."""
         config_file = temp_directory / "isotropic_config.json"
         with open(config_file, "w") as f:
@@ -120,7 +120,8 @@ class TestIsotropicModeIntegration:
     @patch("homodyne.analysis.core.np.load")
     @patch("homodyne.analysis.core.os.path.exists")
     def test_isotropic_mode_data_loading_skips_phi_angles(
-            self, mock_exists, mock_load, mock_savez, temp_directory, isotropic_config):
+        self, mock_exists, mock_load, mock_savez, temp_directory, isotropic_config
+    ):
         """Test that isotropic mode skips loading phi_angles_file."""
         config_file = temp_directory / "isotropic_config.json"
         with open(config_file, "w") as f:
@@ -160,12 +161,8 @@ class TestIsotropicModeIntegration:
     @patch("homodyne.analysis.core.np.load")
     @patch("homodyne.analysis.core.os.path.exists")
     def test_isotropic_mode_optimization_workflow(
-            self,
-            mock_exists,
-            mock_load,
-            mock_savez,
-            temp_directory,
-            isotropic_config):
+        self, mock_exists, mock_load, mock_savez, temp_directory, isotropic_config
+    ):
         """Test complete optimization workflow in isotropic mode."""
         config_file = temp_directory / "isotropic_config.json"
         with open(config_file, "w") as f:
@@ -187,8 +184,7 @@ class TestIsotropicModeIntegration:
             mock_load_raw.return_value = mock_c2_data
 
             # Test parameter processing
-            test_params = np.array(
-                [1200.0, -0.05, 150.0, 0.001, -0.1, 0.0001, 5.0])
+            test_params = np.array([1200.0, -0.05, 150.0, 0.001, -0.1, 0.0001, 5.0])
             effective_params = core.get_effective_parameters(test_params)
 
             # In isotropic static mode, last 4 parameters should be zeroed
@@ -226,15 +222,13 @@ class TestIsotropicModeIntegration:
         assert np.all(c2_result <= 2.0)
 
         # Test that result is same regardless of last 4 parameters
-        params_different_flow = np.array(
-            [1000.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0])
+        params_different_flow = np.array([1000.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0])
         c2_result_2 = core.calculate_c2_single_angle_optimized(
             params_different_flow, phi_angle
         )
 
         # Results should be identical (within numerical precision)
-        np.testing.assert_array_almost_equal(
-            c2_result, c2_result_2, decimal=15)
+        np.testing.assert_array_almost_equal(c2_result, c2_result_2, decimal=15)
 
     def test_isotropic_mode_chi_squared_calculation(
         self, temp_directory, isotropic_config
@@ -247,8 +241,7 @@ class TestIsotropicModeIntegration:
         core = HomodyneAnalysisCore(str(config_file))
 
         # Mock experimental data for single angle
-        mock_exp_data = np.exp(-np.linspace(0, 3, 20)) + \
-            0.05 * np.random.rand(20)
+        mock_exp_data = np.exp(-np.linspace(0, 3, 20)) + 0.05 * np.random.rand(20)
 
         with patch.object(
             core, "cached_experimental_data", mock_exp_data.reshape(1, -1)
@@ -258,16 +251,14 @@ class TestIsotropicModeIntegration:
                 params = np.array([1000.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0])
 
                 # Test that correlation calculation works with dummy angle
-                c2_result = core.calculate_c2_single_angle_optimized(
-                    params, 0.0)
+                c2_result = core.calculate_c2_single_angle_optimized(params, 0.0)
 
                 # Should return finite, positive values
                 assert len(c2_result) > 0
                 assert np.all(np.isfinite(c2_result))
                 assert np.all(c2_result >= 0)  # C2 should be non-negative
 
-    def test_isotropic_mode_caching_behavior(
-            self, temp_directory, isotropic_config):
+    def test_isotropic_mode_caching_behavior(self, temp_directory, isotropic_config):
         """Test caching behavior with dummy angles in isotropic mode."""
         # Reset any global state that might interfere with this test
         import homodyne.analysis.core
@@ -286,8 +277,7 @@ class TestIsotropicModeIntegration:
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Update config to use the temp directory
-        isotropic_config["experimental_data"]["cache_file_path"] = str(
-            cache_dir)
+        isotropic_config["experimental_data"]["cache_file_path"] = str(cache_dir)
 
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
@@ -356,8 +346,7 @@ class TestIsotropicModeIntegration:
         core = HomodyneAnalysisCore(str(config_file))
 
         # Test parameter processing - should zero out flow parameters
-        original_params = np.array(
-            [1000.0, -0.1, 100.0, 0.01, -0.2, 0.001, 10.0])
+        original_params = np.array([1000.0, -0.1, 100.0, 0.01, -0.2, 0.001, 10.0])
         processed_params = core.get_effective_parameters(original_params)
 
         # First 3 should be preserved
@@ -439,8 +428,7 @@ class TestIsotropicModeIntegration:
         assert iso_manager.get_effective_parameter_count() == 3
         assert aniso_manager.get_effective_parameter_count() == 3
 
-    def test_isotropic_mode_end_to_end_workflow(
-            self, temp_directory, isotropic_config):
+    def test_isotropic_mode_end_to_end_workflow(self, temp_directory, isotropic_config):
         """Test complete end-to-end workflow for isotropic mode."""
         config_file = temp_directory / "isotropic_config.json"
         with open(config_file, "w") as f:
@@ -476,8 +464,7 @@ class TestIsotropicModeIntegration:
                         assert c2_data.shape[0] == 1  # Single angle
 
                         # Test basic analysis functions work
-                        params = np.array(
-                            [1000.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0])
+                        params = np.array([1000.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0])
 
                         # Test correlation calculation
                         c2_result = core.calculate_c2_single_angle_optimized(
@@ -542,21 +529,15 @@ class TestIsotropicModeEdgeCases:
 
         for submode, expected_isotropic in test_cases:
             config = {
-                "metadata": {
-                    "config_version": "6.0"},
+                "metadata": {"config_version": "6.0"},
                 "analyzer_parameters": {
-                    "temporal": {
-                        "dt": 0.1,
-                        "start_frame": 1,
-                        "end_frame": 50}},
-                "experimental_data": {
-                    "data_folder_path": "./data/test/"},
+                    "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 50}
+                },
+                "experimental_data": {"data_folder_path": "./data/test/"},
                 "optimization_config": {
-                    "classical_optimization": {
-                        "methods": ["test"]}},
-                "analysis_settings": {
-                    "static_mode": True,
-                    "static_submode": submode},
+                    "classical_optimization": {"methods": ["test"]}
+                },
+                "analysis_settings": {"static_mode": True, "static_submode": submode},
             }
 
             config_file = temp_directory / f"test_{submode}_config.json"
@@ -597,8 +578,7 @@ class TestIsotropicModeEdgeCases:
         assert manager.get_static_submode() == "anisotropic"
         assert manager.get_analysis_mode() == "static_anisotropic"
 
-    def test_isotropic_mode_angle_filtering_override_warning(
-            self, temp_directory):
+    def test_isotropic_mode_angle_filtering_override_warning(self, temp_directory):
         """Test that angle filtering configuration is properly overridden in isotropic mode."""
         config = {
             "metadata": {"config_version": "6.0"},

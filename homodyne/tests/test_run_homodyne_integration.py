@@ -9,21 +9,22 @@ Tests the behavior of the main run_homodyne.py script, including:
 - Directory structure creation
 """
 
-import pytest
-import tempfile
-import numpy as np
-import os
-import sys
-from pathlib import Path
-from unittest.mock import patch, MagicMock, mock_open
 import json
+import os
 import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, mock_open, patch
+
+import numpy as np
+import pytest
 
 from homodyne.tests.fixtures import (
+    create_minimal_config_file,
     dummy_config,
     temp_directory,
     test_output_directory,
-    create_minimal_config_file,
 )
 
 
@@ -152,16 +153,9 @@ class TestRunHomodyneIntegration:
 
         mock_results = {
             "timestamp": "2025-08-18T16:06:09.710366+00:00",
-            "config": {
-                "test": "config"},
-            "results": {
-                "classical_optimization": {
-                    "parameters": [
-                        1.0,
-                        2.0,
-                        3.0]}},
-            "execution_metadata": {
-                "analysis_success": True},
+            "config": {"test": "config"},
+            "results": {"classical_optimization": {"parameters": [1.0, 2.0, 3.0]}},
+            "execution_metadata": {"analysis_success": True},
         }
 
         with open(results_file, "w") as f:
@@ -268,9 +262,7 @@ class TestRunHomodyneIntegration:
             json.dump(summary_data, f, indent=2)
 
         # Create experimental data files
-        exp_data_files = [
-            "data_validation_phi_0.0deg.png",
-            "summary_statistics.txt"]
+        exp_data_files = ["data_validation_phi_0.0deg.png", "summary_statistics.txt"]
 
         for filename in exp_data_files:
             (base_dir / "exp_data" / filename).touch()
@@ -304,8 +296,7 @@ class TestRunHomodyneIntegration:
 class TestRunHomodyneMockExecution:
     """Test run_homodyne.py execution with mocked components."""
 
-    def test_plot_experimental_data_early_exit_simulation(
-            self, temp_directory):
+    def test_plot_experimental_data_early_exit_simulation(self, temp_directory):
         """Simulate the early exit behavior of --plot-experimental-data."""
 
         def mock_run_homodyne_with_plot_experimental_data():
@@ -339,9 +330,7 @@ class TestRunHomodyneMockExecution:
 
             # Early exit - no fitting performed
             if plot_experimental_data:
-                return {
-                    "status": "experimental_data_plotted",
-                    "exit_early": True}
+                return {"status": "experimental_data_plotted", "exit_early": True}
 
             # This code would not be reached with --plot-experimental-data
             return {"status": "full_analysis_completed", "exit_early": False}
@@ -410,11 +399,9 @@ class TestRunHomodyneMockExecution:
 
                 method_info = {
                     "parameters": {
-                        "param_0": {
-                            "value": mock_parameters[0],
-                            "uncertainty": 0.1}},
-                    "goodness_of_fit": {
-                        "chi_squared": mock_chi_squared},
+                        "param_0": {"value": mock_parameters[0], "uncertainty": 0.1}
+                    },
+                    "goodness_of_fit": {"chi_squared": mock_chi_squared},
                 }
 
                 with open(method_dir / "parameters.json", "w") as f:
@@ -557,11 +544,7 @@ class TestBackwardCompatibilityIntegration:
         with open(results_file, "r") as f:
             loaded_data = json.load(f)
 
-        required_keys = [
-            "timestamp",
-            "config",
-            "results",
-            "execution_metadata"]
+        required_keys = ["timestamp", "config", "results", "execution_metadata"]
         for key in required_keys:
             assert key in loaded_data
 
@@ -651,10 +634,7 @@ class TestMCMCIntegration:
             mock_exp_data = np.random.rand(1, 60, 60) + 1.0
 
             # 2. Run MCMC sampling (mock posterior means)
-            mock_posterior_means = {
-                "D0": 850.0,
-                "alpha": -0.021,
-                "D_offset": -780.0}
+            mock_posterior_means = {"D0": 850.0, "alpha": -0.021, "D_offset": -780.0}
             mock_parameters = [850.0, -0.021, -780.0]
 
             # 3. Calculate fitted data from posterior means

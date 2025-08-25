@@ -3,6 +3,7 @@ Type stubs for mpl_toolkits.mplot3d 3D plotting.
 """
 
 from typing import Any, List, Optional, Union
+
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure

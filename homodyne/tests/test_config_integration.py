@@ -6,12 +6,13 @@ ensuring that angle filtering settings are properly read from configuration file
 and applied throughout the system.
 """
 
-import pytest
-import tempfile
 import json
-import numpy as np
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import numpy as np
+import pytest
 
 from homodyne.core.config import ConfigManager
 
@@ -284,10 +285,8 @@ class TestConfigurationIntegration:
             )
 
             # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=5.0)
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=5.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 
@@ -331,10 +330,9 @@ class TestConfigurationIntegration:
             # Explicitly ensure no config_manager attribute exists
 
             optimizer = ClassicalOptimizer(
-                mock_analyzer, {
-                    "optimization_config": {
-                        "angle_filtering": {
-                            "enabled": True}}}, )
+                mock_analyzer,
+                {"optimization_config": {"angle_filtering": {"enabled": True}}},
+            )
 
             phi_angles = np.array([0.0, 90.0, 180.0])
             c2_experimental = np.random.rand(3, 5, 5)
@@ -344,10 +342,8 @@ class TestConfigurationIntegration:
             )
 
             # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=3.0)
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=3.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 

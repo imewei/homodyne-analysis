@@ -23,8 +23,8 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -43,7 +43,8 @@ except ImportError:
 
 # Import robust optimization with graceful degradation
 try:
-    from .robust import RobustHomodyneOptimizer, create_robust_optimizer  # type: ignore
+    from .robust import RobustHomodyneOptimizer  # type: ignore
+    from .robust import create_robust_optimizer
 
     ROBUST_OPTIMIZATION_AVAILABLE = True
 except ImportError:
@@ -149,13 +150,11 @@ class ClassicalOptimizer:
             )
         else:
             # Fallback to core method
-            is_static_mode = getattr(
-                self.core, "is_static_mode", lambda: False)()
+            is_static_mode = getattr(self.core, "is_static_mode", lambda: False)()
             analysis_mode = "static" if is_static_mode else "laminar_flow"
             effective_param_count = 3 if is_static_mode else 7
 
-        print(
-            f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
+        print(f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
         logger.info(
             f"Classical optimization using {analysis_mode} mode with {effective_param_count} parameters"
         )
@@ -191,7 +190,8 @@ class ClassicalOptimizer:
             full_parameters[: len(initial_parameters)] = initial_parameters
             initial_parameters = full_parameters
             print(
-                f"  Extended to {effective_param_count} parameters for laminar flow mode")
+                f"  Extended to {effective_param_count} parameters for laminar flow mode"
+            )
 
         if phi_angles is None or c2_experimental is None:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
@@ -246,26 +246,27 @@ class ClassicalOptimizer:
                         print(
                             f"    ✓ New best: χ²_red = {
                                 result.fun:.6e} ({
-                                elapsed:.1f}s)")
+                                elapsed:.1f}s)"
+                        )
                     else:
                         print(
                             f"    χ²_red = {
                                 result.fun:.6e} ({
-                                elapsed:.1f}s)")
+                                elapsed:.1f}s)"
+                        )
                 else:
                     # Store exception for analysis
                     all_results.append((method, result))
                     print(f"    ✗ Failed: {result}")
                     logger.warning(
-                        f"Classical optimization method {method} failed: {result}")
+                        f"Classical optimization method {method} failed: {result}"
+                    )
 
             except Exception as e:
                 all_results.append((method, e))
                 print(f"    ✗ Failed: {e}")
-                logger.warning(
-                    f"Classical optimization method {method} failed: {e}")
-                logger.exception(
-                    f"Full traceback for {method} optimization failure:")
+                logger.warning(f"Classical optimization method {method} failed: {e}")
+                logger.exception(f"Full traceback for {method} optimization failure:")
 
         if (
             best_result is not None
@@ -283,8 +284,7 @@ class ClassicalOptimizer:
                 best_params, best_result, total_time, best_method
             )
             summary["optimization_method"] = best_method
-            summary["all_methods_tried"] = [
-                method for method, _ in all_results]
+            summary["all_methods_tried"] = [method for method, _ in all_results]
 
             # Create method-specific results dictionary
             method_results = {}
@@ -292,14 +292,17 @@ class ClassicalOptimizer:
                 if hasattr(result, "fun"):  # Successful result
                     method_results[method] = {
                         "parameters": (
-                            result.x.tolist() if hasattr(
-                                result, "x") else None), "chi_squared": result.fun, "success": (
-                            result.success if hasattr(
-                                result, "success") else True), "iterations": getattr(
-                            result, "nit", None), "function_evaluations": getattr(
-                            result, "nfev", None), "message": getattr(
-                                result, "message", ""), "method": getattr(
-                                    result, "method", method), }
+                            result.x.tolist() if hasattr(result, "x") else None
+                        ),
+                        "chi_squared": result.fun,
+                        "success": (
+                            result.success if hasattr(result, "success") else True
+                        ),
+                        "iterations": getattr(result, "nit", None),
+                        "function_evaluations": getattr(result, "nfev", None),
+                        "message": getattr(result, "message", ""),
+                        "method": getattr(result, "method", method),
+                    }
                 else:  # Failed result (exception)
                     method_results[method] = {
                         "parameters": None,
@@ -312,10 +315,12 @@ class ClassicalOptimizer:
             logger.info(
                 f"Classical optimization completed in {
                     total_time:.2f}s, best χ²_red = {
-                    best_chi2:.6e} (method: {best_method})")
+                    best_chi2:.6e} (method: {best_method})"
+            )
             print(
                 f"  Best result: χ²_red = {
-                    best_chi2:.6e} (method: {best_method})")
+                    best_chi2:.6e} (method: {best_method})"
+            )
 
             # Store best parameters
             self.best_params_classical = best_params
@@ -349,7 +354,8 @@ class ClassicalOptimizer:
 
             logger.error(
                 f"Classical optimization failed after {
-                    total_time:.2f}s - all methods failed")
+                    total_time:.2f}s - all methods failed"
+            )
             logger.error(f"Failure analysis: {failed_analysis}")
 
             raise RuntimeError(
@@ -460,19 +466,15 @@ class ClassicalOptimizer:
 
         diffusion_params = parameters[:num_diffusion_params]
         shear_params = parameters[
-            num_diffusion_params: num_diffusion_params + num_shear_params
+            num_diffusion_params : num_diffusion_params + num_shear_params
         ]
 
         # Check positive D0
-        if validation.get(
-            "check_positive_D0",
-                True) and diffusion_params[0] <= 0:
+        if validation.get("check_positive_D0", True) and diffusion_params[0] <= 0:
             return False, f"Negative D0: {diffusion_params[0]}"
 
         # Check positive gamma_dot_t0
-        if validation.get(
-            "check_positive_gamma_dot_t0",
-                True) and shear_params[0] <= 0:
+        if validation.get("check_positive_gamma_dot_t0", True) and shear_params[0] <= 0:
             return False, f"Negative gamma_dot_t0: {shear_params[0]}"
 
         # Check parameter bounds
@@ -572,7 +574,8 @@ class ClassicalOptimizer:
                 )
             elif method.startswith("Robust-"):
                 return self._run_robust_optimization(
-                    method, objective_func, initial_parameters, bounds, method_options)
+                    method, objective_func, initial_parameters, bounds, method_options
+                )
             else:
                 # Filter out comment fields (keys starting with '_' and ending
                 # with '_note')
@@ -639,8 +642,7 @@ class ClassicalOptimizer:
         """
         try:
             if not GUROBI_AVAILABLE or gp is None or GRB is None:
-                raise ImportError(
-                    "Gurobi is not available. Please install gurobipy.")
+                raise ImportError("Gurobi is not available. Please install gurobipy.")
 
             # Get parameter bounds
             if bounds is None:
@@ -678,8 +680,9 @@ class ClassicalOptimizer:
                 x_plus[i] += epsilon
                 x_minus = x0.copy()
                 x_minus[i] -= epsilon
-                grad[i] = (objective_func(x_plus) -
-                           objective_func(x_minus)) / (2 * epsilon)
+                grad[i] = (objective_func(x_plus) - objective_func(x_minus)) / (
+                    2 * epsilon
+                )
 
             # Estimate Hessian using finite differences
             hessian = np.zeros((n_params, n_params))
@@ -733,11 +736,9 @@ class ClassicalOptimizer:
                     # Set Gurobi parameters
                     for param, value in gurobi_options.items():
                         if param == "max_iterations":
-                            model.setParam(
-                                GRB.Param.IterationLimit, int(value))
+                            model.setParam(GRB.Param.IterationLimit, int(value))
                         elif param == "tolerance":
-                            model.setParam(
-                                GRB.Param.OptimalityTol, float(value))
+                            model.setParam(GRB.Param.OptimalityTol, float(value))
                         elif param == "output_flag":
                             model.setParam(GRB.Param.OutputFlag, int(value))
                         elif param == "method":
@@ -747,10 +748,8 @@ class ClassicalOptimizer:
 
                     # Create decision variables
                     x = model.addVars(
-                        n_params,
-                        lb=-gp.GRB.INFINITY,
-                        ub=gp.GRB.INFINITY,
-                        name="x")
+                        n_params, lb=-gp.GRB.INFINITY, ub=gp.GRB.INFINITY, name="x"
+                    )
 
                     # Add bounds constraints
                     for i in range(n_params):
@@ -772,8 +771,7 @@ class ClassicalOptimizer:
                     # Quadratic terms
                     for i in range(n_params):
                         for j in range(n_params):
-                            obj += 0.5 * hessian[i, j] * \
-                                (x[i] - x0[i]) * (x[j] - x0[j])
+                            obj += 0.5 * hessian[i, j] * (x[i] - x0[i]) * (x[j] - x0[j])
 
                     model.setObjective(obj, GRB.MINIMIZE)
 
@@ -783,7 +781,8 @@ class ClassicalOptimizer:
                     # Extract results
                     if model.status == GRB.OPTIMAL:
                         optimal_params = np.array(
-                            [x[i].x for i in range(n_params)])  # type: ignore
+                            [x[i].x for i in range(n_params)]
+                        )  # type: ignore
                         optimal_value = objective_func(
                             optimal_params
                         )  # Evaluate true objective
@@ -890,15 +889,17 @@ class ClassicalOptimizer:
             if phi_angles is None:
                 phi_angles = getattr(self.core, "_last_phi_angles", None)
             if c2_experimental is None:
-                c2_experimental = getattr(
-                    self.core, "_last_experimental_data", None)
+                c2_experimental = getattr(self.core, "_last_experimental_data", None)
 
             if phi_angles is None or c2_experimental is None:
                 raise ValueError(
                     "Robust optimization requires phi_angles and c2_experimental "
-                    "to be available in the analysis core. " f"Found phi_angles: {
-                        'present' if phi_angles is not None else 'missing'}, " f"c2_experimental: {
-                        'present' if c2_experimental is not None else 'missing'}")
+                    "to be available in the analysis core. "
+                    f"Found phi_angles: {
+                        'present' if phi_angles is not None else 'missing'}, "
+                    f"c2_experimental: {
+                        'present' if c2_experimental is not None else 'missing'}"
+                )
 
             # Map method names to robust optimization types
             method_mapping = {
@@ -909,8 +910,7 @@ class ClassicalOptimizer:
 
             robust_method = method_mapping.get(method)
             if robust_method is None:
-                raise ValueError(
-                    f"Unknown robust optimization method: {method}")
+                raise ValueError(f"Unknown robust optimization method: {method}")
 
             # Run robust optimization
             optimal_params, info = robust_optimizer.run_robust_optimization(
@@ -989,8 +989,7 @@ class ClassicalOptimizer:
             }
 
         # Find best result
-        best_method, best_result = min(
-            successful_results, key=lambda x: x[1].fun)
+        best_method, best_result = min(successful_results, key=lambda x: x[1].fun)
 
         # Compute statistics
         chi2_values = [result.fun for _, result in successful_results]
@@ -1051,9 +1050,7 @@ class ClassicalOptimizer:
 
         # Determine effective parameter count if not provided
         if effective_param_count is None:
-            if hasattr(
-                    self.core,
-                    "config_manager") and self.core.config_manager:
+            if hasattr(self.core, "config_manager") and self.core.config_manager:
                 effective_param_count = (
                     self.core.config_manager.get_effective_parameter_count()
                 )
@@ -1067,8 +1064,7 @@ class ClassicalOptimizer:
         # Extract bounds for the effective parameters
         for i, bound in enumerate(param_bounds):
             if i < effective_param_count:
-                bounds.append((bound.get("min", -np.inf),
-                              bound.get("max", np.inf)))
+                bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
 
         # Ensure we have enough bounds
         while len(bounds) < effective_param_count:
@@ -1184,8 +1180,10 @@ class ClassicalOptimizer:
 
         # Add parameter validation info
         is_valid, reason = self.validate_parameters(best_params, "Summary")
-        summary["parameter_validation"] = {"valid": is_valid, "reason": (
-            reason if not is_valid else "All parameters within bounds"), }
+        summary["parameter_validation"] = {
+            "valid": is_valid,
+            "reason": (reason if not is_valid else "All parameters within bounds"),
+        }
 
         return summary
 

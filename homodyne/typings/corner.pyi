@@ -3,8 +3,9 @@ Type stubs for corner plotting library.
 """
 
 from typing import Any, Dict, List, Optional, Tuple, Union
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 

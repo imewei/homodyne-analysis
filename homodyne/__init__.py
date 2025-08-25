@@ -48,19 +48,18 @@ if sys.version_info < (3, 12):
         "Please upgrade your Python installation or use a compatible environment."
     )
 
+# Performance profiling utilities removed - functionality available via
+# core.config.performance_monitor
+from .analysis.core import HomodyneAnalysisCore
 from .core.config import ConfigManager, configure_logging, performance_monitor
 from .core.kernels import (
-    create_time_integral_matrix_numba,
     calculate_diffusion_coefficient_numba,
     calculate_shear_rate_numba,
     compute_g1_correlation_numba,
     compute_sinc_squared_numba,
+    create_time_integral_matrix_numba,
     memory_efficient_cache,
 )
-
-# Performance profiling utilities removed - functionality available via
-# core.config.performance_monitor
-from .analysis.core import HomodyneAnalysisCore
 
 # Optional optimization modules with graceful degradation
 try:

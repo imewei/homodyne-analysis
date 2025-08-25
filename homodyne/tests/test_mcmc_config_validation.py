@@ -14,13 +14,15 @@ This test suite validates:
 4. Warning messages are logged appropriately
 """
 
-import pytest
-import tempfile
 import json
-import numpy as np
+import tempfile
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
+import pytest
+
 from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 
 
@@ -401,8 +403,7 @@ class TestMCMCTraceFileValidation:
         # Mock trace with wrong dimensions (the issue that was happening)
         mock_trace = Mock()
         mock_trace.posterior = Mock()
-        mock_trace.posterior.sizes = {
-            "chain": trace_chains, "draw": trace_draws}
+        mock_trace.posterior.sizes = {"chain": trace_chains, "draw": trace_draws}
 
         # This should detect the mismatch
         assert (
@@ -528,8 +529,7 @@ class TestMCMCThinningConfiguration:
 
     def test_thinning_parameter_extraction(self):
         """Test that MCMCSampler correctly extracts thinning parameter."""
-        config = self.create_test_config(
-            draws=2000, chains=4, tune=500, thin=3)
+        config = self.create_test_config(draws=2000, chains=4, tune=500, thin=3)
         mock_core = self.create_mock_core()
 
         sampler = MCMCSampler(mock_core, config)
@@ -611,8 +611,7 @@ class TestMCMCThinningConfiguration:
 
     def test_thinning_passed_to_pymc_sample(self):
         """Test that thinning parameter is passed to PyMC's sample function."""
-        config = self.create_test_config(
-            draws=1000, chains=2, tune=500, thin=3)
+        config = self.create_test_config(draws=1000, chains=2, tune=500, thin=3)
         mock_core = self.create_mock_core()
 
         # Create dummy data
@@ -664,8 +663,7 @@ class TestMCMCThinningConfiguration:
 
     def test_thinning_warning_for_low_effective_samples(self):
         """Test that validation warns when thinning reduces effective samples too much."""
-        config = self.create_test_config(
-            draws=2000, thin=5)  # Effective = 400 samples
+        config = self.create_test_config(draws=2000, thin=5)  # Effective = 400 samples
         mock_core = self.create_mock_core()
 
         sampler = MCMCSampler(mock_core, config)

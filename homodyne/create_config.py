@@ -33,11 +33,11 @@ Generated Configuration Includes:
 - Output formatting and result organization
 """
 
+import argparse
 import json
 import sys
-from pathlib import Path
-import argparse
 from datetime import datetime
+from pathlib import Path
 
 
 def create_config_from_template(
@@ -101,7 +101,8 @@ def create_config_from_template(
             f"Invalid mode '{mode}'. Valid modes: {
                 list(
                     valid_modes.keys())[
-                    :-1]}")
+                    :-1]}"
+        )
 
     # Get template path (now that we're inside the homodyne package)
     template_dir = Path(__file__).parent
@@ -157,9 +158,9 @@ def create_config_from_template(
 
         # Update cache filename template based on mode
         cache_templates = {
-            "static_isotropic": f"cached_c2_isotropic_{sample_name}_{start_frame} _{end_frame} .npz",
-            "static_anisotropic": f"cached_c2_anisotropic_{sample_name}_{start_frame} _{end_frame} .npz",
-            "laminar_flow": f"cached_c2_flow_{sample_name}_{start_frame} _{end_frame} .npz",
+            "static_isotropic": f"cached_c2_isotropic_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
+            "static_anisotropic": f"cached_c2_anisotropic_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
+            "laminar_flow": f"cached_c2_flow_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
         }
         if mode in cache_templates:
             config["experimental_data"]["cache_filename_template"] = cache_templates[
@@ -205,8 +206,7 @@ def create_config_from_template(
 
     # Provide next steps
     print("\nNext steps:")
-    print(
-        f"1. Edit {output_path} and customize the parameters for your experiment")
+    print(f"1. Edit {output_path} and customize the parameters for your experiment")
     print("2. Replace placeholder values (YOUR_*) with actual values")
     print("3. Adjust initial_parameters.values based on your system")
     if mode == "static_isotropic":
@@ -280,10 +280,7 @@ Examples:
         help="Output configuration file name (default: my_config.json)",
     )
 
-    parser.add_argument(
-        "--sample",
-        "-s",
-        help="Sample name (used in data paths)")
+    parser.add_argument("--sample", "-s", help="Sample name (used in data paths)")
 
     parser.add_argument("--experiment", "-e", help="Experiment description")
 

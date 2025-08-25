@@ -9,14 +9,15 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
-import time
 import gc
 import json
 import os
+import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
+
 import numpy as np
+import pytest
 
 # Import performance monitoring utilities
 from homodyne.core.config import performance_monitor
@@ -59,9 +60,7 @@ def stable_benchmark(
         "outlier_threshold",
         "target_cv",
     ]
-    func_kwargs = {
-        k: v for k,
-        v in kwargs.items() if k not in benchmark_params}
+    func_kwargs = {k: v for k, v in kwargs.items() if k not in benchmark_params}
 
     # Warmup runs
     for _ in range(warmup_runs):
@@ -88,8 +87,9 @@ def stable_benchmark(
     mean_time = sum(times) / len(times) if times else 0.0
     sorted_times = sorted(times) if times else [0.0]
     median_time = sorted_times[len(sorted_times) // 2]
-    std_time = ((sum((t - mean_time) ** 2 for t in times) /
-                 len(times)) ** 0.5 if times else 0.0)
+    std_time = (
+        (sum((t - mean_time) ** 2 for t in times) / len(times)) ** 0.5 if times else 0.0
+    )
 
     # Calculate percentiles
     times_array = np.array(times) if times else np.array([0.0])
@@ -108,8 +108,7 @@ def stable_benchmark(
         iqr = q3 - q1
         outlier_lower = q1 - 1.5 * iqr
         outlier_upper = q3 + 1.5 * iqr
-        outlier_count = sum(1 for t in times if t <
-                            outlier_lower or t > outlier_upper)
+        outlier_count = sum(1 for t in times if t < outlier_lower or t > outlier_upper)
     else:
         outlier_count = 0
 
@@ -151,11 +150,7 @@ def assert_performance_within_bounds(
     )
 
 
-def assert_performance_stability(
-        times,
-        cv_threshold=0.3,
-        max_cv=None,
-        **kwargs):
+def assert_performance_stability(times, cv_threshold=0.3, max_cv=None, **kwargs):
     """Assert that performance measurements are stable."""
     if max_cv is not None:
         cv_threshold = max_cv
@@ -172,8 +167,7 @@ def assert_performance_stability(
 
 
 # Performance test data storage
-PERFORMANCE_BASELINE_FILE = Path(
-    __file__).parent / "performance_baselines.json"
+PERFORMANCE_BASELINE_FILE = Path(__file__).parent / "performance_baselines.json"
 
 
 class PerformanceRecorder:
@@ -208,11 +202,8 @@ class PerformanceRecorder:
         self.current_results[test_name][metric_name] = value
 
     def check_regression(
-            self,
-            test_name: str,
-            metric_name: str,
-            value: float,
-            threshold: float = 1.5) -> bool:
+        self, test_name: str, metric_name: str, value: float, threshold: float = 1.5
+    ) -> bool:
         """Check if a performance metric shows regression."""
         baseline = self.baselines.get(test_name, {}).get(metric_name)
         if baseline is None:
@@ -227,9 +218,7 @@ class PerformanceRecorder:
 
     def update_baseline(self, test_name: str, metric_name: str, value: float):
         """Update baseline if current performance is better."""
-        baseline = self.baselines.get(
-            test_name, {}).get(
-            metric_name, float("inf"))
+        baseline = self.baselines.get(test_name, {}).get(metric_name, float("inf"))
         if value < baseline * 0.9:  # 10% improvement
             if test_name not in self.baselines:
                 self.baselines[test_name] = {}
@@ -267,7 +256,8 @@ def setup_performance_environment():
         optimizations = optimize_numerical_environment()
         print(
             f"✓ Performance testing environment configured ({
-                len(optimizations)} optimizations)")
+                len(optimizations)} optimizations)"
+        )
     except RuntimeError as e:
         if "NUMBA_NUM_THREADS" in str(e):
             print("⚠ Numba threads already initialized - using existing settings")
@@ -322,8 +312,9 @@ def performance_timer():
 def memory_monitor():
     """Monitor memory usage during tests."""
     try:
-        import psutil
         import os
+
+        import psutil
 
         class MemoryMonitor:
             def __init__(self):
@@ -487,8 +478,7 @@ def assert_performance_regression(
 ):
     """Assert that performance hasn't regressed beyond threshold."""
 
-    is_regression = recorder.check_regression(
-        test_name, metric_name, value, threshold)
+    is_regression = recorder.check_regression(test_name, metric_name, value, threshold)
 
     if is_regression:
         baseline = recorder.baselines[test_name][metric_name]
@@ -552,17 +542,15 @@ __all__ = [
 def pytest_configure(config):
     """Configure performance test markers and options."""
     config.addinivalue_line(
-        "markers",
-        "performance: mark test as a performance test that should be fast")
-    config.addinivalue_line(
-        "markers",
-        "memory: mark test as a memory usage test")
+        "markers", "performance: mark test as a performance test that should be fast"
+    )
+    config.addinivalue_line("markers", "memory: mark test as a memory usage test")
     config.addinivalue_line(
         "markers", "regression: mark test as a performance regression test"
     )
     config.addinivalue_line(
-        "markers",
-        "benchmark: mark test for benchmarking (requires pytest-benchmark)")
+        "markers", "benchmark: mark test for benchmarking (requires pytest-benchmark)"
+    )
 
 
 def pytest_runtest_setup(item):

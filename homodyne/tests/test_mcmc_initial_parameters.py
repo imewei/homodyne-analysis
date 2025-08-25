@@ -22,12 +22,13 @@ results are available, otherwise --method mcmc will use the 'classical'
 best-fit results."
 """
 
-import pytest
-import numpy as np
-import tempfile
 import json
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
+import pytest
 
 
 class TestMCMCInitialParameterHandling:
@@ -143,15 +144,9 @@ class TestMCMCInitialParameterHandling:
         ):
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
-                "posterior_means": {
-                    "D0": 1100,
-                    "alpha": -0.45,
-                    "D_offset": 120},
+                "posterior_means": {"D0": 1100, "alpha": -0.45, "D_offset": 120},
                 "trace": None,
-                "diagnostics": {
-                    "converged": True,
-                    "max_rhat": 1.02,
-                    "min_ess": 350},
+                "diagnostics": {"converged": True, "max_rhat": 1.02, "min_ess": 350},
             }
             mock_create_sampler.return_value = mock_sampler
             mock_create_sampler_module.return_value = mock_sampler
@@ -251,8 +246,7 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run all methods
-            result = run_all_methods(
-                mock_analyzer, initial_params, phi_angles, c2_exp)
+            result = run_all_methods(mock_analyzer, initial_params, phi_angles, c2_exp)
 
             # Verify classical was called with initial parameters (including
             # output_dir)
@@ -389,11 +383,7 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run MCMC optimization
-            run_mcmc_optimization(
-                mock_analyzer,
-                initial_params,
-                phi_angles,
-                c2_exp)
+            run_mcmc_optimization(mock_analyzer, initial_params, phi_angles, c2_exp)
 
             # Verify appropriate logging occurred (may vary based on implementation)
             # The exact log message can vary, so just verify that logging
@@ -444,11 +434,7 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run MCMC optimization
-            run_mcmc_optimization(
-                mock_analyzer,
-                initial_params,
-                phi_angles,
-                c2_exp)
+            run_mcmc_optimization(mock_analyzer, initial_params, phi_angles, c2_exp)
 
             # Verify fallback logging occurred (may vary based on implementation)
             # The exact log message can vary, so just verify that logging
@@ -497,8 +483,7 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run all methods
-            result = run_all_methods(
-                mock_analyzer, initial_params, phi_angles, c2_exp)
+            result = run_all_methods(mock_analyzer, initial_params, phi_angles, c2_exp)
 
             # Verify classical was called with initial parameters (including
             # output_dir)
