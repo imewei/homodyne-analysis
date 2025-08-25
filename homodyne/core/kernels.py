@@ -46,6 +46,58 @@ except ImportError:
     float64 = int64 = types = Tuple = DummyType()
 
 
+# Define fallback implementations for when numba is not available
+def _compute_chi_squared_batch_fallback(
+    theory_batch, exp_batch, contrast_batch, offset_batch
+):
+    """Pure numpy fallback for compute_chi_squared_batch_numba when numba is unavailable."""
+    n_angles, n_data = theory_batch.shape
+    chi2_batch = np.zeros(n_angles, dtype=np.float64)
+
+    for i in range(n_angles):
+        theory = theory_batch[i]
+        exp = exp_batch[i]
+        contrast = contrast_batch[i]
+        offset = offset_batch[i]
+
+        fitted_vals = theory * contrast + offset
+        residuals = exp - fitted_vals
+        chi2_batch[i] = np.sum(residuals**2)
+
+    return chi2_batch
+
+
+def _solve_least_squares_batch_fallback(theory_batch, exp_batch):
+    """Pure numpy fallback for solve_least_squares_batch_numba when numba is unavailable."""
+    n_angles, n_data = theory_batch.shape
+    contrast_batch = np.zeros(n_angles, dtype=np.float64)
+    offset_batch = np.zeros(n_angles, dtype=np.float64)
+
+    for i in range(n_angles):
+        theory = theory_batch[i]
+        exp = exp_batch[i]
+
+        # Compute sums for 2x2 least squares system
+        sum_theory_sq = np.sum(theory**2)
+        sum_theory = np.sum(theory)
+        sum_exp = np.sum(exp)
+        sum_theory_exp = np.sum(theory * exp)
+
+        # Solve 2x2 system: AtA * x = Atb
+        det = sum_theory_sq * n_data - sum_theory * sum_theory
+
+        if abs(det) > 1e-12:  # Non-singular matrix
+            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
+            offset_batch[i] = (
+                sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
+            ) / det
+        else:  # Singular matrix fallback
+            contrast_batch[i] = 1.0
+            offset_batch[i] = 0.0
+
+    return contrast_batch, offset_batch
+
+
 @njit(float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True)
 def create_time_integral_matrix_numba(time_dependent_array):
     """
@@ -451,12 +503,7 @@ def memory_efficient_cache(maxsize=128):
 # Additional optimized kernels for improved performance
 
 
-@njit(
-    cache=True,
-    fastmath=True,
-    nogil=True,
-)
-def solve_least_squares_batch_numba(theory_batch, exp_batch):
+def _solve_least_squares_batch_numba_impl(theory_batch, exp_batch):
     """
     Batch solve least squares for multiple angles using Numba optimization.
 
@@ -515,14 +562,18 @@ def solve_least_squares_batch_numba(theory_batch, exp_batch):
     return contrast_batch, offset_batch
 
 
-@njit(
-    float64[:](float64[:, :], float64[:, :], float64[:], float64[:]),
-    parallel=False,
-    cache=True,
-    fastmath=True,
-    nogil=True,
-)
-def compute_chi_squared_batch_numba(
+# Apply numba decorator if available, otherwise use fallback
+if NUMBA_AVAILABLE:
+    solve_least_squares_batch_numba = njit(
+        cache=True,
+        fastmath=True,
+        nogil=True,
+    )(_solve_least_squares_batch_numba_impl)
+else:
+    solve_least_squares_batch_numba = _solve_least_squares_batch_fallback
+
+
+def _compute_chi_squared_batch_numba_impl(
     theory_batch, exp_batch, contrast_batch, offset_batch
 ):
     """
@@ -562,3 +613,16 @@ def compute_chi_squared_batch_numba(
         chi2_batch[i] = chi2
 
     return chi2_batch
+
+
+# Apply numba decorator if available, otherwise use fallback
+if NUMBA_AVAILABLE:
+    compute_chi_squared_batch_numba = njit(
+        float64[:](float64[:, :], float64[:, :], float64[:], float64[:]),
+        parallel=False,
+        cache=True,
+        fastmath=True,
+        nogil=True,
+    )(_compute_chi_squared_batch_numba_impl)
+else:
+    compute_chi_squared_batch_numba = _compute_chi_squared_batch_fallback
