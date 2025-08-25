@@ -13,9 +13,10 @@ This test suite validates:
 3. Default values are used only when configuration is missing
 4. Warning messages are logged appropriately
 
-Note: Type ignore comments are used because MCMCSampler may be None when PyMC is not 
+Note: Type ignore comments are used because MCMCSampler may be None when PyMC is not
 available. However, all tests are properly protected with pytest skip markers.
 """
+
 # type: ignore
 
 import json
@@ -27,13 +28,16 @@ from unittest.mock import MagicMock, Mock, patch
 import numpy as np
 import pytest
 
+
 # Test PyMC availability - dynamic check
 def _check_pymc_available():
     try:
         import pymc
+
         return True
     except ImportError:
         return False
+
 
 PYMC_AVAILABLE = _check_pymc_available()
 
@@ -118,7 +122,10 @@ class TestMCMCConfigurationUsage:
         mock_core.config_manager.is_angle_filtering_enabled.return_value = True
         return mock_core
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_sampler_extracts_correct_config_values(self):
         """Test that MCMCSampler correctly extracts configuration values."""
         config = self.create_test_config(draws=5000, chains=6, tune=2000)
@@ -132,7 +139,10 @@ class TestMCMCConfigurationUsage:
         assert sampler.mcmc_config["tune"] == 2000
         assert sampler.mcmc_config["target_accept"] == 0.95
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_sampler_uses_defaults_when_config_missing(self):
         """Test that MCMCSampler uses default values when configuration is missing."""
         config = {
@@ -152,7 +162,10 @@ class TestMCMCConfigurationUsage:
         # code
         assert sampler.mcmc_config == {}
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_config_values_passed_to_pymc_sample(self):
         """Test that configuration values are passed to PyMC's sample function."""
         config = self.create_test_config(draws=1000, chains=4, tune=500)
@@ -206,7 +219,10 @@ class TestMCMCConfigurationUsage:
                         assert call_args[1]["tune"] == 500
                         assert call_args[1]["target_accept"] == 0.95
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_config_validation_with_invalid_values(self):
         """Test that MCMC configuration validation catches invalid values."""
         config = self.create_test_config(
@@ -217,7 +233,10 @@ class TestMCMCConfigurationUsage:
         with pytest.raises(ValueError, match="draws must be a positive integer"):
             MCMCSampler(mock_core, config)
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_config_validation_with_invalid_types(self):
         """Test that MCMC configuration validation catches invalid types."""
         config = self.create_test_config(
@@ -229,7 +248,10 @@ class TestMCMCConfigurationUsage:
             sampler = MCMCSampler(mock_core, config)
             sampler._validate_mcmc_config()
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_default_fallback_behavior(self):
         """Test the exact default fallback behavior seen in the actual code."""
         config = self.create_test_config()
@@ -253,7 +275,10 @@ class TestMCMCConfigurationUsage:
         assert chains == 2
         assert target_accept == 0.9
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_actual_config_values_override_defaults(self):
         """Test that actual config values override defaults (the main fix)."""
         config = self.create_test_config(draws=10000, chains=8, tune=1000)
@@ -291,7 +316,10 @@ class TestMCMCConfigurationUsage:
         assert mock_trace.posterior.sizes["chain"] == chains
         assert mock_trace.posterior.sizes["draw"] == draws
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_create_mcmc_sampler_factory_function(self):
         """Test the create_mcmc_sampler factory function uses configuration correctly."""
         config = self.create_test_config(draws=7000, chains=5, tune=1500)
@@ -305,7 +333,10 @@ class TestMCMCConfigurationUsage:
         assert sampler.mcmc_config["chains"] == 5
         assert sampler.mcmc_config["tune"] == 1500
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_config_logging(self):
         """Test that MCMC configuration values are logged for debugging."""
         config = self.create_test_config(draws=3000, chains=6, tune=1000)
@@ -317,7 +348,10 @@ class TestMCMCConfigurationUsage:
             # Check that initialization was logged
             mock_logger.info.assert_called()
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_config_file_loading_integration(self):
         """Test loading configuration from a JSON file and using it in MCMC."""
         config_data = self.create_test_config(draws=4000, chains=3, tune=800)
@@ -344,7 +378,10 @@ class TestMCMCConfigurationUsage:
             # Clean up temp file
             Path(temp_config_path).unlink()
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_realistic_simon_config_values(self):
         """Test with the exact values from my_config_simon.json that caused the issue."""
         # Use the exact values from the user's configuration
@@ -365,7 +402,10 @@ class TestMCMCConfigurationUsage:
             mcmc_config.get("tune", 500) == 1000
         ), "Should use configured tune=1000, not default 500"
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_config_path_regression(self):
         """Regression test for the specific config path issue that was fixed."""
         # Test both the old (wrong) and new (correct) config access patterns
@@ -467,7 +507,10 @@ class TestMCMCTraceFileValidation:
 class TestMCMCConfigurationIntegration:
     """Integration tests for full MCMC configuration pipeline."""
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_config_to_trace_pipeline(self):
         """Test the full pipeline from config loading to trace generation."""
         # This test would be more complex and might need actual PyMC
@@ -570,7 +613,10 @@ class TestMCMCThinningConfiguration:
         mock_core.config_manager.is_angle_filtering_enabled.return_value = True
         return mock_core
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_parameter_extraction(self):
         """Test that MCMCSampler correctly extracts thinning parameter."""
         config = self.create_test_config(draws=2000, chains=4, tune=500, thin=3)
@@ -582,7 +628,10 @@ class TestMCMCThinningConfiguration:
         assert sampler.mcmc_config["thin"] == 3
         assert sampler.mcmc_config["draws"] == 2000
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_default_value(self):
         """Test that thinning defaults to 1 when not specified."""
         config = {
@@ -612,7 +661,10 @@ class TestMCMCThinningConfiguration:
         thin = mcmc_config.get("thin", 1)
         assert thin == 1
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_validation_positive_integer(self):
         """Test that thinning validation requires positive integer."""
         mock_core = self.create_mock_core()
@@ -626,7 +678,10 @@ class TestMCMCThinningConfiguration:
             with pytest.raises(ValueError, match="thin must be a positive integer"):
                 MCMCSampler(mock_core, config)
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_valid_values(self):
         """Test that valid thinning values are accepted."""
         mock_core = self.create_mock_core()
@@ -638,7 +693,10 @@ class TestMCMCThinningConfiguration:
             sampler = MCMCSampler(mock_core, config)
             assert sampler.mcmc_config["thin"] == valid_thin
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_effective_draws_calculation(self):
         """Test effective draws calculation with thinning."""
         config = self.create_test_config(draws=1000, thin=5)
@@ -657,7 +715,10 @@ class TestMCMCThinningConfiguration:
         assert effective_draws == expected_effective
         assert effective_draws == 200
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_passed_to_pymc_sample(self):
         """Test that thinning parameter is passed to PyMC's sample function."""
         config = self.create_test_config(draws=1000, chains=2, tune=500, thin=3)
@@ -710,7 +771,10 @@ class TestMCMCThinningConfiguration:
                         assert call_args[1]["chains"] == 2
                         assert call_args[1]["tune"] == 500
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_warning_for_low_effective_samples(self):
         """Test that validation warns when thinning reduces effective samples too much."""
         config = self.create_test_config(draws=2000, thin=5)  # Effective = 400 samples
@@ -728,7 +792,10 @@ class TestMCMCThinningConfiguration:
             low_sample_warning
         ), f"Expected low effective samples warning, got warnings: {warnings}"
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_recommendation_for_large_samples(self):
         """Test that validation recommends thinning for large sample sizes."""
         config = self.create_test_config(
@@ -748,7 +815,10 @@ class TestMCMCThinningConfiguration:
             thinning_recommendation
         ), f"Expected thinning recommendation, got: {recommendations}"
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_thinning_in_different_analysis_modes(self):
         """Test thinning configuration in different analysis modes."""
         mock_core = self.create_mock_core()

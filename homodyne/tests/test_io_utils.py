@@ -205,7 +205,7 @@ class TestDataSaving:
         assert filepath.exists()
 
         # Verify content
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)
         assert loaded_data == data
 

@@ -129,7 +129,7 @@ class TestCompleteWorkflow:
         assert len(plot_files) >= 1
 
         # Verify JSON content is readable
-        with open(json_files[0], "r") as f:
+        with open(json_files[0], "r", encoding="utf-8") as f:
             saved_results = json.load(f)
         assert isinstance(saved_results, dict)
         assert "best_chi_squared" in saved_results
@@ -427,7 +427,7 @@ class TestErrorHandlingIntegration:
             json.dump(invalid_config, f)
 
         # Loading should work (JSON is valid)
-        with open(config_file, "r") as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             loaded_config = json.load(f)
 
         assert loaded_config == invalid_config
@@ -793,7 +793,7 @@ class TestConcurrencyAndRaceConditions:
             filepath = temp_directory / f"concurrent_file_{file_id}.json"
             assert filepath.exists()
 
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             assert data["id"] == file_id
