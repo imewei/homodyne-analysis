@@ -207,7 +207,7 @@
           },
           "Robust-Scenario": {
             "_description": "Scenario-based robust optimization with bootstrap resampling",
-            "n_scenarios": 50,
+            "n_scenarios": 15,
             "scenario_generation": "bootstrap",
             "confidence_level": 0.95,
             "_n_scenarios_note": "Number of worst-case scenarios to consider (20-100 typical)",

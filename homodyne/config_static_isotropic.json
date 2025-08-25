@@ -124,7 +124,7 @@
         "enabled": true,
         "uncertainty_model": "wasserstein",
         "uncertainty_radius": 0.03,
-        "n_scenarios": 30,
+        "n_scenarios": 15,
         "regularization_alpha": 0.01,
         "regularization_beta": 0.001,
         "solver_settings": {

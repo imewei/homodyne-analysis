@@ -123,7 +123,7 @@ class TestMethodResultsSaving:
                 "iterations": 60,
                 "solve_time": 3.2,
                 "status": "optimal",
-                "robust_info": {"n_scenarios": 50, "worst_case_value": 0.65},
+                "robust_info": {"n_scenarios": 15, "worst_case_value": 0.65},
             },
         }
 

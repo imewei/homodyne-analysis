@@ -333,7 +333,7 @@ class TestRobustOptimizationPerformance:
 
         # Jacobian computation involves finite differences, should be
         # reasonable (< 2s for 3D data, more lenient in CI)
-        max_time = 5.0 if os.getenv('CI') else 2.0
+        max_time = 5.0 if os.getenv("CI") else 2.0
         assert (
             jacobian_time < max_time
         ), f"Jacobian computation too slow: {jacobian_time:.4f}s (max: {max_time:.1f}s)"
@@ -366,11 +366,15 @@ class TestRobustOptimizationPerformance:
             scenario_time = end_time - start_time
 
             # Scenario generation should scale linearly with count
-            max_time = 0.005 * n_scenarios  # 5ms per scenario maximum
+            # Be more lenient in CI environments
+            base_time_per_scenario = (
+                0.01 if os.getenv("CI") else 0.005
+            )  # 10ms or 5ms per scenario
+            max_time = base_time_per_scenario * n_scenarios
             assert (
                 scenario_time < max_time
             ), f"Scenario generation too slow: {
-                scenario_time:.4f}s for {n_scenarios} scenarios"
+                scenario_time:.4f}s for {n_scenarios} scenarios (max: {max_time:.4f}s)"
             assert len(scenarios) == n_scenarios
 
     def test_scaling_with_data_size(self):

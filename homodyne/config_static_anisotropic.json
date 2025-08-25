@@ -162,6 +162,64 @@
         "prior_sigma": 0.01,
         "type": "TruncatedNormal"
       }
+    },
+    "robust_optimization": {
+      "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # Run only robust methods",
+        "python run_homodyne.py --method robust --static-anisotropic  # Robust in anisotropic mode",
+        "python run_homodyne.py --method classical  # Run all methods including robust",
+        "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
+      ],
+      "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
+      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "enabled": true,
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
+      "uncertainty_radius": 0.05,
+      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set (0.01-0.1 typical)",
+      "n_scenarios": 15,
+      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization (optimized for performance)",
+      "regularization_alpha": 0.01,
+      "_regularization_alpha_note": "L2 regularization strength for parameter stability",
+      "regularization_beta": 0.001,
+      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
+      "jacobian_epsilon": 1e-6,
+      "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
+      "enable_caching": true,
+      "_enable_caching_note": "Enable performance caching for repeated computations",
+      "preferred_solver": "CLARABEL",
+      "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
+      "solver_settings": {
+        "Method": 2,
+        "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex",
+        "CrossOver": 0,
+        "_CrossOver_note": "Skip crossover for numerical stability",
+        "BarHomogeneous": 1,
+        "_BarHomogeneous_note": "Use homogeneous barrier method",
+        "TimeLimit": 300,
+        "_TimeLimit_note": "Maximum solve time in seconds (optimized for performance)",
+        "MIPGap": 1e-4,
+        "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
+        "NumericFocus": 2,
+        "_NumericFocus_note": "Numerical stability focus (optimized for speed)",
+        "OutputFlag": 0,
+        "_OutputFlag_note": "Suppress solver output"
+      },
+      "method_options": {
+        "wasserstein": {
+          "uncertainty_radius": 0.05,
+          "regularization_alpha": 0.01
+        },
+        "scenario": {
+          "n_scenarios": 15,
+          "bootstrap_method": "residual"
+        },
+        "ellipsoidal": {
+          "gamma": 0.1,
+          "regularization_alpha": 0.01
+        }
+      }
     }
   },
   

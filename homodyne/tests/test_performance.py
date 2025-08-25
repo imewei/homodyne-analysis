@@ -919,9 +919,16 @@ class TestOptimizationFeatures:
         # (May not always be faster due to system variance, but shouldn't be much slower)
         # Be more lenient in CI environments where timing can be unpredictable
         max_slowdown = 5.0 if os.getenv("CI") else 2.0
-        assert (
-            second_call_time < first_call_time * max_slowdown
-        ), f"Cached call shouldn't be significantly slower (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
+
+        # Handle case where timing is too small to be meaningful (< 1ms)
+        if first_call_time < 0.001 and second_call_time < 0.001:
+            print(
+                f"✓ Config caching: both calls too fast to measure accurately (< 1ms)"
+            )
+        else:
+            assert (
+                second_call_time < first_call_time * max_slowdown
+            ), f"Cached call shouldn't be significantly slower (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
 
         print(
             f"✓ Config caching: first={

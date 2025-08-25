@@ -91,6 +91,11 @@ class RobustHomodyneOptimizer:
         self.config = config
         self.best_params_robust = None
 
+        # Performance optimization caches
+        self._jacobian_cache = {}
+        self._correlation_cache = {}
+        self._bounds_cache = None
+
         # Extract robust optimization configuration
         self.robust_config = config.get("optimization_config", {}).get(
             "robust_optimization", {}
@@ -106,16 +111,19 @@ class RobustHomodyneOptimizer:
         self.default_settings = {
             "uncertainty_model": "wasserstein",  # wasserstein, ellipsoidal, scenario
             "uncertainty_radius": 0.05,  # 5% of data variance
-            "n_scenarios": 50,  # Number of scenarios for scenario-based optimization
+            "n_scenarios": 15,  # Reduced from 50 for better performance
             "regularization_alpha": 0.01,  # L2 regularization strength
             "regularization_beta": 0.001,  # L1 sparsity parameter
+            "jacobian_epsilon": 1e-6,  # Smaller epsilon for more accurate derivatives
+            "enable_caching": True,  # Enable performance caching
+            "preferred_solver": "CLARABEL",  # Skip solver chain for speed
             "solver_settings": {
                 "Method": 2,  # Barrier method
                 "CrossOver": 0,  # Skip crossover for stability
                 "BarHomogeneous": 1,  # Use homogeneous barrier
-                "TimeLimit": 600,  # 10 minute limit
-                "MIPGap": 1e-6,  # High precision
-                "NumericFocus": 3,  # Maximum numerical stability
+                "TimeLimit": 300,  # Reduced from 600 for faster timeout
+                "MIPGap": 1e-4,  # Relaxed for speed
+                "NumericFocus": 2,  # Reduced from 3 for speed
                 "OutputFlag": 0,  # Suppress output
             },
         }
@@ -235,8 +243,14 @@ class RobustHomodyneOptimizer:
 
         n_params = len(theta_init)
 
-        # Get parameter bounds
-        bounds = self._get_parameter_bounds()
+        # Get parameter bounds (cached for performance)
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
+            self._bounds_cache = self._get_parameter_bounds()
+        bounds = (
+            self._bounds_cache
+            if self.settings.get("enable_caching", True)
+            else self._get_parameter_bounds()
+        )
 
         # Estimate data uncertainty from experimental variance
         data_std = np.std(c2_experimental, axis=-1, keepdims=True)
@@ -305,124 +319,8 @@ class RobustHomodyneOptimizer:
             objective = cp.Minimize(chi_squared + regularization)
             problem = cp.Problem(objective, constraints)
 
-            # Solve with progressive fallback chain: CLARABEL -> CVXOPT -> SCS
-            # -> Gurobi
-            solver_success = False
-
-            # Try CLARABEL first (most reliable open-source solver)
-            try:
-                logger.debug("Attempting to solve with CLARABEL (primary solver)")
-                problem.solve(solver=cp.CLARABEL)
-                if problem.status in ["optimal", "optimal_inaccurate"]:
-                    solver_success = True
-                    logger.debug(
-                        f"CLARABEL succeeded with status: {
-                            problem.status}"
-                    )
-            except Exception as e:
-                logger.debug(f"CLARABEL failed: {str(e)}")
-
-            # Try CVXOPT if CLARABEL failed
-            if not solver_success:
-                try:
-                    logger.info("CLARABEL failed. Trying CVXOPT.")
-                    problem.solve(solver=cp.CVXOPT)
-                    if problem.status in ["optimal", "optimal_inaccurate"]:
-                        solver_success = True
-                        logger.debug(
-                            f"CVXOPT succeeded with status: {
-                                problem.status}"
-                        )
-                except Exception as e:
-                    logger.debug(f"CVXOPT failed: {str(e)}")
-
-            # Try SCS if CVXOPT failed
-            if not solver_success:
-                try:
-                    logger.info("CVXOPT failed. Trying SCS.")
-                    problem.solve(solver=cp.SCS)
-                    if problem.status in ["optimal", "optimal_inaccurate"]:
-                        solver_success = True
-                        logger.debug(
-                            f"SCS succeeded with status: {
-                                problem.status}"
-                        )
-                except Exception as e:
-                    logger.debug(f"SCS failed: {str(e)}")
-
-            # Try Gurobi as last resort (only for small problems due to license
-            # limitations)
-            if not solver_success and GUROBI_AVAILABLE:
-                total_variables = len(theta_init) + c2_experimental.size
-                gurobi_size_limit = (
-                    100  # Empirically determined limit for restricted license
-                )
-
-                if total_variables <= gurobi_size_limit:
-                    logger.info(
-                        f"SCS failed. Trying Gurobi (problem size {total_variables} within limit)."
-                    )
-                    gurobi_configs = [
-                        {
-                            "QCPDual": 1,
-                            "Method": -1,
-                            "NumericFocus": 3,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 2,
-                            "BarConvTol": 1e-6,
-                            "NumericFocus": 2,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 0,
-                            "NumericFocus": 2,
-                            "Presolve": 2,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 2,
-                            "CrossOver": -1,
-                            "BarHomogeneous": 1,
-                            "OutputFlag": 0,
-                        },
-                        {"OutputFlag": 0},
-                    ]
-
-                    for i, config in enumerate(gurobi_configs):
-                        try:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                config_debug = config.copy()
-                                config_debug["OutputFlag"] = 1
-                                problem.solve(
-                                    solver=cp.GUROBI, verbose=True, **config_debug
-                                )
-                            else:
-                                problem.solve(solver=cp.GUROBI, **config)
-
-                            if problem.status in ["optimal", "optimal_inaccurate"]:
-                                solver_success = True
-                                logger.info(
-                                    f"Gurobi succeeded with config {
-                                        i + 1}"
-                                )
-                                break
-                        except Exception as e:
-                            logger.debug(
-                                f"Gurobi config {
-                                    i +
-                                    1} failed: {
-                                    str(e)}"
-                            )
-                            continue
-                else:
-                    logger.info(
-                        f"Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)"
-                    )
-
-            if not solver_success:
-                logger.error("All solvers failed to find a solution")
+            # Optimized solving with preferred solver and fast fallback
+            solver_success = self._solve_cvxpy_problem_optimized(problem, "DRO")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -531,7 +429,14 @@ class RobustHomodyneOptimizer:
         )
 
         n_params = len(theta_init)
-        bounds = self._get_parameter_bounds()
+        # Get parameter bounds (cached for performance)
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
+            self._bounds_cache = self._get_parameter_bounds()
+        bounds = (
+            self._bounds_cache
+            if self.settings.get("enable_caching", True)
+            else self._get_parameter_bounds()
+        )
 
         try:
             # Check CVXPY availability
@@ -553,21 +458,18 @@ class RobustHomodyneOptimizer:
                     if ub is not None:
                         constraints.append(theta[i] <= ub)
 
-            # Min-max constraints: t >= chi_squared(theta, scenario_s) for all
-            # scenarios
-            for scenario_data in scenarios:
-                # Linearized fitted correlation function for scenario
-                c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                    theta_init, phi_angles, c2_experimental
-                )
-                delta_theta = theta - theta_init
-                # Reshape jacobian @ delta_theta to match c2_fitted_init shape
-                linear_correction = jacobian @ delta_theta
-                linear_correction_reshaped = linear_correction.reshape(
-                    c2_fitted_init.shape
-                )
-                c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
+            # Optimized: Pre-compute linearized correlation once outside the loop
+            c2_fitted_init, jacobian = self._compute_linearized_correlation(
+                theta_init, phi_angles, c2_experimental
+            )
+            delta_theta = theta - theta_init
+            # Reshape jacobian @ delta_theta to match c2_fitted_init shape
+            linear_correction = jacobian @ delta_theta
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
+            c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
+            # Min-max constraints: t >= chi_squared(theta, scenario_s) for all scenarios
+            for scenario_data in scenarios:
                 # Chi-squared for this scenario (experimental - fitted)
                 residuals = scenario_data - c2_fitted_linear
                 assert cp is not None  # Already checked above
@@ -582,139 +484,8 @@ class RobustHomodyneOptimizer:
             objective = cp.Minimize(t + regularization)
             problem = cp.Problem(objective, constraints)
 
-            # Solve with progressive fallback chain: CLARABEL -> CVXOPT -> SCS
-            # -> Gurobi
-            solver_success = False
-
-            # Try CLARABEL first (most reliable open-source solver)
-            try:
-                logger.debug(
-                    "Scenario: Attempting to solve with CLARABEL (primary solver)"
-                )
-                problem.solve(solver=cp.CLARABEL)
-                if problem.status in ["optimal", "optimal_inaccurate"]:
-                    solver_success = True
-                    logger.debug(
-                        f"Scenario: CLARABEL succeeded with status: {
-                            problem.status}"
-                    )
-            except Exception as e:
-                logger.debug(f"Scenario: CLARABEL failed: {str(e)}")
-
-            # Try CVXOPT if CLARABEL failed
-            if not solver_success:
-                try:
-                    logger.info("Scenario: CLARABEL failed. Trying CVXOPT.")
-                    problem.solve(solver=cp.CVXOPT)
-                    if problem.status in ["optimal", "optimal_inaccurate"]:
-                        solver_success = True
-                        logger.debug(
-                            f"Scenario: CVXOPT succeeded with status: {
-                                problem.status}"
-                        )
-                except Exception as e:
-                    logger.debug(f"Scenario: CVXOPT failed: {str(e)}")
-
-            # Try SCS if CVXOPT failed
-            if not solver_success:
-                try:
-                    logger.info("Scenario: CVXOPT failed. Trying SCS.")
-                    problem.solve(solver=cp.SCS)
-                    if problem.status in ["optimal", "optimal_inaccurate"]:
-                        solver_success = True
-                        logger.debug(
-                            f"Scenario: SCS succeeded with status: {
-                                problem.status}"
-                        )
-                except Exception as e:
-                    logger.debug(f"Scenario: SCS failed: {str(e)}")
-
-            # Try Gurobi as last resort (only for small problems due to license
-            # limitations)
-            if not solver_success and GUROBI_AVAILABLE:
-                total_variables = len(theta_init) + c2_experimental.size
-                gurobi_size_limit = (
-                    100  # Empirically determined limit for restricted license
-                )
-
-                if total_variables <= gurobi_size_limit:
-                    logger.info(
-                        f"Scenario: SCS failed. Trying Gurobi (problem size {total_variables} within limit)."
-                    )
-                    gurobi_configs = [
-                        {
-                            "QCPDual": 1,
-                            "Method": -1,
-                            "NumericFocus": 3,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 2,
-                            "BarConvTol": 1e-6,
-                            "NumericFocus": 2,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 0,
-                            "NumericFocus": 2,
-                            "Presolve": 2,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 2,
-                            "CrossOver": -1,
-                            "BarHomogeneous": 1,
-                            "OutputFlag": 0,
-                        },
-                        {"OutputFlag": 0},
-                    ]
-
-                    gurobi_success = False
-                    for i, solver_opts in enumerate(gurobi_configs):
-                        try:
-                            # Enable verbose output for debug logging
-                            if logger.isEnabledFor(logging.DEBUG):
-                                solver_opts_debug = solver_opts.copy()
-                                solver_opts_debug["OutputFlag"] = 1
-                                problem.solve(
-                                    solver=cp.GUROBI, verbose=True, **solver_opts_debug
-                                )
-                            else:
-                                problem.solve(solver=cp.GUROBI, **solver_opts)
-
-                            if problem.status in ["optimal", "optimal_inaccurate"]:
-                                logger.info(
-                                    f"Scenario: Gurobi succeeded with config {
-                                        i +
-                                        1}, status: {
-                                        problem.status}"
-                                )
-                                gurobi_success = True
-                                solver_success = True
-                                break
-                            else:
-                                logger.debug(
-                                    f"Scenario Gurobi config {i + 1} non-optimal status: {problem.status}"
-                                )
-                        except Exception as e:
-                            logger.debug(
-                                f"Scenario Gurobi config {
-                                    i +
-                                    1} exception: {
-                                    str(e)}"
-                            )
-                            continue
-
-                    if not gurobi_success:
-                        logger.info("Scenario: All Gurobi configurations failed.")
-                        solver_success = False
-                else:
-                    logger.info(
-                        f"Scenario: Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)"
-                    )
-
-            if not solver_success:
-                logger.error("Scenario: All solvers failed to find a solution")
+            # Optimized solving with preferred solver and fast fallback
+            solver_success = self._solve_cvxpy_problem_optimized(problem, "Scenario")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -807,7 +578,14 @@ class RobustHomodyneOptimizer:
         logger.info(f"Ellipsoidal initial χ²: {initial_chi_squared:.6f}")
 
         n_params = len(theta_init)
-        bounds = self._get_parameter_bounds()
+        # Get parameter bounds (cached for performance)
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
+            self._bounds_cache = self._get_parameter_bounds()
+        bounds = (
+            self._bounds_cache
+            if self.settings.get("enable_caching", True)
+            else self._get_parameter_bounds()
+        )
 
         try:
             # Check CVXPY availability
@@ -857,142 +635,8 @@ class RobustHomodyneOptimizer:
             objective = cp.Minimize(cp.sum_squares(residuals) + l2_reg + l1_reg)
             problem = cp.Problem(objective, constraints)
 
-            # Solve with progressive fallback chain: CLARABEL -> CVXOPT -> SCS
-            # -> Gurobi
-            solver_success = False
-
-            # Try CLARABEL first (most reliable open-source solver)
-            try:
-                logger.debug(
-                    "Ellipsoidal: Attempting to solve with CLARABEL (primary solver)"
-                )
-                problem.solve(solver=cp.CLARABEL)
-                if problem.status in ["optimal", "optimal_inaccurate"]:
-                    solver_success = True
-                    logger.debug(
-                        f"Ellipsoidal: CLARABEL succeeded with status: {
-                            problem.status}"
-                    )
-            except Exception as e:
-                logger.debug(f"Ellipsoidal: CLARABEL failed: {str(e)}")
-
-            # Try CVXOPT if CLARABEL failed
-            if not solver_success:
-                try:
-                    logger.info("Ellipsoidal: CLARABEL failed. Trying CVXOPT.")
-                    problem.solve(solver=cp.CVXOPT)
-                    if problem.status in ["optimal", "optimal_inaccurate"]:
-                        solver_success = True
-                        logger.debug(
-                            f"Ellipsoidal: CVXOPT succeeded with status: {
-                                problem.status}"
-                        )
-                except Exception as e:
-                    logger.debug(f"Ellipsoidal: CVXOPT failed: {str(e)}")
-
-            # Try SCS if CVXOPT failed
-            if not solver_success:
-                try:
-                    logger.info("Ellipsoidal: CVXOPT failed. Trying SCS.")
-                    problem.solve(solver=cp.SCS)
-                    if problem.status in ["optimal", "optimal_inaccurate"]:
-                        solver_success = True
-                        logger.debug(
-                            f"Ellipsoidal: SCS succeeded with status: {
-                                problem.status}"
-                        )
-                except Exception as e:
-                    logger.debug(f"Ellipsoidal: SCS failed: {str(e)}")
-
-            # Try Gurobi as last resort (only for small problems due to license
-            # limitations)
-            if not solver_success and GUROBI_AVAILABLE:
-                total_variables = len(theta_init) + c2_experimental.size
-                gurobi_size_limit = (
-                    100  # Empirically determined limit for restricted license
-                )
-
-                if total_variables <= gurobi_size_limit:
-                    logger.info(
-                        f"Ellipsoidal: SCS failed. Trying Gurobi (problem size {total_variables} within limit)."
-                    )
-                    gurobi_configs = [
-                        {
-                            "QCPDual": 1,
-                            "Method": -1,
-                            "NumericFocus": 3,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 2,
-                            "BarConvTol": 1e-6,
-                            "NumericFocus": 2,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 0,
-                            "NumericFocus": 2,
-                            "Presolve": 2,
-                            "OutputFlag": 0,
-                        },
-                        {
-                            "Method": 2,
-                            "CrossOver": -1,
-                            "BarHomogeneous": 1,
-                            "OutputFlag": 0,
-                        },
-                        {"OutputFlag": 0},
-                    ]
-
-                    gurobi_success = False
-                    for i, config in enumerate(gurobi_configs):
-                        try:
-                            logger.debug(
-                                f"Ellipsoidal: Trying Gurobi configuration {i + 1}/{len(gurobi_configs)}"
-                            )
-                            # Enable verbose output for debug logging
-                            if logger.isEnabledFor(logging.DEBUG):
-                                config_debug = config.copy()
-                                config_debug["OutputFlag"] = 1
-                                problem.solve(
-                                    solver=cp.GUROBI, verbose=True, **config_debug
-                                )
-                            else:
-                                problem.solve(solver=cp.GUROBI, **config)
-
-                            if problem.status in ["optimal", "optimal_inaccurate"]:
-                                logger.info(
-                                    f"Ellipsoidal: Gurobi succeeded with configuration {
-                                        i +
-                                        1}, status: {
-                                        problem.status}"
-                                )
-                                gurobi_success = True
-                                solver_success = True
-                                break
-                            else:
-                                logger.debug(
-                                    f"Ellipsoidal: Gurobi configuration {i + 1} non-optimal status: {problem.status}"
-                                )
-                        except Exception as e:
-                            logger.debug(
-                                f"Ellipsoidal: Gurobi configuration {
-                                    i +
-                                    1} exception: {
-                                    str(e)}"
-                            )
-                            continue
-
-                    if not gurobi_success:
-                        logger.info("Ellipsoidal: All Gurobi configurations failed.")
-                        solver_success = False
-                else:
-                    logger.info(
-                        f"Ellipsoidal: Problem too large for Gurobi restricted license ({total_variables} > {gurobi_size_limit} vars)"
-                    )
-
-            if not solver_success:
-                logger.error("Ellipsoidal: All solvers failed to find a solution")
+            # Optimized solving with preferred solver and fast fallback
+            solver_success = self._solve_cvxpy_problem_optimized(problem, "Ellipsoidal")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -1115,30 +759,53 @@ class RobustHomodyneOptimizer:
         Tuple[np.ndarray, np.ndarray]
             (fitted_correlation_function, jacobian_matrix)
         """
+        # Create cache key for performance optimization
+        theta_key = tuple(theta) if self.settings.get("enable_caching", True) else None
+
+        if theta_key and theta_key in self._jacobian_cache:
+            return self._jacobian_cache[theta_key]
+
         # Compute fitted correlation function at theta (with scaling applied)
         c2_fitted = self._compute_fitted_correlation(theta, phi_angles, c2_experimental)
 
-        # Estimate Jacobian using finite differences on FITTED correlation
-        epsilon = 1e-8
+        # Optimized Jacobian computation with adaptive epsilon
+        epsilon = self.settings.get("jacobian_epsilon", 1e-6)
         n_params = len(theta)
         jacobian = np.zeros((c2_fitted.size, n_params))
 
+        # Batch compute perturbations for better cache efficiency
+        theta_perturbations = []
         for i in range(n_params):
             theta_plus = theta.copy()
-            theta_plus[i] += epsilon
+            theta_minus = theta.copy()
+            # Adaptive epsilon based on parameter magnitude
+            param_epsilon = max(epsilon, abs(theta[i]) * epsilon)
+            theta_plus[i] += param_epsilon
+            theta_minus[i] -= param_epsilon
+            theta_perturbations.append((theta_plus, theta_minus, param_epsilon))
+
+        # Compute finite differences
+        for i, (theta_plus, theta_minus, param_epsilon) in enumerate(
+            theta_perturbations
+        ):
             c2_plus = self._compute_fitted_correlation(
                 theta_plus, phi_angles, c2_experimental
             )
-
-            theta_minus = theta.copy()
-            theta_minus[i] -= epsilon
             c2_minus = self._compute_fitted_correlation(
                 theta_minus, phi_angles, c2_experimental
             )
 
-            jacobian[:, i] = (c2_plus.flatten() - c2_minus.flatten()) / (2 * epsilon)
+            jacobian[:, i] = (c2_plus.flatten() - c2_minus.flatten()) / (
+                2 * param_epsilon
+            )
 
-        return c2_fitted, jacobian
+        result = (c2_fitted, jacobian)
+
+        # Cache result if caching is enabled
+        if theta_key and self.settings.get("enable_caching", True):
+            self._jacobian_cache[theta_key] = result
+
+        return result
 
     def _compute_theoretical_correlation(
         self, theta: np.ndarray, phi_angles: np.ndarray
@@ -1212,8 +879,20 @@ class RobustHomodyneOptimizer:
             Fitted correlation function (scaled to match experimental data)
         """
         try:
-            # Get raw theoretical correlation
-            c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
+            # Performance optimization: cache theoretical correlation
+            theta_key = (
+                tuple(theta) if self.settings.get("enable_caching", True) else None
+            )
+
+            if theta_key and theta_key in self._correlation_cache:
+                c2_theory = self._correlation_cache[theta_key]
+            else:
+                # Get raw theoretical correlation
+                c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
+
+                # Cache if enabled
+                if theta_key and self.settings.get("enable_caching", True):
+                    self._correlation_cache[theta_key] = c2_theory
 
             # Apply scaling transformation using least squares
             # This mimics what calculate_chi_squared_optimized does internally
@@ -1421,6 +1100,78 @@ class RobustHomodyneOptimizer:
         except Exception as e:
             logger.error(f"Error getting parameter bounds: {e}")
             return None
+
+    def _solve_cvxpy_problem_optimized(self, problem, method_name: str = "") -> bool:
+        """
+        Optimized CVXPY problem solving with preferred solver and fast fallback.
+
+        Parameters
+        ----------
+        problem : cp.Problem
+            CVXPY problem to solve
+        method_name : str
+            Name of the optimization method for logging
+
+        Returns
+        -------
+        bool
+            True if solver succeeded, False otherwise
+        """
+        preferred_solver = self.settings.get("preferred_solver", "CLARABEL")
+
+        # Try preferred solver first
+        try:
+            if preferred_solver == "CLARABEL":
+                logger.debug(f"{method_name}: Using preferred CLARABEL solver")
+                problem.solve(solver=cp.CLARABEL)
+            elif preferred_solver == "SCS":
+                logger.debug(f"{method_name}: Using preferred SCS solver")
+                problem.solve(solver=cp.SCS)
+            elif preferred_solver == "CVXOPT":
+                logger.debug(f"{method_name}: Using preferred CVXOPT solver")
+                problem.solve(solver=cp.CVXOPT)
+            else:
+                logger.debug(f"{method_name}: Using default CLARABEL solver")
+                problem.solve(solver=cp.CLARABEL)
+
+            if problem.status in ["optimal", "optimal_inaccurate"]:
+                logger.debug(
+                    f"{method_name}: Preferred solver succeeded with status: {problem.status}"
+                )
+                return True
+        except Exception as e:
+            logger.debug(
+                f"{method_name}: Preferred solver {preferred_solver} failed: {str(e)}"
+            )
+
+        # Fast fallback to SCS if preferred solver failed
+        try:
+            logger.debug(
+                f"{method_name}: Preferred solver failed. Trying SCS fallback."
+            )
+            problem.solve(solver=cp.SCS)
+            if problem.status in ["optimal", "optimal_inaccurate"]:
+                logger.debug(
+                    f"{method_name}: SCS fallback succeeded with status: {problem.status}"
+                )
+                return True
+        except Exception as e:
+            logger.debug(f"{method_name}: SCS fallback failed: {str(e)}")
+
+        logger.error(f"{method_name}: All solvers failed to find a solution")
+        return False
+
+    def clear_caches(self) -> None:
+        """
+        Clear performance optimization caches to free memory.
+
+        Call this method periodically during batch optimization to prevent
+        memory usage from growing too large.
+        """
+        self._jacobian_cache.clear()
+        self._correlation_cache.clear()
+        self._bounds_cache = None
+        logger.debug("Cleared robust optimization performance caches")
 
 
 def create_robust_optimizer(
