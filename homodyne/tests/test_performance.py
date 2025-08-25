@@ -1888,6 +1888,7 @@ class TestMCMCThinningPerformance:
     @pytest.mark.performance
     @pytest.mark.mcmc
     @pytest.mark.memory
+    @pytest.mark.skipif(not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests")
     def test_thinning_memory_usage(self, small_benchmark_data):
         """Test that thinning reduces memory usage in MCMC traces."""
         c2_experimental, _, phi_angles, _ = small_benchmark_data
@@ -2008,6 +2009,7 @@ class TestMCMCThinningPerformance:
     @pytest.mark.performance
     @pytest.mark.mcmc
     @pytest.mark.slow
+    @pytest.mark.skipif(not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests")
     def test_thinning_impact_on_autocorrelation(self, small_benchmark_data):
         """Test that thinning reduces autocorrelation in MCMC samples."""
         # This is a conceptual test - in practice would need actual MCMC runs

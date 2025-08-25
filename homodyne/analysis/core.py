@@ -1016,7 +1016,11 @@ class HomodyneAnalysisCore:
                 sinc2 = compute_sinc_squared_numba(gamma_integral, prefactor)
             else:
                 arg = prefactor * gamma_integral
-                sinc2 = np.where(np.abs(arg) < 1e-10, 1.0, (np.sin(arg) / arg) ** 2)
+                # Avoid division by zero by using safe division
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    sinc_values = np.sin(arg) / arg
+                    sinc_values = np.where(np.abs(arg) < 1e-10, 1.0, sinc_values)
+                sinc2 = sinc_values**2
 
         # Combine contributions: c2 = (g1 × sinc²)²
         return (sinc2 * g1) ** 2
@@ -2353,9 +2357,13 @@ Validation:
                 )
 
             # Overall title
-            sample_desc = self.config.get("metadata", {}).get(
-                "sample_description", "Unknown Sample"
-            )  # type: ignore
+            sample_desc = (
+                self.config.get("metadata", {}).get(
+                    "sample_description", "Unknown Sample"
+                )
+                if self.config
+                else "Unknown Sample"
+            )
             plt.suptitle(
                 f"Experimental Data Validation: {sample_desc}",
                 fontsize=16,
@@ -2368,7 +2376,9 @@ Validation:
                 .get("plotting", {})
                 .get("output", {})
                 .get("base_directory", "./plots")
-            )  # type: ignore
+                if self.config
+                else "./plots"
+            )
             plots_dir = Path(plots_base_dir)
             plots_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2381,7 +2391,8 @@ Validation:
                 self.config.get("output_settings", {})
                 .get("plotting", {})
                 .get("general", {})
-                .get("show_plots", False)
+                if self.config
+                else {}.get("show_plots", False)
             )  # type: ignore
             if show_plots:
                 plt.show()
@@ -2666,11 +2677,11 @@ Validation:
                 plot_data["phi_angles"] = self._last_phi_angles
 
                 # Generate theoretical data using best parameters
-                if best_params_list is not None:
+                if best_params_list is not None and self._last_phi_angles is not None:
                     try:
                         theoretical_data = self._generate_theoretical_data(
                             best_params_list, self._last_phi_angles
-                        )  # type: ignore
+                        )
                         plot_data["theoretical_data"] = theoretical_data
                     except Exception as e:
                         logger.warning(
