@@ -99,7 +99,8 @@ def stable_benchmark(
     # Calculate outlier ratio (min/max ratio)
     min_time = min(times) if times else 1.0
     max_time = max(times) if times else 1.0
-    outlier_ratio = min_time / max_time if max_time > 0 else 1.0
+    # Protect against division by zero - if either is zero, set ratio to 1.0
+    outlier_ratio = min_time / max_time if (max_time > 0 and min_time > 0) else 1.0
 
     # Count outliers (simple threshold-based approach)
     if times and len(times) > 1:

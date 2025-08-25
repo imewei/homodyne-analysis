@@ -559,7 +559,8 @@ if NUMBA_AVAILABLE:
     )(_solve_least_squares_batch_numba_impl)
 else:
     solve_least_squares_batch_numba = _solve_least_squares_batch_fallback
-    solve_least_squares_batch_numba.signatures = []
+    # Add signatures attribute for compatibility with numba compiled functions
+    setattr(solve_least_squares_batch_numba, 'signatures', [])
 
 
 def _compute_chi_squared_batch_numba_impl(
@@ -615,7 +616,8 @@ if NUMBA_AVAILABLE:
     )(_compute_chi_squared_batch_numba_impl)
 else:
     compute_chi_squared_batch_numba = _compute_chi_squared_batch_fallback
-    compute_chi_squared_batch_numba.signatures = []
+    # Add signatures attribute for compatibility with numba compiled functions
+    setattr(compute_chi_squared_batch_numba, 'signatures', [])
 
 
 # Apply numba decorator to all other functions if available, otherwise use implementations directly
@@ -654,8 +656,8 @@ else:
     compute_sinc_squared_numba = _compute_sinc_squared_impl
 
     # Add empty signatures attribute for fallback functions when numba unavailable
-    create_time_integral_matrix_numba.signatures = []
-    calculate_diffusion_coefficient_numba.signatures = []
-    calculate_shear_rate_numba.signatures = []
-    compute_g1_correlation_numba.signatures = []
-    compute_sinc_squared_numba.signatures = []
+    setattr(create_time_integral_matrix_numba, 'signatures', [])
+    setattr(calculate_diffusion_coefficient_numba, 'signatures', [])
+    setattr(calculate_shear_rate_numba, 'signatures', [])
+    setattr(compute_g1_correlation_numba, 'signatures', [])
+    setattr(compute_sinc_squared_numba, 'signatures', [])

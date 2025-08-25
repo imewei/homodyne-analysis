@@ -378,8 +378,8 @@ class TestMCMCAngleFilteringPerformance:
         total_data_points = total_angles * n_time * n_time
         filtered_data_points = optimization_angles * n_time * n_time
 
-        reduction_factor = total_data_points / filtered_data_points
-        reduction_percentage = (1 - filtered_data_points / total_data_points) * 100
+        reduction_factor = total_data_points / filtered_data_points if filtered_data_points > 0 else float('inf')
+        reduction_percentage = (1 - filtered_data_points / total_data_points) * 100 if total_data_points > 0 else 0
 
         # Verify expected reductions
         assert reduction_factor == pytest.approx(5.75, rel=0.1)  # ~5.75x reduction
