@@ -15,11 +15,9 @@ from unittest.mock import MagicMock, Mock, patch
 import numpy as np
 import pytest
 
-from homodyne.run_homodyne import (
-    _estimate_parameter_uncertainties,
-    _save_individual_method_results,
-    _save_individual_robust_method_results,
-)
+from homodyne.run_homodyne import (_estimate_parameter_uncertainties,
+                                   _save_individual_method_results,
+                                   _save_individual_robust_method_results)
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))

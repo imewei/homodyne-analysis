@@ -8,14 +8,11 @@ This subpackage contains the fundamental building blocks:
 """
 
 from .config import ConfigManager, configure_logging
-from .kernels import (
-    calculate_diffusion_coefficient_numba,
-    calculate_shear_rate_numba,
-    compute_g1_correlation_numba,
-    compute_sinc_squared_numba,
-    create_time_integral_matrix_numba,
-    memory_efficient_cache,
-)
+from .kernels import (calculate_diffusion_coefficient_numba,
+                      calculate_shear_rate_numba, compute_g1_correlation_numba,
+                      compute_sinc_squared_numba,
+                      create_time_integral_matrix_numba,
+                      memory_efficient_cache)
 
 __all__ = [
     "ConfigManager",

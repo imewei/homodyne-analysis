@@ -140,16 +140,14 @@ except ImportError:
 
 # Import core dependencies from the main module
 from ..core.config import ConfigManager
-from ..core.kernels import (
-    calculate_diffusion_coefficient_numba,
-    calculate_shear_rate_numba,
-    compute_chi_squared_batch_numba,
-    compute_g1_correlation_numba,
-    compute_sinc_squared_numba,
-    create_time_integral_matrix_numba,
-    memory_efficient_cache,
-    solve_least_squares_batch_numba,
-)
+from ..core.kernels import (calculate_diffusion_coefficient_numba,
+                            calculate_shear_rate_numba,
+                            compute_chi_squared_batch_numba,
+                            compute_g1_correlation_numba,
+                            compute_sinc_squared_numba,
+                            create_time_integral_matrix_numba,
+                            memory_efficient_cache,
+                            solve_least_squares_batch_numba)
 
 logger = logging.getLogger(__name__)
 
@@ -2114,7 +2112,6 @@ class HomodyneAnalysisCore:
         """
         import json
         import os
-
         # Create comprehensive results with configuration
         from datetime import datetime, timezone
 
@@ -2432,13 +2429,10 @@ Validation:
 
         try:
             # Import plotting module
-            from homodyne.plotting import (
-                plot_c2_heatmaps,
-                plot_diagnostic_summary,
-                plot_mcmc_convergence_diagnostics,
-                plot_mcmc_corner,
-                plot_mcmc_trace,
-            )
+            from homodyne.plotting import (plot_c2_heatmaps,
+                                           plot_diagnostic_summary,
+                                           plot_mcmc_convergence_diagnostics,
+                                           plot_mcmc_corner, plot_mcmc_trace)
 
             # Extract output directory from output_data if available
             output_dir = output_data.get("output_dir")
@@ -2609,7 +2603,7 @@ Validation:
             best_chi2 = float("inf")
 
             # Check different method results
-            for method_key in ["classical_optimization", "mcmc_optimization"]:
+            for method_key in ["classical_optimization", "robust_optimization", "mcmc_optimization"]:
                 if method_key in results:
                     method_results = results[method_key]
                     chi2 = method_results.get("chi_squared")
@@ -2759,9 +2753,25 @@ Validation:
                         "MCMC trace data not available - trace plots will be skipped"
                     )
 
-            # Add other plot data
+            # Add overall plot data
             plot_data["chi_squared"] = best_chi2
             plot_data["method"] = best_method.replace("_optimization", "").title()
+
+            # Add individual method chi-squared values for diagnostic plotting
+            if ("classical_optimization" in results 
+                and "chi_squared" in results["classical_optimization"]):
+                plot_data["classical_chi_squared"] = results[
+                    "classical_optimization"]["chi_squared"]
+
+            if ("robust_optimization" in results 
+                and "chi_squared" in results["robust_optimization"]):
+                plot_data["robust_chi_squared"] = results[
+                    "robust_optimization"]["chi_squared"]
+
+            if ("mcmc_optimization" in results 
+                and "chi_squared" in results["mcmc_optimization"]):
+                plot_data["mcmc_chi_squared"] = results[
+                    "mcmc_optimization"]["chi_squared"]
 
             return plot_data
 

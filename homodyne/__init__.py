@@ -52,14 +52,12 @@ if sys.version_info < (3, 12):
 # core.config.performance_monitor
 from .analysis.core import HomodyneAnalysisCore
 from .core.config import ConfigManager, configure_logging, performance_monitor
-from .core.kernels import (
-    calculate_diffusion_coefficient_numba,
-    calculate_shear_rate_numba,
-    compute_g1_correlation_numba,
-    compute_sinc_squared_numba,
-    create_time_integral_matrix_numba,
-    memory_efficient_cache,
-)
+from .core.kernels import (calculate_diffusion_coefficient_numba,
+                           calculate_shear_rate_numba,
+                           compute_g1_correlation_numba,
+                           compute_sinc_squared_numba,
+                           create_time_integral_matrix_numba,
+                           memory_efficient_cache)
 
 # Optional optimization modules with graceful degradation
 try:
@@ -73,7 +71,8 @@ except ImportError as e:
     )
 
 try:
-    from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
+    from .optimization.robust import (RobustHomodyneOptimizer,
+                                      create_robust_optimizer)
 except ImportError as e:
     RobustHomodyneOptimizer = None
     create_robust_optimizer = None

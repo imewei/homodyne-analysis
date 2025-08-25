@@ -15,24 +15,16 @@ import numpy as np
 import pytest
 
 # Import the modules to test
-from homodyne.tests.fixtures import (
-    create_minimal_config_file,
-    dummy_analysis_results,
-    dummy_config,
-    dummy_correlation_data,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    mock_optimization_result,
-    temp_directory,
-)
+from homodyne.tests.fixtures import (create_minimal_config_file,
+                                     dummy_analysis_results, dummy_config,
+                                     dummy_correlation_data, dummy_phi_angles,
+                                     dummy_theoretical_data,
+                                     mock_optimization_result, temp_directory)
 
 # Import modules being tested
 try:
-    from homodyne.core.io_utils import (
-        ensure_dir,
-        get_output_directory,
-        save_analysis_results,
-    )
+    from homodyne.core.io_utils import (ensure_dir, get_output_directory,
+                                        save_analysis_results)
 
     IO_UTILS_AVAILABLE = True
 except ImportError:
@@ -905,11 +897,8 @@ class TestAnalysisWorkflowIntegration:
             plot_data["mcmc_trace"] = trace_data
 
             # Test individual MCMC plotting functions
-            from homodyne.plotting import (
-                plot_mcmc_convergence_diagnostics,
-                plot_mcmc_corner,
-                plot_mcmc_trace,
-            )
+            from homodyne.plotting import (plot_mcmc_convergence_diagnostics,
+                                           plot_mcmc_corner, plot_mcmc_trace)
 
             plots_dir = temp_directory / "mcmc_plots"
             plots_dir.mkdir(exist_ok=True)

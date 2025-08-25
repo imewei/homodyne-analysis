@@ -19,7 +19,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import dummy_config, temp_directory, test_output_directory
+from homodyne.tests.fixtures import (dummy_config, temp_directory,
+                                     test_output_directory)
 
 
 class TestOutputDirectoryStructure:

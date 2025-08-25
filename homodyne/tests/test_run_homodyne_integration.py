@@ -20,12 +20,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import (
-    create_minimal_config_file,
-    dummy_config,
-    temp_directory,
-    test_output_directory,
-)
+from homodyne.tests.fixtures import (create_minimal_config_file, dummy_config,
+                                     temp_directory, test_output_directory)
 
 
 class TestRunHomodyneIntegration:

@@ -25,12 +25,10 @@ try:
     from homodyne.analysis.core import HomodyneAnalysisCore
     from homodyne.core.config import ConfigManager
     from homodyne.optimization.classical import ClassicalOptimizer
-    from homodyne.optimization.robust import (
-        CVXPY_AVAILABLE,
-        GUROBI_AVAILABLE,
-        RobustHomodyneOptimizer,
-        create_robust_optimizer,
-    )
+    from homodyne.optimization.robust import (CVXPY_AVAILABLE,
+                                              GUROBI_AVAILABLE,
+                                              RobustHomodyneOptimizer,
+                                              create_robust_optimizer)
 
     ROBUST_OPTIMIZATION_AVAILABLE = True
 except ImportError as e:

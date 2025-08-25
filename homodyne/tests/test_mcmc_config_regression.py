@@ -24,13 +24,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
-from homodyne.tests.test_utils_mcmc import (
-    create_mock_analysis_core,
-    create_mock_trace,
-    create_realistic_user_config,
-    get_mcmc_defaults,
-    validate_trace_dimensions,
-)
+from homodyne.tests.test_utils_mcmc import (create_mock_analysis_core,
+                                            create_mock_trace,
+                                            create_realistic_user_config,
+                                            get_mcmc_defaults,
+                                            validate_trace_dimensions)
 
 
 class TestMCMCConfigurationRegression:
