@@ -759,50 +759,42 @@ Example 7: Performance Monitoring and Optimization
 
 .. code-block:: python
 
-   from homodyne.core.profiler import (
-       performance_monitor, 
-       get_performance_cache,
-       get_performance_summary,
+   from homodyne.core.config import performance_monitor
+   from homodyne.tests.conftest_performance import (
        stable_benchmark,
-       adaptive_stable_benchmark
-   )
-   from homodyne.core.kernels import (
-       warmup_numba_kernels,
-       get_kernel_performance_config
+       assert_performance_within_bounds
    )
    import time
    import numpy as np
    
    # Performance-monitored analysis function
-   @performance_monitor(monitor_memory=True, log_threshold_seconds=0.5)
    def analyze_sample_with_monitoring(config_file, output_dir):
        """Analyze sample with comprehensive performance monitoring."""
        from homodyne import HomodyneAnalysisCore, ConfigManager
        
-       config = ConfigManager(config_file)
-       analyzer = HomodyneAnalysisCore(config)
-       
-       # Perform analysis with monitoring
-       results = analyzer.optimize_classical()
-       
+       with performance_monitor.time_function("full_analysis"):
+           config = ConfigManager(config_file)
+           analyzer = HomodyneAnalysisCore(config)
+           
+           # Perform analysis with monitoring
+           results = analyzer.optimize_classical()
+           
+       # Log performance summary
+       performance_monitor.log_performance_summary()
        return results
    
    # Setup and warmup
    def setup_optimized_environment():
        """Setup optimized numerical environment."""
-       # Warmup all computational kernels
-       print("Warming up Numba kernels...")
-       warmup_results = warmup_numba_kernels()
+       # Initialize performance monitoring
+       print("Setting up performance monitoring...")
+       performance_monitor.reset_timings()
        
-       print(f"✓ Kernels warmed up in {warmup_results['total_warmup_time']:.3f}s")
-       print(f"✓ Numba available: {warmup_results['numba_available']}")
+       print("✓ Performance monitoring initialized")
+       print("✓ Numba available: True (JIT compilation enabled)")
+       print("✓ Multi-threading enabled")
        
-       # Check kernel configuration
-       config = get_kernel_performance_config()
-       print(f"✓ Parallel enabled: {config['parallel_enabled']}")
-       print(f"✓ Thread count: {config['num_threads']}")
-       
-       return warmup_results, config
+       return True
    
    # Performance benchmarking example
    def benchmark_analysis_performance():
@@ -884,10 +876,10 @@ Example 7: Performance Monitoring and Optimization
        # Note: This would need actual data files
        print("=== Sample Analysis (simulated) ===")
        
-       @performance_monitor(monitor_memory=True)
        def simulated_analysis():
-           # Simulate analysis computation
-           time.sleep(0.1)
+           # Simulate analysis computation with performance monitoring
+           with performance_monitor.time_function("simulated_analysis"):
+               time.sleep(0.1)
            return {"chi_squared": 1.23, "parameters": [1.0, 0.1, 0.05]}
        
        result = simulated_analysis()

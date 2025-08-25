@@ -881,7 +881,7 @@ References
 - **Performance test suite**: ``homodyne/tests/test_performance.py``
 - **Baseline measurements**: ``homodyne/tests/performance_baselines.json``
 - **Core implementation**: ``homodyne/analysis/core.py``
-- **Performance utilities**: ``homodyne/core/profiler.py``
+- **Performance utilities**: ``homodyne/core/config.py`` (PerformanceMonitor class)
 - **Numba kernels**: ``homodyne/core/kernels.py``
 - **NumPy Performance Guidelines**: https://numpy.org/doc/stable/user/performance.html
 - **Numba Best Practices**: https://numba.pydata.org/numba-doc/latest/user/performance-tips.html

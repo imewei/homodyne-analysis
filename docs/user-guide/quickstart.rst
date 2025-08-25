@@ -212,17 +212,17 @@ Built-in performance monitoring with automatic optimization:
 
 .. code-block:: python
 
-   from homodyne.core.profiler import performance_monitor, get_performance_cache
+   from homodyne.core.config import performance_monitor
    
    # Monitor function performance
-   @performance_monitor(monitor_memory=True, log_threshold_seconds=0.5)
    def my_analysis():
-       # Your analysis code here
-       pass
+       with performance_monitor.time_function("my_analysis"):
+           # Your analysis code here
+           pass
    
-   # Access smart caching system
-   cache = get_performance_cache()
-   print(f"Cache stats: {cache.stats()}")
+   # Access performance statistics
+   stats = performance_monitor.get_timing_summary()
+   print(f"Performance stats: {stats}")
 
 **Benchmarking Tools**
 
