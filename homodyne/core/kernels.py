@@ -10,8 +10,9 @@ Institution: Argonne National Laboratory
 """
 
 from functools import wraps
-from typing import Any, Callable, Dict, TypeVar, Union
+from typing import Any, Callable, Dict
 from typing import Tuple as TypingTuple
+from typing import TypeVar, Union
 
 import numpy as np
 

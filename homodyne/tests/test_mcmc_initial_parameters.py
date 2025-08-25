@@ -32,8 +32,8 @@ import pytest
 
 # Test PyMC availability
 try:
-    import pymc as pm
     import arviz as az
+    import pymc as pm
 
     PYMC_AVAILABLE = True
 except ImportError:

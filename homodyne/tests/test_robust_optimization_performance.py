@@ -134,7 +134,11 @@ class MockAnalysisCorePerformance:
         c2_theory = self.compute_c2_correlation_optimized(params, phi_angles)
         residuals = c2_experimental - c2_theory
         # Normalized chi-squared
-        return np.sum(residuals**2) / c2_experimental.size
+        return (
+            np.sum(residuals**2) / c2_experimental.size
+            if c2_experimental.size > 0
+            else 0.0
+        )
 
     def calculate_c2_nonequilibrium_laminar_parallel(self, params, phi_angles):
         """Mock method for robust optimization compatibility."""
@@ -411,10 +415,14 @@ class TestRobustOptimizationPerformance:
         # Performance should scale reasonably with data size
         # Larger datasets should take longer, but not excessively
         for i in range(1, len(chi_squared_times)):
-            size_ratio = (data_sizes[i][0] * data_sizes[i][1]) / (
-                data_sizes[i - 1][0] * data_sizes[i - 1][1]
+            prev_size = data_sizes[i - 1][0] * data_sizes[i - 1][1]
+            curr_size = data_sizes[i][0] * data_sizes[i][1]
+            size_ratio = curr_size / prev_size if prev_size > 0 else float("inf")
+            time_ratio = (
+                chi_squared_times[i] / chi_squared_times[i - 1]
+                if chi_squared_times[i - 1] > 0
+                else float("inf")
             )
-            time_ratio = chi_squared_times[i] / chi_squared_times[i - 1]
 
             # Time ratio should not exceed size ratio by more than factor of 4 (relaxed for CI)
             assert (

@@ -2844,8 +2844,8 @@ class TestBatchOptimizationFeatures:
             # Test that the analysis core can process this without errors
             # (This mainly tests integration, not full functionality)
             # Create a temporary config file since HomodyneAnalysisCore expects a file path
-            import tempfile
             import json
+            import tempfile
 
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".json", delete=False

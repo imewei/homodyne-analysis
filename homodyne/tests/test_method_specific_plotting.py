@@ -18,6 +18,7 @@ import pytest
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+
     from homodyne.run_homodyne import _generate_classical_plots
 
     PLOTTING_AVAILABLE = True
