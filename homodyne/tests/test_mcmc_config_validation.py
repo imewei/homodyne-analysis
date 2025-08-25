@@ -12,12 +12,16 @@ This test suite validates:
 2. Generated trace files have the expected dimensions
 3. Default values are used only when configuration is missing
 4. Warning messages are logged appropriately
+
+Note: Type ignore comments are used because MCMCSampler may be None when PyMC is not 
+available. However, all tests are properly protected with pytest skip markers.
 """
+# type: ignore
 
 import json
 import tempfile
 from pathlib import Path
-from typing import Union
+from typing import TYPE_CHECKING, Union
 from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
@@ -32,6 +36,19 @@ def _check_pymc_available():
         return False
 
 PYMC_AVAILABLE = _check_pymc_available()
+
+# Import for type checking and runtime use
+if TYPE_CHECKING:
+    from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+elif PYMC_AVAILABLE:
+    try:
+        from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+    except ImportError:
+        MCMCSampler = None
+        create_mcmc_sampler = None
+else:
+    MCMCSampler = None
+    create_mcmc_sampler = None
 
 # pytestmark = pytest.mark.skipif(
 #     not PYMC_AVAILABLE,

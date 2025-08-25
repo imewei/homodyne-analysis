@@ -5,11 +5,16 @@ Test MCMC Configuration Reading
 Tests to ensure MCMC configuration is read correctly from the JSON configuration file.
 This addresses the issue where MCMC parameters (chains, draws, tune) were not being
 read from the proper configuration section.
+
+Note: Type ignore comments are used because MCMCSampler may be None when PyMC is not 
+available. However, all tests are properly protected with pytest skip markers.
 """
+# type: ignore
 
 import json
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -22,6 +27,17 @@ def _check_pymc_available():
         return False
 
 PYMC_AVAILABLE = _check_pymc_available()
+
+# Import for type checking and runtime use
+if TYPE_CHECKING:
+    from homodyne.optimization.mcmc import MCMCSampler
+elif PYMC_AVAILABLE:
+    try:
+        from homodyne.optimization.mcmc import MCMCSampler
+    except ImportError:
+        MCMCSampler: Any = None
+else:
+    MCMCSampler: Any = None
 
 
 # pytestmark = pytest.mark.skipif(

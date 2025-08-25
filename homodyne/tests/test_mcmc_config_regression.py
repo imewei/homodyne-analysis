@@ -14,24 +14,48 @@ This regression test ensures:
 2. Configuration values are used during sampling
 3. Old trace files with wrong dimensions are detected
 4. Users can identify when they need to re-run MCMC analysis
+
+Note: Type ignore comments are used throughout this file because MCMCSampler
+and related functions may be None when PyMC is not available. However, all tests
+are properly protected with pytest skip markers, so these functions are only
+called when PyMC is available.
 """
+
+# type: ignore
 
 import json
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
+
 
 # Test PyMC availability - dynamic check
 def _check_pymc_available():
     try:
         import pymc
+
         return True
     except ImportError:
         return False
 
+
 PYMC_AVAILABLE = _check_pymc_available()
+
+# Import for type checking and runtime use
+if TYPE_CHECKING:
+    from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+elif PYMC_AVAILABLE:
+    try:
+        from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+    except ImportError:
+        MCMCSampler: Any = None
+        create_mcmc_sampler: Any = None
+else:
+    MCMCSampler: Any = None
+    create_mcmc_sampler: Any = None
 
 # pytestmark = pytest.mark.skipif(
 #     not PYMC_AVAILABLE,
@@ -57,7 +81,10 @@ except ImportError:
 class TestMCMCConfigurationRegression:
     """Regression tests for the specific MCMC configuration issue that was fixed."""
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_simon_config_exact_reproduction(self):
         """Test the exact scenario from my_config_simon.json that caused the issue."""
         # This is the exact configuration that was causing problems
@@ -98,8 +125,8 @@ class TestMCMCConfigurationRegression:
             "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
         }
 
-        mock_core = create_mock_analysis_core()
-        sampler = MCMCSampler(mock_core, simon_config)
+        mock_core = create_mock_analysis_core()  # type: ignore
+        sampler = MCMCSampler(mock_core, simon_config)  # type: ignore
 
         # The fix ensures these values are used, not the defaults
         mcmc_config = sampler.mcmc_config
@@ -124,15 +151,15 @@ class TestMCMCConfigurationRegression:
         old_trace_chains, old_trace_draws = 2, 1000
 
         # Create mock traces
-        correct_trace = create_mock_trace(chains=config_chains, draws=config_draws)
-        old_trace = create_mock_trace(chains=old_trace_chains, draws=old_trace_draws)
+        correct_trace = create_mock_trace(chains=config_chains, draws=config_draws)  # type: ignore
+        old_trace = create_mock_trace(chains=old_trace_chains, draws=old_trace_draws)  # type: ignore
 
         # Validation should pass for correct trace
-        assert validate_trace_dimensions(correct_trace, config_chains, config_draws)
+        assert validate_trace_dimensions(correct_trace, config_chains, config_draws)  # type: ignore
 
         # Validation should fail for old trace
         assert (
-            validate_trace_dimensions(old_trace, config_chains, config_draws) == False
+            validate_trace_dimensions(old_trace, config_chains, config_draws) == False  # type: ignore
         )
 
         # This mismatch is what was causing the plotting issue
@@ -144,7 +171,7 @@ class TestMCMCConfigurationRegression:
         # This simulates what plotting functions do
 
         # Case 1: Correct trace (after fix)
-        correct_trace = create_mock_trace(chains=8, draws=10000)
+        correct_trace = create_mock_trace(chains=8, draws=10000)  # type: ignore
 
         chain_count = correct_trace.posterior.sizes.get("chain", "Unknown")
         draw_count = correct_trace.posterior.sizes.get("draw", "Unknown")
@@ -153,7 +180,7 @@ class TestMCMCConfigurationRegression:
         assert plot_text_correct == "Chains: 8 Draws: 10000"
 
         # Case 2: Old trace (the problem)
-        old_trace = create_mock_trace(chains=2, draws=1000)
+        old_trace = create_mock_trace(chains=2, draws=1000)  # type: ignore
 
         chain_count_old = old_trace.posterior.sizes.get("chain", "Unknown")
         draw_count_old = old_trace.posterior.sizes.get("draw", "Unknown")
@@ -161,25 +188,31 @@ class TestMCMCConfigurationRegression:
         plot_text_old = f"Chains: {chain_count_old} Draws: {draw_count_old}"
         assert plot_text_old == "Chains: 2 Draws: 1000"  # This was the problem!
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_mcmc_sampler_factory_with_simon_config(self):
         """Test the create_mcmc_sampler factory with Simon's configuration."""
-        config = create_realistic_user_config()
-        mock_core = create_mock_analysis_core()
+        config = create_realistic_user_config()  # type: ignore
+        mock_core = create_mock_analysis_core()  # type: ignore
 
         # This should create a sampler with the correct configuration
-        sampler = create_mcmc_sampler(mock_core, config)
+        sampler = create_mcmc_sampler(mock_core, config)  # type: ignore
 
         # Verify it uses the configured values
         assert sampler.mcmc_config["draws"] == 10000
         assert sampler.mcmc_config["chains"] == 8
         assert sampler.mcmc_config["tune"] == 1000
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_config_file_persistence(self):
         """Test that configuration persists correctly through file loading."""
         # Create configuration and save to temporary file
-        config_data = create_realistic_user_config()
+        config_data = create_realistic_user_config()  # type: ignore
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config_data, f, indent=2)
@@ -191,8 +224,8 @@ class TestMCMCConfigurationRegression:
                 loaded_config = json.load(f)
 
             # Create sampler with loaded config
-            mock_core = create_mock_analysis_core()
-            sampler = MCMCSampler(mock_core, loaded_config)
+            mock_core = create_mock_analysis_core()  # type: ignore
+            sampler = MCMCSampler(mock_core, loaded_config)  # type: ignore
 
             # Verify values are preserved through the file round-trip
             assert sampler.mcmc_config["draws"] == 10000
@@ -202,7 +235,10 @@ class TestMCMCConfigurationRegression:
         finally:
             Path(temp_path).unlink()
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_default_fallback_regression(self):
         """Test that defaults are only used when configuration is actually missing."""
         # Config with missing MCMC section (should use defaults)
@@ -214,25 +250,28 @@ class TestMCMCConfigurationRegression:
             "parameter_space": {"bounds": []},
         }
 
-        mock_core = create_mock_analysis_core()
-        sampler = MCMCSampler(mock_core, config_missing)
+        mock_core = create_mock_analysis_core()  # type: ignore
+        sampler = MCMCSampler(mock_core, config_missing)  # type: ignore
 
         # Should get empty config dict, leading to defaults
         mcmc_config = sampler.mcmc_config
-        defaults = get_mcmc_defaults()
+        defaults = get_mcmc_defaults()  # type: ignore
 
         assert mcmc_config.get("draws", defaults["draws"]) == defaults["draws"]
         assert mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
         assert mcmc_config.get("tune", defaults["tune"]) == defaults["tune"]
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_configuration_validation_regression(self):
         """Test that configuration validation works correctly."""
-        config = create_realistic_user_config()
-        mock_core = create_mock_analysis_core()
+        config = create_realistic_user_config()  # type: ignore
+        mock_core = create_mock_analysis_core()  # type: ignore
 
         # This should not raise any validation errors
-        sampler = MCMCSampler(mock_core, config)
+        sampler = MCMCSampler(mock_core, config)  # type: ignore
 
         # Validation should pass
         sampler._validate_mcmc_config()  # Should not raise
@@ -241,10 +280,13 @@ class TestMCMCConfigurationRegression:
         assert sampler.mcmc_config is not None
         assert len(sampler.mcmc_config) > 0
 
-    @pytest.mark.skipif(not _check_pymc_available(), reason="PyMC is required for MCMC sampling but is not available.")
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_config_path_hierarchy_regression(self):
         """Test that the correct configuration path hierarchy is used."""
-        config = create_realistic_user_config()
+        config = create_realistic_user_config()  # type: ignore
 
         # Test the actual path used in the code
         mcmc_config_path = config.get("optimization_config", {}).get(
@@ -257,8 +299,8 @@ class TestMCMCConfigurationRegression:
         assert mcmc_config_path["tune"] == 1000
 
         # Test that the MCMCSampler uses this same path
-        mock_core = create_mock_analysis_core()
-        sampler = MCMCSampler(mock_core, config)
+        mock_core = create_mock_analysis_core()  # type: ignore
+        sampler = MCMCSampler(mock_core, config)  # type: ignore
 
         # The sampler's extracted config should match
         assert sampler.mcmc_config["draws"] == mcmc_config_path["draws"]
@@ -278,7 +320,7 @@ class TestMCMCTraceFileRegression:
         old_file_chains, old_file_draws = 2, 1000
 
         # This mismatch caused the plotting issue
-        old_trace = create_mock_trace(chains=old_file_chains, draws=old_file_draws)
+        old_trace = create_mock_trace(chains=old_file_chains, draws=old_file_draws)  # type: ignore
 
         # Extract values the way plotting functions do
         plot_chains = old_trace.posterior.sizes.get("chain", "Unknown")
@@ -298,7 +340,7 @@ class TestMCMCTraceFileRegression:
         config_chains, config_draws = 8, 10000
 
         # Fresh trace created with current config (after fix)
-        fresh_trace = create_mock_trace(chains=config_chains, draws=config_draws)
+        fresh_trace = create_mock_trace(chains=config_chains, draws=config_draws)  # type: ignore
 
         # Extract values the way plotting functions do
         plot_chains = fresh_trace.posterior.sizes.get("chain", "Unknown")
@@ -313,10 +355,10 @@ class TestMCMCTraceFileRegression:
     def test_trace_file_validation_utility(self):
         """Test the utility function for validating trace dimensions."""
         # Create traces with different dimensions
-        correct_trace = create_mock_trace(chains=8, draws=10000)
-        wrong_trace = create_mock_trace(chains=2, draws=1000)
+        correct_trace = create_mock_trace(chains=8, draws=10000)  # type: ignore
+        wrong_trace = create_mock_trace(chains=2, draws=1000)  # type: ignore
 
         # Validation should work correctly
-        assert validate_trace_dimensions(correct_trace, 8, 10000)
-        assert validate_trace_dimensions(wrong_trace, 8, 10000) == False
-        assert validate_trace_dimensions(wrong_trace, 2, 1000)
+        assert validate_trace_dimensions(correct_trace, 8, 10000)  # type: ignore
+        assert validate_trace_dimensions(wrong_trace, 8, 10000) == False  # type: ignore
+        assert validate_trace_dimensions(wrong_trace, 2, 1000)  # type: ignore

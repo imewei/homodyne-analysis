@@ -418,11 +418,11 @@ class TestRobustOptimizationPerformance:
             prev_size = data_sizes[i - 1][0] * data_sizes[i - 1][1]
             curr_size = data_sizes[i][0] * data_sizes[i][1]
             size_ratio = curr_size / prev_size if prev_size > 0 else float("inf")
-            
+
             # Skip scaling check if timing was too small to measure reliably
             if chi_squared_times[i - 1] <= 1e-6 or chi_squared_times[i] <= 1e-6:
                 continue
-                
+
             time_ratio = chi_squared_times[i] / chi_squared_times[i - 1]
 
             # Time ratio should not exceed size ratio by more than factor of 4 (relaxed for CI)
