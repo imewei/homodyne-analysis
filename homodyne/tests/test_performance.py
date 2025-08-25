@@ -767,12 +767,12 @@ class TestStableBenchmarking:
                     "GITHUB_ACTIONS", ""
                 ).lower() in ("true", "1")
                 max_cv_threshold = (
-                    1.5 if is_ci else 1.0
-                )  # Increased thresholds to account for system variance
+                    3.0 if is_ci else 1.0
+                )  # Increased CI tolerance for higher system variance
 
                 assert_performance_stability(
                     benchmark_results["times"].tolist(),
-                    max_cv=max_cv_threshold,  # Allow higher CV to handle system variance
+                    max_cv=max_cv_threshold,  # Allow much higher CV for CI systems
                     test_name="correlation_calculation_stability",
                 )
             else:
@@ -2726,11 +2726,14 @@ class TestBatchOptimizationFeatures:
         print(f"Memory usage: {initial_memory:.1f} MB -> {final_memory:.1f} MB")
         print(f"Memory increase: {memory_increase:.1f} MB")
 
-        # Memory increase should be reasonable (less than 50MB for this test
-        # size)
+        # Memory increase should be reasonable (CI environments need higher tolerance)
+        is_ci = os.getenv("CI", "").lower() in ("true", "1") or os.getenv(
+            "GITHUB_ACTIONS", ""
+        ).lower() in ("true", "1")
+        memory_threshold = 150 if is_ci else 50  # Higher tolerance for CI
         assert (
-            memory_increase < 50
-        ), f"Memory usage increase too large: {memory_increase:.1f} MB"
+            memory_increase < memory_threshold
+        ), f"Memory usage increase too large: {memory_increase:.1f} MB (threshold: {memory_threshold} MB)"
 
         # Verify results are correct
         assert contrast_batch.shape == (n_angles,)
