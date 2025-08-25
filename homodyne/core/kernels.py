@@ -98,8 +98,7 @@ def _solve_least_squares_batch_fallback(theory_batch, exp_batch):
     return contrast_batch, offset_batch
 
 
-@njit(float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True)
-def create_time_integral_matrix_numba(time_dependent_array):
+def _create_time_integral_matrix_impl(time_dependent_array):
     """
     Create time integral matrix for correlation calculations.
 
@@ -141,14 +140,7 @@ def create_time_integral_matrix_numba(time_dependent_array):
     return matrix
 
 
-@njit(
-    float64[:](float64[:], float64, float64, float64),
-    cache=True,
-    fastmath=True,
-    parallel=False,
-    nogil=True,
-)
-def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
+def _calculate_diffusion_coefficient_impl(time_array, D0, alpha, D_offset):
     """
     Calculate time-dependent diffusion coefficient.
 
@@ -192,13 +184,7 @@ def calculate_diffusion_coefficient_numba(time_array, D0, alpha, D_offset):
     return D_t
 
 
-@njit(
-    float64[:](float64[:], float64, float64, float64),
-    cache=True,
-    fastmath=True,
-    parallel=False,
-)
-def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
+def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
     """
     Calculate time-dependent shear rate.
 
@@ -259,8 +245,7 @@ def calculate_shear_rate_numba(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     return gamma_dot_t
 
 
-@njit(float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True)
-def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
+def _compute_g1_correlation_impl(diffusion_integral_matrix, wavevector_factor):
     """
     Compute field correlation function g₁ from diffusion.
 
@@ -294,8 +279,7 @@ def compute_g1_correlation_numba(diffusion_integral_matrix, wavevector_factor):
     return g1
 
 
-@njit(float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True)
-def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
+def _compute_sinc_squared_impl(shear_integral_matrix, prefactor):
     """
     Compute sinc² function for shear flow contributions (Numba-optimized).
 
@@ -371,14 +355,18 @@ def compute_sinc_squared_numba(shear_integral_matrix, prefactor):
             argument = prefactor * shear_integral_matrix[i, j]
 
             # Optimized small argument handling with Taylor expansion
-            if abs(argument) < 1e-8:  # Slightly larger threshold for better performance
+            if abs(argument) < 1e-10:  # Use tighter threshold to catch more edge cases
                 # Taylor expansion: sinc²(x) ≈ 1 - (πx)²/3 + O(x⁴)
                 pi_arg_sq = (pi * argument) ** 2
                 sinc_squared[i, j] = 1.0 - pi_arg_sq / 3.0
             else:
                 pi_arg = pi * argument
-                sinc_value = np.sin(pi_arg) / pi_arg
-                sinc_squared[i, j] = sinc_value * sinc_value
+                # Additional safety check to prevent division by exactly zero
+                if abs(pi_arg) < 1e-15:
+                    sinc_squared[i, j] = 1.0  # sinc(0) = 1, so sinc²(0) = 1
+                else:
+                    sinc_value = np.sin(pi_arg) / pi_arg
+                    sinc_squared[i, j] = sinc_value * sinc_value
 
     return sinc_squared
 
@@ -626,3 +614,46 @@ if NUMBA_AVAILABLE:
     )(_compute_chi_squared_batch_numba_impl)
 else:
     compute_chi_squared_batch_numba = _compute_chi_squared_batch_fallback
+
+
+# Apply numba decorator to all other functions if available, otherwise use implementations directly
+if NUMBA_AVAILABLE:
+    create_time_integral_matrix_numba = njit(
+        float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True
+    )(_create_time_integral_matrix_impl)
+
+    calculate_diffusion_coefficient_numba = njit(
+        float64[:](float64[:], float64, float64, float64),
+        cache=True,
+        fastmath=True,
+        parallel=False,
+        nogil=True,
+    )(_calculate_diffusion_coefficient_impl)
+
+    calculate_shear_rate_numba = njit(
+        float64[:](float64[:], float64, float64, float64),
+        cache=True,
+        fastmath=True,
+        parallel=False,
+    )(_calculate_shear_rate_impl)
+
+    compute_g1_correlation_numba = njit(
+        float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True
+    )(_compute_g1_correlation_impl)
+
+    compute_sinc_squared_numba = njit(
+        float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True
+    )(_compute_sinc_squared_impl)
+else:
+    create_time_integral_matrix_numba = _create_time_integral_matrix_impl
+    calculate_diffusion_coefficient_numba = _calculate_diffusion_coefficient_impl
+    calculate_shear_rate_numba = _calculate_shear_rate_impl
+    compute_g1_correlation_numba = _compute_g1_correlation_impl
+    compute_sinc_squared_numba = _compute_sinc_squared_impl
+
+    # Add empty signatures attribute for fallback functions when numba unavailable
+    create_time_integral_matrix_numba.signatures = []
+    calculate_diffusion_coefficient_numba.signatures = []
+    calculate_shear_rate_numba.signatures = []
+    compute_g1_correlation_numba.signatures = []
+    compute_sinc_squared_numba.signatures = []

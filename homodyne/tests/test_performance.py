@@ -2306,6 +2306,11 @@ class TestNumbaCompilationDiagnostics:
     @pytest.mark.performance
     def test_compilation_signatures(self):
         """Check that Numba functions have been properly compiled."""
+        from homodyne.core.kernels import NUMBA_AVAILABLE
+
+        if not NUMBA_AVAILABLE:
+            pytest.skip("Numba not available - cannot test compilation signatures")
+
         from homodyne.core.kernels import (
             calculate_diffusion_coefficient_numba,
             calculate_shear_rate_numba,
