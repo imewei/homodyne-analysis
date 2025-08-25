@@ -8,6 +8,7 @@ Tests JSON parsing, configuration validation, and parameter correctness.
 import json
 import tempfile
 from pathlib import Path
+
 # Import config management from homodyne module
 from typing import Any
 from unittest.mock import mock_open, patch
@@ -15,9 +16,12 @@ from unittest.mock import mock_open, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import (create_invalid_config_file,
-                                     create_minimal_config_file, dummy_config,
-                                     temp_directory)
+from homodyne.tests.fixtures import (
+    create_invalid_config_file,
+    create_minimal_config_file,
+    dummy_config,
+    temp_directory,
+)
 
 # Import the modules to test
 

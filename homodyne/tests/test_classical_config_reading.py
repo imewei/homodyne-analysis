@@ -14,8 +14,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from homodyne.optimization.classical import (GUROBI_AVAILABLE,
-                                             ClassicalOptimizer)
+from homodyne.optimization.classical import GUROBI_AVAILABLE, ClassicalOptimizer
 
 
 class TestClassicalOptimizationConfigurationReading:

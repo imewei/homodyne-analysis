@@ -14,10 +14,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import (dummy_analysis_results, dummy_config,
-                                     dummy_correlation_data, dummy_phi_angles,
-                                     dummy_theoretical_data, dummy_time_arrays,
-                                     temp_directory)
+from homodyne.tests.fixtures import (
+    dummy_analysis_results,
+    dummy_config,
+    dummy_correlation_data,
+    dummy_phi_angles,
+    dummy_theoretical_data,
+    dummy_time_arrays,
+    temp_directory,
+)
 
 matplotlib.use("Agg")  # Use non-interactive backend for testing
 
@@ -26,11 +31,17 @@ matplotlib.use("Agg")  # Use non-interactive backend for testing
 
 # Import plotting functions
 try:
-    from homodyne.plotting import (create_all_plots, get_plot_config,
-                                   plot_c2_heatmaps, plot_diagnostic_summary,
-                                   plot_mcmc_convergence_diagnostics,
-                                   plot_mcmc_corner, plot_mcmc_trace, save_fig,
-                                   setup_matplotlib_style)
+    from homodyne.plotting import (
+        create_all_plots,
+        get_plot_config,
+        plot_c2_heatmaps,
+        plot_diagnostic_summary,
+        plot_mcmc_convergence_diagnostics,
+        plot_mcmc_corner,
+        plot_mcmc_trace,
+        save_fig,
+        setup_matplotlib_style,
+    )
 
     PLOTTING_MODULE_AVAILABLE = True
 except ImportError as e:

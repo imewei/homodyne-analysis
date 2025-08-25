@@ -138,7 +138,7 @@ jobs:
 
     - name: Check import sorting with isort
       run: |
-        isort --check-only --diff homodyne/
+        isort --check-only --diff --profile black homodyne/
 
   security:
     name: Security Scan

@@ -37,8 +37,11 @@ import pytest
 
 from homodyne.core.config import performance_monitor
 from homodyne.tests.conftest_performance import (
-    assert_performance_stability, assert_performance_within_bounds,
-    optimize_numerical_environment, stable_benchmark)
+    assert_performance_stability,
+    assert_performance_within_bounds,
+    optimize_numerical_environment,
+    stable_benchmark,
+)
 
 # Set up logger for the test module
 logger = logging.getLogger(__name__)
@@ -2185,9 +2188,12 @@ class TestNumbaCompilationDiagnostics:
     def test_homodyne_numba_kernels_diagnostics(self):
         """Diagnose actual homodyne Numba kernel performance."""
         from homodyne.core.kernels import (
-            calculate_diffusion_coefficient_numba, calculate_shear_rate_numba,
-            compute_g1_correlation_numba, compute_sinc_squared_numba,
-            create_time_integral_matrix_numba)
+            calculate_diffusion_coefficient_numba,
+            calculate_shear_rate_numba,
+            compute_g1_correlation_numba,
+            compute_sinc_squared_numba,
+            create_time_integral_matrix_numba,
+        )
 
         # Local warmup implementation
         def warmup_numba_kernels():
@@ -2287,8 +2293,10 @@ class TestNumbaCompilationDiagnostics:
     def test_compilation_signatures(self):
         """Check that Numba functions have been properly compiled."""
         from homodyne.core.kernels import (
-            calculate_diffusion_coefficient_numba, calculate_shear_rate_numba,
-            create_time_integral_matrix_numba)
+            calculate_diffusion_coefficient_numba,
+            calculate_shear_rate_numba,
+            create_time_integral_matrix_numba,
+        )
 
         print("\n=== Compilation Signatures ===")
 
@@ -2513,8 +2521,10 @@ class TestBatchOptimizationFeatures:
     @pytest.mark.benchmark
     def test_batch_optimization_performance_comparison(self, benchmark):
         """Compare performance of batch vs sequential processing."""
-        from homodyne.core.kernels import (compute_chi_squared_batch_numba,
-                                           solve_least_squares_batch_numba)
+        from homodyne.core.kernels import (
+            compute_chi_squared_batch_numba,
+            solve_least_squares_batch_numba,
+        )
 
         # Generate realistic test data
         n_angles = 15  # Typical number of angles
@@ -2610,8 +2620,10 @@ class TestBatchOptimizationFeatures:
 
         import psutil
 
-        from homodyne.core.kernels import (compute_chi_squared_batch_numba,
-                                           solve_least_squares_batch_numba)
+        from homodyne.core.kernels import (
+            compute_chi_squared_batch_numba,
+            solve_least_squares_batch_numba,
+        )
 
         # Get initial memory usage
         process = psutil.Process(os.getpid())
@@ -2782,8 +2794,10 @@ class TestBatchOptimizationFeatures:
 
             # Verify that the batch optimization functions are importable and
             # callable
-            from homodyne.core.kernels import (compute_chi_squared_batch_numba,
-                                               solve_least_squares_batch_numba)
+            from homodyne.core.kernels import (
+                compute_chi_squared_batch_numba,
+                solve_least_squares_batch_numba,
+            )
 
             # Create test arrays
             theory_batch = np.random.rand(n_angles, n_time_points) * 0.5 + 0.5

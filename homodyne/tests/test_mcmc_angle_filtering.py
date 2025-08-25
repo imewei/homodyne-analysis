@@ -300,8 +300,7 @@ class TestMCMCAngleFilteringIntegration:
             pytest.skip("PyMC not available")
 
         try:
-            from homodyne.optimization.mcmc import (MCMCSampler,
-                                                    create_mcmc_sampler)
+            from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 
             # Test that MCMCSampler class has the required methods
             assert hasattr(MCMCSampler, "run_mcmc_analysis")

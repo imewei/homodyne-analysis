@@ -17,10 +17,16 @@ import numpy as np
 import pytest
 
 # Import the modules to test
-from homodyne.core.io_utils import (ensure_dir, get_output_directory,
-                                    save_analysis_results, save_fig, save_json,
-                                    save_numpy, save_pickle,
-                                    timestamped_filename)
+from homodyne.core.io_utils import (
+    ensure_dir,
+    get_output_directory,
+    save_analysis_results,
+    save_fig,
+    save_json,
+    save_numpy,
+    save_pickle,
+    timestamped_filename,
+)
 from homodyne.tests.fixtures import dummy_config
 
 
