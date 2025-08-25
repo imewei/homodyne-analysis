@@ -111,12 +111,9 @@
     "classical_optimization": {
       "methods": [
         "Nelder-Mead",
-        "Gurobi",
-        "Robust-Wasserstein",
-        "Robust-Scenario",
-        "Robust-Ellipsoidal"
+        "Gurobi"
       ],
-      "_methods_note": "Available methods: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
+      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs all methods above in sequence, selects best result",
         "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
@@ -603,8 +600,8 @@
           "mcmc_plots": "mcmc_analysis",
           "diagnostics": "diagnostics"
         },
-        "filename_template": "{analysis_type}_{timestamp}_{method}",
-        "_filename_template_note": "Method-specific plotting: {method} will be replaced with optimization method name (e.g., Nelder-Mead, Gurobi) for easy identification",
+        "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
         "include_timestamp": true,
         "overwrite_existing": false
       }

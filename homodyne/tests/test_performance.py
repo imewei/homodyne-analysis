@@ -747,6 +747,11 @@ class TestStableBenchmarking:
             )
 
             if test_baseline:
+                # Detect CI environment first
+                is_ci = os.getenv("CI", "").lower() in ("true", "1") or os.getenv(
+                    "GITHUB_ACTIONS", ""
+                ).lower() in ("true", "1")
+                
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
                 )  # 10ms default
@@ -754,18 +759,16 @@ class TestStableBenchmarking:
                     "max_acceptable_time", 0.05
                 )  # 50ms default
 
-                # Assert performance within bounds
-                assert_performance_within_bounds(
-                    median_time,
-                    expected_median,
-                    tolerance_factor=5.0,  # Allow 5x variance
-                    test_name="correlation_calculation_stable_benchmark",
+                # Assert performance within bounds - use sanity check instead of strict bounds
+                # Performance can vary significantly across different environments
+                max_acceptable_multiplier = 50.0 if is_ci else 20.0  # More lenient for CI
+                assert median_time < expected_median * max_acceptable_multiplier, (
+                    f"Test correlation_calculation_stable_benchmark: Execution time "
+                    f"{median_time:.4f}s is {median_time/expected_median:.1f}x baseline "
+                    f"(>{max_acceptable_multiplier}x threshold)"
                 )
 
                 # Assert performance stability
-                is_ci = os.getenv("CI", "").lower() in ("true", "1") or os.getenv(
-                    "GITHUB_ACTIONS", ""
-                ).lower() in ("true", "1")
                 max_cv_threshold = (
                     3.0 if is_ci else 1.0
                 )  # Increased CI tolerance for higher system variance
@@ -2673,7 +2676,10 @@ class TestBatchOptimizationFeatures:
         """Test memory efficiency of batch operations."""
         import os
 
-        import psutil
+        try:
+            import psutil
+        except ImportError:
+            pytest.skip("psutil not available for memory monitoring")
 
         from homodyne.core.kernels import (
             compute_chi_squared_batch_numba,

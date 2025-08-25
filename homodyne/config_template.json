@@ -10,7 +10,7 @@
     "institution": "Your Institution",
     "experiment_name": "Your Experiment Description",
     "sample_description": "Sample details and preparation method",
-    "script_compatibility": "homodyne v0.6.4"
+    "script_compatibility": "homodyne v0.6.5.dev0"
   },
   
   "experimental_data": {
@@ -51,10 +51,10 @@
       "typical_range": [0.001, 0.1]
     },
     "geometry": {
-      "stator_rotor_gap": 1000000,
-      "_gap_note": "Gap in Angstroms (100μm typical)",
+      "stator_rotor_gap": 2000000,
+      "_gap_note": "Gap in Angstroms (200μm typical)",
       "gap_unit": "Å",
-      "gap_in_microns": 100
+      "gap_in_microns": 200
     },
     "computational": {
       "num_threads": "auto",
@@ -101,31 +101,45 @@
       "fallback_to_all_angles": true
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
-      "_methods_note": "Available: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
+      "methods": ["Nelder-Mead", "Gurobi"],
+      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
-        "--method robust": "Runs ONLY Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+        "--method robust": "Runs ONLY robust methods: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
         "--method mcmc": "Runs Bayesian MCMC sampling for uncertainty quantification",
-        "--method all": "Runs all methods listed above (classical + robust) followed by MCMC"
+        "--method all": "Runs classical + robust + MCMC methods for comprehensive analysis"
       },
       "_gurobi_availability": "Gurobi provides quadratic programming alternative. Requires license: pip install gurobipy",
       "_robust_availability": "Robust methods require CVXPY: pip install cvxpy. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
       "_robust_flag_note": "Use --method robust to run ONLY robust methods for noise-resistant parameter estimation",
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 5000,
-          "xatol": 1e-08,
-          "fatol": 1e-08,
-          "adaptive": true
+          "maxiter": 10000,
+          "_maxiter_note": "Increased iterations for better convergence with 7 parameters",
+          "xatol": 1e-10,
+          "_xatol_note": "Tighter parameter tolerance for high precision",
+          "fatol": 1e-10,
+          "_fatol_note": "Tighter function tolerance for better fitting",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
           "_comment": "Quadratic programming solver (requires license)",
-          "max_iterations": 1000,
-          "tolerance": 1e-06,
+          "max_iterations": 2000,
+          "_max_iterations_note": "Increased for better convergence",
+          "tolerance": 1e-08,
+          "_tolerance_note": "Tighter tolerance for high precision",
           "output_flag": 0,
           "method": 2,
-          "time_limit": 300
+          "_method_note": "Barrier method for stable convergence",
+          "time_limit": 600,
+          "_time_limit_note": "Extended time limit for complex optimization",
+          "NumericFocus": 3,
+          "_NumericFocus_note": "Maximum numerical precision focus",
+          "OptimalityTol": 1e-08,
+          "_OptimalityTol_note": "Tight optimality tolerance",
+          "FeasibilityTol": 1e-08,
+          "_FeasibilityTol_note": "Tight feasibility tolerance"
         }
       },
       "selection_strategy": "best_chi_squared"
@@ -174,12 +188,12 @@
       "enabled": true,
       "uncertainty_model": "wasserstein",
       "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
-      "uncertainty_radius": 0.05,
-      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set (0.01-0.1 typical)",
-      "n_scenarios": 15,
-      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization (optimized for performance)",
-      "regularization_alpha": 0.01,
-      "_regularization_alpha_note": "L2 regularization strength for parameter stability",
+      "uncertainty_radius": 0.03,
+      "_uncertainty_radius_note": "Optimized for balance between robustness and fitting precision",
+      "n_scenarios": 25,
+      "_n_scenarios_note": "Increased scenarios for better uncertainty characterization",
+      "regularization_alpha": 0.005,
+      "_regularization_alpha_note": "Reduced regularization for better data fitting",
       "regularization_beta": 0.001,
       "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
       "jacobian_epsilon": 1e-6,
@@ -195,8 +209,8 @@
         "_CrossOver_note": "Skip crossover for numerical stability",
         "BarHomogeneous": 1,
         "_BarHomogeneous_note": "Use homogeneous barrier method",
-        "TimeLimit": 300,
-        "_TimeLimit_note": "Maximum solve time in seconds (optimized for performance)",
+        "TimeLimit": 900,
+        "_TimeLimit_note": "Extended time for better convergence in complex problems",
         "MIPGap": 1e-4,
         "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
         "NumericFocus": 2,
@@ -206,18 +220,21 @@
       },
       "method_options": {
         "wasserstein": {
-          "uncertainty_radius": 0.05,
-          "regularization_alpha": 0.01
+          "uncertainty_radius": 0.03,
+          "regularization_alpha": 0.005,
+          "_note": "Optimized for high-quality fitting"
         },
         "scenario": {
-          "n_scenarios": 50,
+          "n_scenarios": 30,
           "bootstrap_method": "residual",
-          "parallel_scenarios": true
+          "parallel_scenarios": true,
+          "_note": "Balanced scenarios for robust estimation"
         },
         "ellipsoidal": {
-          "gamma": 0.1,
-          "l1_regularization": 0.001,
-          "l2_regularization": 0.01
+          "gamma": 0.08,
+          "l1_regularization": 0.0005,
+          "l2_regularization": 0.005,
+          "_note": "Reduced regularization for better data fitting"
         }
       }
     }
@@ -570,8 +587,8 @@
           "mcmc_plots": "mcmc_analysis",
           "diagnostics": "diagnostics"
         },
-        "filename_template": "{analysis_type}_{timestamp}_{method}",
-        "_filename_template_note": "Method-specific plotting: {method} will be replaced with optimization method name (e.g., Nelder-Mead, Gurobi) for easy identification",
+        "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
         "include_timestamp": true,
         "overwrite_existing": false
       }

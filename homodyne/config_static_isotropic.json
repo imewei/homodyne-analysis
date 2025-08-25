@@ -6,7 +6,7 @@
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "analysis_mode": "static_isotropic",
     "parameters_optimized": ["D0", "alpha", "D_offset"],
-    "script_compatibility": "homodyne v0.6.4"
+    "script_compatibility": "homodyne v0.6.5.dev0"
   },
   
   "experimental_data": {
@@ -47,10 +47,10 @@
       "typical_range": [0.001, 0.1]
     },
     "geometry": {
-      "stator_rotor_gap": 1000000,
+      "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms (not critical for static isotropic)",
       "gap_unit": "Å",
-      "gap_in_microns": 100
+      "gap_in_microns": 200
     },
     "computational": {
       "num_threads": "auto",
@@ -87,8 +87,8 @@
       "fallback_to_all_angles": true
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
-      "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "methods": ["Nelder-Mead", "Gurobi"],
+      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
         "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
@@ -97,11 +97,14 @@
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 3000,
-          "_maxiter_note": "Reduced iterations for 3-parameter optimization",
-          "xatol": 1e-08,
-          "fatol": 1e-08,
-          "adaptive": true
+          "maxiter": 8000,
+          "_maxiter_note": "Increased iterations for better convergence with 3 parameters",
+          "xatol": 1e-10,
+          "_xatol_note": "Tighter parameter tolerance for high precision",
+          "fatol": 1e-10,
+          "_fatol_note": "Tighter function tolerance for better fitting",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
           "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
@@ -140,9 +143,9 @@
     "mcmc_sampling": {
       "enabled": true,
       "sampler": "NUTS",
-      "draws": 8000,
-      "_draws_note": "Fewer draws needed with only 3 parameters",
-      "tune": 1000,
+      "draws": 6000,
+      "_draws_note": "Standardized draws for consistency across configs",
+      "tune": 1500,
       "thin": 2,
       "_thin_note": "Moderate thinning for static mode (good convergence expected)",
       "chains": 4,
@@ -482,8 +485,8 @@
           "mcmc_plots": "mcmc_analysis",
           "diagnostics": "diagnostics"
         },
-        "filename_template": "{analysis_type}_{timestamp}_{method}",
-        "_filename_template_note": "Method-specific plotting: {method} will be replaced with optimization method name (e.g., Nelder-Mead, Gurobi) for easy identification",
+        "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
         "include_timestamp": true,
         "overwrite_existing": false
       }

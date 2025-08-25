@@ -7,7 +7,7 @@
     "analysis_mode": "laminar_flow",
     "parameters_optimized": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
     "angle_filtering": "enabled_with_performance_boost",
-    "script_compatibility": "homodyne v0.6.4"
+    "script_compatibility": "homodyne v0.6.5.dev0"
   },
   
   "experimental_data": {
@@ -48,10 +48,10 @@
       "typical_range": [0.001, 0.1]
     },
     "geometry": {
-      "stator_rotor_gap": 1000000,
+      "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms - critical for laminar flow analysis",
       "gap_unit": "Å",
-      "gap_in_microns": 100
+      "gap_in_microns": 200
     },
     "computational": {
       "num_threads": "auto",
@@ -101,21 +101,25 @@
       "_performance_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
-      "_methods_note": "Available methods: Nelder-Mead (always available), Gurobi (if licensed and installed). Gurobi is automatically detected and added to available methods.",
+      "methods": ["Nelder-Mead", "Gurobi"],
+      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
-        "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
-        "--method all": "Runs all methods above (classical + robust) + MCMC for complete analysis"
+        "--method robust": "Runs ONLY robust methods: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+        "--method mcmc": "Runs Bayesian MCMC sampling for uncertainty quantification",
+        "--method all": "Runs classical + robust + MCMC methods for comprehensive analysis"
       },
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 5000,
-          "_maxiter_note": "Increased iterations for complex 7-parameter optimization",
-          "xatol": 1e-08,
-          "fatol": 1e-08,
-          "adaptive": true
+          "maxiter": 10000,
+          "_maxiter_note": "Increased iterations for better convergence with 7 parameters",
+          "xatol": 1e-10,
+          "_xatol_note": "Tighter parameter tolerance for high precision",
+          "fatol": 1e-10,
+          "_fatol_note": "Tighter function tolerance for better fitting",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
           "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
@@ -587,8 +591,8 @@
           "mcmc_plots": "mcmc_analysis",
           "diagnostics": "diagnostics"
         },
-        "filename_template": "{analysis_type}_{timestamp}_{method}",
-        "_filename_template_note": "Method-specific plotting: {method} will be replaced with optimization method name (e.g., Nelder-Mead, Gurobi) for easy identification",
+        "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
         "include_timestamp": true,
         "overwrite_existing": false
       }
