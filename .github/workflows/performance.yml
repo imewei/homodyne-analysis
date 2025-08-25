@@ -21,7 +21,7 @@ on:
       update_baselines:
         description: 'Update performance baselines'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:

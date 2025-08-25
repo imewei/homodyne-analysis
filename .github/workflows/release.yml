@@ -1,0 +1,264 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        type: string
+
+env:
+  PYTHONDONTWRITEBYTECODE: 1
+  PYTHONUNBUFFERED: 1
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write  # For trusted publishing to PyPI
+
+jobs:
+  validate-tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
+      version: ${{ steps.get-tag.outputs.version }}
+    steps:
+    - name: Get tag
+      id: get-tag
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          TAG="${{ github.event.inputs.tag }}"
+        else
+          TAG="${{ github.ref_name }}"
+        fi
+        
+        # Validate tag format
+        if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid tag format: $TAG. Expected format: v1.2.3"
+          exit 1
+        fi
+        
+        VERSION="${TAG#v}"
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Validated tag: $TAG (version: $VERSION)"
+
+  build-and-test:
+    name: Build and Test Release
+    runs-on: ${{ matrix.os }}
+    needs: validate-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.12', '3.13']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.validate-tag.outputs.tag }}
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip build wheel
+        pip install -e ".[test]"
+
+    - name: Run tests
+      run: |
+        pytest homodyne/tests/ -v --tb=short -m "not slow"
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Test installation from wheel
+      run: |
+        pip install dist/*.whl --force-reinstall
+        python -c "import homodyne; print(f'Successfully imported homodyne {homodyne.__version__}')"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      with:
+        name: release-artifacts-${{ needs.validate-tag.outputs.version }}
+        path: dist/
+        retention-days: 30
+
+  security-scan:
+    name: Security Scan for Release
+    runs-on: ubuntu-latest
+    needs: validate-tag
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.validate-tag.outputs.tag }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit[toml] safety pip-audit
+
+    - name: Run comprehensive security scan
+      run: |
+        echo "Running Bandit..."
+        bandit -r homodyne/ -ll
+        
+        echo "Running Safety check..."
+        pip install -e .
+        safety check
+        
+        echo "Running pip-audit..."
+        pip-audit --strict
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-tag, build-and-test, security-scan]
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.validate-tag.outputs.tag }}
+        fetch-depth: 0
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get previous tag
+        PREV_TAG=$(git tag --sort=-version:refname | grep -A1 ${{ needs.validate-tag.outputs.tag }} | tail -1)
+        
+        if [ -z "$PREV_TAG" ]; then
+          PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+        fi
+        
+        echo "Generating changelog from $PREV_TAG to ${{ needs.validate-tag.outputs.tag }}"
+        
+        # Generate changelog
+        CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ needs.validate-tag.outputs.tag }})
+        
+        # Save to file and output
+        echo "$CHANGELOG" > changelog.md
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-artifacts-${{ needs.validate-tag.outputs.version }}
+        path: dist/
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-tag.outputs.tag }}
+        name: Release ${{ needs.validate-tag.outputs.tag }}
+        body: |
+          ## Changes in ${{ needs.validate-tag.outputs.tag }}
+          
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ## Installation
+          
+          ```bash
+          pip install homodyne-analysis==${{ needs.validate-tag.outputs.version }}
+          ```
+          
+          ## Verification
+          
+          This release has been automatically built and tested on:
+          - Ubuntu (Python 3.12, 3.13)
+          - Windows (Python 3.12, 3.13)  
+          - macOS (Python 3.12, 3.13)
+          
+          Security scans have been performed with bandit, safety, and pip-audit.
+        draft: false
+        prerelease: ${{ contains(needs.validate-tag.outputs.version, 'rc') || contains(needs.validate-tag.outputs.version, 'beta') || contains(needs.validate-tag.outputs.version, 'alpha') }}
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-release]
+    # environment: pypi  # Configure this in repository settings
+    permissions:
+      id-token: write
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-artifacts-${{ needs.validate-tag.outputs.version }}
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
+
+  publish-test-pypi:
+    name: Publish to Test PyPI
+    runs-on: ubuntu-latest
+    needs: [validate-tag, build-and-test]
+    if: contains(needs.validate-tag.outputs.version, 'rc') || contains(needs.validate-tag.outputs.version, 'beta') || contains(needs.validate-tag.outputs.version, 'alpha')
+    # environment: test-pypi  # Configure this in repository settings
+    permissions:
+      id-token: write
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-artifacts-${{ needs.validate-tag.outputs.version }}
+        path: dist/
+
+    - name: Publish to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        verbose: true
+
+  notify-success:
+    name: Notify Release Success
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-release, publish-pypi]
+    if: success()
+    steps:
+    - name: Create success summary
+      run: |
+        echo "## ✅ Release ${{ needs.validate-tag.outputs.tag }} Successful!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The package has been successfully:" >> $GITHUB_STEP_SUMMARY
+        echo "- Built and tested on multiple platforms" >> $GITHUB_STEP_SUMMARY
+        echo "- Security scanned" >> $GITHUB_STEP_SUMMARY
+        echo "- Released on GitHub" >> $GITHUB_STEP_SUMMARY
+        echo "- Published to PyPI" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Installation command:**" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "pip install homodyne-analysis==${{ needs.validate-tag.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
