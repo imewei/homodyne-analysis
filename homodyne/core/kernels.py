@@ -559,6 +559,7 @@ if NUMBA_AVAILABLE:
     )(_solve_least_squares_batch_numba_impl)
 else:
     solve_least_squares_batch_numba = _solve_least_squares_batch_fallback
+    solve_least_squares_batch_numba.signatures = []
 
 
 def _compute_chi_squared_batch_numba_impl(
@@ -614,6 +615,7 @@ if NUMBA_AVAILABLE:
     )(_compute_chi_squared_batch_numba_impl)
 else:
     compute_chi_squared_batch_numba = _compute_chi_squared_batch_fallback
+    compute_chi_squared_batch_numba.signatures = []
 
 
 # Apply numba decorator to all other functions if available, otherwise use implementations directly

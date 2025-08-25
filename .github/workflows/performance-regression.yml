@@ -1,6 +1,6 @@
 name: Performance Regression Testing
 
-on:
+"on":
   # Run on pushes to main branch
   push:
     branches: [ main, master ]

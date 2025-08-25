@@ -1,6 +1,6 @@
 name: Performance Tests
 
-on:
+"on":
   push:
     branches: [ main, develop ]
     paths:

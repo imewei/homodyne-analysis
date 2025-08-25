@@ -1,6 +1,6 @@
 name: Test Documentation Build
 
-on:
+"on":
   push:
     branches: [main]
   pull_request:

@@ -68,6 +68,16 @@ MCMC_REQUIREMENTS = [
     "corner>=2.2.0",  # For enhanced MCMC corner plots
 ]
 
+# Robust optimization requirements (optional advanced feature)
+ROBUST_REQUIREMENTS = [
+    "cvxpy>=1.4.0",  # Convex optimization for robust methods
+]
+
+# Gurobi optimization requirements (requires commercial license)
+GUROBI_REQUIREMENTS = [
+    "gurobipy>=11.0.0",  # Gurobi optimization solver (requires license)
+]
+
 # Test requirements
 TEST_REQUIREMENTS = [
     "pytest>=6.2.0",
@@ -75,7 +85,10 @@ TEST_REQUIREMENTS = [
     "pytest-xdist>=2.3.0",
     "pytest-benchmark>=4.0.0",
     "pytest-mock>=3.6.0",  # For mocking utilities in tests
+    "pytest-html>=4.1.1",  # For HTML test reports
+    "pytest-metadata>=3.1.1",  # For test metadata
     "hypothesis>=6.0.0",  # For property-based testing
+    "coverage>=6.2.0",  # Coverage measurement
 ]
 
 # Documentation requirements
@@ -95,9 +108,13 @@ DEV_REQUIREMENTS = [
     "pytest-xdist>=2.3.0",
     "pytest-benchmark>=4.0.0",
     "pytest-mock>=3.6.0",
+    "pytest-html>=4.1.1",  # For HTML test reports
+    "pytest-metadata>=3.1.1",  # For test metadata
     "hypothesis>=6.0.0",
+    "coverage>=6.2.0",  # Coverage measurement
     "black>=21.0.0",
     "flake8>=3.9.0",
+    "isort>=5.0.0",  # Import sorting
     "mypy>=0.910",
     "types-psutil>=5.9.0",
     "types-Pillow>=10.0.0",
@@ -106,7 +123,7 @@ DEV_REQUIREMENTS = [
 
 # All optional requirements combined
 ALL_REQUIREMENTS = (
-    DATA_REQUIREMENTS + PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + DOC_REQUIREMENTS + TEST_REQUIREMENTS + DEV_REQUIREMENTS
+    DATA_REQUIREMENTS + PERFORMANCE_REQUIREMENTS + MCMC_REQUIREMENTS + ROBUST_REQUIREMENTS + DOC_REQUIREMENTS + TEST_REQUIREMENTS + DEV_REQUIREMENTS
 )
 
 setup(
@@ -141,6 +158,8 @@ setup(
         "data": DATA_REQUIREMENTS,
         "performance": PERFORMANCE_REQUIREMENTS,
         "mcmc": MCMC_REQUIREMENTS,
+        "robust": ROBUST_REQUIREMENTS,
+        "gurobi": GUROBI_REQUIREMENTS,
         "docs": DOC_REQUIREMENTS,
         "test": TEST_REQUIREMENTS,
         "dev": DEV_REQUIREMENTS,
