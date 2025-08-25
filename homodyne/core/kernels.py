@@ -10,7 +10,8 @@ Institution: Argonne National Laboratory
 """
 
 from functools import wraps
-from typing import Any, Callable, Dict, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, TypeVar, Union
+from typing import Tuple as TypingTuple
 
 import numpy as np
 
@@ -75,7 +76,7 @@ def _compute_chi_squared_batch_fallback(
 
 def _solve_least_squares_batch_fallback(
     theory_batch: np.ndarray, exp_batch: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> TypingTuple[np.ndarray, np.ndarray]:
     """Pure numpy fallback for solve_least_squares_batch_numba when numba is unavailable."""
     n_angles, n_data = theory_batch.shape
     contrast_batch = np.zeros(n_angles, dtype=np.float64)
