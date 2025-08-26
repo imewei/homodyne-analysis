@@ -14,8 +14,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from homodyne.optimization.classical import (GUROBI_AVAILABLE,
-                                             ClassicalOptimizer)
+from homodyne.optimization.classical import GUROBI_AVAILABLE, ClassicalOptimizer
 
 
 class TestClassicalOptimizationConfigurationReading:
@@ -51,8 +50,7 @@ class TestClassicalOptimizationConfigurationReading:
         optimizer = ClassicalOptimizer(mock_core, test_config)
 
         # Test that it can access initial parameters correctly
-        expected_values = np.array(
-            [1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0])
+        expected_values = np.array([1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0])
         actual_values = np.array(
             test_config["initial_parameters"]["values"], dtype=np.float64
         )
@@ -178,8 +176,7 @@ class TestClassicalOptimizationConfigurationReading:
 
         for i, bound in enumerate(param_bounds):
             if i < effective_param_count:
-                bounds.append((bound.get("min", -np.inf),
-                              bound.get("max", np.inf)))
+                bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
 
         # Expected bounds should match what's in the test_config above
         expected_bounds = [(1.0, 1000000), (-1.5, -0.5), (-100, 100)]
@@ -256,8 +253,7 @@ class TestClassicalOptimizationConfigurationReading:
         static_parameters = initial_parameters[:effective_param_count]
 
         expected_static_params = np.array([18000, -1.59, 3.10])
-        np.testing.assert_array_equal(
-            static_parameters, expected_static_params)
+        np.testing.assert_array_equal(static_parameters, expected_static_params)
 
         # Test bounds for static mode
         param_bounds = test_config.get("parameter_space", {}).get("bounds", [])
@@ -418,9 +414,7 @@ class TestClassicalOptimizationConfigurationReading:
         initial_params = np.array(
             realistic_config["initial_parameters"]["values"], dtype=np.float64
         )
-        param_bounds = realistic_config.get(
-            "parameter_space", {}).get(
-            "bounds", [])
+        param_bounds = realistic_config.get("parameter_space", {}).get("bounds", [])
         opt_config = optimizer.optimization_config
 
         # Verify values match expected configuration
@@ -612,8 +606,7 @@ class TestGurobiIntegration:
         if success:
             # Should find optimum at boundary x=5 (closest to true optimum
             # x=10)
-            assert hasattr(
-                result, "x"), "Result should have x attribute on success"
+            assert hasattr(result, "x"), "Result should have x attribute on success"
             # type: ignore
             assert 0.0 <= result.x[0] <= 5.0, "Solution should respect bounds"
 

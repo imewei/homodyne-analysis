@@ -368,8 +368,7 @@ def dummy_hdf5_data(temp_directory):
 
     # Create dummy correlation data
     np.random.seed(42)
-    correlation_data = np.random.exponential(
-        1.0, (100, 50, 50))  # frames x t2 x t1
+    correlation_data = np.random.exponential(1.0, (100, 50, 50))  # frames x t2 x t1
 
     # Save as npz for testing (simulating HDF5 structure)
     data_file = data_dir / "test_correlation_data.npz"
@@ -479,8 +478,7 @@ def create_minimal_config_file(
     return filepath
 
 
-def create_invalid_config_file(
-        filepath: Path, error_type: str = "syntax") -> Path:
+def create_invalid_config_file(filepath: Path, error_type: str = "syntax") -> Path:
     """Create an invalid JSON config file for testing error handling."""
     if error_type == "syntax":
         # Missing closing brace

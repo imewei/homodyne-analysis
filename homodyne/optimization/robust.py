@@ -103,8 +103,7 @@ class RobustHomodyneOptimizer:
 
         # Check dependencies
         if not CVXPY_AVAILABLE:
-            logger.warning(
-                "CVXPY not available - robust optimization disabled")
+            logger.warning("CVXPY not available - robust optimization disabled")
         if not GUROBI_AVAILABLE:
             logger.warning("Gurobi not available - using CVXPY default solver")
 
@@ -189,8 +188,7 @@ class RobustHomodyneOptimizer:
                     initial_parameters, phi_angles, c2_experimental, **kwargs
                 )
             else:
-                raise ValueError(
-                    f"Unknown robust optimization method: {method}")
+                raise ValueError(f"Unknown robust optimization method: {method}")
 
             optimization_time = time.time() - start_time
 
@@ -246,8 +244,7 @@ class RobustHomodyneOptimizer:
         n_params = len(theta_init)
 
         # Get parameter bounds (cached for performance)
-        if self._bounds_cache is None and self.settings.get(
-                "enable_caching", True):
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
             self._bounds_cache = self._get_parameter_bounds()
         bounds = (
             self._bounds_cache
@@ -269,8 +266,7 @@ class RobustHomodyneOptimizer:
         try:
             # Check CVXPY availability
             if cp is None:
-                raise ImportError(
-                    "CVXPY not available for robust optimization")
+                raise ImportError("CVXPY not available for robust optimization")
 
             # CVXPY variables
             theta = cp.Variable(n_params)
@@ -288,8 +284,7 @@ class RobustHomodyneOptimizer:
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
             linear_correction = jacobian @ delta_theta
-            linear_correction_reshaped = linear_correction.reshape(
-                c2_fitted_init.shape)
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
             # Perturbed experimental data
@@ -325,8 +320,7 @@ class RobustHomodyneOptimizer:
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
-            solver_success = self._solve_cvxpy_problem_optimized(
-                problem, "DRO")
+            solver_success = self._solve_cvxpy_problem_optimized(problem, "DRO")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -339,8 +333,7 @@ class RobustHomodyneOptimizer:
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
-                    percent_improvement = (
-                        improvement / initial_chi_squared) * 100
+                    percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
                         f"DRO final χ²: {
                             final_chi_squared:.6f} (improvement: {
@@ -349,8 +342,7 @@ class RobustHomodyneOptimizer:
                     )
                 else:
                     final_chi_squared = float("inf")
-                    logger.warning(
-                        "DRO optimization failed to find valid parameters")
+                    logger.warning("DRO optimization failed to find valid parameters")
 
                 info = {
                     "method": "distributionally_robust",
@@ -421,8 +413,7 @@ class RobustHomodyneOptimizer:
         initial_chi_squared = self._compute_chi_squared(
             theta_init, phi_angles, c2_experimental
         )
-        logger.info(
-            f"Scenario-based optimization with {n_scenarios} scenarios")
+        logger.info(f"Scenario-based optimization with {n_scenarios} scenarios")
         logger.info(f"Scenario initial χ²: {initial_chi_squared:.6f}")
 
         # Ensure n_scenarios is an int
@@ -441,8 +432,7 @@ class RobustHomodyneOptimizer:
 
         n_params = len(theta_init)
         # Get parameter bounds (cached for performance)
-        if self._bounds_cache is None and self.settings.get(
-                "enable_caching", True):
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
             self._bounds_cache = self._get_parameter_bounds()
         bounds = (
             self._bounds_cache
@@ -453,8 +443,7 @@ class RobustHomodyneOptimizer:
         try:
             # Check CVXPY availability
             if cp is None:
-                raise ImportError(
-                    "CVXPY not available for robust optimization")
+                raise ImportError("CVXPY not available for robust optimization")
 
             # CVXPY variables
             theta = cp.Variable(n_params)
@@ -479,8 +468,7 @@ class RobustHomodyneOptimizer:
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
             linear_correction = jacobian @ delta_theta
-            linear_correction_reshaped = linear_correction.reshape(
-                c2_fitted_init.shape)
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
             # Min-max constraints: t >= chi_squared(theta, scenario_s) for all
@@ -501,8 +489,7 @@ class RobustHomodyneOptimizer:
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
-            solver_success = self._solve_cvxpy_problem_optimized(
-                problem, "Scenario")
+            solver_success = self._solve_cvxpy_problem_optimized(problem, "Scenario")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -515,8 +502,7 @@ class RobustHomodyneOptimizer:
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
-                    percent_improvement = (
-                        improvement / initial_chi_squared) * 100
+                    percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
                         f"Scenario final χ²: {
                             final_chi_squared:.6f} (improvement: {
@@ -602,8 +588,7 @@ class RobustHomodyneOptimizer:
 
         n_params = len(theta_init)
         # Get parameter bounds (cached for performance)
-        if self._bounds_cache is None and self.settings.get(
-                "enable_caching", True):
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
             self._bounds_cache = self._get_parameter_bounds()
         bounds = (
             self._bounds_cache
@@ -614,8 +599,7 @@ class RobustHomodyneOptimizer:
         try:
             # Check CVXPY availability
             if cp is None:
-                raise ImportError(
-                    "CVXPY not available for robust optimization")
+                raise ImportError("CVXPY not available for robust optimization")
 
             # CVXPY variables
             theta = cp.Variable(n_params)
@@ -628,8 +612,7 @@ class RobustHomodyneOptimizer:
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
             linear_correction = jacobian @ delta_theta
-            linear_correction_reshaped = linear_correction.reshape(
-                c2_fitted_init.shape)
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
             # Robust residuals (experimental - fitted)
@@ -658,13 +641,11 @@ class RobustHomodyneOptimizer:
             l1_reg = beta * cp.norm(delta_theta, 1)
 
             # Objective: robust least squares with regularization
-            objective = cp.Minimize(
-                cp.sum_squares(residuals) + l2_reg + l1_reg)
+            objective = cp.Minimize(cp.sum_squares(residuals) + l2_reg + l1_reg)
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
-            solver_success = self._solve_cvxpy_problem_optimized(
-                problem, "Ellipsoidal")
+            solver_success = self._solve_cvxpy_problem_optimized(problem, "Ellipsoidal")
 
             if problem.status not in ["infeasible", "unbounded"]:
                 optimal_params = theta.value
@@ -677,8 +658,7 @@ class RobustHomodyneOptimizer:
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
-                    percent_improvement = (
-                        improvement / initial_chi_squared) * 100
+                    percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
                         f"Ellipsoidal final χ²: {
                             final_chi_squared:.6f} (improvement: {
@@ -761,8 +741,7 @@ class RobustHomodyneOptimizer:
                     lambda x: resample(x, n_samples=len(x)), -1, residuals
                 )
             else:
-                resampled_residuals = resample(
-                    residuals, n_samples=len(residuals))
+                resampled_residuals = resample(residuals, n_samples=len(residuals))
 
             # Create scenario by adding resampled residuals to fitted
             # correlation
@@ -798,15 +777,13 @@ class RobustHomodyneOptimizer:
             (fitted_correlation_function, jacobian_matrix)
         """
         # Create cache key for performance optimization
-        theta_key = tuple(theta) if self.settings.get(
-            "enable_caching", True) else None
+        theta_key = tuple(theta) if self.settings.get("enable_caching", True) else None
 
         if theta_key and theta_key in self._jacobian_cache:
             return self._jacobian_cache[theta_key]
 
         # Compute fitted correlation function at theta (with scaling applied)
-        c2_fitted = self._compute_fitted_correlation(
-            theta, phi_angles, c2_experimental)
+        c2_fitted = self._compute_fitted_correlation(theta, phi_angles, c2_experimental)
 
         # Optimized Jacobian computation with adaptive epsilon
         epsilon = self.settings.get("jacobian_epsilon", 1e-6)
@@ -822,8 +799,7 @@ class RobustHomodyneOptimizer:
             param_epsilon = max(epsilon, abs(theta[i]) * epsilon)
             theta_plus[i] += param_epsilon
             theta_minus[i] -= param_epsilon
-            theta_perturbations.append(
-                (theta_plus, theta_minus, param_epsilon))
+            theta_perturbations.append((theta_plus, theta_minus, param_epsilon))
 
         # Compute finite differences
         for i, (theta_plus, theta_minus, param_epsilon) in enumerate(
@@ -925,16 +901,14 @@ class RobustHomodyneOptimizer:
         try:
             # Performance optimization: cache theoretical correlation
             theta_key = (
-                tuple(theta) if self.settings.get(
-                    "enable_caching", True) else None
+                tuple(theta) if self.settings.get("enable_caching", True) else None
             )
 
             if theta_key and theta_key in self._correlation_cache:
                 c2_theory = self._correlation_cache[theta_key]
             else:
                 # Get raw theoretical correlation
-                c2_theory = self._compute_theoretical_correlation(
-                    theta, phi_angles)
+                c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
 
                 # Cache if enabled
                 if theta_key and self.settings.get("enable_caching", True):
@@ -1021,8 +995,7 @@ class RobustHomodyneOptimizer:
                     # = exp
                     A = np.column_stack([theory_i, np.ones(len(theory_i))])
                     try:
-                        scaling_params = np.linalg.lstsq(
-                            A, exp_i, rcond=None)[0]
+                        scaling_params = np.linalg.lstsq(A, exp_i, rcond=None)[0]
                         contrast, offset = scaling_params[0], scaling_params[1]
                     except np.linalg.LinAlgError:
                         # Fallback if least squares fails
@@ -1088,9 +1061,7 @@ class RobustHomodyneOptimizer:
         try:
             # Extract bounds from configuration (same format as classical
             # optimization)
-            bounds_config = self.config.get(
-                "parameter_space", {}).get(
-                "bounds", [])
+            bounds_config = self.config.get("parameter_space", {}).get("bounds", [])
 
             # Get effective parameter count
             n_params = self.core.get_effective_parameter_count()
@@ -1156,8 +1127,7 @@ class RobustHomodyneOptimizer:
             logger.error(f"Error getting parameter bounds: {e}")
             return None
 
-    def _solve_cvxpy_problem_optimized(
-            self, problem, method_name: str = "") -> bool:
+    def _solve_cvxpy_problem_optimized(self, problem, method_name: str = "") -> bool:
         """
         Optimized CVXPY problem solving with preferred solver and fast fallback.
 

@@ -544,9 +544,7 @@ class TestMCMCConfigurationReading:
         sampler = MCMCSampler(mock_core, realistic_config)
 
         # Test that all parameter bounds are accessible
-        param_bounds = realistic_config.get(
-            "parameter_space", {}).get(
-            "bounds", [])
+        param_bounds = realistic_config.get("parameter_space", {}).get("bounds", [])
         assert len(param_bounds) == 7
 
         # Test active parameters bounds (first 3 for static mode)

@@ -184,12 +184,7 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
         module_logger.removeHandler(handler)
 
     # Parse configuration
-    log_level = getattr(
-        logging,
-        cfg.get(
-            "level",
-            "INFO").upper(),
-        logging.INFO)
+    log_level = getattr(logging, cfg.get("level", "INFO").upper(), logging.INFO)
     format_str = cfg.get(
         "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -208,8 +203,7 @@ def configure_logging(cfg: Dict[str, Any]) -> logging.Logger:
     if cfg.get("log_to_file", False):
         filename = cfg.get("log_filename", "homodyne_analysis.log")
         rotation_config = cfg.get("rotation", {})
-        max_bytes = rotation_config.get(
-            "max_bytes", 10 * 1024 * 1024)  # 10MB default
+        max_bytes = rotation_config.get("max_bytes", 10 * 1024 * 1024)  # 10MB default
         backup_count = rotation_config.get("backup_count", 3)
 
         try:
@@ -356,8 +350,7 @@ class ConfigManager:
 
                 # Display version information if available
                 if isinstance(self.config, dict) and "metadata" in self.config:
-                    version = self.config["metadata"].get(
-                        "config_version", "Unknown")
+                    version = self.config["metadata"].get("config_version", "Unknown")
                     logger.info(f"Configuration version: {version}")
 
             except json.JSONDecodeError as e:
@@ -366,8 +359,7 @@ class ConfigManager:
                 self.config = self._get_default_config()
             except Exception as e:
                 logger.error(f"Failed to load configuration: {e}")
-                logger.exception(
-                    "Full traceback for configuration loading failure:")
+                logger.exception("Full traceback for configuration loading failure:")
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
 
@@ -405,8 +397,7 @@ class ConfigManager:
         # Cache analysis settings
         if "analysis_settings" in self.config:
             analysis = self.config["analysis_settings"]
-            self._cached_values["static_mode"] = analysis.get(
-                "static_mode", False)
+            self._cached_values["static_mode"] = analysis.get("static_mode", False)
 
             # Cache static submode if static mode is enabled
             if self._cached_values["static_mode"]:
@@ -571,8 +562,7 @@ class ConfigManager:
             return configured_logger
         except Exception as e:
             logger.warning(f"Failed to configure logging: {e}")
-            logger.exception(
-                "Full traceback for logging configuration failure:")
+            logger.exception("Full traceback for logging configuration failure:")
             logger.info("Continuing without logging...")
             return None
 
@@ -613,10 +603,7 @@ class ConfigManager:
             - target_ranges: list of dicts with min_angle and max_angle
             - fallback_to_all_angles: bool, whether to use all angles if no targets found
         """
-        angle_filtering = self.get(
-            "optimization_config",
-            "angle_filtering",
-            default={})
+        angle_filtering = self.get("optimization_config", "angle_filtering", default={})
 
         # Ensure angle_filtering is a dictionary for unpacking
         if not isinstance(angle_filtering, dict):
@@ -651,8 +638,7 @@ class ConfigManager:
                         }
                     )
                 else:
-                    logger.warning(
-                        f"Invalid angle range configuration: {range_config}")
+                    logger.warning(f"Invalid angle range configuration: {range_config}")
             result["target_ranges"] = valid_ranges
 
         return result
@@ -731,13 +717,11 @@ class ConfigManager:
 
         if test_name not in configs:
             available = list(configs.keys())
-            raise ValueError(
-                f"Test '{test_name}' not found. Available: {available}")
+            raise ValueError(f"Test '{test_name}' not found. Available: {available}")
 
         config_result = configs[test_name]
         if not isinstance(config_result, dict):
-            raise ValueError(
-                f"Test configuration '{test_name}' is not a dictionary")
+            raise ValueError(f"Test configuration '{test_name}' is not a dictionary")
         return config_result
 
     def is_static_mode_enabled(self) -> bool:
@@ -750,8 +734,7 @@ class ConfigManager:
             True if static mode is enabled, False otherwise
         """
         # Use cached value for performance
-        if hasattr(
-                self, "_cached_values") and "static_mode" in self._cached_values:
+        if hasattr(self, "_cached_values") and "static_mode" in self._cached_values:
             return bool(self._cached_values["static_mode"])
 
         result = self.get("analysis_settings", "static_mode", default=False)
@@ -771,8 +754,7 @@ class ConfigManager:
             return None
 
         # Use cached value for performance
-        if hasattr(
-                self, "_cached_values") and "static_submode" in self._cached_values:
+        if hasattr(self, "_cached_values") and "static_submode" in self._cached_values:
             cached_value = self._cached_values["static_submode"]
             return str(cached_value) if cached_value is not None else None
 
@@ -851,15 +833,11 @@ class ConfigManager:
             Falls back to all parameters if not specified in configuration.
         """
         initial_params = self.get("initial_parameters", default={})
-        active_params = cast(
-            List[str], initial_params.get(
-                "active_parameters", []))
+        active_params = cast(List[str], initial_params.get("active_parameters", []))
 
         # If no active_parameters specified, use all parameter names
         if not active_params:
-            param_names = cast(
-                List[str], initial_params.get(
-                    "parameter_names", []))
+            param_names = cast(List[str], initial_params.get("parameter_names", []))
             if param_names:
                 active_params = param_names
             else:
@@ -1112,8 +1090,7 @@ class PerformanceMonitor:
         self.timings: Dict[str, List[float]] = {}
         self.memory_usage: Dict[str, float] = {}
 
-    def time_function(
-            self, func_name: str) -> "PerformanceMonitor._TimingContext":
+    def time_function(self, func_name: str) -> "PerformanceMonitor._TimingContext":
         """
         Context manager for timing function execution.
 
@@ -1131,8 +1108,7 @@ class PerformanceMonitor:
         return self._TimingContext(self, func_name)
 
     class _TimingContext:
-        def __init__(self, monitor: "PerformanceMonitor",
-                     func_name: str) -> None:
+        def __init__(self, monitor: "PerformanceMonitor", func_name: str) -> None:
             self.monitor = monitor
             self.func_name = func_name
             self.start_time: Optional[float] = None
@@ -1170,8 +1146,7 @@ class PerformanceMonitor:
         self.timings.clear()
         self.memory_usage.clear()
 
-    def log_performance_summary(
-            self, logger: Optional[logging.Logger] = None) -> None:
+    def log_performance_summary(self, logger: Optional[logging.Logger] = None) -> None:
         """Log performance summary to logger."""
         if logger is None:
             logger = logging.getLogger(__name__)

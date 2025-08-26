@@ -20,8 +20,12 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import (create_minimal_config_file, dummy_config,
-                                     temp_directory, test_output_directory)
+from homodyne.tests.fixtures import (
+    create_minimal_config_file,
+    dummy_config,
+    temp_directory,
+    test_output_directory,
+)
 
 
 class TestRunHomodyneIntegration:
@@ -295,8 +299,7 @@ class TestRunHomodyneIntegration:
 class TestRunHomodyneMockExecution:
     """Test run_homodyne.py execution with mocked components."""
 
-    def test_plot_experimental_data_early_exit_simulation(
-            self, temp_directory):
+    def test_plot_experimental_data_early_exit_simulation(self, temp_directory):
         """Simulate the early exit behavior of --plot-experimental-data."""
 
         def mock_run_homodyne_with_plot_experimental_data():

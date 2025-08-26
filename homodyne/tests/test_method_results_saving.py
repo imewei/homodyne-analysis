@@ -15,9 +15,11 @@ from unittest.mock import MagicMock, Mock, patch
 import numpy as np
 import pytest
 
-from homodyne.run_homodyne import (_estimate_parameter_uncertainties,
-                                   _save_individual_method_results,
-                                   _save_individual_robust_method_results)
+from homodyne.run_homodyne import (
+    _estimate_parameter_uncertainties,
+    _save_individual_method_results,
+    _save_individual_robust_method_results,
+)
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -49,8 +51,7 @@ class TestMethodResultsSaving:
             # Return synthetic data based on parameters
             return np.random.randn(len(phi_angles), 100) * params[0]
 
-        analyzer.compute_c2_correlation_optimized = Mock(
-            side_effect=mock_compute_c2)
+        analyzer.compute_c2_correlation_optimized = Mock(side_effect=mock_compute_c2)
         return analyzer
 
     @pytest.fixture
@@ -174,8 +175,7 @@ class TestMethodResultsSaving:
         # Check for each method's directory
         for method_name in ["nelder_mead", "gurobi", "robust_wasserstein"]:
             method_dir = classical_dir / method_name
-            assert method_dir.exists(
-            ), f"Directory for {method_name} not created"
+            assert method_dir.exists(), f"Directory for {method_name} not created"
 
             # Check for parameters.json
             params_file = method_dir / "parameters.json"
@@ -202,8 +202,7 @@ class TestMethodResultsSaving:
 
             # Check for fitted_data.npz
             data_file = method_dir / "fitted_data.npz"
-            assert data_file.exists(
-            ), f"fitted_data.npz not created for {method_name}"
+            assert data_file.exists(), f"fitted_data.npz not created for {method_name}"
 
             # Load and validate numpy data
             data = np.load(data_file)
@@ -270,8 +269,7 @@ class TestMethodResultsSaving:
         # Check for each method's directory (using actual naming convention)
         for method_name in ["wasserstein", "scenario"]:
             method_dir = robust_dir / method_name
-            assert method_dir.exists(
-            ), f"Directory for {method_name} not created"
+            assert method_dir.exists(), f"Directory for {method_name} not created"
 
             # Check for parameters.json
             params_file = method_dir / "parameters.json"
@@ -293,8 +291,7 @@ class TestMethodResultsSaving:
 
             # Check for fitted_data.npz
             data_file = method_dir / "fitted_data.npz"
-            assert data_file.exists(
-            ), f"fitted_data.npz not created for {method_name}"
+            assert data_file.exists(), f"fitted_data.npz not created for {method_name}"
 
             # Load and validate numpy data
             data = np.load(data_file)
@@ -333,8 +330,7 @@ class TestMethodResultsSaving:
 
         # Check that uncertainties were calculated
         assert len(uncertainties) == len(params)
-        assert all(
-            u > 0 for u in uncertainties), "All uncertainties should be positive"
+        assert all(u > 0 for u in uncertainties), "All uncertainties should be positive"
         assert all(
             u < abs(p) for u, p in zip(uncertainties, params)
         ), "Uncertainties should be reasonable relative to parameter values"

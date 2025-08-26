@@ -396,13 +396,11 @@ class TestMCMCParameterBoundsRegression:
         """Test edge cases for MCMC parameter bounds validation."""
 
         # Test case 1: Initial value exactly at lower bound
-        bounds_at_min = [{"name": "alpha", "min": -
-                          2.0, "max": -1.0, "type": "Normal"}]
+        bounds_at_min = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
         initial_at_min = [-2.0]  # Exactly at minimum
 
         # Test case 2: Initial value exactly at upper bound
-        bounds_at_max = [{"name": "alpha", "min": -
-                          2.0, "max": -1.0, "type": "Normal"}]
+        bounds_at_max = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
         initial_at_max = [-1.0]  # Exactly at maximum
 
         # Test case 3: Initial value safely in middle

@@ -240,8 +240,7 @@ def pytest_sessionfinish(session, exitstatus):
         for path in cleanup_candidates:
             if path.exists() and path.is_dir():
                 # Special case: Always clean up ./homodyne/homodyne_results
-                is_nested_homodyne_results = "homodyne/homodyne_results" in str(
-                    path)
+                is_nested_homodyne_results = "homodyne/homodyne_results" in str(path)
 
                 # CONSERVATIVE SAFETY: Only remove if explicitly marked as test artifact
                 # OR if it's the nested homodyne/homodyne_results directory
@@ -250,20 +249,17 @@ def pytest_sessionfinish(session, exitstatus):
                     try:
                         shutil.rmtree(path)
                         if session.config.option.verbose > 0:
-                            print(
-                                f"\n✓ Test cleanup: Removed test artifact {path}")
+                            print(f"\n✓ Test cleanup: Removed test artifact {path}")
                     except (OSError, PermissionError):
                         if session.config.option.verbose > 0:
-                            print(
-                                f"\n⚠ Could not clean up test artifact {path}")
+                            print(f"\n⚠ Could not clean up test artifact {path}")
                 else:
                     # No test marker and not nested - preserve this directory
                     if (
                         session.config.option.verbose > 0
                         and not is_nested_homodyne_results
                     ):
-                        print(
-                            f"\n⚠ Preserved user directory (no test marker): {path}")
+                        print(f"\n⚠ Preserved user directory (no test marker): {path}")
     except Exception:
         # Don't break test reporting due to cleanup issues
         pass
@@ -299,14 +295,8 @@ warnings.filterwarnings(
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib.*")
 
 # Suppress font warnings from homodyne modules that use matplotlib
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    module="homodyne.core.io_utils")
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    module="homodyne.plotting")
+warnings.filterwarnings("ignore", category=UserWarning, module="homodyne.core.io_utils")
+warnings.filterwarnings("ignore", category=UserWarning, module="homodyne.plotting")
 
 
 def pytest_configure(config):
@@ -315,9 +305,7 @@ def pytest_configure(config):
         "markers",
         "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
-    config.addinivalue_line(
-        "markers",
-        "integration: marks tests as integration tests")
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line(
         "markers", "plotting: marks tests that require plotting functionality"
     )
@@ -333,9 +321,7 @@ def pytest_configure(config):
         "markers",
         "performance: mark test as a performance test that should be fast",
     )
-    config.addinivalue_line(
-        "markers",
-        "memory: mark test as a memory usage test")
+    config.addinivalue_line("markers", "memory: mark test as a memory usage test")
     config.addinivalue_line(
         "markers", "regression: mark test as a performance regression test"
     )
@@ -345,9 +331,7 @@ def pytest_configure(config):
     )
 
     # Configure warnings filters
-    config.addinivalue_line(
-        "filterwarnings",
-        "ignore::UserWarning:matplotlib.*")
+    config.addinivalue_line("filterwarnings", "ignore::UserWarning:matplotlib.*")
     config.addinivalue_line("filterwarnings", "ignore::UserWarning:homodyne.*")
     config.addinivalue_line(
         "filterwarnings", "ignore:.*Glyph.*missing from font.*:UserWarning"

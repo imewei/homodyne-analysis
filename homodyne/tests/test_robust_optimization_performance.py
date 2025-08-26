@@ -20,10 +20,12 @@ import pytest
 # Import homodyne modules
 try:
     from homodyne.optimization.classical import ClassicalOptimizer
-    from homodyne.optimization.robust import (CVXPY_AVAILABLE,
-                                              GUROBI_AVAILABLE,
-                                              RobustHomodyneOptimizer,
-                                              create_robust_optimizer)
+    from homodyne.optimization.robust import (
+        CVXPY_AVAILABLE,
+        GUROBI_AVAILABLE,
+        RobustHomodyneOptimizer,
+        create_robust_optimizer,
+    )
 
     ROBUST_OPTIMIZATION_AVAILABLE = True
 except ImportError as e:
@@ -33,8 +35,7 @@ except ImportError as e:
     CVXPY_AVAILABLE = False
     GUROBI_AVAILABLE = False
     ROBUST_OPTIMIZATION_AVAILABLE = False
-    logging.warning(
-        f"Robust optimization not available for performance testing: {e}")
+    logging.warning(f"Robust optimization not available for performance testing: {e}")
 
 # Test configuration
 PERFORMANCE_CONFIG = {
@@ -128,8 +129,7 @@ class MockAnalysisCorePerformance:
 
         return c2_theory
 
-    def calculate_chi_squared_optimized(
-            self, params, phi_angles, c2_experimental):
+    def calculate_chi_squared_optimized(self, params, phi_angles, c2_experimental):
         """Optimized chi-squared calculation."""
         c2_theory = self.compute_c2_correlation_optimized(params, phi_angles)
         residuals = c2_experimental - c2_theory
@@ -186,8 +186,7 @@ def performance_mock_core():
 @pytest.fixture
 def large_scale_mock_core():
     """Fixture providing large-scale mock analysis core."""
-    return MockAnalysisCorePerformance(
-        PERFORMANCE_CONFIG, n_angles=50, n_times=200)
+    return MockAnalysisCorePerformance(PERFORMANCE_CONFIG, n_angles=50, n_times=200)
 
 
 @pytest.mark.performance
@@ -207,8 +206,7 @@ class TestRobustOptimizationPerformance:
         start_time = time.time()
 
         for _ in range(10):
-            _ = RobustHomodyneOptimizer(
-                performance_mock_core, PERFORMANCE_CONFIG)
+            _ = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         end_time = time.time()
         avg_init_time = (end_time - start_time) / 10
@@ -227,8 +225,7 @@ class TestRobustOptimizationPerformance:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         start_time = time.time()
         bounds = None  # Initialize to prevent unbound variable
@@ -251,8 +248,7 @@ class TestRobustOptimizationPerformance:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
         phi_angles = performance_mock_core.phi_angles
@@ -263,8 +259,7 @@ class TestRobustOptimizationPerformance:
 
         # Warm-up
         for _ in range(5):
-            optimizer._compute_chi_squared(
-                test_params, phi_angles, c2_experimental)
+            optimizer._compute_chi_squared(test_params, phi_angles, c2_experimental)
 
         # Timing test
         start_time = time.time()
@@ -288,8 +283,7 @@ class TestRobustOptimizationPerformance:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
         phi_angles = performance_mock_core.phi_angles
@@ -327,8 +321,7 @@ class TestRobustOptimizationPerformance:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
         phi_angles = performance_mock_core.phi_angles
@@ -358,8 +351,7 @@ class TestRobustOptimizationPerformance:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
         phi_angles = performance_mock_core.phi_angles
@@ -428,12 +420,10 @@ class TestRobustOptimizationPerformance:
         for i in range(1, len(chi_squared_times)):
             prev_size = data_sizes[i - 1][0] * data_sizes[i - 1][1]
             curr_size = data_sizes[i][0] * data_sizes[i][1]
-            size_ratio = curr_size / \
-                prev_size if prev_size > 0 else float("inf")
+            size_ratio = curr_size / prev_size if prev_size > 0 else float("inf")
 
             # Skip scaling check if timing was too small to measure reliably
-            if chi_squared_times[i -
-                                 1] <= 1e-6 or chi_squared_times[i] <= 1e-6:
+            if chi_squared_times[i - 1] <= 1e-6 or chi_squared_times[i] <= 1e-6:
                 continue
 
             time_ratio = chi_squared_times[i] / chi_squared_times[i - 1]
@@ -453,14 +443,12 @@ class TestRobustOptimizationPerformance:
 class TestRobustOptimizationBenchmarks:
     """Benchmark tests for robust optimization methods."""
 
-    def test_wasserstein_optimization_benchmark(
-            self, performance_mock_core, benchmark):
+    def test_wasserstein_optimization_benchmark(self, performance_mock_core, benchmark):
         """Benchmark Wasserstein DRO optimization."""
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])  # Close to true values
         phi_angles = performance_mock_core.phi_angles
@@ -485,14 +473,12 @@ class TestRobustOptimizationBenchmarks:
             assert len(optimal_params) == 3
             assert info["method"] == "distributionally_robust"
 
-    def test_scenario_optimization_benchmark(
-            self, performance_mock_core, benchmark):
+    def test_scenario_optimization_benchmark(self, performance_mock_core, benchmark):
         """Benchmark scenario-based robust optimization."""
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])
         phi_angles = performance_mock_core.phi_angles
@@ -517,14 +503,12 @@ class TestRobustOptimizationBenchmarks:
             assert len(optimal_params) == 3
             assert info["method"] == "scenario_robust"
 
-    def test_ellipsoidal_optimization_benchmark(
-            self, performance_mock_core, benchmark):
+    def test_ellipsoidal_optimization_benchmark(self, performance_mock_core, benchmark):
         """Benchmark ellipsoidal robust optimization."""
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            performance_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])
         phi_angles = performance_mock_core.phi_angles
@@ -549,8 +533,7 @@ class TestRobustOptimizationBenchmarks:
             assert len(optimal_params) == 3
             assert info["method"] == "ellipsoidal_robust"
 
-    def test_classical_vs_robust_performance_comparison(
-            self, performance_mock_core):
+    def test_classical_vs_robust_performance_comparison(self, performance_mock_core):
         """Compare performance between classical and robust optimization."""
         # Classical optimizer
         assert ClassicalOptimizer is not None, "ClassicalOptimizer not available"
@@ -618,8 +601,7 @@ class TestRobustOptimizationMemoryUsage:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            large_scale_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(large_scale_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
         phi_angles = large_scale_mock_core.phi_angles  # 50 angles
@@ -643,8 +625,7 @@ class TestRobustOptimizationMemoryUsage:
         assert (
             RobustHomodyneOptimizer is not None
         ), "RobustHomodyneOptimizer not available"
-        optimizer = RobustHomodyneOptimizer(
-            large_scale_mock_core, PERFORMANCE_CONFIG)
+        optimizer = RobustHomodyneOptimizer(large_scale_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
         phi_angles = large_scale_mock_core.phi_angles
@@ -678,13 +659,11 @@ class TestRobustOptimizationStressTests:
 
         # Create mock core with high noise
         config = PERFORMANCE_CONFIG.copy()
-        mock_core = MockAnalysisCorePerformance(
-            config, n_angles=15, n_times=80)
+        mock_core = MockAnalysisCorePerformance(config, n_angles=15, n_times=80)
 
         # Add high noise to experimental data
         noise_level = 0.1  # 10% noise
-        noise = np.random.normal(
-            0, noise_level, mock_core.c2_experimental.shape)
+        noise = np.random.normal(0, noise_level, mock_core.c2_experimental.shape)
         mock_core.c2_experimental += noise * np.mean(mock_core.c2_experimental)
 
         assert (
@@ -756,8 +735,7 @@ class TestRobustOptimizationStressTests:
                     ), f"Expected inf, got {chi_squared} for params {params}"
             except (OverflowError, ValueError) as e:
                 # Acceptable to fail gracefully with extreme values
-                logging.warning(
-                    f"Expected failure with extreme params {params}: {e}")
+                logging.warning(f"Expected failure with extreme params {params}: {e}")
 
 
 if __name__ == "__main__":

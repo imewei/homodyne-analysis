@@ -198,8 +198,7 @@ class TestAngleFilteringCore:
 
         assert optimization_indices == expected_optimization_indices
 
-    def test_chi_squared_angle_filtering_mock(
-            self, mock_analyzer, test_phi_angles):
+    def test_chi_squared_angle_filtering_mock(self, mock_analyzer, test_phi_angles):
         """Test chi-squared calculation with angle filtering using mocked data."""
 
         # Create mock experimental data
@@ -243,8 +242,7 @@ class TestAngleFilteringCore:
         # They should be different (unless by coincidence)
         assert chi2_all != chi2_filtered
 
-    def test_detailed_chi_squared_with_filtering(
-            self, mock_analyzer, test_phi_angles):
+    def test_detailed_chi_squared_with_filtering(self, mock_analyzer, test_phi_angles):
         """Test detailed chi-squared results with angle filtering."""
 
         # Create mock experimental data
@@ -298,8 +296,7 @@ class TestAngleFilteringCore:
         # Total chi-squared should be different
         assert result_all["chi_squared"] != result_filtered["chi_squared"]
 
-    def test_degrees_of_freedom_calculation(
-            self, mock_analyzer, test_phi_angles):
+    def test_degrees_of_freedom_calculation(self, mock_analyzer, test_phi_angles):
         """Test that degrees of freedom are calculated correctly for filtered angles."""
 
         # Create simple mock data
@@ -327,8 +324,7 @@ class TestAngleFilteringCore:
         expected_data_points_filtered = (
             len(optimization_indices) * 25
         )  # 25 points per angle
-        expected_dof_filtered = max(
-            expected_data_points_filtered - n_params, 1)
+        expected_dof_filtered = max(expected_data_points_filtered - n_params, 1)
 
         expected_data_points_all = n_angles * 25
         expected_dof_all = max(expected_data_points_all - n_params, 1)
@@ -531,8 +527,7 @@ class TestAngleFilteringOptimizationIntegration:
 
             for method_name in methods_to_check:
                 if hasattr(sampler, method_name):
-                    method_sig = inspect.signature(
-                        getattr(sampler, method_name))
+                    method_sig = inspect.signature(getattr(sampler, method_name))
                     assert (
                         "filter_angles_for_optimization" in method_sig.parameters
                     ), f"Missing parameter in {method_name}"
@@ -567,10 +562,8 @@ class TestAngleFilteringOptimizationIntegration:
             )
 
             # Mock the core method to capture the call
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=10.0)
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=10.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
 
@@ -693,10 +686,8 @@ class TestAngleFilteringEdgeCases:
             )
 
             # Mock the core method to capture the call
-            mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=10.0)
-            test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
+            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=10.0)
+            test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
 

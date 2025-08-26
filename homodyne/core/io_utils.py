@@ -481,8 +481,7 @@ def get_output_directory(config: Optional[Dict] = None) -> Path:
     default_dir = "./homodyne_results"
 
     if config and "output_settings" in config:
-        output_dir = config["output_settings"].get(
-            "results_directory", default_dir)
+        output_dir = config["output_settings"].get("results_directory", default_dir)
     else:
         output_dir = default_dir
         logger.warning(
@@ -554,8 +553,7 @@ def save_classical_optimization_results(
                 }
 
                 json_path = output_dir / f"{filename_base}.json"
-                save_status[f"{method}_json"] = save_json(
-                    method_result, json_path)
+                save_status[f"{method}_json"] = save_json(method_result, json_path)
 
                 logger.info(f"✓ Saved {method} results to: {json_path.name}")
             else:
@@ -652,8 +650,7 @@ def save_analysis_results(
 
         # Check if enhanced classical results with method information are
         # available
-        if hasattr(classical_results, "get") and isinstance(
-                classical_results, dict):
+        if hasattr(classical_results, "get") and isinstance(classical_results, dict):
             method_results = classical_results.get("method_results")
         elif hasattr(classical_results, "method_results"):
             # Results from enhanced classical optimizer
@@ -708,8 +705,7 @@ def save_analysis_results(
             npz_path = (output_dir / "classical") / f"{filename_base}_data.npz"
         else:
             npz_path = output_dir / f"{filename_base}_data.npz"
-        save_status["numpy"] = save_numpy(
-            results["correlation_data"], npz_path)
+        save_status["numpy"] = save_numpy(results["correlation_data"], npz_path)
 
     # Save complex objects as pickle
     if any(

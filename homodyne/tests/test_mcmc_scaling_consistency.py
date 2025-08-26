@@ -128,8 +128,7 @@ class TestMCMCScalingConsistency:
         }
 
     @pytest.mark.skipif(not mcmc_available, reason="PyMC not available")
-    def test_mcmc_sampler_initialization_with_scaling_config(
-            self, mock_analysis_core):
+    def test_mcmc_sampler_initialization_with_scaling_config(self, mock_analysis_core):
         """Test that MCMC sampler initializes correctly with scaling configuration."""
         if MCMCSampler is None:
             pytest.skip("MCMCSampler not available")
@@ -155,9 +154,7 @@ class TestMCMCScalingConsistency:
             mock_analysis_core.config = config_with_scaling_inconsistency
             if MCMCSampler is None:
                 pytest.skip("MCMCSampler not available")
-            sampler = MCMCSampler(
-                mock_analysis_core,
-                config_with_scaling_inconsistency)
+            sampler = MCMCSampler(mock_analysis_core, config_with_scaling_inconsistency)
 
             # Mock PyMC model building to avoid actual computation
             with patch.object(sampler, "_build_bayesian_model_optimized") as mock_build:
@@ -197,9 +194,7 @@ class TestMCMCScalingConsistency:
         mock_analysis_core.config = config_with_scaling_consistency
         if MCMCSampler is None:
             pytest.skip("MCMCSampler not available")
-        sampler = MCMCSampler(
-            mock_analysis_core,
-            config_with_scaling_consistency)
+        sampler = MCMCSampler(mock_analysis_core, config_with_scaling_consistency)
 
         # Check that configuration indicates full forward model
         chi_config = sampler.config.get("advanced_settings", {}).get(

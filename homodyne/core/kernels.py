@@ -97,8 +97,7 @@ def _solve_least_squares_batch_fallback(
         det = sum_theory_sq * n_data - sum_theory * sum_theory
 
         if abs(det) > 1e-12:  # Non-singular matrix
-            contrast_batch[i] = (
-                n_data * sum_theory_exp - sum_theory * sum_exp) / det
+            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
             offset_batch[i] = (
                 sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
             ) / det
@@ -197,8 +196,7 @@ def _calculate_diffusion_coefficient_impl(time_array, D0, alpha, D_offset):
     return D_t
 
 
-def _calculate_shear_rate_impl(
-        time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
+def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
     """
     Calculate time-dependent shear rate.
 
@@ -250,8 +248,7 @@ def _calculate_shear_rate_impl(
     gamma_dot_t = np.empty_like(time_array)
     # Vectorized computation with positivity constraint
     for i in range(len(time_array)):
-        gamma_value = gamma_dot_t0 * \
-            (time_array[i] ** beta) + gamma_dot_t_offset
+        gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
         # Ensure γ̇(t) > 0 always using conditional (Numba-compatible)
         if gamma_value > 1e-10:
             gamma_dot_t[i] = gamma_value
@@ -504,8 +501,7 @@ def memory_efficient_cache(maxsize=128):
                     return self
                 else:
                     # Return a bound method
-                    return lambda *args, **kwargs: self._func(
-                        instance, *args, **kwargs)
+                    return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
 
         return CachedFunction(wrapper)
 
@@ -563,8 +559,7 @@ def _solve_least_squares_batch_numba_impl(theory_batch, exp_batch):
         det = sum_theory_sq * n_data - sum_theory * sum_theory
 
         if abs(det) > 1e-12:  # Non-singular matrix
-            contrast_batch[i] = (
-                n_data * sum_theory_exp - sum_theory * sum_exp) / det
+            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
             offset_batch[i] = (
                 sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
             ) / det
