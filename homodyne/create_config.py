@@ -152,13 +152,9 @@ def create_config_from_template(
 
     # Apply sample-specific customizations
     if sample_name and "experimental_data" in config:
-        config["experimental_data"][
-            "data_folder_path"
-        ] = f"./data/{sample_name}/"
+        config["experimental_data"]["data_folder_path"] = f"./data/{sample_name}/"
         if "cache_file_path" in config["experimental_data"]:
-            config["experimental_data"][
-                "cache_file_path"
-            ] = f"./data/{sample_name}/"
+            config["experimental_data"]["cache_file_path"] = f"./data/{sample_name}/"
 
         # Update cache filename template based on mode
         cache_templates = {
@@ -167,9 +163,9 @@ def create_config_from_template(
             "laminar_flow": f"cached_c2_flow_{sample_name}_{{start_frame}}_{{end_frame}}.npz",
         }
         if mode in cache_templates:
-            config["experimental_data"]["cache_filename_template"] = (
-                cache_templates[mode]
-            )
+            config["experimental_data"]["cache_filename_template"] = cache_templates[
+                mode
+            ]
 
     # Save configuration
     output_path = Path(output_file)
@@ -211,8 +207,7 @@ def create_config_from_template(
     # Provide next steps
     print("\nNext steps:")
     print(
-        f"1. Edit {output_path} and customize the parameters for your experiment"
-    )
+        f"1. Edit {output_path} and customize the parameters for your experiment")
     print("2. Replace placeholder values (YOUR_*) with actual values")
     print("3. Adjust initial_parameters.values based on your system")
     if mode == "static_isotropic":
@@ -221,14 +216,10 @@ def create_config_from_template(
         )
         print(f"5. Run analysis with: homodyne --config {output_path}")
     elif mode == "static_anisotropic":
-        print(
-            "4. Ensure phi_angles_file exists and contains your scattering angles"
-        )
+        print("4. Ensure phi_angles_file exists and contains your scattering angles")
         print(f"5. Run analysis with: homodyne --config {output_path}")
     else:  # laminar_flow
-        print(
-            "4. Ensure phi_angles_file exists and contains your scattering angles"
-        )
+        print("4. Ensure phi_angles_file exists and contains your scattering angles")
         print("5. Verify initial parameter estimates for all 7 parameters")
         print(f"6. Run analysis with: homodyne --config {output_path}")
 
@@ -241,7 +232,8 @@ def main():
     # Check Python version requirement
     if sys.version_info < (3, 12):
         print(
-            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
+            f"Error: Python 3.12+ is required. You are using Python {
+                sys.version}",
             file=sys.stderr,
         )
         print(
@@ -291,8 +283,9 @@ Examples:
     )
 
     parser.add_argument(
-        "--sample", "-s", help="Sample name (used in data paths)"
-    )
+        "--sample",
+        "-s",
+        help="Sample name (used in data paths)")
 
     parser.add_argument("--experiment", "-e", help="Experiment description")
 

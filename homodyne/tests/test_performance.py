@@ -37,11 +37,8 @@ import pytest
 
 from homodyne.core.config import performance_monitor
 from homodyne.tests.conftest_performance import (
-    assert_performance_stability,
-    assert_performance_within_bounds,
-    optimize_numerical_environment,
-    stable_benchmark,
-)
+    assert_performance_stability, assert_performance_within_bounds,
+    optimize_numerical_environment, stable_benchmark)
 
 # Set up logger for the test module
 logger = logging.getLogger(__name__)
@@ -183,9 +180,7 @@ def performance_config():
             "num_threads": 1,
             "optimization_counter_log_frequency": 1000,
         },
-        "validation_rules": {
-            "fit_quality": {"acceptable_threshold_per_angle": 5.0}
-        },
+        "validation_rules": {"fit_quality": {"acceptable_threshold_per_angle": 5.0}},
         "advanced_settings": {
             "chi_squared_calculation": {
                 "uncertainty_factor": 0.1,
@@ -227,9 +222,8 @@ def medium_benchmark_data():
 
     phi_angles = np.linspace(0, 90, n_angles)
     c2_experimental = np.random.rand(n_angles, time_length, time_length) + 1.0
-    parameters = np.array(
-        [0.8, -0.02, 0.1, 0.05, -0.01, 0.001, 15.0]
-    )  # Laminar flow
+    parameters = np.array([0.8, -0.02, 0.1, 0.05, -0.01,
+                          0.001, 15.0])  # Laminar flow
 
     return {
         "phi_angles": phi_angles,
@@ -244,8 +238,7 @@ class TestAngleFilteringPerformance:
 
     @pytest.mark.performance
     def test_vectorized_angle_filtering_small_dataset(
-        self, small_benchmark_data
-    ):
+            self, small_benchmark_data):
         """Test vectorized angle filtering performance on small dataset."""
         phi_angles = small_benchmark_data["phi_angles"]
         target_ranges = [(10, 30), (60, 80)]
@@ -319,14 +312,11 @@ class TestAngleFilteringPerformance:
                     slowdown:.2f}x (acceptable for small datasets)"
             )
         else:
-            print(
-                "⚠ Unable to calculate performance ratio (timing too precise)"
-            )
+            print("⚠ Unable to calculate performance ratio (timing too precise)")
 
     @pytest.mark.performance
     def test_vectorized_angle_filtering_medium_dataset(
-        self, medium_benchmark_data
-    ):
+            self, medium_benchmark_data):
         """Test vectorized angle filtering performance on medium dataset."""
         phi_angles = medium_benchmark_data["phi_angles"]
         target_ranges = [(10, 30), (45, 75), (80, 90)]
@@ -394,7 +384,11 @@ class TestAngleFilteringPerformance:
         if new_time > old_time * max_allowed_slowdown:
             pytest.skip(
                 f"Vectorized method has expected overhead for small dataset: "
-                f"{new_time:.4f}s vs {old_time:.4f}s ({new_time / old_time if old_time > 0 else float('inf'):.1f}x). "
+                f"{
+                    new_time:.4f}s vs {
+                    old_time:.4f}s ({
+                    new_time /
+                    old_time if old_time > 0 else float('inf'):.1f}x). "
                 f"This is expected for small datasets due to NumPy overhead."
             )
         elif speedup > 1.1:
@@ -442,9 +436,8 @@ class TestCachePerformance:
 
         cache_time = time.perf_counter() - start_time
         denominator = n_iterations * len(test_arrays)
-        avg_cache_time = (
-            cache_time / denominator if denominator > 0 else float("inf")
-        )
+        avg_cache_time = cache_time / \
+            denominator if denominator > 0 else float("inf")
 
         # Cache hits should be very fast
         assert (
@@ -508,8 +501,7 @@ class TestMemoryPerformance:
         # Simulate the old approach (pre-allocation)
         def pre_allocation_approach():
             results = np.zeros(
-                (n_angles, time_length, time_length), dtype=np.float64
-            )
+                (n_angles, time_length, time_length), dtype=np.float64)
             for i in range(n_angles):
                 results[i] = np.random.rand(time_length, time_length)
             return results
@@ -551,15 +543,15 @@ class TestMemoryPerformance:
             lazy_usage = lazy_memory - baseline_memory
 
             print(
-                f"Memory usage: pre-allocation={pre_alloc_usage:.1f}MB, lazy={lazy_usage:.1f}MB"
+                f"Memory usage: pre-allocation={
+                    pre_alloc_usage:.1f}MB, lazy={
+                    lazy_usage:.1f}MB"
             )
 
             # Lazy allocation should not use significantly more memory
             # Handle case where pre_alloc_usage is small (system measurement
             # noise)
-            if (
-                pre_alloc_usage > 1.0
-            ):  # Only compare if we have meaningful measurements
+            if pre_alloc_usage > 1.0:  # Only compare if we have meaningful measurements
                 assert lazy_usage <= pre_alloc_usage * 2.0, (
                     f"Lazy allocation uses too much memory: "
                     f"{lazy_usage:.2f}MB vs pre-allocation {pre_alloc_usage:.2f}MB"
@@ -586,14 +578,11 @@ class TestMemoryPerformance:
         if HomodyneAnalysisCore is None:
             pytest.skip("HomodyneAnalysisCore not available")
 
-        assert (
-            HomodyneAnalysisCore is not None
-        )  # Help Pylance understand type state
+        assert HomodyneAnalysisCore is not None  # Help Pylance understand type state
         try:
             with profile_memory_usage("integrated_workflow"):
                 analyzer = HomodyneAnalysisCore(
-                    config_override=performance_config
-                )
+                    config_override=performance_config)
                 analyzer.time_length = small_benchmark_data["time_length"]
                 analyzer.wavevector_q = 0.01
                 analyzer.dt = 0.1
@@ -620,8 +609,7 @@ class TestMemoryPerformance:
 
                 except KeyError as e:
                     pytest.skip(
-                        f"Configuration incomplete for integrated test: {e}"
-                    )
+                        f"Configuration incomplete for integrated test: {e}")
 
         except ImportError:
             pytest.skip("psutil not available for memory profiling")
@@ -690,11 +678,9 @@ class TestImportPerformance:
 
         # Verify availability flags work
         assert hasattr(
-            plotting, "ARVIZ_AVAILABLE"
-        ), "ARVIZ_AVAILABLE flag missing"
+            plotting, "ARVIZ_AVAILABLE"), "ARVIZ_AVAILABLE flag missing"
         assert hasattr(
-            plotting, "CORNER_AVAILABLE"
-        ), "CORNER_AVAILABLE flag missing"
+            plotting, "CORNER_AVAILABLE"), "CORNER_AVAILABLE flag missing"
 
 
 class TestStableBenchmarking:
@@ -702,8 +688,7 @@ class TestStableBenchmarking:
 
     @pytest.mark.performance
     def test_correlation_calculation_stable_benchmark(
-        self, small_benchmark_data
-    ):
+            self, small_benchmark_data):
         """Test correlation calculation with stable benchmarking utilities.
 
         This test demonstrates the improved performance testing approach with:
@@ -721,13 +706,11 @@ class TestStableBenchmarking:
         if HomodyneAnalysisCore is None:
             pytest.skip("HomodyneAnalysisCore not available")
 
-        assert (
-            HomodyneAnalysisCore is not None
-        )  # Help Pylance understand type state
+        assert HomodyneAnalysisCore is not None  # Help Pylance understand type state
         analyzer = HomodyneAnalysisCore(
             config_override={
-                "performance_settings": {"parallel_execution": True}
-            }
+                "performance_settings": {
+                    "parallel_execution": True}}
         )
         analyzer.time_length = small_benchmark_data["time_length"]
         analyzer.wavevector_q = 0.01
@@ -792,7 +775,9 @@ class TestStableBenchmarking:
                 is_ci = os.getenv("CI", "").lower() in (
                     "true",
                     "1",
-                ) or os.getenv("GITHUB_ACTIONS", "").lower() in ("true", "1")
+                ) or os.getenv(
+                    "GITHUB_ACTIONS", ""
+                ).lower() in ("true", "1")
 
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
@@ -802,15 +787,15 @@ class TestStableBenchmarking:
                 )  # 50ms default
 
                 # Assert performance within bounds - use sanity check instead of strict bounds
-                # Performance can vary significantly across different environments
+                # Performance can vary significantly across different
+                # environments
                 max_acceptable_multiplier = (
                     50.0 if is_ci else 20.0
                 )  # More lenient for CI
-                assert (
-                    median_time < expected_median * max_acceptable_multiplier
-                ), (
+                assert median_time < expected_median * max_acceptable_multiplier, (
                     f"Test correlation_calculation_stable_benchmark: Execution time "
-                    f"{median_time:.4f}s is {median_time/expected_median:.1f}x baseline "
+                    f"{median_time:.4f}s is {median_time /
+                                             expected_median:.1f}x baseline "
                     f"(>{max_acceptable_multiplier}x threshold)"
                 )
 
@@ -825,9 +810,7 @@ class TestStableBenchmarking:
                     test_name="correlation_calculation_stability",
                 )
             else:
-                print(
-                    "⚠ No performance baseline found, recording current measurements"
-                )
+                print("⚠ No performance baseline found, recording current measurements")
         else:
             print("⚠ Performance baselines file not found")
 
@@ -843,13 +826,13 @@ class TestStableBenchmarking:
         )
         print(f"Min/Max ratio: {benchmark_results['outlier_ratio']:.2f}x")
         print(
-            f"Outliers detected: {benchmark_results['outlier_count']}/{len(benchmark_results['times'])}"
+            f"Outliers detected: {
+                benchmark_results['outlier_count']}/{
+                len(
+                    benchmark_results['times'])}"
         )
-        cv = (
-            benchmark_results["std"] / mean_time
-            if mean_time > 0
-            else float("inf")
-        )
+        cv = benchmark_results["std"] / \
+            mean_time if mean_time > 0 else float("inf")
         print(f"Performance variance (CV): {cv:.2f}")
 
         # Additional checks for performance regression
@@ -885,9 +868,7 @@ class TestStableBenchmarking:
         )
 
         # Apply additional optimizations for testing
-        optimizations = (
-            optimize_numerical_environment()
-        )  # Test the function directly
+        optimizations = optimize_numerical_environment()  # Test the function directly
 
         # Benchmark with optimizations
         optimized_results = stable_benchmark(
@@ -950,9 +931,7 @@ class TestOptimizationFeatures:
             np.random.seed(42)  # Ensure consistent results
             return np.random.rand(len(phi_angles), 30, 30) + 1.0
 
-        analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
         # Use values within bounds: D0>=1.0, alpha in [-2,2], D_offset in
         # [-100,100]
@@ -966,8 +945,7 @@ class TestOptimizationFeatures:
         # First call - should cache configs
         start = time.time()
         result1 = analyzer.calculate_chi_squared_optimized(
-            params, phi_angles, c2_exp
-        )
+            params, phi_angles, c2_exp)
         first_call_time = time.time() - start
 
         # Verify caches are created
@@ -981,21 +959,24 @@ class TestOptimizationFeatures:
         # Second call - should use cached configs
         start = time.time()
         result2 = analyzer.calculate_chi_squared_optimized(
-            params, phi_angles, c2_exp
-        )
+            params, phi_angles, c2_exp)
         second_call_time = time.time() - start
 
         # Results should be identical
         # Extract numeric values if results are dictionaries
         result1_value = (
-            result1.get("chi2", result1)
-            if isinstance(result1, dict)
-            else result1
+            result1.get(
+                "chi2",
+                result1) if isinstance(
+                result1,
+                dict) else result1
         )
         result2_value = (
-            result2.get("chi2", result2)
-            if isinstance(result2, dict)
-            else result2
+            result2.get(
+                "chi2",
+                result2) if isinstance(
+                result2,
+                dict) else result2
         )
 
         assert (
@@ -1033,15 +1014,14 @@ class TestOptimizationFeatures:
 
         analyzer = HomodyneAnalysisCore(
             config_override={
-                "performance_settings": {"parallel_execution": True}
-            }
+                "performance_settings": {
+                    "parallel_execution": True}}
         )
         analyzer.time_length = small_benchmark_data["time_length"]
         analyzer.wavevector_q = 0.01
         analyzer.dt = 0.1
         analyzer.time_array = np.linspace(
-            0.1, 3.0, small_benchmark_data["time_length"]
-        )
+            0.1, 3.0, small_benchmark_data["time_length"])
 
         # Force laminar flow parameters (non-static) to trigger memory pool
         params = np.array(
@@ -1160,8 +1140,7 @@ class TestOptimizationFeatures:
         analyzer.wavevector_q = 0.01
         analyzer.dt = 0.1
         analyzer.time_array = np.linspace(
-            0.1, 3.0, small_benchmark_data["time_length"]
-        )
+            0.1, 3.0, small_benchmark_data["time_length"])
 
         params = small_benchmark_data["parameters"][:3]
         phi_angles = small_benchmark_data["phi_angles"]
@@ -1174,35 +1153,27 @@ class TestOptimizationFeatures:
 
         assert isinstance(result, dict), "Should return dict with components"
         assert "valid" in result and result["valid"], "Result should be valid"
-        assert (
-            "scaling_solutions" in result
-        ), "Should include scaling solutions"
+        assert "scaling_solutions" in result, "Should include scaling solutions"
 
         scaling_solutions = result["scaling_solutions"]
         assert len(scaling_solutions) == len(
-            phi_angles
-        ), "One scaling per angle"
+            phi_angles), "One scaling per angle"
 
         # Each scaling should have contrast and offset
         for i, scaling in enumerate(scaling_solutions):
-            assert (
-                len(scaling) == 2
-            ), f"Scaling {i} should have contrast and offset"
+            assert len(
+                scaling) == 2, f"Scaling {i} should have contrast and offset"
             contrast, offset = scaling
             assert isinstance(
-                contrast, (int, float)
-            ), f"Contrast {i} should be numeric"
+                contrast, (int, float)), f"Contrast {i} should be numeric"
             assert isinstance(
-                offset, (int, float)
-            ), f"Offset {i} should be numeric"
+                offset, (int, float)), f"Offset {i} should be numeric"
             # Check that scaling values are finite (very large values can occur
             # with test data)
             assert np.isfinite(
-                contrast
-            ), f"Contrast {i} should be finite: {contrast}"
+                contrast), f"Contrast {i} should be finite: {contrast}"
             assert np.isfinite(
-                offset
-            ), f"Offset {i} should be finite: {offset}"
+                offset), f"Offset {i} should be finite: {offset}"
             # Relaxed bounds for test data - focus on correctness not physical
             # reasonableness
             assert (
@@ -1225,8 +1196,8 @@ class TestOptimizationFeatures:
 
         analyzer = HomodyneAnalysisCore(
             config_override={
-                "performance_settings": {"parallel_execution": True}
-            }
+                "performance_settings": {
+                    "parallel_execution": True}}
         )
         analyzer.time_length = medium_benchmark_data["time_length"]
         analyzer.wavevector_q = 0.01
@@ -1403,8 +1374,7 @@ class TestRegressionBenchmarks:
             # Fallback to stable benchmark with enhanced configuration
             config = create_stable_benchmark_config("thorough")
             benchmark_results = stable_benchmark(
-                chi_squared_calculation, **config
-            )
+                chi_squared_calculation, **config)
 
         # Get benchmark result for pytest-benchmark compatibility
         result = benchmark_results["result"]
@@ -1415,11 +1385,8 @@ class TestRegressionBenchmarks:
         assert np.isfinite(result), "Chi-squared result should be finite"
         assert result >= 0, "Chi-squared should be non-negative"
 
-        cv = (
-            benchmark_results["std"] / mean_time
-            if mean_time > 0
-            else float("inf")
-        )
+        cv = benchmark_results["std"] / \
+            mean_time if mean_time > 0 else float("inf")
         print(
             f"✓ Chi-squared benchmark completed: {
                 mean_time *
@@ -1473,9 +1440,7 @@ class TestRegressionBenchmarks:
             "performance_settings": performance_config.get(
                 "performance_settings", {"parallel_execution": True}
             ),
-            "advanced_settings": performance_config.get(
-                "advanced_settings", {}
-            ),
+            "advanced_settings": performance_config.get("advanced_settings", {}),
         }
 
         # Create analyzer with proper config handling to avoid NoneType error
@@ -1550,8 +1515,7 @@ class TestRegressionBenchmarks:
             # Fallback to stable benchmark with enhanced configuration
             config = create_stable_benchmark_config("thorough")
             benchmark_results = stable_benchmark(
-                correlation_calculation, **config
-            )
+                correlation_calculation, **config)
 
         # Get the result for verification
         result = benchmark_results["result"]
@@ -1572,11 +1536,8 @@ class TestRegressionBenchmarks:
         assert np.all(np.isfinite(result)), "All results should be finite"
         assert not np.allclose(result, 0), "Results shouldn't be all zeros"
 
-        cv = (
-            benchmark_results["std"] / mean_time
-            if mean_time > 0
-            else float("inf")
-        )
+        cv = benchmark_results["std"] / \
+            mean_time if mean_time > 0 else float("inf")
         print(
             f"✓ Correlation benchmark completed: {
                 mean_time *
@@ -1613,11 +1574,8 @@ class TestRegressionBenchmarks:
         # for compatibility)
         benchmark(correlation_calculation)
 
-        cv = (
-            benchmark_results["std"] / mean_time
-            if mean_time > 0
-            else float("inf")
-        )
+        cv = benchmark_results["std"] / \
+            mean_time if mean_time > 0 else float("inf")
         print(
             f"✓ Stable correlation benchmark: {
                 median_time *
@@ -1673,7 +1631,11 @@ class TestPerformanceRegression:
             baseline_description = "local development"
 
         assert median_time < max_acceptable, (
-            f"Chi-squared calculation too slow: {median_time * 1000:.2f}ms > {max_acceptable * 1000:.0f}ms threshold "
+            f"Chi-squared calculation too slow: {
+                median_time *
+                1000:.2f}ms > {
+                max_acceptable *
+                1000:.0f}ms threshold "
             f"({baseline_description})"
         )
 
@@ -1694,19 +1656,17 @@ class TestPerformanceRegression:
 
         analyzer = HomodyneAnalysisCore(
             config_override={
-                "performance_settings": {"parallel_execution": True}
-            }
+                "performance_settings": {
+                    "parallel_execution": True}}
         )
         analyzer.time_length = small_benchmark_data["time_length"]
         analyzer.wavevector_q = 0.01
         analyzer.dt = 0.1
         analyzer.time_array = np.linspace(
-            0.1, 3.0, small_benchmark_data["time_length"]
-        )
+            0.1, 3.0, small_benchmark_data["time_length"])
 
         params = np.concatenate(
-            [small_benchmark_data["parameters"], np.zeros(4)]
-        )
+            [small_benchmark_data["parameters"], np.zeros(4)])
         phi_angles = small_benchmark_data["phi_angles"]
 
         # Run multiple iterations to get stable timing
@@ -1726,7 +1686,8 @@ class TestPerformanceRegression:
         ).lower() in ("true", "1")
 
         if is_ci:
-            # CI environments: more lenient threshold (up to 20x slower as per baselines)
+            # CI environments: more lenient threshold (up to 20x slower as per
+            # baselines)
             max_acceptable = 0.020  # 20ms for CI (20x the 1ms local threshold)
             baseline_description = "CI environment"
         else:
@@ -1735,7 +1696,11 @@ class TestPerformanceRegression:
             baseline_description = "local development"
 
         assert median_time < max_acceptable, (
-            f"Correlation calculation too slow: {median_time * 1000:.2f}ms > {max_acceptable * 1000:.0f}ms threshold "
+            f"Correlation calculation too slow: {
+                median_time *
+                1000:.2f}ms > {
+                max_acceptable *
+                1000:.0f}ms threshold "
             f"({baseline_description})"
         )
 
@@ -1761,8 +1726,7 @@ class TestPerformanceRegression:
         analyzer.wavevector_q = 0.01
         analyzer.dt = 0.1
         analyzer.time_array = np.linspace(
-            0.1, 3.0, small_benchmark_data["time_length"]
-        )
+            0.1, 3.0, small_benchmark_data["time_length"])
 
         params = small_benchmark_data["parameters"][:3]
         phi_angles = small_benchmark_data["phi_angles"]
@@ -1782,8 +1746,7 @@ class TestPerformanceRegression:
         for _ in range(5):
             start = time.time()
             chi2 = analyzer.calculate_chi_squared_optimized(
-                params, phi_angles, c2_exp
-            )
+                params, phi_angles, c2_exp)
             chi2_times.append(time.time() - start)
 
         corr_median = np.median(corr_times)
@@ -1832,14 +1795,11 @@ class TestPerformanceRegression:
             # Re-measure with scaled workload
             corr_times = []
             for _ in range(
-                3
-            ):  # Fewer measurement rounds but more iterations each
+                    3):  # Fewer measurement rounds but more iterations each
                 start = time.time()
                 for _ in range(iterations_per_measurement):
-                    result = (
-                        analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                            params, phi_angles
-                        )
+                    result = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                        params, phi_angles
                     )
                 total_time = time.time() - start
                 corr_times.append(
@@ -1860,9 +1820,8 @@ class TestPerformanceRegression:
 
             corr_median = np.median(corr_times)
             chi2_median = np.median(chi2_times)
-            ratio = (
-                chi2_median / corr_median if corr_median > 0 else float("inf")
-            )
+            ratio = chi2_median / \
+                corr_median if corr_median > 0 else float("inf")
 
             print(
                 f"✓ Scaled measurements: corr={
@@ -1903,9 +1862,15 @@ class TestPerformanceRegression:
             print(f"  CI detected: {is_ci}")
 
             assert ratio < max_acceptable_ratio, (
-                f"Chi2/Correlation ratio too high: {ratio:.1f}x > {max_acceptable_ratio:.1f}x threshold "
+                f"Chi2/Correlation ratio too high: {
+                    ratio:.1f}x > {
+                    max_acceptable_ratio:.1f}x threshold "
                 f"({baseline_description}). "
-                f"Corr: {corr_median * 1000:.2f}ms, Chi2: {chi2_median * 1000:.2f}ms"
+                f"Corr: {
+                    corr_median *
+                    1000:.2f}ms, Chi2: {
+                    chi2_median *
+                    1000:.2f}ms"
             )
 
     @pytest.mark.performance
@@ -1924,8 +1889,8 @@ class TestPerformanceRegression:
 
         analyzer = HomodyneAnalysisCore(
             config_override={
-                "performance_settings": {"parallel_execution": True}
-            }
+                "performance_settings": {
+                    "parallel_execution": True}}
         )
         analyzer.time_length = medium_benchmark_data["time_length"]
         analyzer.wavevector_q = 0.01
@@ -1979,8 +1944,8 @@ def configure_performance_tests():
 def pytest_configure(config):
     """Configure custom pytest markers."""
     config.addinivalue_line(
-        "markers", "performance: mark test as a performance test"
-    )
+        "markers",
+        "performance: mark test as a performance test")
     config.addinivalue_line(
         "markers",
         "benchmark: mark test as a benchmark test (requires pytest-benchmark)",
@@ -2019,9 +1984,8 @@ class TestMCMCThinningPerformance:
     @pytest.mark.performance
     @pytest.mark.mcmc
     @pytest.mark.memory
-    @pytest.mark.skipif(
-        not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests"
-    )
+    @pytest.mark.skipif(not PYMC_AVAILABLE,
+                        reason="PyMC is required for MCMC tests")
     def test_thinning_memory_usage(self, small_benchmark_data):
         """Test that thinning reduces memory usage in MCMC traces."""
         c2_experimental, _, phi_angles, _ = small_benchmark_data
@@ -2031,9 +1995,7 @@ class TestMCMCThinningPerformance:
         mock_core.num_threads = 2
         mock_core.config_manager = Mock()
         mock_core.config_manager.is_static_mode_enabled.return_value = True
-        mock_core.config_manager.get_analysis_mode.return_value = (
-            "static_isotropic"
-        )
+        mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
         mock_core.config_manager.get_effective_parameter_count.return_value = 3
         mock_core.config_manager.is_angle_filtering_enabled.return_value = True
 
@@ -2055,9 +2017,7 @@ class TestMCMCThinningPerformance:
             "parameter_space": {"bounds": []},
             "analyzer_parameters": {"temporal": {"dt": 0.5}},
             "analysis_settings": {"static_mode": True},
-            "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True}
-            },
+            "performance_settings": {"noise_model": {"use_simple_forward_model": True}},
         }
 
         # Configuration with thinning (deep copy to avoid modifying original)
@@ -2081,23 +2041,18 @@ class TestMCMCThinningPerformance:
         assert sampler_with_thin.mcmc_config["thin"] == 2
 
         # Calculate expected effective draws
-        draws_with_thin = config_with_thin["optimization_config"][
-            "mcmc_sampling"
-        ]["draws"]
-        thin_factor = config_with_thin["optimization_config"]["mcmc_sampling"][
-            "thin"
+        draws_with_thin = config_with_thin["optimization_config"]["mcmc_sampling"][
+            "draws"
         ]
+        thin_factor = config_with_thin["optimization_config"]["mcmc_sampling"]["thin"]
         effective_draws = draws_with_thin // thin_factor
 
-        assert (
-            effective_draws == 200
-        )  # Same as no-thinning case for fair comparison
+        assert effective_draws == 200  # Same as no-thinning case for fair comparison
 
     @pytest.mark.performance
     @pytest.mark.mcmc
-    @pytest.mark.skipif(
-        not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests"
-    )
+    @pytest.mark.skipif(not PYMC_AVAILABLE,
+                        reason="PyMC is required for MCMC tests")
     def test_thinning_configuration_validation(self):
         """Test performance of thinning configuration validation."""
         from homodyne.optimization.mcmc import MCMCSampler
@@ -2152,9 +2107,8 @@ class TestMCMCThinningPerformance:
     @pytest.mark.performance
     @pytest.mark.mcmc
     @pytest.mark.slow
-    @pytest.mark.skipif(
-        not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests"
-    )
+    @pytest.mark.skipif(not PYMC_AVAILABLE,
+                        reason="PyMC is required for MCMC tests")
     def test_thinning_impact_on_autocorrelation(self, small_benchmark_data):
         """Test that thinning reduces autocorrelation in MCMC samples."""
         # This is a conceptual test - in practice would need actual MCMC runs
@@ -2166,9 +2120,7 @@ class TestMCMCThinningPerformance:
         mock_core.num_threads = 2
         mock_core.config_manager = Mock()
         mock_core.config_manager.is_static_mode_enabled.return_value = True
-        mock_core.config_manager.get_analysis_mode.return_value = (
-            "static_isotropic"
-        )
+        mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
         mock_core.config_manager.get_effective_parameter_count.return_value = 3
 
         # Test different thinning strategies
@@ -2230,9 +2182,8 @@ class TestMCMCThinningPerformance:
 
     @pytest.mark.performance
     @pytest.mark.regression
-    @pytest.mark.skipif(
-        not PYMC_AVAILABLE, reason="PyMC is required for MCMC tests"
-    )
+    @pytest.mark.skipif(not PYMC_AVAILABLE,
+                        reason="PyMC is required for MCMC tests")
     def test_thinning_performance_regression(self):
         """Test that thinning doesn't cause performance regression in setup."""
         from homodyne.optimization.mcmc import MCMCSampler
@@ -2278,14 +2229,12 @@ class TestMCMCThinningPerformance:
 
         # Calculate average times
         avg_baseline = (
-            sum(baseline_times) / len(baseline_times)
-            if len(baseline_times) > 0
-            else 0
+            sum(baseline_times) /
+            len(baseline_times) if len(baseline_times) > 0 else 0
         )
         avg_thinning = (
-            sum(thinning_times) / len(thinning_times)
-            if len(thinning_times) > 0
-            else 0
+            sum(thinning_times) /
+            len(thinning_times) if len(thinning_times) > 0 else 0
         )
 
         # Thinning should not significantly slow down setup
@@ -2297,12 +2246,10 @@ class TestMCMCThinningPerformance:
             ), f"Thinning setup too slow: {avg_thinning:.4f}s vs baseline {avg_baseline:.4f}s"
         else:
             # Both are very fast, just check they're both reasonable
-            assert (
-                avg_baseline >= 0
-            ), f"Negative baseline time: {avg_baseline:.4f}s"
-            assert (
-                avg_thinning >= 0
-            ), f"Negative thinning time: {avg_thinning:.4f}s"
+            assert avg_baseline >= 0, f"Negative baseline time: {
+                avg_baseline:.4f}s"
+            assert avg_thinning >= 0, f"Negative thinning time: {
+                avg_thinning:.4f}s"
 
         # Both should be reasonably fast
         assert (
@@ -2372,12 +2319,9 @@ class TestNumbaCompilationDiagnostics:
     def test_homodyne_numba_kernels_diagnostics(self):
         """Diagnose actual homodyne Numba kernel performance."""
         from homodyne.core.kernels import (
-            calculate_diffusion_coefficient_numba,
-            calculate_shear_rate_numba,
-            compute_g1_correlation_numba,
-            compute_sinc_squared_numba,
-            create_time_integral_matrix_numba,
-        )
+            calculate_diffusion_coefficient_numba, calculate_shear_rate_numba,
+            compute_g1_correlation_numba, compute_sinc_squared_numba,
+            create_time_integral_matrix_numba)
 
         # Local warmup implementation
         def warmup_numba_kernels():
@@ -2408,8 +2352,7 @@ class TestNumbaCompilationDiagnostics:
 
         # Test 3: Diffusion coefficient calculation
         _ = calculate_diffusion_coefficient_numba(
-            test_time_array, 1000.0, -0.1, 100.0
-        )
+            test_time_array, 1000.0, -0.1, 100.0)
         start = time.perf_counter()
         for _ in range(1000):
             _ = calculate_diffusion_coefficient_numba(
@@ -2438,8 +2381,7 @@ class TestNumbaCompilationDiagnostics:
         _ = create_time_integral_matrix_numba(test_time_array)
         start = time.perf_counter()
         for _ in range(
-            100
-        ):  # Fewer iterations as this creates larger matrices
+                100):  # Fewer iterations as this creates larger matrices
             _ = create_time_integral_matrix_numba(test_time_array)
         matrix_time = (time.perf_counter() - start) / 100
 
@@ -2474,12 +2416,8 @@ class TestNumbaCompilationDiagnostics:
         print(f"Cache enabled: {config['cache_enabled']}")
 
         # Ensure critical performance settings are enabled
-        assert config[
-            "numba_available"
-        ], "Numba should be available for performance"
-        assert config[
-            "cache_enabled"
-        ], "Caching should be enabled for performance"
+        assert config["numba_available"], "Numba should be available for performance"
+        assert config["cache_enabled"], "Caching should be enabled for performance"
 
     @pytest.mark.performance
     def test_compilation_signatures(self):
@@ -2488,27 +2426,24 @@ class TestNumbaCompilationDiagnostics:
 
         if not NUMBA_AVAILABLE:
             pytest.skip(
-                "Numba not available - cannot test compilation signatures"
-            )
+                "Numba not available - cannot test compilation signatures")
 
         from homodyne.core.kernels import (
-            calculate_diffusion_coefficient_numba,
-            calculate_shear_rate_numba,
-            create_time_integral_matrix_numba,
-        )
+            calculate_diffusion_coefficient_numba, calculate_shear_rate_numba,
+            create_time_integral_matrix_numba)
 
         print("\n=== Compilation Signatures ===")
 
         # Trigger compilation
         test_time_array = np.linspace(0.1, 2.0, 10)
         _ = calculate_diffusion_coefficient_numba(
-            test_time_array, 1000.0, -0.1, 100.0
-        )
+            test_time_array, 1000.0, -0.1, 100.0)
         _ = calculate_shear_rate_numba(test_time_array, 10.0, 0.1, 1.0)
         _ = create_time_integral_matrix_numba(test_time_array)
 
         # Check signatures exist (indicates successful compilation)
-        # Only check signatures if numba is available and functions are compiled
+        # Only check signatures if numba is available and functions are
+        # compiled
         try:
             if hasattr(calculate_diffusion_coefficient_numba, "signatures"):
                 signatures = getattr(
@@ -2517,20 +2452,15 @@ class TestNumbaCompilationDiagnostics:
                 print(f"1. Diffusion coef signatures: {len(signatures)}")
                 assert len(signatures) > 0, "Diffusion function not compiled"
             else:
-                print(
-                    "1. Diffusion coef: Using Python fallback (numba not available)"
-                )
+                print("1. Diffusion coef: Using Python fallback (numba not available)")
 
             if hasattr(calculate_shear_rate_numba, "signatures"):
                 signatures = getattr(
-                    calculate_shear_rate_numba, "signatures", []
-                )
+                    calculate_shear_rate_numba, "signatures", [])
                 print(f"2. Shear rate signatures: {len(signatures)}")
                 assert len(signatures) > 0, "Shear rate function not compiled"
             else:
-                print(
-                    "2. Shear rate: Using Python fallback (numba not available)"
-                )
+                print("2. Shear rate: Using Python fallback (numba not available)")
 
             if hasattr(create_time_integral_matrix_numba, "signatures"):
                 signatures = getattr(
@@ -2543,9 +2473,7 @@ class TestNumbaCompilationDiagnostics:
                     "3. Time integral matrix: Using Python fallback (numba not available)"
                 )
         except AttributeError:
-            print(
-                "Numba signatures not available - using Python fallback functions"
-            )
+            print("Numba signatures not available - using Python fallback functions")
 
     @pytest.mark.performance
     def test_performance_vs_expected_baselines(self):
@@ -2555,7 +2483,8 @@ class TestNumbaCompilationDiagnostics:
         # Expected performance baselines (based on recent optimizations)
         # Adjusted for CI environment variability
         baselines = {
-            "diffusion_coefficient_ms": 0.010,  # 10μs per call (relaxed for CI)
+            # 10μs per call (relaxed for CI)
+            "diffusion_coefficient_ms": 0.010,
             "simple_numba_function_ms": 0.002,  # 2μs per call (relaxed for CI)
         }
 
@@ -2595,9 +2524,8 @@ class TestNumbaCompilationDiagnostics:
         if baseline_time_seconds > 0:
             performance_factor = diffusion_time / baseline_time_seconds
         else:
-            performance_factor = float(
-                "inf"
-            )  # Handle zero baseline gracefully
+            # Handle zero baseline gracefully
+            performance_factor = float("inf")
         print(
             f"Performance factor: {
                 performance_factor:.2f}x (1.0 = baseline)"
@@ -2628,12 +2556,8 @@ def run_basic_performance_regression_test() -> bool:
     bool
         True if no regressions detected, False otherwise
     """
-    print(
-        "Running performance tests using existing codebase infrastructure..."
-    )
-    print(
-        "The original homodyne codebase has comprehensive performance optimizations:"
-    )
+    print("Running performance tests using existing codebase infrastructure...")
+    print("The original homodyne codebase has comprehensive performance optimizations:")
 
     # Placeholder implementation - always return True for now
     return True
@@ -2734,11 +2658,9 @@ class TestBatchOptimizationFeatures:
             n_angles,
         ), f"Expected shape ({n_angles},), got {chi2_batch.shape}"
         assert np.all(
-            chi2_batch >= 0
-        ), "Chi-squared values should be non-negative"
-        assert np.all(
-            np.isfinite(chi2_batch)
-        ), "Chi-squared values should be finite"
+            chi2_batch >= 0), "Chi-squared values should be non-negative"
+        assert np.all(np.isfinite(chi2_batch)
+                      ), "Chi-squared values should be finite"
 
         # Compare with manual calculation for first angle
         theory = theory_batch[0]
@@ -2762,10 +2684,8 @@ class TestBatchOptimizationFeatures:
     @pytest.mark.benchmark
     def test_batch_optimization_performance_comparison(self, benchmark):
         """Compare performance of batch vs sequential processing."""
-        from homodyne.core.kernels import (
-            compute_chi_squared_batch_numba,
-            solve_least_squares_batch_numba,
-        )
+        from homodyne.core.kernels import (compute_chi_squared_batch_numba,
+                                           solve_least_squares_batch_numba)
 
         # Generate realistic test data
         n_angles = 15  # Typical number of angles
@@ -2830,8 +2750,7 @@ class TestBatchOptimizationFeatures:
 
         # Benchmark batch processing
         batch_result = handle_numba_threading_error(
-            benchmark, batch_processing
-        )
+            benchmark, batch_processing)
 
         # Time sequential processing manually (since we can only benchmark one
         # function)
@@ -2842,8 +2761,7 @@ class TestBatchOptimizationFeatures:
         start = time.perf_counter()
         for _ in range(10):  # Multiple runs for averaging
             sequential_result = handle_numba_threading_error(
-                sequential_processing
-            )
+                sequential_processing)
         sequential_time = (time.perf_counter() - start) / 10
 
         # Verify results are equivalent
@@ -2855,9 +2773,7 @@ class TestBatchOptimizationFeatures:
                 err_msg="Batch and sequential results should be equivalent",
             )
         else:
-            print(
-                "Warning: Some results were None, skipping numerical comparison"
-            )
+            print("Warning: Some results were None, skipping numerical comparison")
 
         print("✓ Batch optimization performance test completed")
         print(
@@ -2875,10 +2791,8 @@ class TestBatchOptimizationFeatures:
         except ImportError:
             pytest.skip("psutil not available for memory monitoring")
 
-        from homodyne.core.kernels import (
-            compute_chi_squared_batch_numba,
-            solve_least_squares_batch_numba,
-        )
+        from homodyne.core.kernels import (compute_chi_squared_batch_numba,
+                                           solve_least_squares_batch_numba)
 
         # Get initial memory usage
         process = psutil.Process(os.getpid())
@@ -2924,11 +2838,11 @@ class TestBatchOptimizationFeatures:
         memory_increase = final_memory - initial_memory
 
         print(
-            f"Memory usage: {initial_memory:.1f} MB -> {final_memory:.1f} MB"
-        )
+            f"Memory usage: {initial_memory:.1f} MB -> {final_memory:.1f} MB")
         print(f"Memory increase: {memory_increase:.1f} MB")
 
-        # Memory increase should be reasonable (CI environments need higher tolerance)
+        # Memory increase should be reasonable (CI environments need higher
+        # tolerance)
         is_ci = os.getenv("CI", "").lower() in ("true", "1") or os.getenv(
             "GITHUB_ACTIONS", ""
         ).lower() in ("true", "1")
@@ -3045,14 +2959,14 @@ class TestBatchOptimizationFeatures:
             n_time_points = 50
 
             # Synthetic correlation data
-            c2_data = (
-                np.random.rand(n_angles, n_frames, n_time_points) * 0.5 + 1.0
-            )
+            c2_data = np.random.rand(
+                n_angles, n_frames, n_time_points) * 0.5 + 1.0
             time_array = np.linspace(0.1, 5.0, n_time_points)
 
             # Test that the analysis core can process this without errors
             # (This mainly tests integration, not full functionality)
-            # Create a temporary config file since HomodyneAnalysisCore expects a file path
+            # Create a temporary config file since HomodyneAnalysisCore expects
+            # a file path
             import json
             import tempfile
 
@@ -3069,22 +2983,17 @@ class TestBatchOptimizationFeatures:
                     # callable
                     from homodyne.core.kernels import (
                         compute_chi_squared_batch_numba,
-                        solve_least_squares_batch_numba,
-                    )
+                        solve_least_squares_batch_numba)
 
                     # Create test arrays
-                    theory_batch = (
-                        np.random.rand(n_angles, n_time_points) * 0.5 + 0.5
-                    )
-                    exp_batch = (
-                        np.random.rand(n_angles, n_time_points) * 0.5 + 1.0
-                    )
+                    theory_batch = np.random.rand(
+                        n_angles, n_time_points) * 0.5 + 0.5
+                    exp_batch = np.random.rand(
+                        n_angles, n_time_points) * 0.5 + 1.0
 
                     # Test that functions work
-                    contrast_batch, offset_batch = (
-                        solve_least_squares_batch_numba(
-                            theory_batch, exp_batch
-                        )
+                    contrast_batch, offset_batch = solve_least_squares_batch_numba(
+                        theory_batch, exp_batch
                     )
                     chi2_batch = compute_chi_squared_batch_numba(
                         theory_batch, exp_batch, contrast_batch, offset_batch

@@ -71,8 +71,7 @@ class TestMCMC3DPlottingIntegration:
 
     @patch("homodyne.plotting.plot_3d_surface")
     def test_mcmc_3d_plotting_with_trace_data(
-        self, mock_plot_3d, dummy_config
-    ):
+            self, mock_plot_3d, dummy_config):
         """Test 3D plotting functionality with MCMC trace data."""
         from run_homodyne import _generate_mcmc_plots
 
@@ -102,9 +101,7 @@ class TestMCMC3DPlottingIntegration:
         # Mock the config to include parameter names and ensure plotting is
         # enabled
         mock_analyzer.config = {
-            "initial_parameters": {
-                "parameter_names": ["D0", "alpha", "D_offset"]
-            },
+            "initial_parameters": {"parameter_names": ["D0", "alpha", "D_offset"]},
             "output_settings": {"reporting": {"generate_plots": True}},
         }
 
@@ -122,9 +119,7 @@ class TestMCMC3DPlottingIntegration:
                     output_dir=output_dir,
                     mcmc_results=mcmc_results,
                 )
-                print(
-                    "✓ _generate_mcmc_plots executed successfully with 3D plotting"
-                )
+                print("✓ _generate_mcmc_plots executed successfully with 3D plotting")
 
                 # Verify plot_3d_surface was called (fallback mode without
                 # trace)
@@ -136,8 +131,7 @@ class TestMCMC3DPlottingIntegration:
 
     @patch("homodyne.plotting.plot_3d_surface")
     def test_mcmc_3d_plotting_without_trace_data(
-        self, mock_plot_3d, dummy_config
-    ):
+            self, mock_plot_3d, dummy_config):
         """Test 3D plotting functionality without MCMC trace data (fallback mode)."""
         from run_homodyne import _generate_mcmc_plots
 
@@ -177,9 +171,7 @@ class TestMCMC3DPlottingIntegration:
                     output_dir=output_dir,
                     mcmc_results=mcmc_results,
                 )
-                print(
-                    "✓ _generate_mcmc_plots executed successfully without trace data"
-                )
+                print("✓ _generate_mcmc_plots executed successfully without trace data")
 
                 # Verify plot_3d_surface was still called (fallback mode)
                 assert mock_plot_3d.called
@@ -194,8 +186,7 @@ class TestMCMC3DPlottingIntegration:
 
             except Exception as e:
                 pytest.fail(
-                    f"_generate_mcmc_plots failed in fallback mode: {e}"
-                )
+                    f"_generate_mcmc_plots failed in fallback mode: {e}")
 
     def test_3d_plotting_output_directory_structure(self, dummy_config):
         """Test that 3D plots are saved to the correct MCMC directory."""
@@ -248,9 +239,7 @@ class TestMCMC3DPlottingIntegration:
                     call_args = mock_plot_3d.call_args
                     outdir_arg = call_args[1]["outdir"]
                     assert Path(outdir_arg) == mcmc_dir
-                    print(
-                        "✓ plot_3d_surface called with correct MCMC output directory"
-                    )
+                    print("✓ plot_3d_surface called with correct MCMC output directory")
 
     def test_3d_plotting_configuration_integration(self, dummy_config):
         """Test that 3D plotting respects configuration settings."""
@@ -283,9 +272,7 @@ class TestMCMC3DPlottingIntegration:
 
                 # Should not call plot_3d_surface when plotting is disabled
                 assert not mock_plot_3d.called
-                print(
-                    "✓ 3D plotting correctly disabled when generate_plots=False"
-                )
+                print("✓ 3D plotting correctly disabled when generate_plots=False")
 
 
 class TestMCMCPosteriorSampleProcessing:
@@ -334,8 +321,10 @@ class TestMCMCPosteriorSampleProcessing:
         # Test subsampling logic
         n_samples = min(500, param_samples_array.shape[0])
         indices = np.linspace(
-            0, param_samples_array.shape[0] - 1, n_samples, dtype=int
-        )
+            0,
+            param_samples_array.shape[0] - 1,
+            n_samples,
+            dtype=int)
         param_samples_subset = param_samples_array[indices]
 
         assert param_samples_subset.shape == (n_samples, 3)
@@ -375,8 +364,8 @@ class TestMCMCPosteriorSampleProcessing:
         sample_mean = np.mean(c2_samples, axis=0)
         # Allow some tolerance for edge cases
         within_ci_ratio = np.mean(
-            (sample_mean >= lower_ci) & (sample_mean <= upper_ci)
-        )
+            (sample_mean >= lower_ci) & (
+                sample_mean <= upper_ci))
         assert within_ci_ratio > 0.8  # Most points should be within CI
 
         print(

@@ -62,13 +62,11 @@ else:
 #     reason="PyMC is required for MCMC sampling but is not available.",
 # )
 try:
-    from homodyne.tests.test_utils_mcmc import (
-        create_mock_analysis_core,
-        create_mock_trace,
-        create_realistic_user_config,
-        get_mcmc_defaults,
-        validate_trace_dimensions,
-    )
+    from homodyne.tests.test_utils_mcmc import (create_mock_analysis_core,
+                                                create_mock_trace,
+                                                create_realistic_user_config,
+                                                get_mcmc_defaults,
+                                                validate_trace_dimensions)
 except ImportError:
     # Test utilities may not be available without PyMC
     create_mock_analysis_core = None
@@ -164,15 +162,23 @@ class TestMCMCConfigurationRegression:
         old_trace_chains, old_trace_draws = 2, 1000
 
         # Create mock traces
-        correct_trace = create_mock_trace(chains=config_chains, draws=config_draws)  # type: ignore
-        old_trace = create_mock_trace(chains=old_trace_chains, draws=old_trace_draws)  # type: ignore
+        correct_trace = create_mock_trace(
+            chains=config_chains,
+            draws=config_draws)  # type: ignore
+        old_trace = create_mock_trace(
+            chains=old_trace_chains,
+            draws=old_trace_draws)  # type: ignore
 
         # Validation should pass for correct trace
-        assert validate_trace_dimensions(correct_trace, config_chains, config_draws)  # type: ignore
+        assert validate_trace_dimensions(
+            correct_trace, config_chains, config_draws)  # type: ignore
 
         # Validation should fail for old trace
         assert (
-            validate_trace_dimensions(old_trace, config_chains, config_draws) == False  # type: ignore
+            validate_trace_dimensions(
+                old_trace,
+                config_chains,
+                config_draws) == False  # type: ignore
         )
 
         # This mismatch is what was causing the plotting issue
@@ -184,7 +190,8 @@ class TestMCMCConfigurationRegression:
         # This simulates what plotting functions do
 
         # Case 1: Correct trace (after fix)
-        correct_trace = create_mock_trace(chains=8, draws=10000)  # type: ignore
+        correct_trace = create_mock_trace(
+            chains=8, draws=10000)  # type: ignore
 
         chain_count = correct_trace.posterior.sizes.get("chain", "Unknown")
         draw_count = correct_trace.posterior.sizes.get("draw", "Unknown")
@@ -199,9 +206,7 @@ class TestMCMCConfigurationRegression:
         draw_count_old = old_trace.posterior.sizes.get("draw", "Unknown")
 
         plot_text_old = f"Chains: {chain_count_old} Draws: {draw_count_old}"
-        assert (
-            plot_text_old == "Chains: 2 Draws: 1000"
-        )  # This was the problem!
+        assert plot_text_old == "Chains: 2 Draws: 1000"  # This was the problem!
 
     @pytest.mark.skipif(
         not _check_pymc_available(),
@@ -229,9 +234,7 @@ class TestMCMCConfigurationRegression:
         # Create configuration and save to temporary file
         config_data = create_realistic_user_config()  # type: ignore
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config_data, f, indent=2)
             temp_path = f.name
 
@@ -275,9 +278,8 @@ class TestMCMCConfigurationRegression:
         defaults = get_mcmc_defaults()  # type: ignore
 
         assert mcmc_config.get("draws", defaults["draws"]) == defaults["draws"]
-        assert (
-            mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
-        )
+        assert mcmc_config.get(
+            "chains", defaults["chains"]) == defaults["chains"]
         assert mcmc_config.get("tune", defaults["tune"]) == defaults["tune"]
 
     @pytest.mark.skipif(
@@ -339,7 +341,9 @@ class TestMCMCTraceFileRegression:
         old_file_chains, old_file_draws = 2, 1000
 
         # This mismatch caused the plotting issue
-        old_trace = create_mock_trace(chains=old_file_chains, draws=old_file_draws)  # type: ignore
+        old_trace = create_mock_trace(
+            chains=old_file_chains,
+            draws=old_file_draws)  # type: ignore
 
         # Extract values the way plotting functions do
         plot_chains = old_trace.posterior.sizes.get("chain", "Unknown")
@@ -359,7 +363,9 @@ class TestMCMCTraceFileRegression:
         config_chains, config_draws = 8, 10000
 
         # Fresh trace created with current config (after fix)
-        fresh_trace = create_mock_trace(chains=config_chains, draws=config_draws)  # type: ignore
+        fresh_trace = create_mock_trace(
+            chains=config_chains,
+            draws=config_draws)  # type: ignore
 
         # Extract values the way plotting functions do
         plot_chains = fresh_trace.posterior.sizes.get("chain", "Unknown")
@@ -374,10 +380,13 @@ class TestMCMCTraceFileRegression:
     def test_trace_file_validation_utility(self):
         """Test the utility function for validating trace dimensions."""
         # Create traces with different dimensions
-        correct_trace = create_mock_trace(chains=8, draws=10000)  # type: ignore
+        correct_trace = create_mock_trace(
+            chains=8, draws=10000)  # type: ignore
         wrong_trace = create_mock_trace(chains=2, draws=1000)  # type: ignore
 
         # Validation should work correctly
-        assert validate_trace_dimensions(correct_trace, 8, 10000)  # type: ignore
-        assert validate_trace_dimensions(wrong_trace, 8, 10000) == False  # type: ignore
+        assert validate_trace_dimensions(
+            correct_trace, 8, 10000)  # type: ignore
+        assert validate_trace_dimensions(
+            wrong_trace, 8, 10000) == False  # type: ignore
         assert validate_trace_dimensions(wrong_trace, 2, 1000)  # type: ignore

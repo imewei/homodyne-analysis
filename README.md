@@ -170,7 +170,9 @@ homodyne --config my_config.json --quiet       # Quiet mode with custom config
 homodyne --method classical --plot-c2-heatmaps
 ```
 
-### Data Validation
+### Data Validation and Plotting
+
+#### Experimental Data Visualization
 
 Generate validation plots without fitting:
 
@@ -180,9 +182,53 @@ homodyne --plot-experimental-data --config my_config.json --quiet  # Quiet mode
 ```
 
 **Output**: Creates plots in `./homodyne_results/exp_data/`:
-- 2D correlation function heatmaps $g_2(t_1,t_2)$
-- Diagonal slices $g_2(t,t)$ showing decay
+- 2D correlation function heatmaps $c_2(t_1,t_2)$ for each phi angle  
 - Statistical summaries and quality metrics
+- Simplified 2-column layout (heatmap + statistics)
+
+**Supported Data Formats:**
+- **HDF5 files**: Uses PyXPCS viewer library with exchange key
+- **NPZ files**: Pre-processed correlation data with structure `(n_phi, n_t1, n_t2)`
+- **Multiple phi angles**: Each angle plotted individually for comprehensive analysis
+
+#### Simulated Data Visualization
+
+Visualize theoretical and fitted correlation functions with scaling transformations:
+
+```bash
+# Basic simulated data plotting
+homodyne --plot-simulated-data --config my_config.json
+
+# With custom scaling parameters
+homodyne --plot-simulated-data --config my_config.json --contrast 0.3 --offset 1.2
+
+# Override phi angles from command line
+homodyne --plot-simulated-data --config my_config.json --phi-angles 0,45,90,135
+```
+
+**Key Features:**
+- **Scaling transformation**: `c2_fitted = contrast × c2_theoretical + offset`
+- **Default scaling**: `contrast=1.0`, `offset=0.0` (no scaling)
+- **Phi angles override**: Command-line `--phi-angles` overrides config file angles
+- **Individual angle scaling**: `vmin = min(c2_data)` calculated per angle
+- **Clean visualization**: No grid lines on heatmaps
+
+**Data File Structure:**
+- **Theoretical data**: `theoretical_c2_data.npz`
+- **Fitted data**: `fitted_c2_data.npz`
+- **Array format**: `c2_data(n_phi, n_t1, n_t2)`, `t1`, `t2`, `phi_angles`
+
+**Usage Examples:**
+```bash
+# Validate experimental data quality
+homodyne --plot-experimental-data --config experiment.json
+
+# Compare theoretical predictions with scaling
+homodyne --plot-simulated-data --config theory.json --contrast 0.25 --offset 1.1
+
+# Multi-angle analysis with custom angles
+homodyne --plot-simulated-data --config multi_angle.json --phi-angles 0,30,60,90,120,150
+```
 
 ## Robust Optimization
 

@@ -19,11 +19,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import (
-    dummy_config,
-    temp_directory,
-    test_output_directory,
-)
+from homodyne.tests.fixtures import (dummy_config, temp_directory,
+                                     test_output_directory)
 
 
 class TestOutputDirectoryStructure:
@@ -71,8 +68,7 @@ class TestOutputDirectoryStructure:
                 assert (method_dir / filename).exists()
 
     def test_experimental_data_output_directory_structure(
-        self, temp_directory
-    ):
+            self, temp_directory):
         """Test that experimental data plots create the correct directory structure."""
         # Create expected experimental data output directory
         exp_data_dir = temp_directory / "homodyne_results" / "exp_data"
@@ -184,18 +180,18 @@ class TestOutputDirectoryStructure:
         # Verify classical structure
         assert (base_dir / "classical").is_dir()
         assert (
-            base_dir / "classical" / "all_classical_methods_summary.json"
-        ).exists()
+            base_dir /
+            "classical" /
+            "all_classical_methods_summary.json").exists()
         assert (base_dir / "classical" / "nelder_mead").is_dir()
         assert (
-            base_dir
-            / "classical"
-            / "nelder_mead"
-            / "analysis_results_nelder_mead.json"
+            base_dir / "classical" / "nelder_mead" / "analysis_results_nelder_mead.json"
         ).exists()
         assert (
-            base_dir / "classical" / "nelder_mead" / "fitted_data.npz"
-        ).exists()
+            base_dir /
+            "classical" /
+            "nelder_mead" /
+            "fitted_data.npz").exists()
         assert (base_dir / "classical" / "gurobi").is_dir()
         assert (
             base_dir / "classical" / "gurobi" / "analysis_results_gurobi.json"
@@ -205,24 +201,25 @@ class TestOutputDirectoryStructure:
         # Verify robust structure
         assert (base_dir / "robust").is_dir()
         assert (
-            base_dir / "robust" / "all_robust_methods_summary.json"
-        ).exists()
+            base_dir /
+            "robust" /
+            "all_robust_methods_summary.json").exists()
         assert (base_dir / "robust" / "wasserstein").is_dir()
         assert (
-            base_dir
-            / "robust"
-            / "wasserstein"
-            / "analysis_results_wasserstein.json"
+            base_dir / "robust" / "wasserstein" / "analysis_results_wasserstein.json"
         ).exists()
         assert (
-            base_dir / "robust" / "wasserstein" / "fitted_data.npz"
-        ).exists()
+            base_dir /
+            "robust" /
+            "wasserstein" /
+            "fitted_data.npz").exists()
 
         # Verify experimental data plots structure (unchanged)
         assert (base_dir / "exp_data").is_dir()
         assert (
-            base_dir / "exp_data" / "data_validation_phi_0.0deg.png"
-        ).exists()
+            base_dir /
+            "exp_data" /
+            "data_validation_phi_0.0deg.png").exists()
 
     def test_multiple_phi_angles_heatmap_naming(self, temp_directory):
         """Test that heatmap files are named correctly for multiple phi angles."""
@@ -238,9 +235,8 @@ class TestOutputDirectoryStructure:
             # filename
             test_angles = [0.0, 45.0, 90.0]
             for angle in test_angles:
-                heatmap_file = (
-                    method_dir / f"c2_heatmaps_{method}_phi_{angle}deg.png"
-                )
+                heatmap_file = method_dir / \
+                    f"c2_heatmaps_{method}_phi_{angle}deg.png"
                 heatmap_file.touch()
                 assert heatmap_file.exists()
 
@@ -254,9 +250,8 @@ class TestOutputDirectoryStructure:
             # filename
             test_angles = [0.0, 45.0]
             for angle in test_angles:
-                heatmap_file = (
-                    method_dir / f"c2_heatmaps_{method}_phi_{angle}deg.png"
-                )
+                heatmap_file = method_dir / \
+                    f"c2_heatmaps_{method}_phi_{angle}deg.png"
                 heatmap_file.touch()
                 assert heatmap_file.exists()
 
@@ -406,11 +401,9 @@ class TestNPZDataFiles:
         # Verify residuals calculation
         calculated_residuals = exp_loaded - fitted_loaded
         np.testing.assert_array_almost_equal(
-            calculated_residuals, residuals_loaded
-        )
+            calculated_residuals, residuals_loaded)
         np.testing.assert_array_almost_equal(
-            expected_residuals, residuals_loaded
-        )
+            expected_residuals, residuals_loaded)
 
 
 class TestPlotExperimentalDataBehavior:
@@ -568,9 +561,8 @@ class TestMCMCOutputDirectoryStructure:
             assert (mcmc_dir / filename).exists()
 
         # Verify they are in the correct MCMC directory
-        assert all(
-            (mcmc_dir / f).parent == mcmc_dir for f in expected_3d_files
-        )
+        assert all((mcmc_dir / f).parent ==
+                   mcmc_dir for f in expected_3d_files)
 
     def test_mcmc_npz_data_structure(self, temp_directory):
         """Test the structure of MCMC NPZ data files."""
@@ -769,18 +761,18 @@ class TestMCMCOutputDirectoryStructure:
 
         # Verify new classical method-specific structure
         assert (
-            base_dir / "classical" / "all_classical_methods_summary.json"
-        ).exists()
+            base_dir /
+            "classical" /
+            "all_classical_methods_summary.json").exists()
         assert (base_dir / "classical" / "nelder_mead").is_dir()
         assert (
-            base_dir
-            / "classical"
-            / "nelder_mead"
-            / "analysis_results_nelder_mead.json"
+            base_dir / "classical" / "nelder_mead" / "analysis_results_nelder_mead.json"
         ).exists()
         assert (
-            base_dir / "classical" / "nelder_mead" / "fitted_data.npz"
-        ).exists()
+            base_dir /
+            "classical" /
+            "nelder_mead" /
+            "fitted_data.npz").exists()
         assert (base_dir / "classical" / "gurobi").is_dir()
         assert (base_dir / "classical" / "gurobi" / "fitted_data.npz").exists()
 
@@ -793,5 +785,6 @@ class TestMCMCOutputDirectoryStructure:
 
         # Verify experimental data files
         assert (
-            base_dir / "exp_data" / "data_validation_phi_0.0deg.png"
-        ).exists()
+            base_dir /
+            "exp_data" /
+            "data_validation_phi_0.0deg.png").exists()

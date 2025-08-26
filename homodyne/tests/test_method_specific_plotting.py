@@ -73,9 +73,7 @@ class TestMethodSpecificPlotting:
             n_angles = len(phi_angles)
             return np.random.rand(n_angles, 10, 10) + 1.0
 
-        analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
         return analyzer
 
     @pytest.fixture
@@ -298,9 +296,7 @@ class TestMethodSpecificPlotting:
     ):
         """Test that function returns early when plotting is disabled."""
         # Disable plotting in config
-        mock_analyzer.config["output_settings"]["reporting"][
-            "generate_plots"
-        ] = False
+        mock_analyzer.config["output_settings"]["reporting"]["generate_plots"] = False
 
         best_params, phi_angles, c2_exp = test_data
 

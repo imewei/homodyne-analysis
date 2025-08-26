@@ -348,9 +348,9 @@ class TestMCMCConfigurationReading:
         old_tune = config_with_wrong_keys.get("mcmc_tune", 500)
 
         # Test new (correct) access pattern
-        mcmc_config = config_with_wrong_keys.get(
-            "optimization_config", {}
-        ).get("mcmc_sampling", {})
+        mcmc_config = config_with_wrong_keys.get("optimization_config", {}).get(
+            "mcmc_sampling", {}
+        )
         new_draws = mcmc_config.get("draws", 1000)
         new_chains = mcmc_config.get("chains", 2)
         new_tune = mcmc_config.get("tune", 500)
@@ -544,9 +544,9 @@ class TestMCMCConfigurationReading:
         sampler = MCMCSampler(mock_core, realistic_config)
 
         # Test that all parameter bounds are accessible
-        param_bounds = realistic_config.get("parameter_space", {}).get(
-            "bounds", []
-        )
+        param_bounds = realistic_config.get(
+            "parameter_space", {}).get(
+            "bounds", [])
         assert len(param_bounds) == 7
 
         # Test active parameters bounds (first 3 for static mode)

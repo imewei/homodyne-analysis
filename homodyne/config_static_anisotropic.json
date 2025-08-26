@@ -1,10 +1,15 @@
 {
   "metadata": {
-    "_comment": "Static Anisotropic Mode Configuration - 3 parameter optimization with angle filtering",
+    "_comment": "Static Anisotropic Mode Configuration - 3 parameter optimization with angle filtering. Supports experimental and simulated data plotting.",
     "config_version": "0.6.5.dev0",
     "description": "Static anisotropic homodyne scattering analysis - 3-parameter model with angular dependence",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "analysis_mode": "static_anisotropic",
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data for multi-angle validation",
+      "simulated_data_plotting": "Use --plot-simulated-data with scaling: --contrast 0.3 --offset 1.1",
+      "phi_angles_override": "Command-line --phi-angles overrides config file phi angles"
+    },
     "parameters_optimized": ["D0", "alpha", "D_offset"],
     "angle_filtering": "enabled",
     "script_compatibility": "homodyne v0.6.5.dev0"

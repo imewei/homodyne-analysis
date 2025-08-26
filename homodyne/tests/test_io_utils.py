@@ -17,16 +17,10 @@ import numpy as np
 import pytest
 
 # Import the modules to test
-from homodyne.core.io_utils import (
-    ensure_dir,
-    get_output_directory,
-    save_analysis_results,
-    save_fig,
-    save_json,
-    save_numpy,
-    save_pickle,
-    timestamped_filename,
-)
+from homodyne.core.io_utils import (ensure_dir, get_output_directory,
+                                    save_analysis_results, save_fig, save_json,
+                                    save_numpy, save_pickle,
+                                    timestamped_filename)
 from homodyne.tests.fixtures import dummy_config
 
 
@@ -98,9 +92,7 @@ class TestDirectoryCreation:
         file_path = temp_directory / "test_file"
         file_path.write_text("test content")
 
-        with pytest.raises(
-            OSError, match="Path exists but is not a directory"
-        ):
+        with pytest.raises(OSError, match="Path exists but is not a directory"):
             ensure_dir(file_path)
 
 
@@ -325,8 +317,7 @@ class TestOutputDirectory:
     """Test output directory management."""
 
     def test_get_output_directory_from_config(
-        self, temp_directory, dummy_config
-    ):
+            self, temp_directory, dummy_config):
         """Test getting output directory from configuration."""
         dummy_config["output_settings"]["results_directory"] = str(
             temp_directory / "custom_results"
@@ -366,8 +357,7 @@ class TestAnalysisResultsSaving:
     """Test complete analysis results saving."""
 
     def test_save_analysis_results_complete(
-        self, temp_directory, dummy_config
-    ):
+            self, temp_directory, dummy_config):
         """Test saving complete analysis results."""
         dummy_config["output_settings"]["results_directory"] = str(
             temp_directory / "test_output"
@@ -381,8 +371,7 @@ class TestAnalysisResultsSaving:
         }
 
         save_status = save_analysis_results(
-            results, dummy_config, "test_analysis"
-        )
+            results, dummy_config, "test_analysis")
 
         # Check that various save operations were attempted
         assert "json" in save_status
@@ -424,9 +413,7 @@ class TestErrorHandling:
 
     def test_save_json_permission_error(self, temp_directory):
         """Test JSON saving with permission error."""
-        if (
-            os.name == "nt"
-        ):  # Skip on Windows due to different permission model
+        if os.name == "nt":  # Skip on Windows due to different permission model
             pytest.skip("Permission tests not reliable on Windows")
 
         # Create a read-only directory

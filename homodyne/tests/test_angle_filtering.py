@@ -199,8 +199,7 @@ class TestAngleFilteringCore:
         assert optimization_indices == expected_optimization_indices
 
     def test_chi_squared_angle_filtering_mock(
-        self, mock_analyzer, test_phi_angles
-    ):
+            self, mock_analyzer, test_phi_angles):
         """Test chi-squared calculation with angle filtering using mocked data."""
 
         # Create mock experimental data
@@ -215,9 +214,7 @@ class TestAngleFilteringCore:
             # Return mock theoretical data with same shape as experimental
             return np.random.rand(len(angles), 20, 20) + np.float64(1.0)
 
-        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
         # Test without filtering (all angles)
         chi2_all = mock_analyzer.calculate_chi_squared_optimized(
@@ -247,8 +244,7 @@ class TestAngleFilteringCore:
         assert chi2_all != chi2_filtered
 
     def test_detailed_chi_squared_with_filtering(
-        self, mock_analyzer, test_phi_angles
-    ):
+            self, mock_analyzer, test_phi_angles):
         """Test detailed chi-squared results with angle filtering."""
 
         # Create mock experimental data
@@ -260,9 +256,7 @@ class TestAngleFilteringCore:
         def mock_calculate_c2(params, angles):
             return np.random.rand(len(angles), 10, 10) + np.float64(1.0)
 
-        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
         # Get detailed results without filtering
         result_all = mock_analyzer.calculate_chi_squared_optimized(
@@ -299,17 +293,13 @@ class TestAngleFilteringCore:
         assert len(result_filtered["phi_angles"]) == n_angles
 
         # DOF should be different (filtered should have fewer data points)
-        assert (
-            result_all["degrees_of_freedom"]
-            > result_filtered["degrees_of_freedom"]
-        )
+        assert result_all["degrees_of_freedom"] > result_filtered["degrees_of_freedom"]
 
         # Total chi-squared should be different
         assert result_all["chi_squared"] != result_filtered["chi_squared"]
 
     def test_degrees_of_freedom_calculation(
-        self, mock_analyzer, test_phi_angles
-    ):
+            self, mock_analyzer, test_phi_angles):
         """Test that degrees of freedom are calculated correctly for filtered angles."""
 
         # Create simple mock data
@@ -322,9 +312,7 @@ class TestAngleFilteringCore:
         def mock_calculate_c2(params, angles):
             return np.ones((len(angles), 5, 5))
 
-        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
         # Calculate expected DOF
         n_params = len(parameters)
@@ -340,8 +328,7 @@ class TestAngleFilteringCore:
             len(optimization_indices) * 25
         )  # 25 points per angle
         expected_dof_filtered = max(
-            expected_data_points_filtered - n_params, 1
-        )
+            expected_data_points_filtered - n_params, 1)
 
         expected_data_points_all = n_angles * 25
         expected_dof_all = max(expected_data_points_all - n_params, 1)
@@ -369,10 +356,7 @@ class TestAngleFilteringCore:
         assert result_all["degrees_of_freedom"] == expected_dof_all
 
         # Filtered should have fewer degrees of freedom
-        assert (
-            result_filtered["degrees_of_freedom"]
-            < result_all["degrees_of_freedom"]
-        )
+        assert result_filtered["degrees_of_freedom"] < result_all["degrees_of_freedom"]
 
     def test_backward_compatibility(self, mock_analyzer, test_phi_angles):
         """Test that existing code still works without angle filtering."""
@@ -389,9 +373,7 @@ class TestAngleFilteringCore:
                 0.5
             )  # Fixed data for consistency
 
-        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
         # Test default behavior (no filtering)
         chi2_default = mock_analyzer.calculate_chi_squared_optimized(
@@ -424,9 +406,7 @@ class TestAngleFilteringCore:
         def mock_calculate_c2(params, angles):
             return np.random.rand(len(angles), 4, 4) + np.float64(1.0)
 
-        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
-            mock_calculate_c2
-        )
+        mock_analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
 
         # This should fall back to using all angles
         chi2_fallback = mock_analyzer.calculate_chi_squared_optimized(
@@ -524,9 +504,7 @@ class TestAngleFilteringOptimizationIntegration:
             sampler = MCMCSampler.__new__(MCMCSampler)
             sampler.core = mock_analyzer
             sampler.config = mock_config
-            sampler.mcmc_config = mock_config["optimization_config"][
-                "mcmc_sampling"
-            ]
+            sampler.mcmc_config = mock_config["optimization_config"]["mcmc_sampling"]
             sampler.bayesian_model = None
             sampler.mcmc_trace = None
             sampler.mcmc_result = None
@@ -539,9 +517,7 @@ class TestAngleFilteringOptimizationIntegration:
             assert "filter_angles_for_optimization" in sig.parameters
 
             # Test that the default value is None (which gets resolved to True)
-            default_value = sig.parameters[
-                "filter_angles_for_optimization"
-            ].default
+            default_value = sig.parameters["filter_angles_for_optimization"].default
             assert (
                 default_value is None
             )  # Now uses None as default, resolved at runtime
@@ -556,11 +532,9 @@ class TestAngleFilteringOptimizationIntegration:
             for method_name in methods_to_check:
                 if hasattr(sampler, method_name):
                     method_sig = inspect.signature(
-                        getattr(sampler, method_name)
-                    )
+                        getattr(sampler, method_name))
                     assert (
-                        "filter_angles_for_optimization"
-                        in method_sig.parameters
+                        "filter_angles_for_optimization" in method_sig.parameters
                     ), f"Missing parameter in {method_name}"
 
             print("✓ MCMC sampler uses angle filtering by default")
@@ -594,11 +568,9 @@ class TestAngleFilteringOptimizationIntegration:
 
             # Mock the core method to capture the call
             mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=10.0
-            )
+                return_value=10.0)
             test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0]
-            )
+                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
 
@@ -619,8 +591,7 @@ class TestAngleFilteringOptimizationIntegration:
 
                 sig = inspect.signature(MCMCSampler.run_mcmc_analysis)
                 assert (
-                    sig.parameters["filter_angles_for_optimization"].default
-                    is None
+                    sig.parameters["filter_angles_for_optimization"].default is None
                 )  # Uses None, resolved at runtime
 
         except ImportError:
@@ -723,11 +694,9 @@ class TestAngleFilteringEdgeCases:
 
             # Mock the core method to capture the call
             mock_analyzer.calculate_chi_squared_optimized = Mock(
-                return_value=10.0
-            )
+                return_value=10.0)
             test_params = np.array(
-                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0]
-            )
+                [1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
 
@@ -750,9 +719,7 @@ class TestAngleFilteringEdgeCases:
                 mock_sampler = Mock(spec=MCMCSampler)
                 mock_analyzer = Mock()
                 mock_config_manager = Mock(spec=ConfigManager)
-                mock_config_manager.is_angle_filtering_enabled.return_value = (
-                    True
-                )
+                mock_config_manager.is_angle_filtering_enabled.return_value = True
                 mock_analyzer.config_manager = mock_config_manager
 
                 mock_sampler.core = mock_analyzer
@@ -760,9 +727,7 @@ class TestAngleFilteringEdgeCases:
                 # Test that MCMC would consult ConfigManager
                 # (This is a simplified test since MCMC requires PyMC)
                 assert hasattr(mock_analyzer, "config_manager")
-                assert (
-                    mock_analyzer.config_manager.is_angle_filtering_enabled()
-                )
+                assert mock_analyzer.config_manager.is_angle_filtering_enabled()
 
         except ImportError:
             pytest.skip("MCMC module not available")

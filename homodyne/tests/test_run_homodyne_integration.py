@@ -20,12 +20,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import (
-    create_minimal_config_file,
-    dummy_config,
-    temp_directory,
-    test_output_directory,
-)
+from homodyne.tests.fixtures import (create_minimal_config_file, dummy_config,
+                                     temp_directory, test_output_directory)
 
 
 class TestRunHomodyneIntegration:
@@ -111,9 +107,7 @@ class TestRunHomodyneIntegration:
             "results": {},
         }
 
-        with open(
-            classical_dir / "all_classical_methods_summary.json", "w"
-        ) as f:
+        with open(classical_dir / "all_classical_methods_summary.json", "w") as f:
             json.dump(summary_data, f, indent=2)
 
         # Verify structure was created correctly
@@ -156,9 +150,7 @@ class TestRunHomodyneIntegration:
         mock_results = {
             "timestamp": "2025-08-18T16:06:09.710366+00:00",
             "config": {"test": "config"},
-            "results": {
-                "classical_optimization": {"parameters": [1.0, 2.0, 3.0]}
-            },
+            "results": {"classical_optimization": {"parameters": [1.0, 2.0, 3.0]}},
             "execution_metadata": {"analysis_success": True},
         }
 
@@ -262,9 +254,7 @@ class TestRunHomodyneIntegration:
             "methods_analyzed": method_dirs,
         }
 
-        with open(
-            classical_dir / "all_classical_methods_summary.json", "w"
-        ) as f:
+        with open(classical_dir / "all_classical_methods_summary.json", "w") as f:
             json.dump(summary_data, f, indent=2)
 
         # Create experimental data files
@@ -306,8 +296,7 @@ class TestRunHomodyneMockExecution:
     """Test run_homodyne.py execution with mocked components."""
 
     def test_plot_experimental_data_early_exit_simulation(
-        self, temp_directory
-    ):
+            self, temp_directory):
         """Simulate the early exit behavior of --plot-experimental-data."""
 
         def mock_run_homodyne_with_plot_experimental_data():
@@ -431,9 +420,7 @@ class TestRunHomodyneMockExecution:
                 "best_method": "nelder_mead",
             }
 
-            with open(
-                classical_dir / "all_classical_methods_summary.json", "w"
-            ) as f:
+            with open(classical_dir / "all_classical_methods_summary.json", "w") as f:
                 json.dump(summary_data, f, indent=2)
 
             # 6. Save main results to output directory (not current directory)

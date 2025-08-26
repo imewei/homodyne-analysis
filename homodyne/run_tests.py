@@ -57,8 +57,10 @@ def main():
         help="Run only fast tests (exclude slow integration tests)",
     )
     parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Verbose output"
-    )
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Verbose output")
     parser.add_argument(
         "--coverage", action="store_true", help="Run with coverage reporting"
     )
@@ -102,9 +104,7 @@ def main():
 
             cmd.extend(["-n", str(args.parallel)])
         except ImportError:
-            print(
-                "Warning: pytest-xdist not available, running tests serially"
-            )
+            print("Warning: pytest-xdist not available, running tests serially")
 
     # Configure coverage
     if args.coverage:

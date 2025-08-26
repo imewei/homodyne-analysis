@@ -79,18 +79,11 @@ class TestSaveResultsWithConfig:
                     assert "execution_metadata" in saved_data
 
                     # Check results preservation
-                    assert (
-                        saved_data["results"]
-                        == sample_results_with_uncertainty
-                    )
+                    assert saved_data["results"] == sample_results_with_uncertainty
 
                     # Check uncertainty fields are preserved
-                    classical_results = saved_data["results"][
-                        "classical_optimization"
-                    ]
-                    assert (
-                        "reduced_chi_squared_uncertainty" in classical_results
-                    )
+                    classical_results = saved_data["results"]["classical_optimization"]
+                    assert "reduced_chi_squared_uncertainty" in classical_results
                     assert "reduced_chi_squared_std" in classical_results
                     assert "n_optimization_angles" in classical_results
                     assert "degrees_of_freedom" in classical_results
@@ -104,8 +97,7 @@ class TestSaveResultsWithConfig:
             with patch("json.dump") as mock_json:
                 # This should not raise an exception
                 analyzer.save_results_with_config(
-                    sample_results_with_uncertainty
-                )
+                    sample_results_with_uncertainty)
 
                 # Verify it was called (meaning no exception was raised)
                 assert mock_json.called
@@ -124,8 +116,7 @@ class TestSaveResultsWithConfig:
         with patch("builtins.open", mock_open()):
             with patch("json.dump") as mock_json:
                 mock_analyzer.save_results_with_config(
-                    sample_results_with_uncertainty
-                )
+                    sample_results_with_uncertainty)
 
                 call_args = mock_json.call_args
                 saved_data = call_args[0][0]
@@ -142,8 +133,7 @@ class TestSaveResultsWithConfig:
                     assert parsed_time.tzinfo is not None
                 except ValueError:
                     pytest.fail(
-                        f"Timestamp {timestamp_str} is not in valid ISO format"
-                    )
+                        f"Timestamp {timestamp_str} is not in valid ISO format")
 
     def test_different_result_formats(self, mock_analyzer):
         """Test saving with different output format configurations."""
@@ -166,8 +156,7 @@ class TestSaveResultsWithConfig:
         with patch("builtins.open", mock_open()):
             with patch("json.dump") as mock_json:
                 mock_analyzer.save_results_with_config(
-                    sample_results_with_uncertainty
-                )
+                    sample_results_with_uncertainty)
 
                 call_args = mock_json.call_args
                 saved_data = call_args[0][0]
@@ -212,10 +201,7 @@ class TestSaveResultsWithConfig:
 
                 for field in expected_fields:
                     assert field in method_results
-                    assert (
-                        method_results[field]
-                        == test_results["method_test"][field]
-                    )
+                    assert method_results[field] == test_results["method_test"][field]
 
     def test_file_creation_and_backup(
         self, mock_analyzer, sample_results_with_uncertainty
@@ -234,18 +220,14 @@ class TestSaveResultsWithConfig:
                     # backup
                     assert mock_file.call_count >= 1
 
-    def test_error_handling(
-        self, mock_analyzer, sample_results_with_uncertainty
-    ):
+    def test_error_handling(self, mock_analyzer,
+                            sample_results_with_uncertainty):
         """Test error handling in save_results_with_config."""
-        with patch(
-            "builtins.open", side_effect=PermissionError("Access denied")
-        ):
+        with patch("builtins.open", side_effect=PermissionError("Access denied")):
             # Should raise the PermissionError
             with pytest.raises(PermissionError):
                 mock_analyzer.save_results_with_config(
-                    sample_results_with_uncertainty
-                )
+                    sample_results_with_uncertainty)
 
     def test_json_serialization_compatibility(self, mock_analyzer):
         """Test that results are JSON serializable."""
@@ -299,10 +281,7 @@ class TestSaveResultsWithConfig:
                     assert "execution_metadata" in saved_data
 
                     # Results should be preserved
-                    assert (
-                        saved_data["results"]
-                        == sample_results_with_uncertainty
-                    )
+                    assert saved_data["results"] == sample_results_with_uncertainty
 
     def test_save_without_output_dir_parameter(
         self, mock_analyzer, sample_results_with_uncertainty
@@ -312,8 +291,7 @@ class TestSaveResultsWithConfig:
             with patch("json.dump") as mock_json:
                 # Test without output_dir parameter (backward compatibility)
                 mock_analyzer.save_results_with_config(
-                    sample_results_with_uncertainty
-                )
+                    sample_results_with_uncertainty)
 
                 # Should work the same as before
                 assert mock_json.called

@@ -124,6 +124,7 @@ User Guide
    user-guide/quickstart
    user-guide/analysis-modes
    user-guide/configuration
+   user-guide/plotting
    user-guide/examples
 
 API Reference

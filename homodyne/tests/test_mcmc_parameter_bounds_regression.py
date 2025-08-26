@@ -396,15 +396,13 @@ class TestMCMCParameterBoundsRegression:
         """Test edge cases for MCMC parameter bounds validation."""
 
         # Test case 1: Initial value exactly at lower bound
-        bounds_at_min = [
-            {"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}
-        ]
+        bounds_at_min = [{"name": "alpha", "min": -
+                          2.0, "max": -1.0, "type": "Normal"}]
         initial_at_min = [-2.0]  # Exactly at minimum
 
         # Test case 2: Initial value exactly at upper bound
-        bounds_at_max = [
-            {"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}
-        ]
+        bounds_at_max = [{"name": "alpha", "min": -
+                          2.0, "max": -1.0, "type": "Normal"}]
         initial_at_max = [-1.0]  # Exactly at maximum
 
         # Test case 3: Initial value safely in middle
@@ -436,9 +434,7 @@ class TestMCMCParameterBoundsRegression:
             min_dist = min(dist_from_min, dist_from_max)
 
             if case_name == "centered":
-                assert (
-                    min_dist == 0.5
-                ), "Centered case should be 0.5 from each boundary"
+                assert min_dist == 0.5, "Centered case should be 0.5 from each boundary"
             else:
                 assert (
                     min_dist == 0.0
@@ -532,9 +528,7 @@ class TestMCMCBoundsIntegration:
                 "static_mode": True,
                 "static_submode": "isotropic",
             },
-            "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True}
-            },
+            "performance_settings": {"noise_model": {"use_simple_forward_model": True}},
         }
 
         config_file = tmp_path / "realistic_config.json"
@@ -645,9 +639,7 @@ class TestMCMCBoundsIntegration:
                     "sigma_prior": 0.1,
                 }
             },
-            "advanced_settings": {
-                "chi_squared_calculation": {"method": "standard"}
-            },
+            "advanced_settings": {"chi_squared_calculation": {"method": "standard"}},
         }
 
         config_file = tmp_path / "mcmc_full_model_config.json"
@@ -670,28 +662,20 @@ class TestMCMCBoundsIntegration:
         ), "MCMC must use full forward model (use_simple_forward_model=False)"
 
         # Verify MCMC is enabled
-        mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"][
-            "enabled"
-        ]
-        assert (
-            mcmc_enabled is True
-        ), "MCMC sampling must be enabled for this test"
+        mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"]["enabled"]
+        assert mcmc_enabled is True, "MCMC sampling must be enabled for this test"
 
         # Verify scaling optimization is available (standard chi-squared
         # method)
-        chi_sq_method = loaded_config["advanced_settings"][
-            "chi_squared_calculation"
-        ]["method"]
+        chi_sq_method = loaded_config["advanced_settings"]["chi_squared_calculation"][
+            "method"
+        ]
         assert (
             chi_sq_method == "standard"
         ), "Standard chi-squared method supports scaling optimization"
 
-        print(
-            "✓ MCMC configuration uses full forward model with scaling optimization"
-        )
+        print("✓ MCMC configuration uses full forward model with scaling optimization")
         print(f"  use_simple_forward_model: {use_simple_model}")
         print(f"  MCMC enabled: {mcmc_enabled}")
         print(f"  Chi-squared method: {chi_sq_method}")
-        print(
-            "  This ensures MCMC results are consistent with classical optimization"
-        )
+        print("  This ensures MCMC results are consistent with classical optimization")

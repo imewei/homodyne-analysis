@@ -111,9 +111,7 @@ def create_mock_analysis_core():
     # Mock config manager
     mock_core.config_manager = Mock()
     mock_core.config_manager.is_static_mode_enabled.return_value = True
-    mock_core.config_manager.get_analysis_mode.return_value = (
-        "static_isotropic"
-    )
+    mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
     mock_core.config_manager.get_effective_parameter_count.return_value = 3
     mock_core.config_manager.is_angle_filtering_enabled.return_value = True
 

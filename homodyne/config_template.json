@@ -523,7 +523,7 @@
       "convergence_diagnostics": true
     },
     "plotting": {
-      "_comment": "Plotting configuration",
+      "_comment": "Plotting configuration for experimental and simulated C2 correlation function heatmaps",
       "general": {
         "create_plots": true,
         "plot_format": "png",
@@ -533,17 +533,90 @@
         "save_plots": true,
         "show_plots": false
       },
+      "experimental_data_plotting": {
+        "_comment": "Configuration for --plot-experimental-data functionality",
+        "enabled": true,
+        "data_sources": {
+          "hdf_files": {
+            "supported": true,
+            "loader": "pyxpcs.viewer",
+            "exchange_key": "exchange",
+            "_note": "Loads HDF5 experimental data files using PyXPCS viewer library"
+          },
+          "npz_files": {
+            "supported": true,
+            "format": "theoretical_c2_data.npz or fitted_c2_data.npz",
+            "_note": "Supports pre-processed NPZ correlation data files"
+          }
+        },
+        "plot_layout": {
+          "columns": 2,
+          "_layout_note": "2-column layout: left=c2_heatmap, right=statistics",
+          "include_diagonal_plots": false,
+          "include_crosssection_plots": false,
+          "_removed_plots_note": "Diagonal and cross-section plots removed for simplified visualization"
+        },
+        "multiple_phi_handling": {
+          "plot_individually": true,
+          "_note": "Each phi angle gets its own subplot for multi-angle experiments"
+        }
+      },
+      "simulated_data_plotting": {
+        "_comment": "Configuration for --plot-simulated-data functionality",
+        "enabled": true,
+        "usage_examples": [
+          "python run_homodyne.py --plot-simulated-data config.json",
+          "python run_homodyne.py --plot-simulated-data config.json --contrast 0.3 --offset 1.2",
+          "python run_homodyne.py --plot-simulated-data config.json --phi-angles 0,45,90,135"
+        ],
+        "scaling_transformation": {
+          "formula": "c2_fitted = contrast * c2_theoretical + offset",
+          "default_contrast": 1.0,
+          "default_offset": 0.0,
+          "_contrast_note": "Scaling factor for theoretical data (default: 1.0 = no scaling)",
+          "_offset_note": "Baseline offset for fitted data (default: 0.0 = no offset)",
+          "_formula_note": "Physical scaling: fitted data = theory scaled by contrast + baseline offset"
+        },
+        "phi_angles_input": {
+          "command_line_override": true,
+          "format": "--phi-angles 0,45,90,135",
+          "fallback_to_config": true,
+          "_override_note": "Command-line --phi-angles overrides config file phi angles",
+          "_format_note": "Comma-separated list of angles in degrees"
+        },
+        "data_files": {
+          "theoretical": "theoretical_c2_data.npz",
+          "fitted": "fitted_c2_data.npz",
+          "_file_structure": {
+            "arrays": ["c2_data", "t1", "t2", "phi_angles"],
+            "c2_data_shape": "(n_phi, n_t1, n_t2)",
+            "_note": "3D array with phi angle as first dimension"
+          }
+        },
+        "heatmap_settings": {
+          "colormap": "viridis",
+          "color_scaling": {
+            "per_angle_vmin": true,
+            "_vmin_note": "vmin = min(c2_data) calculated individually for each phi angle",
+            "global_vmax": false
+          },
+          "remove_grid": true,
+          "_grid_note": "No grid lines on C2 heatmaps for cleaner visualization"
+        }
+      },
       "c2_heatmaps": {
         "enabled": true,
         "_method_specific_note": "When multiple optimization methods are used (e.g., Nelder-Mead + Gurobi), separate heatmaps are generated for each method with method names in filenames",
         "layout": "single_row",
         "include_experimental": true,
         "include_theoretical": true,
+        "include_fitted": true,
         "include_residuals": true,
         "colormap": "viridis",
         "colorbar_position": "right",
         "title_prefix": "C2 Correlation Function",
-        "figsize": [15, 5]
+        "figsize": [15, 5],
+        "scaling_note": "Fitted data uses scaling transformation: fitted = contrast × theory + offset"
       },
       "mcmc_plots": {
         "enabled": true,

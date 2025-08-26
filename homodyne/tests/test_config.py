@@ -28,8 +28,7 @@ class TestConfigManager:
         }
 
     def test_config_manager_init_with_file(
-        self, temp_directory, minimal_config
-    ):
+            self, temp_directory, minimal_config):
         """Test initialization with config file."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -49,14 +48,14 @@ class TestConfigManager:
 
         manager = ConfigManager(str(config_file))
         assert manager.get("analyzer_parameters", "nested", "value") == "test"
-        assert manager.get("analyzer_parameters", "nested") == {
-            "value": "test"
-        }
+        assert manager.get(
+            "analyzer_parameters",
+            "nested") == {
+            "value": "test"}
         assert manager.get("nonexistent", default="default") == "default"
 
     def test_config_manager_get_with_default(
-        self, temp_directory, minimal_config
-    ):
+            self, temp_directory, minimal_config):
         """Test getting values with default fallback."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -99,8 +98,7 @@ class TestConfigManager:
             ConfigManager(str(config_file))
 
     def test_config_manager_invalid_frame_range(
-        self, temp_directory, minimal_config
-    ):
+            self, temp_directory, minimal_config):
         """Test validation with invalid frame range."""
         minimal_config["analyzer_parameters"]["start_frame"] = 100
         # Invalid: start > end
@@ -210,9 +208,8 @@ def test_config_manager_default_config():
 def test_config_manager_real_config_file():
     """Test with the actual homodyne_config.json file if it exists."""
     # Check both project root and tests directory for config file
-    project_root_path = (
-        Path(__file__).parent.parent.parent / "homodyne_config.json"
-    )
+    project_root_path = Path(
+        __file__).parent.parent.parent / "homodyne_config.json"
     tests_dir_path = Path(__file__).parent / "homodyne_config.json"
 
     config_path = None
@@ -673,8 +670,7 @@ class TestPlottingConfigurationConsistency:
         assert len(param_names) == len(bound_names) == 7
 
     def test_parameter_count_consistency(
-        self, temp_directory, plotting_config
-    ):
+            self, temp_directory, plotting_config):
         """Test that parameter counts are consistent across all sections."""
         config_file = temp_directory / "count_test.json"
         with open(config_file, "w") as f:
@@ -695,8 +691,7 @@ class TestPlottingConfigurationConsistency:
         assert len(param_names) == effective_count
 
     def test_plotting_configuration_validation(
-        self, temp_directory, plotting_config
-    ):
+            self, temp_directory, plotting_config):
         """Test plotting configuration validation."""
         config_file = temp_directory / "plot_config_test.json"
         with open(config_file, "w") as f:
@@ -706,11 +701,9 @@ class TestPlottingConfigurationConsistency:
 
         # Test plotting settings
         generate_plots = manager.get(
-            "output_settings", "reporting", "generate_plots"
-        )
+            "output_settings", "reporting", "generate_plots")
         plot_formats = manager.get(
-            "output_settings", "reporting", "plot_formats"
-        )
+            "output_settings", "reporting", "plot_formats")
         plot_format = manager.get("output_settings", "plotting", "plot_format")
 
         assert isinstance(generate_plots, bool)

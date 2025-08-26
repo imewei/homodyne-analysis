@@ -1,10 +1,16 @@
 {
   "metadata": {
-    "_comment": "Laminar Flow Configuration - 7 parameter optimization for flow analysis",
+    "_comment": "Laminar Flow Configuration - 7 parameter optimization for flow analysis. Full plotting support for experimental and simulated data.",
     "config_version": "0.6.5.dev0",
     "description": "Laminar flow homodyne scattering analysis - comprehensive 7-parameter nonequilibrium model",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (full flow model)",
     "analysis_mode": "laminar_flow",
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data for comprehensive flow analysis validation",
+      "simulated_data_plotting": "Use --plot-simulated-data with flow scaling transformation",
+      "scaling_examples": ["--contrast 0.25 --offset 1.2", "--phi-angles 0,30,60,90,120,150"],
+      "multi_angle_support": "Individual plots for each phi angle with optimized color scaling"
+    },
     "parameters_optimized": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
     "angle_filtering": "enabled_with_performance_boost",
     "script_compatibility": "homodyne v0.6.5.dev0"
