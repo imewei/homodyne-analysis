@@ -2202,17 +2202,7 @@ class HomodyneAnalysisCore:
         # NEW: Call method-specific saving logic for enhanced results organization
         # This runs after the main save to avoid interfering with tests
         # Skip enhanced saving during tests to avoid mocking conflicts
-        import sys
-
-        # More specific test detection - check for pytest or test environment
-        is_testing = (
-            "pytest" in sys.modules
-            or "_pytest" in sys.modules
-            or os.environ.get("PYTEST_CURRENT_TEST") is not None
-            or any("test" in arg for arg in sys.argv)
-            and "pytest" in " ".join(sys.argv)
-        )
-
+        # Note: is_testing variable removed as it was unused
         # Note: File saving handled by run_homodyne.py with proper directory structure
         # handles all file outputs with proper directory structure
 

@@ -13,7 +13,7 @@ These tests avoid complex dependencies and focus on the core functionality.
 import sys
 import time
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest

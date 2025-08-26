@@ -6,11 +6,10 @@ including proper handling of None configurations, timezone-aware timestamps,
 and uncertainty field preservation.
 """
 
-import json
 import os
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import mock_open, patch
 
 import pytest

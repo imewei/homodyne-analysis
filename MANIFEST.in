@@ -2,10 +2,12 @@
 include README.md
 include LICENSE
 include CHANGELOG.md
+include CONTRIBUTING.md
 include requirements.txt
 include pyproject.toml
+include Makefile
 
-# Include CLI scripts
+# Include CLI scripts (legacy entry points)
 include run_homodyne.py
 include create_config.py
 
@@ -35,12 +37,20 @@ recursive-exclude * *.so
 recursive-exclude * *.dylib
 recursive-exclude .git *
 recursive-exclude .pytest_cache *
+recursive-exclude .mypy_cache *
+recursive-exclude .ruff_cache *
 recursive-exclude *.egg-info *
+recursive-exclude build *
+recursive-exclude dist *
 exclude .DS_Store
 exclude .gitignore
 exclude .github
 exclude .benchmarks
+exclude homodyne/.benchmarks
 exclude .claude
 exclude benchmark_performance.py
 exclude my_config*.json
 exclude WARP.md
+exclude .coverage
+exclude htmlcov
+exclude .pytest_cache
