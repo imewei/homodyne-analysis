@@ -34,6 +34,9 @@ homodyne [OPTIONS]
   --contrast CONTRAST           Contrast parameter for scaling: fitted = contrast * theory + offset (default: 1.0)
   --offset OFFSET              Offset parameter for scaling: fitted = contrast * theory + offset (default: 0.0)
   --phi-angles PHI_ANGLES       Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'
+  --install-completion {bash,zsh,fish,powershell}
+                                Install shell completion for the specified shell
+  {interactive}                 Special commands: 'interactive' starts interactive CLI mode
 ```
 
 #### Methods
@@ -306,12 +309,178 @@ homodyne
    - MCMC requires PyMC installation
    - Robust optimization requires CVXPY
    - Some features require numba for performance
+   - Shell completion and interactive mode require `argcomplete` and `cmd2`
+
+## Shell Completion
+
+The homodyne CLI supports tab completion for enhanced user experience across multiple shells.
+
+### Installation
+
+Install completion support with optional dependencies:
+```bash
+pip install homodyne-analysis[interactive]
+```
+
+Enable shell completion for your shell (one-time setup):
+```bash
+# For bash
+homodyne --install-completion bash
+
+# For zsh  
+homodyne --install-completion zsh
+
+# For fish
+homodyne --install-completion fish
+
+# For PowerShell
+homodyne --install-completion powershell
+```
+
+After installation, restart your shell or source the configuration file:
+```bash
+# Bash/Zsh
+source ~/.bashrc  # or ~/.zshrc
+
+# Fish
+source ~/.config/fish/config.fish
+```
+
+### Features
+
+- **Method completion**: Tab complete `--method` options (classical, mcmc, robust, all)
+- **File completion**: Tab complete `--config` with available .json files
+- **Directory completion**: Tab complete `--output-dir` with available directories
+- **Context-aware**: Completion adapts based on current command context
+- **Cross-platform**: Works on Linux, macOS, and Windows
+
+### Usage Examples
+
+```bash
+# Tab completion examples (press TAB at cursor position)
+homodyne --method <TAB>          # Shows: classical, mcmc, robust, all
+homodyne --config <TAB>          # Shows available .json files
+homodyne --output-dir <TAB>      # Shows available directories
+homodyne-config --mode <TAB>     # Shows: static_isotropic, static_anisotropic, laminar_flow
+```
+
+## Interactive Mode
+
+The homodyne CLI provides a powerful interactive mode for streamlined analysis workflows.
+
+### Starting Interactive Mode
+
+```bash
+homodyne interactive
+```
+
+### Interactive Commands
+
+Once in interactive mode, you have access to specialized commands:
+
+#### Core Analysis Commands
+
+```bash
+# Set analysis method
+method classical        # Switch to classical optimization
+method mcmc            # Switch to MCMC sampling
+method robust          # Switch to robust optimization  
+method all             # Use all methods
+method                 # Show current method and available options
+
+# Configure settings
+config set my_config.json    # Load configuration file
+config show                  # Display current config contents
+config validate              # Validate configuration file
+config                       # Show current config file
+
+# Execute analysis
+run                          # Run with current settings
+run --method mcmc            # Run MCMC with current config  
+run --verbose                # Run with debug logging
+run --static-isotropic       # Run in static isotropic mode
+```
+
+#### Utility Commands
+
+```bash
+# File management
+ls                          # List current directory contents
+ls data/                    # List specific directory
+
+# Session management
+status                      # Show current session settings
+help_guide                  # Comprehensive usage guide
+quit                        # Exit interactive mode (or Ctrl+C)
+
+# Configuration creation
+create_config --mode laminar_flow --sample protein_01
+create_config --mode static_isotropic --output my_config.json
+```
+
+### Interactive Features
+
+- **Tab completion**: All commands and arguments support tab completion
+- **Command history**: Use up/down arrows to navigate command history
+- **Real-time validation**: Immediate feedback on configuration errors
+- **Context awareness**: Commands adapt based on current session state
+- **Integrated help**: Built-in help system with examples
+- **File discovery**: Automatic detection of configuration files
+
+### Example Interactive Session
+
+```bash
+$ homodyne interactive
+
+╭─────────────────────────────────────────────────────────╮
+│            Homodyne Analysis Interactive CLI            │
+│                                                         │
+│  Tab completion, command history, and real-time help   │
+│  Type 'help' for commands or 'help <command>' for info │
+│  Use Ctrl+C to exit or type 'quit'                     │
+╰─────────────────────────────────────────────────────────╯
+
+homodyne> ls
+Config files:
+  📄 homodyne_config.json
+  📄 mcmc_config.json
+  
+homodyne> config set homodyne_config.json
+✓ Config set to: homodyne_config.json
+
+homodyne> method mcmc
+✓ Method set to: mcmc
+
+homodyne> status
+╭─────────────────────────────────────────╮
+│           Current Settings             │
+├─────────────────────────────────────────┤
+│ Method     : mcmc                      │
+│ Config     : homodyne_config.json      │
+│ Output Dir : ./homodyne_results        │
+│ Verbose    : False                     │
+╰─────────────────────────────────────────╯
+
+homodyne> run --verbose
+Executing: python -m homodyne.run_homodyne --method mcmc --config homodyne_config.json --output-dir ./homodyne_results --verbose
+✓ Analysis completed successfully!
+
+homodyne> quit
+```
+
+### Benefits of Interactive Mode
+
+- **Faster iteration**: No need to type full commands repeatedly
+- **Session persistence**: Settings maintained throughout session
+- **Reduced errors**: Tab completion and validation prevent typos
+- **Enhanced productivity**: Quick access to files and configurations
+- **Learning friendly**: Built-in help and guidance
 
 ## Future Enhancement Possibilities
 
 The CLI could be extended with additional commands:
 - `homodyne-validate` - Validate data format
-- `homodyne-benchmark` - Run performance benchmarks
+- `homodyne-benchmark` - Run performance benchmarks  
 - `homodyne-plot` - Generate plots from existing results
 - `homodyne-convert` - Convert between data formats
 

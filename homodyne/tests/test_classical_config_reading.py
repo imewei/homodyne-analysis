@@ -576,8 +576,8 @@ class TestGurobiIntegration:
         assert hasattr(result, "x"), "Result should have optimal parameters"
         assert hasattr(result, "fun"), "Result should have optimal value"
         assert (
-            hasattr(result, "method") and result.method == "Gurobi-QP"
-        )  # type: ignore
+            hasattr(result, "method") and getattr(result, "method") == "Gurobi-QP"
+        )
 
     @pytest.mark.skipif(not GUROBI_AVAILABLE, reason="Gurobi not available")
     def test_gurobi_with_bounds_constraints(self):
@@ -607,8 +607,9 @@ class TestGurobiIntegration:
             # Should find optimum at boundary x=5 (closest to true optimum
             # x=10)
             assert hasattr(result, "x"), "Result should have x attribute on success"
-            # type: ignore
-            assert 0.0 <= result.x[0] <= 5.0, "Solution should respect bounds"
+            x_value = getattr(result, "x", None)
+            assert x_value is not None, "Result should have x attribute"
+            assert 0.0 <= x_value[0] <= 5.0, "Solution should respect bounds"
 
     def test_gurobi_error_handling_when_unavailable(self):
         """Test proper error handling when Gurobi is not available."""

@@ -21,10 +21,10 @@ try:
     from numba import float64, int64, jit, njit, prange, types
 
     try:
-        from numba.types import Tuple
+        from numba.types import Tuple  # type: ignore[attr-defined]
     except (ImportError, AttributeError):
         # Fallback for older numba versions or different import paths
-        Tuple = getattr(types, "Tuple", types.UniTuple)
+        Tuple = getattr(types, "Tuple", types.UniTuple)  # type: ignore[union-attr]
 
     NUMBA_AVAILABLE = True
 except ImportError:
@@ -33,10 +33,10 @@ except ImportError:
     # Fallback decorators when Numba is unavailable
     F = TypeVar("F", bound=Callable[..., Any])
 
-    def jit(*args: Any, **kwargs: Any) -> Union[F, Callable[[F], F]]:
+    def jit(*args: Any, **kwargs: Any) -> Any:
         return args[0] if args and callable(args[0]) else lambda f: f
 
-    def njit(*args: Any, **kwargs: Any) -> Union[F, Callable[[F], F]]:
+    def njit(*args: Any, **kwargs: Any) -> Any:
         return args[0] if args and callable(args[0]) else lambda f: f
 
     prange = range

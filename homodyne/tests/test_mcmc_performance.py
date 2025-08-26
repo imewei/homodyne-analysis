@@ -148,7 +148,12 @@ class MockAnalysisCoreForMCMC:
         return c2_theory
 
     def calculate_chi_squared_optimized(
-        self, params, phi_angles, c2_experimental, method_name=None, filter_angles_for_optimization=None
+        self,
+        params,
+        phi_angles,
+        c2_experimental,
+        method_name=None,
+        filter_angles_for_optimization=None,
     ):
         """Optimized chi-squared calculation for MCMC."""
         c2_theory = self.compute_c2_correlation_optimized(params, phi_angles)

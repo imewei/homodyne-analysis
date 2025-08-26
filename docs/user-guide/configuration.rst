@@ -194,6 +194,46 @@ Optimization Configuration
    Gurobi is automatically detected if installed and licensed. It uses quadratic approximation 
    via finite differences and excels with smooth objective functions and bounds constraints.
 
+**Robust Optimization Configuration**:
+
+.. code-block:: javascript
+
+   {
+     "optimization_config": {
+       "robust_optimization": {
+         "enabled": true,
+         "uncertainty_model": "wasserstein",
+         "method_options": {
+           "wasserstein": {
+             "uncertainty_radius": 0.02,
+             "regularization_alpha": 0.005
+           },
+           "scenario": {
+             "n_scenarios": 30,
+             "bootstrap_method": "residual",
+             "parallel_scenarios": true
+           },
+           "ellipsoidal": {
+             "gamma": 0.08,
+             "l1_regularization": 0.0005,
+             "l2_regularization": 0.005
+           }
+         },
+         "solver_settings": {
+           "preferred_solver": "CLARABEL",
+           "timeout": 300,
+           "enable_caching": true
+         }
+       }
+     }
+   }
+
+**Robust Methods Available**:
+
+- **Wasserstein DRO**: Distributionally robust optimization using Wasserstein uncertainty sets
+- **Scenario-based**: Multi-scenario optimization using bootstrap resampling for outlier resistance  
+- **Ellipsoidal**: Robust least squares with bounded uncertainty in correlation functions
+
 **MCMC Configuration**:
 
 .. code-block:: javascript

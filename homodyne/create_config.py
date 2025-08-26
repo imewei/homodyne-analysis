@@ -118,7 +118,7 @@ def create_config_from_template(
         raise FileNotFoundError(f"Template not found: {template_file}")
 
     # Load template
-    with open(template_file, "r") as f:
+    with open(template_file, "r", encoding="utf-8") as f:
         config = json.load(f)
 
     # Remove template-specific fields from final config
@@ -173,7 +173,7 @@ def create_config_from_template(
     # Create output directory if needed
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
 
     print(f"✓ Configuration created: {output_path.absolute()}")

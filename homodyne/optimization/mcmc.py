@@ -597,10 +597,12 @@ class MCMCSampler:
             # but scaling optimization is fundamental to proper uncertainty
             # quantification.
             simple_forward = noise_config.get("use_simple_forward_model", False)
-            
+
             # Force full forward model for proper scaling consistency
             if simple_forward:
-                logger.warning("Forcing full forward model for scaling consistency with classical methods")
+                logger.warning(
+                    "Forcing full forward model for scaling consistency with classical methods"
+                )
                 simple_forward = False
 
             if simple_forward:

@@ -22,7 +22,7 @@ This package analyzes time-dependent intensity correlation functions c₂(φ,t�
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
-- **High performance**: Numba JIT compilation with 3-5x speedup, optional JAX backend for GPU acceleration
+- **High performance**: Numba JIT compilation with 3-5x speedup, JAX backend for GPU acceleration, comprehensive performance monitoring
 - **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
 
 Quick Start
@@ -42,27 +42,37 @@ Quick Start
    
    config = ConfigManager("config.json")
    analysis = HomodyneAnalysisCore(config)
-   results = analysis.optimize_classical()
+   results = analysis.optimize_classical()  # Classical methods
+   results = analysis.optimize_robust()     # Robust methods only
+   results = analysis.optimize_all()        # All methods
 
-**Command Line:**
+**Command Line Interface:**
 
 .. code-block:: bash
 
-   # Basic analysis
-   homodyne --static-isotropic --method classical
-   homodyne --static-anisotropic --method robust  # NEW: Robust optimization
-   homodyne --laminar-flow --method all
+   # Configuration generator
+   homodyne-config --mode static_isotropic --sample protein_01
+   homodyne-config --mode laminar_flow --sample microgel
 
-   # Data validation and plotting
-   homodyne --plot-experimental-data --config my_config.json
-   homodyne --plot-simulated-data --contrast 1.5 --offset 0.1
+   # Main analysis command
+   homodyne                                    # Default classical method
+   homodyne --method robust                    # Robust optimization only  
+   homodyne --method mcmc                      # MCMC sampling only
+   homodyne --method all --verbose             # All methods with debug logging
 
-   # Custom configuration and output  
-   homodyne --config my_experiment.json --output-dir ./homodyne_results
+   # Analysis mode control
+   homodyne --static-isotropic                 # Force 3-parameter isotropic mode
+   homodyne --static-anisotropic               # Force 3-parameter anisotropic mode  
+   homodyne --laminar-flow                     # Force 7-parameter flow mode
 
-   # Logging control
-   homodyne --verbose --method all    # Debug logging
-   homodyne --quiet --method classical  # File logging only
+   # Data visualization  
+   homodyne --plot-experimental-data           # Validate experimental data
+   homodyne --plot-simulated-data              # Plot theoretical correlations
+   homodyne --plot-simulated-data --contrast 1.5 --offset 0.1 --phi-angles "0,45,90,135"
+
+   # Configuration and output
+   homodyne --config my_config.json --output-dir ./results --verbose
+   homodyne --quiet                            # File logging only, no console output
 
 Analysis Modes
 --------------
@@ -104,8 +114,8 @@ Key Features
 **Scientific Accuracy**
    Automatic g₂ = offset + contrast × g₁ fitting for accurate chi-squared calculations
 
-**Dual Optimization**
-   Fast classical optimization (Nelder-Mead) and robust Bayesian MCMC (NUTS)
+**Multiple Optimization Methods**
+   Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 
 **Comprehensive Validation**
    Experimental data validation plots and quality control

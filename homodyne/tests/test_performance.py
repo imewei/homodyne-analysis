@@ -2198,12 +2198,8 @@ class TestMCMCThinningPerformance:
             ), f"Thinning setup time difference too large: {time_diff:.4f}s (baseline: {avg_baseline:.4f}s, thinning: {avg_thinning:.4f}s)"
         else:
             # Both are very fast, just check they're both reasonable
-            assert (
-                avg_baseline >= 0
-            ), f"Negative baseline time: {avg_baseline:.4f}s"
-            assert (
-                avg_thinning >= 0
-            ), f"Negative thinning time: {avg_thinning:.4f}s"
+            assert avg_baseline >= 0, f"Negative baseline time: {avg_baseline:.4f}s"
+            assert avg_thinning >= 0, f"Negative thinning time: {avg_thinning:.4f}s"
 
         # Both should be reasonably fast
         assert (

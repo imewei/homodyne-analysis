@@ -20,8 +20,9 @@ The package follows a layered architecture:
    └── Result Generation
            │
    Optimization Layer
-   ├── Classical Optimization
-   └── MCMC Sampling
+   ├── Classical Optimization (Nelder-Mead, Gurobi)
+   ├── Robust Optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
+   └── MCMC Sampling (NUTS)
            │
    Model Layer
    ├── Physical Models
@@ -55,7 +56,9 @@ Key Components
        def __init__(self, config: ConfigManager)
        def load_experimental_data(self)
        def optimize_classical(self) -> OptimizeResult
+       def optimize_robust(self) -> dict
        def run_mcmc_sampling(self) -> dict
+       def optimize_all(self) -> dict
 
 **3. Model System**
 
@@ -72,6 +75,9 @@ Key Components
 
    class ClassicalOptimizer:
        """SciPy-based optimization"""
+       
+   class RobustHomodyneOptimizer:
+       """CVXPY-based robust optimization"""
        
    class MCMCSampler:
        """PyMC-based Bayesian sampling"""

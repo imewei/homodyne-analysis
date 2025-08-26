@@ -80,6 +80,10 @@ robust = [
 gurobi = [
     "gurobipy>=11.0.0",  # Gurobi optimization solver (requires license)
 ]
+interactive = [
+    "cmd2>=2.0.0",      # Interactive CLI with advanced features
+    "argcomplete>=3.0.0",  # Shell tab completion
+]
 docs = [
     "sphinx>=4.0.0",
     "sphinx-rtd-theme>=1.0.0",
@@ -120,7 +124,7 @@ dev = [
     "twine>=4.0.0",
 ]
 all = [
-    "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,dev]",
+    "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,interactive,dev]",
 ]
 
 [project.urls]
