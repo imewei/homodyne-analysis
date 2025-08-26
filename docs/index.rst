@@ -21,8 +21,8 @@ Overview
 This package analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow. The implementation provides:
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- **Dual optimization**: Fast classical (Nelder-Mead) and robust Bayesian MCMC (NUTS)
-- **High performance**: Numba JIT compilation with 3-5x speedup and smart angle filtering
+- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+- **High performance**: Numba JIT compilation with 3-5x speedup, optional JAX backend for GPU acceleration
 - **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
 
 Quick Start
@@ -50,17 +50,19 @@ Quick Start
 
    # Basic analysis
    homodyne --static-isotropic --method classical
-   homodyne --static-anisotropic --method mcmc
+   homodyne --static-anisotropic --method robust  # NEW: Robust optimization
    homodyne --laminar-flow --method all
 
-   # Data validation only
+   # Data validation and plotting
    homodyne --plot-experimental-data --config my_config.json
+   homodyne --plot-simulated-data --contrast 1.5 --offset 0.1
 
-   # Custom configuration and output
-   homodyne --config my_experiment.json --output-dir ./results
+   # Custom configuration and output  
+   homodyne --config my_experiment.json --output-dir ./homodyne_results
 
-   # Generate C2 heatmaps
-   homodyne --method classical --plot-c2-heatmaps
+   # Logging control
+   homodyne --verbose --method all    # Debug logging
+   homodyne --quiet --method classical  # File logging only
 
 Analysis Modes
 --------------

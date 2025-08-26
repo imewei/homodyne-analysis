@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
+[![PyPI version](https://badge.fury.io/py/homodyne-analysis.svg)](https://badge.fury.io/py/homodyne-analysis)
 [![Numba](https://img.shields.io/badge/Numba-JIT%20Accelerated-green)](https://numba.pydata.org/)
 [![Performance](https://img.shields.io/badge/Performance-Optimized%20%26%20Monitored-brightgreen)](PERFORMANCE_OPTIMIZATIONS.md)
 
@@ -51,17 +52,146 @@ pip install -e .[all]
 
 ### Dependencies
 
-- **Core**: `numpy`, `scipy`, `matplotlib`
-- **Performance**: `numba` (3-5x speedup via JIT compilation)
-- **Bayesian Analysis**: `pymc`, `arviz`, `pytensor` (for MCMC sampling)
-- **Classical Optimization**: `gurobipy` (optional, requires license for Gurobi solver)
-- **Robust Optimization**: `cvxpy` (required for `--method robust`, distributionally robust optimization)
-- **Optional**: `pytest`, `sphinx` (testing and documentation)
-
-**Installation for Robust Optimization:**
+#### Core Dependencies (always installed)
 ```bash
-pip install cvxpy                    # Required for robust methods
-pip install gurobipy                 # Optional, for best performance
+# Core scientific computing stack
+numpy>=1.24.0,<2.3.0              # Array operations and linear algebra
+scipy>=1.9.0                       # Scientific computing functions
+matplotlib>=3.5.0                  # Plotting and visualization
+typing-extensions>=4.0.0           # Extended typing support (Python <3.13)
+```
+
+#### Optional Dependencies by Feature
+
+**Data Handling:**
+```bash
+pip install homodyne-analysis[data]
+# Includes:
+# - xpcs-viewer>=1.0.4             # XPCS data loading and visualization
+```
+
+**Performance Optimization:**
+```bash
+pip install homodyne-analysis[performance]
+# Includes:
+# - numba>=0.61.0,<0.62.0          # JIT compilation (3-5x speedup)
+# - jax>=0.7.0                     # High-performance numerical computing
+# - jaxlib>=0.4.35                 # JAX backend library
+# - psutil>=5.8.0                  # Memory profiling and monitoring
+```
+
+**JAX Acceleration (GPU/TPU support):**
+```bash
+pip install homodyne-analysis[jax]
+# Includes:
+# - jax>=0.7.0                     # High-performance computations
+# - jaxlib>=0.4.35                 # JAX backend with CPU/GPU support
+```
+
+**Bayesian MCMC Analysis:**
+```bash
+pip install homodyne-analysis[mcmc]
+# Includes:
+# - pymc>=5.0.0                    # Probabilistic programming
+# - arviz>=0.12.0                  # Bayesian data analysis
+# - pytensor>=2.8.0                # Tensor operations for PyMC
+# - corner>=2.2.0                  # Corner plots for MCMC results
+```
+
+**Robust Optimization:**
+```bash
+pip install homodyne-analysis[robust]
+# Includes:
+# - cvxpy>=1.4.0                   # Convex optimization framework
+```
+
+**Gurobi Solver (requires license):**
+```bash
+pip install homodyne-analysis[gurobi]
+# Includes:
+# - gurobipy>=11.0.0               # Commercial optimization solver
+```
+
+**Documentation:**
+```bash
+pip install homodyne-analysis[docs]
+# Includes:
+# - sphinx>=4.0.0                  # Documentation generator
+# - sphinx-rtd-theme>=1.0.0        # Read the Docs theme
+# - myst-parser>=0.17.0            # Markdown support
+# - sphinx-autodoc-typehints>=1.12.0  # Type hints in docs
+# - numpydoc>=1.2.0                # NumPy-style docstrings
+# - linkify-it-py>=2.0.0           # Link detection
+```
+
+**Testing Framework:**
+```bash
+pip install homodyne-analysis[test]
+# Includes:
+# - pytest>=6.2.0                  # Testing framework
+# - pytest-cov>=2.12.0             # Coverage reporting
+# - pytest-xdist>=2.3.0            # Parallel testing
+# - pytest-benchmark>=4.0.0        # Performance benchmarking
+# - pytest-mock>=3.6.0             # Mocking utilities
+# - pytest-html>=4.1.1             # HTML test reports
+# - pytest-metadata>=3.1.1         # Test metadata
+# - hypothesis>=6.0.0               # Property-based testing
+# - coverage>=6.2.0                 # Coverage measurement
+```
+
+**Code Quality Tools:**
+```bash
+pip install homodyne-analysis[quality]
+# Includes:
+# - black>=23.0.0                  # Code formatter
+# - isort>=5.12.0                  # Import sorter
+# - flake8>=6.0.0                  # Style guide enforcement
+# - mypy>=1.5.0                    # Type checker
+# - ruff>=0.1.0                    # Modern linter and formatter
+```
+
+**Type Checking Stubs:**
+```bash
+pip install homodyne-analysis[typing]
+# Includes:
+# - types-psutil>=5.9.0            # Type stubs for psutil
+# - types-Pillow>=10.0.0           # Type stubs for Pillow
+# - types-six>=1.16.0              # Type stubs for six
+# - types-requests>=2.28.0         # Type stubs for requests
+```
+
+**Development Environment:**
+```bash
+pip install homodyne-analysis[dev]
+# Includes all test, docs, quality, and typing dependencies plus:
+# - pre-commit>=3.0.0              # Pre-commit hooks
+# - tox>=4.0.0                     # Testing across environments
+# - build>=0.10.0                  # Build tools
+# - twine>=4.0.0                   # Package uploading
+```
+
+**All Features:**
+```bash
+pip install homodyne-analysis[all]
+# Includes: data, performance, jax, mcmc, robust, gurobi, dev
+# Complete installation with all optional dependencies
+```
+
+#### Quick Installation Commands
+
+**For most users:**
+```bash
+pip install homodyne-analysis[performance,mcmc,robust]  # Core analysis features
+```
+
+**For developers:**
+```bash
+pip install homodyne-analysis[all]  # Everything included
+```
+
+**For high-performance computing:**
+```bash
+pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
 ```
 
 ## Quick Start
@@ -79,6 +209,53 @@ homodyne --config my_config.json --method all
 # Run only robust optimization (noise-resistant)
 homodyne --config my_config.json --method robust
 ```
+
+## CLI Commands
+
+The homodyne package provides two main command-line tools:
+
+### 1. `homodyne` - Main Analysis Command
+
+```bash
+# Usage: homodyne [OPTIONS]
+
+# Basic examples
+homodyne                                    # Default classical method
+homodyne --method robust                    # Robust optimization only  
+homodyne --method mcmc                      # MCMC sampling only
+homodyne --method all --verbose             # All methods with debug logging
+
+# Analysis mode control
+homodyne --static-isotropic                 # Force 3-parameter isotropic mode
+homodyne --static-anisotropic               # Force 3-parameter anisotropic mode  
+homodyne --laminar-flow                     # Force 7-parameter flow mode
+
+# Data visualization  
+homodyne --plot-experimental-data           # Validate experimental data
+homodyne --plot-simulated-data              # Plot theoretical correlations
+homodyne --plot-simulated-data --contrast 1.5 --offset 0.1 --phi-angles "0,45,90,135"
+
+# Configuration and output
+homodyne --config my_config.json --output-dir ./results --verbose
+homodyne --quiet                            # File logging only, no console output
+```
+
+### 2. `homodyne-config` - Configuration Generator
+
+```bash
+# Usage: homodyne-config [OPTIONS]
+
+# Basic examples
+homodyne-config                             # Default laminar_flow config
+homodyne-config --mode static_isotropic     # Fastest analysis mode
+homodyne-config --mode static_anisotropic   # Static with angle filtering
+
+# With metadata
+homodyne-config --sample protein_sample --author "Your Name" --experiment "Protein dynamics"
+homodyne-config --mode laminar_flow --output custom_config.json --sample microgel
+```
+
+**See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete command-line documentation.**
 
 **Python API:**
 
@@ -270,12 +447,6 @@ homodyne --method robust --config robust_config.json
 - **Noise resistance**: 3-8% uncertainty tolerance (configurable)
 - **Performance**: ~2-5x slower than classical, but uncertainty-resistant
 
-### Dependencies
-
-```bash
-pip install cvxpy        # Required for all robust methods
-pip install gurobipy     # Optional, for best performance
-```
 
 ### When to Use Robust Optimization
 
@@ -369,93 +540,6 @@ The homodyne package includes enterprise-grade performance optimization and moni
 | **Environment Optimization** | Conservative threading and JIT settings | Balanced performance and numerical stability |
 | **Performance Rebalancing** | Optimized chi-squared and kernel functions | 97% reduction in performance variability |
 
-### Performance Monitoring
-
-The package includes comprehensive performance monitoring tools:
-
-```python
-from homodyne.core.profiler import performance_monitor, get_performance_summary, get_performance_cache
-
-# Monitor function performance
-@performance_monitor(monitor_memory=True, log_threshold_seconds=0.5)
-def my_analysis_function(data):
-    return process_data(data)
-
-# Get performance statistics
-summary = get_performance_summary()
-print(f"Function called {summary['my_analysis_function']['calls']} times")
-print(f"Average time: {summary['my_analysis_function']['avg_time']:.3f}s")
-
-# Access smart caching system
-cache = get_performance_cache()
-cache_stats = cache.stats()
-print(f"Cache utilization: {cache_stats['utilization']:.1%}")
-print(f"Memory usage: {cache_stats['memory_mb']:.1f}MB")
-```
-
-### JIT Compilation Warmup
-
-Eliminate JIT compilation overhead with automatic kernel pre-compilation:
-
-```python
-from homodyne.core.kernels import warmup_numba_kernels
-
-# Warmup all computational kernels
-warmup_results = warmup_numba_kernels()
-print(f"Kernels warmed up in {warmup_results['total_warmup_time']:.3f}s")
-print(f"Warmed kernels: {list(warmup_results['warmup_results'].keys())}")
-```
-
-### Benchmarking Utilities
-
-For developers and researchers who need reliable performance measurements:
-
-```python
-from homodyne.core.profiler import stable_benchmark, adaptive_stable_benchmark
-
-# Standard stable benchmarking
-results = stable_benchmark(my_function, warmup_runs=5, measurement_runs=15)
-print(f"Mean time: {results['mean']:.4f}s, CV: {results['std']/results['mean']:.3f}")
-
-# Adaptive benchmarking (finds optimal measurement count)
-results = adaptive_stable_benchmark(my_function, target_cv=0.10)
-print(f"Achieved {results['cv']:.3f} CV in {results['total_runs']} runs")
-```
-
-### Performance Configuration
-
-Key environment variables for optimization:
-
-```bash
-# Conservative threading for stability (automatically set)
-export NUMBA_NUM_THREADS=4
-export OPENBLAS_NUM_THREADS=4
-
-# Balanced JIT optimization (automatically configured)
-export NUMBA_FASTMATH=0  # Disabled for numerical stability
-export NUMBA_LOOP_VECTORIZE=1
-export NUMBA_OPT=2  # Moderate optimization level
-
-# Memory optimization
-export NUMBA_CACHE_DIR=~/.numba_cache
-```
-
-### Performance Baselines
-
-The package maintains performance baselines with excellent stability:
-
-**Stability Achievements:**
-- **Chi-squared calculations**: CV < 0.31 across all array sizes
-- **97% reduction** in performance variability 
-- **Balanced optimization**: Performance and numerical stability
-- **Production ready**: Consistent benchmarking results
-
-Performance baselines and regression detection:
-
-- **Chi-squared calculation**: ~0.8-1.2ms (CV ≤ 0.09)
-- **Correlation calculation**: ~0.26-0.28ms (CV ≤ 0.16)
-- **Memory efficiency**: Automatic cleanup prevents >50MB accumulation
-- **Stability**: 95%+ improvement in coefficient of variation
 
 ## Performance & Testing
 
@@ -497,21 +581,8 @@ The package includes comprehensive performance optimizations:
 - **Fast startup**: >99% reduction in import time for optional components
 - **Modular imports**: Core functionality available without heavy dependencies
 
-**🎯 MCMC Optimizations:**
-- **Thinning support**: Configurable sample thinning to reduce autocorrelation and memory usage
-- **Smart defaults**: Mode-aware thinning settings (thin=1 for laminar flow, thin=2 for static modes)
-- **Convergence diagnostics**: R-hat, ESS, and mixing assessment with thinning recommendations
 
-**📊 Memory Optimizations:**
-- **Memory-mapped I/O**: Efficient loading of large experimental datasets
-- **Lazy array allocation**: Reduced peak memory usage
-- **Garbage collection optimization**: Automatic cleanup of temporary objects
 
-**🔧 Recent Performance Enhancements (v2024.2):**
-- **Enhanced JIT warmup**: Comprehensive function-level warmup reduces timing variance by 60%
-- **Stable benchmarking**: Statistical outlier filtering for reliable performance measurement
-- **Consolidated performance utilities**: Unified performance testing infrastructure
-- **Improved type safety**: Enhanced type annotations and consistency checks
 
 ## Physical Constraints and Parameter Ranges
 
@@ -555,82 +626,7 @@ The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded par
 | `c2_theory` | [0.0, 1.0] | *derived* | Theoretical correlation bounds |
 
 
-### MCMC Configuration
 
-**Optimized MCMC Settings:**
-- **target_accept = 0.95**: High acceptance rate for constrained sampling
-- **Distribution-aware priors**: TruncatedNormal for positive parameters, Normal otherwise  
-- **Configuration-driven**: All parameters read from JSON files for consistency
-#### Static Isotropic (3 parameters)
-{
-  "draws": 8000,
-  "thin": 2,        # Effective samples: 4000
-  "chains": 4
-}
-
-#### Static Anisotropic (3 parameters)  
-{
-  "draws": 8000,
-  "thin": 2,        # Good convergence expected
-  "chains": 4
-}
-
-#### Laminar Flow (7 parameters)
-{
-  "draws": 10000,
-  "thin": 1,        # All samples needed for complex posterior
-  "chains": 6
-}
-
-#### Memory-Constrained Systems
-{
-  "draws": 5000,
-  "thin": 5,        # Effective samples: 1000
-  "chains": 2
-}
-```
-
-**Thinning Benefits:**
-- ✅ Reduces autocorrelation between samples
-- ✅ Lower memory usage (fewer stored samples)
-- ✅ Faster post-processing and plotting
-- ✅ Better effective sample size per stored sample
-- ⚠️ Trades total samples for independence
-
-### Performance Monitoring
-
-**Automated Performance Testing:**
-```bash
-# Quick performance validation
-python run_performance_tests.py --quick
-
-# Full performance test suite
-python run_performance_tests.py --full
-
-# Memory usage tests
-python run_performance_tests.py --memory
-
-# Update performance baselines after optimizations
-python run_performance_tests.py --update --quick
-```
-
-**Pytest Integration:**
-```bash
-# Performance tests with pytest
-pytest -m performance                    # All performance tests
-pytest -m "performance and not slow"     # Quick tests (CI-friendly)
-pytest -m benchmark --benchmark-only     # Benchmarking tests
-pytest -m memory                         # Memory usage tests
-```
-
-**Performance Benchmarking:**
-```bash
-# Comprehensive benchmark
-python performance_benchmark_optimized.py --detailed
-
-# Quick benchmark validation
-python performance_benchmark_optimized.py
-```
 
 ### Scaling Optimization
 
@@ -656,41 +652,7 @@ export NUMBA_CACHE_DIR=/tmp/numba_cache
 export HOMODYNE_PERFORMANCE_MODE=1
 ```
 
-### Testing Framework
 
-**Standard Testing:**
-```bash
-python homodyne/run_tests.py              # Standard tests
-python homodyne/run_tests.py --fast       # Quick tests  
-python homodyne/run_tests.py --coverage   # With coverage
-pytest                                     # Pytest runner
-```
-
-**Performance Testing:**
-```bash
-# Performance validation
-python run_performance_tests.py --quick   
-
-# Performance test suite
-pytest -m performance                     
-
-# Regression detection
-pytest -m regression                      
-
-# Stable benchmarking with statistical analysis
-pytest -m benchmark --benchmark-only
-```
-
-**CI/CD Integration:**
-- **Automated testing**: Performance tests run on every PR
-- **Regression detection**: Automatic alerts for performance degradation
-- **Multi-platform**: Tests across Python 3.12, 3.13
-- **Baseline tracking**: Performance history and trend monitoring
-
-### Performance Documentation
-
-📊 **Detailed Performance Guides:**
-- [`docs/performance.rst`](docs/performance.rst) - Comprehensive performance optimization and monitoring guide
 
 ### Output Organization
 
@@ -1133,6 +1095,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Includes user guides, API reference, and developer documentation.
 
+## Development Status & Code Quality
+
+**Code Formatting & Quality:**
+- ✅ **Black**: 100% compliant (all files formatted)
+- ✅ **isort**: 100% compliant (imports sorted)  
+- ⚠️ **flake8**: 2,189 style issues (mostly line length E501 and unused imports F401)
+- ⚠️ **mypy**: 285 type annotation issues (31 files)
+
+**Python Version Support:**
+- **Required**: Python 3.12+ (enforced at package and CLI level)
+- **Tested**: Python 3.12, 3.13
+- **CI/CD**: Multi-platform testing (Ubuntu, Windows, macOS)
+
+**Performance:**
+- **JIT Compilation**: Numba warmup eliminates compilation overhead
+- **JAX Integration**: Optional GPU acceleration for MCMC
+- **Memory Management**: Automatic cleanup and smart caching
+- **Benchmarking**: Comprehensive performance regression testing
+
 ## Contributing
 
 We welcome contributions! Please submit issues and pull requests.
@@ -1142,8 +1123,18 @@ We welcome contributions! Please submit issues and pull requests.
 git clone https://github.com/imewei/homodyne.git
 cd homodyne
 pip install -e .[all]
+
+# Run tests
 python homodyne/run_tests.py
+
+# Code quality checks
+black homodyne/                    # Format code
+isort homodyne/                    # Sort imports  
+flake8 homodyne/                   # Linting
+mypy homodyne/                     # Type checking
 ```
+
+**Pre-commit hooks available for automated code quality checks.**
 
 **Authors:** Wei Chen, Hongrui He (Argonne National Laboratory)
 

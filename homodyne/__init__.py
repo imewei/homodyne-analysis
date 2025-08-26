@@ -66,7 +66,7 @@ from .core.kernels import (
 try:
     from .optimization.classical import ClassicalOptimizer
 except ImportError as e:
-    ClassicalOptimizer = None
+    ClassicalOptimizer = None  # type: ignore[assignment]
     import logging
 
     logging.getLogger(__name__).warning(
@@ -76,8 +76,8 @@ except ImportError as e:
 try:
     from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
 except ImportError as e:
-    RobustHomodyneOptimizer = None
-    create_robust_optimizer = None
+    RobustHomodyneOptimizer = None  # type: ignore[assignment]
+    create_robust_optimizer = None  # type: ignore[assignment]
     import logging
 
     logging.getLogger(__name__).warning(
@@ -87,8 +87,8 @@ except ImportError as e:
 try:
     from .optimization.mcmc import MCMCSampler, create_mcmc_sampler
 except ImportError as e:
-    MCMCSampler = None
-    create_mcmc_sampler = None
+    MCMCSampler = None  # type: ignore[assignment]
+    create_mcmc_sampler = None  # type: ignore[assignment]
     import logging
 
     logging.getLogger(__name__).warning(

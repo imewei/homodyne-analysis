@@ -1,51 +1,7 @@
-# Core requirements for the Homodyne Scattering Analysis Package
-numpy>=1.24.0,<2.3.0    # Numerical computing (compatible with Numba 0.61.2)
-scipy>=1.7.0            # Scientific computing
-matplotlib>=3.3.0       # Plotting and visualization
+# Core dependencies for Homodyne Scattering Analysis Package
+# Generated from pyproject.toml [project.dependencies]
 
-# Performance enhancement (recommended)
-numba>=0.61.0,<0.62.0   # Just-In-Time compiler for Python (NumPy 2.2 compatibility)
-psutil>=5.8.0           # System and process utilities for memory profiling
-
-# Data handling and manipulation
-xpcs-viewer>=1.0.4      # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
-
-# Optional MCMC dependencies (for Bayesian analysis)
-# Uncomment these lines if you want full MCMC functionality:
-pymc>=5.0.0             # Bayesian modeling framework
-arviz>=0.12.0           # Bayesian data analysis
-pytensor>=2.8.0         # Mathematical expressions compiler
-corner>=2.2.0           # Enhanced MCMC corner plots
-
-# Optional Gurobi optimization dependency
-# Uncomment this line if you want Gurobi optimization support:
-gurobipy>=11.0.0        # Gurobi optimization solver (requires license)
-
-# Optional Test Dependencies
-pytest>=6.2.0           # Testing framework
-pytest-cov>=2.12.0      # Coverage reporting
-pytest-xdist>=2.3.0     # Parallel testing
-pytest-benchmark>=4.0.0 # Performance testing
-pytest-mock>=3.6.0      # Mocking utilities
-pytest-html>=4.1.1      # HTML test reports
-pytest-metadata>=3.1.1  # Test metadata
-hypothesis>=6.0.0       # Property-based testing
-coverage>=6.2.0         # Coverage measurement
-black>=21.0.0           # Code formatting
-flake8>=3.9.0           # Linting
-isort>=5.0.0            # Import sorting
-mypy>=0.910             # Type checking
-types-psutil>=5.9.0     # Type stubs for psutil
-types-Pillow>=10.0.0    # Type stubs for Pillow
-types-six>=1.16.0       # Type stubs for six
-
-# Optional Robust Optimization Dependencies  
-cvxpy>=1.4.0            # Convex optimization for robust methods
-
-# Optional Documentation Dependencies
-sphinx>=4.0.0           # Documentation generator
-sphinx-rtd-theme>=1.0.0 # Read the Docs theme for Sphinx
-myst-parser>=0.17.0     # MyST Markdown parser for Sphinx (allows Markdown in .rst files)
-sphinx-autodoc-typehints>=1.12.0 # Automatic type hints documentation
-numpydoc>=1.2.0         # NumPy-style docstring support
-linkify-it-py>=2.0.0    # Link detection for documentation
+numpy>=1.24.0,<2.3.0
+scipy>=1.9.0
+matplotlib>=3.5.0
+typing-extensions>=4.0.0; python_version<'3.13'

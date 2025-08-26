@@ -13,25 +13,28 @@ for reliable and comparable results across different optimization approaches.
 """
 
 # Import with error handling for optional dependencies
-try:
+from typing import TYPE_CHECKING, Optional, Type, Any
+
+if TYPE_CHECKING:
     from .classical import ClassicalOptimizer
-except ImportError as e:
-    ClassicalOptimizer = None
-    import warnings
+    from .mcmc import MCMCSampler
+else:
+    try:
+        from .classical import ClassicalOptimizer
+    except ImportError as e:
+        ClassicalOptimizer: Optional[Type[Any]] = None  # type: ignore[misc]
+        import warnings
+        warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning)
 
-    warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning)
-
-
-try:
-    from .mcmc import MCMCSampler, create_mcmc_sampler
-except ImportError as e:
-    MCMCSampler = None
-    create_mcmc_sampler = None
-    import warnings
-
-    warnings.warn(
-        f"MCMC functionality not available (PyMC required): {e}", ImportWarning
-    )
+    try:
+        from .mcmc import MCMCSampler, create_mcmc_sampler
+    except ImportError as e:
+        MCMCSampler: Optional[Type[Any]] = None  # type: ignore[misc]
+        create_mcmc_sampler: Optional[Any] = None  # type: ignore[misc]
+        import warnings
+        warnings.warn(
+            f"MCMC functionality not available (PyMC required): {e}", ImportWarning
+        )
 
 __all__ = [
     "ClassicalOptimizer",

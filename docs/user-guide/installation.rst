@@ -28,24 +28,33 @@ This installs the core dependencies (numpy, scipy, matplotlib) along with the ma
 
    pip install homodyne-analysis[all]
 
-This includes all optional dependencies: performance acceleration (numba), MCMC analysis (pymc, arviz, pytensor), documentation tools, and development utilities.
+This includes all optional dependencies: performance acceleration (numba, jax), robust optimization (cvxpy), MCMC analysis (pymc, arviz, pytensor), documentation tools, and development utilities.
 
 Optional Installation Extras
 -----------------------------
 
 You can install specific feature sets using pip extras:
 
-**For Enhanced Performance (Numba JIT acceleration):**
+**For Enhanced Performance (Numba JIT + JAX acceleration):**
 
 .. code-block:: bash
 
    pip install homodyne-analysis[performance]
+   # OR for JAX-specific features:
+   pip install homodyne-analysis[jax]
 
 **For MCMC Bayesian Analysis:**
 
 .. code-block:: bash
 
    pip install homodyne-analysis[mcmc]
+
+**For Robust Optimization (Noise-Resistant Methods):**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[robust]
+   # Includes CVXPY for distributionally robust optimization
 
 **For XPCS Data Handling:**
 

@@ -882,9 +882,7 @@ class TestRobustOptimizationPerformance:
         # Create mock core with minimal data
         small_core = MockAnalysisCore(test_config)
         small_core.phi_angles = np.array([0.0, 30.0])  # Only 2 angles
-        small_core.c2_experimental = np.random.randn(
-            2, 5
-        )  # Only 5 time points  # type: ignore
+        small_core.c2_experimental = np.random.randn(2, 5).astype(np.float64)  # type: ignore
 
         assert (
             RobustHomodyneOptimizer is not None

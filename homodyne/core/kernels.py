@@ -405,8 +405,8 @@ def memory_efficient_cache(maxsize=128):
     """
 
     def decorator(func):
-        cache = {}
-        access_count = {}
+        cache: dict[Any, Any] = {}
+        access_count: dict[Any, int] = {}
 
         @wraps(func)
         def wrapper(*args, **kwargs):

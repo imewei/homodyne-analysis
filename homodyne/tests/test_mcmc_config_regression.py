@@ -155,6 +155,10 @@ class TestMCMCConfigurationRegression:
             mcmc_config.get("tune", 500) == 1000
         ), "Should use Simon's configured tune=1000, not default 500"
 
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_old_trace_file_detection(self):
         """Test detection of old trace files with wrong dimensions."""
         # Configuration specifies 8 chains, 10000 draws
@@ -186,6 +190,10 @@ class TestMCMCConfigurationRegression:
         assert old_trace.posterior.sizes["chain"] != config_chains
         assert old_trace.posterior.sizes["draw"] != config_draws
 
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_plotting_function_trace_dimension_extraction(self):
         """Test how plotting functions extract chain/draw counts from traces."""
         # This simulates what plotting functions do
@@ -331,6 +339,10 @@ class TestMCMCConfigurationRegression:
 class TestMCMCTraceFileRegression:
     """Test trace file related regression scenarios."""
 
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_trace_file_dimension_mismatch_scenario(self):
         """Test the exact scenario that caused the plotting issue."""
         # User has configuration with 8 chains, 10000 draws
@@ -356,6 +368,10 @@ class TestMCMCTraceFileRegression:
         assert plot_chains != user_config_chains
         assert plot_draws != user_config_draws
 
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_fresh_trace_correct_dimensions(self):
         """Test that a fresh trace would have correct dimensions."""
         # Configuration values
@@ -376,6 +392,10 @@ class TestMCMCTraceFileRegression:
         assert plot_chains == 8
         assert plot_draws == 10000
 
+    @pytest.mark.skipif(
+        not _check_pymc_available(),
+        reason="PyMC is required for MCMC sampling but is not available.",
+    )
     def test_trace_file_validation_utility(self):
         """Test the utility function for validating trace dimensions."""
         # Create traces with different dimensions

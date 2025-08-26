@@ -3,7 +3,11 @@ Performance Test Configuration and Fixtures
 ==========================================
 
 This module provides shared fixtures and configuration for performance testing.
-It extends the main conftest.py with performance-specific utilities.
+It extends the main conftest.py with performance-specific utilities for:
+- Classical optimization performance testing
+- Robust optimization benchmarking
+- MCMC sampling performance analysis
+- Cross-method performance comparisons
 
 Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
@@ -14,7 +18,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pytest
@@ -184,7 +188,8 @@ class PerformanceRecorder:
         if PERFORMANCE_BASELINE_FILE.exists():
             try:
                 with open(PERFORMANCE_BASELINE_FILE, "r") as f:
-                    return json.load(f)
+                    data: dict[str, Any] = json.load(f)
+                    return data
             except (json.JSONDecodeError, IOError):
                 pass
         return {}
@@ -637,3 +642,306 @@ def pytest_runtest_makereport(item, call):
         return report
     else:
         return (yield)
+
+
+# Enhanced performance utilities for MCMC and Robust Optimization
+
+# Performance test configuration specific to optimization methods
+OPTIMIZATION_PERFORMANCE_CONFIG = {
+    "timeouts": {
+        "classical_optimization": 30.0,
+        "robust_optimization": 90.0,
+        "mcmc_sampling": 180.0,
+    },
+    "thresholds": {
+        "chi_squared_computation": 0.02,  # Max time for chi-squared calculation
+        "model_building": 1.0,  # Max time for MCMC model building
+        "parameter_bounds": 0.001,  # Max time for bounds extraction
+        "convergence_diagnostics": 0.5,  # Max time for MCMC diagnostics
+        "solver_fallback": 45.0,  # Max time including solver fallback
+    },
+    "dataset_sizes": {
+        "small": {"n_angles": 15, "n_times": 50},
+        "medium": {"n_angles": 20, "n_times": 80},
+        "large": {"n_angles": 35, "n_times": 120},
+    },
+    "sample_counts": {
+        "quick_test": {"draws": 40, "tune": 20, "chains": 2},
+        "standard_test": {"draws": 80, "tune": 40, "chains": 2},
+        "thorough_test": {"draws": 200, "tune": 100, "chains": 4},
+    },
+    "ci_adjustments": {
+        "timeout_multiplier": 2.0,
+        "skip_stress_tests": True,
+        "reduce_sample_counts": True,
+    },
+}
+
+
+def get_optimization_timeout(method: str) -> float:
+    """Get timeout for optimization method with CI adjustments."""
+    base_timeout = OPTIMIZATION_PERFORMANCE_CONFIG["timeouts"].get(method, 60.0)
+    is_ci = any(os.getenv(var) for var in ["CI", "GITHUB_ACTIONS", "TRAVIS"])
+
+    if is_ci:
+        multiplier = OPTIMIZATION_PERFORMANCE_CONFIG["ci_adjustments"][
+            "timeout_multiplier"
+        ]
+        return base_timeout * multiplier
+
+    return base_timeout
+
+
+def get_performance_threshold_for_metric(metric: str) -> float:
+    """Get performance threshold for specific metric."""
+    base_threshold = OPTIMIZATION_PERFORMANCE_CONFIG["thresholds"].get(metric, 1.0)
+    is_ci = any(os.getenv(var) for var in ["CI", "GITHUB_ACTIONS", "TRAVIS"])
+
+    if is_ci:
+        return base_threshold * 2.0  # More lenient in CI
+
+    return base_threshold
+
+
+def assert_optimization_performance(
+    elapsed_time: float, method: str, custom_threshold: Optional[float] = None
+):
+    """Assert optimization performance is within bounds."""
+    threshold = custom_threshold or get_optimization_timeout(method)
+
+    assert elapsed_time <= threshold, (
+        f"Performance regression in {method}: took {elapsed_time:.3f}s "
+        f"(threshold: {threshold:.3f}s)"
+    )
+
+
+class OptimizationBenchmarkContext:
+    """Context manager for optimization benchmarking."""
+
+    def __init__(self, method_name: str, test_name: str = ""):
+        self.method_name = method_name
+        self.test_name = test_name
+        self.start_time = 0.0
+        self.end_time = 0.0
+        self.memory_start = 0.0
+        self.memory_peak = 0.0
+        self.results = {}
+
+    def __enter__(self):
+        # Optimize environment for consistent benchmarking
+        optimize_numerical_environment()
+        gc.collect()
+
+        self.start_time = time.perf_counter()
+        self.memory_start = self._get_memory_usage()
+        self.memory_peak = self.memory_start
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time.perf_counter()
+        gc.collect()
+
+        # Record results
+        self.results = {
+            "elapsed_time": self.end_time - self.start_time,
+            "memory_start_mb": self.memory_start,
+            "memory_peak_mb": self.memory_peak,
+            "memory_used_mb": self._get_memory_usage() - self.memory_start,
+            "method": self.method_name,
+            "success": exc_type is None,
+        }
+
+        return False
+
+    def _get_memory_usage(self) -> float:
+        """Get current memory usage in MB."""
+        try:
+            import psutil
+
+            process = psutil.Process(os.getpid())
+            return process.memory_info().rss / 1024 / 1024
+        except ImportError:
+            return 0.0
+
+    def update_peak_memory(self):
+        """Update peak memory usage."""
+        current_memory = self._get_memory_usage()
+        self.memory_peak = max(self.memory_peak, current_memory)
+
+
+@pytest.fixture
+def optimization_benchmark_context():
+    """Provide optimization benchmark context manager."""
+
+    def _create_context(method_name: str, test_name: str = ""):
+        return OptimizationBenchmarkContext(method_name, test_name)
+
+    return _create_context
+
+
+# Enhanced mock cores for cross-method testing
+class UniversalOptimizationMockCore:
+    """Universal mock core that works with all optimization methods."""
+
+    def __init__(self, config, n_angles=20, n_times=80, seed=42, noise_level=0.01):
+        self.config = config
+        self.n_angles = n_angles
+        self.n_times = n_times
+
+        # Set reproducible seed
+        np.random.seed(seed)
+
+        # Generate consistent test data
+        self.phi_angles = np.linspace(-45, 45, n_angles)
+        self.time_delays = np.linspace(0, 10, n_times)
+        self.true_parameters = np.array([125.0, -0.65, 18.0])
+        self.c2_experimental = self._generate_test_data(noise_level)
+
+    def _generate_test_data(self, noise_level=0.01):
+        """Generate test data with known ground truth."""
+        D0_true, alpha_true, D_offset_true = self.true_parameters
+        c2_data = np.zeros((self.n_angles, self.n_times))
+
+        for i, phi in enumerate(self.phi_angles):
+            # Realistic correlation function
+            D_eff = D0_true * self.time_delays ** abs(alpha_true) + D_offset_true
+            decay = np.exp(-0.01 * D_eff * self.time_delays)
+
+            angular_factor = 1.0 + 0.08 * np.cos(np.radians(phi))
+            contrast = 0.22 * angular_factor
+            c2_data[i, :] = 1.0 + contrast * decay
+
+        # Add noise
+        noise = np.random.normal(0, noise_level, c2_data.shape)
+        c2_data += noise * np.mean(c2_data)
+
+        return c2_data
+
+    def compute_c2_correlation_optimized(self, params, phi_angles):
+        """Compute correlation function (classical/MCMC compatibility)."""
+        n_angles = len(phi_angles)
+        c2_theory = np.zeros((n_angles, self.n_times))
+
+        D0, alpha, D_offset = params[0], params[1], params[2]
+
+        for i, phi in enumerate(phi_angles):
+            D_eff = D0 * self.time_delays ** abs(alpha) + D_offset * self.time_delays
+            decay = np.exp(-0.01 * D_eff * self.time_delays)
+
+            angular_factor = 1.0 + 0.08 * np.cos(np.radians(phi))
+            contrast = 0.22 * angular_factor
+            c2_theory[i, :] = 1.0 + contrast * decay
+
+        return c2_theory
+
+    def calculate_chi_squared_optimized(self, params, phi_angles, c2_experimental):
+        """Calculate chi-squared for optimization."""
+        c2_theory = self.compute_c2_correlation_optimized(params, phi_angles)
+        residuals = c2_experimental - c2_theory
+        return np.sum(residuals**2) / c2_experimental.size
+
+    def calculate_c2_nonequilibrium_laminar_parallel(self, params, phi_angles):
+        """3D correlation function for robust optimization."""
+        n_angles = len(phi_angles)
+        c2_theory = np.zeros((n_angles, self.n_times, self.n_times))
+
+        D0, alpha, D_offset = params[0], params[1], params[2]
+
+        for i, phi in enumerate(phi_angles):
+            angular_factor = 1.0 + 0.08 * np.cos(np.radians(phi))
+            contrast = 0.22 * angular_factor
+
+            for j in range(self.n_times):
+                for k in range(self.n_times):
+                    tau = abs(self.time_delays[j] - self.time_delays[k])
+                    D_eff = D0 * self.time_delays[min(j, k)] ** abs(alpha) + D_offset
+                    decay = np.exp(-0.01 * D_eff)
+                    c2_theory[i, j, k] = 1.0 + contrast * decay
+
+        return c2_theory
+
+    def is_static_mode(self):
+        return True
+
+    def get_effective_parameter_count(self):
+        return 3
+
+    @property
+    def time_length(self):
+        return self.n_times
+
+
+@pytest.fixture
+def universal_mock_core_small():
+    """Small dataset universal mock core."""
+    config = {"analysis_settings": {"mode": "static", "num_parameters": 3}}
+    size_config = OPTIMIZATION_PERFORMANCE_CONFIG["dataset_sizes"]["small"]
+    return UniversalOptimizationMockCore(
+        config,
+        n_angles=size_config["n_angles"],
+        n_times=size_config["n_times"],
+        seed=42,
+    )
+
+
+@pytest.fixture
+def universal_mock_core_medium():
+    """Medium dataset universal mock core."""
+    config = {"analysis_settings": {"mode": "static", "num_parameters": 3}}
+    size_config = OPTIMIZATION_PERFORMANCE_CONFIG["dataset_sizes"]["medium"]
+    return UniversalOptimizationMockCore(
+        config,
+        n_angles=size_config["n_angles"],
+        n_times=size_config["n_times"],
+        seed=42,
+    )
+
+
+@pytest.fixture
+def universal_mock_core_large():
+    """Large dataset universal mock core."""
+    config = {"analysis_settings": {"mode": "static", "num_parameters": 3}}
+    size_config = OPTIMIZATION_PERFORMANCE_CONFIG["dataset_sizes"]["large"]
+    return UniversalOptimizationMockCore(
+        config,
+        n_angles=size_config["n_angles"],
+        n_times=size_config["n_times"],
+        seed=42,
+    )
+
+
+def log_optimization_performance(method: str, results: Dict[str, Any]):
+    """Log optimization performance results."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    logger.info(f"Performance Results for {method}:")
+    for metric, value in results.items():
+        if isinstance(value, float):
+            logger.info(f"  {metric}: {value:.4f}")
+        else:
+            logger.info(f"  {metric}: {value}")
+
+
+def compare_optimization_methods(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Compare performance across optimization methods."""
+    if not results:
+        return {}
+
+    comparison = {
+        "fastest_method": min(
+            results, key=lambda x: x.get("elapsed_time", float("inf"))
+        ),
+        "most_memory_efficient": min(
+            results, key=lambda x: x.get("memory_used_mb", float("inf"))
+        ),
+        "success_rate": sum(1 for r in results if r.get("success", False))
+        / len(results),
+        "average_time": np.mean(
+            [r.get("elapsed_time", 0) for r in results if r.get("success", False)]
+        ),
+    }
+
+    return comparison

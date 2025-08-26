@@ -112,6 +112,12 @@ class TestMethodSpecificPlotting:
         c2_exp = np.random.rand(n_angles, n_t2, n_t1) + 1.0
         return best_params, phi_angles, c2_exp
 
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+    )
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+    )
     @patch("homodyne.plotting.plot_c2_heatmaps")
     def test_generate_classical_plots_with_method_results(
         self, mock_plot_c2, mock_analyzer, mock_result_with_methods, test_data
@@ -143,6 +149,9 @@ class TestMethodSpecificPlotting:
             assert "nelder_mead" in method_names
             assert "gurobi" in method_names
 
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+    )
     @patch("homodyne.plotting.plot_c2_heatmaps")
     def test_generate_classical_plots_without_method_results(
         self,
@@ -175,6 +184,9 @@ class TestMethodSpecificPlotting:
             call = mock_plot_c2.call_args_list[0]
             assert call.kwargs.get("method_name") == "best"
 
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+    )
     @patch("homodyne.plotting.plot_c2_heatmaps")
     def test_generate_classical_plots_skips_unsuccessful_methods(
         self, mock_plot_c2, mock_analyzer, test_data
@@ -218,6 +230,9 @@ class TestMethodSpecificPlotting:
             call = mock_plot_c2.call_args_list[0]
             assert call.kwargs.get("method_name") == "nelder_mead"
 
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+    )
     @patch("homodyne.plotting.plot_c2_heatmaps")
     def test_generate_classical_plots_handles_missing_parameters(
         self, mock_plot_c2, mock_analyzer, test_data
@@ -291,6 +306,9 @@ class TestMethodSpecificPlotting:
                 assert classical_dir.exists()
                 assert classical_dir.is_dir()
 
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting dependencies not available"
+    )
     def test_generate_classical_plots_respects_plotting_disabled(
         self, mock_analyzer, mock_result_with_methods, test_data
     ):

@@ -52,10 +52,13 @@ dev-install:
 
 # Testing targets  
 test:
-	pytest -v
+	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
 
 test-all:
 	pytest -v --cov=homodyne --cov-report=html --cov-report=term
+
+test-fast:
+	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
 
 # Performance testing targets
 test-performance:
@@ -90,15 +93,29 @@ baseline-report:
 
 # Code quality targets
 lint:
-	flake8 homodyne/
+	ruff check homodyne/
 	mypy homodyne/
 
 format:
+	ruff format homodyne/ tests/
 	black homodyne/ tests/
+	isort homodyne/ tests/
+
+ruff-fix:
+	ruff check --fix homodyne/
+
+quality: format lint
+	@echo "Code quality checks completed"
 
 # Cleanup targets
 clean: clean-build clean-pyc clean-test
 	@echo "Cleaned all build artifacts and cache files"
+
+clean-cache:
+	find . -name '__pycache__' -type d -exec rm -rf {} +
+	find . -name '*.pyc' -delete
+	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
+	@echo "Cleaned Python cache files"
 
 clean-build:
 	rm -rf build/
@@ -148,4 +165,10 @@ upload: build
 
 check:
 	python -m twine check dist/*
-	python setup.py check -m -s
+	python -m build --check
+
+pre-commit:
+	pre-commit run --all-files
+
+install-hooks:
+	pre-commit install

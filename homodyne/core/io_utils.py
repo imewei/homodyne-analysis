@@ -221,7 +221,7 @@ def _json_serializer(obj):
         return str(obj)
 
 
-def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
+def save_json(data: Any, filepath: Union[str, Path], **kwargs: Any) -> bool:
     """
     Save data as JSON with robust error handling and NumPy support.
 
@@ -273,7 +273,7 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
 
         # Save JSON file
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, **json_kwargs)
+            json.dump(data, f, **json_kwargs)  # type: ignore[arg-type]
 
         logger.info(f"Successfully saved JSON data to: {filepath}")
         return True
@@ -293,7 +293,7 @@ def save_numpy(
     data: np.ndarray,
     filepath: Union[str, Path],
     compressed: bool = True,
-    **kwargs,
+    **kwargs: Any,
 ) -> bool:
     """
     Save NumPy arrays with optimal compression and format selection.
@@ -361,7 +361,7 @@ def save_pickle(
     data: Any,
     filepath: Union[str, Path],
     protocol: int = pickle.HIGHEST_PROTOCOL,
-    **kwargs,
+    **kwargs: Any,
 ) -> bool:
     """
     Save data using pickle with error handling and logging.
@@ -405,11 +405,11 @@ def save_pickle(
 
 
 def save_fig(
-    figure,
+    figure: Any,
     filepath: Union[str, Path],
     dpi: int = 300,
     format: Optional[str] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> bool:
     """
     Save matplotlib figure with error handling and logging.
