@@ -73,7 +73,10 @@ except ImportError as e:
     )
 
 try:
-    from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
+    from .optimization.robust import (
+        RobustHomodyneOptimizer,
+        create_robust_optimizer,
+    )
 except ImportError as e:
     RobustHomodyneOptimizer = None
     create_robust_optimizer = None

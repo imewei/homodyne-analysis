@@ -83,12 +83,22 @@ class TestMCMCInitialParameterHandling:
         mock_analyzer.best_params_classical = classical_best_params
 
         # Mock the MCMC sampler creation and initialization detection
-        with patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler:
+        with patch(
+            "homodyne.run_homodyne.create_mcmc_sampler"
+        ) as mock_create_sampler:
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
-                "posterior_means": {"D0": 5100, "alpha": -1.15, "D_offset": 480},
+                "posterior_means": {
+                    "D0": 5100,
+                    "alpha": -1.15,
+                    "D_offset": 480,
+                },
                 "trace": None,
-                "diagnostics": {"converged": True, "max_rhat": 1.01, "min_ess": 400},
+                "diagnostics": {
+                    "converged": True,
+                    "max_rhat": 1.01,
+                    "min_ess": 400,
+                },
                 "chi_squared": 1.5,  # Add chi_squared to avoid comparison issues
             }
             mock_create_sampler.return_value = mock_sampler
@@ -155,16 +165,26 @@ class TestMCMCInitialParameterHandling:
 
         # Mock the MCMC sampler creation and the import
         with (
-            patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
+            patch(
+                "homodyne.run_homodyne.create_mcmc_sampler"
+            ) as mock_create_sampler,
             patch(
                 "homodyne.run_homodyne.create_mcmc_sampler"
             ) as mock_create_sampler_module,
         ):
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
-                "posterior_means": {"D0": 1100, "alpha": -0.45, "D_offset": 120},
+                "posterior_means": {
+                    "D0": 1100,
+                    "alpha": -0.45,
+                    "D_offset": 120,
+                },
                 "trace": None,
-                "diagnostics": {"converged": True, "max_rhat": 1.02, "min_ess": 350},
+                "diagnostics": {
+                    "converged": True,
+                    "max_rhat": 1.02,
+                    "min_ess": 350,
+                },
             }
             mock_create_sampler.return_value = mock_sampler
             mock_create_sampler_module.return_value = mock_sampler
@@ -241,14 +261,22 @@ class TestMCMCInitialParameterHandling:
 
         # Mock MCMC results
         mock_mcmc_results = {
-            "mcmc_optimization": {"parameters": [5100, -1.15, 480], "success": True},
-            "mcmc_summary": {"parameters": [5100, -1.15, 480], "method": "MCMC"},
+            "mcmc_optimization": {
+                "parameters": [5100, -1.15, 480],
+                "success": True,
+            },
+            "mcmc_summary": {
+                "parameters": [5100, -1.15, 480],
+                "method": "MCMC",
+            },
             "methods_used": ["MCMC"],
         }
 
         # Mock the optimization functions
         with (
-            patch("homodyne.run_homodyne.run_classical_optimization") as mock_classical,
+            patch(
+                "homodyne.run_homodyne.run_classical_optimization"
+            ) as mock_classical,
             patch("homodyne.run_homodyne.run_mcmc_optimization") as mock_mcmc,
         ):
 
@@ -264,7 +292,9 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run all methods
-            result = run_all_methods(mock_analyzer, initial_params, phi_angles, c2_exp)
+            result = run_all_methods(
+                mock_analyzer, initial_params, phi_angles, c2_exp
+            )
 
             # Verify classical was called with initial parameters (including
             # output_dir)
@@ -326,7 +356,9 @@ class TestMCMCInitialParameterHandling:
         )
 
         # Mock ClassicalOptimizer class
-        with patch("homodyne.run_homodyne.ClassicalOptimizer") as mock_optimizer_class:
+        with patch(
+            "homodyne.run_homodyne.ClassicalOptimizer"
+        ) as mock_optimizer_class:
             mock_optimizer_class.return_value = mock_optimizer
 
             # Import and run the function
@@ -356,7 +388,10 @@ class TestMCMCInitialParameterHandling:
             assert result is not None
             assert "classical_optimization" in result
             assert "classical_summary" in result
-            assert result["classical_summary"]["parameters"] == classical_best_params
+            assert (
+                result["classical_summary"]["parameters"]
+                == classical_best_params
+            )
 
     def test_mcmc_parameter_initialization_logging(self):
         """Test that proper logging occurs for MCMC parameter initialization."""
@@ -378,7 +413,9 @@ class TestMCMCInitialParameterHandling:
         mock_analyzer.best_params_classical = [5000, -1.2, 500]
 
         with (
-            patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
+            patch(
+                "homodyne.run_homodyne.create_mcmc_sampler"
+            ) as mock_create_sampler,
             patch("logging.getLogger") as mock_logger,
         ):
 
@@ -401,7 +438,9 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run MCMC optimization
-            run_mcmc_optimization(mock_analyzer, initial_params, phi_angles, c2_exp)
+            run_mcmc_optimization(
+                mock_analyzer, initial_params, phi_angles, c2_exp
+            )
 
             # Verify appropriate logging occurred (may vary based on implementation)
             # The exact log message can vary, so just verify that logging
@@ -429,7 +468,9 @@ class TestMCMCInitialParameterHandling:
             delattr(mock_analyzer, "best_params_classical")
 
         with (
-            patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
+            patch(
+                "homodyne.run_homodyne.create_mcmc_sampler"
+            ) as mock_create_sampler,
             patch("logging.getLogger") as mock_logger,
         ):
 
@@ -452,7 +493,9 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run MCMC optimization
-            run_mcmc_optimization(mock_analyzer, initial_params, phi_angles, c2_exp)
+            run_mcmc_optimization(
+                mock_analyzer, initial_params, phi_angles, c2_exp
+            )
 
             # Verify fallback logging occurred (may vary based on implementation)
             # The exact log message can vary, so just verify that logging
@@ -478,14 +521,22 @@ class TestMCMCInitialParameterHandling:
 
         # Mock MCMC results
         mock_mcmc_results = {
-            "mcmc_optimization": {"parameters": [1100, -0.45, 120], "success": True},
-            "mcmc_summary": {"parameters": [1100, -0.45, 120], "method": "MCMC"},
+            "mcmc_optimization": {
+                "parameters": [1100, -0.45, 120],
+                "success": True,
+            },
+            "mcmc_summary": {
+                "parameters": [1100, -0.45, 120],
+                "method": "MCMC",
+            },
             "methods_used": ["MCMC"],
         }
 
         # Mock the optimization functions - classical fails, MCMC succeeds
         with (
-            patch("homodyne.run_homodyne.run_classical_optimization") as mock_classical,
+            patch(
+                "homodyne.run_homodyne.run_classical_optimization"
+            ) as mock_classical,
             patch("homodyne.run_homodyne.run_mcmc_optimization") as mock_mcmc,
         ):
 
@@ -501,7 +552,9 @@ class TestMCMCInitialParameterHandling:
             c2_exp = np.random.random((1, 100, 100))
 
             # Run all methods
-            result = run_all_methods(mock_analyzer, initial_params, phi_angles, c2_exp)
+            result = run_all_methods(
+                mock_analyzer, initial_params, phi_angles, c2_exp
+            )
 
             # Verify classical was called with initial parameters (including
             # output_dir)

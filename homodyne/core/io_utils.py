@@ -264,7 +264,11 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs) -> bool:
         ensure_dir(filepath.parent)
 
         # Set default JSON parameters with custom serializer
-        json_kwargs = {"indent": 2, "ensure_ascii": False, "default": _json_serializer}
+        json_kwargs = {
+            "indent": 2,
+            "ensure_ascii": False,
+            "default": _json_serializer,
+        }
         json_kwargs.update(kwargs)
 
         # Save JSON file
@@ -477,7 +481,9 @@ def get_output_directory(config: Optional[Dict] = None) -> Path:
     default_dir = "./homodyne_results"
 
     if config and "output_settings" in config:
-        output_dir = config["output_settings"].get("results_directory", default_dir)
+        output_dir = config["output_settings"].get(
+            "results_directory", default_dir
+        )
     else:
         output_dir = default_dir
         logger.warning(
@@ -540,14 +546,22 @@ def save_classical_optimization_results(
                     "chi_squared": chi2,
                     "success": method_data.get("success"),
                     "iterations": method_data.get("iterations"),
-                    "function_evaluations": method_data.get("function_evaluations"),
+                    "function_evaluations": method_data.get(
+                        "function_evaluations"
+                    ),
                     "message": method_data.get("message", ""),
                     "timestamp": datetime.now().isoformat(),
-                    **{k: v for k, v in results.items() if k not in ["method_results"]},
+                    **{
+                        k: v
+                        for k, v in results.items()
+                        if k not in ["method_results"]
+                    },
                 }
 
                 json_path = output_dir / f"{filename_base}.json"
-                save_status[f"{method}_json"] = save_json(method_result, json_path)
+                save_status[f"{method}_json"] = save_json(
+                    method_result, json_path
+                )
 
                 logger.info(f"✓ Saved {method} results to: {json_path.name}")
             else:
@@ -636,15 +650,17 @@ def save_analysis_results(
     # Handle classical optimization results with method-specific saving
     # ONLY for true classical methods, not for robust methods that use
     # ClassicalOptimizer internally
-    if "classical_optimization" in results and results.get("methods_used", []) == [
-        "Classical"
-    ]:
+    if "classical_optimization" in results and results.get(
+        "methods_used", []
+    ) == ["Classical"]:
         classical_results = results["classical_optimization"]
         method_results = None
 
         # Check if enhanced classical results with method information are
         # available
-        if hasattr(classical_results, "get") and isinstance(classical_results, dict):
+        if hasattr(classical_results, "get") and isinstance(
+            classical_results, dict
+        ):
             method_results = classical_results.get("method_results")
         elif hasattr(classical_results, "method_results"):
             # Results from enhanced classical optimizer
@@ -659,7 +675,10 @@ def save_analysis_results(
                 "success": getattr(classical_results, "success", True),
             }
             classical_save_status = save_classical_optimization_results(
-                results_for_save, method_results, config, "classical_optimization"
+                results_for_save,
+                method_results,
+                config,
+                "classical_optimization",
             )
             save_status.update(classical_save_status)
 
@@ -696,11 +715,14 @@ def save_analysis_results(
             npz_path = (output_dir / "classical") / f"{filename_base}_data.npz"
         else:
             npz_path = output_dir / f"{filename_base}_data.npz"
-        save_status["numpy"] = save_numpy(results["correlation_data"], npz_path)
+        save_status["numpy"] = save_numpy(
+            results["correlation_data"], npz_path
+        )
 
     # Save complex objects as pickle
     if any(
-        key.startswith("mcmc_") or key.startswith("bayesian_") for key in results.keys()
+        key.startswith("mcmc_") or key.startswith("bayesian_")
+        for key in results.keys()
     ):
         # Use same directory logic as main JSON file
         if (

@@ -60,7 +60,9 @@ def stable_benchmark(
         "outlier_threshold",
         "target_cv",
     ]
-    func_kwargs = {k: v for k, v in kwargs.items() if k not in benchmark_params}
+    func_kwargs = {
+        k: v for k, v in kwargs.items() if k not in benchmark_params
+    }
 
     # Warmup runs
     for _ in range(warmup_runs):
@@ -88,7 +90,9 @@ def stable_benchmark(
     sorted_times = sorted(times) if times else [0.0]
     median_time = sorted_times[len(sorted_times) // 2]
     std_time = (
-        (sum((t - mean_time) ** 2 for t in times) / len(times)) ** 0.5 if times else 0.0
+        (sum((t - mean_time) ** 2 for t in times) / len(times)) ** 0.5
+        if times
+        else 0.0
     )
 
     # Calculate percentiles
@@ -100,7 +104,9 @@ def stable_benchmark(
     min_time = min(times) if times else 1.0
     max_time = max(times) if times else 1.0
     # Protect against division by zero - if either is zero, set ratio to 1.0
-    outlier_ratio = min_time / max_time if (max_time > 0 and min_time > 0) else 1.0
+    outlier_ratio = (
+        min_time / max_time if (max_time > 0 and min_time > 0) else 1.0
+    )
 
     # Count outliers (simple threshold-based approach)
     if times and len(times) > 1:
@@ -109,7 +115,9 @@ def stable_benchmark(
         iqr = q3 - q1
         outlier_lower = q1 - 1.5 * iqr
         outlier_upper = q3 + 1.5 * iqr
-        outlier_count = sum(1 for t in times if t < outlier_lower or t > outlier_upper)
+        outlier_count = sum(
+            1 for t in times if t < outlier_lower or t > outlier_upper
+        )
     else:
         outlier_count = 0
 
@@ -151,7 +159,9 @@ def assert_performance_within_bounds(
     )
 
 
-def assert_performance_stability(times, cv_threshold=0.3, max_cv=None, **kwargs):
+def assert_performance_stability(
+    times, cv_threshold=0.3, max_cv=None, **kwargs
+):
     """Assert that performance measurements are stable."""
     if max_cv is not None:
         cv_threshold = max_cv
@@ -168,7 +178,9 @@ def assert_performance_stability(times, cv_threshold=0.3, max_cv=None, **kwargs)
 
 
 # Performance test data storage
-PERFORMANCE_BASELINE_FILE = Path(__file__).parent / "performance_baselines.json"
+PERFORMANCE_BASELINE_FILE = (
+    Path(__file__).parent / "performance_baselines.json"
+)
 
 
 class PerformanceRecorder:
@@ -203,7 +215,11 @@ class PerformanceRecorder:
         self.current_results[test_name][metric_name] = value
 
     def check_regression(
-        self, test_name: str, metric_name: str, value: float, threshold: float = 1.5
+        self,
+        test_name: str,
+        metric_name: str,
+        value: float,
+        threshold: float = 1.5,
     ) -> bool:
         """Check if a performance metric shows regression."""
         baseline = self.baselines.get(test_name, {}).get(metric_name)
@@ -219,7 +235,9 @@ class PerformanceRecorder:
 
     def update_baseline(self, test_name: str, metric_name: str, value: float):
         """Update baseline if current performance is better."""
-        baseline = self.baselines.get(test_name, {}).get(metric_name, float("inf"))
+        baseline = self.baselines.get(test_name, {}).get(
+            metric_name, float("inf")
+        )
         if value < baseline * 0.9:  # 10% improvement
             if test_name not in self.baselines:
                 self.baselines[test_name] = {}
@@ -261,7 +279,9 @@ def setup_performance_environment():
         )
     except RuntimeError as e:
         if "NUMBA_NUM_THREADS" in str(e):
-            print("⚠ Numba threads already initialized - using existing settings")
+            print(
+                "⚠ Numba threads already initialized - using existing settings"
+            )
             optimizations = {}
         else:
             raise
@@ -431,9 +451,16 @@ def performance_config_factory():
         phi_angles = np.linspace(0, 90, n_angles).tolist()
 
         config = {
-            "data_configuration": {"data_file": f"test_performance_{mode}.npz"},
-            "processing": {"phi_angles": phi_angles, "time_range": [0, time_length]},
-            "analysis_mode": "static_isotropic" if mode == "static" else "laminar_flow",
+            "data_configuration": {
+                "data_file": f"test_performance_{mode}.npz"
+            },
+            "processing": {
+                "phi_angles": phi_angles,
+                "time_range": [0, time_length],
+            },
+            "analysis_mode": (
+                "static_isotropic" if mode == "static" else "laminar_flow"
+            ),
             "performance_settings": {
                 "parallel_execution": True,
                 "num_threads": 1,
@@ -479,7 +506,9 @@ def assert_performance_regression(
 ):
     """Assert that performance hasn't regressed beyond threshold."""
 
-    is_regression = recorder.check_regression(test_name, metric_name, value, threshold)
+    is_regression = recorder.check_regression(
+        test_name, metric_name, value, threshold
+    )
 
     if is_regression:
         baseline = recorder.baselines[test_name][metric_name]
@@ -543,14 +572,18 @@ __all__ = [
 def pytest_configure(config):
     """Configure performance test markers and options."""
     config.addinivalue_line(
-        "markers", "performance: mark test as a performance test that should be fast"
+        "markers",
+        "performance: mark test as a performance test that should be fast",
     )
-    config.addinivalue_line("markers", "memory: mark test as a memory usage test")
+    config.addinivalue_line(
+        "markers", "memory: mark test as a memory usage test"
+    )
     config.addinivalue_line(
         "markers", "regression: mark test as a performance regression test"
     )
     config.addinivalue_line(
-        "markers", "benchmark: mark test for benchmarking (requires pytest-benchmark)"
+        "markers",
+        "benchmark: mark test for benchmarking (requires pytest-benchmark)",
     )
 
 

@@ -179,7 +179,10 @@ class TestMCMCConfigurationReading:
 
         # Create a realistic config structure matching the project's format
         realistic_config = {
-            "metadata": {"config_version": "6.0", "analysis_mode": "static_isotropic"},
+            "metadata": {
+                "config_version": "6.0",
+                "analysis_mode": "static_isotropic",
+            },
             "optimization_config": {
                 "classical_optimization": {"methods": ["Nelder-Mead"]},
                 "mcmc_sampling": {
@@ -227,10 +230,25 @@ class TestMCMCConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -330,9 +348,9 @@ class TestMCMCConfigurationReading:
         old_tune = config_with_wrong_keys.get("mcmc_tune", 500)
 
         # Test new (correct) access pattern
-        mcmc_config = config_with_wrong_keys.get("optimization_config", {}).get(
-            "mcmc_sampling", {}
-        )
+        mcmc_config = config_with_wrong_keys.get(
+            "optimization_config", {}
+        ).get("mcmc_sampling", {})
         new_draws = mcmc_config.get("draws", 1000)
         new_chains = mcmc_config.get("chains", 2)
         new_tune = mcmc_config.get("tune", 500)
@@ -365,8 +383,18 @@ class TestMCMCConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                 ]
             },
@@ -471,10 +499,25 @@ class TestMCMCConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -485,7 +528,10 @@ class TestMCMCConfigurationReading:
                     {"name": "phi0", "min": 0.0, "max": 0.0, "type": "fixed"},
                 ]
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
         }
 
         # Create mock core object
@@ -498,7 +544,9 @@ class TestMCMCConfigurationReading:
         sampler = MCMCSampler(mock_core, realistic_config)
 
         # Test that all parameter bounds are accessible
-        param_bounds = realistic_config.get("parameter_space", {}).get("bounds", [])
+        param_bounds = realistic_config.get("parameter_space", {}).get(
+            "bounds", []
+        )
         assert len(param_bounds) == 7
 
         # Test active parameters bounds (first 3 for static mode)

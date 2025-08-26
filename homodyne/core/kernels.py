@@ -97,7 +97,9 @@ def _solve_least_squares_batch_fallback(
         det = sum_theory_sq * n_data - sum_theory * sum_theory
 
         if abs(det) > 1e-12:  # Non-singular matrix
-            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
+            contrast_batch[i] = (
+                n_data * sum_theory_exp - sum_theory * sum_exp
+            ) / det
             offset_batch[i] = (
                 sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
             ) / det
@@ -108,7 +110,9 @@ def _solve_least_squares_batch_fallback(
     return contrast_batch, offset_batch
 
 
-def _create_time_integral_matrix_impl(time_dependent_array: np.ndarray) -> np.ndarray:
+def _create_time_integral_matrix_impl(
+    time_dependent_array: np.ndarray,
+) -> np.ndarray:
     """
     Create time integral matrix for correlation calculations.
 
@@ -194,7 +198,9 @@ def _calculate_diffusion_coefficient_impl(time_array, D0, alpha, D_offset):
     return D_t
 
 
-def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
+def _calculate_shear_rate_impl(
+    time_array, gamma_dot_t0, beta, gamma_dot_t_offset
+):
     """
     Calculate time-dependent shear rate.
 
@@ -246,7 +252,9 @@ def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     gamma_dot_t = np.empty_like(time_array)
     # Vectorized computation with positivity constraint
     for i in range(len(time_array)):
-        gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
+        gamma_value = (
+            gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
+        )
         # Ensure γ̇(t) > 0 always using conditional (Numba-compatible)
         if gamma_value > 1e-10:
             gamma_dot_t[i] = gamma_value
@@ -365,7 +373,9 @@ def _compute_sinc_squared_impl(shear_integral_matrix, prefactor):
             argument = prefactor * shear_integral_matrix[i, j]
 
             # Optimized small argument handling with Taylor expansion
-            if abs(argument) < 1e-10:  # Use tighter threshold to catch more edge cases
+            if (
+                abs(argument) < 1e-10
+            ):  # Use tighter threshold to catch more edge cases
                 # Taylor expansion: sinc²(x) ≈ 1 - (πx)²/3 + O(x⁴)
                 pi_arg_sq = (pi * argument) ** 2
                 sinc_squared[i, j] = 1.0 - pi_arg_sq / 3.0
@@ -413,12 +423,20 @@ def memory_efficient_cache(maxsize=128):
             for arg in args:
                 if isinstance(arg, np.ndarray):
                     # Use faster hash-based key generation
-                    array_info = (arg.shape, arg.dtype.str, hash(arg.data.tobytes()))
+                    array_info = (
+                        arg.shape,
+                        arg.dtype.str,
+                        hash(arg.data.tobytes()),
+                    )
                     key_parts.append(str(array_info))
                 elif hasattr(arg, "__array__"):
                     # Handle array-like objects
                     arr = np.asarray(arg)
-                    array_info = (arr.shape, arr.dtype.str, hash(arr.data.tobytes()))
+                    array_info = (
+                        arr.shape,
+                        arr.dtype.str,
+                        hash(arr.data.tobytes()),
+                    )
                     key_parts.append(str(array_info))
                 else:
                     key_parts.append(str(arg))
@@ -491,7 +509,9 @@ def memory_efficient_cache(maxsize=128):
                     return self
                 else:
                     # Return a bound method
-                    return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
+                    return lambda *args, **kwargs: self._func(
+                        instance, *args, **kwargs
+                    )
 
         return CachedFunction(wrapper)
 
@@ -549,7 +569,9 @@ def _solve_least_squares_batch_numba_impl(theory_batch, exp_batch):
         det = sum_theory_sq * n_data - sum_theory * sum_theory
 
         if abs(det) > 1e-12:  # Non-singular matrix
-            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
+            contrast_batch[i] = (
+                n_data * sum_theory_exp - sum_theory * sum_exp
+            ) / det
             offset_batch[i] = (
                 sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
             ) / det
@@ -633,7 +655,11 @@ else:
 # Apply numba decorator to all other functions if available, otherwise use implementations directly
 if NUMBA_AVAILABLE:
     create_time_integral_matrix_numba = njit(
-        float64[:, :](float64[:]), parallel=False, cache=True, fastmath=True, nogil=True
+        float64[:, :](float64[:]),
+        parallel=False,
+        cache=True,
+        fastmath=True,
+        nogil=True,
     )(_create_time_integral_matrix_impl)
 
     calculate_diffusion_coefficient_numba = njit(
@@ -652,15 +678,23 @@ if NUMBA_AVAILABLE:
     )(_calculate_shear_rate_impl)
 
     compute_g1_correlation_numba = njit(
-        float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True
+        float64[:, :](float64[:, :], float64),
+        parallel=False,
+        cache=True,
+        fastmath=True,
     )(_compute_g1_correlation_impl)
 
     compute_sinc_squared_numba = njit(
-        float64[:, :](float64[:, :], float64), parallel=False, cache=True, fastmath=True
+        float64[:, :](float64[:, :], float64),
+        parallel=False,
+        cache=True,
+        fastmath=True,
     )(_compute_sinc_squared_impl)
 else:
     create_time_integral_matrix_numba = _create_time_integral_matrix_impl
-    calculate_diffusion_coefficient_numba = _calculate_diffusion_coefficient_impl
+    calculate_diffusion_coefficient_numba = (
+        _calculate_diffusion_coefficient_impl
+    )
     calculate_shear_rate_numba = _calculate_shear_rate_impl
     compute_g1_correlation_numba = _compute_g1_correlation_impl
     compute_sinc_squared_numba = _compute_sinc_squared_impl

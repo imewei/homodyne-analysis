@@ -251,16 +251,22 @@ class MCMCSampler:
                     "   Warning: No angles found in optimization ranges [-10°, 10°] and [170°, 190°]"
                 )
                 print("   Falling back to all angles for MCMC")
-                logger.warning("No MCMC optimization angles found, using all angles")
+                logger.warning(
+                    "No MCMC optimization angles found, using all angles"
+                )
 
         # Update n_angles after potential filtering
         n_angles, n_time, _ = c2_experimental.shape
 
         # Optional subsampling for large datasets
-        subsample_factor = performance_config.get("bayesian_subsample_factor", 1)
+        subsample_factor = performance_config.get(
+            "bayesian_subsample_factor", 1
+        )
         if subsample_factor > 1 and n_time > 50:
             subsample_indices = np.arange(0, n_time, subsample_factor)
-            c2_data = c2_experimental[:, subsample_indices, :][:, :, subsample_indices]
+            c2_data = c2_experimental[:, subsample_indices, :][
+                :, :, subsample_indices
+            ]
             print(
                 f"   Subsampling data by factor {subsample_factor}: {n_time}x{n_time} -> {
                     len(subsample_indices)}x{
@@ -324,7 +330,9 @@ class MCMCSampler:
                             else:
                                 raise ImportError("PyMC not available")
                         elif prior_type == "Normal":
-                            return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)
+                            return pm.Normal(
+                                param_name, mu=prior_mu, sigma=prior_sigma
+                            )
                         elif (
                             prior_type == "LogNormal"
                             and min_val is not None
@@ -333,18 +341,24 @@ class MCMCSampler:
                             # Convert to log space
                             log_mu = np.log(prior_mu) if prior_mu > 0 else 0.0
                             log_sigma = prior_sigma
-                            return pm.LogNormal(param_name, mu=log_mu, sigma=log_sigma)
+                            return pm.LogNormal(
+                                param_name, mu=log_mu, sigma=log_sigma
+                            )
                         elif (
                             prior_type == "Uniform"
                             and min_val is not None
                             and max_val is not None
                         ):
-                            return pm.Uniform(param_name, lower=min_val, upper=max_val)
+                            return pm.Uniform(
+                                param_name, lower=min_val, upper=max_val
+                            )
                         else:
                             print(
                                 f"   ⚠ Unknown prior type '{prior_type}' for {param_name}, using Normal"
                             )
-                            return pm.Normal(param_name, mu=prior_mu, sigma=prior_sigma)
+                            return pm.Normal(
+                                param_name, mu=prior_mu, sigma=prior_sigma
+                            )
                     else:
                         logger.warning(
                             f"Parameter name mismatch: expected {param_name}, got {
@@ -368,7 +382,11 @@ class MCMCSampler:
                         "type": "TruncatedNormal",
                     },
                     "beta": {"mu": 0.0, "sigma": 0.1, "type": "Normal"},
-                    "gamma_dot_t_offset": {"mu": 0.0, "sigma": 1e-3, "type": "Normal"},
+                    "gamma_dot_t_offset": {
+                        "mu": 0.0,
+                        "sigma": 1e-3,
+                        "type": "Normal",
+                    },
                     "phi0": {"mu": 0.0, "sigma": 5.0, "type": "Normal"},
                 }
 
@@ -409,13 +427,17 @@ class MCMCSampler:
                 assert alpha is not None
                 assert D_offset is not None
 
-                print("   ✓ Successfully created diffusion priors from configuration")
+                print(
+                    "   ✓ Successfully created diffusion priors from configuration"
+                )
             except Exception as e:
                 print(f"   ⚠ Error creating priors from config: {e}")
                 # Fallback with hardcoded values
                 D0 = create_prior_from_config("D0", -1)  # Force fallback
                 alpha = create_prior_from_config("alpha", -1)  # Force fallback
-                D_offset = create_prior_from_config("D_offset", -1)  # Force fallback
+                D_offset = create_prior_from_config(
+                    "D_offset", -1
+                )  # Force fallback
 
                 # Assert that these variables are not None for type checking
                 assert D0 is not None
@@ -434,7 +456,9 @@ class MCMCSampler:
                         "gamma_dot_t_offset", 5
                     )
                     phi0 = create_prior_from_config("phi0", 6)
-                    print("   ✓ Created laminar flow priors from configuration")
+                    print(
+                        "   ✓ Created laminar flow priors from configuration"
+                    )
                 except Exception as e:
                     print(f"   ⚠ Error creating laminar flow priors: {e}")
                     # Fallback
@@ -444,7 +468,9 @@ class MCMCSampler:
                         "gamma_dot_t_offset", -1
                     )
                     phi0 = create_prior_from_config("phi0", -1)
-                    print("   ✓ Using fallback priors for laminar flow parameters")
+                    print(
+                        "   ✓ Using fallback priors for laminar flow parameters"
+                    )
             else:
                 # Static mode: shear parameters are fixed at zero (not used)
                 print(
@@ -454,7 +480,9 @@ class MCMCSampler:
                 # variable errors
                 gamma_dot_t0 = pt.constant(0.0, name="gamma_dot_t0")
                 beta = pt.constant(0.0, name="beta")
-                gamma_dot_t_offset = pt.constant(0.0, name="gamma_dot_t_offset")
+                gamma_dot_t_offset = pt.constant(
+                    0.0, name="gamma_dot_t_offset"
+                )
                 phi0 = pt.constant(0.0, name="phi0")
 
             # Noise model
@@ -474,7 +502,9 @@ class MCMCSampler:
                 valid_mask = ~np.isnan(c2_data)
                 if np.any(valid_mask):
                     c2_mean_valid = np.mean(c2_data[valid_mask])
-                    c2_data = np.where(np.isnan(c2_data), c2_mean_valid, c2_data)
+                    c2_data = np.where(
+                        np.isnan(c2_data), c2_mean_valid, c2_data
+                    )
                     print(
                         f"   ✓ Replaced NaN values with mean: {
                             c2_mean_valid:.4f}"
@@ -516,7 +546,9 @@ class MCMCSampler:
             # The choice between simple and full forward models affects computational speed
             # but scaling optimization is fundamental to proper uncertainty
             # quantification.
-            simple_forward = noise_config.get("use_simple_forward_model", False)
+            simple_forward = noise_config.get(
+                "use_simple_forward_model", False
+            )
 
             if simple_forward:
                 print(
@@ -626,9 +658,9 @@ class MCMCSampler:
                     # Implement scaling optimization: fitted = theory * contrast + offset
                     # Use bounded priors with realistic physical constraints
                     # from configuration
-                    scaling_config = self.config.get("optimization_config", {}).get(
-                        "scaling_parameters", {}
-                    )
+                    scaling_config = self.config.get(
+                        "optimization_config", {}
+                    ).get("scaling_parameters", {})
                     contrast_config = scaling_config.get("contrast", {})
                     offset_config = scaling_config.get("offset", {})
 
@@ -734,13 +766,17 @@ class MCMCSampler:
 
             # Add validation checks
             if pm is not None:
-                D_positive = pm.Deterministic("D_positive", D0 > 0)  # noqa: F841
+                D_positive = pm.Deterministic(
+                    "D_positive", D0 > 0
+                )  # noqa: F841
                 if not is_static_mode and effective_param_count > 3:
                     # Only check gamma_dot_t0 positivity in laminar flow mode
                     gamma_positive = pm.Deterministic(
                         "gamma_positive", gamma_dot_t0 > 0
                     )  # noqa: F841
-                D_total = pm.Deterministic("D_total", D0 + D_offset)  # noqa: F841
+                D_total = pm.Deterministic(
+                    "D_total", D0 + D_offset
+                )  # noqa: F841
             else:
                 raise ImportError("PyMC not available")
 
@@ -825,7 +861,9 @@ class MCMCSampler:
         cores = min(chains, getattr(self.core, "num_threads", 1))
 
         print("   Running MCMC (NUTS) Sampling...")
-        print(f"     Mode: {analysis_mode} ({effective_param_count} parameters)")
+        print(
+            f"     Mode: {analysis_mode} ({effective_param_count} parameters)"
+        )
 
         # Calculate effective draws after thinning
         effective_draws = draws // thin if thin > 1 else draws
@@ -853,18 +891,26 @@ class MCMCSampler:
         # 4. Hardcoded fallback values (last resort)
 
         initvals = None
-        best_params_classical = getattr(self.core, "best_params_classical", None)
+        best_params_classical = getattr(
+            self.core, "best_params_classical", None
+        )
         best_params_bo = getattr(self.core, "best_params_bo", None)
 
         # Priority 1: Use classical fitting results if available
         if best_params_classical is not None and not np.any(
             np.isnan(best_params_classical)
         ):
-            print("     ✓ Using Classical optimization results for MCMC initialization")
+            print(
+                "     ✓ Using Classical optimization results for MCMC initialization"
+            )
             init_params = best_params_classical
         # Priority 2: Use Bayesian Optimization results if available
-        elif best_params_bo is not None and not np.any(np.isnan(best_params_bo)):
-            print("     ✓ Using Bayesian Optimization results for MCMC initialization")
+        elif best_params_bo is not None and not np.any(
+            np.isnan(best_params_bo)
+        ):
+            print(
+                "     ✓ Using Bayesian Optimization results for MCMC initialization"
+            )
             init_params = best_params_bo
         else:
             init_params = None
@@ -876,16 +922,20 @@ class MCMCSampler:
                 "     Using configuration file initial parameters for MCMC initialization"
             )
             try:
-                config_initial_params = self.config.get("initial_parameters", {}).get(
-                    "values", None
-                )
+                config_initial_params = self.config.get(
+                    "initial_parameters", {}
+                ).get("values", None)
                 if config_initial_params is not None:
                     init_params = np.array(
                         config_initial_params[:effective_param_count]
                     )
-                    print(f"     Configuration initialization values: {init_params}")
+                    print(
+                        f"     Configuration initialization values: {init_params}"
+                    )
                 else:
-                    print("     ⚠ No initial parameter values found in configuration")
+                    print(
+                        "     ⚠ No initial parameter values found in configuration"
+                    )
                     init_params = None
             except Exception as e:
                 print(f"     ⚠ Error reading configuration parameters: {e}")
@@ -893,7 +943,9 @@ class MCMCSampler:
 
         # Priority 4: Use hardcoded fallback values as last resort
         if init_params is None:
-            print("     ⚠ Using hardcoded fallback values for MCMC initialization")
+            print(
+                "     ⚠ Using hardcoded fallback values for MCMC initialization"
+            )
             # Hardcoded fallback values - should match your specified defaults
             fallback_params = [
                 16000.0,  # D0 - your specified default
@@ -911,12 +963,20 @@ class MCMCSampler:
                     ]
                 )
             init_params = np.array(fallback_params[:effective_param_count])
-            print(f"     Hardcoded fallback initialization values: {init_params}")
+            print(
+                f"     Hardcoded fallback initialization values: {init_params}"
+            )
 
         # Validate initialization parameters against physical constraints
-        print("     Validating initialization parameters for physical constraints...")
-        if not self._validate_initialization_constraints(init_params, is_static_mode):
-            print("     ⚠ Initial parameters may violate constraints, adjusting...")
+        print(
+            "     Validating initialization parameters for physical constraints..."
+        )
+        if not self._validate_initialization_constraints(
+            init_params, is_static_mode
+        ):
+            print(
+                "     ⚠ Initial parameters may violate constraints, adjusting..."
+            )
             # Adjust D0 if it's too large for the constraint system
             if len(init_params) > 0:
                 # Use a conservative D0 value that won't violate constraints
@@ -985,7 +1045,9 @@ class MCMCSampler:
                 new_value = value * (1 + perturbation)
                 # Validate the new value
                 if np.isnan(new_value) or np.isinf(new_value):
-                    new_value = value  # Keep original if perturbation causes issues
+                    new_value = (
+                        value  # Keep original if perturbation causes issues
+                    )
                 initvals[chain_idx][param] = new_value
 
         mcmc_start = time.time()
@@ -1031,7 +1093,10 @@ class MCMCSampler:
         try:
             # Extract posterior mean parameters as array
             param_array = np.array(
-                [posterior_means.get(name, 0.0) for name in param_names_effective]
+                [
+                    posterior_means.get(name, 0.0)
+                    for name in param_names_effective
+                ]
             )
 
             # Calculate chi-squared using the core method
@@ -1102,18 +1167,24 @@ class MCMCSampler:
             )
         else:
             # Fallback to core method
-            is_static_mode = getattr(self.core, "is_static_mode", lambda: False)()
+            is_static_mode = getattr(
+                self.core, "is_static_mode", lambda: False
+            )()
             analysis_mode = "static" if is_static_mode else "laminar_flow"
             effective_param_count = 3 if is_static_mode else 7
 
-        print(f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)")
+        print(
+            f"  Analysis mode: {analysis_mode} ({effective_param_count} parameters)"
+        )
         logger.info(
             f"MCMC sampling using {analysis_mode} mode with {effective_param_count} parameters"
         )
 
         # Load data if needed
         if c2_experimental is None or phi_angles is None:
-            c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
+            c2_experimental, _, phi_angles, _ = (
+                self.core.load_experimental_data()
+            )
 
         # Type assertions after loading data
         assert (
@@ -1130,7 +1201,10 @@ class MCMCSampler:
         # Determine angle filtering setting
         if filter_angles_for_optimization is None:
             # Get from ConfigManager if available
-            if hasattr(self.core, "config_manager") and self.core.config_manager:
+            if (
+                hasattr(self.core, "config_manager")
+                and self.core.config_manager
+            ):
                 filter_angles_for_optimization = (
                     self.core.config_manager.is_angle_filtering_enabled()
                 )
@@ -1156,7 +1230,9 @@ class MCMCSampler:
 
         # Add convergence diagnostics
         if "trace" in results:
-            diagnostics = self.compute_convergence_diagnostics(results["trace"])
+            diagnostics = self.compute_convergence_diagnostics(
+                results["trace"]
+            )
             results["diagnostics"] = diagnostics
 
         return results
@@ -1243,7 +1319,11 @@ class MCMCSampler:
         """
         if not PYMC_AVAILABLE or az is None:
             logger.warning("Arviz not available - returning basic statistics")
-            return {"note": ("Posterior statistics unavailable - arviz not installed")}
+            return {
+                "note": (
+                    "Posterior statistics unavailable - arviz not installed"
+                )
+            }
 
         try:
             # Summary statistics
@@ -1284,7 +1364,9 @@ class MCMCSampler:
             logger.warning(f"Failed to extract posterior statistics: {e}")
             return {"error": str(e)}
 
-    def generate_posterior_samples(self, n_samples: int = 1000) -> Optional[np.ndarray]:
+    def generate_posterior_samples(
+        self, n_samples: int = 1000
+    ) -> Optional[np.ndarray]:
         """
         Generate posterior parameter samples for uncertainty propagation.
 
@@ -1348,7 +1430,10 @@ class MCMCSampler:
         """
         try:
             # Check for divergences
-            if hasattr(trace, "sample_stats") and "diverging" in trace.sample_stats:
+            if (
+                hasattr(trace, "sample_stats")
+                and "diverging" in trace.sample_stats
+            ):
                 n_divergent = trace.sample_stats.diverging.sum().values
                 divergent_fraction = float(
                     n_divergent / trace.sample_stats.diverging.size
@@ -1460,25 +1545,36 @@ class MCMCSampler:
         # Validate MCMC-specific settings
         mcmc_draws = self.mcmc_config.get("draws", 1000)
         if not isinstance(mcmc_draws, int) or mcmc_draws < 1:
-            raise ValueError(f"draws must be a positive integer, got {mcmc_draws}")
+            raise ValueError(
+                f"draws must be a positive integer, got {mcmc_draws}"
+            )
 
         mcmc_tune = self.mcmc_config.get("tune", 500)
         if not isinstance(mcmc_tune, int) or mcmc_tune < 1:
-            raise ValueError(f"tune must be a positive integer, got {mcmc_tune}")
+            raise ValueError(
+                f"tune must be a positive integer, got {mcmc_tune}"
+            )
 
         mcmc_chains = self.mcmc_config.get("chains", 2)
         if not isinstance(mcmc_chains, int) or mcmc_chains < 1:
-            raise ValueError(f"chains must be a positive integer, got {mcmc_chains}")
+            raise ValueError(
+                f"chains must be a positive integer, got {mcmc_chains}"
+            )
 
         target_accept = self.mcmc_config.get("target_accept", 0.95)
-        if not isinstance(target_accept, (int, float)) or not 0 < target_accept < 1:
+        if (
+            not isinstance(target_accept, (int, float))
+            or not 0 < target_accept < 1
+        ):
             raise ValueError(
                 f"target_accept must be between 0 and 1, got {target_accept}"
             )
 
         mcmc_thin = self.mcmc_config.get("thin", 1)
         if not isinstance(mcmc_thin, int) or mcmc_thin < 1:
-            raise ValueError(f"thin must be a positive integer, got {mcmc_thin}")
+            raise ValueError(
+                f"thin must be a positive integer, got {mcmc_thin}"
+            )
 
         logger.debug("MCMC configuration validated successfully")
 
@@ -1522,7 +1618,9 @@ class MCMCSampler:
             # Using config defaults: contrast ~0.3, offset ~1.0
             contrast_typical = 0.3
             offset_typical = 1.0
-            fitted_typical = theory_normalized * contrast_typical + offset_typical
+            fitted_typical = (
+                theory_normalized * contrast_typical + offset_typical
+            )
 
             # Also check with range extremes
             contrast_min, contrast_max = 0.05, 0.5
@@ -1773,7 +1871,10 @@ class MCMCSampler:
         np.ndarray or None
             Posterior mean parameters
         """
-        if self.mcmc_result is None or "posterior_means" not in self.mcmc_result:
+        if (
+            self.mcmc_result is None
+            or "posterior_means" not in self.mcmc_result
+        ):
             logger.warning("No MCMC results available")
             return None
 
@@ -1782,7 +1883,9 @@ class MCMCSampler:
             posterior_means = self.mcmc_result["posterior_means"]
 
             # Convert to array in parameter order
-            params = np.array([posterior_means.get(name, 0.0) for name in param_names])
+            params = np.array(
+                [posterior_means.get(name, 0.0) for name in param_names]
+            )
             return params
 
         except Exception as e:
@@ -1989,7 +2092,9 @@ if __name__ == "__main__":
     print("\nTo use the MCMC sampler:")
     print("1. Create a HomodyneAnalysisCore instance with your configuration")
     print("2. Use create_mcmc_sampler() to create a sampler instance")
-    print("3. Call run_mcmc_analysis() to perform Bayesian parameter estimation")
+    print(
+        "3. Call run_mcmc_analysis() to perform Bayesian parameter estimation"
+    )
 
     if not PYMC_AVAILABLE:
         print("\nWarning: Install PyMC for full functionality:")

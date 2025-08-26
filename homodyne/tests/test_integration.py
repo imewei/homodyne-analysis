@@ -117,7 +117,9 @@ class TestCompleteWorkflow:
         assert save_status["json"] is True
 
         # Step 3: Create plots
-        plot_status = create_all_plots(dummy_analysis_results, output_dir, dummy_config)
+        plot_status = create_all_plots(
+            dummy_analysis_results, output_dir, dummy_config
+        )
         successful_plots = sum(1 for status in plot_status.values() if status)
         assert successful_plots >= 1
 
@@ -187,7 +189,10 @@ class TestCompleteWorkflow:
 
         # Test creating expected files in each directory
         # Main directory files
-        main_files = [base_dir / "homodyne_analysis_results.json", base_dir / "run.log"]
+        main_files = [
+            base_dir / "homodyne_analysis_results.json",
+            base_dir / "run.log",
+        ]
 
         # Create method-specific files in classical subdirectories
         method_names = ["nelder_mead", "gurobi"]
@@ -256,10 +261,14 @@ class TestCompleteWorkflow:
             assert "residuals" in data
 
         # Verify summary file
-        assert (base_dir / "classical" / "all_classical_methods_summary.json").exists()
+        assert (
+            base_dir / "classical" / "all_classical_methods_summary.json"
+        ).exists()
 
         # Verify experimental data plots
-        assert len(list((base_dir / "exp_data").glob("*.png"))) >= 1  # Validation plots
+        assert (
+            len(list((base_dir / "exp_data").glob("*.png"))) >= 1
+        )  # Validation plots
 
 
 class TestMockedHeavyComputation:
@@ -348,10 +357,14 @@ class TestMockedHeavyComputation:
 
             # Verify mock was used and data is correct shape
             mock_load.assert_called_once_with("mock_file.npz")
-            assert data["experimental_data"].shape == mock_correlation_data.shape
+            assert (
+                data["experimental_data"].shape == mock_correlation_data.shape
+            )
             assert np.array_equal(data["phi_angles"], mock_phi_angles)
 
-    @pytest.mark.skipif(not PLOTTING_AVAILABLE, reason="Plotting module not available")
+    @pytest.mark.skipif(
+        not PLOTTING_AVAILABLE, reason="Plotting module not available"
+    )
     def test_plotting_workflow_integration(self, temp_directory, dummy_config):
         """Test plotting workflow integration without parameter evolution."""
 
@@ -396,7 +409,9 @@ class TestErrorHandlingIntegration:
 
         # Save should succeed
         if IO_UTILS_AVAILABLE:
-            save_status = save_analysis_results(partial_results, config, "partial_test")
+            save_status = save_analysis_results(
+                partial_results, config, "partial_test"
+            )
             assert save_status["json"] is True
 
         # Plotting should handle missing data gracefully
@@ -452,9 +467,13 @@ class TestErrorHandlingIntegration:
             # Attempt to save results should fail gracefully
             if IO_UTILS_AVAILABLE:
                 results = {"test": "data"}
-                config = {"output_settings": {"results_directory": str(readonly_dir)}}
+                config = {
+                    "output_settings": {"results_directory": str(readonly_dir)}
+                }
 
-                save_status = save_analysis_results(results, config, "permission_test")
+                save_status = save_analysis_results(
+                    results, config, "permission_test"
+                )
 
                 # Should handle permission error gracefully
                 assert save_status["json"] is False
@@ -481,7 +500,9 @@ class TestDataValidation:
         wrong_angles = np.random.rand(5, 20, 30)  # Too many angles
         assert wrong_angles.shape[0] != len(dummy_phi_angles)
 
-        wrong_dimensions = np.random.rand(3, 20)  # Missing delay time dimension
+        wrong_dimensions = np.random.rand(
+            3, 20
+        )  # Missing delay time dimension
         assert len(wrong_dimensions.shape) != 3
 
         # Invalid data values
@@ -639,7 +660,9 @@ class TestPerAngleAnalysisIntegration:
         }
 
         # Mock analyzer with per-angle analysis capability
-        with patch("homodyne.analysis.core.HomodyneAnalysisCore") as MockAnalyzer:
+        with patch(
+            "homodyne.analysis.core.HomodyneAnalysisCore"
+        ) as MockAnalyzer:
             mock_instance = Mock()
             MockAnalyzer.return_value = mock_instance
             mock_instance.config = dummy_config
@@ -655,7 +678,9 @@ class TestPerAngleAnalysisIntegration:
                     "overall_quality": "warning",
                     "per_angle_quality": "acceptable",
                     "combined_quality": "warning",
-                    "quality_issues": ["Overall chi-squared above warning threshold"],
+                    "quality_issues": [
+                        "Overall chi-squared above warning threshold"
+                    ],
                 },
                 "angle_categorization": {
                     "good_angles": {"count": 8, "fraction": 0.8},
@@ -685,7 +710,9 @@ class TestPerAngleAnalysisIntegration:
             # Verify quality assessment structure
             assert "quality_assessment" in result
             assert "angle_categorization" in result
-            assert result["quality_assessment"]["combined_quality"] == "warning"
+            assert (
+                result["quality_assessment"]["combined_quality"] == "warning"
+            )
 
     def test_per_angle_results_integration(self, temp_directory, dummy_config):
         """Test that per-angle results are properly included in main results."""
@@ -750,7 +777,9 @@ class TestConcurrencyAndRaceConditions:
         subdirs = [f"subdir_{i}" for i in range(5)]
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(create_directory, subdir) for subdir in subdirs]
+            futures = [
+                executor.submit(create_directory, subdir) for subdir in subdirs
+            ]
 
             # Wait for all to complete
             for future in futures:
@@ -782,7 +811,9 @@ class TestConcurrencyAndRaceConditions:
         file_ids = list(range(5))
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(save_test_file, fid) for fid in file_ids]
+            futures = [
+                executor.submit(save_test_file, fid) for fid in file_ids
+            ]
             results = [future.result() for future in futures]
 
         # All saves should succeed
@@ -804,13 +835,16 @@ class TestAnalysisWorkflowIntegration:
     """Test integration of analysis workflow with plotting."""
 
     @pytest.mark.skipif(
-        not CORE_ANALYSIS_AVAILABLE, reason="Core analysis module not available"
+        not CORE_ANALYSIS_AVAILABLE,
+        reason="Core analysis module not available",
     )
     def test_analysis_plotting_integration(self, temp_directory):
         """Test that analysis workflow integrates properly with plotting."""
         from homodyne.tests.fixtures import create_minimal_config_file
 
-        config_file = create_minimal_config_file(temp_directory / "test_config.json")
+        config_file = create_minimal_config_file(
+            temp_directory / "test_config.json"
+        )
 
         try:
             # Initialize analyzer
@@ -835,7 +869,9 @@ class TestAnalysisWorkflowIntegration:
             }
 
             # Test plot data preparation
-            plot_data = analyzer._prepare_plot_data(mock_results, analyzer.config or {})
+            plot_data = analyzer._prepare_plot_data(
+                mock_results, analyzer.config or {}
+            )
             assert plot_data is not None
             assert "best_parameters" in plot_data
             assert "parameter_bounds" in plot_data
@@ -869,7 +905,9 @@ class TestAnalysisWorkflowIntegration:
 
             posterior_dict = {}
             for param in param_names:
-                posterior_dict[param] = np.random.normal(0, 1, (n_chains, n_draws))
+                posterior_dict[param] = np.random.normal(
+                    0, 1, (n_chains, n_draws)
+                )
 
             trace_data = az.from_dict({"posterior": posterior_dict})
 
@@ -885,17 +923,27 @@ class TestAnalysisWorkflowIntegration:
                         # Updated to match actual MCMC module output format
                         "rhat": {"D0": 1.02, "alpha": 1.03, "D_offset": 1.01},
                         "ess": {"D0": 400, "alpha": 350, "D_offset": 450},
-                        "mcse": {"D0": 0.001, "alpha": 0.002, "D_offset": 0.0015},
+                        "mcse": {
+                            "D0": 0.001,
+                            "alpha": 0.002,
+                            "D_offset": 0.0015,
+                        },
                         # Keep backward compatibility with old format too
                         "r_hat": {"D0": 1.02, "alpha": 1.03, "D_offset": 1.01},
                         "ess_bulk": {"D0": 400, "alpha": 350, "D_offset": 450},
-                        "mcse_mean": {"D0": 0.001, "alpha": 0.002, "D_offset": 0.0015},
+                        "mcse_mean": {
+                            "D0": 0.001,
+                            "alpha": 0.002,
+                            "D_offset": 0.0015,
+                        },
                     },
                 }
             }
 
             # Test MCMC plot data preparation
-            plot_data = analyzer._prepare_plot_data(mcmc_results, analyzer.config or {})
+            plot_data = analyzer._prepare_plot_data(
+                mcmc_results, analyzer.config or {}
+            )
             assert plot_data is not None
             assert "mcmc_diagnostics" in plot_data
             assert "parameter_names" in plot_data
@@ -958,7 +1006,8 @@ class TestAnalysisWorkflowIntegration:
                 raise
 
     @pytest.mark.skipif(
-        not CORE_ANALYSIS_AVAILABLE, reason="Core analysis module not available"
+        not CORE_ANALYSIS_AVAILABLE,
+        reason="Core analysis module not available",
     )
     def test_configuration_consistency_integration(self, temp_directory):
         """Test that configuration is consistent across analysis workflow."""
@@ -976,7 +1025,9 @@ class TestAnalysisWorkflowIntegration:
             param_names = config.get("initial_parameters", {}).get(
                 "parameter_names", []
             )
-            param_values = config.get("initial_parameters", {}).get("values", [])
+            param_values = config.get("initial_parameters", {}).get(
+                "values", []
+            )
             bounds = config.get("parameter_space", {}).get("bounds", [])
 
             # All should have same count
@@ -1074,10 +1125,12 @@ class TestAnalysisWorkflowIntegration:
                     "mcmc_trace": trace_data,
                     "mcmc_diagnostics": {
                         "r_hat": {
-                            name: np.random.uniform(1.0, 1.1) for name in param_names
+                            name: np.random.uniform(1.0, 1.1)
+                            for name in param_names
                         },
                         "ess_bulk": {
-                            name: np.random.randint(150, 400) for name in param_names
+                            name: np.random.randint(150, 400)
+                            for name in param_names
                         },
                         "mcse_mean": {
                             name: np.random.uniform(0.001, 0.005)
@@ -1098,7 +1151,9 @@ class TestAnalysisWorkflowIntegration:
         plots_dir = temp_directory / "comprehensive_plots"
         plots_dir.mkdir(exist_ok=True)
 
-        plot_status = create_all_plots(comprehensive_results, plots_dir, dummy_config)
+        plot_status = create_all_plots(
+            comprehensive_results, plots_dir, dummy_config
+        )
 
         # Check results
         assert isinstance(plot_status, dict)
@@ -1116,4 +1171,6 @@ class TestAnalysisWorkflowIntegration:
 
         # Verify file sizes (should contain actual plot data)
         for plot_file in all_plot_files:
-            assert plot_file.stat().st_size > 5000  # Reasonable minimum for plot file
+            assert (
+                plot_file.stat().st_size > 5000
+            )  # Reasonable minimum for plot file

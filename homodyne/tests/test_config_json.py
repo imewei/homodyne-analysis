@@ -138,7 +138,10 @@ class TestJSONParsing:
             else:
                 # This is acceptable - some implementations might raise
                 # FileNotFoundError
-                assert "not found" in str(e).lower() or "no such file" in str(e).lower()
+                assert (
+                    "not found" in str(e).lower()
+                    or "no such file" in str(e).lower()
+                )
         finally:
             os.chdir(original_cwd)
 
@@ -150,12 +153,15 @@ class TestParameterValidation:
         """Test that parameter names are consistent across configuration sections."""
         initial_params = dummy_config["initial_parameters"]["parameter_names"]
         bounds_params = [
-            bound["name"] for bound in dummy_config["parameter_space"]["bounds"]
+            bound["name"]
+            for bound in dummy_config["parameter_space"]["bounds"]
         ]
 
         # All initial parameters should have corresponding bounds
         for param in initial_params:
-            assert param in bounds_params, f"Parameter {param} missing from bounds"
+            assert (
+                param in bounds_params
+            ), f"Parameter {param} missing from bounds"
 
         # Check that we have the expected core parameters
         expected_params = [
@@ -168,7 +174,9 @@ class TestParameterValidation:
             "phi0",
         ]
         for param in expected_params:
-            assert param in initial_params, f"Expected parameter {param} not found"
+            assert (
+                param in initial_params
+            ), f"Expected parameter {param} not found"
 
     def test_parameter_bounds_validity(self, dummy_config):
         """Test that parameter bounds are physically reasonable."""
@@ -187,7 +195,9 @@ class TestParameterValidation:
 
             # Check specific physical constraints
             if bound["name"] == "D0":
-                assert bound["min"] > 0, "Diffusion coefficient D0 must be positive"
+                assert (
+                    bound["min"] > 0
+                ), "Diffusion coefficient D0 must be positive"
             elif bound["name"] == "gamma_dot_t0":
                 assert (
                     bound["min"] > 0
@@ -203,7 +213,8 @@ class TestParameterValidation:
         initial_values = dummy_config["initial_parameters"]["values"]
         parameter_names = dummy_config["initial_parameters"]["parameter_names"]
         bounds = {
-            bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]
+            bound["name"]: bound
+            for bound in dummy_config["parameter_space"]["bounds"]
         }
 
         for param_name, value in zip(parameter_names, initial_values):
@@ -216,7 +227,9 @@ class TestParameterValidation:
     def test_parameter_units_consistency(self, dummy_config):
         """Test that parameter units are correctly specified."""
         if "units" in dummy_config["initial_parameters"]:
-            parameter_names = dummy_config["initial_parameters"]["parameter_names"]
+            parameter_names = dummy_config["initial_parameters"][
+                "parameter_names"
+            ]
             units = dummy_config["initial_parameters"]["units"]
 
             assert len(units) == len(
@@ -353,13 +366,16 @@ class TestParameterTypes:
     def test_physical_parameter_constraints(self, dummy_config):
         """Test physical constraints on specific parameters."""
         bounds = {
-            bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]
+            bound["name"]: bound
+            for bound in dummy_config["parameter_space"]["bounds"]
         }
 
         # Diffusion coefficient constraints
         if "D0" in bounds:
             d0_bound = bounds["D0"]
-            assert d0_bound["min"] > 0, "Diffusion coefficient D0 must be positive"
+            assert (
+                d0_bound["min"] > 0
+            ), "Diffusion coefficient D0 must be positive"
             # Typical range for XPCS: 1e-3 to 1e6 Å²/s
             assert d0_bound["min"] >= 1e-6, "D0 minimum seems too small"
             assert d0_bound["max"] <= 1e8, "D0 maximum seems too large"
@@ -367,17 +383,27 @@ class TestParameterTypes:
         # Shear rate constraints
         if "gamma_dot_t0" in bounds:
             gamma_bound = bounds["gamma_dot_t0"]
-            assert gamma_bound["min"] > 0, "Shear rate gamma_dot_t0 must be positive"
+            assert (
+                gamma_bound["min"] > 0
+            ), "Shear rate gamma_dot_t0 must be positive"
             # Typical range for rheology: 1e-6 to 1e3 s⁻¹
-            assert gamma_bound["min"] >= 1e-8, "gamma_dot_t0 minimum seems too small"
-            assert gamma_bound["max"] <= 1e5, "gamma_dot_t0 maximum seems too large"
+            assert (
+                gamma_bound["min"] >= 1e-8
+            ), "gamma_dot_t0 minimum seems too small"
+            assert (
+                gamma_bound["max"] <= 1e5
+            ), "gamma_dot_t0 maximum seems too large"
 
         # Angle constraints
         if "phi0" in bounds:
             phi_bound = bounds["phi0"]
             # Angle should be in reasonable range
-            assert phi_bound["min"] >= -180, "phi0 minimum should be >= -180 degrees"
-            assert phi_bound["max"] <= 180, "phi0 maximum should be <= 180 degrees"
+            assert (
+                phi_bound["min"] >= -180
+            ), "phi0 minimum should be >= -180 degrees"
+            assert (
+                phi_bound["max"] <= 180
+            ), "phi0 maximum should be <= 180 degrees"
 
 
 class TestConfigurationValidation:
@@ -389,7 +415,9 @@ class TestConfigurationValidation:
         start_frame = temporal["start_frame"]
         end_frame = temporal["end_frame"]
 
-        assert start_frame < end_frame, "Start frame must be less than end frame"
+        assert (
+            start_frame < end_frame
+        ), "Start frame must be less than end frame"
         assert start_frame >= 0, "Start frame must be non-negative"
         assert end_frame > 0, "End frame must be positive"
 
@@ -410,7 +438,9 @@ class TestConfigurationValidation:
             comp = dummy_config["analyzer_parameters"]["computational"]
 
             if "num_threads" in comp:
-                assert comp["num_threads"] > 0, "Number of threads must be positive"
+                assert (
+                    comp["num_threads"] > 0
+                ), "Number of threads must be positive"
                 assert (
                     comp["num_threads"] <= 1024
                 ), "Number of threads seems unreasonably large"
@@ -435,11 +465,15 @@ class TestConfigurationValidation:
 
                 if "dpi" in plotting:
                     assert plotting["dpi"] > 0, "DPI must be positive"
-                    assert plotting["dpi"] <= 2400, "DPI seems unreasonably high"
+                    assert (
+                        plotting["dpi"] <= 2400
+                    ), "DPI seems unreasonably high"
 
                 if "figure_size" in plotting:
                     fig_size = plotting["figure_size"]
-                    assert isinstance(fig_size, list), "Figure size should be a list"
+                    assert isinstance(
+                        fig_size, list
+                    ), "Figure size should be a list"
                     assert (
                         len(fig_size) == 2
                     ), "Figure size should have exactly 2 elements"
@@ -482,8 +516,12 @@ class TestJSONSchemaCompliance:
         # Check temporal parameters
         temporal = dummy_config["analyzer_parameters"]["temporal"]
         assert isinstance(temporal["dt"], (int, float)), "dt must be numeric"
-        assert isinstance(temporal["start_frame"], int), "start_frame must be integer"
-        assert isinstance(temporal["end_frame"], int), "end_frame must be integer"
+        assert isinstance(
+            temporal["start_frame"], int
+        ), "start_frame must be integer"
+        assert isinstance(
+            temporal["end_frame"], int
+        ), "end_frame must be integer"
 
     def test_string_fields_in_config(self, dummy_config):
         """Test that string fields are properly typed."""
@@ -497,7 +535,9 @@ class TestJSONSchemaCompliance:
 
         for field in string_fields:
             if field in exp_data:
-                assert isinstance(exp_data[field], str), f"{field} should be a string"
+                assert isinstance(
+                    exp_data[field], str
+                ), f"{field} should be a string"
                 assert len(exp_data[field]) > 0, f"{field} should not be empty"
 
     def test_boolean_fields_in_config(self, dummy_config):
@@ -588,12 +628,16 @@ class TestConfigErrorHandling:
     def test_unicode_handling_in_config(self, temp_directory):
         """Test proper handling of unicode characters in configuration."""
         unicode_config = {
-            "metadata": {"description": "Configuration with unicode: α, β, γ, Å, °"},
+            "metadata": {
+                "description": "Configuration with unicode: α, β, γ, Å, °"
+            },
             "analyzer_parameters": {
                 "scattering": {"q_unit": "Å⁻¹"},
                 "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 10},
             },
-            "initial_parameters": {"units": ["Å²/s", "dimensionless", "s⁻¹", "°"]},
+            "initial_parameters": {
+                "units": ["Å²/s", "dimensionless", "s⁻¹", "°"]
+            },
         }
 
         config_file = temp_directory / "unicode_config.json"

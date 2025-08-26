@@ -14,7 +14,10 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from homodyne.optimization.classical import GUROBI_AVAILABLE, ClassicalOptimizer
+from homodyne.optimization.classical import (
+    GUROBI_AVAILABLE,
+    ClassicalOptimizer,
+)
 
 
 class TestClassicalOptimizationConfigurationReading:
@@ -50,7 +53,9 @@ class TestClassicalOptimizationConfigurationReading:
         optimizer = ClassicalOptimizer(mock_core, test_config)
 
         # Test that it can access initial parameters correctly
-        expected_values = np.array([1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0])
+        expected_values = np.array(
+            [1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0]
+        )
         actual_values = np.array(
             test_config["initial_parameters"]["values"], dtype=np.float64
         )
@@ -70,18 +75,48 @@ class TestClassicalOptimizationConfigurationReading:
         test_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
-                    {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
-                    {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0, "type": "Normal"},
-                    {"name": "beta", "min": -2.0, "max": 2.0, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 1.0,
+                        "max": 1000000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "D_offset",
+                        "min": -100,
+                        "max": 100,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 1e-6,
+                        "max": 1.0,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "beta",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "Normal",
+                    },
                     {
                         "name": "gamma_dot_t_offset",
                         "min": -1e-2,
                         "max": 1e-2,
                         "type": "Normal",
                     },
-                    {"name": "phi0", "min": -10.0, "max": 10.0, "type": "Normal"},
+                    {
+                        "name": "phi0",
+                        "min": -10.0,
+                        "max": 10.0,
+                        "type": "Normal",
+                    },
                 ]
             },
             "optimization_config": {
@@ -146,7 +181,9 @@ class TestClassicalOptimizationConfigurationReading:
 
         for i, bound in enumerate(param_bounds):
             if i < effective_param_count:
-                bounds.append((bound.get("min", -np.inf), bound.get("max", np.inf)))
+                bounds.append(
+                    (bound.get("min", -np.inf), bound.get("max", np.inf))
+                )
 
         # Expected bounds should match what's in the test_config above
         expected_bounds = [(1.0, 1000000), (-1.5, -0.5), (-100, 100)]
@@ -179,16 +216,27 @@ class TestClassicalOptimizationConfigurationReading:
                         "min": 0.0,
                         "max": 0.0,
                     },  # Fixed for static
-                    {"name": "beta", "min": 0.0, "max": 0.0},  # Fixed for static
+                    {
+                        "name": "beta",
+                        "min": 0.0,
+                        "max": 0.0,
+                    },  # Fixed for static
                     {
                         "name": "gamma_dot_t_offset",
                         "min": 0.0,
                         "max": 0.0,
                     },  # Fixed for static
-                    {"name": "phi0", "min": 0.0, "max": 0.0},  # Fixed for static
+                    {
+                        "name": "phi0",
+                        "min": 0.0,
+                        "max": 0.0,
+                    },  # Fixed for static
                 ]
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
             "optimization_config": {
                 "classical_optimization": {"methods": ["Nelder-Mead"]}
             },
@@ -212,7 +260,9 @@ class TestClassicalOptimizationConfigurationReading:
         static_parameters = initial_parameters[:effective_param_count]
 
         expected_static_params = np.array([18000, -1.59, 3.10])
-        np.testing.assert_array_equal(static_parameters, expected_static_params)
+        np.testing.assert_array_equal(
+            static_parameters, expected_static_params
+        )
 
         # Test bounds for static mode
         param_bounds = test_config.get("parameter_space", {}).get("bounds", [])
@@ -290,7 +340,10 @@ class TestClassicalOptimizationConfigurationReading:
         """Test with realistic configuration structure matching the project."""
 
         realistic_config = {
-            "metadata": {"config_version": "6.0", "analysis_mode": "static_isotropic"},
+            "metadata": {
+                "config_version": "6.0",
+                "analysis_mode": "static_isotropic",
+            },
             "initial_parameters": {
                 "values": [18000, -1.59, 3.10],
                 "parameter_names": [
@@ -306,10 +359,30 @@ class TestClassicalOptimizationConfigurationReading:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
-                    {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "D0",
+                        "min": 1.0,
+                        "max": 1000000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "D_offset",
+                        "min": -100,
+                        "max": 100,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -333,7 +406,10 @@ class TestClassicalOptimizationConfigurationReading:
                     },
                 }
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
         }
 
         # Create mock core
@@ -347,7 +423,9 @@ class TestClassicalOptimizationConfigurationReading:
         initial_params = np.array(
             realistic_config["initial_parameters"]["values"], dtype=np.float64
         )
-        param_bounds = realistic_config.get("parameter_space", {}).get("bounds", [])
+        param_bounds = realistic_config.get("parameter_space", {}).get(
+            "bounds", []
+        )
         opt_config = optimizer.optimization_config
 
         # Verify values match expected configuration
@@ -453,7 +531,10 @@ class TestGurobiIntegration:
 
         # Check that Gurobi options are accessible
         opt_config = optimizer.optimization_config
-        if "method_options" in opt_config and "Gurobi" in opt_config["method_options"]:
+        if (
+            "method_options" in opt_config
+            and "Gurobi" in opt_config["method_options"]
+        ):
             gurobi_options = opt_config["method_options"]["Gurobi"]
             assert gurobi_options["max_iterations"] == 500
             assert gurobi_options["tolerance"] == 1e-8
@@ -523,7 +604,9 @@ class TestGurobiIntegration:
             return (x - 10) ** 2
 
         test_config = {
-            "parameter_space": {"bounds": [{"name": "x", "min": 0.0, "max": 5.0}]}
+            "parameter_space": {
+                "bounds": [{"name": "x", "min": 0.0, "max": 5.0}]
+            }
         }
 
         mock_core = Mock()
@@ -539,7 +622,9 @@ class TestGurobiIntegration:
         if success:
             # Should find optimum at boundary x=5 (closest to true optimum
             # x=10)
-            assert hasattr(result, "x"), "Result should have x attribute on success"
+            assert hasattr(
+                result, "x"
+            ), "Result should have x attribute on success"
             # type: ignore
             assert 0.0 <= result.x[0] <= 5.0, "Solution should respect bounds"
 
@@ -606,15 +691,30 @@ class TestGurobiIntegration:
                         "max": 1000000.0,
                         "type": "TruncatedNormal",
                     },
-                    {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
-                    {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
+                    {
+                        "name": "alpha",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "D_offset",
+                        "min": -100,
+                        "max": 100,
+                        "type": "Normal",
+                    },
                     {
                         "name": "gamma_dot_t0",
                         "min": 1e-06,
                         "max": 1.0,
                         "type": "TruncatedNormal",
                     },
-                    {"name": "beta", "min": -2.0, "max": 2.0, "type": "Normal"},
+                    {
+                        "name": "beta",
+                        "min": -2.0,
+                        "max": 2.0,
+                        "type": "Normal",
+                    },
                     {
                         "name": "gamma_dot_t_offset",
                         "min": -0.01,
@@ -624,7 +724,9 @@ class TestGurobiIntegration:
                     {"name": "phi0", "min": -10, "max": 10, "type": "Normal"},
                 ]
             },
-            "optimization_config": {"classical_optimization": {"methods": ["Gurobi"]}},
+            "optimization_config": {
+                "classical_optimization": {"methods": ["Gurobi"]}
+            },
         }
 
         mock_core = Mock()
@@ -669,13 +771,21 @@ class TestGurobiIntegration:
                         "min": 0.0,
                         "max": 0.0,
                     },  # Fixed for static
-                    {"name": "beta", "min": 0.0, "max": 0.0},  # Fixed for static
+                    {
+                        "name": "beta",
+                        "min": 0.0,
+                        "max": 0.0,
+                    },  # Fixed for static
                     {
                         "name": "gamma_dot_t_offset",
                         "min": 0.0,
                         "max": 0.0,
                     },  # Fixed for static
-                    {"name": "phi0", "min": 0.0, "max": 0.0},  # Fixed for static
+                    {
+                        "name": "phi0",
+                        "min": 0.0,
+                        "max": 0.0,
+                    },  # Fixed for static
                 ]
             }
         }

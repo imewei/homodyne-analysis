@@ -117,12 +117,25 @@ class TestMCMCConfigurationRegression:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                 ]
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
         }
 
         mock_core = create_mock_analysis_core()  # type: ignore
@@ -186,7 +199,9 @@ class TestMCMCConfigurationRegression:
         draw_count_old = old_trace.posterior.sizes.get("draw", "Unknown")
 
         plot_text_old = f"Chains: {chain_count_old} Draws: {draw_count_old}"
-        assert plot_text_old == "Chains: 2 Draws: 1000"  # This was the problem!
+        assert (
+            plot_text_old == "Chains: 2 Draws: 1000"
+        )  # This was the problem!
 
     @pytest.mark.skipif(
         not _check_pymc_available(),
@@ -214,7 +229,9 @@ class TestMCMCConfigurationRegression:
         # Create configuration and save to temporary file
         config_data = create_realistic_user_config()  # type: ignore
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as f:
             json.dump(config_data, f, indent=2)
             temp_path = f.name
 
@@ -258,7 +275,9 @@ class TestMCMCConfigurationRegression:
         defaults = get_mcmc_defaults()  # type: ignore
 
         assert mcmc_config.get("draws", defaults["draws"]) == defaults["draws"]
-        assert mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
+        assert (
+            mcmc_config.get("chains", defaults["chains"]) == defaults["chains"]
+        )
         assert mcmc_config.get("tune", defaults["tune"]) == defaults["tune"]
 
     @pytest.mark.skipif(

@@ -78,7 +78,12 @@ class TestMCMCParameterBoundsRegression:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
                     {
                         "name": "alpha",
                         "min": -1.6,
@@ -86,7 +91,12 @@ class TestMCMCParameterBoundsRegression:
                         "type": "Normal",
                     },  # Narrow range, initial at boundary
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -109,9 +119,15 @@ class TestMCMCParameterBoundsRegression:
                     "return_inferencedata": True,
                 }
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
         }
 
@@ -148,7 +164,12 @@ class TestMCMCParameterBoundsRegression:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
                     {
                         "name": "alpha",
                         "min": -1.8,
@@ -156,7 +177,12 @@ class TestMCMCParameterBoundsRegression:
                         "type": "Normal",
                     },  # Wider range, initial in center
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -179,9 +205,15 @@ class TestMCMCParameterBoundsRegression:
                     "return_inferencedata": True,
                 }
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
         }
 
@@ -191,7 +223,12 @@ class TestMCMCParameterBoundsRegression:
         boundary_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"}
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    }
                 ]
             },
             "initial_parameters": {
@@ -232,7 +269,12 @@ class TestMCMCParameterBoundsRegression:
         safe_config = {
             "parameter_space": {
                 "bounds": [
-                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "Normal"}
+                    {
+                        "name": "alpha",
+                        "min": -1.8,
+                        "max": -1.2,
+                        "type": "Normal",
+                    }
                 ]
             },
             "initial_parameters": {
@@ -354,11 +396,15 @@ class TestMCMCParameterBoundsRegression:
         """Test edge cases for MCMC parameter bounds validation."""
 
         # Test case 1: Initial value exactly at lower bound
-        bounds_at_min = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
+        bounds_at_min = [
+            {"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}
+        ]
         initial_at_min = [-2.0]  # Exactly at minimum
 
         # Test case 2: Initial value exactly at upper bound
-        bounds_at_max = [{"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}]
+        bounds_at_max = [
+            {"name": "alpha", "min": -2.0, "max": -1.0, "type": "Normal"}
+        ]
         initial_at_max = [-1.0]  # Exactly at maximum
 
         # Test case 3: Initial value safely in middle
@@ -390,7 +436,9 @@ class TestMCMCParameterBoundsRegression:
             min_dist = min(dist_from_min, dist_from_max)
 
             if case_name == "centered":
-                assert min_dist == 0.5, "Centered case should be 0.5 from each boundary"
+                assert (
+                    min_dist == 0.5
+                ), "Centered case should be 0.5 from each boundary"
             else:
                 assert (
                     min_dist == 0.0
@@ -408,7 +456,10 @@ class TestMCMCBoundsIntegration:
 
         # Create a realistic configuration similar to the fixed my_config.json
         realistic_config = {
-            "metadata": {"config_version": "6.0", "analysis_mode": "static_isotropic"},
+            "metadata": {
+                "config_version": "6.0",
+                "analysis_mode": "static_isotropic",
+            },
             "analyzer_parameters": {
                 "temporal": {"dt": 0.5, "start_frame": 400, "end_frame": 1000},
                 "scattering": {"wavevector_q": 0.0237},
@@ -436,7 +487,12 @@ class TestMCMCBoundsIntegration:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
                     {
                         "name": "alpha",
                         "min": -1.8,
@@ -445,7 +501,12 @@ class TestMCMCBoundsIntegration:
                         "_note": "PRIMARY PARAMETER - diffusion time dependence exponent. Bounds widened to avoid initialization at hard boundary.",
                     },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -467,8 +528,13 @@ class TestMCMCBoundsIntegration:
                     "target_accept": 0.9,
                 }
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
-            "performance_settings": {"noise_model": {"use_simple_forward_model": True}},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
+            "performance_settings": {
+                "noise_model": {"use_simple_forward_model": True}
+            },
         }
 
         config_file = tmp_path / "realistic_config.json"
@@ -529,10 +595,25 @@ class TestMCMCBoundsIntegration:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 15000, "max": 20000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.8, "max": -1.2, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 15000,
+                        "max": 20000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.8,
+                        "max": -1.2,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
-                    {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 0.0,
+                        "max": 0.0,
+                        "type": "fixed",
+                    },
                     {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
                     {
                         "name": "gamma_dot_t_offset",
@@ -554,14 +635,19 @@ class TestMCMCBoundsIntegration:
                     "target_accept": 0.9,
                 }
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
             "performance_settings": {
                 "noise_model": {
                     "use_simple_forward_model": False,  # CRITICAL: Must be False for MCMC
                     "sigma_prior": 0.1,
                 }
             },
-            "advanced_settings": {"chi_squared_calculation": {"method": "standard"}},
+            "advanced_settings": {
+                "chi_squared_calculation": {"method": "standard"}
+            },
         }
 
         config_file = tmp_path / "mcmc_full_model_config.json"
@@ -584,20 +670,28 @@ class TestMCMCBoundsIntegration:
         ), "MCMC must use full forward model (use_simple_forward_model=False)"
 
         # Verify MCMC is enabled
-        mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"]["enabled"]
-        assert mcmc_enabled is True, "MCMC sampling must be enabled for this test"
+        mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"][
+            "enabled"
+        ]
+        assert (
+            mcmc_enabled is True
+        ), "MCMC sampling must be enabled for this test"
 
         # Verify scaling optimization is available (standard chi-squared
         # method)
-        chi_sq_method = loaded_config["advanced_settings"]["chi_squared_calculation"][
-            "method"
-        ]
+        chi_sq_method = loaded_config["advanced_settings"][
+            "chi_squared_calculation"
+        ]["method"]
         assert (
             chi_sq_method == "standard"
         ), "Standard chi-squared method supports scaling optimization"
 
-        print("✓ MCMC configuration uses full forward model with scaling optimization")
+        print(
+            "✓ MCMC configuration uses full forward model with scaling optimization"
+        )
         print(f"  use_simple_forward_model: {use_simple_model}")
         print(f"  MCMC enabled: {mcmc_enabled}")
         print(f"  Chi-squared method: {chi_sq_method}")
-        print("  This ensures MCMC results are consistent with classical optimization")
+        print(
+            "  This ensures MCMC results are consistent with classical optimization"
+        )

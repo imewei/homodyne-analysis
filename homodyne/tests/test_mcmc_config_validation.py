@@ -96,8 +96,18 @@ class TestMCMCConfigurationUsage:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 1.0,
+                        "max": 1000000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                 ]
             },
@@ -105,9 +115,15 @@ class TestMCMCConfigurationUsage:
                 "temporal": {"dt": 0.5},
                 "scattering": {"wavevector_q": 0.0237},
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
         }
 
@@ -117,7 +133,9 @@ class TestMCMCConfigurationUsage:
         mock_core.num_threads = 4
         mock_core.config_manager = Mock()
         mock_core.config_manager.is_static_mode_enabled.return_value = True
-        mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
+        mock_core.config_manager.get_analysis_mode.return_value = (
+            "static_isotropic"
+        )
         mock_core.config_manager.get_effective_parameter_count.return_value = 3
         mock_core.config_manager.is_angle_filtering_enabled.return_value = True
         return mock_core
@@ -230,7 +248,9 @@ class TestMCMCConfigurationUsage:
         )  # Invalid values
         mock_core = self.create_mock_core()
 
-        with pytest.raises(ValueError, match="draws must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="draws must be a positive integer"
+        ):
             MCMCSampler(mock_core, config)
 
     @pytest.mark.skipif(
@@ -357,7 +377,9 @@ class TestMCMCConfigurationUsage:
         config_data = self.create_test_config(draws=4000, chains=3, tune=800)
 
         # Write config to temporary file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as f:
             json.dump(config_data, f)
             temp_config_path = f.name
 
@@ -485,7 +507,10 @@ class TestMCMCTraceFileValidation:
         # Mock trace with wrong dimensions (the issue that was happening)
         mock_trace = Mock()
         mock_trace.posterior = Mock()
-        mock_trace.posterior.sizes = {"chain": trace_chains, "draw": trace_draws}
+        mock_trace.posterior.sizes = {
+            "chain": trace_chains,
+            "draw": trace_draws,
+        }
 
         # This should detect the mismatch
         assert (
@@ -587,8 +612,18 @@ class TestMCMCThinningConfiguration:
             },
             "parameter_space": {
                 "bounds": [
-                    {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
-                    {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
+                    {
+                        "name": "D0",
+                        "min": 1.0,
+                        "max": 1000000,
+                        "type": "Normal",
+                    },
+                    {
+                        "name": "alpha",
+                        "min": -1.6,
+                        "max": -1.5,
+                        "type": "Normal",
+                    },
                     {"name": "D_offset", "min": 0, "max": 5, "type": "Normal"},
                 ]
             },
@@ -596,9 +631,15 @@ class TestMCMCThinningConfiguration:
                 "temporal": {"dt": 0.5},
                 "scattering": {"wavevector_q": 0.0237},
             },
-            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+            "analysis_settings": {
+                "static_mode": True,
+                "static_submode": "isotropic",
+            },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
         }
 
@@ -608,7 +649,9 @@ class TestMCMCThinningConfiguration:
         mock_core.num_threads = 4
         mock_core.config_manager = Mock()
         mock_core.config_manager.is_static_mode_enabled.return_value = True
-        mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
+        mock_core.config_manager.get_analysis_mode.return_value = (
+            "static_isotropic"
+        )
         mock_core.config_manager.get_effective_parameter_count.return_value = 3
         mock_core.config_manager.is_angle_filtering_enabled.return_value = True
         return mock_core
@@ -619,7 +662,9 @@ class TestMCMCThinningConfiguration:
     )
     def test_thinning_parameter_extraction(self):
         """Test that MCMCSampler correctly extracts thinning parameter."""
-        config = self.create_test_config(draws=2000, chains=4, tune=500, thin=3)
+        config = self.create_test_config(
+            draws=2000, chains=4, tune=500, thin=3
+        )
         mock_core = self.create_mock_core()
 
         sampler = MCMCSampler(mock_core, config)
@@ -675,7 +720,9 @@ class TestMCMCThinningConfiguration:
         for invalid_thin in invalid_values:
             config = self.create_test_config(thin=invalid_thin)
 
-            with pytest.raises(ValueError, match="thin must be a positive integer"):
+            with pytest.raises(
+                ValueError, match="thin must be a positive integer"
+            ):
                 MCMCSampler(mock_core, config)
 
     @pytest.mark.skipif(
@@ -721,7 +768,9 @@ class TestMCMCThinningConfiguration:
     )
     def test_thinning_passed_to_pymc_sample(self):
         """Test that thinning parameter is passed to PyMC's sample function."""
-        config = self.create_test_config(draws=1000, chains=2, tune=500, thin=3)
+        config = self.create_test_config(
+            draws=1000, chains=2, tune=500, thin=3
+        )
         mock_core = self.create_mock_core()
 
         # Create dummy data
@@ -777,7 +826,9 @@ class TestMCMCThinningConfiguration:
     )
     def test_thinning_warning_for_low_effective_samples(self):
         """Test that validation warns when thinning reduces effective samples too much."""
-        config = self.create_test_config(draws=2000, thin=5)  # Effective = 400 samples
+        config = self.create_test_config(
+            draws=2000, thin=5
+        )  # Effective = 400 samples
         mock_core = self.create_mock_core()
 
         sampler = MCMCSampler(mock_core, config)
@@ -835,7 +886,9 @@ class TestMCMCThinningConfiguration:
         config_flow["analysis_settings"]["static_mode"] = False
 
         mock_core.config_manager.is_static_mode_enabled.return_value = False
-        mock_core.config_manager.get_analysis_mode.return_value = "laminar_flow"
+        mock_core.config_manager.get_analysis_mode.return_value = (
+            "laminar_flow"
+        )
         mock_core.config_manager.get_effective_parameter_count.return_value = 7
 
         sampler_flow = MCMCSampler(mock_core, config_flow)

@@ -103,7 +103,9 @@ class TestMCMCConvergenceDiagnostics:
             }
         }
 
-    def test_mcmc_quality_assessment_excellent(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_excellent(
+        self, mock_config_with_mcmc_thresholds
+    ):
         """Test MCMC quality assessment for excellent convergence."""
         # Mock excellent convergence metrics
         diagnostics = {
@@ -143,7 +145,9 @@ class TestMCMCConvergenceDiagnostics:
 
         assert quality == "excellent"
 
-    def test_mcmc_quality_assessment_good(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_good(
+        self, mock_config_with_mcmc_thresholds
+    ):
         """Test MCMC quality assessment for good convergence."""
         # Mock good convergence metrics
         diagnostics = {
@@ -183,7 +187,9 @@ class TestMCMCConvergenceDiagnostics:
 
         assert quality == "good"
 
-    def test_mcmc_quality_assessment_acceptable(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_acceptable(
+        self, mock_config_with_mcmc_thresholds
+    ):
         """Test MCMC quality assessment for acceptable convergence."""
         # Mock acceptable convergence metrics
         diagnostics = {
@@ -223,7 +229,9 @@ class TestMCMCConvergenceDiagnostics:
 
         assert quality == "acceptable"
 
-    def test_mcmc_quality_assessment_poor(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_quality_assessment_poor(
+        self, mock_config_with_mcmc_thresholds
+    ):
         """Test MCMC quality assessment for poor convergence."""
         # Mock poor convergence metrics
         diagnostics = {
@@ -285,7 +293,9 @@ class TestMCMCConvergenceDiagnostics:
         assert isinstance(diagnostics["max_rhat"], (int, float))
         assert isinstance(diagnostics["min_ess"], (int, float))
 
-    def test_mcmc_config_validation_thresholds(self, mock_config_with_mcmc_thresholds):
+    def test_mcmc_config_validation_thresholds(
+        self, mock_config_with_mcmc_thresholds
+    ):
         """Test that MCMC configuration contains proper validation thresholds."""
         mcmc_config = mock_config_with_mcmc_thresholds["validation_rules"][
             "mcmc_convergence"
@@ -294,10 +304,12 @@ class TestMCMCConvergenceDiagnostics:
         # Verify R-hat thresholds
         rhat_thresholds = mcmc_config["rhat_thresholds"]
         assert (
-            rhat_thresholds["excellent_threshold"] < rhat_thresholds["good_threshold"]
+            rhat_thresholds["excellent_threshold"]
+            < rhat_thresholds["good_threshold"]
         )
         assert (
-            rhat_thresholds["good_threshold"] < rhat_thresholds["acceptable_threshold"]
+            rhat_thresholds["good_threshold"]
+            < rhat_thresholds["acceptable_threshold"]
         )
         assert (
             rhat_thresholds["acceptable_threshold"]
@@ -306,10 +318,17 @@ class TestMCMCConvergenceDiagnostics:
 
         # Verify ESS thresholds
         ess_thresholds = mcmc_config["ess_thresholds"]
-        assert ess_thresholds["excellent_threshold"] > ess_thresholds["good_threshold"]
-        assert ess_thresholds["good_threshold"] > ess_thresholds["acceptable_threshold"]
         assert (
-            ess_thresholds["acceptable_threshold"] > ess_thresholds["minimum_threshold"]
+            ess_thresholds["excellent_threshold"]
+            > ess_thresholds["good_threshold"]
+        )
+        assert (
+            ess_thresholds["good_threshold"]
+            > ess_thresholds["acceptable_threshold"]
+        )
+        assert (
+            ess_thresholds["acceptable_threshold"]
+            > ess_thresholds["minimum_threshold"]
         )
 
         # Verify divergence thresholds
@@ -361,13 +380,19 @@ class TestMCMCConvergenceDiagnostics:
         ess_thresholds = mcmc_config.get("ess_thresholds", {})
 
         # Test that defaults are used
-        assert rhat_thresholds.get("excellent_threshold", 1.01) == excellent_rhat
+        assert (
+            rhat_thresholds.get("excellent_threshold", 1.01) == excellent_rhat
+        )
         assert rhat_thresholds.get("good_threshold", 1.05) == good_rhat
-        assert rhat_thresholds.get("acceptable_threshold", 1.1) == acceptable_rhat
+        assert (
+            rhat_thresholds.get("acceptable_threshold", 1.1) == acceptable_rhat
+        )
 
         assert ess_thresholds.get("excellent_threshold", 400) == excellent_ess
         assert ess_thresholds.get("good_threshold", 200) == good_ess
-        assert ess_thresholds.get("acceptable_threshold", 100) == acceptable_ess
+        assert (
+            ess_thresholds.get("acceptable_threshold", 100) == acceptable_ess
+        )
 
 
 if __name__ == "__main__":

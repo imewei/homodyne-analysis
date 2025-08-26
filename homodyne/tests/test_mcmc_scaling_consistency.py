@@ -46,7 +46,10 @@ class TestMCMCScalingConsistency:
                 }
             },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
             "optimization_config": {
                 "mcmc_sampling": {"draws": 100, "tune": 50, "chains": 2}
@@ -125,7 +128,9 @@ class TestMCMCScalingConsistency:
         }
 
     @pytest.mark.skipif(not mcmc_available, reason="PyMC not available")
-    def test_mcmc_sampler_initialization_with_scaling_config(self, mock_analysis_core):
+    def test_mcmc_sampler_initialization_with_scaling_config(
+        self, mock_analysis_core
+    ):
         """Test that MCMC sampler initializes correctly with scaling configuration."""
         if MCMCSampler is None:
             pytest.skip("MCMCSampler not available")
@@ -151,10 +156,14 @@ class TestMCMCScalingConsistency:
             mock_analysis_core.config = config_with_scaling_inconsistency
             if MCMCSampler is None:
                 pytest.skip("MCMCSampler not available")
-            sampler = MCMCSampler(mock_analysis_core, config_with_scaling_inconsistency)
+            sampler = MCMCSampler(
+                mock_analysis_core, config_with_scaling_inconsistency
+            )
 
             # Mock PyMC model building to avoid actual computation
-            with patch.object(sampler, "_build_bayesian_model_optimized") as mock_build:
+            with patch.object(
+                sampler, "_build_bayesian_model_optimized"
+            ) as mock_build:
                 mock_model = Mock()
                 mock_build.return_value = mock_model
 
@@ -174,7 +183,9 @@ class TestMCMCScalingConsistency:
 
         # Check that scaling optimization is always enabled (configuration
         # updated)
-        chi_config = sampler.config["advanced_settings"]["chi_squared_calculation"]
+        chi_config = sampler.config["advanced_settings"][
+            "chi_squared_calculation"
+        ]
         assert "_scaling_optimization_note" in chi_config
         assert (
             sampler.config["performance_settings"]["noise_model"][
@@ -191,7 +202,9 @@ class TestMCMCScalingConsistency:
         mock_analysis_core.config = config_with_scaling_consistency
         if MCMCSampler is None:
             pytest.skip("MCMCSampler not available")
-        sampler = MCMCSampler(mock_analysis_core, config_with_scaling_consistency)
+        sampler = MCMCSampler(
+            mock_analysis_core, config_with_scaling_consistency
+        )
 
         # Check that configuration indicates full forward model
         chi_config = sampler.config.get("advanced_settings", {}).get(
@@ -217,7 +230,10 @@ class TestMCMCScalingConsistency:
                 }
             },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
         }
 
@@ -248,7 +264,11 @@ class TestMCMCScalingConsistency:
                 "chi_squared_calculation",
                 "_scaling_optimization_note",
             ),
-            ("performance_settings", "noise_model", "use_simple_forward_model"),
+            (
+                "performance_settings",
+                "noise_model",
+                "use_simple_forward_model",
+            ),
             ("performance_settings", "noise_model", "sigma_prior"),
         ]
 
@@ -259,7 +279,10 @@ class TestMCMCScalingConsistency:
                 }
             },
             "performance_settings": {
-                "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+                "noise_model": {
+                    "use_simple_forward_model": True,
+                    "sigma_prior": 0.1,
+                }
             },
         }
 
@@ -283,7 +306,10 @@ class TestConfigurationConsistency:
         }
 
         # This would be validated against actual config files
-        test_noise_config = {"use_simple_forward_model": True, "sigma_prior": 0.1}
+        test_noise_config = {
+            "use_simple_forward_model": True,
+            "sigma_prior": 0.1,
+        }
 
         for key, expected_type in expected_structure.items():
             assert key in test_noise_config

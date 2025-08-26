@@ -95,7 +95,10 @@ TEST_CONFIG = {
                     "uncertainty_radius": 0.03,
                     "regularization_alpha": 0.01,
                 },
-                "scenario": {"n_scenarios": 10, "bootstrap_method": "residual"},
+                "scenario": {
+                    "n_scenarios": 10,
+                    "bootstrap_method": "residual",
+                },
                 "ellipsoidal": {
                     "gamma": 0.1,
                     "l1_regularization": 0.001,
@@ -150,13 +153,17 @@ class MockAnalysisCore:
 
         for i in range(n_angles):
             # Simple model: c2 = 1 + contrast * exp(-(D0*t^alpha + D_offset*t))
-            decay_factor = D0 * time_delays ** abs(alpha) + D_offset * time_delays
+            decay_factor = (
+                D0 * time_delays ** abs(alpha) + D_offset * time_delays
+            )
             decay = np.exp(-decay_factor)
             c2_theory[i, :] = 1.0 + 0.3 * decay
 
         return c2_theory
 
-    def calculate_chi_squared_optimized(self, params, phi_angles, c2_experimental):
+    def calculate_chi_squared_optimized(
+        self, params, phi_angles, c2_experimental
+    ):
         """Mock chi-squared calculation."""
         c2_theory = self.compute_c2_correlation_optimized(params, phi_angles)
         residuals = c2_experimental - c2_theory
@@ -174,7 +181,9 @@ class MockAnalysisCore:
 
         for i in range(n_angles):
             # Simple model with proper 3D structure
-            decay_factor = D0 * time_delays ** abs(alpha) + D_offset * time_delays
+            decay_factor = (
+                D0 * time_delays ** abs(alpha) + D_offset * time_delays
+            )
             for j in range(n_times):
                 for k in range(n_times):
                     tau = abs(time_delays[j] - time_delays[k])
@@ -256,7 +265,9 @@ class TestRobustHomodyneOptimizer:
         assert "uncertainty_model" in optimizer.settings
         assert optimizer.settings["uncertainty_model"] == "wasserstein"
 
-    def test_create_robust_optimizer_factory(self, mock_analysis_core, test_config):
+    def test_create_robust_optimizer_factory(
+        self, mock_analysis_core, test_config
+    ):
         """Test create_robust_optimizer factory function."""
         assert (
             create_robust_optimizer is not None
@@ -283,7 +294,9 @@ class TestRobustHomodyneOptimizer:
             with pytest.raises(ImportError, match="CVXPY is required"):
                 optimizer.check_dependencies()
 
-    def test_parameter_bounds_extraction(self, mock_analysis_core, test_config):
+    def test_parameter_bounds_extraction(
+        self, mock_analysis_core, test_config
+    ):
         """Test parameter bounds extraction from configuration."""
         assert (
             RobustHomodyneOptimizer is not None
@@ -425,7 +438,9 @@ class TestDistributionallyRobustOptimization:
             # Results should be different for different uncertainty levels
             params_list = [r[0] for r in successful_results]
             for i in range(1, len(params_list)):
-                assert not np.allclose(params_list[0], params_list[i], rtol=1e-3)
+                assert not np.allclose(
+                    params_list[0], params_list[i], rtol=1e-3
+                )
 
 
 @pytest.mark.skipif(
@@ -579,11 +594,14 @@ class TestEllipsoidalRobustOptimization:
             params_list = [r[0] for r in successful_results]
             for i in range(1, len(params_list)):
                 # Results should vary with uncertainty bound
-                assert not np.allclose(params_list[0], params_list[i], rtol=1e-2)
+                assert not np.allclose(
+                    params_list[0], params_list[i], rtol=1e-2
+                )
 
 
 @pytest.mark.skipif(
-    not ROBUST_OPTIMIZATION_AVAILABLE, reason="Robust optimization not available"
+    not ROBUST_OPTIMIZATION_AVAILABLE,
+    reason="Robust optimization not available",
 )
 class TestRobustOptimizationInterface:
     """Test suite for the main robust optimization interface."""
@@ -686,14 +704,19 @@ class TestRobustOptimizationInterface:
 
 
 @pytest.mark.skipif(
-    not ROBUST_OPTIMIZATION_AVAILABLE, reason="Robust optimization not available"
+    not ROBUST_OPTIMIZATION_AVAILABLE,
+    reason="Robust optimization not available",
 )
 class TestClassicalOptimizerIntegration:
     """Test suite for integration with ClassicalOptimizer."""
 
-    def test_robust_methods_in_available_methods(self, mock_analysis_core, test_config):
+    def test_robust_methods_in_available_methods(
+        self, mock_analysis_core, test_config
+    ):
         """Test that robust methods appear in available methods."""
-        assert ClassicalOptimizer is not None, "ClassicalOptimizer not available"
+        assert (
+            ClassicalOptimizer is not None
+        ), "ClassicalOptimizer not available"
         optimizer = ClassicalOptimizer(mock_analysis_core, test_config)
         available_methods = optimizer.get_available_methods()
 
@@ -713,7 +736,11 @@ class TestClassicalOptimizerIntegration:
         mock_robust_optimizer = Mock()
         mock_robust_optimizer.run_robust_optimization.return_value = (
             np.array([100.0, -0.5, 10.0]),
-            {"method": "wasserstein", "status": "success", "final_chi_squared": 1.5},
+            {
+                "method": "wasserstein",
+                "status": "success",
+                "final_chi_squared": 1.5,
+            },
         )
         mock_create_robust.return_value = mock_robust_optimizer
 
@@ -721,7 +748,9 @@ class TestClassicalOptimizerIntegration:
         mock_analysis_core.phi_angles = np.linspace(-30, 30, 10)
         mock_analysis_core.c2_experimental = np.random.randn(10, 50)
 
-        assert ClassicalOptimizer is not None, "ClassicalOptimizer not available"
+        assert (
+            ClassicalOptimizer is not None
+        ), "ClassicalOptimizer not available"
         optimizer = ClassicalOptimizer(mock_analysis_core, test_config)
 
         def dummy_objective(params):
@@ -753,13 +782,17 @@ class TestClassicalOptimizerIntegration:
         else:
             assert success == False
 
-    def test_robust_optimization_error_handling(self, mock_analysis_core, test_config):
+    def test_robust_optimization_error_handling(
+        self, mock_analysis_core, test_config
+    ):
         """Test error handling when robust optimization fails."""
         # Remove required attributes to trigger error
         if hasattr(mock_analysis_core, "phi_angles"):
             delattr(mock_analysis_core, "phi_angles")
 
-        assert ClassicalOptimizer is not None, "ClassicalOptimizer not available"
+        assert (
+            ClassicalOptimizer is not None
+        ), "ClassicalOptimizer not available"
         optimizer = ClassicalOptimizer(mock_analysis_core, test_config)
 
         def dummy_objective(params):
@@ -785,7 +818,9 @@ class TestRobustOptimizationConfiguration:
         # Test that the configuration section exists
         assert "robust_optimization" in TEST_CONFIG["optimization_config"]
 
-        robust_config = TEST_CONFIG["optimization_config"]["robust_optimization"]
+        robust_config = TEST_CONFIG["optimization_config"][
+            "robust_optimization"
+        ]
 
         # Check required fields
         assert "enabled" in robust_config
@@ -802,7 +837,9 @@ class TestRobustOptimizationConfiguration:
 
     def test_robust_methods_in_classical_config(self):
         """Test that robust methods are included in classical optimization methods."""
-        classical_config = TEST_CONFIG["optimization_config"]["classical_optimization"]
+        classical_config = TEST_CONFIG["optimization_config"][
+            "classical_optimization"
+        ]
 
         assert "methods" in classical_config
         methods = classical_config["methods"]
@@ -815,7 +852,9 @@ class TestRobustOptimizationConfiguration:
     def test_configuration_validation(self, test_config):
         """Test validation of robust optimization configuration."""
         # Test with valid configuration
-        robust_config = test_config["optimization_config"]["robust_optimization"]
+        robust_config = test_config["optimization_config"][
+            "robust_optimization"
+        ]
 
         # Required fields should be present
         required_fields = [
@@ -941,7 +980,9 @@ class TestRobustOptimizationIntegration:
 
     def test_config_file_loading(self):
         """Test loading robust optimization configuration from file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as f:
             json.dump(TEST_CONFIG, f, indent=2)
             config_path = f.name
 
@@ -951,7 +992,9 @@ class TestRobustOptimizationIntegration:
                 loaded_config = json.load(f)
 
             assert "optimization_config" in loaded_config
-            assert "robust_optimization" in loaded_config["optimization_config"]
+            assert (
+                "robust_optimization" in loaded_config["optimization_config"]
+            )
 
             # Test creating optimizer with loaded config
             if ROBUST_OPTIMIZATION_AVAILABLE:

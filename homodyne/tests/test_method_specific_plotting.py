@@ -73,7 +73,9 @@ class TestMethodSpecificPlotting:
             n_angles = len(phi_angles)
             return np.random.rand(n_angles, 10, 10) + 1.0
 
-        analyzer.calculate_c2_nonequilibrium_laminar_parallel = mock_calculate_c2
+        analyzer.calculate_c2_nonequilibrium_laminar_parallel = (
+            mock_calculate_c2
+        )
         return analyzer
 
     @pytest.fixture
@@ -145,7 +147,11 @@ class TestMethodSpecificPlotting:
 
     @patch("homodyne.plotting.plot_c2_heatmaps")
     def test_generate_classical_plots_without_method_results(
-        self, mock_plot_c2, mock_analyzer, mock_result_without_methods, test_data
+        self,
+        mock_plot_c2,
+        mock_analyzer,
+        mock_result_without_methods,
+        test_data,
     ):
         """Test fallback behavior when method_results not available."""
         mock_plot_c2.return_value = True
@@ -199,7 +205,12 @@ class TestMethodSpecificPlotting:
 
             # Call the function
             _generate_classical_plots(
-                mock_analyzer, best_params, result, phi_angles, c2_exp, output_dir
+                mock_analyzer,
+                best_params,
+                result,
+                phi_angles,
+                c2_exp,
+                output_dir,
             )
 
             # Should have been called only once (for successful method)
@@ -237,7 +248,12 @@ class TestMethodSpecificPlotting:
 
             # Call the function
             _generate_classical_plots(
-                mock_analyzer, best_params, result, phi_angles, c2_exp, output_dir
+                mock_analyzer,
+                best_params,
+                result,
+                phi_angles,
+                c2_exp,
+                output_dir,
             )
 
             # Should have been called only once (for method with parameters)
@@ -282,7 +298,9 @@ class TestMethodSpecificPlotting:
     ):
         """Test that function returns early when plotting is disabled."""
         # Disable plotting in config
-        mock_analyzer.config["output_settings"]["reporting"]["generate_plots"] = False
+        mock_analyzer.config["output_settings"]["reporting"][
+            "generate_plots"
+        ] = False
 
         best_params, phi_angles, c2_exp = test_data
 

@@ -27,7 +27,9 @@ class TestConfigManager:
             "optimization_config": {"method": "test"},
         }
 
-    def test_config_manager_init_with_file(self, temp_directory, minimal_config):
+    def test_config_manager_init_with_file(
+        self, temp_directory, minimal_config
+    ):
         """Test initialization with config file."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -47,10 +49,14 @@ class TestConfigManager:
 
         manager = ConfigManager(str(config_file))
         assert manager.get("analyzer_parameters", "nested", "value") == "test"
-        assert manager.get("analyzer_parameters", "nested") == {"value": "test"}
+        assert manager.get("analyzer_parameters", "nested") == {
+            "value": "test"
+        }
         assert manager.get("nonexistent", default="default") == "default"
 
-    def test_config_manager_get_with_default(self, temp_directory, minimal_config):
+    def test_config_manager_get_with_default(
+        self, temp_directory, minimal_config
+    ):
         """Test getting values with default fallback."""
         config_file = temp_directory / "test_config.json"
         with open(config_file, "w") as f:
@@ -92,7 +98,9 @@ class TestConfigManager:
         with pytest.raises(ValueError, match="Missing required sections"):
             ConfigManager(str(config_file))
 
-    def test_config_manager_invalid_frame_range(self, temp_directory, minimal_config):
+    def test_config_manager_invalid_frame_range(
+        self, temp_directory, minimal_config
+    ):
         """Test validation with invalid frame range."""
         minimal_config["analyzer_parameters"]["start_frame"] = 100
         # Invalid: start > end
@@ -202,7 +210,9 @@ def test_config_manager_default_config():
 def test_config_manager_real_config_file():
     """Test with the actual homodyne_config.json file if it exists."""
     # Check both project root and tests directory for config file
-    project_root_path = Path(__file__).parent.parent.parent / "homodyne_config.json"
+    project_root_path = (
+        Path(__file__).parent.parent.parent / "homodyne_config.json"
+    )
     tests_dir_path = Path(__file__).parent / "homodyne_config.json"
 
     config_path = None
@@ -594,22 +604,54 @@ class TestPlottingConfigurationConsistency:
             "parameter_space": {
                 "bounds": [
                     {"name": "D0", "min": 1.0, "max": 10000.0, "unit": "Å²/s"},
-                    {"name": "alpha", "min": -2.0, "max": 0.0, "unit": "dimensionless"},
-                    {"name": "D_offset", "min": 0.0, "max": 1000.0, "unit": "Å²/s"},
-                    {"name": "gamma_dot_t0", "min": 1e-5, "max": 0.1, "unit": "s⁻¹"},
-                    {"name": "beta", "min": -1.0, "max": 1.0, "unit": "dimensionless"},
+                    {
+                        "name": "alpha",
+                        "min": -2.0,
+                        "max": 0.0,
+                        "unit": "dimensionless",
+                    },
+                    {
+                        "name": "D_offset",
+                        "min": 0.0,
+                        "max": 1000.0,
+                        "unit": "Å²/s",
+                    },
+                    {
+                        "name": "gamma_dot_t0",
+                        "min": 1e-5,
+                        "max": 0.1,
+                        "unit": "s⁻¹",
+                    },
+                    {
+                        "name": "beta",
+                        "min": -1.0,
+                        "max": 1.0,
+                        "unit": "dimensionless",
+                    },
                     {
                         "name": "gamma_dot_t_offset",
                         "min": 0.0,
                         "max": 0.01,
                         "unit": "s⁻¹",
                     },
-                    {"name": "phi0", "min": 0.0, "max": 360.0, "unit": "degrees"},
+                    {
+                        "name": "phi0",
+                        "min": 0.0,
+                        "max": 360.0,
+                        "unit": "degrees",
+                    },
                 ]
             },
             "output_settings": {
-                "reporting": {"generate_plots": True, "plot_formats": ["png", "pdf"]},
-                "plotting": {"plot_format": "png", "dpi": 150, "figure_size": [8, 6]},
+                "reporting": {
+                    "generate_plots": True,
+                    "plot_formats": ["png", "pdf"],
+                },
+                "plotting": {
+                    "plot_format": "png",
+                    "dpi": 150,
+                    "figure_size": [8, 6],
+                },
             },
         }
 
@@ -630,7 +672,9 @@ class TestPlottingConfigurationConsistency:
         assert param_names == bound_names
         assert len(param_names) == len(bound_names) == 7
 
-    def test_parameter_count_consistency(self, temp_directory, plotting_config):
+    def test_parameter_count_consistency(
+        self, temp_directory, plotting_config
+    ):
         """Test that parameter counts are consistent across all sections."""
         config_file = temp_directory / "count_test.json"
         with open(config_file, "w") as f:
@@ -650,7 +694,9 @@ class TestPlottingConfigurationConsistency:
         effective_count = manager.get_effective_parameter_count()
         assert len(param_names) == effective_count
 
-    def test_plotting_configuration_validation(self, temp_directory, plotting_config):
+    def test_plotting_configuration_validation(
+        self, temp_directory, plotting_config
+    ):
         """Test plotting configuration validation."""
         config_file = temp_directory / "plot_config_test.json"
         with open(config_file, "w") as f:
@@ -659,8 +705,12 @@ class TestPlottingConfigurationConsistency:
         manager = ConfigManager(str(config_file))
 
         # Test plotting settings
-        generate_plots = manager.get("output_settings", "reporting", "generate_plots")
-        plot_formats = manager.get("output_settings", "reporting", "plot_formats")
+        generate_plots = manager.get(
+            "output_settings", "reporting", "generate_plots"
+        )
+        plot_formats = manager.get(
+            "output_settings", "reporting", "plot_formats"
+        )
         plot_format = manager.get("output_settings", "plotting", "plot_format")
 
         assert isinstance(generate_plots, bool)

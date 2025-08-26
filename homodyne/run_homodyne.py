@@ -136,6 +136,24 @@ except ImportError:
         MCMC_AVAILABLE = False
 
 
+class MockResult:
+    """Mock result class for robust optimization compatibility."""
+
+    def __init__(
+        self,
+        method_results=None,
+        best_method=None,
+        x=None,
+        fun=None,
+        success=None,
+    ):
+        self.method_results = method_results or {}
+        self.best_method = best_method
+        self.x = x
+        self.fun = fun
+        self.success = success
+
+
 def setup_logging(verbose: bool, quiet: bool, output_dir: Path) -> None:
     """
     Configure comprehensive logging for the analysis session.
@@ -218,7 +236,9 @@ def print_banner(args: argparse.Namespace) -> None:
 
     # Show analysis mode
     if args.static_isotropic:
-        print("Analysis mode:    Static isotropic (3 parameters, no angle selection)")
+        print(
+            "Analysis mode:    Static isotropic (3 parameters, no angle selection)"
+        )
     elif args.static_anisotropic:
         print(
             "Analysis mode:    Static anisotropic (3 parameters, with angle selection)"
@@ -278,11 +298,17 @@ def run_analysis(args: argparse.Namespace) -> None:
     try:
         # Check if HomodyneAnalysisCore is available (import succeeded)
         if HomodyneAnalysisCore is None:
-            logger.error("❌ HomodyneAnalysisCore is not available due to import error")
-            logger.error("Please ensure all required dependencies are installed.")
+            logger.error(
+                "❌ HomodyneAnalysisCore is not available due to import error"
+            )
+            logger.error(
+                "Please ensure all required dependencies are installed."
+            )
             sys.exit(1)
 
-        logger.info(f"Initializing Homodyne Analysis with config: {config_path}")
+        logger.info(
+            f"Initializing Homodyne Analysis with config: {config_path}"
+        )
 
         # Apply mode override if specified
         config_override: Optional[Dict[str, Any]] = None
@@ -308,7 +334,9 @@ def run_analysis(args: argparse.Namespace) -> None:
             )
         elif args.laminar_flow:
             config_override = {"analysis_settings": {"static_mode": False}}
-            logger.info("Using command-line override: laminar flow mode (7 parameters)")
+            logger.info(
+                "Using command-line override: laminar flow mode (7 parameters)"
+            )
 
         # Add experimental data plotting override if specified
         if args.plot_experimental_data:
@@ -316,9 +344,14 @@ def run_analysis(args: argparse.Namespace) -> None:
                 config_override = {}
             if "workflow_integration" not in config_override:
                 config_override["workflow_integration"] = {}
-            if "analysis_workflow" not in config_override["workflow_integration"]:
+            if (
+                "analysis_workflow"
+                not in config_override["workflow_integration"]
+            ):
                 # type: ignore
-                config_override["workflow_integration"]["analysis_workflow"] = {}
+                config_override["workflow_integration"][
+                    "analysis_workflow"
+                ] = {}
             # type: ignore
             config_override["workflow_integration"]["analysis_workflow"][
                 "plot_experimental_data_on_load"
@@ -347,14 +380,20 @@ def run_analysis(args: argparse.Namespace) -> None:
         # Log the actual analysis mode being used
         analysis_mode = analyzer.config_manager.get_analysis_mode()
         param_count = analyzer.config_manager.get_effective_parameter_count()
-        logger.info(f"Analysis mode: {analysis_mode} ({param_count} parameters)")
+        logger.info(
+            f"Analysis mode: {analysis_mode} ({param_count} parameters)"
+        )
     except (ImportError, ModuleNotFoundError) as e:
-        logger.error(f"❌ Import error while creating HomodyneAnalysisCore: {e}")
+        logger.error(
+            f"❌ Import error while creating HomodyneAnalysisCore: {e}"
+        )
         logger.error("Please ensure all required dependencies are installed.")
         sys.exit(1)
     except (ValueError, KeyError, FileNotFoundError) as e:
         logger.error(f"❌ JSON configuration error: {e}")
-        logger.error("Please check your configuration file format and content.")
+        logger.error(
+            "Please check your configuration file format and content."
+        )
         sys.exit(1)
     except Exception as e:
         logger.error(f"❌ Unexpected error initializing analysis core: {e}")
@@ -363,12 +402,16 @@ def run_analysis(args: argparse.Namespace) -> None:
 
     # Load experimental data
     logger.info("Loading experimental data...")
-    c2_exp, time_length, phi_angles, num_angles = analyzer.load_experimental_data()
+    c2_exp, time_length, phi_angles, num_angles = (
+        analyzer.load_experimental_data()
+    )
 
     # If only plotting experimental data, exit after loading and plotting
     if args.plot_experimental_data:
         logger.info("✓ Experimental data plotted successfully")
-        logger.info("Analysis completed (plotting only mode - no fitting performed)")
+        logger.info(
+            "Analysis completed (plotting only mode - no fitting performed)"
+        )
         return
 
     # Get initial parameters from config
@@ -378,7 +421,9 @@ def run_analysis(args: argparse.Namespace) -> None:
             "ensure it is loaded correctly."
         )
         sys.exit(1)
-    initial_params = analyzer.config.get("initial_parameters", {}).get("values", None)
+    initial_params = analyzer.config.get("initial_parameters", {}).get(
+        "values", None
+    )
     if initial_params is None:
         logger.error(
             "❌ Initial parameters not found in configuration. Please check your configuration file format."
@@ -426,7 +471,9 @@ def run_analysis(args: argparse.Namespace) -> None:
             # Save results with their own method-specific plotting
             # Classical and MCMC methods use their own dedicated plotting
             # functions
-            analyzer.save_results_with_config(results, output_dir=str(args.output_dir))
+            analyzer.save_results_with_config(
+                results, output_dir=str(args.output_dir)
+            )
 
             # Perform per-angle chi-squared analysis for each successful method
             successful_methods = results.get("methods_used", [])
@@ -436,7 +483,10 @@ def run_analysis(args: argparse.Namespace) -> None:
 
             for method in successful_methods:
                 method_key = f"{method.lower()}_optimization"
-                if method_key in results and "parameters" in results[method_key]:
+                if (
+                    method_key in results
+                    and "parameters" in results[method_key]
+                ):
                     method_params = results[method_key]["parameters"]
                     if method_params is not None:
                         if method.upper() == "MCMC":
@@ -467,7 +517,9 @@ def run_analysis(args: argparse.Namespace) -> None:
 
                                     # Quality assessment based on convergence
                                     # criteria from config
-                                    max_rhat = diag.get("max_rhat", float("inf"))
+                                    max_rhat = diag.get(
+                                        "max_rhat", float("inf")
+                                    )
                                     min_ess = diag.get("min_ess", 0)
 
                                     # Get thresholds from config or use
@@ -499,7 +551,9 @@ def run_analysis(args: argparse.Namespace) -> None:
                                     excellent_ess = ess_thresholds.get(
                                         "excellent_threshold", 400
                                     )
-                                    good_ess = ess_thresholds.get("good_threshold", 200)
+                                    good_ess = ess_thresholds.get(
+                                        "good_threshold", 200
+                                    )
                                     acceptable_ess = ess_thresholds.get(
                                         "acceptable_threshold", 100
                                     )
@@ -509,7 +563,10 @@ def run_analysis(args: argparse.Namespace) -> None:
                                         and min_ess > excellent_ess
                                     ):
                                         quality = "excellent"
-                                    elif max_rhat < good_rhat and min_ess > good_ess:
+                                    elif (
+                                        max_rhat < good_rhat
+                                        and min_ess > good_ess
+                                    ):
                                         quality = "good"
                                     elif (
                                         max_rhat < acceptable_rhat
@@ -696,14 +753,18 @@ def run_classical_optimization(
             "methods_used": ["Classical"],
         }
     except ImportError as e:
-        error_msg = f"Classical optimization failed - missing dependencies: {e}"
+        error_msg = (
+            f"Classical optimization failed - missing dependencies: {e}"
+        )
         logger.error(error_msg)
         if "scipy" in str(e).lower():
             logger.error("❌ Install scipy: pip install scipy")
         elif "numpy" in str(e).lower():
             logger.error("❌ Install numpy: pip install numpy")
         else:
-            logger.error("❌ Install required dependencies: pip install scipy numpy")
+            logger.error(
+                "❌ Install required dependencies: pip install scipy numpy"
+            )
         return None
     except (ValueError, KeyError) as e:
         error_msg = f"Classical optimization failed - configuration error: {e}"
@@ -801,13 +862,17 @@ def run_robust_optimization(
                 )
 
                 if params is not None:
-                    chi_squared = method_info.get("final_chi_squared", float("inf"))
+                    chi_squared = method_info.get(
+                        "final_chi_squared", float("inf")
+                    )
 
                     # Store method result in classical-compatible format
                     method_name = f"Robust-{method.capitalize()}"
                     method_results[method_name] = {
                         "parameters": (
-                            params.tolist() if hasattr(params, "tolist") else params
+                            params.tolist()
+                            if hasattr(params, "tolist")
+                            else params
                         ),
                         "chi_squared": chi_squared,
                         "success": True,
@@ -831,17 +896,13 @@ def run_robust_optimization(
         # Create result object with method_results (compatible with existing
         # code)
         if best_params is not None:
-            result = type(
-                "MockResult",
-                (),
-                {
-                    "method_results": method_results,
-                    "best_method": best_method,
-                    "x": best_params,
-                    "fun": best_chi_squared,
-                    "success": True,
-                },
-            )()
+            result = MockResult(
+                method_results=method_results,
+                best_method=best_method,
+                x=best_params,
+                fun=best_chi_squared,
+                success=True,
+            )
             logger.info(
                 f"✓ Best robust method: {best_method} with χ²={
                     best_chi_squared:.6f}"
@@ -854,7 +915,9 @@ def run_robust_optimization(
         # initialization
         if best_params is not None:
             analyzer.best_params_robust = best_params
-            logger.info("✓ Robust results stored for potential MCMC initialization")
+            logger.info(
+                "✓ Robust results stored for potential MCMC initialization"
+            )
 
         # Save experimental and fitted data to robust directory
         if output_dir is not None and best_params is not None:
@@ -909,7 +972,9 @@ def run_robust_optimization(
         if "cvxpy" in str(e).lower():
             logger.error("❌ Install CVXPY: pip install cvxpy")
         elif "gurobipy" in str(e).lower():
-            logger.error("⚠️  Gurobi not available, using default solver (still works)")
+            logger.error(
+                "⚠️  Gurobi not available, using default solver (still works)"
+            )
         else:
             logger.error(
                 "❌ Install robust optimization dependencies: pip install cvxpy"
@@ -980,9 +1045,13 @@ def run_mcmc_optimization(
             or analyzer.best_params_classical is None
         ):
             analyzer.best_params_classical = initial_params
-            logger.info("✓ Using provided initial parameters for MCMC initialization")
+            logger.info(
+                "✓ Using provided initial parameters for MCMC initialization"
+            )
         else:
-            logger.info("✓ Using stored classical results for MCMC initialization")
+            logger.info(
+                "✓ Using stored classical results for MCMC initialization"
+            )
 
         # Step 3: Create MCMC sampler (this already validates)
         logger.info("Creating MCMC sampler...")
@@ -1026,7 +1095,9 @@ def run_mcmc_optimization(
                 az.to_netcdf(mcmc_results["trace"], str(netcdf_path))
                 logger.info(f"✓ MCMC trace saved to NetCDF: {netcdf_path}")
             except ImportError as import_err:
-                logger.error(f"❌ ArviZ not available for saving trace: {import_err}")
+                logger.error(
+                    f"❌ ArviZ not available for saving trace: {import_err}"
+                )
                 logger.error("❌ Install ArviZ: pip install arviz")
             except Exception as e:
                 logger.error(f"❌ Failed to save NetCDF trace: {e}")
@@ -1073,7 +1144,10 @@ def run_mcmc_optimization(
                 posterior_stats = sampler.extract_posterior_statistics(
                     mcmc_results.get("trace")
                 )
-                if posterior_stats and "parameter_statistics" in posterior_stats:
+                if (
+                    posterior_stats
+                    and "parameter_statistics" in posterior_stats
+                ):
                     summary_results["parameter_statistics"] = posterior_stats[
                         "parameter_statistics"
                     ]
@@ -1097,12 +1171,19 @@ def run_mcmc_optimization(
                 "parameter_names", []
             )
             posterior_means = mcmc_results["posterior_means"]
-            best_params = [posterior_means.get(name, 0.0) for name in param_names]
+            best_params = [
+                posterior_means.get(name, 0.0) for name in param_names
+            ]
 
         # Generate mcmc-specific plots and save data
         if output_dir is not None and best_params is not None:
             _generate_mcmc_plots(
-                analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results
+                analyzer,
+                best_params,
+                phi_angles,
+                c2_exp,
+                output_dir,
+                mcmc_results,
             )
 
         # Extract convergence quality for MCMC summary (no chi-squared
@@ -1129,7 +1210,9 @@ def run_mcmc_optimization(
             )
             logger.info(f"MCMC posterior mean parameters: {best_params}")
         else:
-            logger.warning("No convergence diagnostics available for MCMC results")
+            logger.warning(
+                "No convergence diagnostics available for MCMC results"
+            )
 
         # Format results for compatibility with main analysis framework
         return {
@@ -1138,7 +1221,9 @@ def run_mcmc_optimization(
                 "convergence_quality": convergence_quality,
                 "optimization_time": mcmc_execution_time,
                 "total_time": mcmc_execution_time,
-                "success": mcmc_results.get("diagnostics", {}).get("converged", True),
+                "success": mcmc_results.get("diagnostics", {}).get(
+                    "converged", True
+                ),
                 "method": "MCMC_NUTS",
                 "posterior_means": mcmc_results.get("posterior_means", {}),
                 "convergence_diagnostics": mcmc_results.get("diagnostics", {}),
@@ -1150,8 +1235,12 @@ def run_mcmc_optimization(
             "mcmc_summary": {
                 "parameters": best_params,
                 "convergence_quality": convergence_quality,
-                "max_rhat": mcmc_results.get("diagnostics", {}).get("max_rhat", None),
-                "min_ess": mcmc_results.get("diagnostics", {}).get("min_ess", None),
+                "max_rhat": mcmc_results.get("diagnostics", {}).get(
+                    "max_rhat", None
+                ),
+                "min_ess": mcmc_results.get("diagnostics", {}).get(
+                    "min_ess", None
+                ),
                 "method": "MCMC",
                 "evaluation_metric": "convergence_diagnostics",
                 "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment",
@@ -1179,7 +1268,9 @@ def run_mcmc_optimization(
     except (ValueError, KeyError) as e:
         error_msg = f"MCMC optimization failed - configuration error: {e}"
         logger.error(error_msg)
-        logger.error("❌ Please check your MCMC configuration and parameter priors")
+        logger.error(
+            "❌ Please check your MCMC configuration and parameter priors"
+        )
         return None
     except Exception as e:
         error_msg = f"MCMC optimization failed - unexpected error: {e}"
@@ -1191,7 +1282,9 @@ def run_mcmc_optimization(
         return None
 
 
-def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
+def run_all_methods(
+    analyzer, initial_params, phi_angles, c2_exp, output_dir=None
+):
     """
     Execute all optimization methods: classical, robust, and MCMC sequentially.
 
@@ -1266,7 +1359,9 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     classical_chi_squared = float("inf")
     classical_params = None
     if classical_results and "classical_summary" in classical_results:
-        classical_params = classical_results["classical_summary"].get("parameters")
+        classical_params = classical_results["classical_summary"].get(
+            "parameters"
+        )
         classical_chi_squared = classical_results["classical_summary"].get(
             "chi_squared", float("inf")
         )
@@ -1295,10 +1390,14 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
             )
     elif classical_params is not None:
         mcmc_initial_params = classical_params
-        logger.info("✓ Using classical optimization results for MCMC initialization")
+        logger.info(
+            "✓ Using classical optimization results for MCMC initialization"
+        )
     elif robust_params is not None:
         mcmc_initial_params = robust_params
-        logger.info("✓ Using robust optimization results for MCMC initialization")
+        logger.info(
+            "✓ Using robust optimization results for MCMC initialization"
+        )
     else:
         logger.info(
             "⚠ No optimization results available, using initial parameters for MCMC"
@@ -1468,8 +1567,10 @@ def _generate_classical_plots(
                 classical_dir.mkdir(parents=True, exist_ok=True)
                 logger.info("Generating classical optimization plots...")
 
-                c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                    best_params, phi_angles
+                c2_theory = (
+                    analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                        best_params, phi_angles
+                    )
                 )
                 success = plot_c2_heatmaps(
                     c2_exp,
@@ -1482,9 +1583,13 @@ def _generate_classical_plots(
                     method_name="best",
                 )
                 if success:
-                    logger.info("✓ Classical C2 heatmaps generated successfully")
+                    logger.info(
+                        "✓ Classical C2 heatmaps generated successfully"
+                    )
                 else:
-                    logger.warning("⚠ Some classical C2 heatmaps failed to generate")
+                    logger.warning(
+                        "⚠ Some classical C2 heatmaps failed to generate"
+                    )
             else:
                 # Check if there are any successful methods with parameters
                 # first
@@ -1520,13 +1625,15 @@ def _generate_classical_plots(
                     logger.info(f"  Generating plots for {method_name}...")
 
                     # Calculate theoretical data for this method
-                    c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                        method_params, phi_angles
+                    c2_theory = (
+                        analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                            method_params, phi_angles
+                        )
                     )
 
                     # Create method-specific directory for plots
-                    method_plot_dir = classical_dir / method_name.lower().replace(
-                        "-", "_"
+                    method_plot_dir = (
+                        classical_dir / method_name.lower().replace("-", "_")
                     )
                     method_plot_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1723,8 +1830,12 @@ def _save_individual_method_results(
                 "convergence_info": {
                     "success": method_data.get("success", False),
                     "iterations": method_data.get("iterations"),
-                    "function_evaluations": method_data.get("function_evaluations"),
-                    "termination_reason": method_data.get("message", "Not provided"),
+                    "function_evaluations": method_data.get(
+                        "function_evaluations"
+                    ),
+                    "termination_reason": method_data.get(
+                        "message", "Not provided"
+                    ),
                 },
                 "data_info": {
                     "n_angles": len(phi_angles),
@@ -1786,7 +1897,9 @@ def _save_individual_method_results(
                     {
                         "analysis_type": "Classical Optimization",
                         "methods_analyzed": list(all_methods_data.keys()),
-                        "best_method": getattr(result, "best_method", "unknown"),
+                        "best_method": getattr(
+                            result, "best_method", "unknown"
+                        ),
                         "results": all_methods_data,
                     },
                     f,
@@ -2008,10 +2121,14 @@ def _save_individual_robust_method_results(
                     "max_abs_error": float(max_abs_error),
                 },
                 "robust_specific": {
-                    "uncertainty_radius": robust_info.get("uncertainty_radius"),
+                    "uncertainty_radius": robust_info.get(
+                        "uncertainty_radius"
+                    ),
                     "n_scenarios": robust_info.get("n_scenarios"),
                     "worst_case_value": robust_info.get("worst_case_value"),
-                    "regularization_alpha": robust_info.get("regularization_alpha"),
+                    "regularization_alpha": robust_info.get(
+                        "regularization_alpha"
+                    ),
                 },
                 "convergence_info": {
                     "success": method_data.get("success", False),
@@ -2037,12 +2154,15 @@ def _save_individual_robust_method_results(
             standardized_method_name = method_name_map.get(
                 method_name, method_name.lower().replace("-", "_")
             )
+            if standardized_method_name is None:
+                standardized_method_name = "unknown_method"
             method_dir = robust_dir / standardized_method_name
             method_dir.mkdir(parents=True, exist_ok=True)
 
             # Save method-specific analysis results
             analysis_results_file = (
-                method_dir / f"analysis_results_{standardized_method_name}.json"
+                method_dir
+                / f"analysis_results_{standardized_method_name}.json"
             )
             with open(analysis_results_file, "w") as f:
                 json.dump(method_info, f, indent=2)
@@ -2083,8 +2203,12 @@ def _save_individual_robust_method_results(
                 json.dump(
                     {
                         "analysis_type": "Robust Optimization",
-                        "methods_analyzed": list(all_robust_methods_data.keys()),
-                        "best_method": getattr(result, "best_method", "unknown"),
+                        "methods_analyzed": list(
+                            all_robust_methods_data.keys()
+                        ),
+                        "best_method": getattr(
+                            result, "best_method", "unknown"
+                        ),
                         "results": all_robust_methods_data,
                     },
                     f,
@@ -2196,13 +2320,13 @@ def _generate_robust_plots(
             total_methods = len(result.method_results)
 
             for method_name, method_data in result.method_results.items():
-                if method_data.get("success", False) and method_data.get("parameters"):
+                if method_data.get("success", False) and method_data.get(
+                    "parameters"
+                ):
                     try:
                         method_params = np.array(method_data["parameters"])
-                        method_c2 = (
-                            analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                                method_params, phi_angles
-                            )
+                        method_c2 = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+                            method_params, phi_angles
                         )
 
                         # Generate method-specific plots
@@ -2216,6 +2340,8 @@ def _generate_robust_plots(
                         standardized_name = method_name_map.get(
                             method_name, method_name.lower().replace("-", "_")
                         )
+                        if standardized_name is None:
+                            standardized_name = "unknown_method"
 
                         # Create method directory for plots (same as data
                         # saving)
@@ -2235,7 +2361,9 @@ def _generate_robust_plots(
                         )
                         if plot_success:
                             success_count += 1
-                            logger.info(f"  ✓ {method_name} heatmaps generated")
+                            logger.info(
+                                f"  ✓ {method_name} heatmaps generated"
+                            )
                         else:
                             logger.warning(
                                 f"  ⚠ {method_name} heatmaps failed to generate"
@@ -2245,7 +2373,9 @@ def _generate_robust_plots(
                         # diagnostic_summary.png for --method all is generated
 
                     except Exception as e:
-                        logger.warning(f"  ⚠ {method_name} plot generation failed: {e}")
+                        logger.warning(
+                            f"  ⚠ {method_name} plot generation failed: {e}"
+                        )
 
             if success_count > 0:
                 logger.info(
@@ -2267,7 +2397,9 @@ def _generate_robust_plots(
                     method_name="Robust-Best",
                 )
                 if plot_success:
-                    logger.info("✓ Robust fallback plot generated successfully")
+                    logger.info(
+                        "✓ Robust fallback plot generated successfully"
+                    )
                 else:
                     logger.warning("⚠ Robust fallback plot failed to generate")
         else:
@@ -2373,7 +2505,9 @@ def _generate_mcmc_plots(
 
             # Time arrays already initialized at function start
 
-            logger.info("Generating C2 correlation heatmaps for MCMC results...")
+            logger.info(
+                "Generating C2 correlation heatmaps for MCMC results..."
+            )
             success = plot_c2_heatmaps(
                 c2_exp,
                 c2_theory,
@@ -2427,7 +2561,9 @@ def _generate_mcmc_plots(
 
                         if param_samples:
                             # Stack to get shape (n_samples, n_parameters)
-                            param_samples_array = np.column_stack(param_samples)
+                            param_samples_array = np.column_stack(
+                                param_samples
+                            )
                             n_samples = min(
                                 500, param_samples_array.shape[0]
                             )  # Limit for performance
@@ -2448,7 +2584,9 @@ def _generate_mcmc_plots(
                             # Generate C2 samples for each parameter sample
                             c2_posterior_samples = []
                             for i, params in enumerate(param_samples_subset):
-                                if i % 50 == 0:  # Log progress every 50 samples
+                                if (
+                                    i % 50 == 0
+                                ):  # Log progress every 50 samples
                                     logger.debug(
                                         f"Processing posterior sample {
                                             i + 1}/{n_samples}"
@@ -2462,23 +2600,31 @@ def _generate_mcmc_plots(
 
                                 # Apply least squares scaling to match
                                 # experimental data structure
-                                for j in range(c2_exp.shape[0]):  # For each angle
+                                for j in range(
+                                    c2_exp.shape[0]
+                                ):  # For each angle
                                     exp_data = c2_exp[j].flatten()
                                     theory_data = c2_sample[j].flatten()
 
                                     # Least squares scaling: fitted = contrast
                                     # * theory + offset
                                     A = np.vstack(
-                                        [theory_data, np.ones(len(theory_data))]
+                                        [
+                                            theory_data,
+                                            np.ones(len(theory_data)),
+                                        ]
                                     ).T
-                                    scaling, residuals, rank, s = np.linalg.lstsq(
-                                        A, exp_data, rcond=None
+                                    scaling, residuals, rank, s = (
+                                        np.linalg.lstsq(
+                                            A, exp_data, rcond=None
+                                        )
                                     )
                                     contrast, offset = scaling
 
                                     # Apply scaling to this angle slice
                                     c2_sample[j] = (
-                                        theory_data.reshape(c2_exp[j].shape) * contrast
+                                        theory_data.reshape(c2_exp[j].shape)
+                                        * contrast
                                         + offset
                                     )
 
@@ -2486,7 +2632,9 @@ def _generate_mcmc_plots(
 
                             # Convert to numpy array: (n_samples, n_angles,
                             # n_t2, n_t1)
-                            c2_posterior_samples = np.array(c2_posterior_samples)
+                            c2_posterior_samples = np.array(
+                                c2_posterior_samples
+                            )
 
                             # Generate 3D plots for a subset of angles (to
                             # avoid too many plots)
@@ -2540,10 +2688,14 @@ def _generate_mcmc_plots(
                                 )
 
                         else:
-                            logger.warning("No parameter samples found in MCMC trace")
+                            logger.warning(
+                                "No parameter samples found in MCMC trace"
+                            )
 
                     else:
-                        logger.warning("MCMC trace does not contain posterior data")
+                        logger.warning(
+                            "MCMC trace does not contain posterior data"
+                        )
 
                 except ImportError:
                     logger.warning(
@@ -2605,7 +2757,9 @@ def _generate_mcmc_plots(
                 "phi_angles": phi_angles,
                 "best_parameters": dict(
                     zip(
-                        config.get("initial_parameters", {}).get("parameter_names", []),
+                        config.get("initial_parameters", {}).get(
+                            "parameter_names", []
+                        ),
                         best_params,
                     )
                 ),
@@ -2620,12 +2774,18 @@ def _generate_mcmc_plots(
                 "method": "MCMC",
             }
 
-            logger.info("Generating MCMC-specific plots (trace, corner, etc.)...")
+            logger.info(
+                "Generating MCMC-specific plots (trace, corner, etc.)..."
+            )
             plot_status = create_all_plots(plot_data, mcmc_dir, config)
 
-            successful_plots = sum(1 for status in plot_status.values() if status)
+            successful_plots = sum(
+                1 for status in plot_status.values() if status
+            )
             if successful_plots > 0:
-                logger.info(f"✓ Generated {successful_plots} MCMC plots successfully")
+                logger.info(
+                    f"✓ Generated {successful_plots} MCMC plots successfully"
+                )
             else:
                 logger.warning("⚠ No MCMC plots were generated successfully")
 
@@ -2642,50 +2802,56 @@ def _generate_mcmc_plots(
 def plot_simulated_data(args: argparse.Namespace) -> None:
     """
     Generate and plot theoretical C2 correlation function heatmaps using initial parameters.
-    
+
     This function creates simulated C2 data based on the initial parameters specified
     in the configuration file, without requiring experimental data. Useful for:
     - Parameter exploration and visualization
     - Method comparison and validation
     - Understanding theoretical behavior
     - Educational purposes
-    
+
     Parameters
     ----------
     args : argparse.Namespace
         Command-line arguments containing config path and output directory
     """
     logger = logging.getLogger(__name__)
-    
+
     logger.info("Starting simulated data plotting...")
     logger.info(f"Configuration file: {args.config}")
-    
+
     # Check if core components are available
     if HomodyneAnalysisCore is None:
         logger.error("❌ HomodyneAnalysisCore is not available")
-        logger.error("Please ensure the homodyne package is properly installed")
+        logger.error(
+            "Please ensure the homodyne package is properly installed"
+        )
         raise ImportError("HomodyneAnalysisCore not available")
-    
+
     # Define default parameters for fallback
     DEFAULT_INITIAL_PARAMS = np.array([100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0])
-    DEFAULT_PARAM_NAMES = ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
-    DEFAULT_TEMPORAL_CONFIG = {
-        "dt": 0.1,
-        "start_frame": 1,
-        "end_frame": 100
-    }
+    DEFAULT_PARAM_NAMES = [
+        "D0",
+        "alpha",
+        "D_offset",
+        "gamma_dot_t0",
+        "beta",
+        "gamma_dot_t_offset",
+        "phi0",
+    ]
+    DEFAULT_TEMPORAL_CONFIG = {"dt": 0.1, "start_frame": 1, "end_frame": 100}
     DEFAULT_ANALYZER_CONFIG = {
         "temporal": DEFAULT_TEMPORAL_CONFIG,
         "scattering": {"wavevector_q": 0.01},
-        "geometry": {"stator_rotor_gap": 2000000}  # 200 μm in Angstroms
+        "geometry": {"stator_rotor_gap": 2000000},  # 200 μm in Angstroms
     }
-    
+
     # Initialize variables for config and parameters
     core = None
     config = None
     initial_params = None
     use_default_config = False
-    
+
     # Try to initialize analysis core with configuration
     try:
         # Check if config file exists
@@ -2697,28 +2863,42 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
             # Apply command-line mode overrides
             config_override = {}
             if args.static_isotropic:
-                config_override["analysis_settings"] = {"static_mode": True, "isotropic_mode": True}
+                config_override["analysis_settings"] = {
+                    "static_mode": True,
+                    "isotropic_mode": True,
+                }
             elif args.static_anisotropic:
-                config_override["analysis_settings"] = {"static_mode": True, "isotropic_mode": False}
+                config_override["analysis_settings"] = {
+                    "static_mode": True,
+                    "isotropic_mode": False,
+                }
             elif args.laminar_flow:
                 config_override["analysis_settings"] = {"static_mode": False}
-            
+
             if config_override:
                 core = HomodyneAnalysisCore(str(args.config), config_override)
-                logger.info(f"Applied command-line mode override: {config_override}")
+                logger.info(
+                    f"Applied command-line mode override: {config_override}"
+                )
             else:
                 core = HomodyneAnalysisCore(str(args.config))
-            
+
             # Get configuration and parameters from core
             config = core.config_manager.config
+            if config is None or "initial_parameters" not in config:
+                raise ValueError(
+                    "Configuration does not contain initial_parameters"
+                )
             initial_params = np.array(config["initial_parameters"]["values"])
-            logger.info(f"Using initial parameters from config: {initial_params}")
-            
+            logger.info(
+                f"Using initial parameters from config: {initial_params}"
+            )
+
     except Exception as e:
         logger.warning(f"Failed to initialize analysis core with config: {e}")
         logger.info("Falling back to default parameters for simulation")
         use_default_config = True
-    
+
     # Use default configuration if needed
     if use_default_config:
         # Create minimal configuration for simulation
@@ -2726,19 +2906,21 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
             "analyzer_parameters": DEFAULT_ANALYZER_CONFIG,
             "initial_parameters": {
                 "values": DEFAULT_INITIAL_PARAMS.tolist(),
-                "parameter_names": DEFAULT_PARAM_NAMES
-            }
+                "parameter_names": DEFAULT_PARAM_NAMES,
+            },
         }
         initial_params = DEFAULT_INITIAL_PARAMS
         logger.info(f"Using default initial parameters: {initial_params}")
-        
+
         # Create a minimal core for calculation if not already created
         if core is None:
             # Create temporary config file for core initialization
-            import tempfile
             import json
-            
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            import tempfile
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False
+            ) as f:
                 temp_config = {
                     "metadata": {"config_version": "0.6.5.dev0"},
                     "analyzer_parameters": DEFAULT_ANALYZER_CONFIG,
@@ -2746,14 +2928,14 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
                         "data_folder_path": "./data/",
                         "data_file_name": "dummy.hdf",
                         "phi_angles_path": "./data/",
-                        "phi_angles_file": "phi_list.txt"
+                        "phi_angles_file": "phi_list.txt",
                     },
                     "optimization_config": {
                         "classical_optimization": {"methods": ["Nelder-Mead"]}
                     },
                     "initial_parameters": {
                         "values": DEFAULT_INITIAL_PARAMS.tolist(),
-                        "parameter_names": DEFAULT_PARAM_NAMES
+                        "parameter_names": DEFAULT_PARAM_NAMES,
                     },
                     "parameter_space": {
                         "bounds": [
@@ -2762,216 +2944,281 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
                             {"name": "D_offset", "min": -5000, "max": 5000},
                             {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0},
                             {"name": "beta", "min": -2.0, "max": 2.0},
-                            {"name": "gamma_dot_t_offset", "min": -0.1, "max": 0.1},
-                            {"name": "phi0", "min": -15.0, "max": 15.0}
+                            {
+                                "name": "gamma_dot_t_offset",
+                                "min": -0.1,
+                                "max": 0.1,
+                            },
+                            {"name": "phi0", "min": -15.0, "max": 15.0},
                         ]
-                    }
+                    },
                 }
-                
+
                 # Apply command-line mode overrides
                 if args.static_isotropic:
-                    temp_config["analysis_settings"] = {"static_mode": True, "isotropic_mode": True}
+                    temp_config["analysis_settings"] = {
+                        "static_mode": True,
+                        "isotropic_mode": True,
+                    }
                 elif args.static_anisotropic:
-                    temp_config["analysis_settings"] = {"static_mode": True, "isotropic_mode": False}
+                    temp_config["analysis_settings"] = {
+                        "static_mode": True,
+                        "isotropic_mode": False,
+                    }
                 elif args.laminar_flow:
                     temp_config["analysis_settings"] = {"static_mode": False}
-                
+
                 json.dump(temp_config, f)
                 temp_config_path = f.name
-            
+
             try:
                 core = HomodyneAnalysisCore(temp_config_path)
                 logger.info("Created analysis core with default configuration")
+            except Exception as e:
+                logger.error(f"Failed to create default analysis core: {e}")
+                logger.error("Cannot proceed with simulation")
+                sys.exit(1)
             finally:
                 # Clean up temporary file
                 Path(temp_config_path).unlink(missing_ok=True)
-    
-    # Get analysis mode information
+
+    # Get analysis mode information (core is guaranteed to exist at this point)
+    if core is None:
+        logger.error(
+            "Analysis core is not available. Cannot proceed with simulation"
+        )
+        sys.exit(1)
+
     is_static = core.is_static_mode()
     param_count = core.get_effective_parameter_count()
     analysis_mode = core.config_manager.get_analysis_mode()
-    
+
     logger.info(f"Analysis mode: {analysis_mode}")
     logger.info(f"Static mode: {is_static}")
     logger.info(f"Parameter count: {param_count}")
-    
+
     # Create phi angles for simulation
     if args.phi_angles is not None:
         # Parse command-line phi angles
         try:
-            phi_angles_list = [float(angle.strip()) for angle in args.phi_angles.split(',')]
+            phi_angles_list = [
+                float(angle.strip()) for angle in args.phi_angles.split(",")
+            ]
             phi_angles = np.array(phi_angles_list)
             n_angles = len(phi_angles)
-            logger.info(f"Using custom phi angles from command line: {phi_angles}")
+            logger.info(
+                f"Using custom phi angles from command line: {phi_angles}"
+            )
         except ValueError as e:
             logger.error(f"❌ Invalid phi angles format: {args.phi_angles}")
-            logger.error("Expected comma-separated numbers (e.g., '0,45,90,135')")
+            logger.error(
+                "Expected comma-separated numbers (e.g., '0,45,90,135')"
+            )
             raise ValueError(f"Failed to parse phi angles: {e}")
     else:
         # Use reasonable default range covering typical XPCS measurements
         n_angles = 5  # Default number of angles
-        phi_angles = np.linspace(0, 180, n_angles, endpoint=False)  # 0°, 36°, 72°, 108°, 144°
+        phi_angles = np.linspace(
+            0, 180, n_angles, endpoint=False
+        )  # 0°, 36°, 72°, 108°, 144°
         logger.info(f"Using default phi angles: {phi_angles}")
-    
+
     logger.info(f"Simulating {n_angles} phi angles: {phi_angles}")
-    
+
     # Create time arrays for simulation
     # Base on config temporal parameters if available
+    if config is None:
+        logger.error(
+            "Configuration is not available. Cannot proceed with simulation"
+        )
+        sys.exit(1)
+
     temporal_config = config.get("analyzer_parameters", {}).get("temporal", {})
     dt = temporal_config.get("dt", 0.1)
     start_frame = temporal_config.get("start_frame", 1)
     end_frame = temporal_config.get("end_frame", 50)
-    n_time = end_frame - start_frame  # Correct calculation: end_frame - start_frame (not +1)
-    
+    n_time = (
+        end_frame - start_frame
+    )  # Correct calculation: end_frame - start_frame (not +1)
+
     # Create time arrays
     t1 = np.arange(n_time) * dt
     t2 = np.arange(n_time) * dt
-    
-    logger.info(f"Time parameters: dt={dt}, frames={start_frame}-{end_frame}, n_time={n_time}")
-    
+
+    logger.info(
+        f"Time parameters: dt={dt}, frames={start_frame}-{end_frame}, n_time={n_time}"
+    )
+
     # Generate theoretical C2 data for each angle
     logger.info("Generating theoretical C2 correlation functions...")
     c2_theoretical = np.zeros((n_angles, n_time, n_time))
-    
+
+    if initial_params is None:
+        logger.error(
+            "Initial parameters are not available. Cannot proceed with simulation"
+        )
+        sys.exit(1)
+
     try:
         for i, phi_angle in enumerate(phi_angles):
             logger.debug(f"Computing C2 for phi angle {phi_angle:.1f}°")
-            c2_single = core.calculate_c2_single_angle_optimized(initial_params, phi_angle)
+            c2_single = core.calculate_c2_single_angle_optimized(
+                initial_params, phi_angle
+            )
             c2_theoretical[i] = c2_single
-            
-        logger.info("✓ Theoretical C2 correlation functions generated successfully")
-        
+
+        logger.info(
+            "✓ Theoretical C2 correlation functions generated successfully"
+        )
+
     except Exception as e:
         logger.error(f"❌ Failed to generate theoretical C2 data: {e}")
         raise
-    
+
     # Apply scaling transformation (always when plotting simulated data)
-    logger.info(f"Applying scaling transformation: fitted = {args.contrast} * theory + {args.offset}")
+    logger.info(
+        f"Applying scaling transformation: fitted = {args.contrast} * theory + {args.offset}"
+    )
     c2_fitted = args.contrast * c2_theoretical + args.offset
     c2_plot_data = c2_fitted
-    
+
     # Determine data type and logging based on whether scaling is meaningful
     if args.contrast == 1.0 and args.offset == 0.0:
         data_type = "theoretical"
-        logger.info("✓ Default scaling applied (contrast=1.0, offset=0.0): equivalent to theoretical data")
+        logger.info(
+            "✓ Default scaling applied (contrast=1.0, offset=0.0): equivalent to theoretical data"
+        )
     else:
         data_type = "fitted"
         logger.info("✓ Custom scaling transformation applied successfully")
-    
+
     # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
     simulated_dir = args.output_dir / "simulated_data"
     os.makedirs(simulated_dir, exist_ok=True)
-    
+
     # Generate custom plots for simulated data
     logger.info("Generating C2 theoretical heatmap plots...")
-    
+
     # Import matplotlib for custom plotting
     try:
-        import matplotlib.pyplot as plt
         import matplotlib.colors as colors
+        import matplotlib.pyplot as plt
     except ImportError:
         logger.error("❌ Failed to import matplotlib")
         logger.error("Please ensure matplotlib is available")
         raise
-    
+
     try:
         success_count = 0
-        
+
         for i, phi_angle in enumerate(phi_angles):
             # Get C2 data for this angle (theoretical or fitted)
             c2_data = c2_plot_data[i]
-            
+
             # Calculate color scale: vmin=min, vmax=max value in this angle's data
             vmin = np.min(c2_data)
             vmax = np.max(c2_data)
-            
+
             # Create figure for single heatmap
             fig, ax = plt.subplots(figsize=(8, 6))
-            
+
             # Create heatmap with custom color scale
             im = ax.imshow(
                 c2_data,
-                aspect='equal',
-                origin='lower',
+                aspect="equal",
+                origin="lower",
                 extent=(t1[0], t1[-1], t2[0], t2[-1]),
                 vmin=vmin,
                 vmax=vmax,
-                cmap='viridis'
+                cmap="viridis",
             )
-            
+
             # Add colorbar with appropriate label
             cbar = plt.colorbar(im, ax=ax)
             if data_type == "fitted":
-                cbar.set_label('C₂ Fitted (t₁, t₂)', fontsize=12)
+                cbar.set_label("C₂ Fitted (t₁, t₂)", fontsize=12)
             else:
-                cbar.set_label('C₂(t₁, t₂)', fontsize=12)
-            
+                cbar.set_label("C₂(t₁, t₂)", fontsize=12)
+
             # Set labels and title
-            ax.set_xlabel('t₁ (s)', fontsize=12)
-            ax.set_ylabel('t₂ (s)', fontsize=12)
-            
+            ax.set_xlabel("t₁ (s)", fontsize=12)
+            ax.set_ylabel("t₂ (s)", fontsize=12)
+
             if data_type == "fitted":
-                ax.set_title(f'Fitted C₂ Correlation Function (φ = {phi_angle:.1f}°)\nfitted = {args.contrast} × theory + {args.offset}', fontsize=14)
+                ax.set_title(
+                    f"Fitted C₂ Correlation Function (φ = {phi_angle:.1f}°)\nfitted = {args.contrast} × theory + {args.offset}",
+                    fontsize=14,
+                )
                 filename = f"simulated_c2_fitted_phi_{phi_angle:.1f}deg.png"
             else:
-                ax.set_title(f'Theoretical C₂ Correlation Function (φ = {phi_angle:.1f}°)', fontsize=14)
-                filename = f"simulated_c2_theoretical_phi_{phi_angle:.1f}deg.png"
-            
-            
+                ax.set_title(
+                    f"Theoretical C₂ Correlation Function (φ = {phi_angle:.1f}°)",
+                    fontsize=14,
+                )
+                filename = (
+                    f"simulated_c2_theoretical_phi_{phi_angle:.1f}deg.png"
+                )
+
             # Save the plot
             filepath = simulated_dir / filename
-            
+
             plt.tight_layout()
-            plt.savefig(filepath, dpi=300, bbox_inches='tight')
+            plt.savefig(filepath, dpi=300, bbox_inches="tight")
             plt.close(fig)
-            
+
             success_count += 1
-            logger.debug(f"Saved theoretical C2 heatmap for φ = {phi_angle:.1f}°: {filename}")
-        
+            logger.debug(
+                f"Saved theoretical C2 heatmap for φ = {phi_angle:.1f}°: {filename}"
+            )
+
         if success_count == len(phi_angles):
-            logger.info(f"✓ Successfully generated {success_count}/{len(phi_angles)} theoretical C2 heatmap plots")
+            logger.info(
+                f"✓ Successfully generated {success_count}/{len(phi_angles)} theoretical C2 heatmap plots"
+            )
             logger.info(f"Plots saved to: {simulated_dir}")
         else:
-            logger.warning(f"⚠ Generated {success_count}/{len(phi_angles)} plots successfully")
-            
+            logger.warning(
+                f"⚠ Generated {success_count}/{len(phi_angles)} plots successfully"
+            )
+
     except Exception as e:
         logger.error(f"❌ Failed to generate custom theoretical plots: {e}")
         raise
-    
+
     # Save data as numpy arrays for further analysis
     # Always save with scaling information since scaling is always applied
     if data_type == "fitted":
         data_file = simulated_dir / "fitted_c2_data.npz"
     else:
         data_file = simulated_dir / "theoretical_c2_data.npz"
-    
+
     try:
         save_data = {
-            'c2_theoretical': c2_theoretical,
-            'c2_scaled': c2_plot_data,  # Always include scaled data
-            'phi_angles': phi_angles,
-            't1': t1,
-            't2': t2,
-            'initial_parameters': initial_params,
-            'analysis_mode': analysis_mode,
-            'config_file': str(args.config),
-            'contrast': args.contrast,
-            'offset': args.offset,
-            'scaling_formula': f"scaled = {args.contrast} * theory + {args.offset}"
+            "c2_theoretical": c2_theoretical,
+            "c2_scaled": c2_plot_data,  # Always include scaled data
+            "phi_angles": phi_angles,
+            "t1": t1,
+            "t2": t2,
+            "initial_parameters": initial_params,
+            "analysis_mode": analysis_mode,
+            "config_file": str(args.config),
+            "contrast": args.contrast,
+            "offset": args.offset,
+            "scaling_formula": f"scaled = {args.contrast} * theory + {args.offset}",
         }
-        
+
         np.savez(data_file, **save_data)
-        
+
         if data_type == "fitted":
             logger.info(f"✓ Theoretical and fitted data saved to: {data_file}")
         else:
             logger.info(f"✓ Theoretical and scaled data saved to: {data_file}")
-        
+
     except Exception as e:
         logger.error(f"❌ Failed to save data: {e}")
         logger.warning("Continuing without saving data arrays...")
-    
+
     # Print summary
     print()
     print("=" * 60)
@@ -2980,15 +3227,21 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     print(f"Analysis mode:        {analysis_mode}")
     print(f"Static mode:          {is_static}")
     print(f"Parameters used:      {param_count} effective parameters")
-    print(f"Phi angles:           {n_angles} angles from {phi_angles[0]:.1f}° to {phi_angles[-1]:.1f}°")
+    print(
+        f"Phi angles:           {n_angles} angles from {phi_angles[0]:.1f}° to {phi_angles[-1]:.1f}°"
+    )
     print(f"Time points:          {n_time} frames (dt = {dt})")
     print(f"Output directory:     {simulated_dir}")
     if data_type == "fitted":
         print(f"Plots generated:      Fitted C2 heatmaps for each phi angle")
-        print(f"Scaling applied:      fitted = {args.contrast} × theory + {args.offset}")
+        print(
+            f"Scaling applied:      fitted = {args.contrast} × theory + {args.offset}"
+        )
     else:
-        print(f"Plots generated:      Theoretical C2 heatmaps for each phi angle")
-    
+        print(
+            f"Plots generated:      Theoretical C2 heatmaps for each phi angle"
+        )
+
     print(f"Data saved:           {data_file.name}")
     print("=" * 60)
 
@@ -3130,15 +3383,21 @@ Method Quality Assessment:
     # Check for conflicting logging options
     if args.verbose and args.quiet:
         parser.error("Cannot use --verbose and --quiet together")
-    
+
     # Check for consistent scaling parameters
-    if (args.contrast != 1.0 or args.offset != 0.0) and not args.plot_simulated_data:
-        parser.error("--contrast and --offset can only be used with --plot-simulated-data")
-    
+    if (
+        args.contrast != 1.0 or args.offset != 0.0
+    ) and not args.plot_simulated_data:
+        parser.error(
+            "--contrast and --offset can only be used with --plot-simulated-data"
+        )
+
     # Check for consistent phi angles parameter
     if args.phi_angles is not None:
         if not args.plot_simulated_data:
-            parser.error("--phi-angles can only be used with --plot-simulated-data")
+            parser.error(
+                "--phi-angles can only be used with --plot-simulated-data"
+            )
 
     # Setup logging and prepare output directory
     setup_logging(args.verbose, args.quiet, args.output_dir)
@@ -3181,7 +3440,7 @@ Method Quality Assessment:
         except Exception as e:
             logger.error(f"❌ Simulated data plotting failed: {e}")
             sys.exit(1)
-    
+
     # Run the analysis
     try:
         run_analysis(args)

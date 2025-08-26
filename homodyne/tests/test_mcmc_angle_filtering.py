@@ -142,7 +142,9 @@ class TestMCMCAngleFilteringCore:
         import inspect
 
         # Test _build_bayesian_model_optimized defaults
-        sig = inspect.signature(mock_mcmc_sampler._build_bayesian_model_optimized)
+        sig = inspect.signature(
+            mock_mcmc_sampler._build_bayesian_model_optimized
+        )
         assert "filter_angles_for_optimization" in sig.parameters
         assert sig.parameters["filter_angles_for_optimization"].default is True
 
@@ -213,7 +215,9 @@ class TestMCMCAngleFilteringCore:
         c2_filtered = c2_experimental[optimization_indices]
 
         # Check dimensions
-        assert c2_filtered.shape[0] == len(optimization_indices)  # Reduced angles
+        assert c2_filtered.shape[0] == len(
+            optimization_indices
+        )  # Reduced angles
         assert c2_filtered.shape[1] == n_time  # Time dimension unchanged
         assert c2_filtered.shape[2] == n_time  # Time dimension unchanged
 
@@ -230,9 +234,9 @@ class TestMCMCAngleFilteringCore:
         # Create test data
         n_angles = len(test_phi_angles_mcmc)
         n_time = 20  # Small for testing
-        c2_experimental = np.ones((n_angles, n_time, n_time)) + 0.1 * np.random.rand(
-            n_angles, n_time, n_time
-        )
+        c2_experimental = np.ones(
+            (n_angles, n_time, n_time)
+        ) + 0.1 * np.random.rand(n_angles, n_time, n_time)
 
         try:
             # Test with filtering enabled
@@ -265,7 +269,9 @@ class TestMCMCAngleFilteringCore:
         except Exception as e:
             # Model building might fail due to simplified forward model
             # This is acceptable - we're mainly testing the parameter passing
-            assert "forward model" in str(e).lower() or "pymc" in str(e).lower()
+            assert (
+                "forward model" in str(e).lower() or "pymc" in str(e).lower()
+            )
 
     def test_mcmc_fallback_behavior(self, mock_mcmc_sampler):
         """Test MCMC fallback when no angles are in optimization ranges."""
@@ -288,7 +294,9 @@ class TestMCMCAngleFilteringCore:
             assert model is not None
         except Exception as e:
             # Expected due to simplified model limitations
-            assert "forward model" in str(e).lower() or "pymc" in str(e).lower()
+            assert (
+                "forward model" in str(e).lower() or "pymc" in str(e).lower()
+            )
 
 
 class TestMCMCAngleFilteringIntegration:
@@ -300,7 +308,10 @@ class TestMCMCAngleFilteringIntegration:
             pytest.skip("PyMC not available")
 
         try:
-            from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
+            from homodyne.optimization.mcmc import (
+                MCMCSampler,
+                create_mcmc_sampler,
+            )
 
             # Test that MCMCSampler class has the required methods
             assert hasattr(MCMCSampler, "run_mcmc_analysis")
@@ -390,8 +401,12 @@ class TestMCMCAngleFilteringPerformance:
         )
 
         # Verify expected reductions
-        assert reduction_factor == pytest.approx(5.75, rel=0.1)  # ~5.75x reduction
-        assert reduction_percentage == pytest.approx(82.6, rel=1.0)  # ~82.6% reduction
+        assert reduction_factor == pytest.approx(
+            5.75, rel=0.1
+        )  # ~5.75x reduction
+        assert reduction_percentage == pytest.approx(
+            82.6, rel=1.0
+        )  # ~82.6% reduction
 
     @pytest.mark.memory
     def test_mcmc_memory_usage_estimation(self):
@@ -413,7 +428,9 @@ class TestMCMCAngleFilteringPerformance:
         # Verify significant memory savings
         memory_savings = memory_all_mb - memory_filtered_mb
         assert memory_savings > 0
-        assert memory_filtered_mb / memory_all_mb == pytest.approx(4 / 23, rel=0.01)
+        assert memory_filtered_mb / memory_all_mb == pytest.approx(
+            4 / 23, rel=0.01
+        )
 
 
 class TestMCMCAngleFilteringBackwardCompatibility:
@@ -431,8 +448,12 @@ class TestMCMCAngleFilteringBackwardCompatibility:
 
             # Test that default is None (resolved to True at runtime)
             sig = inspect.signature(MCMCSampler.run_mcmc_analysis)
-            default_value = sig.parameters["filter_angles_for_optimization"].default
-            assert default_value is None  # Uses None, resolved to True at runtime
+            default_value = sig.parameters[
+                "filter_angles_for_optimization"
+            ].default
+            assert (
+                default_value is None
+            )  # Uses None, resolved to True at runtime
 
             # Test that parameter is optional
             assert (

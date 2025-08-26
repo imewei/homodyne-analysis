@@ -72,16 +72,27 @@ def create_minimal_mcmc_config(draws=1000, chains=2, tune=500, **kwargs):
             "bounds": [
                 {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
                 {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
-                {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
+                {
+                    "name": "D_offset",
+                    "min": -100,
+                    "max": 100,
+                    "type": "Normal",
+                },
             ]
         },
         "analyzer_parameters": {
             "temporal": {"dt": 0.5},
             "scattering": {"wavevector_q": 0.0237},
         },
-        "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+        "analysis_settings": {
+            "static_mode": True,
+            "static_submode": "isotropic",
+        },
         "performance_settings": {
-            "noise_model": {"use_simple_forward_model": True, "sigma_prior": 0.1}
+            "noise_model": {
+                "use_simple_forward_model": True,
+                "sigma_prior": 0.1,
+            }
         },
     }
 
@@ -100,7 +111,9 @@ def create_mock_analysis_core():
     # Mock config manager
     mock_core.config_manager = Mock()
     mock_core.config_manager.is_static_mode_enabled.return_value = True
-    mock_core.config_manager.get_analysis_mode.return_value = "static_isotropic"
+    mock_core.config_manager.get_analysis_mode.return_value = (
+        "static_isotropic"
+    )
     mock_core.config_manager.get_effective_parameter_count.return_value = 3
     mock_core.config_manager.is_angle_filtering_enabled.return_value = True
 
@@ -273,7 +286,10 @@ def create_realistic_user_config():
         Realistic configuration with proper MCMC settings
     """
     return {
-        "metadata": {"config_version": "6.0", "analysis_mode": "static_isotropic"},
+        "metadata": {
+            "config_version": "6.0",
+            "analysis_mode": "static_isotropic",
+        },
         "optimization_config": {
             "mcmc_sampling": {
                 "enabled": True,
@@ -304,14 +320,32 @@ def create_realistic_user_config():
             "bounds": [
                 {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
                 {"name": "alpha", "min": -1.6, "max": -1.5, "type": "Normal"},
-                {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
-                {"name": "gamma_dot_t0", "min": 0.0, "max": 0.0, "type": "fixed"},
+                {
+                    "name": "D_offset",
+                    "min": -100,
+                    "max": 100,
+                    "type": "Normal",
+                },
+                {
+                    "name": "gamma_dot_t0",
+                    "min": 0.0,
+                    "max": 0.0,
+                    "type": "fixed",
+                },
                 {"name": "beta", "min": 0.0, "max": 0.0, "type": "fixed"},
-                {"name": "gamma_dot_t_offset", "min": 0.0, "max": 0.0, "type": "fixed"},
+                {
+                    "name": "gamma_dot_t_offset",
+                    "min": 0.0,
+                    "max": 0.0,
+                    "type": "fixed",
+                },
                 {"name": "phi0", "min": 0.0, "max": 0.0, "type": "fixed"},
             ]
         },
-        "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
+        "analysis_settings": {
+            "static_mode": True,
+            "static_submode": "isotropic",
+        },
         "analyzer_parameters": {
             "temporal": {"dt": 0.5, "start_frame": 400, "end_frame": 1000},
             "scattering": {"wavevector_q": 0.0237},
@@ -327,4 +361,10 @@ def get_mcmc_defaults():
     dict
         Dictionary with default MCMC configuration values
     """
-    return {"draws": 1000, "tune": 500, "chains": 2, "target_accept": 0.9, "cores": 1}
+    return {
+        "draws": 1000,
+        "tune": 500,
+        "chains": 2,
+        "target_accept": 0.9,
+        "cores": 1,
+    }
