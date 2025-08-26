@@ -408,8 +408,9 @@
     },
     "noise_model": {
       "use_simple_forward_model": false,
-      "_note": "False uses full forward model consistent with classical optimization",
-      "sigma_prior": 0.1
+      "_note": "False uses full forward model with fitted = contrast × theory + offset scaling, consistent with classical/robust optimization",
+      "sigma_prior": 0.1,
+      "_scaling_note": "Full forward model ensures MCMC uses same scaling relationship as other methods"
     }
   },
   

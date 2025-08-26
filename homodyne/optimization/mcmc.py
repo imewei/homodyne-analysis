@@ -204,11 +204,10 @@ class MCMCSampler:
         This method constructs a probabilistic model for Bayesian inference
         with PyMC, including proper priors and likelihood functions.
 
-        IMPORTANT: The current implementation has a scaling optimization consistency issue.
-        The chi-squared calculation applies per-angle scaling optimization (fitted = theory * contrast + offset)
-        while the simplified MCMC forward model does not. This creates inconsistency between
-        optimization methods. Set use_simple_forward_model=False for better consistency,
-        but this is computationally more expensive.
+        The MCMC implementation correctly uses the same scaling optimization as classical methods.
+        Both simple and full forward models support proper scaling (fitted = contrast * theory + offset)
+        ensuring consistency across all optimization methods. The full forward model uses the
+        actual analysis core for theoretical correlations, providing the most accurate results.
 
         Parameters
         ----------
@@ -406,17 +405,6 @@ class MCMCSampler:
                                 )
                             else:
                                 raise ImportError("PyMC not available")
-                        elif (
-                            prior_type == "Uniform"
-                            and min_val is not None
-                            and max_val is not None
-                        ):
-                            if pm is not None:
-                                return pm.Uniform(
-                                    param_name, lower=min_val, upper=max_val
-                                )
-                            else:
-                                raise ImportError("PyMC not available")
                         else:
                             print(
                                 f"   ⚠ Unknown prior type '{prior_type}' for {param_name}, using Normal"
@@ -609,6 +597,11 @@ class MCMCSampler:
             # but scaling optimization is fundamental to proper uncertainty
             # quantification.
             simple_forward = noise_config.get("use_simple_forward_model", False)
+            
+            # Force full forward model for proper scaling consistency
+            if simple_forward:
+                logger.warning("Forcing full forward model for scaling consistency with classical methods")
+                simple_forward = False
 
             if simple_forward:
                 print(

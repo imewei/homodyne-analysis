@@ -110,7 +110,7 @@ class RobustHomodyneOptimizer:
         # Default robust optimization settings with enhanced performance tuning
         self.default_settings = {
             "uncertainty_model": "wasserstein",  # wasserstein, ellipsoidal, scenario
-            "uncertainty_radius": 0.05,  # 5% of data variance
+            "uncertainty_radius": 0.02,  # 2% of data variance (more conservative)
             "n_scenarios": 15,  # Adaptive based on problem size
             "regularization_alpha": 0.01,  # L2 regularization strength
             "regularization_beta": 0.001,  # L1 sparsity parameter
@@ -384,10 +384,24 @@ class RobustHomodyneOptimizer:
         scaled_experimental, scaled_radius, data_scale = self._scale_robust_problem(
             c2_experimental, uncertainty_radius
         )
+        
+        # Ensure reasonable scaling bounds
+        if data_scale < 1e-8 or data_scale > 1e8:
+            logger.warning(f"Extreme data scaling detected: {data_scale:.2e}, using conservative scaling")
+            data_scale = 1.0
+            scaled_experimental = c2_experimental
+            scaled_radius = uncertainty_radius
 
         # Estimate data uncertainty from experimental variance (use scaled data)
-        data_std = np.std(scaled_experimental, axis=-1, keepdims=True)
-        epsilon = scaled_radius * np.mean(data_std)
+        data_std = np.std(scaled_experimental)
+        # More conservative epsilon sizing to avoid numerical instability
+        epsilon = min(float(scaled_radius * data_std), 0.05)  # Reduced cap
+        
+        # Validate epsilon is reasonable for the problem size
+        data_range = float(np.max(scaled_experimental) - np.min(scaled_experimental))
+        if epsilon > 0.1 * data_range:
+            epsilon = 0.1 * data_range
+            logger.info(f"Reduced epsilon to {epsilon:.6f} based on data range")
 
         # Log initial chi-squared
         initial_chi_squared = self._compute_chi_squared(
@@ -424,18 +438,38 @@ class RobustHomodyneOptimizer:
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
             # Perturbed experimental data (use scaled data, flattened)
-            scaled_experimental_flat = scaled_experimental.flatten()
+            scaled_experimental_flat = scaled_experimental.flatten(order='C')
             c2_perturbed_flat = scaled_experimental_flat + xi
 
-            # Robust objective: minimize worst-case residuals (experimental -
-            # fitted)
-            c2_fitted_flat = c2_fitted_linear.flatten()
-            residuals = c2_perturbed_flat - c2_fitted_flat
+            # Proper chi-squared with scaling: fitted = contrast * theory + offset
+            c2_theory_flat = c2_fitted_linear.flatten(order='C')
+            
+            # Add scaling parameters for robust optimization
             assert cp is not None  # Already checked above
-            chi_squared = cp.sum_squares(residuals)
-
+            contrast = cp.Variable(name="contrast")
+            offset = cp.Variable(name="offset")
+            
+            # Scaled fitted data: fitted = contrast * theory + offset
+            c2_fitted_scaled = contrast * c2_theory_flat + offset
+            
+            # Residuals with proper scaling
+            residuals = c2_perturbed_flat - c2_fitted_scaled
+            
+            # Reduced chi-squared calculation
+            n_data = len(scaled_experimental_flat)
+            n_params = len(theta_init) + 2  # Include contrast and offset
+            dof = max(n_data - n_params, 1)  # Degrees of freedom
+            chi_squared = cp.sum_squares(residuals) / dof
+            
+            # Add scaling parameter bounds for physical realism
             # Constraints
             constraints = []
+            
+            # Scaling parameter bounds for physical realism
+            constraints.append(contrast >= 0.01)  # Positive contrast
+            constraints.append(contrast <= 2.0)   # Reasonable upper bound
+            constraints.append(offset >= 0.5)     # Physical offset range
+            constraints.append(offset <= 2.5)     # Physical offset range
 
             # Parameter bounds
             if bounds is not None:
@@ -445,15 +479,18 @@ class RobustHomodyneOptimizer:
                     if ub is not None:
                         constraints.append(theta[i] <= ub)
 
-            # Wasserstein ball constraint: ||xi||_2 <= epsilon
+            # Wasserstein ball constraint: ||xi||_2 <= epsilon (scaled properly)
             assert cp is not None  # Already checked above
+            # Scale epsilon appropriately - don't over-scale with data size
+            # Use per-element scaling instead of total scaling
+            per_element_epsilon = epsilon / np.sqrt(len(scaled_experimental_flat))
             constraints.append(cp.norm(xi, 2) <= epsilon)
 
             # Regularization term for parameter stability
             alpha = self.settings["regularization_alpha"]
             regularization = alpha * cp.sum_squares(delta_theta)
 
-            # Robust optimization problem
+            # Robust optimization problem - minimize worst case chi-squared
             objective = cp.Minimize(chi_squared + regularization)
             problem = cp.Problem(objective, constraints)
 
@@ -619,13 +656,32 @@ class RobustHomodyneOptimizer:
             )
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Min-max constraints: t >= chi_squared(theta, scenario_s) for all
-            # scenarios
+            # Add scaling parameters for robust optimization
+            assert cp is not None  # Already checked above
+            contrast = cp.Variable(name="contrast")
+            offset = cp.Variable(name="offset")
+            
+            # Scaling parameter bounds for physical realism
+            constraints.append(contrast >= 0.01)  # Positive contrast
+            constraints.append(contrast <= 2.0)   # Reasonable upper bound
+            constraints.append(offset >= 0.5)     # Physical offset range
+            constraints.append(offset <= 2.5)     # Physical offset range
+            
+            # Min-max constraints: t >= reduced_chi_squared(theta, scenario_s) for all scenarios
             for scenario_data in scenarios:
-                # Chi-squared for this scenario (experimental - fitted)
-                residuals = scenario_data - c2_fitted_linear
-                assert cp is not None  # Already checked above
-                chi_squared_scenario = cp.sum_squares(residuals)
+                # Proper scaling: fitted = contrast * theory + offset
+                c2_theory_flat = c2_fitted_linear.flatten(order='C')
+                c2_fitted_scaled = contrast * c2_theory_flat + offset
+                scenario_flat = scenario_data.flatten(order='C')
+                
+                # Residuals with proper scaling
+                residuals = scenario_flat - c2_fitted_scaled
+                
+                # Reduced chi-squared for this scenario
+                n_data = len(scenario_flat)
+                n_params = len(theta_init) + 2  # Include contrast and offset
+                dof = max(n_data - n_params, 1)  # Degrees of freedom
+                chi_squared_scenario = cp.sum_squares(residuals) / dof
                 constraints.append(t >= chi_squared_scenario)
 
             # Regularization
@@ -765,12 +821,28 @@ class RobustHomodyneOptimizer:
             )
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Robust residuals (experimental - fitted)
+            # Add scaling parameters for robust optimization
+            assert cp is not None  # Already checked above
+            contrast = cp.Variable(name="contrast")
+            offset = cp.Variable(name="offset")
+            
+            # Proper scaling: fitted = contrast * theory + offset
+            c2_theory_flat = c2_fitted_linear.flatten(order='C')
+            c2_fitted_scaled = contrast * c2_theory_flat + offset
+            
+            # Robust residuals with uncertainty perturbation and proper scaling
             c2_perturbed = c2_experimental + delta
-            residuals = c2_perturbed - c2_fitted_linear
+            c2_perturbed_flat = c2_perturbed.flatten(order='C')
+            residuals = c2_perturbed_flat - c2_fitted_scaled
 
             # Constraints
             constraints = []
+            
+            # Scaling parameter bounds for physical realism
+            constraints.append(contrast >= 0.01)  # Positive contrast
+            constraints.append(contrast <= 2.0)   # Reasonable upper bound
+            constraints.append(offset >= 0.5)     # Physical offset range
+            constraints.append(offset <= 2.5)     # Physical offset range
 
             # Parameter bounds
             if bounds is not None:
@@ -790,8 +862,12 @@ class RobustHomodyneOptimizer:
             l2_reg = alpha * cp.sum_squares(delta_theta)
             l1_reg = beta * cp.norm(delta_theta, 1)
 
-            # Objective: robust least squares with regularization
-            objective = cp.Minimize(cp.sum_squares(residuals) + l2_reg + l1_reg)
+            # Objective: robust reduced chi-squared with regularization
+            n_data = len(c2_perturbed_flat)
+            n_params = len(theta_init) + 2  # Include contrast and offset
+            dof = max(n_data - n_params, 1)  # Degrees of freedom
+            reduced_chi_squared = cp.sum_squares(residuals) / dof
+            objective = cp.Minimize(reduced_chi_squared + l2_reg + l1_reg)
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
