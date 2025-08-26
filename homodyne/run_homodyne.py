@@ -2639,6 +2639,360 @@ def _generate_mcmc_plots(
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
+def plot_simulated_data(args: argparse.Namespace) -> None:
+    """
+    Generate and plot theoretical C2 correlation function heatmaps using initial parameters.
+    
+    This function creates simulated C2 data based on the initial parameters specified
+    in the configuration file, without requiring experimental data. Useful for:
+    - Parameter exploration and visualization
+    - Method comparison and validation
+    - Understanding theoretical behavior
+    - Educational purposes
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Command-line arguments containing config path and output directory
+    """
+    logger = logging.getLogger(__name__)
+    
+    logger.info("Starting simulated data plotting...")
+    logger.info(f"Configuration file: {args.config}")
+    
+    # Check if core components are available
+    if HomodyneAnalysisCore is None:
+        logger.error("❌ HomodyneAnalysisCore is not available")
+        logger.error("Please ensure the homodyne package is properly installed")
+        raise ImportError("HomodyneAnalysisCore not available")
+    
+    # Define default parameters for fallback
+    DEFAULT_INITIAL_PARAMS = np.array([100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0])
+    DEFAULT_PARAM_NAMES = ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"]
+    DEFAULT_TEMPORAL_CONFIG = {
+        "dt": 0.1,
+        "start_frame": 1,
+        "end_frame": 100
+    }
+    DEFAULT_ANALYZER_CONFIG = {
+        "temporal": DEFAULT_TEMPORAL_CONFIG,
+        "scattering": {"wavevector_q": 0.01},
+        "geometry": {"stator_rotor_gap": 2000000}  # 200 μm in Angstroms
+    }
+    
+    # Initialize variables for config and parameters
+    core = None
+    config = None
+    initial_params = None
+    use_default_config = False
+    
+    # Try to initialize analysis core with configuration
+    try:
+        # Check if config file exists
+        if not Path(args.config).exists():
+            logger.warning(f"Configuration file not found: {args.config}")
+            logger.info("Using default parameters for simulation")
+            use_default_config = True
+        else:
+            # Apply command-line mode overrides
+            config_override = {}
+            if args.static_isotropic:
+                config_override["analysis_settings"] = {"static_mode": True, "isotropic_mode": True}
+            elif args.static_anisotropic:
+                config_override["analysis_settings"] = {"static_mode": True, "isotropic_mode": False}
+            elif args.laminar_flow:
+                config_override["analysis_settings"] = {"static_mode": False}
+            
+            if config_override:
+                core = HomodyneAnalysisCore(str(args.config), config_override)
+                logger.info(f"Applied command-line mode override: {config_override}")
+            else:
+                core = HomodyneAnalysisCore(str(args.config))
+            
+            # Get configuration and parameters from core
+            config = core.config_manager.config
+            initial_params = np.array(config["initial_parameters"]["values"])
+            logger.info(f"Using initial parameters from config: {initial_params}")
+            
+    except Exception as e:
+        logger.warning(f"Failed to initialize analysis core with config: {e}")
+        logger.info("Falling back to default parameters for simulation")
+        use_default_config = True
+    
+    # Use default configuration if needed
+    if use_default_config:
+        # Create minimal configuration for simulation
+        config = {
+            "analyzer_parameters": DEFAULT_ANALYZER_CONFIG,
+            "initial_parameters": {
+                "values": DEFAULT_INITIAL_PARAMS.tolist(),
+                "parameter_names": DEFAULT_PARAM_NAMES
+            }
+        }
+        initial_params = DEFAULT_INITIAL_PARAMS
+        logger.info(f"Using default initial parameters: {initial_params}")
+        
+        # Create a minimal core for calculation if not already created
+        if core is None:
+            # Create temporary config file for core initialization
+            import tempfile
+            import json
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                temp_config = {
+                    "metadata": {"config_version": "0.6.5.dev0"},
+                    "analyzer_parameters": DEFAULT_ANALYZER_CONFIG,
+                    "experimental_data": {
+                        "data_folder_path": "./data/",
+                        "data_file_name": "dummy.hdf",
+                        "phi_angles_path": "./data/",
+                        "phi_angles_file": "phi_list.txt"
+                    },
+                    "optimization_config": {
+                        "classical_optimization": {"methods": ["Nelder-Mead"]}
+                    },
+                    "initial_parameters": {
+                        "values": DEFAULT_INITIAL_PARAMS.tolist(),
+                        "parameter_names": DEFAULT_PARAM_NAMES
+                    },
+                    "parameter_space": {
+                        "bounds": [
+                            {"name": "D0", "min": 1e-3, "max": 1e6},
+                            {"name": "alpha", "min": -2.0, "max": 2.0},
+                            {"name": "D_offset", "min": -5000, "max": 5000},
+                            {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0},
+                            {"name": "beta", "min": -2.0, "max": 2.0},
+                            {"name": "gamma_dot_t_offset", "min": -0.1, "max": 0.1},
+                            {"name": "phi0", "min": -15.0, "max": 15.0}
+                        ]
+                    }
+                }
+                
+                # Apply command-line mode overrides
+                if args.static_isotropic:
+                    temp_config["analysis_settings"] = {"static_mode": True, "isotropic_mode": True}
+                elif args.static_anisotropic:
+                    temp_config["analysis_settings"] = {"static_mode": True, "isotropic_mode": False}
+                elif args.laminar_flow:
+                    temp_config["analysis_settings"] = {"static_mode": False}
+                
+                json.dump(temp_config, f)
+                temp_config_path = f.name
+            
+            try:
+                core = HomodyneAnalysisCore(temp_config_path)
+                logger.info("Created analysis core with default configuration")
+            finally:
+                # Clean up temporary file
+                Path(temp_config_path).unlink(missing_ok=True)
+    
+    # Get analysis mode information
+    is_static = core.is_static_mode()
+    param_count = core.get_effective_parameter_count()
+    analysis_mode = core.config_manager.get_analysis_mode()
+    
+    logger.info(f"Analysis mode: {analysis_mode}")
+    logger.info(f"Static mode: {is_static}")
+    logger.info(f"Parameter count: {param_count}")
+    
+    # Create phi angles for simulation
+    if args.phi_angles is not None:
+        # Parse command-line phi angles
+        try:
+            phi_angles_list = [float(angle.strip()) for angle in args.phi_angles.split(',')]
+            phi_angles = np.array(phi_angles_list)
+            n_angles = len(phi_angles)
+            logger.info(f"Using custom phi angles from command line: {phi_angles}")
+        except ValueError as e:
+            logger.error(f"❌ Invalid phi angles format: {args.phi_angles}")
+            logger.error("Expected comma-separated numbers (e.g., '0,45,90,135')")
+            raise ValueError(f"Failed to parse phi angles: {e}")
+    else:
+        # Use reasonable default range covering typical XPCS measurements
+        n_angles = 5  # Default number of angles
+        phi_angles = np.linspace(0, 180, n_angles, endpoint=False)  # 0°, 36°, 72°, 108°, 144°
+        logger.info(f"Using default phi angles: {phi_angles}")
+    
+    logger.info(f"Simulating {n_angles} phi angles: {phi_angles}")
+    
+    # Create time arrays for simulation
+    # Base on config temporal parameters if available
+    temporal_config = config.get("analyzer_parameters", {}).get("temporal", {})
+    dt = temporal_config.get("dt", 0.1)
+    start_frame = temporal_config.get("start_frame", 1)
+    end_frame = temporal_config.get("end_frame", 50)
+    n_time = end_frame - start_frame  # Correct calculation: end_frame - start_frame (not +1)
+    
+    # Create time arrays
+    t1 = np.arange(n_time) * dt
+    t2 = np.arange(n_time) * dt
+    
+    logger.info(f"Time parameters: dt={dt}, frames={start_frame}-{end_frame}, n_time={n_time}")
+    
+    # Generate theoretical C2 data for each angle
+    logger.info("Generating theoretical C2 correlation functions...")
+    c2_theoretical = np.zeros((n_angles, n_time, n_time))
+    
+    try:
+        for i, phi_angle in enumerate(phi_angles):
+            logger.debug(f"Computing C2 for phi angle {phi_angle:.1f}°")
+            c2_single = core.calculate_c2_single_angle_optimized(initial_params, phi_angle)
+            c2_theoretical[i] = c2_single
+            
+        logger.info("✓ Theoretical C2 correlation functions generated successfully")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to generate theoretical C2 data: {e}")
+        raise
+    
+    # Apply scaling transformation (always when plotting simulated data)
+    logger.info(f"Applying scaling transformation: fitted = {args.contrast} * theory + {args.offset}")
+    c2_fitted = args.contrast * c2_theoretical + args.offset
+    c2_plot_data = c2_fitted
+    
+    # Determine data type and logging based on whether scaling is meaningful
+    if args.contrast == 1.0 and args.offset == 0.0:
+        data_type = "theoretical"
+        logger.info("✓ Default scaling applied (contrast=1.0, offset=0.0): equivalent to theoretical data")
+    else:
+        data_type = "fitted"
+        logger.info("✓ Custom scaling transformation applied successfully")
+    
+    # Create output directory
+    os.makedirs(args.output_dir, exist_ok=True)
+    simulated_dir = args.output_dir / "simulated_data"
+    os.makedirs(simulated_dir, exist_ok=True)
+    
+    # Generate custom plots for simulated data
+    logger.info("Generating C2 theoretical heatmap plots...")
+    
+    # Import matplotlib for custom plotting
+    try:
+        import matplotlib.pyplot as plt
+        import matplotlib.colors as colors
+    except ImportError:
+        logger.error("❌ Failed to import matplotlib")
+        logger.error("Please ensure matplotlib is available")
+        raise
+    
+    try:
+        success_count = 0
+        
+        for i, phi_angle in enumerate(phi_angles):
+            # Get C2 data for this angle (theoretical or fitted)
+            c2_data = c2_plot_data[i]
+            
+            # Calculate color scale: vmin=min, vmax=max value in this angle's data
+            vmin = np.min(c2_data)
+            vmax = np.max(c2_data)
+            
+            # Create figure for single heatmap
+            fig, ax = plt.subplots(figsize=(8, 6))
+            
+            # Create heatmap with custom color scale
+            im = ax.imshow(
+                c2_data,
+                aspect='equal',
+                origin='lower',
+                extent=(t1[0], t1[-1], t2[0], t2[-1]),
+                vmin=vmin,
+                vmax=vmax,
+                cmap='viridis'
+            )
+            
+            # Add colorbar with appropriate label
+            cbar = plt.colorbar(im, ax=ax)
+            if data_type == "fitted":
+                cbar.set_label('C₂ Fitted (t₁, t₂)', fontsize=12)
+            else:
+                cbar.set_label('C₂(t₁, t₂)', fontsize=12)
+            
+            # Set labels and title
+            ax.set_xlabel('t₁ (s)', fontsize=12)
+            ax.set_ylabel('t₂ (s)', fontsize=12)
+            
+            if data_type == "fitted":
+                ax.set_title(f'Fitted C₂ Correlation Function (φ = {phi_angle:.1f}°)\nfitted = {args.contrast} × theory + {args.offset}', fontsize=14)
+                filename = f"simulated_c2_fitted_phi_{phi_angle:.1f}deg.png"
+            else:
+                ax.set_title(f'Theoretical C₂ Correlation Function (φ = {phi_angle:.1f}°)', fontsize=14)
+                filename = f"simulated_c2_theoretical_phi_{phi_angle:.1f}deg.png"
+            
+            
+            # Save the plot
+            filepath = simulated_dir / filename
+            
+            plt.tight_layout()
+            plt.savefig(filepath, dpi=300, bbox_inches='tight')
+            plt.close(fig)
+            
+            success_count += 1
+            logger.debug(f"Saved theoretical C2 heatmap for φ = {phi_angle:.1f}°: {filename}")
+        
+        if success_count == len(phi_angles):
+            logger.info(f"✓ Successfully generated {success_count}/{len(phi_angles)} theoretical C2 heatmap plots")
+            logger.info(f"Plots saved to: {simulated_dir}")
+        else:
+            logger.warning(f"⚠ Generated {success_count}/{len(phi_angles)} plots successfully")
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to generate custom theoretical plots: {e}")
+        raise
+    
+    # Save data as numpy arrays for further analysis
+    # Always save with scaling information since scaling is always applied
+    if data_type == "fitted":
+        data_file = simulated_dir / "fitted_c2_data.npz"
+    else:
+        data_file = simulated_dir / "theoretical_c2_data.npz"
+    
+    try:
+        save_data = {
+            'c2_theoretical': c2_theoretical,
+            'c2_scaled': c2_plot_data,  # Always include scaled data
+            'phi_angles': phi_angles,
+            't1': t1,
+            't2': t2,
+            'initial_parameters': initial_params,
+            'analysis_mode': analysis_mode,
+            'config_file': str(args.config),
+            'contrast': args.contrast,
+            'offset': args.offset,
+            'scaling_formula': f"scaled = {args.contrast} * theory + {args.offset}"
+        }
+        
+        np.savez(data_file, **save_data)
+        
+        if data_type == "fitted":
+            logger.info(f"✓ Theoretical and fitted data saved to: {data_file}")
+        else:
+            logger.info(f"✓ Theoretical and scaled data saved to: {data_file}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to save data: {e}")
+        logger.warning("Continuing without saving data arrays...")
+    
+    # Print summary
+    print()
+    print("=" * 60)
+    print("            SIMULATED DATA PLOTTING SUMMARY")
+    print("=" * 60)
+    print(f"Analysis mode:        {analysis_mode}")
+    print(f"Static mode:          {is_static}")
+    print(f"Parameters used:      {param_count} effective parameters")
+    print(f"Phi angles:           {n_angles} angles from {phi_angles[0]:.1f}° to {phi_angles[-1]:.1f}°")
+    print(f"Time points:          {n_time} frames (dt = {dt})")
+    print(f"Output directory:     {simulated_dir}")
+    if data_type == "fitted":
+        print(f"Plots generated:      Fitted C2 heatmaps for each phi angle")
+        print(f"Scaling applied:      fitted = {args.contrast} × theory + {args.offset}")
+    else:
+        print(f"Plots generated:      Theoretical C2 heatmaps for each phi angle")
+    
+    print(f"Data saved:           {data_file.name}")
+    print("=" * 60)
+
+
 def main():
     """
     Command-line entry point for homodyne scattering analysis.
@@ -2673,6 +3027,11 @@ Examples:
   %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
   %(prog)s --static-isotropic --method robust # Run robust methods in static mode
   %(prog)s --static-isotropic --method all    # Run all methods in static mode
+  %(prog)s --plot-simulated-data                  # Plot with default scaling: fitted = 1.0 * theory + 0.0
+  %(prog)s --plot-simulated-data --static-isotropic   # Plot simulated data in static mode
+  %(prog)s --plot-simulated-data --contrast 1.5 --offset 0.1  # Plot scaled data: fitted = 1.5 * theory + 0.1
+  %(prog)s --plot-simulated-data --phi-angles "0,45,90,135"  # Plot with custom phi angles
+  %(prog)s --plot-simulated-data --phi-angles "30,60,90" --contrast 1.2 --offset 0.05  # Custom angles with scaling
 
 Method Quality Assessment:
   Classical: Uses chi-squared goodness-of-fit (lower is better)
@@ -2740,11 +3099,46 @@ Method Quality Assessment:
         help="Generate validation plots of experimental data after loading for quality checking",
     )
 
+    parser.add_argument(
+        "--plot-simulated-data",
+        action="store_true",
+        help="Plot theoretical C2 heatmaps using initial parameters from config without experimental data",
+    )
+
+    parser.add_argument(
+        "--contrast",
+        type=float,
+        default=1.0,
+        help="Contrast parameter for scaling: fitted = contrast * theory + offset (default: 1.0)",
+    )
+
+    parser.add_argument(
+        "--offset",
+        type=float,
+        default=0.0,
+        help="Offset parameter for scaling: fitted = contrast * theory + offset (default: 0.0)",
+    )
+
+    parser.add_argument(
+        "--phi-angles",
+        type=str,
+        help="Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'",
+    )
+
     args = parser.parse_args()
 
     # Check for conflicting logging options
     if args.verbose and args.quiet:
         parser.error("Cannot use --verbose and --quiet together")
+    
+    # Check for consistent scaling parameters
+    if (args.contrast != 1.0 or args.offset != 0.0) and not args.plot_simulated_data:
+        parser.error("--contrast and --offset can only be used with --plot-simulated-data")
+    
+    # Check for consistent phi angles parameter
+    if args.phi_angles is not None:
+        if not args.plot_simulated_data:
+            parser.error("--phi-angles can only be used with --plot-simulated-data")
 
     # Setup logging and prepare output directory
     setup_logging(args.verbose, args.quiet, args.output_dir)
@@ -2775,6 +3169,19 @@ Method Quality Assessment:
     else:
         logger.info("Analysis mode: from configuration file")
 
+    # Handle special plotting mode
+    if args.plot_simulated_data:
+        try:
+            plot_simulated_data(args)
+            print()
+            print("✓ Simulated data plotting completed successfully!")
+            print(f"Results saved to: {args.output_dir}")
+            # Exit with code 0 - success
+            sys.exit(0)
+        except Exception as e:
+            logger.error(f"❌ Simulated data plotting failed: {e}")
+            sys.exit(1)
+    
     # Run the analysis
     try:
         run_analysis(args)

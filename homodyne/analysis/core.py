@@ -2250,10 +2250,10 @@ class HomodyneAnalysisCore:
                 f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s"
             )
 
-            # Create the validation plot
+            # Create the validation plot - simplified to heatmap + statistics only
             n_plot_angles = min(3, n_angles)  # Show up to 3 angles
-            fig = plt.figure(figsize=(16, 4 * n_plot_angles))
-            gs = gridspec.GridSpec(n_plot_angles, 4, hspace=0.3, wspace=0.3)
+            fig = plt.figure(figsize=(10, 4 * n_plot_angles))
+            gs = gridspec.GridSpec(n_plot_angles, 2, hspace=0.3, wspace=0.3)
 
             for i in range(n_plot_angles):
                 angle_idx = i * (n_angles // n_plot_angles) if n_angles > 1 else 0
@@ -2263,7 +2263,7 @@ class HomodyneAnalysisCore:
                 angle_data = c2_experimental[angle_idx, :, :]
                 phi_deg = phi_angles[angle_idx] if len(phi_angles) > angle_idx else 0.0
 
-                # 1. Full heatmap
+                # 1. C2 heatmap (left panel)
                 ax1 = fig.add_subplot(gs[i, 0])
                 im1 = ax1.imshow(
                     angle_data,
@@ -2282,48 +2282,16 @@ class HomodyneAnalysisCore:
                 ax1.set_title(f"$g_2(t_1,t_2)$ at φ={phi_deg:.1f}°")
                 plt.colorbar(im1, ax=ax1, shrink=0.8)
 
-                # 2. Diagonal slice
+                # 2. Statistics (right panel)
                 ax2 = fig.add_subplot(gs[i, 1])
-                diagonal = np.diag(angle_data)
-                time_diag = time_t1[: len(diagonal)]
-                ax2.plot(time_diag, diagonal, "b-", linewidth=2)
-                ax2.set_xlabel("Time (s)")
-                ax2.set_ylabel(r"$g_2(t,t)$")
-                ax2.set_title(f"Diagonal at φ={phi_deg:.1f}°")
-                ax2.grid(True, alpha=0.3)
-
-                # 3. Cross-sections
-                ax3 = fig.add_subplot(gs[i, 2])
-                n_sections = 3
-                section_indices = np.linspace(5, n_t2 - 5, n_sections, dtype=int)
-                colors = ["red", "blue", "green"]
-
-                for idx, color in zip(section_indices, colors):
-                    if idx < n_t2:
-                        ax3.plot(
-                            time_t1,
-                            angle_data[idx, :],
-                            color=color,
-                            linewidth=1.5,
-                            alpha=0.8,
-                            label=f"$t_2$={time_t2[idx]:.1f}s",
-                        )
-
-                ax3.set_xlabel(r"Time $t_1$ (s)")
-                ax3.set_ylabel(r"$g_2(t_1,t_2)$")
-                ax3.set_title(f"Cross-sections at φ={phi_deg:.1f}°")
-                ax3.legend(fontsize=9)
-                ax3.grid(True, alpha=0.3)
-
-                # 4. Statistics
-                ax4 = fig.add_subplot(gs[i, 3])
-                ax4.axis("off")
+                ax2.axis("off")
 
                 # Calculate statistics
                 mean_val = np.mean(angle_data)
                 std_val = np.std(angle_data)
                 min_val = np.min(angle_data)
                 max_val = np.max(angle_data)
+                diagonal = np.diag(angle_data)
                 diag_mean = np.mean(diagonal)
                 contrast = (max_val - min_val) / min_val
 
@@ -2345,11 +2313,11 @@ Validation:
 {'✓' if diag_mean > mean_val else '✗'} Diagonal enhanced
 {'✓' if contrast > 0.001 else '✗'} Sufficient contrast"""
 
-                ax4.text(
+                ax2.text(
                     0.05,
                     0.95,
                     stats_text,
-                    transform=ax4.transAxes,
+                    transform=ax2.transAxes,
                     fontsize=9,
                     verticalalignment="top",
                     fontfamily="monospace",
