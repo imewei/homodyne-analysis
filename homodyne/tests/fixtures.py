@@ -36,8 +36,11 @@ def test_output_directory():
     import time
     from pathlib import Path
 
-    # Import the marking function from conftest
-    from .conftest import mark_directory_as_test_artifact
+    # Avoid circular import by importing inside function
+    def mark_directory_as_test_artifact(directory_path):
+        """Mark directory as test artifact (fallback implementation)."""
+        marker_file = directory_path / ".test-artifact"
+        marker_file.write_text("This directory was created by tests and can be safely removed.")
 
     # Create homodyne_results directory in current directory
     test_dir = Path.cwd() / "homodyne_results"
