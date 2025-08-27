@@ -39,8 +39,12 @@ def test_output_directory():
     # Avoid circular import by importing inside function
     def mark_directory_as_test_artifact(directory_path):
         """Mark directory as test artifact (fallback implementation)."""
+        # Ensure the directory exists before writing the marker file
+        directory_path.mkdir(parents=True, exist_ok=True)
         marker_file = directory_path / ".test-artifact"
-        marker_file.write_text("This directory was created by tests and can be safely removed.")
+        marker_file.write_text(
+            "This directory was created by tests and can be safely removed."
+        )
 
     # Create homodyne_results directory in current directory
     test_dir = Path.cwd() / "homodyne_results"

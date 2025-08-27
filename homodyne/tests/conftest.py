@@ -18,9 +18,16 @@ import pytest
 
 # Import specific fixtures needed by tests - avoid star import to prevent circular imports
 from .fixtures import (
-    temp_directory, test_output_directory, dummy_config, dummy_correlation_data,
-    dummy_phi_angles, dummy_time_arrays, dummy_theoretical_data, dummy_analysis_results, 
-    dummy_hdf5_data, mock_optimization_result
+    dummy_analysis_results,
+    dummy_config,
+    dummy_correlation_data,
+    dummy_hdf5_data,
+    dummy_phi_angles,
+    dummy_theoretical_data,
+    dummy_time_arrays,
+    mock_optimization_result,
+    temp_directory,
+    test_output_directory,
 )
 
 # CRITICAL: Set threading environment variables BEFORE any imports that might use Numba
