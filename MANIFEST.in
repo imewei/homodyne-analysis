@@ -63,6 +63,9 @@ exclude .pre-commit-config.yaml
 exclude benchmark_performance.py
 exclude my_config*.json
 exclude WARP.md
+exclude bandit_report.json
+exclude .bandit
+exclude .security
 
 # Exclude editor and IDE files
 exclude .vscode

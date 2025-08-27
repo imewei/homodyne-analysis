@@ -89,6 +89,13 @@ You can install specific feature sets using pip extras:
    # Then install completion for your shell:
    homodyne --install-completion bash  # or zsh, fish, powershell
 
+**For Security and Code Quality Tools:**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[quality]
+   # Includes black, isort, flake8, mypy, ruff, bandit, pip-audit
+
 **Enhanced Shell Experience:**
 
 The completion system provides multiple interaction methods:

@@ -24,3 +24,6 @@ cvxpy>=1.4.0
 
 # Gurobi optimization solver (requires license)
 gurobipy>=11.0.0
+
+# Shell completion
+argcomplete>=3.0.0

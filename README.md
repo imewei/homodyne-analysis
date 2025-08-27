@@ -136,7 +136,7 @@ pip install homodyne-analysis[test]
 # - coverage>=6.2.0                 # Coverage measurement
 ```
 
-**Code Quality Tools:**
+**Code Quality and Security Tools:**
 ```bash
 pip install homodyne-analysis[quality]
 # Includes:
@@ -146,6 +146,7 @@ pip install homodyne-analysis[quality]
 # - mypy>=1.5.0                    # Type checker
 # - ruff>=0.1.0                    # Modern linter and formatter
 # - bandit>=1.8.0                  # Security linter
+# - pip-audit>=2.6.0               # Dependency vulnerability scanner
 ```
 
 **Type Checking Stubs:**
@@ -1189,10 +1190,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ⚠️ **mypy**: ~285 type annotation issues (mainly missing library stubs and function annotations)
 
 **Security & Best Practices:**
-- ✅ **Security scanning**: Integrated Bandit for continuous vulnerability detection
+- ✅ **Security scanning**: Integrated Bandit for continuous vulnerability detection (0 medium/high severity issues)
+- ✅ **Dependency vulnerability checking**: pip-audit integration for automated dependency security scanning
 - ✅ **Cross-platform compatibility**: Windows, macOS, and Linux support
 - ✅ **Dependency management**: Clean dependency tree with optional feature groups
 - ✅ **Safe coding practices**: No hardcoded paths, secure file operations, proper error handling
+- ✅ **Security configuration**: Properly configured security tools with scientific code patterns
 
 **Python Version Support:**
 - **Required**: Python 3.12+ (enforced at package and CLI level)
@@ -1220,12 +1223,13 @@ pip install -e .[all]
 # Run tests
 python homodyne/run_tests.py
 
-# Code quality checks
+# Code quality and security checks
 black homodyne/                    # Format code
 isort homodyne/                    # Sort imports  
 flake8 homodyne/                   # Linting
 mypy homodyne/                     # Type checking
 bandit -r homodyne/                # Security scanning
+pip-audit                          # Dependency vulnerability scanning
 ```
 
 **Pre-commit hooks available for automated code quality checks.**

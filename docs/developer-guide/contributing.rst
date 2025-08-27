@@ -38,10 +38,13 @@ Getting Started
    # Run tests to verify everything works
    pytest homodyne/tests/ -v
    
-   # Check code quality tools
+   # Check code quality and security tools
    black --check homodyne/
+   isort --check-only homodyne/
    flake8 homodyne/
    mypy homodyne/
+   bandit -r homodyne/
+   pip-audit
 
 Development Workflow
 --------------------

@@ -111,6 +111,7 @@ quality = [
     "mypy>=1.5.0",
     "ruff>=0.1.0",  # Modern linter and formatter
     "bandit>=1.8.0",  # Security linter for Python code
+    "pip-audit>=2.6.0",  # Security vulnerability scanner for dependencies
 ]
 typing = [
     "types-psutil>=5.9.0",

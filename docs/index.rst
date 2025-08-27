@@ -117,6 +117,9 @@ Key Features
 **Multiple Optimization Methods**
    Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 
+**Security and Code Quality**
+   Comprehensive security scanning with Bandit, dependency vulnerability checking with pip-audit, and automated code quality tools
+
 **Comprehensive Validation**
    Experimental data validation plots and quality control
 

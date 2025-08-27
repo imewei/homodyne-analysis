@@ -9,6 +9,7 @@ This guide is for developers who want to contribute to the homodyne package or e
 
    architecture
    contributing
+   security
    performance
    testing
    troubleshooting
@@ -30,16 +31,21 @@ Quick Developer Setup
 
    pytest homodyne/tests/ -v
 
-**Code Quality**:
+**Code Quality and Security**:
 
 .. code-block:: bash
 
-   # Linting
-   flake8 homodyne/
+   # Code formatting and linting
    black homodyne/
+   isort homodyne/
+   flake8 homodyne/
    
    # Type checking
    mypy homodyne/
+   
+   # Security scanning
+   bandit -r homodyne/
+   pip-audit
 
 Development Workflow
 --------------------
@@ -90,8 +96,11 @@ Development Tools
 
 - **pytest**: Testing framework
 - **black**: Code formatting
+- **isort**: Import sorting
 - **flake8**: Linting
 - **mypy**: Type checking
+- **bandit**: Security scanning
+- **pip-audit**: Dependency vulnerability scanning
 - **sphinx**: Documentation generation
 
 **Optional Tools**:
