@@ -89,7 +89,9 @@ class TestCompletionPerformance:
                 speedup = first_time / cached_time if cached_time > 0 else float("inf")
                 # Either we get speedup OR both operations are very fast (< 1ms)
                 if cached_time > 0.001:  # 1ms threshold
-                    assert speedup > 1.1, f"Cache speedup only {speedup:.1f}x (first: {first_time*1000:.2f}ms, cached: {cached_time*1000:.2f}ms)"
+                    assert (
+                        speedup > 1.1
+                    ), f"Cache speedup only {speedup:.1f}x (first: {first_time*1000:.2f}ms, cached: {cached_time*1000:.2f}ms)"
                 # If cached call is < 1ms, that's success regardless of speedup ratio
 
                 # Results should be correct
@@ -134,24 +136,28 @@ class TestCompletionPerformance:
 
             try:
                 # Debug: Check what directories actually exist
-                actual_dirs = [d.name for d in Path('.').iterdir() if d.is_dir()]
-                level1_dirs = [d for d in actual_dirs if d.startswith('level1')]
-                
+                actual_dirs = [d.name for d in Path(".").iterdir() if d.is_dir()]
+                level1_dirs = [d for d in actual_dirs if d.startswith("level1")]
+
                 completer = HomodyneCompleter()
                 HomodyneCompleter.clear_cache()
-                
+
                 # Test completion at root level
                 start = time.perf_counter()
                 results = completer.output_dir_completer("level1", argparse.Namespace())
                 duration = (time.perf_counter() - start) * 1000
 
                 assert duration < 5, f"Directory completion too slow: {duration:.2f}ms"
-                
+
                 # If no results found, provide debug info, otherwise expect reasonable results
                 if len(results) == 0:
-                    pytest.skip(f"Cache didn't find directories. Actual dirs: {actual_dirs}, level1 dirs: {level1_dirs}")
+                    pytest.skip(
+                        f"Cache didn't find directories. Actual dirs: {actual_dirs}, level1 dirs: {level1_dirs}"
+                    )
                 else:
-                    assert len(results) >= min(8, len(level1_dirs)), f"Expected at least {min(8, len(level1_dirs))} directories, got {len(results)}. Results: {results}"
+                    assert len(results) >= min(
+                        8, len(level1_dirs)
+                    ), f"Expected at least {min(8, len(level1_dirs))} directories, got {len(results)}. Results: {results}"
 
                 # Test cached performance
                 start = time.perf_counter()
