@@ -277,8 +277,9 @@ class TestIsotropicModeIntegration:
     def test_isotropic_mode_caching_behavior(self, temp_directory, isotropic_config):
         """Test caching behavior with dummy angles in isotropic mode."""
         # Reset any global state that might interfere with this test
-        from homodyne.analysis import core as analysis_core
         import importlib
+
+        from homodyne.analysis import core as analysis_core
 
         # Reset the counter using the imported module reference
         analysis_core.OPTIMIZATION_COUNTER = 0

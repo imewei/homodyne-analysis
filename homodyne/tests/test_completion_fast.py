@@ -257,7 +257,9 @@ class TestCompletionFunctions:
             # Test with parent directory
             dirs = complete_output_dir("project/out")
             mock_cache.get_dirs.assert_called_with("project")
-            assert dirs == ["project/output/"]
+            # Use os.path.join for platform-agnostic path comparison
+            expected_path = os.path.join("project", "output") + "/"
+            assert dirs == [expected_path]
 
 
 class TestMainFunction:

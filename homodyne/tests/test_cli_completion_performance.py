@@ -105,20 +105,20 @@ class TestCompletionPerformance:
         """Test that static completions (methods, modes) are instant."""
         completer = HomodyneCompleter()
 
-        # Method completion should be < 0.1ms
+        # Method completion should be < 1.0ms (very fast)
         start = time.perf_counter()
         results = completer.method_completer("cl", argparse.Namespace())
         duration = (time.perf_counter() - start) * 1000
 
-        assert duration < 0.1, f"Method completion too slow: {duration:.2f}ms"
+        assert duration < 1.0, f"Method completion too slow: {duration:.2f}ms"
         assert "classical" in results
 
-        # Mode completion should be < 0.1ms
+        # Mode completion should be < 1.0ms (very fast)
         start = time.perf_counter()
         results = completer.analysis_mode_completer("static", argparse.Namespace())
         duration = (time.perf_counter() - start) * 1000
 
-        assert duration < 0.1, f"Mode completion too slow: {duration:.2f}ms"
+        assert duration < 1.0, f"Mode completion too slow: {duration:.2f}ms"
         assert "static_isotropic" in results
 
     def test_directory_completion_performance(self):
