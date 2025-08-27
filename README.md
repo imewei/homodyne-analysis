@@ -1154,11 +1154,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
 - **[CONTRIBUTING.md](CONTRIBUTING.md)**: Development guidelines and standards
 
-### 🚀 Recent Documentation Improvements (v0.6.7)
-- **Enhanced shell completion system** with multi-tier fallback (argcomplete → shortcuts → help)
-- **Security improvements**: All medium/high severity issues resolved with Bandit scanning
-- **Cross-platform compatibility**: Windows test compatibility fixes
-- **Performance optimizations**: 3-5x speedup with Numba JIT compilation
+### 🚀 Recent Improvements (v0.6.8)
+- **Cross-platform compatibility**: Fixed Windows path separator issues in completion tests
+- **Test suite reliability**: All GitHub Actions tests now pass consistently across platforms
+- **Module import fixes**: Resolved AttributeError in isotropic mode integration tests
+- **Performance test stability**: Adjusted completion performance expectations for CI environments
+- **Code quality**: Applied black formatter and isort for consistent code style
 - **Python 3.13 support**: Full compatibility with latest Python version
 
 ### 📋 Quick Access

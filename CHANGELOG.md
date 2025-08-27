@@ -5,6 +5,20 @@ All notable changes to the Homodyne Scattering Analysis Package will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] - 2025-08-27
+
+### Fixed
+- **Cross-Platform Compatibility**: Fixed Windows path separator issues in completion tests
+- **Module Import Issues**: Resolved AttributeError in isotropic mode integration tests 
+- **Configuration Template Handling**: Fixed MODE_DEPENDENT placeholder resolution in static mode tests
+- **Performance Test Thresholds**: Adjusted completion performance expectations for CI environments
+- **Code Quality**: Fixed import sorting and formatting issues
+
+### Improved
+- **Test Suite Reliability**: All GitHub Actions tests now pass consistently across platforms
+- **Cross-Platform Testing**: Enhanced compatibility with Windows, macOS, and Linux
+- **Code Formatting**: Applied black formatter and isort for consistent code style
+
 ## [0.6.5] - 2024-11-24
 
 ### Added
