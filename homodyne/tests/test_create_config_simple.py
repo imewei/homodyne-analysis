@@ -25,18 +25,17 @@ class TestCreateConfig:
         """Test that invalid mode raises ValueError."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output_file = Path(tmpdir) / "config.json"
-            
+
             with pytest.raises(ValueError, match="Invalid mode"):
                 create_config_from_template(
-                    output_file=str(output_file),
-                    mode="invalid_mode"
+                    output_file=str(output_file), mode="invalid_mode"
                 )
 
     def test_create_config_default_parameters(self):
         """Test config creation with default parameters."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output_file = Path(tmpdir) / "config.json"
-            
+
             # This will likely fail due to missing templates, but we can test the interface
             try:
                 create_config_from_template(output_file=str(output_file))
@@ -48,7 +47,7 @@ class TestCreateConfig:
         """Test config creation with all parameters."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output_file = Path(tmpdir) / "config.json"
-            
+
             # Test that all parameters are accepted
             try:
                 create_config_from_template(
@@ -56,7 +55,7 @@ class TestCreateConfig:
                     sample_name="test_sample",
                     experiment_name="Test Experiment",
                     author="Test Author",
-                    mode="laminar_flow"
+                    mode="laminar_flow",
                 )
             except (FileNotFoundError, ValueError) as e:
                 # Expected when no templates available
@@ -66,16 +65,13 @@ class TestCreateConfig:
     def test_create_config_valid_modes(self):
         """Test that valid modes are accepted."""
         valid_modes = ["static_isotropic", "static_anisotropic", "laminar_flow"]
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             for mode in valid_modes:
                 output_file = Path(tmpdir) / f"{mode}_config.json"
-                
+
                 try:
-                    create_config_from_template(
-                        output_file=str(output_file),
-                        mode=mode
-                    )
+                    create_config_from_template(output_file=str(output_file), mode=mode)
                 except (FileNotFoundError, ValueError) as e:
                     # Should not be an invalid mode error
                     assert "Invalid mode" not in str(e)
@@ -85,7 +81,7 @@ class TestCreateConfig:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Non-existent subdirectory
             output_file = Path(tmpdir) / "configs" / "subdir" / "config.json"
-            
+
             try:
                 create_config_from_template(output_file=str(output_file))
             except (FileNotFoundError, ValueError):
@@ -114,10 +110,12 @@ class TestMainFunction:
 
     def test_main_success_handling(self):
         """Test main function success handling."""
-        with patch("sys.argv", ["create_config"]), \
-             patch("homodyne.create_config.create_config_from_template") as mock_create:
+        with (
+            patch("sys.argv", ["create_config"]),
+            patch("homodyne.create_config.create_config_from_template") as mock_create,
+        ):
             mock_create.return_value = None
-            
+
             result = main()
             assert result == 0
 
@@ -125,26 +123,33 @@ class TestMainFunction:
         """Test that argument parsing works correctly."""
         test_args = [
             "create_config",
-            "--mode", "static_isotropic",
-            "--output", "test.json",
-            "--sample", "test_sample",
-            "--experiment", "Test Experiment", 
-            "--author", "Test Author"
+            "--mode",
+            "static_isotropic",
+            "--output",
+            "test.json",
+            "--sample",
+            "test_sample",
+            "--experiment",
+            "Test Experiment",
+            "--author",
+            "Test Author",
         ]
-        
-        with patch("sys.argv", test_args), \
-             patch("homodyne.create_config.create_config_from_template") as mock_create:
+
+        with (
+            patch("sys.argv", test_args),
+            patch("homodyne.create_config.create_config_from_template") as mock_create,
+        ):
             mock_create.return_value = None
-            
+
             result = main()
-            
+
             # Verify function was called with correct arguments
             mock_create.assert_called_once_with(
                 output_file="test.json",
                 sample_name="test_sample",
                 experiment_name="Test Experiment",
                 author="Test Author",
-                mode="static_isotropic"
+                mode="static_isotropic",
             )
             assert result == 0
 
@@ -152,43 +157,52 @@ class TestMainFunction:
         """Test short argument forms."""
         test_args = [
             "create_config",
-            "-m", "laminar_flow",
-            "-o", "short.json",
-            "-s", "sample",
-            "-e", "Experiment",
-            "-a", "Author"
+            "-m",
+            "laminar_flow",
+            "-o",
+            "short.json",
+            "-s",
+            "sample",
+            "-e",
+            "Experiment",
+            "-a",
+            "Author",
         ]
-        
-        with patch("sys.argv", test_args), \
-             patch("homodyne.create_config.create_config_from_template") as mock_create:
+
+        with (
+            patch("sys.argv", test_args),
+            patch("homodyne.create_config.create_config_from_template") as mock_create,
+        ):
             mock_create.return_value = None
-            
+
             result = main()
-            
+
             mock_create.assert_called_once_with(
                 output_file="short.json",
                 sample_name="sample",
                 experiment_name="Experiment",
                 author="Author",
-                mode="laminar_flow"
+                mode="laminar_flow",
             )
             assert result == 0
 
     def test_main_default_values(self):
         """Test that default values are used correctly."""
-        with patch("sys.argv", ["create_config"]), \
-             patch("homodyne.create_config.create_config_from_template") as mock_create:
+        with (
+            patch("sys.argv", ["create_config"]),
+            patch("homodyne.create_config.create_config_from_template") as mock_create,
+        ):
             mock_create.return_value = None
-            
+
             result = main()
-            
+
             # Verify defaults are used
             mock_create.assert_called_once_with(
                 output_file="my_config.json",
                 sample_name=None,
                 experiment_name=None,
                 author=None,
-                mode="laminar_flow"
+                mode="laminar_flow",
             )
             assert result == 0
 

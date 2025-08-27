@@ -30,7 +30,7 @@ class TestFastCache:
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("homodyne.completion_fast.Path.home") as mock_home:
                 mock_home.return_value = Path(tmpdir)
-                
+
                 # Change to a directory with test files
                 with tempfile.TemporaryDirectory() as test_cwd:
                     test_dir = Path(test_cwd)
@@ -38,11 +38,11 @@ class TestFastCache:
                     (test_dir / "test.json").touch()
                     (test_dir / "output").mkdir()
                     (test_dir / "data").mkdir()
-                    
+
                     with patch("homodyne.completion_fast.Path.cwd") as mock_cwd:
                         mock_cwd.return_value = test_dir
                         cache = FastCache()
-                        
+
                         # Verify cache was populated
                         assert "config.json" in cache.get_files(".")
                         assert "test.json" in cache.get_files(".")
@@ -55,19 +55,19 @@ class TestFastCache:
             cache_dir = Path(tmpdir) / ".cache" / "homodyne"
             cache_dir.mkdir(parents=True)
             cache_file = cache_dir / "completion_cache.json"
-            
+
             # Create a fresh cache file
             cache_data = {
                 "timestamp": time.time() - 1,  # 1 second ago (fresh)
                 "files": {".": ["test_config.json"]},
-                "dirs": {".": ["test_output"]}
+                "dirs": {".": ["test_output"]},
             }
             cache_file.write_text(json.dumps(cache_data))
-            
+
             with patch("homodyne.completion_fast.Path.home") as mock_home:
                 mock_home.return_value = Path(tmpdir)
                 cache = FastCache()
-                
+
                 # Should load from cache
                 assert "test_config.json" in cache.get_files(".")
                 assert "test_output" in cache.get_dirs(".")
@@ -78,27 +78,29 @@ class TestFastCache:
             cache_dir = Path(tmpdir) / ".cache" / "homodyne"
             cache_dir.mkdir(parents=True)
             cache_file = cache_dir / "completion_cache.json"
-            
+
             # Create a stale cache file
             cache_data = {
                 "timestamp": time.time() - 10,  # 10 seconds ago (stale)
                 "files": {".": ["old_config.json"]},
-                "dirs": {".": ["old_output"]}
+                "dirs": {".": ["old_output"]},
             }
             cache_file.write_text(json.dumps(cache_data))
-            
+
             with tempfile.TemporaryDirectory() as test_cwd:
                 test_dir = Path(test_cwd)
                 (test_dir / "new_config.json").touch()
                 (test_dir / "new_output").mkdir()
-                
-                with patch("homodyne.completion_fast.Path.home") as mock_home, \
-                     patch("homodyne.completion_fast.Path.cwd") as mock_cwd:
+
+                with (
+                    patch("homodyne.completion_fast.Path.home") as mock_home,
+                    patch("homodyne.completion_fast.Path.cwd") as mock_cwd,
+                ):
                     mock_home.return_value = Path(tmpdir)
                     mock_cwd.return_value = test_dir
-                    
+
                     cache = FastCache()
-                    
+
                     # Should scan fresh, not load stale cache
                     assert "new_config.json" in cache.get_files(".")
                     assert "old_config.json" not in cache.get_files(".")
@@ -111,14 +113,16 @@ class TestFastCache:
             cache_dir.mkdir(parents=True)
             cache_file = cache_dir / "completion_cache.json"
             cache_file.write_text("invalid json")
-            
-            with patch("homodyne.completion_fast.Path.home") as mock_home, \
-                 patch("homodyne.completion_fast.Path.cwd") as mock_cwd:
+
+            with (
+                patch("homodyne.completion_fast.Path.home") as mock_home,
+                patch("homodyne.completion_fast.Path.cwd") as mock_cwd,
+            ):
                 mock_home.return_value = Path(tmpdir)
                 mock_cwd.return_value = Path("/nonexistent")  # Will cause scan to fail
-                
+
                 cache = FastCache()
-                
+
                 # Should have empty data but not crash
                 assert cache.get_files(".") == []
                 assert cache.get_dirs(".") == []
@@ -127,11 +131,18 @@ class TestFastCache:
         """Test that common config files are prioritized."""
         cache = FastCache()
         cache._data = {
-            "files": {".": ["z_other.json", "config.json", "a_another.json", "homodyne_config.json"]},
+            "files": {
+                ".": [
+                    "z_other.json",
+                    "config.json",
+                    "a_another.json",
+                    "homodyne_config.json",
+                ]
+            },
             "dirs": {".": []},
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
-        
+
         files = cache.get_files(".")
         # Common configs should come first
         assert files[0] == "config.json"
@@ -145,9 +156,9 @@ class TestFastCache:
         cache._data = {
             "files": {".": []},
             "dirs": {".": ["z_other", "output", "a_another", "results"]},
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
-        
+
         dirs = cache.get_dirs(".")
         # Common dirs should come first
         assert dirs[0] == "output"
@@ -167,16 +178,16 @@ class TestCompletionFunctions:
         assert "mcmc" in methods
         assert "robust" in methods
         assert "all" in methods
-        
+
         # Test with prefix
         assert complete_method("c") == ["classical"]
         assert complete_method("m") == ["mcmc"]
         assert complete_method("r") == ["robust"]
         assert complete_method("a") == ["all"]
-        
+
         # Test case insensitive
         assert complete_method("C") == ["classical"]
-        
+
         # Test no matches
         assert complete_method("xyz") == []
 
@@ -187,11 +198,11 @@ class TestCompletionFunctions:
         assert "static_isotropic" in modes
         assert "static_anisotropic" in modes
         assert "laminar_flow" in modes
-        
+
         # Test with prefix
         assert complete_mode("static") == ["static_isotropic", "static_anisotropic"]
         assert complete_mode("lam") == ["laminar_flow"]
-        
+
         # Test case insensitive
         assert complete_mode("STATIC") == ["static_isotropic", "static_anisotropic"]
 
@@ -199,12 +210,12 @@ class TestCompletionFunctions:
         """Test config file completion."""
         with patch("homodyne.completion_fast._cache") as mock_cache:
             mock_cache.get_files.return_value = ["config.json", "test.json"]
-            
+
             # Test with no prefix
             configs = complete_config("")
             assert "config.json" in configs
             assert "test.json" in configs
-            
+
             # Test with prefix
             mock_cache.get_files.return_value = ["config.json", "custom.json"]
             assert "config.json" in complete_config("con")
@@ -214,7 +225,7 @@ class TestCompletionFunctions:
         """Test config completion with directory prefix."""
         with patch("homodyne.completion_fast._cache") as mock_cache:
             mock_cache.get_files.return_value = ["config.json"]
-            
+
             # Test with directory prefix
             configs = complete_config("data/con")
             mock_cache.get_files.assert_called_with("data")
@@ -224,12 +235,12 @@ class TestCompletionFunctions:
         """Test output directory completion."""
         with patch("homodyne.completion_fast._cache") as mock_cache:
             mock_cache.get_dirs.return_value = ["output", "results"]
-            
+
             # Test with no prefix
             dirs = complete_output_dir("")
             assert "output/" in dirs
             assert "results/" in dirs
-            
+
             # Test with prefix
             mock_cache.get_dirs.return_value = ["output", "other"]
             assert "output/" in complete_output_dir("out")
@@ -239,7 +250,7 @@ class TestCompletionFunctions:
         """Test output directory completion with directory prefix."""
         with patch("homodyne.completion_fast._cache") as mock_cache:
             mock_cache.get_dirs.return_value = ["output"]
-            
+
             # Test with parent directory
             dirs = complete_output_dir("project/out")
             mock_cache.get_dirs.assert_called_with("project")
@@ -253,7 +264,7 @@ class TestMainFunction:
         """Test main function with method completion."""
         with patch("sys.argv", ["completion_fast", "method", "c"]):
             main()
-            
+
         captured = capsys.readouterr()
         assert "classical" in captured.out
 
@@ -261,7 +272,7 @@ class TestMainFunction:
         """Test main function with mode completion."""
         with patch("sys.argv", ["completion_fast", "mode", "static"]):
             main()
-            
+
         captured = capsys.readouterr()
         assert "static_isotropic" in captured.out
         assert "static_anisotropic" in captured.out
@@ -270,10 +281,10 @@ class TestMainFunction:
         """Test main function with config completion."""
         with patch("homodyne.completion_fast._cache") as mock_cache:
             mock_cache.get_files.return_value = ["config.json"]
-            
+
             with patch("sys.argv", ["completion_fast", "config", ""]):
                 main()
-            
+
         captured = capsys.readouterr()
         assert "config.json" in captured.out
 
@@ -281,10 +292,10 @@ class TestMainFunction:
         """Test main function with output dir completion."""
         with patch("homodyne.completion_fast._cache") as mock_cache:
             mock_cache.get_dirs.return_value = ["output"]
-            
+
             with patch("sys.argv", ["completion_fast", "output_dir", ""]):
                 main()
-            
+
         captured = capsys.readouterr()
         assert "output/" in captured.out
 
@@ -292,7 +303,7 @@ class TestMainFunction:
         """Test main function with unknown completion type."""
         with patch("sys.argv", ["completion_fast", "unknown", "test"]):
             main()
-            
+
         captured = capsys.readouterr()
         assert captured.out == ""
 
@@ -300,7 +311,7 @@ class TestMainFunction:
         """Test main function with no arguments."""
         with patch("sys.argv", ["completion_fast"]):
             main()
-            
+
         captured = capsys.readouterr()
         assert captured.out == ""
 
@@ -308,7 +319,7 @@ class TestMainFunction:
         """Test main function with only completion type."""
         with patch("sys.argv", ["completion_fast", "method"]):
             main()
-            
+
         captured = capsys.readouterr()
         # Should complete with empty prefix
         assert "classical" in captured.out
