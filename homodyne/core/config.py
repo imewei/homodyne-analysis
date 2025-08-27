@@ -34,9 +34,7 @@ import multiprocessing as mp
 import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union, cast
-
-from typing_extensions import NotRequired
+from typing import Any, Dict, List, NotRequired, Optional, Tuple, TypedDict, Union, cast
 
 # Default parallelization setting - balance performance and resource usage
 # Limit to 16 threads to avoid overwhelming system resources while providing
