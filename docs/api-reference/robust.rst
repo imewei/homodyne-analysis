@@ -18,20 +18,28 @@ Key Features
 Classes
 -------
 
-.. autoclass:: RobustHomodyneOptimizer
-   :members:
-   :show-inheritance:
+**RobustHomodyneOptimizer**
+
+Main class for distributionally robust optimization methods.
 
 Key Methods
 -----------
 
-.. automethod:: RobustHomodyneOptimizer.optimize_robust
+**optimize_robust(theta_init, phi_angles, c2_experimental)**
 
-.. automethod:: RobustHomodyneOptimizer._solve_wasserstein_dro
+Run all available robust optimization methods and return the best result.
 
-.. automethod:: RobustHomodyneOptimizer._solve_scenario_robust
+**_solve_wasserstein_dro(theta_init, phi_angles, c2_experimental, uncertainty_radius=0.02)**
 
-.. automethod:: RobustHomodyneOptimizer._solve_ellipsoidal_robust
+Solve using Wasserstein distributionally robust optimization.
+
+**_solve_scenario_robust(theta_init, phi_angles, c2_experimental, n_scenarios=30)**
+
+Solve using scenario-based robust optimization with bootstrap resampling.
+
+**_solve_ellipsoidal_robust(theta_init, phi_angles, c2_experimental, gamma=0.08)**
+
+Solve using ellipsoidal uncertainty sets for robust least squares.
 
 Configuration
 -------------

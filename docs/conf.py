@@ -25,7 +25,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    "sphinx.ext.autosummary",
+    # "sphinx.ext.autosummary",  # Disabled due to import issues with mocked modules
     "myst_parser",
 ]
 

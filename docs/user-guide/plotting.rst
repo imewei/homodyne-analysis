@@ -354,7 +354,7 @@ Data Preparation
    - Validate array dimensions match expected structure
 
 Visualization Quality
---------------------
+---------------------
 
 1. **Color Scaling:**
    - Use per-angle vmin optimization for multi-angle datasets
@@ -404,7 +404,7 @@ Common Issues
    --phi-angles "0 45 90 135"  # Incorrect
 
 Performance Considerations
--------------------------
+---------------------------
 
 **Large Datasets:**
 - Use chunked loading for memory-efficient processing

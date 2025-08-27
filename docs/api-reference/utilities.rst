@@ -164,13 +164,13 @@ Usage Examples
 File I/O Functions
 ------------------
 
-.. autofunction:: homodyne.core.io_utils.get_output_directory
+**get_output_directory(config=None)**
 
-   Get organized output directory structure.
+Get organized output directory structure based on configuration settings.
 
-.. autofunction:: homodyne.core.io_utils.save_fig
+**save_fig(fig, filepath, dpi=300, bbox_inches='tight')**
 
-   Save matplotlib figures with proper formatting.
+Save matplotlib figures with proper formatting and publication-quality settings.
 
 **Error Handling Example**:
 
