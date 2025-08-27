@@ -107,23 +107,42 @@ The homodyne package implements comprehensive physical constraints to ensure sci
 
 **Core Model Parameters**
 
-+----------------------+------------------------+-------------------------------------+----------------------+
-| Parameter            | Range                  | Distribution                        | Physical Constraint  |
-+======================+========================+=====================================+======================+
-| ``D0``               | [1.0, 1000000.0] Å²/s | TruncatedNormal(μ=10000.0, σ=1000.0)| Must be positive     |
-+----------------------+------------------------+-------------------------------------+----------------------+
-| ``alpha``            | [-2.0, 2.0]           | Normal(μ=-1.5, σ=0.1)              | none                 |
-+----------------------+------------------------+-------------------------------------+----------------------+
-| ``D_offset``         | [-100, 100] Å²/s      | Normal(μ=0.0, σ=10.0)              | none                 |
-+----------------------+------------------------+-------------------------------------+----------------------+
-| ``gamma_dot_t0``     | [1e-06, 1.0] s⁻¹      | TruncatedNormal(μ=0.001, σ=0.01)   | Must be positive     |
-+----------------------+------------------------+-------------------------------------+----------------------+
-| ``beta``             | [-2.0, 2.0]           | Normal(μ=0.0, σ=0.1)               | none                 |
-+----------------------+------------------------+-------------------------------------+----------------------+
-| ``gamma_dot_t_offset``| [-0.01, 0.01] s⁻¹     | Normal(μ=0.0, σ=0.001)             | none                 |
-+----------------------+------------------------+-------------------------------------+----------------------+
-| ``phi0``             | [-10, 10] degrees     | Normal(μ=0.0, σ=5.0)               | angular              |
-+----------------------+------------------------+-------------------------------------+----------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 25 35 15
+
+   * - Parameter
+     - Range
+     - Distribution
+     - Physical Constraint
+   * - ``D0``
+     - [1.0, 1000000.0] Å²/s
+     - TruncatedNormal(μ=10000.0, σ=1000.0)
+     - Must be positive
+   * - ``alpha``
+     - [-2.0, 2.0]
+     - Normal(μ=-1.5, σ=0.1)
+     - none
+   * - ``D_offset``
+     - [-100, 100] Å²/s
+     - Normal(μ=0.0, σ=10.0)
+     - none
+   * - ``gamma_dot_t0``
+     - [1e-06, 1.0] s⁻¹
+     - TruncatedNormal(μ=0.001, σ=0.01)
+     - Must be positive
+   * - ``beta``
+     - [-2.0, 2.0]
+     - Normal(μ=0.0, σ=0.1)
+     - none
+   * - ``gamma_dot_t_offset``
+     - [-0.01, 0.01] s⁻¹
+     - Normal(μ=0.0, σ=0.001)
+     - none
+   * - ``phi0``
+     - [-10, 10] degrees
+     - Normal(μ=0.0, σ=5.0)
+     - angular
 
 **Physical Function Constraints**
 
@@ -143,18 +162,30 @@ The package automatically enforces positivity for time-dependent functions:
 
 The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded parameters:
 
-+---------------+-------------------+-------------------------------------+-------------------------------+
-| Parameter     | Range             | Distribution                        | Physical Meaning              |
-+===============+===================+=====================================+===============================+
-| ``contrast``  | (0.05, 0.5]       | TruncatedNormal(μ=0.3, σ=0.1)      | Correlation strength scaling  |
-+---------------+-------------------+-------------------------------------+-------------------------------+
-| ``offset``    | (0.05, 1.95)      | TruncatedNormal(μ=1.0, σ=0.2)      | Baseline correlation level    |
-+---------------+-------------------+-------------------------------------+-------------------------------+
-| ``c2_fitted`` | [1.0, 2.0]        | *derived*                           | Final correlation function    |
-+---------------+-------------------+-------------------------------------+-------------------------------+
-| ``c2_theory`` | [0.0, 1.0]        | *derived*                           | Theoretical correlation       |
-|               |                   |                                     | bounds                        |
-+---------------+-------------------+-------------------------------------+-------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 20 40 30
+
+   * - Parameter
+     - Range
+     - Distribution
+     - Physical Meaning
+   * - ``contrast``
+     - (0.05, 0.5]
+     - TruncatedNormal(μ=0.3, σ=0.1)
+     - Correlation strength scaling
+   * - ``offset``
+     - (0.05, 1.95)
+     - TruncatedNormal(μ=1.0, σ=0.2)
+     - Baseline correlation level
+   * - ``c2_fitted``
+     - [1.0, 2.0]
+     - *derived*
+     - Final correlation function
+   * - ``c2_theory``
+     - [0.0, 1.0]
+     - *derived*
+     - Theoretical correlation bounds
 
 Optimization Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
