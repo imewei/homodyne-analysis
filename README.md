@@ -56,7 +56,6 @@ pip install -e .[all]
 numpy>=1.24.0,<2.3.0              # Array operations and linear algebra
 scipy>=1.9.0                       # Scientific computing functions
 matplotlib>=3.5.0                  # Plotting and visualization
-typing-extensions>=4.0.0           # Extended typing support (Python <3.13)
 ```
 
 #### Optional Dependencies by Feature
@@ -146,6 +145,7 @@ pip install homodyne-analysis[quality]
 # - flake8>=6.0.0                  # Style guide enforcement
 # - mypy>=1.5.0                    # Type checker
 # - ruff>=0.1.0                    # Modern linter and formatter
+# - bandit>=1.8.0                  # Security linter
 ```
 
 **Type Checking Stubs:**
@@ -1118,28 +1118,93 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Documentation
 
-📚 **Complete Documentation**: https://homodyne.readthedocs.io/
+### 📚 Complete Documentation Portal
+**Primary Site**: https://homodyne.readthedocs.io/
 
-Includes user guides, API reference, and developer documentation.
+### 📖 Available Documentation Resources
+
+#### **User Documentation**
+- **[Installation Guide](docs/user-guide/installation.rst)**: Complete installation instructions with dependency options
+- **[Quickstart Tutorial](docs/user-guide/quickstart.rst)**: Get started with analysis in 5 minutes  
+- **[Configuration Guide](docs/user-guide/configuration.rst)**: Detailed configuration options and templates
+- **[Analysis Modes](docs/user-guide/analysis-modes.rst)**: Static vs. laminar flow analysis modes
+- **[Plotting & Visualization](docs/user-guide/plotting.rst)**: Data visualization and validation tools
+- **[Examples & Use Cases](docs/user-guide/examples.rst)**: Real-world analysis examples
+
+#### **Command Line Interface**
+- **[CLI_REFERENCE.md](CLI_REFERENCE.md)**: Complete command-line documentation
+- **Shell completion support** for bash, zsh, fish, and PowerShell
+- **Interactive help system** with `homodyne_help` command
+
+#### **Developer Resources** 
+- **[Architecture Overview](docs/developer-guide/architecture.rst)**: Package structure and design
+- **[Contributing Guide](docs/developer-guide/contributing.rst)**: Development workflow and standards
+- **[Performance Guide](docs/developer-guide/performance.rst)**: Optimization techniques and benchmarking
+- **[Testing Framework](docs/developer-guide/testing.rst)**: Test organization and best practices
+- **[Troubleshooting](docs/developer-guide/troubleshooting.rst)**: Common issues and solutions
+
+#### **API Reference**
+- **[Core Analysis](docs/api-reference/core.rst)**: Main analysis classes and functions
+- **[Optimization Methods](docs/api-reference/mcmc.rst)**: MCMC, classical, and robust optimization
+- **[Robust Methods](docs/api-reference/robust.rst)**: Noise-resistant optimization techniques  
+- **[Utilities](docs/api-reference/utilities.rst)**: Helper functions and data handling
+
+#### **Reference Documentation**
+- **[API_REFERENCE.md](API_REFERENCE.md)**: Comprehensive API documentation
+- **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Development guidelines and standards
+
+### 🚀 Recent Documentation Improvements (v0.6.7)
+- **Enhanced shell completion system** with multi-tier fallback (argcomplete → shortcuts → help)
+- **Security improvements**: All medium/high severity issues resolved with Bandit scanning
+- **Cross-platform compatibility**: Windows test compatibility fixes
+- **Performance optimizations**: 3-5x speedup with Numba JIT compilation
+- **Python 3.13 support**: Full compatibility with latest Python version
+
+### 📋 Quick Access
+| Topic | Link | Description |
+|-------|------|-------------|
+| **Getting Started** | [Quickstart](docs/user-guide/quickstart.rst) | 5-minute tutorial |
+| **CLI Commands** | [CLI_REFERENCE.md](CLI_REFERENCE.md) | Complete command reference |
+| **Configuration** | [Configuration Guide](docs/user-guide/configuration.rst) | Setup and templates |
+| **API Usage** | [API_REFERENCE.md](API_REFERENCE.md) | Python API documentation |
+| **Troubleshooting** | [Troubleshooting](docs/developer-guide/troubleshooting.rst) | Common issues & solutions |
+| **Contributing** | [CONTRIBUTING.md](CONTRIBUTING.md) | Development workflow |
+
+### 💡 Documentation Features
+- **Comprehensive coverage**: User guides, API reference, and developer documentation
+- **Cross-platform compatibility**: Windows, macOS, and Linux instructions
+- **Multiple analysis modes**: Static isotropic, anisotropic, and laminar flow
+- **Security-focused**: Bandit integration for continuous security scanning
+- **Performance-oriented**: Detailed optimization guides and benchmarking tools
 
 ## Development Status & Code Quality
 
 **Code Formatting & Quality:**
 - ✅ **Black**: 100% compliant (all files formatted with 88-character line length)
 - ✅ **isort**: 100% compliant (imports sorted and optimized)  
+- ✅ **Bandit**: 0 medium/high severity security issues (comprehensive security scanning)
 - ⚠️ **flake8**: ~400 remaining style issues (primarily line length E501 and unused imports F401 in data scripts)
 - ⚠️ **mypy**: ~285 type annotation issues (mainly missing library stubs and function annotations)
+
+**Security & Best Practices:**
+- ✅ **Security scanning**: Integrated Bandit for continuous vulnerability detection
+- ✅ **Cross-platform compatibility**: Windows, macOS, and Linux support
+- ✅ **Dependency management**: Clean dependency tree with optional feature groups
+- ✅ **Safe coding practices**: No hardcoded paths, secure file operations, proper error handling
 
 **Python Version Support:**
 - **Required**: Python 3.12+ (enforced at package and CLI level)
 - **Tested**: Python 3.12, 3.13
 - **CI/CD**: Multi-platform testing (Ubuntu, Windows, macOS)
+- **Compatibility**: Full Python 3.13 support with typing improvements
 
 **Performance:**
 - **JIT Compilation**: Numba warmup eliminates compilation overhead
 - **JAX Integration**: Optional GPU acceleration for MCMC
 - **Memory Management**: Automatic cleanup and smart caching
 - **Benchmarking**: Comprehensive performance regression testing
+- **Shell Completion**: Multi-tier fallback system for enhanced UX
 
 ## Contributing
 
@@ -1159,6 +1224,7 @@ black homodyne/                    # Format code
 isort homodyne/                    # Sort imports  
 flake8 homodyne/                   # Linting
 mypy homodyne/                     # Type checking
+bandit -r homodyne/                # Security scanning
 ```
 
 **Pre-commit hooks available for automated code quality checks.**
