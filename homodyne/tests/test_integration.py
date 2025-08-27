@@ -48,6 +48,7 @@ except ImportError:
 
     def get_output_directory(*args, **kwargs):
         import tempfile
+
         return Path(tempfile.gettempdir())
 
 

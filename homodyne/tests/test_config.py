@@ -192,6 +192,7 @@ class TestConfigManager:
 def test_config_manager_default_config():
     """Test that default configuration is loaded when file is missing."""
     import tempfile
+
     # Use a non-existent file in temp directory to trigger default config loading
     temp_dir = tempfile.gettempdir()
     nonexistent_file = os.path.join(temp_dir, "definitely_nonexistent_file.json")
