@@ -206,7 +206,8 @@ class TestHomodyneCLI:
             for file in glob.glob(os.path.join(temp_dir, pattern)):
                 try:
                     os.remove(file)
-                except:
+                except Exception:
+                    # Ignore file removal errors during test cleanup
                     pass
 
 

@@ -129,7 +129,8 @@ def _handle_completion_fast():
                             result = [f for f in result if f.startswith(current_word)]
                         for r in result:
                             print(r)
-                    except:
+                    except Exception:
+                        # Fallback to common config files if directory scan fails
                         print("config.json")
                         print("homodyne_config.json")
                     sys.exit(0)
@@ -147,7 +148,8 @@ def _handle_completion_fast():
                             result = [d for d in result if d.startswith(current_word)]
                         for d in result:
                             print(d + "/")
-                    except:
+                    except Exception:
+                        # Fallback to common output directories if scan fails
                         print("output/")
                         print("results/")
                     sys.exit(0)
@@ -155,8 +157,8 @@ def _handle_completion_fast():
             # For any other completion case, just exit empty
             sys.exit(0)
 
-        except:
-            # If anything fails, exit without output
+        except Exception:
+            # If completion handling fails, exit silently
             sys.exit(0)
 
     return False

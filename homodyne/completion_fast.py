@@ -38,7 +38,8 @@ class FastCache:
                 if time.time() - cache_data.get("timestamp", 0) < self.cache_ttl:
                     self._data = cache_data
                     return
-        except:
+        except Exception:
+            # Cache loading failed, continue with fresh scan
             pass
 
         # Minimal fallback - scan current directory only
@@ -58,7 +59,8 @@ class FastCache:
                 "files": {".": files[:20]},  # Limit for speed
                 "dirs": {".": dirs[:20]},
             }
-        except:
+        except Exception:
+            # Directory scanning failed, use empty data
             self._data = {
                 "timestamp": time.time(),
                 "files": {".": []},

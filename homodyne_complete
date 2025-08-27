@@ -23,8 +23,8 @@ class UltraFastCache:
             self.cache_file = Path.home() / ".cache" / "homodyne" / "completion_cache.json"
             self.cache_ttl = 10.0  # Longer TTL for better performance
             self._load_cache()
-        except:
-            # Fallback if any error
+        except Exception:
+            # Fallback if any error during cache initialization
             self._data = {'files': {'.': []}, 'dirs': {'.': []}, 'timestamp': 0}
     
     def _load_cache(self):
@@ -38,7 +38,8 @@ class UltraFastCache:
                 if time.time() - data.get('timestamp', 0) < self.cache_ttl:
                     self._data = data
                     return
-        except:
+        except Exception:
+            # Cache loading failed, continue with fresh scan
             pass
         
         # Create new cache
@@ -59,7 +60,8 @@ class UltraFastCache:
                         files.append(item.name)
                     elif item.is_dir():
                         dirs.append(item.name)
-                except:
+                except Exception:
+                    # Skip items that can't be accessed
                     continue
                 
                 # Limit for speed
@@ -77,11 +79,12 @@ class UltraFastCache:
                 self.cache_file.parent.mkdir(parents=True, exist_ok=True)
                 with open(self.cache_file, 'w') as f:
                     json.dump(self._data, f)
-            except:
+            except Exception:
+                # Cache save failed, continue without caching
                 pass
                 
-        except:
-            # Ultimate fallback
+        except Exception:
+            # Ultimate fallback if directory scanning fails
             self._data = {
                 'files': {'.': []},
                 'dirs': {'.': []},
@@ -214,7 +217,7 @@ def main():
         for result in results:
             print(result)
             
-    except:
+    except Exception:
         # Fail silently - shell completion should never crash
         pass
 

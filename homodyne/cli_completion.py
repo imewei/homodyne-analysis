@@ -335,7 +335,8 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
                         if line.strip()
                     ]
 
-            except:
+            except Exception:
+                # Fast completion failed, fallback to built-in completion
                 pass
 
             # Fallback to built-in completion
