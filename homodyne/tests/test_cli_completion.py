@@ -21,7 +21,7 @@ except ImportError:
     COMPLETION_AVAILABLE = False
     # Define dummy classes/functions to avoid errors
 
-    class HomodyneCompleter:  # type: ignore[misc]
+    class _DummyHomodyneCompleter:  # type: ignore[misc]
         def method_completer(self, prefix: str, parsed_args: Any) -> List[str]:
             return []
 
@@ -33,6 +33,8 @@ except ImportError:
 
         def analysis_mode_completer(self, prefix: str, parsed_args: Any) -> List[str]:
             return []
+
+    HomodyneCompleter = _DummyHomodyneCompleter  # type: ignore[misc]
 
     def setup_shell_completion(parser: Any) -> None:  # type: ignore[misc]
         pass
@@ -66,12 +68,18 @@ class TestHomodyneCompleter:
         """Test config file completion."""
         completer = HomodyneCompleter()
 
-        # Test json file completion
-        with patch("glob.glob") as mock_glob:
-            mock_glob.return_value = ["config.json", "my_config.json", "test.json"]
+        # Mock the global cache to provide test data
+        with patch("homodyne.cli_completion._completion_cache") as mock_cache:
+            # Mock cache behavior
+            mock_cache.get_json_files.return_value = [
+                "config.json",
+                "my_config.json",
+                "test.json",
+            ]
 
             results = completer.config_files_completer("config", argparse.Namespace())
             assert "config.json" in results
+            mock_cache.get_json_files.assert_called_with(".")
 
             results = completer.config_files_completer("my", argparse.Namespace())
             assert "my_config.json" in results
@@ -80,14 +88,15 @@ class TestHomodyneCompleter:
         """Test directory completion."""
         completer = HomodyneCompleter()
 
-        with patch("os.listdir") as mock_listdir, patch("os.path.isdir") as mock_isdir:
-
-            mock_listdir.return_value = ["results", "data", "config.json"]
-            mock_isdir.side_effect = lambda x: not x.endswith(".json")
+        # Mock the global cache to provide test data
+        with patch("homodyne.cli_completion._completion_cache") as mock_cache:
+            # Mock cache behavior
+            mock_cache.get_directories.return_value = ["results", "data", "output"]
 
             results = completer.output_dir_completer("res", argparse.Namespace())
-            # Should return directories only
-            assert any("results" in r for r in results)
+            # Should return directories only with trailing slash
+            assert any("results/" in r for r in results)
+            mock_cache.get_directories.assert_called_with(".")
 
     def test_analysis_mode_completer(self):
         """Test analysis mode completion."""
@@ -107,8 +116,12 @@ class TestShellCompletion:
 
     def test_install_completion_bash(self):
         """Test bash completion installation."""
+        # Import the actual module to patch it directly
+        import homodyne.cli_completion
+
         with (
-            patch("homodyne.cli_completion.ARGCOMPLETE_AVAILABLE", True),
+            patch.object(homodyne.cli_completion, "ARGCOMPLETE_AVAILABLE", True),
+            patch.object(homodyne.cli_completion, "argcomplete", MagicMock()),
             patch("pathlib.Path.home") as mock_home,
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch("pathlib.Path.exists"),
@@ -130,7 +143,8 @@ class TestShellCompletion:
                 mock_file = MagicMock()
                 mock_open.return_value.__enter__.return_value = mock_file
 
-                result = install_shell_completion("bash")
+                # Call the function from the actual module
+                result = homodyne.cli_completion.install_shell_completion("bash")
                 assert result == 0
                 mock_open.assert_called()
 
@@ -177,7 +191,6 @@ class TestCLIIntegration:
                     assert result == 0
                     mock_install.assert_called_once_with("bash")
 
-
     def test_completion_unavailable_error_messages(self):
         """Test error messages when completion features are unavailable."""
         from homodyne.run_homodyne import main
@@ -191,9 +204,6 @@ class TestCLIIntegration:
                     # Check that helpful error message was printed
                     printed_args = [call[0][0] for call in mock_print.call_args_list]
                     assert any("argcomplete" in msg for msg in printed_args)
-
-
-
 
 
 class TestCLIReferenceCompliance:
@@ -219,4 +229,3 @@ class TestCLIReferenceCompliance:
             assert (
                 expected_method in methods
             ), f"Method {expected_method} missing from completion"
-

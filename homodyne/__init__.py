@@ -117,12 +117,12 @@ __all__ = [
 ]
 
 # Version information
-__version__ = "0.6.5"
+__version__ = "0.6.6"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"
 
-# Recent improvements (v0.6.5)
+# Recent improvements (v0.6.6)
 # - Added robust optimization framework with CVXPY + Gurobi
 # - Distributionally Robust Optimization (DRO) with Wasserstein uncertainty sets
 # - Scenario-based robust optimization with bootstrap resampling

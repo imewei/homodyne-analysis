@@ -1,6 +1,6 @@
 # Homodyne CLI - Actual Implementation
 
-**Version 0.6.5+** | **Python 3.12+ Required** | **Trust Region Gurobi ✅** | **Code Quality: Black ✅ isort ✅**
+**Version 0.6.6+** | **Python 3.12+ Required** | **Trust Region Gurobi ✅** | **Code Quality: Black ✅ isort ✅**
 
 ## Overview
 The Homodyne project provides two command-line tools for analyzing X-ray Photon Correlation Spectroscopy (XPCS) data:
@@ -8,7 +8,7 @@ The Homodyne project provides two command-line tools for analyzing X-ray Photon 
 1. **`homodyne`** - Main analysis command with enhanced Gurobi trust region optimization
 2. **`homodyne-config`** - Configuration file generator
 
-**Recent Improvements (v0.6.5+):**
+**Recent Improvements (v0.6.6+):**
 - **Enhanced Gurobi optimization** with iterative trust region SQP approach
 - **Improved code quality** with comprehensive formatting and linting (Black, isort)
 - **Shell completion support** for enhanced CLI experience
@@ -331,7 +331,7 @@ homodyne
 
 ## Shell Completion
 
-The homodyne CLI supports tab completion for enhanced user experience across multiple shells.
+The homodyne CLI supports multiple completion methods for enhanced user experience across shells.
 
 ### Installation
 
@@ -366,22 +366,87 @@ source ~/.bashrc  # or ~/.zshrc
 source ~/.config/fish/config.fish
 ```
 
-### Features
+### Completion Features
 
+The completion system provides multiple tiers of functionality:
+
+#### 1. **Tab Completion** (Primary Method)
 - **Method completion**: Tab complete `--method` options (classical, mcmc, robust, all)
 - **File completion**: Tab complete `--config` with available .json files
 - **Directory completion**: Tab complete `--output-dir` with available directories
 - **Context-aware**: Completion adapts based on current command context
 - **Cross-platform**: Works on Linux, macOS, and Windows
 
+#### 2. **Command Shortcuts** (Always Available)
+Fast shortcuts for common operations:
+```bash
+hc          # homodyne --method classical
+hm          # homodyne --method mcmc
+hr          # homodyne --method robust
+ha          # homodyne --method all
+hconfig     # homodyne --config
+hplot       # homodyne --plot-experimental-data
+```
+
+#### 3. **Completion Help System**
+```bash
+homodyne_help    # Show all available options and current config files
+```
+
 ### Usage Examples
 
+#### Tab Completion (if working)
 ```bash
 # Tab completion examples (press TAB at cursor position)
 homodyne --method <TAB>          # Shows: classical, mcmc, robust, all
 homodyne --config <TAB>          # Shows available .json files
 homodyne --output-dir <TAB>      # Shows available directories
 homodyne-config --mode <TAB>     # Shows: static_isotropic, static_anisotropic, laminar_flow
+```
+
+#### Command Shortcuts (always work)
+```bash
+# Quick method selection
+hc                               # homodyne --method classical
+hm --verbose                     # homodyne --method mcmc --verbose
+hr --config my_config.json       # homodyne --method robust --config my_config.json
+ha                               # homodyne --method all
+
+# Quick config and plotting
+hconfig my_config.json           # homodyne --config my_config.json
+hplot                            # homodyne --plot-experimental-data
+```
+
+#### Help and Reference
+```bash
+homodyne_help                    # Show completion help and available options
+```
+
+### Troubleshooting Completion
+
+The completion system is designed to be robust with multiple fallback mechanisms:
+
+#### If Tab Completion Doesn't Work
+1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha` always work
+2. **Check installation**: Run `homodyne --install-completion zsh` again
+3. **Reload shell**: `source ~/.zshrc` or restart terminal
+4. **Use help reference**: `homodyne_help` shows all options
+
+#### Common Issues
+```bash
+# Issue: Tab completion not working after installation  
+# Solution: Restart shell or source config
+exec zsh                         # Restart shell
+# OR
+source ~/.zshrc                  # Reload config
+
+# Issue: compdef errors in zsh
+# Solution: Use shortcuts which bypass the issue
+hc --verbose                     # Instead of homodyne --method classical --verbose
+
+# Issue: Forgot available options
+# Solution: Use help system
+homodyne_help                    # Shows all methods, config files, and flags
 ```
 
 ## Code Quality and Maintenance (v0.6.5+)
@@ -465,13 +530,22 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 **Shell Completion Issues:**
 ```bash
 # Issue: Tab completion not working after installation
-# Solution: Source the shell configuration
+# Solution: Source the shell configuration or use shortcuts
 source ~/.bashrc  # For bash
 source ~/.zshrc   # For zsh
+# OR use shortcuts that always work:
+hc                # homodyne --method classical
+hm                # homodyne --method mcmc
 
-# Issue: argcomplete not found
-# Solution: Install completion dependencies
+# Issue: argcomplete not found or compdef errors
+# Solution: Install completion dependencies and use fallback
 pip install homodyne-analysis[completion]
+# Shortcuts work even when tab completion fails:
+hr --verbose      # homodyne --method robust --verbose
+
+# Issue: Forgot command options
+# Solution: Use built-in help system
+homodyne_help     # Shows all methods, config files, and flags
 ```
 
 **Performance Issues:**

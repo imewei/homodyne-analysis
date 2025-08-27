@@ -89,6 +89,23 @@ You can install specific feature sets using pip extras:
    # Then install completion for your shell:
    homodyne --install-completion bash  # or zsh, fish, powershell
 
+**Enhanced Shell Experience:**
+
+The completion system provides multiple interaction methods:
+
+- **Tab completion**: ``homodyne --method <TAB>`` shows available options
+- **Command shortcuts**: ``hc`` (classical), ``hm`` (mcmc), ``hr`` (robust), ``ha`` (all)
+- **Help reference**: ``homodyne_help`` shows all available options and current config files
+
+.. code-block:: bash
+
+   # After installation, restart shell or reload config
+   source ~/.zshrc  # or ~/.bashrc for bash
+   
+   # Test shortcuts (always work even if tab completion fails)
+   hc --verbose     # homodyne --method classical --verbose
+   homodyne_help    # Show all options and current config files
+
 **All Dependencies:**
 
 .. code-block:: bash

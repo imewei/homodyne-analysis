@@ -310,6 +310,7 @@ def _solve_least_squares_batch_fallback(theory_batch, exp_batch):
     """Fallback implementation when Numba is not available."""
     return _solve_least_squares_batch_numba_impl(theory_batch, exp_batch)
 
+
 if NUMBA_AVAILABLE:
     solve_least_squares_batch_numba = njit(
         cache=True,
@@ -364,9 +365,14 @@ def _compute_chi_squared_batch_numba_impl(
     return chi2_batch
 
 
-def _compute_chi_squared_batch_fallback(theory_batch, exp_batch, contrast_batch, offset_batch):
+def _compute_chi_squared_batch_fallback(
+    theory_batch, exp_batch, contrast_batch, offset_batch
+):
     """Fallback implementation when Numba is not available."""
-    return _compute_chi_squared_batch_numba_impl(theory_batch, exp_batch, contrast_batch, offset_batch)
+    return _compute_chi_squared_batch_numba_impl(
+        theory_batch, exp_batch, contrast_batch, offset_batch
+    )
+
 
 # Apply numba decorator if available, otherwise use fallback
 if NUMBA_AVAILABLE:

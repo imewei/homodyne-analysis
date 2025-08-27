@@ -575,7 +575,10 @@ class TestGurobiIntegration:
         assert success, f"Gurobi optimization should succeed, got: {result}"
         assert hasattr(result, "x"), "Result should have optimal parameters"
         assert hasattr(result, "fun"), "Result should have optimal value"
-        assert hasattr(result, "method") and getattr(result, "method") == "Gurobi-Iterative-QP"
+        assert (
+            hasattr(result, "method")
+            and getattr(result, "method") == "Gurobi-Iterative-QP"
+        )
 
     @pytest.mark.skipif(not GUROBI_AVAILABLE, reason="Gurobi not available")
     def test_gurobi_with_bounds_constraints(self):

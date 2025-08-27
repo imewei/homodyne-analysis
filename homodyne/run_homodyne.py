@@ -71,6 +71,100 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+
+# CRITICAL: Handle shell completion BEFORE any heavy imports
+# This must be the very first thing we do to avoid 5+ second startup times
+def _handle_completion_fast():
+    """Ultra-fast completion handler that bypasses all heavy imports."""
+    # Only handle completion if argcomplete is actively requesting completions
+    # (not just setup). This is indicated by _ARGCOMPLETE=1 specifically
+    if os.environ.get("_ARGCOMPLETE") == "1":
+        # This is definitely an active completion request - handle it fast
+        try:
+            # Get completion context
+            comp_line = os.environ.get("COMP_LINE", "")
+            comp_point = int(os.environ.get("COMP_POINT", len(comp_line)))
+
+            # Parse command line up to cursor position
+            words = comp_line[:comp_point].split()
+
+            if len(words) >= 1:
+                # Check if we're completing after an argument flag
+                if comp_line[comp_point - 1 : comp_point].isspace():
+                    # Space after last word - completing the value for that argument
+                    prev_word = words[-1] if words else ""
+                    current_word = ""
+                else:
+                    # No space - still typing the current word
+                    prev_word = words[-2] if len(words) >= 2 else ""
+                    current_word = words[-1] if words else ""
+
+                # Complete based on previous word
+                if prev_word in ["--method", "-m"]:
+                    methods = ["classical", "mcmc", "robust", "all"]
+                    if current_word:
+                        methods = [m for m in methods if m.startswith(current_word)]
+                    for method in methods:
+                        print(method)
+                    sys.exit(0)
+                elif prev_word in ["--config", "-c"]:
+                    # Fast config file completion
+                    try:
+                        from pathlib import Path
+
+                        cwd = Path.cwd()
+                        json_files = [
+                            f.name
+                            for f in cwd.iterdir()
+                            if f.is_file() and f.suffix == ".json"
+                        ]
+                        priority = [
+                            "config.json",
+                            "homodyne_config.json",
+                            "my_config.json",
+                        ]
+                        result = [f for f in priority if f in json_files]
+                        result.extend([f for f in json_files if f not in priority][:8])
+                        if current_word:
+                            result = [f for f in result if f.startswith(current_word)]
+                        for r in result:
+                            print(r)
+                    except:
+                        print("config.json")
+                        print("homodyne_config.json")
+                    sys.exit(0)
+                elif prev_word in ["--output-dir", "-o"]:
+                    # Fast directory completion
+                    try:
+                        from pathlib import Path
+
+                        cwd = Path.cwd()
+                        dirs = [d.name for d in cwd.iterdir() if d.is_dir()]
+                        priority = ["output", "results", "data", "plots", "analysis"]
+                        result = [f for f in priority if f in dirs]
+                        result.extend([f for f in dirs if f not in priority][:5])
+                        if current_word:
+                            result = [d for d in result if d.startswith(current_word)]
+                        for d in result:
+                            print(d + "/")
+                    except:
+                        print("output/")
+                        print("results/")
+                    sys.exit(0)
+
+            # For any other completion case, just exit empty
+            sys.exit(0)
+
+        except:
+            # If anything fails, exit without output
+            sys.exit(0)
+
+    return False
+
+
+# Call completion handler immediately - before any heavy imports
+_handle_completion_fast()
+
 import numpy as np
 
 # Import completion support
@@ -3268,7 +3362,6 @@ Method Quality Assessment:
         choices=["bash", "zsh", "fish", "powershell"],
         help="Install shell completion for the specified shell",
     )
-
 
     # Setup shell completion if available
     if COMPLETION_AVAILABLE:

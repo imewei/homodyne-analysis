@@ -621,7 +621,7 @@ class ClassicalOptimizer:
 
         This method uses successive quadratic approximations (SQP-like approach) where:
         1. Build quadratic approximation around current point
-        2. Solve QP subproblem with trust region constraints  
+        2. Solve QP subproblem with trust region constraints
         3. Evaluate actual objective at new point
         4. Update trust region and iterate until convergence
 
@@ -677,21 +677,23 @@ class ClassicalOptimizer:
             x_current = initial_parameters.copy()
             f_current = objective_func(x_current)
             trust_radius = gurobi_options["trust_region_initial"]
-            
+
             # Convergence tracking
             iteration = 0
             max_iter = gurobi_options["max_iterations"]
             tolerance = gurobi_options["tolerance"]
             function_evaluations = 1  # Already evaluated f_current
-            grad_norm = float('inf')  # Initialize for later use
-            
-            logger.debug(f"Starting Gurobi iterative optimization with initial χ² = {f_current:.6e}")
-            
+            grad_norm = float("inf")  # Initialize for later use
+
+            logger.debug(
+                f"Starting Gurobi iterative optimization with initial χ² = {f_current:.6e}"
+            )
+
             # Iterative trust region optimization
             for iteration in range(max_iter):
                 # Choose appropriate epsilon based on parameter magnitudes and trust region
                 base_epsilon = max(1e-8, trust_radius / 100)
-                
+
                 # Estimate gradient using finite differences
                 grad = np.zeros(n_params)
                 for i in range(n_params):
@@ -700,7 +702,7 @@ class ClassicalOptimizer:
                     x_plus[i] += epsilon
                     x_minus = x_current.copy()
                     x_minus[i] -= epsilon
-                    
+
                     f_plus = objective_func(x_plus)
                     f_minus = objective_func(x_minus)
                     grad[i] = (f_plus - f_minus) / (2 * epsilon)
@@ -709,7 +711,9 @@ class ClassicalOptimizer:
                 # Check for convergence based on gradient norm
                 grad_norm = np.linalg.norm(grad)
                 if grad_norm < tolerance:
-                    logger.debug(f"Gurobi optimization converged at iteration {iteration}: ||grad|| = {grad_norm:.2e}")
+                    logger.debug(
+                        f"Gurobi optimization converged at iteration {iteration}: ||grad|| = {grad_norm:.2e}"
+                    )
                     break
 
                 # Estimate diagonal Hessian approximation (BFGS-like)
@@ -720,7 +724,7 @@ class ClassicalOptimizer:
                     x_plus[i] += epsilon
                     x_minus = x_current.copy()
                     x_minus[i] -= epsilon
-                    
+
                     f_plus = objective_func(x_plus)
                     f_minus = objective_func(x_minus)
                     second_deriv = (f_plus - 2 * f_current + f_minus) / (epsilon**2)
@@ -737,8 +741,13 @@ class ClassicalOptimizer:
                         with gp.Model(env=env) as model:
                             # Set Gurobi parameters
                             model.setParam(GRB.Param.OptimalityTol, tolerance)
-                            model.setParam(GRB.Param.Method, gurobi_options.get("method", 2))
-                            model.setParam(GRB.Param.TimeLimit, gurobi_options.get("time_limit", 300))
+                            model.setParam(
+                                GRB.Param.Method, gurobi_options.get("method", 2)
+                            )
+                            model.setParam(
+                                GRB.Param.TimeLimit,
+                                gurobi_options.get("time_limit", 300),
+                            )
 
                             # Create decision variables for step
                             step = model.addVars(
@@ -750,8 +759,9 @@ class ClassicalOptimizer:
 
                             # Trust region constraint: ||step||_2 <= trust_radius
                             model.addQConstr(
-                                gp.quicksum(step[i] * step[i] for i in range(n_params)) <= trust_radius**2,
-                                "trust_region"
+                                gp.quicksum(step[i] * step[i] for i in range(n_params))
+                                <= trust_radius**2,
+                                "trust_region",
                             )
 
                             # Parameter bounds constraints: bounds[i][0] <= x_current[i] + step[i] <= bounds[i][1]
@@ -759,15 +769,23 @@ class ClassicalOptimizer:
                                 if i < len(bounds):
                                     lb, ub = bounds[i]
                                     if lb != -np.inf:
-                                        model.addConstr(step[i] >= lb - x_current[i], f"lower_bound_{i}")
+                                        model.addConstr(
+                                            step[i] >= lb - x_current[i],
+                                            f"lower_bound_{i}",
+                                        )
                                     if ub != np.inf:
-                                        model.addConstr(step[i] <= ub - x_current[i], f"upper_bound_{i}")
+                                        model.addConstr(
+                                            step[i] <= ub - x_current[i],
+                                            f"upper_bound_{i}",
+                                        )
 
                             # Quadratic approximation: grad^T * step + 0.5 * step^T * H_diag * step
                             obj = gp.LinExpr()
                             for i in range(n_params):
                                 obj += grad[i] * step[i]  # Linear term
-                                obj += 0.5 * hessian_diag[i] * step[i] * step[i]  # Quadratic term
+                                obj += (
+                                    0.5 * hessian_diag[i] * step[i] * step[i]
+                                )  # Quadratic term
 
                             model.setObjective(obj, GRB.MINIMIZE)
 
@@ -782,42 +800,68 @@ class ClassicalOptimizer:
                                 function_evaluations += 1
 
                                 # Trust region update logic
-                                predicted_reduction = model.objVal  # Should be negative for minimization
+                                predicted_reduction = (
+                                    model.objVal
+                                )  # Should be negative for minimization
                                 actual_reduction = f_current - f_new
-                                
+
                                 if actual_reduction > 0:
                                     # Accept step
                                     step_norm = np.linalg.norm(step_values)
-                                    logger.debug(f"Iteration {iteration}: χ² = {f_new:.6e} (improvement: {actual_reduction:.2e}, step: {step_norm:.3f})")
-                                    
+                                    logger.debug(
+                                        f"Iteration {iteration}: χ² = {f_new:.6e} (improvement: {actual_reduction:.2e}, step: {step_norm:.3f})"
+                                    )
+
                                     x_current = x_new
                                     f_current = f_new
-                                    
+
                                     # Expand trust region if step is successful and near boundary
                                     if step_norm > 0.8 * trust_radius:
-                                        trust_radius = min(gurobi_options["trust_region_max"], 2 * trust_radius)
+                                        trust_radius = min(
+                                            gurobi_options["trust_region_max"],
+                                            2 * trust_radius,
+                                        )
                                 else:
                                     # Reject step and shrink trust region
-                                    trust_radius = max(gurobi_options["trust_region_min"], 0.5 * trust_radius)
-                                    logger.debug(f"Iteration {iteration}: Step rejected, shrinking trust region to {trust_radius:.6f}")
+                                    trust_radius = max(
+                                        gurobi_options["trust_region_min"],
+                                        0.5 * trust_radius,
+                                    )
+                                    logger.debug(
+                                        f"Iteration {iteration}: Step rejected, shrinking trust region to {trust_radius:.6f}"
+                                    )
 
                                 # Check convergence
-                                if actual_reduction > 0 and abs(actual_reduction) < tolerance:
-                                    logger.debug(f"Gurobi optimization converged at iteration {iteration}: improvement = {actual_reduction:.2e}")
+                                if (
+                                    actual_reduction > 0
+                                    and abs(actual_reduction) < tolerance
+                                ):
+                                    logger.debug(
+                                        f"Gurobi optimization converged at iteration {iteration}: improvement = {actual_reduction:.2e}"
+                                    )
                                     break
-                                    
+
                                 if trust_radius < gurobi_options["trust_region_min"]:
-                                    logger.debug(f"Gurobi optimization terminated: trust region too small ({trust_radius:.2e})")
+                                    logger.debug(
+                                        f"Gurobi optimization terminated: trust region too small ({trust_radius:.2e})"
+                                    )
                                     break
                             else:
                                 # QP solve failed, shrink trust region and try again
-                                trust_radius = max(gurobi_options["trust_region_min"], 0.25 * trust_radius)
-                                logger.debug(f"QP subproblem failed with status {model.status}, shrinking trust region to {trust_radius:.6f}")
+                                trust_radius = max(
+                                    gurobi_options["trust_region_min"],
+                                    0.25 * trust_radius,
+                                )
+                                logger.debug(
+                                    f"QP subproblem failed with status {model.status}, shrinking trust region to {trust_radius:.6f}"
+                                )
                                 if trust_radius < gurobi_options["trust_region_min"]:
                                     break
 
                 except Exception as e:
-                    logger.warning(f"Gurobi subproblem failed at iteration {iteration}: {e}")
+                    logger.warning(
+                        f"Gurobi subproblem failed at iteration {iteration}: {e}"
+                    )
                     break
 
             # Create final result
@@ -832,7 +876,9 @@ class ClassicalOptimizer:
                     nfev=function_evaluations,
                     method="Gurobi-Iterative-QP",
                 )
-                logger.debug(f"Gurobi optimization completed: χ² = {f_current:.6e} after {iteration} iterations")
+                logger.debug(
+                    f"Gurobi optimization completed: χ² = {f_current:.6e} after {iteration} iterations"
+                )
                 return True, result
             else:
                 result = optimize.OptimizeResult(

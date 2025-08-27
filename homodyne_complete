@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+"""
+Standalone ultra-fast shell completion for homodyne.
+
+This script has ZERO dependencies on the homodyne package to ensure
+instant completion performance.
+
+Performance target: < 50ms total completion time
+"""
+
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+
+class UltraFastCache:
+    """Minimal cache implementation with zero dependencies."""
+    
+    def __init__(self):
+        try:
+            self.cache_file = Path.home() / ".cache" / "homodyne" / "completion_cache.json"
+            self.cache_ttl = 10.0  # Longer TTL for better performance
+            self._load_cache()
+        except:
+            # Fallback if any error
+            self._data = {'files': {'.': []}, 'dirs': {'.': []}, 'timestamp': 0}
+    
+    def _load_cache(self):
+        """Load cache with aggressive error handling."""
+        try:
+            if self.cache_file.exists() and self.cache_file.stat().st_size > 0:
+                with open(self.cache_file, 'r') as f:
+                    data = json.load(f)
+                
+                # Check if cache is fresh
+                if time.time() - data.get('timestamp', 0) < self.cache_ttl:
+                    self._data = data
+                    return
+        except:
+            pass
+        
+        # Create new cache
+        self._scan_minimal()
+    
+    def _scan_minimal(self):
+        """Ultra-minimal directory scan."""
+        try:
+            cwd = Path.cwd()
+            
+            # Only scan current directory - no recursion
+            files = []
+            dirs = []
+            
+            for item in cwd.iterdir():
+                try:
+                    if item.is_file() and item.suffix == '.json':
+                        files.append(item.name)
+                    elif item.is_dir():
+                        dirs.append(item.name)
+                except:
+                    continue
+                
+                # Limit for speed
+                if len(files) > 15 and len(dirs) > 10:
+                    break
+            
+            self._data = {
+                'timestamp': time.time(),
+                'files': {'.': files},
+                'dirs': {'.': dirs}
+            }
+            
+            # Save cache for next time (fail silently if error)
+            try:
+                self.cache_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(self.cache_file, 'w') as f:
+                    json.dump(self._data, f)
+            except:
+                pass
+                
+        except:
+            # Ultimate fallback
+            self._data = {
+                'files': {'.': []},
+                'dirs': {'.': []},
+                'timestamp': time.time()
+            }
+    
+    def get_files(self, directory='.'):
+        """Get files with built-in prioritization."""
+        files = self._data.get('files', {}).get(directory, [])
+        
+        # Fast prioritization without expensive operations
+        priority_files = []
+        other_files = []
+        
+        for f in files:
+            if f.startswith(('config', 'homodyne')):
+                priority_files.append(f)
+            else:
+                other_files.append(f)
+        
+        return priority_files + other_files[:8]  # Total limit: ~12 files
+    
+    def get_dirs(self, directory='.'):
+        """Get directories with built-in prioritization."""
+        dirs = self._data.get('dirs', {}).get(directory, [])
+        
+        # Fast prioritization
+        priority_dirs = []
+        other_dirs = []
+        
+        for d in dirs:
+            if d in ('output', 'results', 'data', 'plots', 'analysis'):
+                priority_dirs.append(d)
+            else:
+                other_dirs.append(d)
+        
+        return priority_dirs + other_dirs[:5]  # Total limit: ~8 dirs
+
+
+# Pre-defined completions (zero computation)
+METHODS = ['classical', 'mcmc', 'robust', 'all']
+MODES = ['static_isotropic', 'static_anisotropic', 'laminar_flow']
+
+# Lazy-loaded cache
+_cache = None
+
+
+def get_cache():
+    """Lazy cache initialization."""
+    global _cache
+    if _cache is None:
+        _cache = UltraFastCache()
+    return _cache
+
+
+def complete_method(prefix):
+    """Complete method names."""
+    if not prefix:
+        return METHODS
+    
+    return [m for m in METHODS if m.startswith(prefix.lower())]
+
+
+def complete_mode(prefix):
+    """Complete modes."""
+    if not prefix:
+        return MODES
+    
+    return [m for m in MODES if m.startswith(prefix.lower())]
+
+
+def complete_config(prefix):
+    """Complete config files."""
+    cache = get_cache()
+    
+    # Simple path handling
+    if '/' in prefix:
+        return []  # Skip complex paths for speed
+    
+    files = cache.get_files('.')
+    
+    if not prefix:
+        return files
+    
+    # Case-insensitive prefix matching
+    prefix_lower = prefix.lower()
+    return [f for f in files if f.lower().startswith(prefix_lower)]
+
+
+def complete_output_dir(prefix):
+    """Complete output directories."""
+    cache = get_cache()
+    
+    # Simple path handling
+    if '/' in prefix:
+        return []  # Skip complex paths for speed
+    
+    dirs = cache.get_dirs('.')
+    
+    if not prefix:
+        return [d + '/' for d in dirs]
+    
+    # Case-insensitive prefix matching
+    prefix_lower = prefix.lower()
+    return [d + '/' for d in dirs if d.lower().startswith(prefix_lower)]
+
+
+def main():
+    """Ultra-fast main function."""
+    try:
+        if len(sys.argv) < 2:
+            return
+        
+        completion_type = sys.argv[1]
+        prefix = sys.argv[2] if len(sys.argv) > 2 else ''
+        
+        # Direct dispatch - no function lookups
+        if completion_type == 'method':
+            results = complete_method(prefix)
+        elif completion_type == 'mode':
+            results = complete_mode(prefix)
+        elif completion_type == 'config':
+            results = complete_config(prefix)
+        elif completion_type == 'output_dir':
+            results = complete_output_dir(prefix)
+        else:
+            return
+        
+        # Fast output
+        for result in results:
+            print(result)
+            
+    except:
+        # Fail silently - shell completion should never crash
+        pass
+
+
+if __name__ == '__main__':
+    main()

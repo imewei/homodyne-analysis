@@ -45,6 +45,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance test improvements**: Better reliability with JIT warmup and deterministic data
 - **Bounds Constraints**: Gurobi provides native support for parameter bounds (unlike Nelder-Mead)
 
+## [0.6.6] - 2025-08-27
+
+### Added
+- **Enhanced Shell Completion System**: Implemented multi-tier shell completion with robust fallback mechanisms
+  - Fast standalone completion script (`homodyne_complete`) with zero package dependencies for instant performance
+  - Comprehensive shell shortcuts: `hc` (classical), `hm` (mcmc), `hr` (robust), `ha` (all methods)
+  - Silent loading option for completion system without startup notifications
+  - Three-tier fallback system: tab completion → shortcuts → help system
+- **Code Quality Improvements**: Comprehensive formatting and linting applied across entire codebase
+  - Applied Black formatter (line length 88) to all Python files for consistent style
+  - Applied isort import sorting with Black profile for organized imports
+  - Enhanced type consistency and import organization
+- **Documentation Updates**: Comprehensive updates to reflect shell completion enhancements
+  - Updated CLI_REFERENCE.md with three-tier completion system documentation
+  - Enhanced README.md with Shell Completion & Shortcuts section
+  - Updated user-guide documentation with shell enhancement setup instructions
+
+### Changed
+- **Shell Completion Architecture**: Migrated from argcomplete-only to hybrid completion system
+  - Added bypass mechanism for zsh compdef issues (`compdef:153: _comps: assignment to invalid subscript range`)
+  - Implemented external completion handler with caching for performance optimization
+  - Removed startup notification messages for silent shell loading
+- **CLI Interface**: Enhanced user experience with improved completion and shortcuts
+  - Completion system now gracefully degrades from tab completion to shortcuts to help
+  - Added comprehensive troubleshooting section for completion issues
+
+### Fixed  
+- **Shell Completion Issues**: Resolved zsh compdef registration failures that broke tab completion
+- **Completion Performance**: Optimized completion speed with aggressive caching and minimal file system operations
+- **Documentation Consistency**: Updated version references across all documentation files
+- **File Organization**: Cleaned up temporary completion files and consolidated working completion system
+
+### Performance
+- **Completion Speed**: Target < 50ms completion time achieved through zero-dependency completion script
+- **Caching System**: Implemented intelligent file/directory caching with TTL for faster subsequent completions
+- **Memory Optimization**: Minimal memory footprint for completion operations
+
 ## [Unreleased]
 
 ### Added

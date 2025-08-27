@@ -255,6 +255,55 @@ homodyne-config --mode laminar_flow --output custom_config.json --sample microge
 
 **See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete command-line documentation.**
 
+## Shell Completion & Shortcuts
+
+The homodyne CLI includes robust completion and shortcut systems for enhanced productivity:
+
+### Quick Setup
+```bash
+# Install completion support
+pip install homodyne-analysis[completion]
+
+# Enable for your shell (one-time setup)
+homodyne --install-completion zsh    # or bash, fish, powershell
+source ~/.zshrc                      # Restart shell or reload config
+```
+
+### Available Features
+
+**🔥 Command Shortcuts (Always Available):**
+```bash
+hc          # homodyne --method classical
+hm          # homodyne --method mcmc
+hr          # homodyne --method robust  
+ha          # homodyne --method all
+hconfig     # homodyne --config
+hplot       # homodyne --plot-experimental-data
+```
+
+**⚡ Tab Completion (When Working):**
+```bash
+homodyne --method <TAB>     # Shows: classical, mcmc, robust, all
+homodyne --config <TAB>     # Shows available .json files
+homodyne --output-dir <TAB> # Shows available directories
+```
+
+**📋 Help System:**
+```bash
+homodyne_help              # Show all available options and current config files
+```
+
+### Usage Examples
+```bash
+# Using shortcuts for quick analysis
+hc --verbose               # homodyne --method classical --verbose
+hr --config my_data.json   # homodyne --method robust --config my_data.json
+ha                         # homodyne --method all
+
+# Check what's available
+homodyne_help             # Shows methods, config files, flags
+```
+
 **Python API:**
 
 ```python
@@ -523,22 +572,6 @@ homodyne --verbose --quiet  # ERROR: conflicting options
 
 **File Logging**: All modes save detailed logs to `output_dir/run.log` for analysis tracking and debugging, regardless of console settings.
 
-## Performance and Stability
-
-The homodyne package includes enterprise-grade performance optimization and monitoring features:
-
-### Performance Stability Features
-
-| Feature | Description | Benefit |
-|---------|-------------|---------|
-| **JIT Warmup** | Automatic Numba kernel pre-compilation | Eliminates JIT compilation overhead |
-| **Adaptive Benchmarking** | Smart benchmarking with target stability | 95%+ improvement in performance consistency |
-| **Memory Management** | Automatic memory monitoring and cleanup | Prevents memory bloat in long-running analyses |
-| **Smart Caching** | Memory-aware LRU caching system | Optimizes memory usage while improving speed |
-| **Environment Optimization** | Conservative threading and JIT settings | Balanced performance and numerical stability |
-| **Performance Rebalancing** | Optimized chi-squared and kernel functions | 97% reduction in performance variability |
-
-
 ## Performance & Testing
 
 ### Optimization Methods
@@ -578,9 +611,6 @@ The package includes comprehensive performance optimizations:
 - **Lazy loading**: Heavy dependencies loaded only when needed
 - **Fast startup**: >99% reduction in import time for optional components
 - **Modular imports**: Core functionality available without heavy dependencies
-
-
-
 
 ## Physical Constraints and Parameter Ranges
 
@@ -623,9 +653,6 @@ The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded par
 | `c2_fitted` | [1.0, 2.0] | *derived* | Final correlation function range |
 | `c2_theory` | [0.0, 1.0] | *derived* | Theoretical correlation bounds |
 
-
-
-
 ### Scaling Optimization
 
 Always enabled for scientific accuracy:
@@ -650,53 +677,55 @@ export NUMBA_CACHE_DIR=/tmp/numba_cache
 export HOMODYNE_PERFORMANCE_MODE=1
 ```
 
-
-
 ### Output Organization
 
 ```
 ./homodyne_results/
-├── homodyne_analysis_results.json  # Main analysis results (all methods)
-├── run.log                         # Detailed execution log
-├── diagnostic_summary.png          # Main comprehensive diagnostic plot (2×3 grid) - only for --method all
-├── classical/                      # Classical method outputs
-│   ├── all_classical_methods_summary.json  # Summary of all classical methods
-│   ├── nelder_mead/                # Individual method results
-│   │   ├── analysis_results_nelder_mead.json     # Nelder-Mead results
-│   │   ├── parameters.json         # Parameters with uncertainties
-│   │   ├── fitted_data.npz         # Method-specific fitted data (includes experimental data and residuals)
-│   │   └── c2_heatmaps_nelder_mead.png # Method-specific heatmaps
-│   └── gurobi/                     # Gurobi results
-│       ├── analysis_results_gurobi.json     # Gurobi results
-│       ├── parameters.json         # Parameters with uncertainties
-│       ├── fitted_data.npz         # Method-specific fitted data (includes experimental data and residuals)
-│       └── c2_heatmaps_gurobi.png  # Method-specific heatmaps
-├── robust/                          # Robust-only optimization outputs
-│   ├── all_robust_methods_summary.json  # Summary of robust methods
-│   ├── wasserstein/                # Wasserstein robust method results
-│   │   ├── analysis_results_wasserstein.json   # Wasserstein results
-│   │   ├── parameters.json         # Parameters with uncertainties
-│   │   ├── fitted_data.npz         # Method-specific fitted data (includes experimental data and residuals)
-│   │   └── c2_heatmaps_wasserstein.png # Method-specific heatmaps
-│   ├── scenario/                   # Scenario-based robust method results
-│   │   ├── analysis_results_scenario.json      # Scenario results
-│   │   ├── parameters.json         # Parameters with uncertainties
-│   │   ├── fitted_data.npz         # Method-specific fitted data (includes experimental data and residuals)
-│   │   └── c2_heatmaps_scenario.png # Method-specific heatmaps
-│   └── ellipsoidal/                # Ellipsoidal robust method results
-│       ├── analysis_results_ellipsoidal.json  # Ellipsoidal results
-│       ├── parameters.json         # Parameters with uncertainties
-│       ├── fitted_data.npz         # Method-specific fitted data (includes experimental data and residuals)
-│       └── c2_heatmaps_ellipsoidal.png # Method-specific heatmaps
-├── mcmc/                           # MCMC method outputs  
-│   ├── fitted_data.npz             # Consolidated MCMC data (experimental, fitted, residuals, parameters)
-│   ├── mcmc_summary.json           # MCMC convergence diagnostics and posterior statistics
-│   ├── mcmc_trace.nc               # NetCDF trace data (ArviZ format)
-│   ├── c2_heatmaps_phi_*.png       # C2 correlation heatmaps using posterior means
-│   ├── trace_plot.png              # MCMC trace plots
-│   └── corner_plot.png             # Parameter posterior distributions
-└── exp_data/                       # Data validation plots
-    └── data_validation_*.png
+├── homodyne_analysis_results.json    # Main results with config and metadata
+├── run.log                          # Execution log file
+├── classical/                      # Classical optimization results (if run)
+│   ├── all_classical_methods_summary.json
+│   ├── nelder_mead/                # Method-specific directory
+│   │   ├── analysis_results_nelder_mead.json
+│   │   ├── parameters.json
+│   │   ├── fitted_data.npz         # Experimental, fitted, residuals data
+│   │   ├── c2_heatmaps_nelder_mead_phi_*.png
+│   │   └── nelder_mead_diagnostic_summary.png
+│   ├── gurobi/                     # Gurobi method directory (if available)
+│   │   ├── analysis_results_gurobi.json
+│   │   ├── parameters.json
+│   │   ├── fitted_data.npz
+│   │   └── c2_heatmaps_gurobi_phi_*.png
+│   └── ...                         # Other classical methods
+├── robust/                         # Robust optimization results (if run)
+│   ├── all_robust_methods_summary.json
+│   ├── wasserstein/               # Robust method directories
+│   │   ├── analysis_results_wasserstein.json
+│   │   ├── parameters.json
+│   │   ├── fitted_data.npz
+│   │   └── c2_heatmaps_wasserstein_phi_*.png
+│   ├── scenario/
+│   ├── ellipsoidal/
+│   └── ...
+├── mcmc/                          # MCMC results (if run)
+│   ├── mcmc_summary.json          # MCMC summary statistics
+│   ├── mcmc_trace.nc              # NetCDF trace file
+│   ├── experimental_data.npz      # Original experimental data
+│   ├── fitted_data.npz            # MCMC fitted data
+│   ├── residuals_data.npz         # Residuals
+│   ├── c2_heatmaps_phi_*.png      # Heatmap plots per angle
+│   ├── 3d_surface_phi_*.png       # 3D surface plots
+│   ├── 3d_surface_residuals_phi_*.png
+│   ├── trace_plot.png             # MCMC trace plots
+│   └── corner_plot.png            # Parameter posterior distributions
+├── exp_data/                      # Experimental data plots (if --plot-experimental-data)
+│   ├── data_validation_phi_*.png  # Per-angle validation plots
+│   └── summary_statistics.txt     # Data summary
+└── simulated_data/               # Simulated data plots (if --plot-simulated-data)
+    ├── simulated_c2_fitted_phi_*.png    # Simulated fitted data plots
+    ├── theoretical_c2_phi_*.png         # Theoretical correlation plots
+    ├── fitted_c2_data.npz              # Fitted data arrays
+    └── theoretical_c2_data.npz         # Theoretical data arrays
 ```
 
 **File Organization:**
