@@ -6,6 +6,7 @@ Tests configuration loading, validation, and access methods.
 """
 
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -190,8 +191,11 @@ class TestConfigManager:
 
 def test_config_manager_default_config():
     """Test that default configuration is loaded when file is missing."""
-    # Use a non-existent file to trigger default config loading
-    manager = ConfigManager("/tmp/definitely_nonexistent_file.json")
+    import tempfile
+    # Use a non-existent file in temp directory to trigger default config loading
+    temp_dir = tempfile.gettempdir()
+    nonexistent_file = os.path.join(temp_dir, "definitely_nonexistent_file.json")
+    manager = ConfigManager(nonexistent_file)
 
     # Should have loaded default config
     assert manager.config is not None

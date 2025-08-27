@@ -47,7 +47,8 @@ except ImportError:
         return Path(path)
 
     def get_output_directory(*args, **kwargs):
-        return Path("/tmp")
+        import tempfile
+        return Path(tempfile.gettempdir())
 
 
 try:

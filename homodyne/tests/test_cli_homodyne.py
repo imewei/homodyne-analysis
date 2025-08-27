@@ -198,9 +198,12 @@ class TestHomodyneCLI:
         """Clean up temporary files after each test."""
         # Clean up any temporary files created during tests
         import glob
+        import tempfile
 
+        # Use proper temp directory instead of hardcoded /tmp
+        temp_dir = tempfile.gettempdir()
         for pattern in ["*.json", "*.npz", "*.log"]:
-            for file in glob.glob(f"/tmp/{pattern}"):
+            for file in glob.glob(os.path.join(temp_dir, pattern)):
                 try:
                     os.remove(file)
                 except:

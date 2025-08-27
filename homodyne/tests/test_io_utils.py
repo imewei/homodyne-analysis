@@ -273,8 +273,9 @@ class TestDataSaving:
         assert filepath.exists()
 
         # Verify content
+        # Note: This is safe as we're only loading test data we just created
         with open(filepath, "rb") as f:
-            loaded_data = pickle.load(f)
+            loaded_data = pickle.load(f)  # nosec B301 - Safe: loading trusted test data
         assert loaded_data == data
 
     def test_save_figure_success(self, temp_directory):
@@ -348,6 +349,7 @@ class TestOutputDirectory:
 
     def test_get_output_directory_no_config(self, temp_directory):
         """Test output directory with empty config."""
+        original_cwd = Path.cwd()
         os.chdir(temp_directory)
 
         try:
@@ -355,7 +357,7 @@ class TestOutputDirectory:
             assert result.exists()
             assert result.name == "homodyne_results"
         finally:
-            os.chdir(Path(__file__).parent.parent)
+            os.chdir(original_cwd)
 
 
 class TestAnalysisResultsSaving:
@@ -393,6 +395,7 @@ class TestAnalysisResultsSaving:
 
     def test_save_analysis_results_minimal(self, temp_directory):
         """Test saving minimal analysis results."""
+        original_cwd = Path.cwd()
         os.chdir(temp_directory)
 
         try:
@@ -408,7 +411,7 @@ class TestAnalysisResultsSaving:
             assert results_dir.exists()
 
         finally:
-            os.chdir(Path(__file__).parent.parent)
+            os.chdir(original_cwd)
 
 
 class TestErrorHandling:
