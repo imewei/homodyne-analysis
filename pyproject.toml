@@ -110,6 +110,7 @@ quality = [
     "flake8>=6.0.0",
     "mypy>=1.5.0",
     "ruff>=0.1.0",  # Modern linter and formatter
+    "bandit>=1.8.0",  # Security linter for Python code
 ]
 typing = [
     "types-psutil>=5.9.0",
@@ -300,3 +301,8 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.bandit]
+exclude_dirs = ["homodyne/tests", "tests", "build", "dist"]
+skips = ["B101"]  # Skip assert_used test (common in scientific code)
+severity_level = "medium"  # Only report medium and high severity issues
