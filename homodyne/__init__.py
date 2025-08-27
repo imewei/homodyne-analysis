@@ -117,7 +117,7 @@ __all__ = [
 ]
 
 # Version information
-__version__ = "0.6.8"
+__version__ = "0.6.9"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"

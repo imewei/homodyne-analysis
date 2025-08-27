@@ -5,6 +5,29 @@ All notable changes to the Homodyne Scattering Analysis Package will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.9] - 2025-08-27
+
+### Added
+- **Comprehensive Security Framework**: Integrated security scanning with Bandit and pip-audit for automated vulnerability detection
+- **Security Documentation**: Complete security guidelines and best practices documentation (`docs/developer-guide/security.rst`)
+- **Enhanced Quality Tools**: Added pip-audit dependency vulnerability scanner to development workflow
+- **Security Configuration**: Properly configured Bandit with scientific code patterns and security exclusions
+
+### Fixed
+- **Windows CI Performance Test**: Adjusted robust optimization performance test thresholds for CI environment compatibility
+- **Security Tool Integration**: Fixed Bandit configuration to work with scientific Python code patterns
+- **Documentation Updates**: Enhanced README.md and documentation with security information
+
+### Changed
+- **Development Workflow**: Updated code quality checks to include comprehensive security scanning
+- **Requirements Files**: Enhanced with security tools and proper dependency organization
+- **Package Configuration**: Improved pyproject.toml with security tool configurations and proper skips
+
+### Security
+- **Zero Security Issues**: Achieved 0 medium/high severity security issues through comprehensive Bandit scanning
+- **Dependency Security**: Implemented automated dependency vulnerability checking with pip-audit
+- **Secure Development**: Established security-first development practices and documentation
+
 ## [0.6.8] - 2025-08-27
 
 ### Fixed
