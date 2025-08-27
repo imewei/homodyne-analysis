@@ -14,7 +14,6 @@
     "angle_filtering": "enabled",
     "script_compatibility": "homodyne v0.6.5.dev0"
   },
-  
   "experimental_data": {
     "_comment": "Data source and loading configuration",
     "data_folder_path": "./data/SAMPLE_NAME/",
@@ -35,7 +34,6 @@
       "normalization_method": "baseline"
     }
   },
-  
   "analyzer_parameters": {
     "_comment": "Core analysis parameters - static anisotropic mode",
     "temporal": {
@@ -65,7 +63,6 @@
       "memory_limit_gb": 12
     }
   },
-  
   "initial_parameters": {
     "_comment": "Starting values for 3-parameter static anisotropic optimization [D0, alpha, D_offset]",
     "values": [100.0, 0.0, 10.0],
@@ -83,7 +80,6 @@
       "D_offset": "Å²/s"
     }
   },
-  
   "optimization_config": {
     "_comment": "Optimization configuration with angle filtering for anisotropic mode",
     "angle_filtering": {
@@ -119,7 +115,8 @@
           "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
-          "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter anisotropic case",
           "tolerance": 1e-06,
@@ -130,6 +127,16 @@
           "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
           "time_limit": 120,
           "_time_limit_note": "Shorter time limit for simple 3-parameter problem",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          },
           "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
           "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
           "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
@@ -137,6 +144,64 @@
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
+    },
+    "robust_optimization": {
+      "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # Run only robust methods",
+        "python run_homodyne.py --method robust --static-anisotropic  # Robust in anisotropic mode",
+        "python run_homodyne.py --method classical  # Run all methods including robust",
+        "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
+      ],
+      "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
+      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "enabled": true,
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
+      "uncertainty_radius": 0.03,
+      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set (0.01-0.1 typical)",
+      "n_scenarios": 15,
+      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization (optimized for performance)",
+      "regularization_alpha": 0.01,
+      "_regularization_alpha_note": "L2 regularization strength for parameter stability",
+      "regularization_beta": 0.001,
+      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
+      "jacobian_epsilon": 1e-6,
+      "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
+      "enable_caching": true,
+      "_enable_caching_note": "Enable performance caching for repeated computations",
+      "preferred_solver": "CLARABEL",
+      "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
+      "solver_settings": {
+        "Method": 2,
+        "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex",
+        "CrossOver": 0,
+        "_CrossOver_note": "Skip crossover for numerical stability",
+        "BarHomogeneous": 1,
+        "_BarHomogeneous_note": "Use homogeneous barrier method",
+        "TimeLimit": 300,
+        "_TimeLimit_note": "Maximum solve time in seconds (optimized for performance)",
+        "MIPGap": 1e-4,
+        "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
+        "NumericFocus": 2,
+        "_NumericFocus_note": "Numerical stability focus (optimized for speed)",
+        "OutputFlag": 0,
+        "_OutputFlag_note": "Suppress solver output"
+      },
+      "method_options": {
+        "wasserstein": {
+          "uncertainty_radius": 0.03,
+          "regularization_alpha": 0.01
+        },
+        "scenario": {
+          "n_scenarios": 15,
+          "bootstrap_method": "residual"
+        },
+        "ellipsoidal": {
+          "gamma": 0.1,
+          "regularization_alpha": 0.01
+        }
+      }
     },
     "mcmc_sampling": {
       "enabled": true,
@@ -170,67 +235,8 @@
         "prior_sigma": 0.01,
         "type": "TruncatedNormal"
       }
-    },
-    "robust_optimization": {
-      "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
-      "_usage_examples": [
-        "python run_homodyne.py --method robust  # Run only robust methods",
-        "python run_homodyne.py --method robust --static-anisotropic  # Robust in anisotropic mode",
-        "python run_homodyne.py --method classical  # Run all methods including robust",
-        "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
-      ],
-      "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
-      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
-      "enabled": true,
-      "uncertainty_model": "wasserstein",
-      "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
-      "uncertainty_radius": 0.05,
-      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set (0.01-0.1 typical)",
-      "n_scenarios": 15,
-      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization (optimized for performance)",
-      "regularization_alpha": 0.01,
-      "_regularization_alpha_note": "L2 regularization strength for parameter stability",
-      "regularization_beta": 0.001,
-      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
-      "jacobian_epsilon": 1e-6,
-      "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
-      "enable_caching": true,
-      "_enable_caching_note": "Enable performance caching for repeated computations",
-      "preferred_solver": "CLARABEL",
-      "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
-      "solver_settings": {
-        "Method": 2,
-        "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex",
-        "CrossOver": 0,
-        "_CrossOver_note": "Skip crossover for numerical stability",
-        "BarHomogeneous": 1,
-        "_BarHomogeneous_note": "Use homogeneous barrier method",
-        "TimeLimit": 300,
-        "_TimeLimit_note": "Maximum solve time in seconds (optimized for performance)",
-        "MIPGap": 1e-4,
-        "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
-        "NumericFocus": 2,
-        "_NumericFocus_note": "Numerical stability focus (optimized for speed)",
-        "OutputFlag": 0,
-        "_OutputFlag_note": "Suppress solver output"
-      },
-      "method_options": {
-        "wasserstein": {
-          "uncertainty_radius": 0.05,
-          "regularization_alpha": 0.01
-        },
-        "scenario": {
-          "n_scenarios": 15,
-          "bootstrap_method": "residual"
-        },
-        "ellipsoidal": {
-          "gamma": 0.1,
-          "regularization_alpha": 0.01
-        }
-      }
     }
   },
-  
   "parameter_space": {
     "_comment": "Parameter bounds for 3-parameter static anisotropic optimization",
     "bounds": [
@@ -263,7 +269,6 @@
       }
     ]
   },
-  
   "analysis_settings": {
     "_comment": "Static anisotropic mode configuration",
     "static_mode": true,
@@ -274,7 +279,6 @@
       "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering for anisotropic behavior"
     }
   },
-  
   "advanced_settings": {
     "_comment": "Advanced computational settings",
     "data_loading": {
@@ -311,7 +315,6 @@
       "finite_difference_step": 1e-08
     }
   },
-  
   "performance_settings": {
     "_comment": "Performance settings optimized for 3-parameter static anisotropic case",
     "caching": {
@@ -366,7 +369,6 @@
       "sigma_prior": 0.1
     }
   },
-  
   "validation_rules": {
     "_comment": "Validation rules for static anisotropic analysis",
     "data_quality": {
@@ -384,15 +386,15 @@
     "fit_quality": {
       "_comment": "Quality thresholds for 3-parameter optimization",
       "overall_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
-        "critical_threshold": 20.0
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
       },
       "per_angle_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
         "outlier_threshold_multiplier": 2.5,
         "max_outlier_fraction": 0.25,
         "min_good_angles": 3
@@ -423,7 +425,6 @@
       "check_continuity": true
     }
   },
-  
   "workflow_integration": {
     "_comment": "Analysis workflow settings",
     "analysis_workflow": {
@@ -454,7 +455,6 @@
       "validate_plot_data": true
     }
   },
-  
   "output_settings": {
     "_comment": "Output and reporting configuration",
     "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",

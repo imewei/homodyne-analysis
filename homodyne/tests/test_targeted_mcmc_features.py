@@ -64,7 +64,7 @@ class TestPyMCImportHandling:
 
             with patch("builtins.__import__", mock_import):
                 # Verify that importing pymc raises ImportError
-                assert test_import_pymc() == False
+                assert test_import_pymc() is False
 
                 print("✓ PyMC import correctly mocked as absent")
 
@@ -84,7 +84,7 @@ class TestPyMCImportHandling:
             assert actual_available
             print(f"✓ PyMC availability flag consistent: {actual_available}")
         else:
-            assert actual_available == False
+            assert actual_available is False
             print(f"✓ PyMC unavailable flag consistent: {actual_available}")
 
 

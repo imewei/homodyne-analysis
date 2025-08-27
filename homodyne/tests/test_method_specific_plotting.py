@@ -130,14 +130,15 @@ class TestMethodSpecificPlotting:
             output_dir = Path(temp_dir)
 
             # Call the function
-            _generate_classical_plots(
-                mock_analyzer,
-                best_params,
-                mock_result_with_methods,
-                phi_angles,
-                c2_exp,
-                output_dir,
-            )
+            if _generate_classical_plots is not None:
+                _generate_classical_plots(
+                    mock_analyzer,
+                    best_params,
+                    mock_result_with_methods,
+                    phi_angles,
+                    c2_exp,
+                    output_dir,
+                )
 
             # Should have been called once for each successful method
             assert mock_plot_c2.call_count == 2
@@ -168,14 +169,15 @@ class TestMethodSpecificPlotting:
             output_dir = Path(temp_dir)
 
             # Call the function
-            _generate_classical_plots(
-                mock_analyzer,
-                best_params,
-                mock_result_without_methods,
-                phi_angles,
-                c2_exp,
-                output_dir,
-            )
+            if _generate_classical_plots is not None:
+                _generate_classical_plots(
+                    mock_analyzer,
+                    best_params,
+                    mock_result_without_methods,
+                    phi_angles,
+                    c2_exp,
+                    output_dir,
+                )
 
             # Should have been called once with fallback
             assert mock_plot_c2.call_count == 1
@@ -214,14 +216,15 @@ class TestMethodSpecificPlotting:
             output_dir = Path(temp_dir)
 
             # Call the function
-            _generate_classical_plots(
-                mock_analyzer,
-                best_params,
-                result,
-                phi_angles,
-                c2_exp,
-                output_dir,
-            )
+            if _generate_classical_plots is not None:
+                _generate_classical_plots(
+                    mock_analyzer,
+                    best_params,
+                    result,
+                    phi_angles,
+                    c2_exp,
+                    output_dir,
+                )
 
             # Should have been called only once (for successful method)
             assert mock_plot_c2.call_count == 1
@@ -260,14 +263,15 @@ class TestMethodSpecificPlotting:
             output_dir = Path(temp_dir)
 
             # Call the function
-            _generate_classical_plots(
-                mock_analyzer,
-                best_params,
-                result,
-                phi_angles,
-                c2_exp,
-                output_dir,
-            )
+            if _generate_classical_plots is not None:
+                _generate_classical_plots(
+                    mock_analyzer,
+                    best_params,
+                    result,
+                    phi_angles,
+                    c2_exp,
+                    output_dir,
+                )
 
             # Should have been called only once (for method with parameters)
             assert mock_plot_c2.call_count == 1
@@ -293,14 +297,15 @@ class TestMethodSpecificPlotting:
                 mock_plot.return_value = True
 
                 # Call the function
-                _generate_classical_plots(
-                    mock_analyzer,
-                    best_params,
-                    mock_result_with_methods,
-                    phi_angles,
-                    c2_exp,
-                    output_dir,
-                )
+                if _generate_classical_plots is not None:
+                    _generate_classical_plots(
+                        mock_analyzer,
+                        best_params,
+                        mock_result_with_methods,
+                        phi_angles,
+                        c2_exp,
+                        output_dir,
+                    )
 
                 # Directory should now exist
                 assert classical_dir.exists()
@@ -323,14 +328,15 @@ class TestMethodSpecificPlotting:
 
             with patch("homodyne.plotting.plot_c2_heatmaps") as mock_plot:
                 # Call the function
-                _generate_classical_plots(
-                    mock_analyzer,
-                    best_params,
-                    mock_result_with_methods,
-                    phi_angles,
-                    c2_exp,
-                    output_dir,
-                )
+                if _generate_classical_plots is not None:
+                    _generate_classical_plots(
+                        mock_analyzer,
+                        best_params,
+                        mock_result_with_methods,
+                        phi_angles,
+                        c2_exp,
+                        output_dir,
+                    )
 
                 # Plot function should not have been called
                 assert mock_plot.call_count == 0

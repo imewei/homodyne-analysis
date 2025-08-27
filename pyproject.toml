@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with JAX acceleration"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with iterative Gurobi optimization and robust methods"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -41,10 +41,13 @@ keywords = [
     "bayesian-analysis",
     "mcmc",
     "robust-optimization",
+    "trust-region-optimization",
+    "gurobi",
     "jax",
     "high-performance-computing",
     "jit-compilation",
     "performance-optimization",
+    "code-quality",
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -80,8 +83,7 @@ robust = [
 gurobi = [
     "gurobipy>=11.0.0",  # Gurobi optimization solver (requires license)
 ]
-interactive = [
-    "cmd2>=2.0.0",      # Interactive CLI with advanced features
+completion = [
     "argcomplete>=3.0.0",  # Shell tab completion
 ]
 docs = [
@@ -124,7 +126,7 @@ dev = [
     "twine>=4.0.0",
 ]
 all = [
-    "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,interactive,dev]",
+    "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,completion,dev]",
 ]
 
 [project.urls]

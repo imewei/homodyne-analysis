@@ -130,7 +130,7 @@ class TestConfigurationIntegration:
         config_manager = ConfigManager(str(config_file))
 
         # Verify filtering is disabled
-        assert config_manager.is_angle_filtering_enabled() == False
+        assert config_manager.is_angle_filtering_enabled() is False
 
         # When filtering is disabled, all angles should be used
         test_angles = np.array([0.0, 45.0, 90.0, 135.0, 180.0])
@@ -245,7 +245,7 @@ class TestConfigurationIntegration:
 
         # Fallback should be disabled
         should_fallback = config_manager.should_fallback_to_all_angles()
-        assert should_fallback == False
+        assert should_fallback is False
 
         # This should result in an error condition
         if not optimization_indices and not should_fallback:
@@ -315,7 +315,7 @@ class TestConfigurationIntegration:
             # Verify config values are as expected
             assert enabled
             assert ranges == [(-15.0, 15.0), (165.0, 195.0)]
-            assert fallback == False
+            assert fallback is False
 
         except ImportError:
             pytest.skip("MCMC module not available")

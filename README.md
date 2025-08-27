@@ -3,8 +3,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
 [![PyPI version](https://badge.fury.io/py/homodyne-analysis.svg)](https://badge.fury.io/py/homodyne-analysis)
-[![Numba](https://img.shields.io/badge/Numba-JIT%20Accelerated-green)](https://numba.pydata.org/)
-[![Performance](https://img.shields.io/badge/Performance-Optimized%20%26%20Monitored-brightgreen)](PERFORMANCE_OPTIMIZATIONS.md)
 
 A high-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the theoretical framework from [He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121) for characterizing transport properties in flowing soft matter systems.
 
@@ -547,7 +545,7 @@ The homodyne package includes enterprise-grade performance optimization and moni
 
 **Classical Optimization (Fast)**
 - **Nelder-Mead**: Derivative-free simplex algorithm, robust for noisy functions
-- **Gurobi**: Quadratic programming solver (requires license), excellent for smooth functions with bounds constraints
+- **Gurobi**: Iterative quadratic programming with trust region optimization (requires license), excellent for smooth functions with parameter bounds
 - Speed: ~minutes (optimized with lazy imports and memory-efficient operations)
 - Use: Exploratory analysis, parameter screening
 - Command: `--method classical`
@@ -1098,10 +1096,10 @@ Includes user guides, API reference, and developer documentation.
 ## Development Status & Code Quality
 
 **Code Formatting & Quality:**
-- ✅ **Black**: 100% compliant (all files formatted)
-- ✅ **isort**: 100% compliant (imports sorted)  
-- ⚠️ **flake8**: 2,189 style issues (mostly line length E501 and unused imports F401)
-- ⚠️ **mypy**: 285 type annotation issues (31 files)
+- ✅ **Black**: 100% compliant (all files formatted with 88-character line length)
+- ✅ **isort**: 100% compliant (imports sorted and optimized)  
+- ⚠️ **flake8**: ~400 remaining style issues (primarily line length E501 and unused imports F401 in data scripts)
+- ⚠️ **mypy**: ~285 type annotation issues (mainly missing library stubs and function annotations)
 
 **Python Version Support:**
 - **Required**: Python 3.12+ (enforced at package and CLI level)

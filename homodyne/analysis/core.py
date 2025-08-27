@@ -103,11 +103,13 @@ Institution: Argonne National Laboratory
 __author__ = "Wei Chen, Hongrui He"
 __credits__ = "Argonne National Laboratory"
 
+import json
 import logging
 import multiprocessing as mp
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -819,47 +821,6 @@ class HomodyneAnalysisCore:
         else:
             gamma_t = gamma_dot_t0 * (self.time_array**beta) + gamma_dot_t_offset
             return np.maximum(gamma_t, 1e-10)  # Ensure γ̇(t) > 0 always
-
-    def update_frame_range(self, start_frame: int, end_frame: int):
-        """
-        Update frame range with validation.
-
-        Parameters
-        ----------
-        start_frame : int
-            New start frame
-        end_frame : int
-            New end frame
-        """
-        if start_frame >= end_frame:
-            raise ValueError(
-                f"Invalid frame range: start_frame ({start_frame}) must be < end_frame ({end_frame})"
-            )
-        if start_frame < 0:
-            raise ValueError(f"start_frame must be >= 0, got {start_frame}")
-
-        if self.config is None:
-            raise ValueError("Configuration not loaded: self.config is None.")
-        min_frames = (
-            self.config.get("validation_rules", {})
-            .get("frame_range", {})
-            .get("minimum_frames", 10)
-        )
-        frame_count = end_frame - start_frame
-        if frame_count < min_frames:
-            raise ValueError(f"Frame count ({frame_count}) must be >= {min_frames}")
-
-        # Update configuration and recalculate derived parameters
-        if self.config is None:
-            raise ValueError("Configuration not loaded: self.config is None.")
-        self.config["analyzer_parameters"]["temporal"]["start_frame"] = start_frame
-        self.config["analyzer_parameters"]["temporal"]["end_frame"] = end_frame
-
-        # Re-initialize parameters with new frame range
-        self._initialize_parameters()
-        logger.info(
-            f"Frame range updated to {start_frame}-{end_frame} ({frame_count} frames)"
-        )
 
     @memory_efficient_cache(maxsize=64)
     def create_time_integral_matrix_cached(
@@ -2132,11 +2093,7 @@ class HomodyneAnalysisCore:
         output_dir : str, optional
             Output directory for saving results file (default: current directory)
         """
-        import json
-        import os
-
         # Create comprehensive results with configuration
-        from datetime import datetime, timezone
 
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -2163,8 +2120,6 @@ class HomodyneAnalysisCore:
 
         # Determine output file path
         if output_dir:
-            from pathlib import Path
-
             output_dir_path = Path(output_dir)
             output_dir_path.mkdir(parents=True, exist_ok=True)
             if results_format == "json":
@@ -2224,8 +2179,6 @@ class HomodyneAnalysisCore:
         """
         try:
             # Import plotting dependencies
-            from pathlib import Path
-
             import matplotlib.gridspec as gridspec
             import matplotlib.pyplot as plt
 
@@ -2719,8 +2672,6 @@ Validation:
                 else:
                     # Final fallback: try to load from NetCDF file
                     try:
-                        from pathlib import Path
-
                         mcmc_results_dir = Path("homodyne_results") / "mcmc_results"
                         trace_file = mcmc_results_dir / "mcmc_trace.nc"
 

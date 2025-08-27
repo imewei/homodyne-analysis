@@ -81,6 +81,14 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[gurobi]
    # or manually: pip install gurobipy
 
+**For Shell Tab Completion:**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[completion]
+   # Then install completion for your shell:
+   homodyne --install-completion bash  # or zsh, fish, powershell
+
 **All Dependencies:**
 
 .. code-block:: bash

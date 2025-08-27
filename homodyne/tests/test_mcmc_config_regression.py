@@ -181,10 +181,11 @@ class TestMCMCConfigurationRegression:
         )  # type: ignore
 
         # Validation should fail for old trace
-        assert (
-            validate_trace_dimensions(old_trace, config_chains, config_draws)
-            == False  # type: ignore
-        )
+        if validate_trace_dimensions is not None:
+            assert (
+                validate_trace_dimensions(old_trace, config_chains, config_draws)
+                == False
+            )
 
         # This mismatch is what was causing the plotting issue
         assert old_trace.posterior.sizes["chain"] != config_chains

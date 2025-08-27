@@ -47,8 +47,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Comprehensive Code Quality Improvements**: Major cleanup and optimization of codebase quality
+  - Fixed critical Gurobi optimization implementation that was non-iterative and getting stuck
+  - Implemented proper iterative trust region SQP approach for Gurobi optimization
+  - Removed unused function definitions (308 lines) from kernels.py fallback implementations  
+  - Fixed all critical flake8 issues including false comparisons and import organization
+  - Added missing fallback function definitions to resolve name errors
+  - Enhanced Gurobi with adaptive trust region management and parameter-scaled finite differences
+
 ### Changed
-- No unreleased changes at this time
+- **Gurobi Optimization Implementation**: Complete rewrite from single-shot to iterative optimization
+  - **Trust Region SQP**: Successive quadratic approximations with adaptive trust regions (0.1 → 1e-8 to 1.0 range)
+  - **Iterative refinement**: Up to 50 outer iterations with convergence criteria based on gradient norm and objective improvement
+  - **Numerical stability**: Parameter-scaled epsilon for finite differences and diagonal Hessian approximation
+  - **Enhanced logging**: Debug messages showing iteration progress and convergence metrics
+- **Code Quality Standards**: Updated formatting and import organization
+  - **Black formatting**: Applied 88-character line length formatting to all files
+  - **Import sorting**: Fixed import order with isort across all modules
+  - **Type annotations**: Improved import patterns to resolve mypy redefinition warnings
+
+### Fixed
+- **Critical Gurobi Bug**: Gurobi optimization was building single quadratic approximation around initial point only
+  - **Root Cause**: No iterative refinement meant χ² values remained constant across "iterations"
+  - **Solution**: Implemented proper trust region optimization with step acceptance/rejection logic
+  - **Expected Impact**: Progressive χ² improvement instead of constant values, proper convergence behavior
+- **Code Quality Issues**: Resolved major flake8 and type checking problems
+  - Fixed `== False` to `is False` comparisons in test files (7 locations)
+  - Removed unused imports and variables in test modules
+  - Added missing fallback functions `_solve_least_squares_batch_fallback` and `_compute_chi_squared_batch_fallback`
+  - Improved import patterns in `test_cli_completion.py` to avoid redefinition warnings
 
 ## [0.6.4] - 2025-08-22
 

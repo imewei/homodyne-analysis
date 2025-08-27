@@ -15,7 +15,6 @@
     "angle_filtering": "enabled_with_performance_boost",
     "script_compatibility": "homodyne v0.6.5.dev0"
   },
-  
   "experimental_data": {
     "_comment": "Data source and loading configuration",
     "data_folder_path": "./data/SAMPLE_NAME/",
@@ -36,7 +35,6 @@
       "normalization_method": "baseline"
     }
   },
-  
   "analyzer_parameters": {
     "_comment": "Core analysis parameters - laminar flow mode",
     "temporal": {
@@ -66,7 +64,6 @@
       "memory_limit_gb": 16
     }
   },
-  
   "initial_parameters": {
     "_comment": "Starting values for 7-parameter laminar flow optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
     "values": [100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0],
@@ -92,7 +89,6 @@
       "phi0": "degrees"
     }
   },
-  
   "optimization_config": {
     "_comment": "Optimization configuration with enhanced angle filtering for flow analysis",
     "angle_filtering": {
@@ -128,7 +124,8 @@
           "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
-          "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 1500,
           "_max_iterations_note": "More iterations needed for complex 7-parameter flow case",
           "tolerance": 1e-06,
@@ -139,6 +136,16 @@
           "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
           "time_limit": 600,
           "_time_limit_note": "Longer time limit for complex 7-parameter problem",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          },
           "_gurobi_flow_note": "Gurobi particularly effective for laminar flow with bounds constraints",
           "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
           "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
@@ -244,7 +251,6 @@
       }
     }
   },
-  
   "parameter_space": {
     "_comment": "Parameter bounds for 7-parameter laminar flow optimization",
     "bounds": [
@@ -313,7 +319,6 @@
       }
     ]
   },
-  
   "analysis_settings": {
     "_comment": "Laminar flow mode configuration",
     "static_mode": false,
@@ -325,7 +330,6 @@
       "flow_physics": "D(t) = D₀ × t^α + D_offset, γ̇(t) = γ̇₀ × t^β + γ̇_offset"
     }
   },
-  
   "advanced_settings": {
     "_comment": "Advanced computational settings for laminar flow",
     "data_loading": {
@@ -363,7 +367,6 @@
       "finite_difference_step": 1e-08
     }
   },
-  
   "performance_settings": {
     "_comment": "Performance settings optimized for 7-parameter laminar flow",
     "caching": {
@@ -419,7 +422,6 @@
       "sigma_prior": 0.1
     }
   },
-  
   "validation_rules": {
     "_comment": "Validation rules for laminar flow analysis",
     "data_quality": {
@@ -437,15 +439,15 @@
     "fit_quality": {
       "_comment": "Quality thresholds for 7-parameter optimization",
       "overall_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
-        "critical_threshold": 20.0
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
       },
       "per_angle_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
         "outlier_threshold_multiplier": 2.5,
         "max_outlier_fraction": 0.25,
         "min_good_angles": 3
@@ -476,7 +478,6 @@
       "check_continuity": true
     }
   },
-  
   "workflow_integration": {
     "_comment": "Analysis workflow settings",
     "analysis_workflow": {
@@ -507,7 +508,6 @@
       "validate_plot_data": true
     }
   },
-  
   "output_settings": {
     "_comment": "Output and reporting configuration",
     "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",

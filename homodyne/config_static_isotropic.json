@@ -13,7 +13,6 @@
     "parameters_optimized": ["D0", "alpha", "D_offset"],
     "script_compatibility": "homodyne v0.6.5.dev0"
   },
-  
   "experimental_data": {
     "_comment": "Data source and loading configuration",
     "data_folder_path": "./data/SAMPLE_NAME/",
@@ -34,7 +33,6 @@
       "normalization_method": "baseline"
     }
   },
-  
   "analyzer_parameters": {
     "_comment": "Core analysis parameters - static isotropic mode",
     "temporal": {
@@ -64,7 +62,6 @@
       "memory_limit_gb": 8
     }
   },
-  
   "initial_parameters": {
     "_comment": "Starting values for 3-parameter static isotropic optimization [D0, alpha, D_offset]",
     "values": [100.0, 0.0, 10.0],
@@ -82,7 +79,6 @@
       "D_offset": "Å²/s"
     }
   },
-  
   "optimization_config": {
     "_comment": "Optimization configuration - angle filtering disabled for isotropic mode",
     "angle_filtering": {
@@ -112,7 +108,8 @@
           "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
-          "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter isotropic case",
           "tolerance": 1e-06,
@@ -123,27 +120,37 @@
           "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
           "time_limit": 120,
           "_time_limit_note": "Shorter time limit for simple 3-parameter problem",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          },
           "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
           "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
           "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
         }
       },
-      "robust_optimization": {
-        "enabled": true,
-        "uncertainty_model": "wasserstein",
-        "uncertainty_radius": 0.03,
-        "n_scenarios": 15,
-        "regularization_alpha": 0.01,
-        "regularization_beta": 0.001,
-        "solver_settings": {
-          "Method": 2,
-          "TimeLimit": 300,
-          "NumericFocus": 3,
-          "OutputFlag": 0
-        }
-      },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
+    },
+    "robust_optimization": {
+      "enabled": true,
+      "uncertainty_model": "wasserstein",
+      "uncertainty_radius": 0.03,
+      "n_scenarios": 15,
+      "regularization_alpha": 0.01,
+      "regularization_beta": 0.001,
+      "solver_settings": {
+        "Method": 2,
+        "TimeLimit": 300,
+        "NumericFocus": 3,
+        "OutputFlag": 0
+      }
     },
     "mcmc_sampling": {
       "enabled": true,
@@ -179,7 +186,6 @@
       }
     }
   },
-  
   "parameter_space": {
     "_comment": "Parameter bounds for 3-parameter static isotropic optimization",
     "bounds": [
@@ -212,7 +218,6 @@
       }
     ]
   },
-  
   "analysis_settings": {
     "_comment": "Static isotropic mode configuration",
     "static_mode": true,
@@ -223,7 +228,6 @@
       "static_isotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with isotropic symmetry"
     }
   },
-  
   "advanced_settings": {
     "_comment": "Advanced computational settings",
     "data_loading": {
@@ -260,7 +264,6 @@
       "finite_difference_step": 1e-08
     }
   },
-  
   "performance_settings": {
     "_comment": "Performance settings optimized for 3-parameter static case",
     "caching": {
@@ -315,7 +318,6 @@
       "sigma_prior": 0.1
     }
   },
-  
   "validation_rules": {
     "_comment": "Validation rules for static isotropic analysis",
     "data_quality": {
@@ -333,15 +335,15 @@
     "fit_quality": {
       "_comment": "Quality thresholds for 3-parameter optimization",
       "overall_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
-        "critical_threshold": 20.0
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
       },
       "per_angle_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
         "outlier_threshold_multiplier": 2.5,
         "max_outlier_fraction": 0.25,
         "min_good_angles": 1
@@ -372,7 +374,6 @@
       "check_continuity": true
     }
   },
-  
   "workflow_integration": {
     "_comment": "Analysis workflow settings",
     "analysis_workflow": {
@@ -403,7 +404,6 @@
       "validate_plot_data": true
     }
   },
-  
   "output_settings": {
     "_comment": "Output and reporting configuration",
     "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",

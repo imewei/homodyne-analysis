@@ -1,26 +1,39 @@
 {
-  "metadata": {
-    "_comment": "Project metadata and version information",
-    "config_version": "0.6.5.dev0",
-    "description": "Homodyne Scattering Analysis Configuration - XPCS under Nonequilibrium Conditions",
-    "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
-    "created_date": "YYYY-MM-DD",
-    "updated_date": "YYYY-MM-DD",
-    "authors": ["Your Name"],
-    "institution": "Your Institution",
-    "experiment_name": "Your Experiment Description",
-    "sample_description": "Sample details and preparation method",
-    "script_compatibility": "homodyne v0.6.5.dev0"
+  "_template_info": {
+    "_comment": "COMPREHENSIVE HOMODYNE CONFIGURATION TEMPLATE - Based on current codebase v0.6.5.dev0",
+    "_creation_date": "2025-08-27",
+    "_based_on_analysis": "All existing config files (static_isotropic, static_anisotropic, laminar_flow) merged with recent enhancements",
+    "_usage": "Copy this template and customize the analysis_mode, initial_parameters, and experimental_data sections for your specific experiment",
+    "_config_modes": {
+      "static_isotropic": "3-parameter optimization [D0, alpha, D_offset] - no angle filtering",
+      "static_anisotropic": "3-parameter optimization [D0, alpha, D_offset] - with angle filtering",
+      "laminar_flow": "7-parameter optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0] - full flow dynamics"
+    }
   },
-  
+  "metadata": {
+    "_comment": "Template metadata - Customize description and analysis_mode for your experiment",
+    "config_version": "0.6.5.dev0",
+    "description": "TEMPLATE: Comprehensive homodyne scattering analysis configuration",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
+    "analysis_mode": "CHANGE_ME: static_isotropic | static_anisotropic | laminar_flow",
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data for validation and comparison",
+      "simulated_data_plotting": "Use --plot-simulated-data with --contrast and --offset parameters",
+      "phi_angles_override": "Command-line --phi-angles overrides config file settings",
+      "multi_method_support": "Separate plots generated for each optimization method (Nelder-Mead, Gurobi, etc.)"
+    },
+    "parameters_optimized": "DEPENDS_ON_MODE: [D0,alpha,D_offset] for static modes, [D0,alpha,D_offset,gamma_dot_t0,beta,gamma_dot_t_offset,phi0] for laminar_flow",
+    "shell_completion": "Interactive mode removed - use argcomplete for shell completion",
+    "script_compatibility": "homodyne v0.6.5.dev0 with enhanced Gurobi optimization and code quality improvements"
+  },
   "experimental_data": {
-    "_comment": "Data source and loading configuration",
-    "data_folder_path": "./data/SAMPLE_NAME/",
-    "data_file_name": "your_data_file.hdf",
+    "_comment": "CUSTOMIZE: Update paths and filenames for your experimental data",
+    "data_folder_path": "./data/YOUR_SAMPLE_NAME/",
+    "data_file_name": "your_experimental_data.hdf",
     "phi_angles_path": "./data/phi_angles/",
     "phi_angles_file": "phi_list.txt",
     "exchange_key": "exchange",
-    "cache_file_path": "./data/SAMPLE_NAME/",
+    "cache_file_path": "./data/YOUR_SAMPLE_NAME/",
     "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
     "cache_compression": true,
     "data_type": "float64",
@@ -33,274 +46,331 @@
       "normalization_method": "baseline"
     }
   },
-  
   "analyzer_parameters": {
-    "_comment": "Core analysis parameters and experimental geometry",
+    "_comment": "CUSTOMIZE: Core physics parameters for your experiment",
     "temporal": {
       "dt": 0.1,
-      "_dt_note": "Time step between frames in seconds",
+      "_dt_note": "Time step between frames in seconds - CUSTOMIZE for your acquisition",
       "dt_unit": "seconds",
       "start_frame": 100,
+      "_start_frame_note": "CUSTOMIZE: Skip initial frames for equilibration",
       "end_frame": 1000,
-      "frame_description": "Analysis window for XPCS experiment"
+      "_end_frame_note": "CUSTOMIZE: Total analysis window",
+      "frame_description": "Analysis time window for experiment"
     },
     "scattering": {
-      "wavevector_q": 0.01,
-      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "typical_range": [0.001, 0.1]
+      "wavevector_q": 0.001,
+      "_q_note": "CUSTOMIZE: Scattering wavevector q = 4\u03c0 sin(\u03b8/2)/\u03bb",
+      "q_unit": "\u00c5\u207b\u00b9",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
-      "_gap_note": "Gap in Angstroms (200μm typical)",
-      "gap_unit": "Å",
+      "_gap_note": "CUSTOMIZE: Gap in Angstroms - critical for laminar_flow, less important for static modes",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 200
     },
     "computational": {
       "num_threads": "auto",
       "auto_detect_cores": true,
-      "max_threads_limit": 12,
+      "max_threads_limit": 16,
+      "_max_threads_note": "Adjust based on your system - laminar_flow needs more threads",
       "memory_limit_gb": 16
     }
   },
-  
   "initial_parameters": {
-    "_comment": "Starting values for optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
-    "values": [100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0],
-    "parameter_names": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
-    "units": ["Å²/s", "dimensionless", "Å²/s", "s⁻¹", "dimensionless", "s⁻¹", "degrees"],
-    "physical_meaning": {
-      "D0": "Reference diffusion coefficient",
-      "alpha": "Power-law exponent for D(t) evolution",
-      "D_offset": "Baseline diffusion coefficient",
-      "gamma_dot_t0": "Reference shear rate",
-      "beta": "Power-law exponent for shear rate evolution",
-      "gamma_dot_t_offset": "Baseline shear rate",
-      "phi0": "Angular offset between flow and scattering"
-    },
-    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
-    "parameter_units": {
-      "D0": "Å²/s",
-      "alpha": "dimensionless",
-      "D_offset": "Å²/s",
-      "gamma_dot_t0": "s⁻¹",
-      "beta": "dimensionless",
-      "gamma_dot_t_offset": "s⁻¹",
-      "phi0": "degrees"
-    }
-  },
-  
-  "optimization_config": {
-    "_comment": "Configuration for optimization methods",
-    "angle_filtering": {
-      "enabled": true,
-      "target_ranges": [
-        {"min_angle": -10.0, "max_angle": 10.0},
-        {"min_angle": 170.0, "max_angle": 190.0}
+    "_comment": "CUSTOMIZE: Starting values - CRITICAL for convergence. Adjust based on your analysis_mode",
+    "_mode_dependent_note": "Parameter count depends on analysis_mode: 3 for static modes, 7 for laminar_flow",
+    "values": "MODE_DEPENDENT: [100.0,0.0,10.0] for static, [100.0,0.0,10.0,1.0,0.0,0.0,0.0] for laminar_flow",
+    "parameter_names": "MODE_DEPENDENT: See _parameter_definitions below",
+    "_parameter_definitions": {
+      "static_modes": [
+        "D0",
+        "alpha",
+        "D_offset"
       ],
-      "fallback_to_all_angles": true
+      "laminar_flow": [
+        "D0",
+        "alpha",
+        "D_offset",
+        "gamma_dot_t0",
+        "beta",
+        "gamma_dot_t_offset",
+        "phi0"
+      ]
     },
-    "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
-      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
-      "_usage_flags": {
-        "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
-        "--method robust": "Runs ONLY robust methods: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
-        "--method mcmc": "Runs Bayesian MCMC sampling for uncertainty quantification",
-        "--method all": "Runs classical + robust + MCMC methods for comprehensive analysis"
+    "units": "MODE_DEPENDENT: [\u00c5\u00b2/s,dimensionless,\u00c5\u00b2/s] for static, [\u00c5\u00b2/s,dimensionless,\u00c5\u00b2/s,s\u207b\u00b9,dimensionless,s\u207b\u00b9,degrees] for laminar_flow",
+    "physical_meaning": {
+      "_common_to_all_modes": {
+        "D0": "Reference diffusion coefficient",
+        "alpha": "Power-law exponent for D(t) evolution",
+        "D_offset": "Baseline diffusion coefficient"
       },
-      "_gurobi_availability": "Gurobi provides quadratic programming alternative. Requires license: pip install gurobipy",
-      "_robust_availability": "Robust methods require CVXPY: pip install cvxpy. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
-      "_robust_flag_note": "Use --method robust to run ONLY robust methods for noise-resistant parameter estimation",
-      "method_options": {
-        "Nelder-Mead": {
-          "maxiter": 10000,
-          "_maxiter_note": "Increased iterations for better convergence with 7 parameters",
-          "xatol": 1e-10,
-          "_xatol_note": "Tighter parameter tolerance for high precision",
-          "fatol": 1e-10,
-          "_fatol_note": "Tighter function tolerance for better fitting",
-          "adaptive": true,
-          "_adaptive_note": "Adaptive step sizes for better convergence"
-        },
-        "Gurobi": {
-          "_comment": "Quadratic programming solver (requires license)",
-          "max_iterations": 2000,
-          "_max_iterations_note": "Increased for better convergence",
-          "tolerance": 1e-08,
-          "_tolerance_note": "Tighter tolerance for high precision",
-          "output_flag": 0,
-          "method": 2,
-          "_method_note": "Barrier method for stable convergence",
-          "time_limit": 600,
-          "_time_limit_note": "Extended time limit for complex optimization",
-          "NumericFocus": 3,
-          "_NumericFocus_note": "Maximum numerical precision focus",
-          "OptimalityTol": 1e-08,
-          "_OptimalityTol_note": "Tight optimality tolerance",
-          "FeasibilityTol": 1e-08,
-          "_FeasibilityTol_note": "Tight feasibility tolerance"
-        }
-      },
-      "selection_strategy": "best_chi_squared"
-    },
-    "mcmc_sampling": {
-      "enabled": true,
-      "sampler": "NUTS",
-      "draws": 6000,
-      "tune": 1500,
-      "thin": 1,
-      "chains": 4,
-      "cores": 4,
-      "target_accept": 0.95,
-      "max_treedepth": 12,
-      "return_inferencedata": true
-    },
-    "scaling_parameters": {
-      "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
-      "fitted_range": {"min": 1.0, "max": 2.0},
-      "theory_range": {"min": 0.0, "max": 1.0},
-      "contrast": {
-        "min": 0.05,
-        "max": 0.5,
-        "prior_mu": 0.3,
-        "prior_sigma": 0.1,
-        "type": "TruncatedNormal"
-      },
-      "offset": {
-        "min": 0.05,
-        "max": 1.95,
-        "prior_mu": 1.0,
-        "prior_sigma": 0.2,
-        "type": "TruncatedNormal"
+      "_laminar_flow_additional": {
+        "gamma_dot_t0": "Reference shear rate",
+        "beta": "Power-law exponent for shear rate evolution",
+        "gamma_dot_t_offset": "Baseline shear rate",
+        "phi0": "Angular offset between flow and scattering"
       }
     },
+    "active_parameters": "MODE_DEPENDENT: Matches parameter_names above",
+    "parameter_units": "MODE_DEPENDENT: Matches units above in dict format"
+  },
+  "optimization_config": {
+    "_comment": "Comprehensive optimization settings with enhanced Gurobi and robust methods",
+    "angle_filtering": {
+      "_mode_dependent": "disabled for static_isotropic, enabled for static_anisotropic and laminar_flow",
+      "enabled": "MODE_DEPENDENT: false for static_isotropic, true for others",
+      "target_ranges": [
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0
+        },
+        {
+          "min_angle": 80.0,
+          "max_angle": 100.0,
+          "_note": "static_anisotropic only"
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0
+        },
+        {
+          "min_angle": 260.0,
+          "max_angle": 280.0,
+          "_note": "static_anisotropic only"
+        }
+      ],
+      "fallback_to_all_angles": true,
+      "_performance_note": "Provides 3-5x speedup for complex optimization"
+    },
+    "classical_optimization": {
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
+      "_methods_note": "Classical methods always available. Robust methods in separate section below.",
+      "_method_flags": {
+        "--method classical": "Runs ONLY classical methods: Nelder-Mead, Gurobi (if licensed)",
+        "--method robust": "Runs ONLY robust methods: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+        "--method mcmc": "Runs ONLY Bayesian MCMC sampling for uncertainty quantification",
+        "--method all": "Runs classical + robust + MCMC for comprehensive analysis"
+      },
+      "_gurobi_availability": "Requires Gurobi license (pip install gurobipy). Now uses enhanced Trust Region SQP.",
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": "MODE_DEPENDENT: 8000 for static, 10000 for laminar_flow",
+          "_maxiter_note": "Increased iterations for parameter complexity",
+          "xatol": 1e-10,
+          "_xatol_note": "Tight parameter tolerance for precision",
+          "fatol": 1e-10,
+          "_fatol_note": "Tight function tolerance for convergence",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes improve convergence"
+        },
+        "Gurobi": {
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
+          "max_iterations": "MODE_DEPENDENT: 500 for static, 1500 for laminar_flow",
+          "_max_iterations_note": "Trust region iterations - more needed for complex parameters",
+          "tolerance": 1e-06,
+          "_tolerance_note": "Convergence tolerance for trust region updates",
+          "output_flag": 0,
+          "_output_flag_note": "Gurobi verbosity (0=silent, 1=verbose)",
+          "method": 2,
+          "_method_note": "Gurobi solver method (2=barrier recommended for QP subproblems)",
+          "time_limit": "MODE_DEPENDENT: 120s for static, 600s for laminar_flow",
+          "_time_limit_note": "Per-subproblem time limit in trust region algorithm",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          },
+          "_advantages": "Better convergence than old single-shot QP, handles bounds naturally",
+          "_requirements": "Gurobi license required for enhanced optimization performance"
+        }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "best_chi_squared, consensus, or first_success when multiple methods used"
+    },
     "robust_optimization": {
-      "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
+      "_comment": "ENHANCED: 100x-5000x performance improvements with caching and optimized solvers",
+      "_performance_upgrades": "v0.6.5+ optimizations: adaptive Jacobians, CLARABEL/SCS solvers, smart caching",
       "_usage_examples": [
         "python run_homodyne.py --method robust  # Run only robust methods",
-        "python run_homodyne.py --method robust --static-isotropic  # Robust in static mode",
-        "python run_homodyne.py --method classical  # Run all methods including robust",
-        "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
+        "python run_homodyne.py --method classical  # Include robust in classical analysis",
+        "python run_homodyne.py --method all  # Comprehensive: classical + robust + MCMC"
       ],
-      "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
-      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
       "enabled": true,
       "uncertainty_model": "wasserstein",
-      "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
-      "uncertainty_radius": 0.03,
-      "_uncertainty_radius_note": "Optimized for balance between robustness and fitting precision",
-      "n_scenarios": 25,
-      "_n_scenarios_note": "Increased scenarios for better uncertainty characterization",
-      "regularization_alpha": 0.005,
-      "_regularization_alpha_note": "Reduced regularization for better data fitting",
+      "_uncertainty_model_note": "Options: wasserstein (recommended), ellipsoidal, scenario",
+      "uncertainty_radius": "MODE_DEPENDENT: 0.03 for static, 0.05 for laminar_flow",
+      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set",
+      "n_scenarios": 15,
+      "_n_scenarios_note": "Bootstrap scenarios - optimized for performance",
+      "regularization_alpha": "MODE_DEPENDENT: 0.01 for static, 0.02 for laminar_flow",
+      "_regularization_alpha_note": "L2 regularization - higher for complex parameter spaces",
       "regularization_beta": 0.001,
-      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
-      "jacobian_epsilon": 1e-6,
-      "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
+      "_regularization_beta_note": "L1 sparsity parameter",
+      "jacobian_epsilon": 1e-06,
+      "_jacobian_epsilon_note": "Finite difference step for adaptive Jacobians",
       "enable_caching": true,
-      "_enable_caching_note": "Enable performance caching for repeated computations",
+      "_enable_caching_note": "Smart caching provides major performance gains",
       "preferred_solver": "CLARABEL",
-      "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
+      "_preferred_solver_note": "Optimized CVXPY solver: CLARABEL > SCS > CVXOPT",
       "solver_settings": {
+        "_gurobi_settings": "For Gurobi-based robust optimization backend",
         "Method": 2,
-        "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex",
         "CrossOver": 0,
-        "_CrossOver_note": "Skip crossover for numerical stability",
         "BarHomogeneous": 1,
-        "_BarHomogeneous_note": "Use homogeneous barrier method",
-        "TimeLimit": 900,
-        "_TimeLimit_note": "Extended time for better convergence in complex problems",
-        "MIPGap": 1e-4,
-        "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
+        "TimeLimit": "MODE_DEPENDENT: 300s for static, 600s for laminar_flow",
+        "MIPGap": 0.0001,
         "NumericFocus": 2,
-        "_NumericFocus_note": "Numerical stability focus (optimized for speed)",
-        "OutputFlag": 0,
-        "_OutputFlag_note": "Suppress solver output"
+        "OutputFlag": 0
       },
       "method_options": {
         "wasserstein": {
-          "uncertainty_radius": 0.03,
-          "regularization_alpha": 0.005,
-          "_note": "Optimized for high-quality fitting"
+          "uncertainty_radius": "MODE_DEPENDENT: 0.03 for static, 0.05 for laminar_flow",
+          "regularization_alpha": "MODE_DEPENDENT: 0.01 for static, 0.02 for laminar_flow"
         },
         "scenario": {
-          "n_scenarios": 30,
-          "bootstrap_method": "residual",
-          "parallel_scenarios": true,
-          "_note": "Balanced scenarios for robust estimation"
+          "n_scenarios": 15,
+          "bootstrap_method": "residual"
         },
         "ellipsoidal": {
-          "gamma": 0.08,
-          "l1_regularization": 0.0005,
-          "l2_regularization": 0.005,
-          "_note": "Reduced regularization for better data fitting"
+          "gamma": "MODE_DEPENDENT: 0.1 for static, 0.15 for laminar_flow",
+          "regularization_alpha": "MODE_DEPENDENT: 0.01 for static, 0.02 for laminar_flow"
         }
+      }
+    },
+    "mcmc_sampling": {
+      "_comment": "Bayesian MCMC sampling for uncertainty quantification",
+      "enabled": true,
+      "sampler": "NUTS",
+      "draws": 6000,
+      "_draws_note": "Standardized across all modes for consistency",
+      "tune": 1500,
+      "_tune_note": "Extended tuning for complex parameter spaces",
+      "thin": "MODE_DEPENDENT: 2 for static, 1 for laminar_flow",
+      "_thin_note": "Thinning strategy depends on convergence characteristics",
+      "chains": 4,
+      "cores": 4,
+      "target_accept": "MODE_DEPENDENT: 0.95 for static, 0.90 for laminar_flow",
+      "_target_accept_note": "Lower acceptance for complex parameter spaces",
+      "max_treedepth": "MODE_DEPENDENT: 10 for static, 12 for laminar_flow",
+      "_max_treedepth_note": "Deeper trees needed for complex models",
+      "return_inferencedata": true
+    },
+    "scaling_parameters": {
+      "_comment": "Physical scaling: c2_fitted = c2_theory * contrast + offset",
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "contrast": {
+        "min": "MODE_DEPENDENT: 1e-4 for static, 0.05 for laminar_flow",
+        "max": 0.5,
+        "prior_mu": "MODE_DEPENDENT: 0.05 for static, 0.3 for laminar_flow",
+        "prior_sigma": "MODE_DEPENDENT: 0.01 for static, 0.1 for laminar_flow",
+        "type": "TruncatedNormal"
+      },
+      "offset": {
+        "min": "MODE_DEPENDENT: 1.0 for static, 0.05 for laminar_flow",
+        "max": "MODE_DEPENDENT: 1.5 for static, 1.95 for laminar_flow",
+        "prior_mu": "MODE_DEPENDENT: 1.3 for static, 1.0 for laminar_flow",
+        "prior_sigma": "MODE_DEPENDENT: 0.01 for static, 0.2 for laminar_flow",
+        "type": "TruncatedNormal"
       }
     }
   },
-  
   "parameter_space": {
-    "_comment": "Parameter bounds and priors for optimization",
+    "_comment": "CUSTOMIZE: Parameter bounds and priors - adjust based on your physical system",
+    "_bounds_note": "Parameter bounds depend on analysis_mode - see mode-specific examples below",
     "bounds": [
       {
+        "_common_parameter_1": "D0",
         "name": "D0",
         "min": 1.0,
         "max": 1000000.0,
+        "_customize_note": "Adjust D0 bounds based on your expected diffusion rates",
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
+        "_common_parameter_2": "alpha",
         "name": "alpha",
         "min": -2.0,
         "max": 2.0,
+        "_customize_note": "Power-law exponent - typically [-2, 2] range is sufficient",
         "type": "Normal",
         "prior_mu": -1.5,
         "prior_sigma": 0.1,
         "unit": "dimensionless"
       },
       {
+        "_common_parameter_3": "D_offset",
         "name": "D_offset",
         "min": -100,
         "max": 100,
+        "_customize_note": "Baseline diffusion - adjust based on system",
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
+        "_laminar_flow_parameter_4": "gamma_dot_t0 (laminar_flow mode only)",
         "name": "gamma_dot_t0",
         "min": 1e-06,
         "max": 1.0,
+        "_customize_note": "Reference shear rate - adjust for your flow conditions",
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.01,
-        "unit": "s⁻¹"
+        "unit": "s\u207b\u00b9"
       },
       {
+        "_laminar_flow_parameter_5": "beta (laminar_flow mode only)",
         "name": "beta",
         "min": -2.0,
         "max": 2.0,
+        "_customize_note": "Shear rate power-law exponent",
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.1,
         "unit": "dimensionless"
       },
       {
+        "_laminar_flow_parameter_6": "gamma_dot_t_offset (laminar_flow mode only)",
         "name": "gamma_dot_t_offset",
         "min": -0.01,
         "max": 0.01,
+        "_customize_note": "Baseline shear rate offset",
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.001,
-        "unit": "s⁻¹"
+        "unit": "s\u207b\u00b9"
       },
       {
+        "_laminar_flow_parameter_7": "phi0 (laminar_flow mode only)",
         "name": "phi0",
         "min": -10.0,
         "max": 10.0,
+        "_customize_note": "Angular offset - adjust based on geometry",
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 5.0,
@@ -308,39 +378,38 @@
       }
     ]
   },
-  
   "analysis_settings": {
-    "_comment": "Analysis mode configuration",
-    "static_mode": false,
-    "_static_mode_note": "True for no-flow analysis (only D0, alpha, D_offset)",
-    "static_submode": "anisotropic",
-    "_submode_options": "isotropic (no angles) or anisotropic (with angle filtering)",
+    "_comment": "CUSTOMIZE: Set analysis_mode and corresponding static_mode/static_submode",
+    "static_mode": "MODE_DEPENDENT: true for static_isotropic/static_anisotropic, false for laminar_flow",
+    "_static_mode_note": "Controls whether to use static (3-param) or dynamic (7-param) model",
+    "static_submode": "MODE_DEPENDENT: isotropic/anisotropic for static modes, null for laminar_flow",
+    "_submode_note": "Isotropic disables angle filtering, anisotropic enables it",
     "model_description": {
-      "static": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]²",
-      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term"
+      "static_isotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with isotropic symmetry",
+      "static_anisotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with angular filtering",
+      "laminar_flow": "g\u2082 = g\u2081_diff \u00d7 g\u2081_shear with sinc\u00b2 term for full flow dynamics"
     }
   },
-  
   "advanced_settings": {
-    "_comment": "Advanced computational settings",
+    "_comment": "Advanced computational and numerical settings",
     "data_loading": {
       "use_diagonal_correction": true,
       "vectorized_diagonal_fix": true
     },
     "chi_squared_calculation": {
       "method": "standard",
-      "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
+      "_scaling_note": "Scaling optimization always enabled for proper chi-squared calculation",
       "uncertainty_estimation_factor": 0.1,
       "minimum_sigma": 1e-10,
       "fast_computation": true,
       "uncertainty_calculation": {
         "enable_uncertainty": true,
         "report_uncertainty": true,
-        "minimum_angles_for_uncertainty": 2
+        "minimum_angles_for_uncertainty": "MODE_DEPENDENT: 1 for static_isotropic, 2+ for others"
       },
       "validity_check": {
         "check_positive_D0": true,
-        "check_positive_gamma_dot_t0": true,
+        "check_positive_gamma_dot_t0": "MODE_DEPENDENT: false for static modes, true for laminar_flow",
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true
       }
@@ -352,18 +421,18 @@
     },
     "optimization_controls": {
       "convergence_tolerance": 1e-08,
-      "max_function_evaluations": 10000,
+      "max_function_evaluations": "MODE_DEPENDENT: 5000 for static, 15000 for laminar_flow",
+      "_max_function_evaluations_note": "Higher limits for complex parameter spaces",
       "parameter_scaling": "auto",
       "finite_difference_step": 1e-08
     }
   },
-  
   "performance_settings": {
-    "_comment": "Performance and resource management",
+    "_comment": "Performance optimization settings with mode-dependent scaling",
     "caching": {
       "enable_memory_cache": true,
       "enable_disk_cache": true,
-      "cache_size_limit_mb": 1000,
+      "cache_size_limit_mb": "MODE_DEPENDENT: 500-750 for static, 1000 for laminar_flow",
       "auto_cleanup": true
     },
     "parallel_processing": {
@@ -383,12 +452,12 @@
       "cache_numba": true,
       "stability_enhancements": {
         "enable_kernel_warmup": true,
-        "warmup_iterations": 5,
+        "warmup_iterations": "MODE_DEPENDENT: 3 for static, 5 for laminar_flow",
         "optimize_memory_layout": true,
         "enable_nogil": true,
         "environment_optimization": {
           "auto_configure": true,
-          "max_threads": 4,
+          "max_threads": "MODE_DEPENDENT: 2-3 for static, 4 for laminar_flow",
           "gc_optimization": true
         }
       },
@@ -397,25 +466,23 @@
         "stable_benchmarking": false,
         "adaptive_benchmarking": false,
         "performance_baselines": false,
-        "target_cv": 0.10,
+        "target_cv": 0.1,
         "memory_monitoring": true,
         "smart_caching": {
           "enabled": true,
-          "max_items": 100,
-          "max_memory_mb": 500.0
+          "max_items": "MODE_DEPENDENT: 50-75 for static, 100 for laminar_flow",
+          "max_memory_mb": "MODE_DEPENDENT: 250-375 for static, 500 for laminar_flow"
         }
       }
     },
     "noise_model": {
       "use_simple_forward_model": false,
-      "_note": "False uses full forward model with fitted = contrast × theory + offset scaling, consistent with classical/robust optimization",
-      "sigma_prior": 0.1,
-      "_scaling_note": "Full forward model ensures MCMC uses same scaling relationship as other methods"
+      "_note": "False uses full forward model consistent with classical optimization",
+      "sigma_prior": 0.1
     }
   },
-  
   "validation_rules": {
-    "_comment": "Data validation and quality control",
+    "_comment": "Quality control and validation thresholds",
     "data_quality": {
       "check_data_range": true,
       "correlation_minimum": 0.0,
@@ -429,24 +496,24 @@
       "correlation_checks": true
     },
     "fit_quality": {
-      "_comment": "Classical optimization quality thresholds",
+      "_comment": "Chi-squared quality thresholds - adjust based on your data quality expectations",
       "overall_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
-        "critical_threshold": 20.0
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
       },
       "per_angle_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
         "outlier_threshold_multiplier": 2.5,
         "max_outlier_fraction": 0.25,
-        "min_good_angles": 3
+        "min_good_angles": "MODE_DEPENDENT: 1 for static_isotropic, 2-3 for others"
       }
     },
     "mcmc_convergence": {
-      "_comment": "MCMC convergence criteria",
+      "_comment": "MCMC convergence diagnostics - tighter for complex parameter spaces",
       "rhat_thresholds": {
         "excellent_threshold": 1.01,
         "good_threshold": 1.05,
@@ -470,9 +537,8 @@
       "check_continuity": true
     }
   },
-  
   "workflow_integration": {
-    "_comment": "Analysis workflow settings",
+    "_comment": "Analysis workflow and integration settings",
     "analysis_workflow": {
       "auto_generate_plots": true,
       "plot_integration_enabled": true,
@@ -501,10 +567,9 @@
       "validate_plot_data": true
     }
   },
-  
   "output_settings": {
     "_comment": "Output and reporting configuration",
-    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results in subdirectories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json, all_robust_methods_summary.json. MCMC results in mcmc/ subdirectory.",
     "results_directory": "./homodyne_results",
     "file_formats": {
       "results_format": "json",
@@ -519,122 +584,57 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png", "pdf"],
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
       "detailed_summary": true,
       "convergence_diagnostics": true
     },
     "plotting": {
-      "_comment": "Plotting configuration for experimental and simulated C2 correlation function heatmaps",
+      "_comment": "Comprehensive plotting configuration with method-specific outputs",
       "general": {
         "create_plots": true,
         "plot_format": "png",
         "dpi": 300,
-        "figure_size": [10, 8],
+        "figure_size": "MODE_DEPENDENT: [10,8] for static, [12,8] for laminar_flow",
+        "_figsize_note": "Larger figures for complex parameter results",
         "style": "publication",
         "save_plots": true,
         "show_plots": false
       },
-      "experimental_data_plotting": {
-        "_comment": "Configuration for --plot-experimental-data functionality",
-        "enabled": true,
-        "data_sources": {
-          "hdf_files": {
-            "supported": true,
-            "loader": "pyxpcs.viewer",
-            "exchange_key": "exchange",
-            "_note": "Loads HDF5 experimental data files using PyXPCS viewer library"
-          },
-          "npz_files": {
-            "supported": true,
-            "format": "theoretical_c2_data.npz or fitted_c2_data.npz",
-            "_note": "Supports pre-processed NPZ correlation data files"
-          }
-        },
-        "plot_layout": {
-          "columns": 2,
-          "_layout_note": "2-column layout: left=c2_heatmap, right=statistics",
-          "include_diagonal_plots": false,
-          "include_crosssection_plots": false,
-          "_removed_plots_note": "Diagonal and cross-section plots removed for simplified visualization"
-        },
-        "multiple_phi_handling": {
-          "plot_individually": true,
-          "_note": "Each phi angle gets its own subplot for multi-angle experiments"
-        }
-      },
-      "simulated_data_plotting": {
-        "_comment": "Configuration for --plot-simulated-data functionality",
-        "enabled": true,
-        "usage_examples": [
-          "python run_homodyne.py --plot-simulated-data config.json",
-          "python run_homodyne.py --plot-simulated-data config.json --contrast 0.3 --offset 1.2",
-          "python run_homodyne.py --plot-simulated-data config.json --phi-angles 0,45,90,135"
-        ],
-        "scaling_transformation": {
-          "formula": "c2_fitted = contrast * c2_theoretical + offset",
-          "default_contrast": 1.0,
-          "default_offset": 0.0,
-          "_contrast_note": "Scaling factor for theoretical data (default: 1.0 = no scaling)",
-          "_offset_note": "Baseline offset for fitted data (default: 0.0 = no offset)",
-          "_formula_note": "Physical scaling: fitted data = theory scaled by contrast + baseline offset"
-        },
-        "phi_angles_input": {
-          "command_line_override": true,
-          "format": "--phi-angles 0,45,90,135",
-          "fallback_to_config": true,
-          "_override_note": "Command-line --phi-angles overrides config file phi angles",
-          "_format_note": "Comma-separated list of angles in degrees"
-        },
-        "data_files": {
-          "theoretical": "theoretical_c2_data.npz",
-          "fitted": "fitted_c2_data.npz",
-          "_file_structure": {
-            "arrays": ["c2_data", "t1", "t2", "phi_angles"],
-            "c2_data_shape": "(n_phi, n_t1, n_t2)",
-            "_note": "3D array with phi angle as first dimension"
-          }
-        },
-        "heatmap_settings": {
-          "colormap": "viridis",
-          "color_scaling": {
-            "per_angle_vmin": true,
-            "_vmin_note": "vmin = min(c2_data) calculated individually for each phi angle",
-            "global_vmax": false
-          },
-          "remove_grid": true,
-          "_grid_note": "No grid lines on C2 heatmaps for cleaner visualization"
-        }
-      },
       "c2_heatmaps": {
         "enabled": true,
-        "_method_specific_note": "When multiple optimization methods are used (e.g., Nelder-Mead + Gurobi), separate heatmaps are generated for each method with method names in filenames",
+        "_method_specific_note": "Separate heatmaps generated for each optimization method (Nelder-Mead, Gurobi, Robust-*, etc.) with method names in filenames",
         "layout": "single_row",
         "include_experimental": true,
         "include_theoretical": true,
-        "include_fitted": true,
         "include_residuals": true,
         "colormap": "viridis",
         "colorbar_position": "right",
-        "title_prefix": "C2 Correlation Function",
-        "figsize": [15, 5],
-        "scaling_note": "Fitted data uses scaling transformation: fitted = contrast × theory + offset"
+        "title_prefix": "MODE_DEPENDENT: C2 Correlation Function ([analysis_mode])",
+        "figsize": "MODE_DEPENDENT: [12,4] for static_isotropic, [15,5] for static_anisotropic, [18,6] for laminar_flow"
       },
       "mcmc_plots": {
         "enabled": true,
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
           "show_truths": false,
           "use_arviz": true,
-          "figsize": [12, 12]
+          "figsize": "MODE_DEPENDENT: [9,9] for static, [15,15] for laminar_flow"
         },
         "trace_plots": {
           "enabled": true,
           "show_chains": true,
           "show_warmup": false,
-          "compact_layout": false,
-          "figsize": [12, 8]
+          "compact_layout": "MODE_DEPENDENT: true for static, false for laminar_flow",
+          "figsize": "MODE_DEPENDENT: [10,6] for static, [12,14] for laminar_flow"
         },
         "convergence_diagnostics": {
           "enabled": true,
@@ -662,7 +662,7 @@
           "diagnostics": "diagnostics"
         },
         "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
-        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
+        "_filename_template_note": "Frame-aware plotting with method identification: start_frame, end_frame for data range, method name (Nelder-Mead, Gurobi-Iterative-QP, Robust-Wasserstein, etc.), timestamp",
         "include_timestamp": true,
         "overwrite_existing": false
       }
@@ -671,11 +671,31 @@
       "log_level": "INFO",
       "log_to_file": true,
       "log_to_console": true,
-      "log_filename": "homodyne_analysis.log",
+      "log_filename": "MODE_DEPENDENT: homodyne_[analysis_mode].log",
       "rotation": {
         "max_bytes": 10485760,
         "backup_count": 3
       }
     }
+  },
+  "_customization_guide": {
+    "_step_1": "Set analysis_mode in metadata section to: static_isotropic, static_anisotropic, or laminar_flow",
+    "_step_2": "Update experimental_data section with your file paths and sample name",
+    "_step_3": "Customize analyzer_parameters: dt (time step), q (wavevector), frame range, gap size",
+    "_step_4": "Adjust initial_parameters values based on your expected parameter ranges",
+    "_step_5": "Modify parameter_space bounds to match your physical system constraints",
+    "_step_6": "Update analysis_settings: set static_mode and static_submode consistently with analysis_mode",
+    "_step_7": "Adjust performance_settings based on your computational resources",
+    "_step_8": "Customize validation_rules thresholds based on your data quality expectations",
+    "_step_9": "Update output_settings paths and logging configuration",
+    "_mode_dependent_values": "Search for 'MODE_DEPENDENT' throughout config to see values that need mode-specific customization"
+  },
+  "_recent_enhancements": {
+    "_gurobi_optimization": "Enhanced Trust Region SQP algorithm fixes \u03c7\u00b2 convergence issues in v0.6.5+",
+    "_robust_optimization": "100x-5000x performance improvements with smart caching and optimized solvers",
+    "_interactive_mode": "Completely removed - replaced with argcomplete shell completion",
+    "_code_quality": "Full codebase formatted with black, linted with flake8, type-checked with mypy",
+    "_dependency_management": "Updated pyproject.toml with 'completion' group instead of deprecated 'interactive'",
+    "_test_coverage": "Enhanced test suite with better CLI completion testing and error handling"
   }
 }

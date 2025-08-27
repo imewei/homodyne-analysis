@@ -3,7 +3,7 @@ Robust Optimization Methods for Homodyne Scattering Analysis
 ===========================================================
 
 This module implements robust optimization algorithms for parameter estimation
-in homodyne scattering analysis using CVXPY + Gurobi. Provides protection against
+in homodyne scattering analysis using CVXPY. Provides protection against
 measurement noise, experimental uncertainties, and model misspecification.
 
 Robust Methods Implemented:
@@ -16,12 +16,8 @@ Robust Methods Implemented:
 3. **Ellipsoidal Uncertainty Sets**: Robust least squares with bounded uncertainty
    in experimental correlation functions.
 
-4. **Regularized Robust Formulation**: L1/L2 mixed regularization with physical
-   priors for parameter stability.
-
 Key Features:
-- CVXPY + Gurobi integration for high-performance convex optimization
-- Adaptive uncertainty set sizing based on experimental data characteristics
+- CVXPY integration for convex optimization
 - Bootstrap scenario generation for robust parameter estimation
 - Physical parameter bounds consistent with existing optimization methods
 - Comprehensive error handling and graceful degradation
@@ -37,7 +33,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from sklearn.utils import resample
 
-# CVXPY and Gurobi imports with graceful degradation
+# CVXPY import with graceful degradation
 try:
     import cvxpy as cp
 
@@ -48,8 +44,9 @@ except ImportError:
 
 # Check if Gurobi is available as a CVXPY solver
 try:
-    import gurobipy  # noqa: F401
+    import gurobipy  # Import needed to check Gurobi availability
 
+    _ = gurobipy  # Silence unused import warning
     GUROBI_AVAILABLE = True
 except ImportError:
     GUROBI_AVAILABLE = False
@@ -63,7 +60,7 @@ class RobustHomodyneOptimizer:
 
     This class provides multiple robust optimization methods that handle measurement
     noise, experimental uncertainties, and model misspecification in XPCS analysis.
-    All methods use CVXPY + Gurobi for high-performance convex optimization.
+    All methods use CVXPY for high-performance convex optimization.
 
     The robust optimization framework addresses common challenges in experimental
     data analysis:
@@ -107,41 +104,15 @@ class RobustHomodyneOptimizer:
         if not GUROBI_AVAILABLE:
             logger.warning("Gurobi not available - using CVXPY default solver")
 
-        # Default robust optimization settings with enhanced performance tuning
+        # Default robust optimization settings (only used settings)
         self.default_settings = {
-            "uncertainty_model": "wasserstein",  # wasserstein, ellipsoidal, scenario
-            "uncertainty_radius": 0.02,  # 2% of data variance (more conservative)
-            "n_scenarios": 15,  # Adaptive based on problem size
+            "uncertainty_radius": 0.05,  # 5% of data variance
+            "n_scenarios": 15,  # Number of bootstrap scenarios
             "regularization_alpha": 0.01,  # L2 regularization strength
             "regularization_beta": 0.001,  # L1 sparsity parameter
             "jacobian_epsilon": 1e-6,  # Finite difference step size
             "enable_caching": True,  # Enable performance caching
-            "enable_progressive_optimization": True,  # Multi-stage optimization
-            "enable_problem_scaling": True,  # Automatic problem scaling
-            "adaptive_scenarios": True,  # Dynamically adjust scenario count
-            "fallback_to_classical": True,  # Fall back if robust fails
-            "solver_settings": {
-                "clarabel": {
-                    "verbose": False,
-                    "tol_feas": 1e-6,
-                    "tol_gap_abs": 1e-6,
-                    "max_iter": 200,
-                },
-                "scs": {
-                    "verbose": False,
-                    "eps": 1e-4,
-                    "max_iters": 2500,
-                    "alpha": 1.8,
-                    "normalize": True,
-                },
-                "cvxopt": {
-                    "verbose": False,
-                    "abstol": 1e-6,
-                    "reltol": 1e-6,
-                    "feastol": 1e-6,
-                    "max_iters": 1000,
-                },
-            },
+            "preferred_solver": "CLARABEL",  # Preferred solver
         }
 
         # Merge with user configuration
@@ -155,95 +126,6 @@ class RobustHomodyneOptimizer:
                 "Install with: pip install cvxpy"
             )
         return True
-
-    def _determine_optimal_scenarios(
-        self, data_size: int, method: str = "scenario"
-    ) -> int:
-        """
-        Dynamically determine optimal scenario count based on data size.
-
-        Parameters
-        ----------
-        data_size : int
-            Total size of experimental data
-        method : str
-            Optimization method name
-
-        Returns
-        -------
-        int
-            Optimal number of scenarios
-        """
-        if not self.settings.get("adaptive_scenarios", True):
-            return self.settings["n_scenarios"]
-
-        base_scenarios = self.settings["n_scenarios"]
-
-        if data_size < 1000:
-            return min(base_scenarios, 20)  # Can afford more scenarios
-        elif data_size < 5000:
-            return min(base_scenarios, 12)  # Moderate scenario count
-        else:
-            return min(base_scenarios, 8)  # Minimal scenarios for large problems
-
-    def _scale_robust_problem(
-        self, c2_experimental: np.ndarray, uncertainty_radius: float
-    ) -> Tuple[np.ndarray, float, float]:
-        """
-        Scale problem to improve solver numerical stability.
-
-        Parameters
-        ----------
-        c2_experimental : np.ndarray
-            Experimental correlation data
-        uncertainty_radius : float
-            Original uncertainty radius
-
-        Returns
-        -------
-        Tuple[np.ndarray, float, float]
-            (scaled_experimental, scaled_radius, data_scale)
-        """
-        if not self.settings.get("enable_problem_scaling", True):
-            return c2_experimental, uncertainty_radius, 1.0
-
-        # Use robust scaling based on median absolute deviation
-        data_median = np.median(c2_experimental)
-        data_mad = np.median(np.abs(c2_experimental - data_median))
-        data_scale = max(float(data_mad), 1e-10)  # Avoid division by zero
-
-        scaled_experimental = (c2_experimental - data_median) / data_scale
-        scaled_radius = uncertainty_radius / data_scale
-
-        logger.debug(f"Problem scaling: median={data_median:.6f}, MAD={data_mad:.6f}")
-        return scaled_experimental, scaled_radius, data_scale
-
-    def _unscale_results(
-        self, scaled_params: np.ndarray, data_scale: float, data_median: float
-    ) -> np.ndarray:
-        """
-        Unscale optimization results back to original scale.
-
-        Parameters
-        ----------
-        scaled_params : np.ndarray
-            Parameters from scaled optimization
-        data_scale : float
-            Scaling factor used
-        data_median : float
-            Data median used for centering
-
-        Returns
-        -------
-        np.ndarray
-            Unscaled parameters
-        """
-        if not self.settings.get("enable_problem_scaling", True):
-            return scaled_params
-
-        # For homodyne parameters, scaling affects different parameters differently
-        # This is a simplified approach - may need refinement based on parameter physics
-        return scaled_params  # For now, assume parameters are scale-invariant
 
     def run_robust_optimization(
         self,
@@ -280,27 +162,20 @@ class RobustHomodyneOptimizer:
         logger.info(f"Starting robust optimization with method: {method}")
 
         try:
-            # Progressive optimization if enabled
-            if self.settings.get("enable_progressive_optimization", True):
-                result = self._progressive_robust_optimization(
-                    initial_parameters, phi_angles, c2_experimental, method, **kwargs
+            if method == "wasserstein":
+                result = self._solve_distributionally_robust(
+                    initial_parameters, phi_angles, c2_experimental, **kwargs
+                )
+            elif method == "scenario":
+                result = self._solve_scenario_robust(
+                    initial_parameters, phi_angles, c2_experimental, **kwargs
+                )
+            elif method == "ellipsoidal":
+                result = self._solve_ellipsoidal_robust(
+                    initial_parameters, phi_angles, c2_experimental, **kwargs
                 )
             else:
-                # Direct optimization
-                if method == "wasserstein":
-                    result = self._solve_distributionally_robust(
-                        initial_parameters, phi_angles, c2_experimental, **kwargs
-                    )
-                elif method == "scenario":
-                    result = self._solve_scenario_robust(
-                        initial_parameters, phi_angles, c2_experimental, **kwargs
-                    )
-                elif method == "ellipsoidal":
-                    result = self._solve_ellipsoidal_robust(
-                        initial_parameters, phi_angles, c2_experimental, **kwargs
-                    )
-                else:
-                    raise ValueError(f"Unknown robust optimization method: {method}")
+                raise ValueError(f"Unknown robust optimization method: {method}")
 
             optimization_time = time.time() - start_time
 
@@ -317,23 +192,7 @@ class RobustHomodyneOptimizer:
 
         except Exception as e:
             logger.error(f"Robust optimization failed: {e}")
-
-            # Fallback to classical optimization if enabled
-            if self.settings.get("fallback_to_classical", True):
-                logger.info("Attempting fallback to regularized classical optimization")
-                try:
-                    fallback_result = self._solve_regularized_classical(
-                        initial_parameters, phi_angles, c2_experimental
-                    )
-                    if fallback_result[0] is not None:
-                        logger.info("Fallback to classical optimization succeeded")
-                        fallback_result[1]["method"] = f"{method}_fallback_classical"
-                        fallback_result[1]["fallback_used"] = True
-                        return fallback_result
-                except Exception as fallback_e:
-                    logger.error(f"Fallback optimization also failed: {fallback_e}")
-
-            return None, {"error": str(e), "method": method, "fallback_used": False}
+            return None, {"error": str(e), "method": method}
 
     def _solve_distributionally_robust(
         self,
@@ -367,31 +226,22 @@ class RobustHomodyneOptimizer:
             (optimal_parameters, optimization_info)
         """
         if uncertainty_radius is None:
-            uncertainty_radius = float(self.settings["uncertainty_radius"])
+            uncertainty_radius = self.settings["uncertainty_radius"]
 
-        # Note: n_params and bounds no longer needed in simplified approach
+        n_params = len(theta_init)
 
-        # Scale problem for numerical stability if enabled
-        scaled_experimental, scaled_radius, data_scale = self._scale_robust_problem(
-            c2_experimental, uncertainty_radius
+        # Get parameter bounds (cached for performance)
+        if self._bounds_cache is None and self.settings.get("enable_caching", True):
+            self._bounds_cache = self._get_parameter_bounds()
+        bounds = (
+            self._bounds_cache
+            if self.settings.get("enable_caching", True)
+            else self._get_parameter_bounds()
         )
 
-        # Ensure reasonable scaling bounds
-        if data_scale < 1e-8 or data_scale > 1e8:
-            data_scale = 1.0
-            scaled_experimental = c2_experimental
-            scaled_radius = uncertainty_radius
-
-        # Estimate data uncertainty from experimental variance (use scaled data)
-        data_std = np.std(scaled_experimental)
-        # More conservative epsilon sizing to avoid numerical instability
-        epsilon = min(float(scaled_radius * data_std), 0.05)  # Reduced cap
-
-        # Validate epsilon is reasonable for the problem size
-        data_range = float(np.max(scaled_experimental) - np.min(scaled_experimental))
-        if epsilon > 0.1 * data_range:
-            epsilon = 0.1 * data_range
-            logger.info(f"Reduced epsilon to {epsilon:.6f} based on data range")
+        # Estimate data uncertainty from experimental variance
+        data_std = np.std(c2_experimental, axis=-1, keepdims=True)
+        epsilon = uncertainty_radius * np.mean(data_std)
 
         # Log initial chi-squared
         initial_chi_squared = self._compute_chi_squared(
@@ -405,63 +255,63 @@ class RobustHomodyneOptimizer:
             if cp is None:
                 raise ImportError("CVXPY not available for robust optimization")
 
-            # CVXPY variables (only uncertainty perturbations)
-            data_size = scaled_experimental.size
-            xi = cp.Variable(data_size)
+            # CVXPY variables
+            theta = cp.Variable(n_params)
+            # Uncertain data perturbations
+            xi = cp.Variable(c2_experimental.shape)
 
-            # Use pre-computed fitted correlation with optimal scaling to avoid DCP violations
-            # This avoids bilinear terms (contrast * linearized_theory_with_variables)
-            c2_fitted_init = self._compute_fitted_correlation(
+            # Compute fitted correlation function (linearized around
+            # theta_init)
+            c2_fitted_init, jacobian = self._compute_linearized_correlation(
                 theta_init, phi_angles, c2_experimental
             )
-            c2_fitted_flat = c2_fitted_init.flatten(order="C")
 
-            # Perturbed experimental data (use scaled data, flattened)
-            scaled_experimental_flat = scaled_experimental.flatten(order="C")
-            c2_perturbed_flat = scaled_experimental_flat + xi
+            # Linear approximation: c2_fitted ≈ c2_fitted_init + J @ (theta -
+            # theta_init)
+            delta_theta = theta - theta_init
+            # Reshape jacobian @ delta_theta to match c2_fitted_init shape
+            linear_correction = jacobian @ delta_theta
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
+            c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Simple residuals using pre-scaled fitted correlation
-            # This avoids DCP violations by not having variable * variable terms
-            residuals = c2_perturbed_flat - c2_fitted_flat
+            # Perturbed experimental data
+            c2_perturbed = c2_experimental + xi
 
-            # Reduced chi-squared calculation (simplified approach)
-            n_data = len(scaled_experimental_flat)
-            n_params_model = len(theta_init)  # Only count model parameters
-            dof = max(n_data - n_params_model, 1)  # Degrees of freedom
-            chi_squared = cp.sum_squares(residuals) / dof
+            # Robust objective: minimize worst-case residuals (experimental -
+            # fitted)
+            residuals = c2_perturbed - c2_fitted_linear
+            assert cp is not None  # Already checked above
+            chi_squared = cp.sum_squares(residuals)
 
             # Constraints
             constraints = []
 
-            # No parameter bounds needed since theta is fixed at theta_init
+            # Parameter bounds
+            if bounds is not None:
+                for i, (lb, ub) in enumerate(bounds):
+                    if lb is not None:
+                        constraints.append(theta[i] >= lb)
+                    if ub is not None:
+                        constraints.append(theta[i] <= ub)
 
-            # Wasserstein ball constraint: ||xi||_2 <= epsilon (scaled properly)
+            # Wasserstein ball constraint: ||xi||_2 <= epsilon
             assert cp is not None  # Already checked above
-            # Scale epsilon appropriately - don't over-scale with data size
-            # Use per-element scaling instead of total scaling
-            per_element_epsilon = epsilon / np.sqrt(len(scaled_experimental_flat))
             constraints.append(cp.norm(xi, 2) <= epsilon)
 
-            # Since theta is fixed, no regularization needed
-            # Robust optimization problem - minimize worst case chi-squared
-            objective = cp.Minimize(chi_squared)
+            # Regularization term for parameter stability
+            alpha = self.settings["regularization_alpha"]
+            regularization = alpha * cp.sum_squares(delta_theta)
+
+            # Robust optimization problem
+            objective = cp.Minimize(chi_squared + regularization)
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
             self._solve_cvxpy_problem_optimized(problem, "DRO")
 
             if problem.status not in ["infeasible", "unbounded"]:
-                # Return the fixed initial parameters
-                optimal_params = theta_init
+                optimal_params = theta.value
                 optimal_value = problem.value
-
-                # Unscale parameters if scaling was applied
-                if optimal_params is not None and self.settings.get(
-                    "enable_problem_scaling", True
-                ):
-                    # For homodyne parameters, unscaling might be needed depending on parameter physics
-                    # This is a simplified implementation
-                    pass  # optimal_params = self._unscale_results(optimal_params, data_scale, data_median)
 
                 # Compute final chi-squared with optimal parameters
                 if optimal_params is not None:
@@ -553,14 +403,14 @@ class RobustHomodyneOptimizer:
         logger.info(f"Scenario-based optimization with {n_scenarios} scenarios")
         logger.info(f"Scenario initial χ²: {initial_chi_squared:.6f}")
 
-        # Determine optimal scenario count adaptively
-        data_size = c2_experimental.size
+        # Ensure n_scenarios is an int
         if n_scenarios is None:
-            n_scenarios = self._determine_optimal_scenarios(data_size, "scenario")
-        else:
+            n_scenarios = self.settings.get("n_scenarios", 50)
+        # Convert to int only if not None
+        if n_scenarios is not None:
             n_scenarios = int(n_scenarios)
-
-        logger.info(f"Using {n_scenarios} scenarios for data size {data_size}")
+        else:
+            n_scenarios = 50  # Default fallback
 
         # Generate scenarios using bootstrap resampling
         scenarios = self._generate_bootstrap_scenarios(
@@ -597,41 +447,39 @@ class RobustHomodyneOptimizer:
                     if ub is not None:
                         constraints.append(theta[i] <= ub)
 
-            # Use pre-computed fitted correlation with optimal scaling to avoid DCP violations
-            c2_fitted_init = self._compute_fitted_correlation(
+            # Optimized: Pre-compute linearized correlation once outside the
+            # loop
+            c2_fitted_init, jacobian = self._compute_linearized_correlation(
                 theta_init, phi_angles, c2_experimental
             )
-            c2_fitted_flat = c2_fitted_init.flatten(order="C")
+            delta_theta = theta - theta_init
+            # Reshape jacobian @ delta_theta to match c2_fitted_init shape
+            linear_correction = jacobian @ delta_theta
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
+            c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Min-max constraints: t >= reduced_chi_squared(theta, scenario_s) for all scenarios
-            # Use pre-scaled fitted correlation to avoid DCP violations
+            # Min-max constraints: t >= chi_squared(theta, scenario_s) for all
+            # scenarios
             for scenario_data in scenarios:
-                scenario_flat = scenario_data.flatten(order="C")
-
-                # Simple residuals using pre-scaled fitted correlation
-                residuals = scenario_flat - c2_fitted_flat
-
-                # Reduced chi-squared for this scenario (simplified)
-                n_data = len(scenario_flat)
-                n_params_model = len(theta_init)  # Only count model parameters
-                dof = max(n_data - n_params_model, 1)  # Degrees of freedom
-                chi_squared_scenario = cp.sum_squares(residuals) / dof
+                # Chi-squared for this scenario (experimental - fitted)
+                residuals = scenario_data - c2_fitted_linear
+                assert cp is not None  # Already checked above
+                chi_squared_scenario = cp.sum_squares(residuals)
                 constraints.append(t >= chi_squared_scenario)
 
-            # Since we're using pre-scaled fitted correlation, we treat this as
-            # a robust evaluation rather than joint optimization over theta + scaling
-            # The model parameters (theta_init) are used as-is with optimal scaling
+            # Regularization
+            alpha = self.settings["regularization_alpha"]
+            regularization = alpha * cp.sum_squares(theta - theta_init)
 
             # Objective: minimize worst-case scenario
-            objective = cp.Minimize(t)
+            objective = cp.Minimize(t + regularization)
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
             self._solve_cvxpy_problem_optimized(problem, "Scenario")
 
             if problem.status not in ["infeasible", "unbounded"]:
-                # Since we fixed theta at theta_init, return the initial parameters
-                optimal_params = theta_init
+                optimal_params = theta.value
                 worst_case_value = t.value
 
                 # Compute final chi-squared
@@ -740,51 +588,54 @@ class RobustHomodyneOptimizer:
             if cp is None:
                 raise ImportError("CVXPY not available for robust optimization")
 
-            # CVXPY variables (only uncertainty)
+            # CVXPY variables
+            theta = cp.Variable(n_params)
             delta = cp.Variable(c2_experimental.shape)  # Uncertainty in data
 
-            # Use pre-computed fitted correlation with optimal scaling to avoid DCP violations
-            c2_fitted_init = self._compute_fitted_correlation(
+            # Linearized fitted correlation function
+            c2_fitted_init, jacobian = self._compute_linearized_correlation(
                 theta_init, phi_angles, c2_experimental
             )
-            c2_fitted_flat = c2_fitted_init.flatten(order="C")
+            delta_theta = theta - theta_init
+            # Reshape jacobian @ delta_theta to match c2_fitted_init shape
+            linear_correction = jacobian @ delta_theta
+            linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
+            c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Robust residuals with uncertainty perturbation
+            # Robust residuals (experimental - fitted)
             c2_perturbed = c2_experimental + delta
-            c2_perturbed_flat = c2_perturbed.flatten(order="C")
-            # Use pre-scaled fitted correlation to avoid DCP violations
-            residuals = c2_perturbed_flat - c2_fitted_flat
+            residuals = c2_perturbed - c2_fitted_linear
 
             # Constraints
             constraints = []
 
-            # No parameter bounds needed since theta is fixed at theta_init
+            # Parameter bounds
+            if bounds is not None:
+                for i, (lb, ub) in enumerate(bounds):
+                    if lb is not None:
+                        constraints.append(theta[i] >= lb)
+                    if ub is not None:
+                        constraints.append(theta[i] <= ub)
 
             # Ellipsoidal uncertainty constraint
             assert cp is not None  # Already checked above
-            # Fix reshape error by using proper shape calculation
-            delta_size = int(np.prod(c2_experimental.shape))
-            delta_flat = cp.reshape(delta, (delta_size,))
-            constraints.append(cp.norm(delta_flat, 2) <= gamma)
+            constraints.append(cp.norm(delta, 2) <= gamma)
 
-            # Since theta is fixed at theta_init in this simplified approach, no regularization needed
-            l2_reg = 0
-            l1_reg = 0
+            # Regularization
+            alpha = self.settings["regularization_alpha"]
+            beta = self.settings["regularization_beta"]
+            l2_reg = alpha * cp.sum_squares(delta_theta)
+            l1_reg = beta * cp.norm(delta_theta, 1)
 
-            # Objective: robust reduced chi-squared with regularization
-            n_data = int(np.prod(c2_experimental.shape))  # Use the original data size
-            n_params_total = len(theta_init) + 2  # Include scaling parameters
-            dof = max(n_data - n_params_total, 1)  # Degrees of freedom
-            reduced_chi_squared = cp.sum_squares(residuals) / dof
-            objective = cp.Minimize(reduced_chi_squared + l2_reg + l1_reg)
+            # Objective: robust least squares with regularization
+            objective = cp.Minimize(cp.sum_squares(residuals) + l2_reg + l1_reg)
             problem = cp.Problem(objective, constraints)
 
             # Optimized solving with preferred solver and fast fallback
             self._solve_cvxpy_problem_optimized(problem, "Ellipsoidal")
 
             if problem.status not in ["infeasible", "unbounded"]:
-                # Return the fixed initial parameters
-                optimal_params = theta_init
+                optimal_params = theta.value
                 optimal_value = problem.value
 
                 # Compute final chi-squared
@@ -1056,8 +907,8 @@ class RobustHomodyneOptimizer:
             c2_fitted = np.zeros_like(c2_theory)
 
             # Flatten for easier processing
-            theory_flat = c2_theory.reshape(n_angles, -1, order="C")
-            exp_flat = c2_experimental.reshape(n_angles, -1, order="C")
+            theory_flat = c2_theory.reshape(n_angles, -1)
+            exp_flat = c2_experimental.reshape(n_angles, -1)
 
             # Compute optimal scaling for each angle: fitted = contrast *
             # theory + offset
@@ -1095,7 +946,7 @@ class RobustHomodyneOptimizer:
         """
         Compute 2D fitted correlation function for bootstrap scenarios.
 
-        This method uses the mock core's 2D compute_c2_correlation_optimized method
+        This method uses the core's 2D compute_c2_correlation_optimized method
         to return correlation functions compatible with experimental data shape.
 
         Parameters
@@ -1113,7 +964,7 @@ class RobustHomodyneOptimizer:
             2D fitted correlation function (n_angles x n_times)
         """
         try:
-            # Use the mock core's 2D correlation function
+            # Use the core's 2D correlation function
             if hasattr(self.core, "compute_c2_correlation_optimized"):
                 c2_theory_2d = self.core.compute_c2_correlation_optimized(
                     theta, phi_angles
@@ -1263,92 +1114,9 @@ class RobustHomodyneOptimizer:
             logger.error(f"Error getting parameter bounds: {e}")
             return None
 
-    def _classify_problem_type(self, problem) -> str:
-        """
-        Classify problem type for optimal solver selection.
-
-        Parameters
-        ----------
-        problem : cp.Problem
-            CVXPY problem to classify
-
-        Returns
-        -------
-        str
-            Problem type classification
-        """
-        try:
-            # Estimate problem size
-            num_vars = sum(var.size for var in problem.variables())
-            num_constraints = len(problem.constraints)
-
-            # Check for quadratic objectives and norm constraints
-            has_quadratic = any(
-                "sum_squares" in str(expr) for expr in [problem.objective.expr]
-            )
-            has_norm_constraints = any(
-                "norm" in str(con) for con in problem.constraints
-            )
-
-            if has_quadratic and has_norm_constraints:
-                return "quadratic_with_l2_norm"
-            elif num_constraints > 50:  # Many scenario constraints
-                return "large_scale_scenarios"
-            else:
-                return "standard"
-
-        except Exception:
-            return "standard"
-
-    def _get_solver_settings(self, solver, problem_size: int, method_name: str) -> dict:
-        """
-        Get optimized settings for each solver.
-
-        Parameters
-        ----------
-        solver : cp.Solver
-            CVXPY solver
-        problem_size : int
-            Estimated problem size (variables + constraints)
-        method_name : str
-            Optimization method name
-
-        Returns
-        -------
-        dict
-            Solver-specific settings
-        """
-        if cp is not None and solver == cp.CLARABEL:
-            return {
-                "verbose": False,
-                "tol_feas": 1e-6 if problem_size < 5000 else 1e-5,
-                "tol_gap_abs": 1e-6 if problem_size < 5000 else 1e-5,
-                "max_iter": 100 if method_name == "DRO" else 200,
-            }
-
-        elif cp is not None and solver == cp.SCS:
-            return {
-                "verbose": False,
-                "eps": 1e-4,  # Relaxed for better performance
-                "max_iters": 2500,
-                "alpha": 1.8,  # Over-relaxation parameter
-                "normalize": True,
-            }
-
-        elif cp is not None and solver == cp.CVXOPT:
-            return {
-                "verbose": False,
-                "abstol": 1e-6,
-                "reltol": 1e-6,
-                "feastol": 1e-6,
-                "max_iters": 1000,
-            }
-
-        return {"verbose": False}
-
     def _solve_cvxpy_problem_optimized(self, problem, method_name: str = "") -> bool:
         """
-        Optimized CVXPY problem solving with smart solver selection.
+        Optimized CVXPY problem solving with preferred solver and fast fallback.
 
         Parameters
         ----------
@@ -1362,294 +1130,60 @@ class RobustHomodyneOptimizer:
         bool
             True if solver succeeded, False otherwise
         """
-        # Classify problem type for optimal solver selection
-        problem_type = self._classify_problem_type(problem)
+        preferred_solver = self.settings.get("preferred_solver", "CLARABEL")
 
-        # Estimate problem size
+        # Try preferred solver first
         try:
-            num_vars = sum(var.size for var in problem.variables())
-            num_constraints = len(problem.constraints)
-            problem_size = num_vars + num_constraints
-        except Exception:
-            problem_size = 1000  # Default assumption
+            if cp is None:
+                logger.error(f"{method_name}: CVXPY not available")
+                return False
 
-        # Select solver order based on problem type
-        if cp is None:
-            logger.error(
-                "CVXPY is not available - cannot proceed with solver selection"
+            if preferred_solver == "CLARABEL":
+                logger.debug(f"{method_name}: Using preferred CLARABEL solver")
+                problem.solve(solver=cp.CLARABEL)
+            elif preferred_solver == "SCS":
+                logger.debug(f"{method_name}: Using preferred SCS solver")
+                problem.solve(solver=cp.SCS)
+            elif preferred_solver == "CVXOPT":
+                logger.debug(f"{method_name}: Using preferred CVXOPT solver")
+                problem.solve(solver=cp.CVXOPT)
+            else:
+                logger.debug(f"{method_name}: Using default CLARABEL solver")
+                problem.solve(solver=cp.CLARABEL)
+
+            if problem.status in ["optimal", "optimal_inaccurate"]:
+                logger.debug(
+                    f"{method_name}: Preferred solver succeeded with status: {
+                        problem.status}"
+                )
+                return True
+        except Exception as e:
+            logger.debug(
+                f"{method_name}: Preferred solver {preferred_solver} failed: {
+                    str(e)}"
             )
-            return False
 
-        if problem_type == "quadratic_with_l2_norm":
-            # CLARABEL excels at conic problems with quadratic objectives
-            solver_order = [cp.CLARABEL, cp.SCS, cp.CVXOPT]
-            logger.debug(f"{method_name}: Using quadratic optimization solver order")
-        elif problem_type == "large_scale_scenarios":
-            # SCS is more robust for large, ill-conditioned problems
-            solver_order = [cp.SCS, cp.CLARABEL, cp.CVXOPT]
-            logger.debug(f"{method_name}: Using large-scale solver order")
-        else:
-            # Default order
-            solver_order = [cp.CLARABEL, cp.SCS, cp.CVXOPT]
-            logger.debug(f"{method_name}: Using standard solver order")
+        # Fast fallback to SCS if preferred solver failed
+        try:
+            if cp is None:
+                logger.error(f"{method_name}: CVXPY not available for fallback")
+                return False
 
-        # Try solvers in order with optimized settings
-        for solver in solver_order:
-            try:
-                settings = self._get_solver_settings(solver, problem_size, method_name)
-                solver_name = getattr(solver, "__name__", str(solver))
-
+            logger.debug(
+                f"{method_name}: Preferred solver failed. Trying SCS fallback."
+            )
+            problem.solve(solver=cp.SCS)
+            if problem.status in ["optimal", "optimal_inaccurate"]:
                 logger.debug(
-                    f"{method_name}: Trying {solver_name} with settings: {settings}"
+                    f"{method_name}: SCS fallback succeeded with status: {
+                        problem.status}"
                 )
-                problem.solve(solver=solver, **settings)
-
-                if problem.status in ["optimal", "optimal_inaccurate"]:
-                    logger.debug(
-                        f"{method_name}: {solver_name} succeeded with status: {problem.status}"
-                    )
-                    return True
-                else:
-                    logger.debug(
-                        f"{method_name}: {solver_name} failed with status: {problem.status}"
-                    )
-
-            except Exception as e:
-                solver_name = getattr(solver, "__name__", str(solver))
-                logger.debug(
-                    f"{method_name}: {solver_name} failed with exception: {str(e)}"
-                )
-                continue
+                return True
+        except Exception as e:
+            logger.debug(f"{method_name}: SCS fallback failed: {str(e)}")
 
         logger.error(f"{method_name}: All solvers failed to find a solution")
         return False
-
-    def _progressive_robust_optimization(
-        self,
-        theta_init: np.ndarray,
-        phi_angles: np.ndarray,
-        c2_experimental: np.ndarray,
-        method: str,
-        **kwargs,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
-        """
-        Multi-stage optimization: coarse → fine for better performance.
-
-        Parameters
-        ----------
-        theta_init : np.ndarray
-            Initial parameters
-        phi_angles : np.ndarray
-            Angular positions
-        c2_experimental : np.ndarray
-            Experimental data
-        method : str
-            Robust optimization method
-        **kwargs
-            Additional method-specific parameters
-
-        Returns
-        -------
-        Tuple[Optional[np.ndarray], Dict[str, Any]]
-            (optimal_parameters, optimization_info)
-        """
-        logger.info(f"Progressive robust optimization with method: {method}")
-
-        # Stage 1: Reduced problem (faster convergence)
-        coarse_result = self._solve_coarse_problem(
-            theta_init, phi_angles, c2_experimental, method, **kwargs
-        )
-
-        if coarse_result[0] is None:
-            logger.warning("Coarse optimization failed, trying full problem")
-            return self._solve_full_problem(
-                theta_init, phi_angles, c2_experimental, method, **kwargs
-            )
-
-        logger.info("Coarse optimization succeeded, refining with full problem")
-
-        # Stage 2: Full problem with warm start
-        return self._solve_full_problem(
-            coarse_result[0], phi_angles, c2_experimental, method, **kwargs
-        )
-
-    def _solve_coarse_problem(
-        self,
-        theta_init: np.ndarray,
-        phi_angles: np.ndarray,
-        c2_experimental: np.ndarray,
-        method: str,
-        **kwargs,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
-        """
-        Solve reduced/coarse version of the robust optimization problem.
-        """
-        # Reduce problem complexity for faster initial solution
-        original_settings = self.settings.copy()
-
-        try:
-            # Temporarily modify settings for coarse optimization
-            self.settings["n_scenarios"] = max(
-                1, self.settings.get("n_scenarios", 15) // 3
-            )
-            self.settings[
-                "regularization_alpha"
-            ] *= 2  # More regularization for stability
-
-            # Coarsen data if large
-            if c2_experimental.size > 5000:
-                # Simple downsampling - take every other point
-                coarse_experimental = (
-                    c2_experimental[::2, ::2]
-                    if c2_experimental.ndim == 2
-                    else c2_experimental[::2]
-                )
-                coarse_phi = phi_angles[::2] if len(phi_angles) > 10 else phi_angles
-            else:
-                coarse_experimental = c2_experimental
-                coarse_phi = phi_angles
-
-            logger.debug(
-                f"Coarse problem: data size {coarse_experimental.size}, scenarios {self.settings['n_scenarios']}"
-            )
-
-            # Solve coarse problem
-            return self._solve_full_problem(
-                theta_init, coarse_phi, coarse_experimental, method, **kwargs
-            )
-
-        finally:
-            # Restore original settings
-            self.settings = original_settings
-
-    def _solve_full_problem(
-        self,
-        theta_init: np.ndarray,
-        phi_angles: np.ndarray,
-        c2_experimental: np.ndarray,
-        method: str,
-        **kwargs,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
-        """
-        Solve full robust optimization problem.
-        """
-        if method == "wasserstein":
-            return self._solve_distributionally_robust(
-                theta_init, phi_angles, c2_experimental, **kwargs
-            )
-        elif method == "scenario":
-            return self._solve_scenario_robust(
-                theta_init, phi_angles, c2_experimental, **kwargs
-            )
-        elif method == "ellipsoidal":
-            return self._solve_ellipsoidal_robust(
-                theta_init, phi_angles, c2_experimental, **kwargs
-            )
-        else:
-            raise ValueError(f"Unknown robust optimization method: {method}")
-
-    def _solve_regularized_classical(
-        self,
-        theta_init: np.ndarray,
-        phi_angles: np.ndarray,
-        c2_experimental: np.ndarray,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
-        """
-        Fallback to classical optimization with regularization for robustness.
-
-        Parameters
-        ----------
-        theta_init : np.ndarray
-            Initial parameters
-        phi_angles : np.ndarray
-            Angular positions
-        c2_experimental : np.ndarray
-            Experimental data
-
-        Returns
-        -------
-        Tuple[Optional[np.ndarray], Dict[str, Any]]
-            (optimal_parameters, optimization_info)
-        """
-        try:
-            if cp is None:
-                raise ImportError("CVXPY not available for fallback optimization")
-
-            n_params = len(theta_init)
-            theta = cp.Variable(n_params)
-
-            # Get parameter bounds
-            bounds = self._get_parameter_bounds()
-            constraints = []
-
-            if bounds is not None:
-                for i, (lb, ub) in enumerate(bounds):
-                    if lb is not None:
-                        constraints.append(theta[i] >= lb)
-                    if ub is not None:
-                        constraints.append(theta[i] <= ub)
-
-            # Compute fitted correlation (simplified linear approximation)
-            c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles, c2_experimental
-            )
-
-            # Linear approximation for fallback
-            delta_theta = theta - theta_init
-            linear_correction = jacobian @ delta_theta
-            linear_correction_reshaped = linear_correction.reshape(
-                c2_fitted_init.shape, order="C"
-            )
-            c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
-
-            # Residuals
-            residuals = c2_experimental - c2_fitted_linear
-
-            # Strong regularization for robustness
-            alpha = self.settings.get("regularization_alpha", 0.01) * 5  # 5x stronger
-            regularization = alpha * cp.sum_squares(delta_theta)
-
-            # Objective: regularized least squares
-            objective = cp.Minimize(cp.sum_squares(residuals) + regularization)
-            problem = cp.Problem(objective, constraints)
-
-            # Solve with optimized solver selection
-            self._solve_cvxpy_problem_optimized(
-                problem, "Fallback-Classical"
-            )
-
-            if (
-                problem.status not in ["infeasible", "unbounded"]
-                and theta.value is not None
-            ):
-                optimal_params = theta.value
-                final_chi_squared = self._compute_chi_squared(
-                    optimal_params, phi_angles, c2_experimental
-                )
-
-                info = {
-                    "method": "regularized_classical",
-                    "status": problem.status,
-                    "final_chi_squared": final_chi_squared,
-                    "regularization_alpha": alpha,
-                    "fallback": True,
-                }
-
-                return optimal_params, info
-            else:
-                return None, {
-                    "status": problem.status,
-                    "method": "regularized_classical",
-                    "fallback": True,
-                }
-
-        except Exception as e:
-            logger.error(f"Fallback classical optimization failed: {e}")
-            return None, {
-                "error": str(e),
-                "method": "regularized_classical",
-                "fallback": True,
-            }
 
     def clear_caches(self) -> None:
         """

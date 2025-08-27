@@ -354,7 +354,7 @@ class TestConfigManagerAngleFiltering:
             json.dump(config_with_custom_angle_filtering, f)
 
         manager = ConfigManager(str(config_file))
-        assert manager.is_angle_filtering_enabled() == False
+        assert manager.is_angle_filtering_enabled() is False
 
     def test_get_target_angle_ranges_default(
         self, temp_directory, config_with_angle_filtering
@@ -418,7 +418,7 @@ class TestConfigManagerAngleFiltering:
             json.dump(config_with_custom_angle_filtering, f)
 
         manager = ConfigManager(str(config_file))
-        assert manager.should_fallback_to_all_angles() == False
+        assert manager.should_fallback_to_all_angles() is False
 
     def test_get_angle_filtering_config_complete(
         self, temp_directory, config_with_angle_filtering

@@ -10,9 +10,7 @@ Institution: Argonne National Laboratory
 """
 
 from functools import wraps
-from typing import Any, Callable
-from typing import Tuple as TypingTuple
-from typing import TypeVar, Union
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 
@@ -51,238 +49,43 @@ except ImportError:
     float64 = int64 = types = Tuple = DummyType()
 
 
-# Define fallback implementations for when numba is not available
-def _compute_chi_squared_batch_fallback(
-    theory_batch: np.ndarray,
-    exp_batch: np.ndarray,
-    contrast_batch: np.ndarray,
-    offset_batch: np.ndarray,
-) -> np.ndarray:
-    """Pure numpy fallback for compute_chi_squared_batch_numba when numba is unavailable."""
-    n_angles, n_data = theory_batch.shape
-    chi2_batch = np.zeros(n_angles, dtype=np.float64)
-
-    for i in range(n_angles):
-        theory = theory_batch[i]
-        exp = exp_batch[i]
-        contrast = contrast_batch[i]
-        offset = offset_batch[i]
-
-        fitted_vals = theory * contrast + offset
-        residuals = exp - fitted_vals
-        chi2_batch[i] = np.sum(residuals**2)
-
-    return chi2_batch
-
-
-def _solve_least_squares_batch_fallback(
-    theory_batch: np.ndarray, exp_batch: np.ndarray
-) -> TypingTuple[np.ndarray, np.ndarray]:
-    """Pure numpy fallback for solve_least_squares_batch_numba when numba is unavailable."""
-    n_angles, n_data = theory_batch.shape
-    contrast_batch = np.zeros(n_angles, dtype=np.float64)
-    offset_batch = np.zeros(n_angles, dtype=np.float64)
-
-    for i in range(n_angles):
-        theory = theory_batch[i]
-        exp = exp_batch[i]
-
-        # Compute sums for 2x2 least squares system
-        sum_theory_sq = np.sum(theory**2)
-        sum_theory = np.sum(theory)
-        sum_exp = np.sum(exp)
-        sum_theory_exp = np.sum(theory * exp)
-
-        # Solve 2x2 system: AtA * x = Atb
-        det = sum_theory_sq * n_data - sum_theory * sum_theory
-
-        if abs(det) > 1e-12:  # Non-singular matrix
-            contrast_batch[i] = (n_data * sum_theory_exp - sum_theory * sum_exp) / det
-            offset_batch[i] = (
-                sum_theory_sq * sum_exp - sum_theory * sum_theory_exp
-            ) / det
-        else:  # Singular matrix fallback
-            contrast_batch[i] = 1.0
-            offset_batch[i] = 0.0
-
-    return contrast_batch, offset_batch
-
-
-def _create_time_integral_matrix_impl(
-    time_dependent_array: np.ndarray,
-) -> np.ndarray:
-    """
-    Create time integral matrix for correlation calculations.
-
-    Computes matrix of time integrals I[i,j] = |integral_{t_i}^{t_j} f(t)dt|
-    using optimized algorithm that mimics numpy's vectorized approach.
-
-    This implementation is equivalent to:
-    cumsum_matrix = np.tile(cumsum, (n, 1))
-    return np.abs(cumsum_matrix - cumsum_matrix.T)
-
-    But optimized for Numba with parallel execution.
-
-    Parameters
-    ----------
-    time_dependent_array : np.ndarray
-        Time-dependent values f(t) at discrete points
-
-    Returns
-    -------
-    np.ndarray
-        Matrix where element [i,j] = integral from time i to j
-    """
+def _create_time_integral_matrix_impl(time_dependent_array):
+    """Create time integral matrix for correlation calculations."""
     n = len(time_dependent_array)
     matrix = np.empty((n, n), dtype=np.float64)
-
-    # Compute cumulative sum once - O(n) operation
     cumsum = np.cumsum(time_dependent_array)
 
-    # Use parallel loops to fill the matrix efficiently
-    # This approach avoids the complex indexing and simply computes the
-    # difference
     for i in range(n):
         cumsum_i = cumsum[i]
         for j in range(n):
-            cumsum_j = cumsum[j]
-            # Absolute difference of cumulative sums
-            matrix[i, j] = abs(cumsum_i - cumsum_j)
+            matrix[i, j] = abs(cumsum_i - cumsum[j])
 
     return matrix
 
 
 def _calculate_diffusion_coefficient_impl(time_array, D0, alpha, D_offset):
-    """
-    Calculate time-dependent diffusion coefficient.
-
-    Implements power-law model: D(t) = D₀(t/t₀)^α + D_offset
-
-    This model captures various physical scenarios:
-    1. Aging systems: D decreases with time (α < 0) as structure develops
-    2. Swelling/dissolution: D increases with time (α > 0) as structure breaks down
-    3. Stress relaxation: D changes as internal stresses redistribute
-    4. Temperature effects: Time-dependent heating/cooling during measurement
-
-    Parameters
-    ----------
-    time_array : np.ndarray
-        Time points [seconds]
-    D0 : float
-        Reference diffusion coefficient [Å²/s]
-    alpha : float
-        Power-law exponent [dimensionless]
-        α = 0: constant diffusion (equilibrium systems)
-        α > 0: enhanced diffusion (aging, structural relaxation)
-        α < 0: subdiffusion (crowded environments, viscoelastic media)
-    D_offset : float
-        Baseline diffusion [Å²/s]
-        Accounts for residual thermal motion or measurement artifacts
-
-    Returns
-    -------
-    np.ndarray
-        D(t) at each time point [Å²/s], guaranteed to be > 0
-    """
+    """Calculate time-dependent diffusion coefficient."""
     D_t = np.empty_like(time_array)
-    # Vectorized computation with positivity constraint
     for i in range(len(time_array)):
         D_value = D0 * (time_array[i] ** alpha) + D_offset
-        # Ensure D(t) > 0 always using conditional (Numba-compatible)
-        if D_value > 1e-10:
-            D_t[i] = D_value
-        else:
-            D_t[i] = 1e-10
+        D_t[i] = max(D_value, 1e-10)
     return D_t
 
 
 def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
-    """
-    Calculate time-dependent shear rate.
-
-    Implements power-law model: γ̇(t) = γ̇₀(t/t₀)^β + γ̇_offset
-
-    Common experimental scenarios:
-
-    1. Creep tests: Applied constant stress → time-dependent strain rate
-
-       - Initially: γ̇(t) ~ t^(-n) as material yields
-       - Later: γ̇(t) ~ constant for steady-state flow
-       - Recovery: γ̇(t) → 0 with power-law or exponential decay
-
-    2. Startup flows: Sudden application of shear
-
-       - Acceleration phase: γ̇(t) increases toward steady state
-       - Overshoot possible in viscoelastic materials
-       - Eventually: γ̇(t) → constant
-
-    3. Oscillatory flows: Time-varying shear rates
-
-       - Can be captured by appropriate choice of β
-       - More complex forms may require Fourier series
-
-    4. Stress relaxation: Removal of applied stress
-
-       - Exponential or power-law decay: γ̇(t) ~ t^(-β)
-       - Long-time tail behavior depends on material properties
-
-    Parameters
-    ----------
-    time_array : np.ndarray
-        Time points [seconds]
-    gamma_dot_t0 : float
-        Reference shear rate [s⁻¹]
-    beta : float
-        Power-law exponent [dimensionless]
-        β = 0: constant shear rate (steady flow)
-        β > 0: accelerating flow (creep acceleration, startup transients)
-        β < 0: decelerating flow (stress relaxation, recovery)
-    gamma_dot_t_offset : float
-        Baseline shear rate [s⁻¹]
-
-    Returns
-    -------
-    np.ndarray
-        γ̇(t) at each time point [s⁻¹], guaranteed to be > 0
-    """
+    """Calculate time-dependent shear rate."""
     gamma_dot_t = np.empty_like(time_array)
-    # Vectorized computation with positivity constraint
     for i in range(len(time_array)):
         gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
-        # Ensure γ̇(t) > 0 always using conditional (Numba-compatible)
-        if gamma_value > 1e-10:
-            gamma_dot_t[i] = gamma_value
-        else:
-            gamma_dot_t[i] = 1e-10
+        gamma_dot_t[i] = max(gamma_value, 1e-10)
     return gamma_dot_t
 
 
 def _compute_g1_correlation_impl(diffusion_integral_matrix, wavevector_factor):
-    """
-    Compute field correlation function g₁ from diffusion.
-
-    Calculates the field correlation function arising from translational diffusion
-    of scattering particles in the sample. This implements the core diffusion term
-    from the homodyne scattering equations:
-
-        g₁(q⃗, t₁, t₂) = exp(-q² ∫ᵗ²ᵗ¹ D(t)dt)
-
-    Parameters
-    ----------
-    diffusion_integral_matrix : np.ndarray
-        Matrix of diffusion integrals [Å²]
-    wavevector_factor : float
-        Pre-computed 0.5×q²×Δt [Å⁻²]
-
-    Returns
-    -------
-    np.ndarray
-        Field correlation g₁(t₁,t₂), values in [0,1]
-    """
+    """Compute field correlation function g₁ from diffusion."""
     shape = diffusion_integral_matrix.shape
     g1 = np.empty(shape, dtype=np.float64)
 
-    # Optimized computation with fastmath and cache-friendly access
     for i in range(shape[0]):
         for j in range(shape[1]):
             exponent = -wavevector_factor * diffusion_integral_matrix[i, j]
@@ -292,90 +95,22 @@ def _compute_g1_correlation_impl(diffusion_integral_matrix, wavevector_factor):
 
 
 def _compute_sinc_squared_impl(shear_integral_matrix, prefactor):
-    """
-    Compute sinc² function for shear flow contributions (Numba-optimized).
-
-    Calculates the shear-induced decorrelation term appearing in homodyne
-    scattering under flow conditions. This implements the sinc² term from
-    the theoretical equations:
-
-        sinc²(x) = [sin(πx)/(πx)]²
-
-    where x = (1/2π) × q⃗·v̄ × ∫γ̇(t)dt
-
-    Physical interpretation:
-
-    - The sinc function arises from the Fourier transform of a rectangular
-      velocity profile in laminar shear flow
-    - Shear flow creates a systematic velocity gradient perpendicular to the flow
-    - Particles at different heights have different velocities
-    - This creates a phase modulation of the scattered light
-    - The sinc² envelope reflects the coherent averaging over the velocity distribution
-
-    Mathematical origin:
-
-    In laminar flow between parallel plates with gap h::
-
-        v(y) = γ̇ × y  (linear velocity profile)
-
-    The scattering from particles at height y picks up phase φ = q⃗·v⃗(y)t
-    Coherent averaging over y gives::
-
-        ⟨exp(iq⃗·v⃗(y)t)⟩ = ∫₀ʰ exp(iqy̲γ̇t)dy/h = sinc(qy̲γ̇th/2)
-
-    Where qy̲ is the component of q⃗ perpendicular to flow direction.
-
-    Flow geometry considerations:
-
-    - For q⃗ parallel to flow: cos(φ) = ±1, maximum shear effect
-    - For q⃗ perpendicular to flow: cos(φ) = 0, no shear contribution
-    - Intermediate angles: cos(φ) determines the effective shear sensitivity
-
-    Limiting behaviors:
-
-    - Small argument (weak shear): sinc²(x) ≈ 1 - (πx)²/3
-    - Large argument (strong shear): sinc²(x) ≈ 0 with oscillations
-    - First zero at x = 1: complete destructive interference
-
-    Parameters
-    ----------
-    shear_integral_matrix : np.ndarray
-        Matrix of shear rate integrals (strain)
-    prefactor : float
-        Geometric factor (1/2π)×q×h×cos(φ)×Δt
-
-    Returns
-    -------
-    np.ndarray
-        Sinc² values for shear contribution, in [0,1] with sinc²(0) = 1
-
-    Special cases
-    -------------
-    - Zero shear (γ̇ = 0): sinc²(0) = 1 (no shear decorrelation)
-    - Perpendicular scattering (cos φ = 0): sinc²(0) = 1 (no sensitivity)
-    - Very small arguments: use Taylor expansion to avoid 0/0 indeterminacy
-    - Very large arguments: sinc² oscillates rapidly around small values
-    """
+    """Compute sinc² function for shear flow contributions."""
     shape = shear_integral_matrix.shape
     sinc_squared = np.empty(shape, dtype=np.float64)
-
-    # Pre-compute pi for efficiency
     pi = np.pi
 
     for i in range(shape[0]):
         for j in range(shape[1]):
             argument = prefactor * shear_integral_matrix[i, j]
 
-            # Optimized small argument handling with Taylor expansion
-            if abs(argument) < 1e-10:  # Use tighter threshold to catch more edge cases
-                # Taylor expansion: sinc²(x) ≈ 1 - (πx)²/3 + O(x⁴)
+            if abs(argument) < 1e-10:
                 pi_arg_sq = (pi * argument) ** 2
                 sinc_squared[i, j] = 1.0 - pi_arg_sq / 3.0
             else:
                 pi_arg = pi * argument
-                # Additional safety check to prevent division by exactly zero
                 if abs(pi_arg) < 1e-15:
-                    sinc_squared[i, j] = 1.0  # sinc(0) = 1, so sinc²(0) = 1
+                    sinc_squared[i, j] = 1.0
                 else:
                     sinc_value = np.sin(pi_arg) / pi_arg
                     sinc_squared[i, j] = sinc_value * sinc_value
@@ -571,6 +306,10 @@ def _solve_least_squares_batch_numba_impl(theory_batch, exp_batch):
 
 
 # Apply numba decorator if available, otherwise use fallback
+def _solve_least_squares_batch_fallback(theory_batch, exp_batch):
+    """Fallback implementation when Numba is not available."""
+    return _solve_least_squares_batch_numba_impl(theory_batch, exp_batch)
+
 if NUMBA_AVAILABLE:
     solve_least_squares_batch_numba = njit(
         cache=True,
@@ -624,6 +363,10 @@ def _compute_chi_squared_batch_numba_impl(
 
     return chi2_batch
 
+
+def _compute_chi_squared_batch_fallback(theory_batch, exp_batch, contrast_batch, offset_batch):
+    """Fallback implementation when Numba is not available."""
+    return _compute_chi_squared_batch_numba_impl(theory_batch, exp_batch, contrast_batch, offset_batch)
 
 # Apply numba decorator if available, otherwise use fallback
 if NUMBA_AVAILABLE:

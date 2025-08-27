@@ -617,11 +617,13 @@ class ClassicalOptimizer:
         method_options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[bool, Union[optimize.OptimizeResult, Exception]]:
         """
-        Run Gurobi optimization for least squares fitting.
+        Run iterative Gurobi-based optimization using trust region approach.
 
-        This method approximates the chi-squared objective function using a quadratic model
-        and solves it with Gurobi's quadratic programming solver. It uses the same parameter
-        bounds as MCMC for consistency between optimization methods.
+        This method uses successive quadratic approximations (SQP-like approach) where:
+        1. Build quadratic approximation around current point
+        2. Solve QP subproblem with trust region constraints  
+        3. Evaluate actual objective at new point
+        4. Update trust region and iterate until convergence
 
         Parameters
         ----------
@@ -639,12 +641,6 @@ class ClassicalOptimizer:
         -------
         Tuple[bool, Union[OptimizeResult, Exception]]
             (success, result_or_exception)
-
-        Notes
-        -----
-        For consistency with MCMC, this method uses the same parameter bounds defined
-        in the configuration's parameter_space.bounds section. This ensures that both
-        classical and Bayesian optimization methods respect the same physical constraints.
         """
         try:
             if not GUROBI_AVAILABLE or gp is None or GRB is None:
@@ -656,13 +652,16 @@ class ClassicalOptimizer:
 
             n_params = len(initial_parameters)
 
-            # Default Gurobi options
+            # Default Gurobi options with iterative settings
             gurobi_options = {
-                "max_iterations": 1000,
+                "max_iterations": 50,  # Outer iterations for SQP
                 "tolerance": 1e-6,
                 "output_flag": 0,  # Suppress output by default
                 "method": 2,  # Use barrier method for QP
                 "time_limit": 300,  # 5 minute time limit
+                "trust_region_initial": 0.1,  # Initial trust region radius
+                "trust_region_min": 1e-8,  # Minimum trust region radius
+                "trust_region_max": 1.0,  # Maximum trust region radius
             }
 
             # Update with user options
@@ -674,179 +673,182 @@ class ClassicalOptimizer:
                 }
                 gurobi_options.update(filtered_options)
 
-            # Build quadratic approximation around initial point
-            x0 = initial_parameters.copy()
-            f0 = objective_func(x0)
+            # Initialize iterative optimization
+            x_current = initial_parameters.copy()
+            f_current = objective_func(x_current)
+            trust_radius = gurobi_options["trust_region_initial"]
+            
+            # Convergence tracking
+            iteration = 0
+            max_iter = gurobi_options["max_iterations"]
+            tolerance = gurobi_options["tolerance"]
+            function_evaluations = 1  # Already evaluated f_current
+            grad_norm = float('inf')  # Initialize for later use
+            
+            logger.debug(f"Starting Gurobi iterative optimization with initial χ² = {f_current:.6e}")
+            
+            # Iterative trust region optimization
+            for iteration in range(max_iter):
+                # Choose appropriate epsilon based on parameter magnitudes and trust region
+                base_epsilon = max(1e-8, trust_radius / 100)
+                
+                # Estimate gradient using finite differences
+                grad = np.zeros(n_params)
+                for i in range(n_params):
+                    epsilon = base_epsilon * max(1.0, abs(x_current[i]))
+                    x_plus = x_current.copy()
+                    x_plus[i] += epsilon
+                    x_minus = x_current.copy()
+                    x_minus[i] -= epsilon
+                    
+                    f_plus = objective_func(x_plus)
+                    f_minus = objective_func(x_minus)
+                    grad[i] = (f_plus - f_minus) / (2 * epsilon)
+                    function_evaluations += 2
 
-            # Estimate gradient using finite differences
-            epsilon = 1e-8
-            grad = np.zeros(n_params)
-            for i in range(n_params):
-                x_plus = x0.copy()
-                x_plus[i] += epsilon
-                x_minus = x0.copy()
-                x_minus[i] -= epsilon
-                grad[i] = (objective_func(x_plus) - objective_func(x_minus)) / (
-                    2 * epsilon
+                # Check for convergence based on gradient norm
+                grad_norm = np.linalg.norm(grad)
+                if grad_norm < tolerance:
+                    logger.debug(f"Gurobi optimization converged at iteration {iteration}: ||grad|| = {grad_norm:.2e}")
+                    break
+
+                # Estimate diagonal Hessian approximation (BFGS-like)
+                hessian_diag = np.ones(n_params)
+                for i in range(n_params):
+                    epsilon = base_epsilon * max(1.0, abs(x_current[i]))
+                    x_plus = x_current.copy()
+                    x_plus[i] += epsilon
+                    x_minus = x_current.copy()
+                    x_minus[i] -= epsilon
+                    
+                    f_plus = objective_func(x_plus)
+                    f_minus = objective_func(x_minus)
+                    second_deriv = (f_plus - 2 * f_current + f_minus) / (epsilon**2)
+                    hessian_diag[i] = max(1e-6, second_deriv)  # Ensure positive
+                    function_evaluations += 2
+
+                try:
+                    # Create Gurobi model for trust region subproblem
+                    with gp.Env(empty=True) as env:
+                        if gurobi_options.get("output_flag", 0) == 0:
+                            env.setParam("OutputFlag", 0)
+                        env.start()
+
+                        with gp.Model(env=env) as model:
+                            # Set Gurobi parameters
+                            model.setParam(GRB.Param.OptimalityTol, tolerance)
+                            model.setParam(GRB.Param.Method, gurobi_options.get("method", 2))
+                            model.setParam(GRB.Param.TimeLimit, gurobi_options.get("time_limit", 300))
+
+                            # Create decision variables for step
+                            step = model.addVars(
+                                n_params,
+                                lb=-gp.GRB.INFINITY,
+                                ub=gp.GRB.INFINITY,
+                                name="step",
+                            )
+
+                            # Trust region constraint: ||step||_2 <= trust_radius
+                            model.addQConstr(
+                                gp.quicksum(step[i] * step[i] for i in range(n_params)) <= trust_radius**2,
+                                "trust_region"
+                            )
+
+                            # Parameter bounds constraints: bounds[i][0] <= x_current[i] + step[i] <= bounds[i][1]
+                            for i in range(n_params):
+                                if i < len(bounds):
+                                    lb, ub = bounds[i]
+                                    if lb != -np.inf:
+                                        model.addConstr(step[i] >= lb - x_current[i], f"lower_bound_{i}")
+                                    if ub != np.inf:
+                                        model.addConstr(step[i] <= ub - x_current[i], f"upper_bound_{i}")
+
+                            # Quadratic approximation: grad^T * step + 0.5 * step^T * H_diag * step
+                            obj = gp.LinExpr()
+                            for i in range(n_params):
+                                obj += grad[i] * step[i]  # Linear term
+                                obj += 0.5 * hessian_diag[i] * step[i] * step[i]  # Quadratic term
+
+                            model.setObjective(obj, GRB.MINIMIZE)
+
+                            # Optimize subproblem
+                            model.optimize()
+
+                            if model.status == GRB.OPTIMAL:
+                                # Extract step
+                                step_values = np.array([step[i].x for i in range(n_params)])  # type: ignore[attr-defined]
+                                x_new = x_current + step_values
+                                f_new = objective_func(x_new)
+                                function_evaluations += 1
+
+                                # Trust region update logic
+                                predicted_reduction = model.objVal  # Should be negative for minimization
+                                actual_reduction = f_current - f_new
+                                
+                                if actual_reduction > 0:
+                                    # Accept step
+                                    step_norm = np.linalg.norm(step_values)
+                                    logger.debug(f"Iteration {iteration}: χ² = {f_new:.6e} (improvement: {actual_reduction:.2e}, step: {step_norm:.3f})")
+                                    
+                                    x_current = x_new
+                                    f_current = f_new
+                                    
+                                    # Expand trust region if step is successful and near boundary
+                                    if step_norm > 0.8 * trust_radius:
+                                        trust_radius = min(gurobi_options["trust_region_max"], 2 * trust_radius)
+                                else:
+                                    # Reject step and shrink trust region
+                                    trust_radius = max(gurobi_options["trust_region_min"], 0.5 * trust_radius)
+                                    logger.debug(f"Iteration {iteration}: Step rejected, shrinking trust region to {trust_radius:.6f}")
+
+                                # Check convergence
+                                if actual_reduction > 0 and abs(actual_reduction) < tolerance:
+                                    logger.debug(f"Gurobi optimization converged at iteration {iteration}: improvement = {actual_reduction:.2e}")
+                                    break
+                                    
+                                if trust_radius < gurobi_options["trust_region_min"]:
+                                    logger.debug(f"Gurobi optimization terminated: trust region too small ({trust_radius:.2e})")
+                                    break
+                            else:
+                                # QP solve failed, shrink trust region and try again
+                                trust_radius = max(gurobi_options["trust_region_min"], 0.25 * trust_radius)
+                                logger.debug(f"QP subproblem failed with status {model.status}, shrinking trust region to {trust_radius:.6f}")
+                                if trust_radius < gurobi_options["trust_region_min"]:
+                                    break
+
+                except Exception as e:
+                    logger.warning(f"Gurobi subproblem failed at iteration {iteration}: {e}")
+                    break
+
+            # Create final result
+            if iteration < max_iter or grad_norm < tolerance:
+                result = optimize.OptimizeResult(
+                    x=x_current,
+                    fun=f_current,
+                    success=True,
+                    status=0,
+                    message=f"Iterative Gurobi optimization converged after {iteration} iterations.",
+                    nit=iteration,
+                    nfev=function_evaluations,
+                    method="Gurobi-Iterative-QP",
                 )
-
-            # Estimate Hessian using finite differences
-            hessian = np.zeros((n_params, n_params))
-            for i in range(n_params):
-                for j in range(i, n_params):
-                    if i == j:
-                        # Diagonal elements
-                        x_plus = x0.copy()
-                        x_plus[i] += epsilon
-                        x_minus = x0.copy()
-                        x_minus[i] -= epsilon
-                        hessian[i, j] = (
-                            objective_func(x_plus) - 2 * f0 + objective_func(x_minus)
-                        ) / (epsilon**2)
-                    else:
-                        # Off-diagonal elements
-                        x_pp = x0.copy()
-                        x_pp[i] += epsilon
-                        x_pp[j] += epsilon
-                        x_pm = x0.copy()
-                        x_pm[i] += epsilon
-                        x_pm[j] -= epsilon
-                        x_mp = x0.copy()
-                        x_mp[i] -= epsilon
-                        x_mp[j] += epsilon
-                        x_mm = x0.copy()
-                        x_mm[i] -= epsilon
-                        x_mm[j] -= epsilon
-                        hessian[i, j] = (
-                            objective_func(x_pp)
-                            - objective_func(x_pm)
-                            - objective_func(x_mp)
-                            + objective_func(x_mm)
-                        ) / (4 * epsilon**2)
-                        hessian[j, i] = hessian[i, j]  # Symmetric
-
-            # Ensure Hessian is positive definite for QP
-            eigenvals = np.linalg.eigvals(hessian)
-            if np.min(eigenvals) <= 0:
-                # Add regularization to make positive definite
-                regularization = abs(np.min(eigenvals)) + 1e-6
-                hessian += regularization * np.eye(n_params)
-
-            # Create Gurobi model
-            with gp.Env(empty=True) as env:
-                if gurobi_options.get("output_flag", 0) == 0:
-                    env.setParam("OutputFlag", 0)
-                env.start()
-
-                with gp.Model(env=env) as model:
-                    # Set Gurobi parameters
-                    for param, value in gurobi_options.items():
-                        if param == "max_iterations":
-                            model.setParam(GRB.Param.IterationLimit, int(value))
-                        elif param == "tolerance":
-                            model.setParam(GRB.Param.OptimalityTol, float(value))
-                        elif param == "output_flag":
-                            model.setParam(GRB.Param.OutputFlag, int(value))
-                        elif param == "method":
-                            model.setParam(GRB.Param.Method, int(value))
-                        elif param == "time_limit":
-                            model.setParam(GRB.Param.TimeLimit, float(value))
-
-                    # Create decision variables
-                    x = model.addVars(
-                        n_params,
-                        lb=-gp.GRB.INFINITY,
-                        ub=gp.GRB.INFINITY,
-                        name="x",
-                    )
-
-                    # Add bounds constraints
-                    for i in range(n_params):
-                        if i < len(bounds):
-                            lb, ub = bounds[i]
-                            if lb != -np.inf:
-                                x[i].setAttr(GRB.Attr.LB, lb)
-                            if ub != np.inf:
-                                x[i].setAttr(GRB.Attr.UB, ub)
-
-                    # Build quadratic objective: f0 + grad^T(x-x0) +
-                    # 0.5*(x-x0)^T*H*(x-x0)
-                    obj = f0
-
-                    # Linear terms
-                    for i in range(n_params):
-                        obj += grad[i] * (x[i] - x0[i])
-
-                    # Quadratic terms
-                    for i in range(n_params):
-                        for j in range(n_params):
-                            obj += 0.5 * hessian[i, j] * (x[i] - x0[i]) * (x[j] - x0[j])
-
-                    model.setObjective(obj, GRB.MINIMIZE)
-
-                    # Optimize
-                    model.optimize()
-
-                    # Extract results
-                    if model.status == GRB.OPTIMAL:
-                        optimal_params = np.array(
-                            [x[i].x for i in range(n_params)]
-                        )  # type: ignore
-                        optimal_value = objective_func(
-                            optimal_params
-                        )  # Evaluate true objective
-
-                        # Create OptimizeResult-like object
-                        result = optimize.OptimizeResult(
-                            x=optimal_params,
-                            fun=optimal_value,
-                            success=True,
-                            status=0,
-                            message="Optimization terminated successfully.",
-                            nit=model.getAttr(GRB.Attr.IterCount),
-                            nfev=model.getAttr(GRB.Attr.IterCount)
-                            + n_params * (n_params + 3) // 2
-                            + 1,  # Approximate function evaluations
-                            method="Gurobi-QP",
-                        )
-
-                        return True, result
-                    else:
-                        status_messages = {
-                            GRB.INFEASIBLE: "Model is infeasible",
-                            GRB.INF_OR_UNBD: "Model is infeasible or unbounded",
-                            GRB.UNBOUNDED: "Model is unbounded",
-                            GRB.CUTOFF: "Objective cutoff reached",
-                            GRB.ITERATION_LIMIT: "Iteration limit reached",
-                            GRB.NODE_LIMIT: "Node limit reached",
-                            GRB.TIME_LIMIT: "Time limit reached",
-                            GRB.SOLUTION_LIMIT: "Solution limit reached",
-                            GRB.INTERRUPTED: "Optimization interrupted",
-                            GRB.NUMERIC: "Numerical issues encountered",
-                            GRB.SUBOPTIMAL: "Suboptimal solution found",
-                        }
-                        message = status_messages.get(
-                            model.status, f"Unknown status: {model.status}"
-                        )
-
-                        result = optimize.OptimizeResult(
-                            x=initial_parameters,
-                            fun=f0,
-                            success=False,
-                            status=model.status,
-                            message=message,
-                            nit=(
-                                model.getAttr(GRB.Attr.IterCount)
-                                if hasattr(model, "IterCount")
-                                else 0
-                            ),
-                            nfev=n_params * (n_params + 3) // 2 + 1,
-                            method="Gurobi-QP",
-                        )
-
-                        return False, result
+                logger.debug(f"Gurobi optimization completed: χ² = {f_current:.6e} after {iteration} iterations")
+                return True, result
+            else:
+                result = optimize.OptimizeResult(
+                    x=x_current,
+                    fun=f_current,
+                    success=False,
+                    status=1,
+                    message=f"Iterative Gurobi optimization reached maximum iterations ({max_iter}).",
+                    nit=iteration,
+                    nfev=function_evaluations,
+                    method="Gurobi-Iterative-QP",
+                )
+                return False, result
 
         except Exception as e:
+            logger.error(f"Gurobi optimization failed: {e}")
             return False, e
 
     def _run_robust_optimization(

@@ -70,14 +70,6 @@ except ImportError:
 _plotting_deps = None
 
 
-def _get_plotting_deps():
-    """Get plotting dependencies, loading them lazily if needed."""
-    global _plotting_deps
-    if _plotting_deps is None:
-        _plotting_deps = _lazy_import_plotting_deps()
-    return _plotting_deps
-
-
 def get_plot_config(config: Optional[Dict] = None) -> Dict[str, Any]:
     """
     Extract plotting configuration from the main config dictionary.

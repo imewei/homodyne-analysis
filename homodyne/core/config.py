@@ -695,35 +695,6 @@ class ConfigManager:
             self.get_angle_filtering_config().get("fallback_to_all_angles", True)
         )
 
-    def get_test_config(self, test_name: str) -> Dict[str, Any]:
-        """
-        Get predefined test configuration.
-
-        Parameters
-        ----------
-        test_name : str
-            Name of test configuration
-
-        Returns
-        -------
-        dict
-            Test-specific configuration
-        """
-        if self.config is None:
-            raise ValueError(
-                "Configuration is None. Cannot retrieve test configurations."
-            )
-        configs = self.config.get("test_configurations", {})
-
-        if test_name not in configs:
-            available = list(configs.keys())
-            raise ValueError(f"Test '{test_name}' not found. Available: {available}")
-
-        config_result = configs[test_name]
-        if not isinstance(config_result, dict):
-            raise ValueError(f"Test configuration '{test_name}' is not a dictionary")
-        return config_result
-
     def is_static_mode_enabled(self) -> bool:
         """
         Check if static mode is enabled in configuration.
@@ -1145,20 +1116,6 @@ class PerformanceMonitor:
         """Clear all timing data."""
         self.timings.clear()
         self.memory_usage.clear()
-
-    def log_performance_summary(self, logger: Optional[logging.Logger] = None) -> None:
-        """Log performance summary to logger."""
-        if logger is None:
-            logger = logging.getLogger(__name__)
-
-        summary = self.get_timing_summary()
-        if summary:
-            logger.info("=== Performance Summary ===")
-            for func_name, stats in summary.items():
-                logger.info(
-                    f"{func_name}: {stats['calls']} calls, "
-                    f"avg={stats['mean']:.4f}s, total={stats['total']:.4f}s"
-                )
 
 
 # Global performance monitor instance

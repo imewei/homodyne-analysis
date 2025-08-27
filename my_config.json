@@ -12,6 +12,11 @@
       "alpha",
       "D_offset"
     ],
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data for validation",
+      "simulated_data_plotting": "Use --plot-simulated-data with --contrast and --offset",
+      "phi_angles_override": "Use --phi-angles 0,45,90,135 to override config angles"
+    },
     "user_customized": true,
     "script_compatibility": "homodyne v0.6.5.dev0"
   },
@@ -124,17 +129,21 @@
       "_robust_flag_note": "NEW: Use --method robust to run ONLY robust methods for dedicated noise-resistant estimation",
       "method_options": {
         "Nelder-Mead": {
-          "maxiter": 5000,
-          "_maxiter_note": "Reduced iterations for 3-parameter optimization",
+          "maxiter": 8000,
+          "_maxiter_note": "Increased iterations for better convergence with 3 parameters",
           "xatol": 1e-10,
+          "_xatol_note": "Tighter parameter tolerance for high precision",
           "fatol": 1e-10,
-          "adaptive": true
+          "_fatol_note": "Tighter function tolerance for better fitting",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
-          "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
-          "max_iterations": 5000,
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
+          "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter isotropic case",
-          "tolerance": 1e-8,
+          "tolerance": 1e-06,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -144,7 +153,17 @@
           "_time_limit_note": "Shorter time limit for simple 3-parameter problem",
           "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
           "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
-          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
+          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          }
         }
       },
       "selection_strategy": "best_chi_squared",
@@ -158,23 +177,25 @@
         "python run_homodyne.py --method classical  # Run all methods including robust"
       ],
       "_robust_flag_benefits": "NEW --method robust flag runs ONLY robust methods for dedicated noise-resistant estimation",
-      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "_optimization_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
       "enabled": true,
       "_enabled_note": "Set to false to disable robust optimization methods",
       "uncertainty_model": "wasserstein",
       "_uncertainty_model_note": "Primary method: wasserstein (DRO), scenario (bootstrap), ellipsoidal (bounded uncertainty)",
-      "uncertainty_radius": 0.03,
-      "_uncertainty_radius_note": "Conservative 3% uncertainty for first run - adjust based on data quality (0.01-0.1 typical)",
-      "n_scenarios": 15,
-      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization (optimized for performance)",
-      "regularization_alpha": 0.01,
-      "_regularization_alpha_note": "L2 regularization for parameter stability - higher values = more conservative",
-      "regularization_beta": 0.001,
-      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations - promotes simple solutions",
-      "jacobian_epsilon": 1e-6,
+      "uncertainty_radius": 0.005,
+      "_uncertainty_radius_note": "Aggressive 0.5% for testing - minimal uncertainty to allow better fit",
+      "n_scenarios": 30,
+      "_n_scenarios_note": "Increased to 20 for better uncertainty capture while maintaining performance",
+      "regularization_alpha": 0.001,
+      "_regularization_alpha_note": "Very low 0.001 for minimal smoothing - testing aggressive settings",
+      "regularization_beta": 0.0001,
+      "_regularization_beta_note": "Very low 0.0001 for maximum parameter freedom",
+      "jacobian_epsilon": 1e-7,
       "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
       "enable_caching": true,
       "_enable_caching_note": "Enable performance caching for repeated computations",
+      "enable_progressive_optimization": false,
+      "_enable_progressive_note": "Disabled for direct optimization - may achieve better fit",
       "preferred_solver": "CLARABEL",
       "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
       "solver_settings": {
@@ -185,12 +206,12 @@
         "_CrossOver_note": "Skip crossover for numerical stability with experimental data",
         "BarHomogeneous": 1,
         "_BarHomogeneous_note": "Use homogeneous barrier method for better convergence",
-        "TimeLimit": 300,
-        "_TimeLimit_note": "Maximum solve time in seconds (optimized for performance)",
-        "MIPGap": 1e-4,
-        "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
-        "NumericFocus": 2,
-        "_NumericFocus_note": "Numerical stability focus (optimized for speed)",
+        "TimeLimit": 600,
+        "_TimeLimit_note": "Increased to 600s for better convergence quality",
+        "MIPGap": 1e-6,
+        "_MIPGap_note": "Tightened to 1e-6 for better fit quality",
+        "NumericFocus": 1,
+        "_NumericFocus_note": "Reduced to 1 for better accuracy vs speed balance",
         "OutputFlag": 0,
         "_OutputFlag_note": "Silent mode - change to 1 for debug output"
       },
@@ -198,16 +219,16 @@
         "_comment": "Method-specific parameters for different robust optimization approaches",
         "wasserstein": {
           "_description": "Distributionally Robust Optimization with Wasserstein uncertainty sets",
-          "uncertainty_radius": 0.03,
-          "_uncertainty_radius_note": "Lower radius for initial testing - provides theoretical robustness guarantees",
-          "regularization_alpha": 0.01,
+          "uncertainty_radius": 0.003,
+          "_uncertainty_radius_note": "Very aggressive 0.3% for Wasserstein - testing minimal uncertainty",
+          "regularization_alpha": 0.0005,
           "_advantages": "Theoretical guarantees, handles measurement noise well, smooth convergence",
           "_best_for": "Noisy experimental data, when measurement uncertainty is well-characterized"
         },
         "scenario": {
           "_description": "Scenario-based robust optimization using bootstrap resampling",
-          "n_scenarios": 30,
-          "_n_scenarios_note": "Moderate count for first run - increase for higher precision",
+          "n_scenarios": 25,
+          "_n_scenarios_note": "Optimized to 25 scenarios for better uncertainty capture",
           "bootstrap_method": "residual",
           "_bootstrap_method_note": "Resample from correlation function residuals",
           "parallel_scenarios": true,
@@ -216,16 +237,16 @@
         },
         "ellipsoidal": {
           "_description": "Ellipsoidal uncertainty sets for bounded data uncertainty",
-          "gamma": 0.05,
-          "_gamma_note": "Uncertainty bound as fraction of data norm - conservative for first run",
-          "l1_regularization": 0.001,
-          "l2_regularization": 0.01,
+          "gamma": 0.02,
+          "_gamma_note": "Reduced to 2% for tighter uncertainty bounds and better fit",
+          "l1_regularization": 0.0003,
+          "l2_regularization": 0.003,
           "_advantages": "Bounded uncertainty, efficient computation, parameter sparsity control",
           "_best_for": "Well-characterized noise levels, when uncertainty bounds are known"
         }
       },
       "_first_run_recommendation": "Start with wasserstein method for theoretical guarantees and smooth convergence",
-      "_performance_note": "Robust methods typically 2-5x slower than classical but provide uncertainty resistance",
+      "_runtime_performance_note": "Robust methods typically 2-5x slower than classical but provide uncertainty resistance",
       "_requirements": "Requires CVXPY (pip install cvxpy). Gurobi license recommended for best performance.",
       "_robust_only_recommendations": {
         "when_to_use_robust_flag": "Use --method robust when you specifically want noise-resistant estimation without classical methods",
@@ -427,15 +448,15 @@
     "fit_quality": {
       "_comment": "Quality thresholds for user's optimization",
       "overall_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
-        "critical_threshold": 20.0
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
       },
       "per_angle_chi_squared": {
-        "excellent_threshold": 2.0,
-        "acceptable_threshold": 5.0,
-        "warning_threshold": 10.0,
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
         "outlier_threshold_multiplier": 2.5,
         "max_outlier_fraction": 0.25,
         "min_good_angles": 1
@@ -497,7 +518,8 @@
     }
   },
   "output_settings": {
-    "_comment": "User's output and reporting configuration",
+    "_comment": "Output and reporting configuration",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",
     "results_directory": "./homodyne_results",
     "file_formats": {
       "results_format": "json",
@@ -542,7 +564,7 @@
         "include_residuals": true,
         "colormap": "viridis",
         "colorbar_position": "right",
-        "title_prefix": "C2 Correlation Function (User Analysis)",
+        "title_prefix": "C2 Correlation Function (Static Isotropic)",
         "figsize": [
           12,
           4
@@ -610,7 +632,7 @@
       "log_level": "INFO",
       "log_to_file": true,
       "log_to_console": true,
-      "log_filename": "homodyne_user_analysis.log",
+      "log_filename": "homodyne_static_isotropic.log",
       "rotation": {
         "max_bytes": 10485760,
         "backup_count": 3

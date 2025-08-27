@@ -20,7 +20,7 @@ The package follows a layered architecture:
    └── Result Generation
            │
    Optimization Layer
-   ├── Classical Optimization (Nelder-Mead, Gurobi)
+   ├── Classical Optimization (Nelder-Mead, Iterative Gurobi Trust Region)
    ├── Robust Optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
    └── MCMC Sampling (NUTS)
            │
@@ -74,13 +74,46 @@ Key Components
 .. code-block:: python
 
    class ClassicalOptimizer:
-       """SciPy-based optimization"""
+       """SciPy and Gurobi-based optimization"""
        
    class RobustHomodyneOptimizer:
        """CVXPY-based robust optimization"""
        
    class MCMCSampler:
        """PyMC-based Bayesian sampling"""
+
+**5. Gurobi Trust Region Implementation**
+
+The Gurobi optimization uses an iterative trust region approach for enhanced convergence:
+
+.. code-block:: python
+
+   def _run_gurobi_optimization(self, objective_func, initial_parameters):
+       """
+       Iterative trust region SQP optimization:
+       1. Build quadratic approximation around current point
+       2. Solve QP subproblem with trust region constraints
+       3. Evaluate actual objective and update trust region
+       4. Iterate until convergence
+       """
+       x_current = initial_parameters.copy()
+       trust_radius = 0.1  # Initial trust region
+       
+       for iteration in range(max_iterations):
+           # Estimate gradient and diagonal Hessian
+           grad = self._compute_gradient(objective_func, x_current)
+           hessian_diag = self._compute_hessian_diagonal(objective_func, x_current)
+           
+           # Solve trust region QP subproblem with Gurobi
+           step = self._solve_trust_region_qp(grad, hessian_diag, trust_radius)
+           
+           # Evaluate and accept/reject step
+           x_new = x_current + step
+           if objective_func(x_new) < objective_func(x_current):
+               x_current = x_new  # Accept step
+               trust_radius = min(1.0, 2 * trust_radius)  # Expand region
+           else:
+               trust_radius = max(1e-8, 0.5 * trust_radius)  # Shrink region
 
 Design Patterns
 ---------------

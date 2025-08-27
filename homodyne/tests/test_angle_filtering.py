@@ -696,7 +696,7 @@ class TestAngleFilteringEdgeCases:
 
             # Verify that angle filtering was disabled (as configured)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
-            assert call_args[1]["filter_angles_for_optimization"] == False
+            assert call_args[1]["filter_angles_for_optimization"] is False
 
         except ImportError:
             pytest.skip("Classical optimization module not available")

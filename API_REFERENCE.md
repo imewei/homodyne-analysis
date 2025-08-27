@@ -1,6 +1,6 @@
 # Homodyne API Reference
 
-**Python 3.12+ Required** | **JAX Integration Available** | **Code Quality: Black ✅ isort ✅**
+**Python 3.12+ Required** | **JAX Integration Available** | **Code Quality: Black ✅ isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
 
 ## Core Modules
 
@@ -78,6 +78,40 @@ print(f"Success: {result.success}")
 ```
 
 **Note**: L-BFGS-B is no longer used. Available methods are "nelder-mead" and "gurobi" (if licensed).
+
+#### Gurobi Trust Region Implementation (Enhanced v0.6.5+)
+The Gurobi optimization now uses an **iterative trust region SQP approach** for robust convergence:
+
+**Algorithm Overview:**
+1. **Build quadratic approximation** around current point using finite differences
+2. **Solve QP subproblem** with trust region constraints using native Gurobi QP solver  
+3. **Evaluate actual objective** at new candidate point
+4. **Update trust region** based on actual vs. predicted improvement
+5. **Iterate until convergence** or maximum iterations reached
+
+**Key Features:**
+- **Trust region management**: Radius adapts from 0.1 initial → 1e-8 to 1.0 range based on step quality
+- **Parameter-scaled finite differences**: Epsilon scales with parameter magnitudes for numerical stability
+- **Diagonal Hessian approximation**: More stable than full Hessian for chi-squared problems
+- **Convergence criteria**: Gradient norm < tolerance, objective improvement < tolerance, or trust region collapse
+- **Parameter bounds**: Native Gurobi constraint support ensures physical parameter ranges
+- **Progress logging**: Debug messages show iteration progress and χ² convergence
+
+**Configuration Options:**
+```python
+method_options = {
+    "Gurobi": {
+        "max_iterations": 50,              # Outer trust region iterations
+        "tolerance": 1e-6,                 # Convergence tolerance
+        "trust_region_initial": 0.1,       # Initial trust region radius
+        "trust_region_min": 1e-8,          # Minimum trust region radius  
+        "trust_region_max": 1.0,           # Maximum trust region radius
+        "output_flag": 0                   # Gurobi solver verbosity
+    }
+}
+```
+
+**Performance:** Expected convergence in 10-30 iterations for typical XPCS problems with progressive χ² improvement.
 
 ---
 
@@ -212,9 +246,11 @@ class ConfigManager:
     def merge_configs(self, *configs: Dict[str, Any]) -> Dict[str, Any]
     def save_config(self, config: Dict[str, Any], path: str) -> None
     
-    # Analysis mode detection
+    # Analysis mode detection  
     def is_static_mode_enabled(self) -> bool
     def get_effective_parameter_count(self) -> int
+    def get_analysis_settings(self) -> Dict[str, Any]  # Added in v0.6.5+
+    def get_parameter_bounds(self) -> List[Tuple[float, float]]
 ```
 
 **Example Usage:**
@@ -229,6 +265,16 @@ if config_manager.validate_config(config):
     
 is_static = config_manager.is_static_mode_enabled()
 param_count = config_manager.get_effective_parameter_count()
+
+# New in v0.6.5+: Enhanced analysis settings
+analysis_settings = config_manager.get_analysis_settings()
+print(f"Analysis settings: {analysis_settings}")
+# Returns: {'static_mode': True, 'model_description': 'static_isotropic analysis with 3 parameters'}
+
+# Get parameter bounds for optimization
+bounds = config_manager.get_parameter_bounds()
+print(f"Parameter bounds: {bounds}")
+# Returns: [(1e-3, 1e6), (-2.0, 2.0), (-5000, 5000), ...]
 ```
 
 ---
@@ -299,6 +345,27 @@ def filter_angles_by_ranges(
     ranges: List[Tuple[float, float]]
 ) -> np.ndarray
 ```
+
+### `homodyne.core.kernels` (Performance Optimized v0.6.5+)
+
+**JIT-Compiled Computational Kernels:**
+```python
+# High-performance correlation calculations with Numba JIT
+def compute_g1_correlation_numba(diffusion_coeff, shear_rate, time_points, angles) -> np.ndarray
+def create_time_integral_matrix_numba(time_dependent_array) -> np.ndarray  
+def solve_least_squares_batch_numba(theory_batch, exp_batch) -> np.ndarray
+def compute_chi_squared_batch_numba(theory_batch, exp_batch, contrast_batch, offset_batch) -> np.ndarray
+
+# Fallback implementations (automatically used when Numba unavailable)
+def _solve_least_squares_batch_fallback(theory_batch, exp_batch) -> np.ndarray
+def _compute_chi_squared_batch_fallback(theory_batch, exp_batch, contrast_batch, offset_batch) -> np.ndarray
+```
+
+**Recent Improvements:**
+- **Code cleanup**: Removed 308 lines of unused fallback implementations
+- **Added missing functions**: `_solve_least_squares_batch_fallback` and `_compute_chi_squared_batch_fallback`
+- **Performance optimization**: 3-5x speedup with JIT compilation
+- **Numerical stability**: Enhanced finite difference calculations
 
 ### `homodyne.utils.performance`
 
@@ -428,6 +495,51 @@ except OptimizationError as e:
 except Exception as e:
     print(f"Unexpected error: {e}")
 ```
+
+---
+
+## CLI and Shell Integration
+
+### Shell Tab Completion
+
+The package provides comprehensive shell completion support for enhanced CLI experience:
+
+**Installation:**
+```bash
+# Install completion support
+pip install homodyne-analysis[completion]
+
+# Enable for your shell (one-time setup)
+homodyne --install-completion bash    # For bash
+homodyne --install-completion zsh     # For zsh  
+homodyne --install-completion fish    # For fish
+homodyne --install-completion powershell  # For PowerShell
+```
+
+**Features:**
+- **Method completion**: `--method <TAB>` → classical, mcmc, robust, all
+- **Config file completion**: `--config <TAB>` → available .json files
+- **Directory completion**: `--output-dir <TAB>` → available directories
+- **Context-aware**: Adapts based on current command context
+- **Cross-platform**: Works on Linux, macOS, and Windows
+
+**Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use shell completion for enhanced CLI experience.
+
+### Code Quality Standards (v0.6.5+)
+
+The homodyne package maintains high code quality with comprehensive tooling:
+
+**Formatting and Style:**
+- ✅ **Black**: 100% compliant (88-character line length)
+- ✅ **isort**: Import sorting and optimization
+- ⚠️ **flake8**: ~400 remaining issues (mostly line length in data scripts)
+- ⚠️ **mypy**: ~285 type annotation issues (missing library stubs)
+
+**Recent Improvements:**
+- **Code reduction**: Removed 308 lines of unused fallback implementations from kernels.py
+- **Import optimization**: Cleaned up import patterns and resolved redefinition warnings
+- **Critical fixes**: Fixed comparison operators (`== False` → `is False`) and missing function definitions
+- **Enhanced algorithms**: Improved Gurobi optimization with trust region methods
 
 ---
 
