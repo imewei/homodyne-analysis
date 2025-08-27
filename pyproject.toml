@@ -304,5 +304,11 @@ exclude_lines = [
 
 [tool.bandit]
 exclude_dirs = ["homodyne/tests", "tests", "build", "dist"]
-skips = ["B101"]  # Skip assert_used test (common in scientific code)
+skips = [
+    "B101",  # Skip assert_used test (common in scientific code)
+    "B110",  # Skip try_except_pass (used for graceful degradation)
+    "B403",  # Skip pickle import (required for data serialization)
+    "B404",  # Skip subprocess import (required for CLI completion and test runner)
+    "B603",  # Skip subprocess without shell (we control the input)
+]
 severity_level = "medium"  # Only report medium and high severity issues
