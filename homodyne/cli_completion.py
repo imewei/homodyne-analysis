@@ -279,6 +279,9 @@ class HomodyneCompleter:
         """Clear cache for testing."""
         global _completion_cache
         _completion_cache = FastCompletionCache()
+        # Force immediate cache update for testing
+        _completion_cache._last_update = 0.0
+        _completion_cache._update_cache()
 
 
 def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
