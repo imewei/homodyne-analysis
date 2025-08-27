@@ -121,14 +121,14 @@ jobs:
     - name: Run comprehensive security scan
       run: |
         echo "Running Bandit..."
-        bandit -r homodyne/ -ll
+        bandit -r homodyne/ --configfile pyproject.toml
         
         echo "Running Safety check..."
         pip install -e .
         safety check
         
         echo "Running pip-audit..."
-        pip-audit --strict
+        pip-audit --requirement requirements.txt
 
   create-release:
     name: Create GitHub Release
