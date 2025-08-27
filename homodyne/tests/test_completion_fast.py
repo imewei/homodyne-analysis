@@ -5,6 +5,7 @@ This module tests the ultra-lightweight shell completion functionality.
 """
 
 import json
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -229,7 +230,9 @@ class TestCompletionFunctions:
             # Test with directory prefix
             configs = complete_config("data/con")
             mock_cache.get_files.assert_called_with("data")
-            assert configs == ["data/config.json"]
+            # Use os.path.join for platform-agnostic path comparison
+            expected_path = os.path.join("data", "config.json")
+            assert configs == [expected_path]
 
     def test_complete_output_dir(self):
         """Test output directory completion."""
