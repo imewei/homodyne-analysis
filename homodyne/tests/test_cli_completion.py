@@ -3,6 +3,7 @@ Tests for CLI completion and interactive features.
 """
 
 import argparse
+import os
 from pathlib import Path
 from typing import Any, List
 from unittest.mock import MagicMock, patch
@@ -94,8 +95,8 @@ class TestHomodyneCompleter:
             mock_cache.get_directories.return_value = ["results", "data", "output"]
 
             results = completer.output_dir_completer("res", argparse.Namespace())
-            # Should return directories only with trailing slash
-            assert any("results/" in r for r in results)
+            # Should return directories only with trailing path separator
+            assert any("results" + os.sep in r for r in results)
             mock_cache.get_directories.assert_called_with(".")
 
     def test_analysis_mode_completer(self):
