@@ -48,15 +48,15 @@ autodoc_mock_imports = [
     # Mock modules that don't exist but are referenced in docs
     "mcmc",  # This appears to be incorrectly referenced
     "io_utils",  # Missing module referenced in autosummary
-    "kernels",   # Missing module referenced in autosummary  
-    "classical", # Missing module referenced in autosummary
-    "config",    # Missing module referenced in autosummary
+    "kernels",  # Missing module referenced in autosummary
+    "classical",  # Missing module referenced in autosummary
+    "config",  # Missing module referenced in autosummary
     # Mock problematic homodyne submodules temporarily
     "homodyne.analysis",
     "homodyne.analysis.core",
     "homodyne.core",
     "homodyne.core.config",
-    "homodyne.core.kernels", 
+    "homodyne.core.kernels",
     "homodyne.core.io_utils",
     "homodyne.optimization",
     "homodyne.optimization.mcmc",
