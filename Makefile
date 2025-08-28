@@ -50,7 +50,7 @@ install:
 dev-install:
 	pip install -e ".[all,dev,docs]"
 
-# Testing targets  
+# Testing targets
 test:
 	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
 

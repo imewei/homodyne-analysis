@@ -1,0 +1,191 @@
+# Pre-commit hooks for Homodyne Analysis Package
+# Install with: pip install pre-commit && pre-commit install
+
+repos:
+  # Built-in hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: debug-statements
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        name: black
+        description: "Black: The uncompromising Python code formatter"
+        entry: black
+        language: python
+        minimum_pre_commit_version: 2.9.2
+        require_serial: true
+        types_or: [python, pyi]
+        args: [--line-length=88]
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (python)
+        description: "Sort Python imports"
+        entry: isort
+        language: python
+        types: [python]
+        args: [--profile=black, --line-length=88]
+
+  # Linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        name: flake8
+        description: "Tool For Style Guide Enforcement"
+        entry: flake8
+        language: python
+        types: [python]
+        args:
+          - --max-line-length=88
+          - --extend-ignore=E203,W503,E501
+          - --exclude=build,dist,.eggs,*.egg-info,.tox,.venv,venv
+
+  # Modern linting and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.1
+    hooks:
+      - id: ruff
+        name: ruff
+        description: "An extremely fast Python linter, written in Rust"
+        entry: ruff check
+        language: python
+        types: [python]
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        name: ruff-format
+        description: "An extremely fast Python formatter, written in Rust"
+        entry: ruff format
+        language: python
+        types: [python]
+
+  # Security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        name: bandit
+        description: "Bandit is a tool for finding common security issues in Python code"
+        entry: bandit
+        language: python
+        types: [python]
+        args:
+          - -r
+          - -f
+          - json
+          - -o
+          - bandit_report.json
+          - --severity-level
+          - medium
+          - --skip
+          - B101,B110,B403,B404,B603
+        exclude: ^(homodyne/tests/|tests/|build/|dist/)
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        name: mypy
+        description: "Optional static typing for Python"
+        entry: mypy
+        language: python
+        types: [python]
+        args: [--config-file=pyproject.toml]
+        additional_dependencies:
+          - types-psutil
+          - types-requests
+          - numpy
+          - matplotlib
+        exclude: ^(homodyne/tests/|tests/|build/|dist/|docs/)
+
+  # Markdown formatting
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.19
+    hooks:
+      - id: mdformat
+        name: mdformat
+        description: "CommonMark compliant Markdown formatter"
+        entry: mdformat
+        language: python
+        types: [markdown]
+        args: [--wrap=88]
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        name: prettier
+        description: "Prettier formatter for various file types"
+        entry: prettier
+        language: node
+        types_or: [yaml, json]
+        args: [--write, --tab-width=2]
+
+  # Jupyter notebook cleaning
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.8.7
+    hooks:
+      - id: nbqa-black
+        name: nbqa-black
+        description: "Run black on Jupyter notebooks"
+        entry: nbqa
+        language: python
+        types: [jupyter]
+        args: [black, --line-length=88]
+      - id: nbqa-isort
+        name: nbqa-isort
+        description: "Run isort on Jupyter notebooks"
+        entry: nbqa
+        language: python
+        types: [jupyter]
+        args: [isort, --profile=black]
+
+# Global configuration
+default_language_version:
+  python: python3.13
+
+# Exclude certain directories and files
+exclude: |
+  (?x)^(
+      \.eggs/|
+      \.git/|
+      \.hg/|
+      \.mypy_cache/|
+      \.pytest_cache/|
+      \.ruff_cache/|
+      \.tox/|
+      \.venv/|
+      _build/|
+      build/|
+      dist/|
+      venv/|
+      .*\.egg-info/|
+      homodyne_results/|
+      \.benchmarks/|
+      bandit_report\.json|
+      coverage\.xml|
+      htmlcov/
+  )$

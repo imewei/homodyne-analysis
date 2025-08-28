@@ -31,7 +31,7 @@ classifiers = [
 ]
 keywords = [
     "xpcs",
-    "homodyne", 
+    "homodyne",
     "scattering",
     "correlation-spectroscopy",
     "soft-matter",
@@ -186,7 +186,7 @@ exclude = [
     ".mypy_cache",
     ".ruff_cache",
     ".tox",
-    ".venv", 
+    ".venv",
     "__pycache__",
     "build",
     "dist",
@@ -195,7 +195,7 @@ exclude = [
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings  
+    "W",   # pycodestyle warnings
     "F",   # pyflakes
     "I",   # isort
     "B",   # flake8-bugbear
@@ -224,7 +224,7 @@ addopts = [
 testpaths = ["homodyne/tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests", 
+    "integration: marks tests as integration tests",
     "mcmc: marks tests requiring MCMC dependencies",
     "performance: marks performance-related tests",
     "benchmark: marks tests for benchmarking (requires pytest-benchmark)",

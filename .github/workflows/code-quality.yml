@@ -45,19 +45,19 @@ jobs:
       run: |
         echo "## Code Complexity Analysis" >> complexity_report.md
         echo "" >> complexity_report.md
-        
+
         echo "### Cyclomatic Complexity (McCabe)" >> complexity_report.md
         echo '```' >> complexity_report.md
         python -m mccabe --min 10 homodyne/ >> complexity_report.md || true
         echo '```' >> complexity_report.md
         echo "" >> complexity_report.md
-        
+
         echo "### Maintainability Index" >> complexity_report.md
         echo '```' >> complexity_report.md
         radon mi homodyne/ >> complexity_report.md || true
         echo '```' >> complexity_report.md
         echo "" >> complexity_report.md
-        
+
         echo "### Raw Metrics" >> complexity_report.md
         echo '```' >> complexity_report.md
         radon raw homodyne/ >> complexity_report.md || true
@@ -77,13 +77,13 @@ jobs:
         echo "" >> style_report.md
         echo "## Style Analysis Report" >> style_report.md
         echo "" >> style_report.md
-        
+
         echo "### PEP8 Style Issues" >> style_report.md
         echo '```' >> style_report.md
         pycodestyle homodyne/ --max-line-length=88 --statistics >> style_report.md || true
         echo '```' >> style_report.md
         echo "" >> style_report.md
-        
+
         echo "### Documentation Style Issues" >> style_report.md
         echo '```' >> style_report.md
         pydocstyle homodyne/ >> style_report.md || true
@@ -95,11 +95,11 @@ jobs:
         echo "" >> code_quality_report.md
         echo "Generated for commit: ${{ github.sha }}" >> code_quality_report.md
         echo "" >> code_quality_report.md
-        
+
         if [ -f complexity_report.md ]; then
           cat complexity_report.md >> code_quality_report.md
         fi
-        
+
         if [ -f style_report.md ]; then
           cat style_report.md >> code_quality_report.md
         fi
@@ -120,16 +120,16 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          
+
           if (fs.existsSync('code_quality_report.md')) {
             const report = fs.readFileSync('code_quality_report.md', 'utf8');
-            
+
             // Truncate report if too long for comment
             const maxLength = 50000;
-            const truncatedReport = report.length > maxLength 
+            const truncatedReport = report.length > maxLength
               ? report.substring(0, maxLength) + '\n\n... (Report truncated. See full report in artifacts)'
               : report;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -159,14 +159,14 @@ jobs:
       run: |
         echo "# Dependency Analysis Report - $(date)" > dependency_report.md
         echo "" >> dependency_report.md
-        
+
         echo "## Dependency Tree" >> dependency_report.md
         echo '```' >> dependency_report.md
         pip install -e .
         pipdeptree >> dependency_report.md || true
         echo '```' >> dependency_report.md
         echo "" >> dependency_report.md
-        
+
         echo "## License Analysis" >> dependency_report.md
         echo '```' >> dependency_report.md
         pip-licenses --format=markdown >> dependency_report.md || true
@@ -178,13 +178,13 @@ jobs:
       run: |
         echo "## Security Vulnerabilities" >> dependency_report.md
         echo "" >> dependency_report.md
-        
+
         echo "### Safety Scan" >> dependency_report.md
         echo '```' >> dependency_report.md
         safety check >> dependency_report.md || true
         echo '```' >> dependency_report.md
         echo "" >> dependency_report.md
-        
+
         echo "### Pip Audit Scan" >> dependency_report.md
         echo '```' >> dependency_report.md
         pip-audit >> dependency_report.md || true
@@ -225,7 +225,7 @@ jobs:
         coverage report --show-missing > coverage_summary.txt
         coverage html -d coverage_html
         coverage xml
-        
+
         echo "# Test Coverage Report - $(date)" > coverage_report.md
         echo "" >> coverage_report.md
         echo "## Coverage Summary" >> coverage_report.md

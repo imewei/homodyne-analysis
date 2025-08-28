@@ -12,12 +12,12 @@ Main analysis engine for XPCS data processing.
 ```python
 class HomodyneAnalysisCore:
     def __init__(self, config: Dict[str, Any])
-    
+
     # Properties
     phi_angles: np.ndarray              # Scattering angles
     c2_experimental: np.ndarray         # Experimental correlation data
     config: Dict[str, Any]              # Configuration settings
-    
+
     # Methods
     def load_data(self, file_path: str) -> None
     def preprocess_data(self) -> None
@@ -45,22 +45,22 @@ Classical optimization methods (Nelder-Mead, Gurobi if available).
 ```python
 class ClassicalOptimizer:
     def __init__(self, analysis_core: HomodyneAnalysisCore)
-    
+
     # Methods
     def run_optimization(
-        self, 
+        self,
         method: str = "nelder-mead",
         initial_params: Optional[np.ndarray] = None,
         bounds: Optional[List[Tuple[float, float]]] = None
     ) -> OptimizationResult
-    
+
     def run_single_method(
         self,
         method: str,
         objective_func: Callable,
         initial_params: np.ndarray
     ) -> Tuple[bool, Union[scipy.optimize.OptimizeResult, Exception]]
-    
+
     def create_objective_function(self) -> Callable
     def get_default_bounds(self) -> List[Tuple[float, float]]
 ```
@@ -127,7 +127,7 @@ class RobustHomodyneOptimizer:
         analysis_core: HomodyneAnalysisCore,
         config: Dict[str, Any]
     )
-    
+
     # Methods
     def _solve_distributionally_robust(
         self,
@@ -137,7 +137,7 @@ class RobustHomodyneOptimizer:
         uncertainty_radius: float = 0.05,
         solver: str = "clarabel"
     ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]
-    
+
     def _solve_scenario_based_robust(self, ...) -> Tuple[Optional[np.ndarray], Dict[str, Any]]
     def _solve_ellipsoidal_robust(self, ...) -> Tuple[Optional[np.ndarray], Dict[str, Any]]
 ```
@@ -182,7 +182,7 @@ Bayesian MCMC sampling using PyMC with NUTS.
 ```python
 class MCMCSampler:
     def __init__(self, analysis_core: HomodyneAnalysisCore, config: Dict[str, Any])
-    
+
     # Methods
     def run_mcmc_analysis(
         self,
@@ -191,7 +191,7 @@ class MCMCSampler:
         mcmc_config: Optional[Dict[str, Any]] = None,
         filter_angles_for_optimization: Optional[bool] = None
     ) -> Dict[str, Any]
-    
+
     def compute_convergence_diagnostics(self, trace) -> Dict[str, Any]
     def extract_posterior_statistics(self, trace) -> Dict[str, Any]
     def generate_posterior_samples(self, n_samples: int = 1000) -> Optional[np.ndarray]
@@ -238,14 +238,14 @@ Configuration management and validation.
 ```python
 class ConfigManager:
     def __init__(self, config_path: Optional[str] = None)
-    
+
     # Methods
     def load_config(self, config_path: str) -> Dict[str, Any]
     def validate_config(self, config: Dict[str, Any]) -> bool
     def get_default_config(self) -> Dict[str, Any]
     def merge_configs(self, *configs: Dict[str, Any]) -> Dict[str, Any]
     def save_config(self, config: Dict[str, Any], path: str) -> None
-    
+
     # Analysis mode detection  
     def is_static_mode_enabled(self) -> bool
     def get_effective_parameter_count(self) -> int
@@ -262,7 +262,7 @@ config = config_manager.load_config()
 
 if config_manager.validate_config(config):
     print("Configuration is valid")
-    
+
 is_static = config_manager.is_static_mode_enabled()
 param_count = config_manager.get_effective_parameter_count()
 
@@ -341,7 +341,7 @@ def load_experimental_data(file_path: str) -> Tuple[np.ndarray, np.ndarray, np.n
 def validate_data_format(data: np.ndarray) -> bool
 def preprocess_correlation_data(c2_data: np.ndarray) -> np.ndarray
 def filter_angles_by_ranges(
-    phi_angles: np.ndarray, 
+    phi_angles: np.ndarray,
     ranges: List[Tuple[float, float]]
 ) -> np.ndarray
 ```
@@ -395,16 +395,16 @@ class CustomOptimizer(ClassicalOptimizer):
         def custom_objective(params: np.ndarray) -> float:
             # Your custom objective implementation
             D0, alpha, D_offset = params[:3]
-            
+
             # Calculate model predictions
             model_c2 = self.compute_model_correlation(params)
-            
+
             # Custom chi-squared with regularization
             chi2 = np.sum((self.analysis_core.c2_experimental - model_c2)**2)
             regularization = 0.01 * np.sum(params**2)
-            
+
             return chi2 + regularization
-            
+
         return custom_objective
 ```
 
@@ -417,23 +417,23 @@ from pathlib import Path
 
 def batch_analyze(data_files: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
     results = []
-    
+
     for data_file in data_files:
         # Create analysis core for each dataset
         core = HomodyneAnalysisCore(config)
         core.load_data(data_file)
-        
+
         # Run optimization
         optimizer = ClassicalOptimizer(core)
         result = optimizer.run_optimization()
-        
+
         results.append({
             "file": data_file,
             "parameters": result.x,
             "chi_squared": result.fun,
             "success": result.success
         })
-    
+
     return results
 ```
 
@@ -485,13 +485,13 @@ try:
     core = HomodyneAnalysisCore(config)
     optimizer = ClassicalOptimizer(core)
     result = optimizer.run_optimization()
-    
+
 except ConfigurationError as e:
     print(f"Configuration error: {e}")
-    
+
 except OptimizationError as e:
     print(f"Optimization failed: {e}")
-    
+
 except Exception as e:
     print(f"Unexpected error: {e}")
 ```

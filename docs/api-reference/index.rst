@@ -39,16 +39,16 @@ Quick Reference
 
    # 1. Configuration
    config = ConfigManager("config.json")
-   
+
    # 2. Analysis setup
    analysis = HomodyneAnalysisCore(config)
    analysis.load_experimental_data()
-   
+
    # 3. Run optimization methods
    classical_result = analysis.optimize_classical()    # Classical methods
    robust_result = analysis.optimize_robust()         # Robust methods
    mcmc_result = analysis.run_mcmc_sampling()         # MCMC sampling
-   
+
    # Or run all methods
    all_results = analysis.optimize_all()
 
@@ -58,7 +58,7 @@ Module Index
 The package includes the following key modules:
 
 * **homodyne.core** - Core functionality and configuration
-* **homodyne.analysis.core** - Main analysis engine  
+* **homodyne.analysis.core** - Main analysis engine
 * **homodyne.optimization.classical** - Classical optimization (Nelder-Mead, Gurobi)
 * **homodyne.optimization.robust** - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
 * **homodyne.optimization.mcmc** - Bayesian MCMC sampling (NUTS)
@@ -69,11 +69,11 @@ The package includes the following key modules:
 
 ..
    Temporarily disabled autosummary due to import issues
-   
+
    .. autosummary::
       :toctree: _autosummary
       :template: module.rst
-   
+
       homodyne.core
       homodyne.core.config
       homodyne.core.kernels

@@ -75,10 +75,10 @@ Key Components
 
    class ClassicalOptimizer:
        """SciPy and Gurobi-based optimization"""
-       
+
    class RobustHomodyneOptimizer:
        """CVXPY-based robust optimization"""
-       
+
    class MCMCSampler:
        """PyMC-based Bayesian sampling"""
 
@@ -98,15 +98,15 @@ The Gurobi optimization uses an iterative trust region approach for enhanced con
        """
        x_current = initial_parameters.copy()
        trust_radius = 0.1  # Initial trust region
-       
+
        for iteration in range(max_iterations):
            # Estimate gradient and diagonal Hessian
            grad = self._compute_gradient(objective_func, x_current)
            hessian_diag = self._compute_hessian_diagonal(objective_func, x_current)
-           
+
            # Solve trust region QP subproblem with Gurobi
            step = self._solve_trust_region_qp(grad, hessian_diag, trust_radius)
-           
+
            # Evaluate and accept/reject step
            x_new = x_current + step
            if objective_func(x_new) < objective_func(x_current):
@@ -128,11 +128,11 @@ Different optimization strategies are encapsulated:
        @abstractmethod
        def optimize(self, objective_func, initial_params):
            pass
-   
+
    class NelderMeadStrategy(OptimizationStrategy):
        def optimize(self, objective_func, initial_params):
            return minimize(objective_func, initial_params, method='Nelder-Mead')
-   
+
    class MCMCStrategy(OptimizationStrategy):
        def optimize(self, objective_func, initial_params):
            return run_mcmc_sampling(...)
@@ -160,7 +160,7 @@ Models are created based on configuration:
    class ProgressObserver:
        def update(self, stage: str, progress: float):
            pass
-   
+
    class ConsoleProgressObserver(ProgressObserver):
        def update(self, stage: str, progress: float):
            print(f"{stage}: {progress:.1%}")
@@ -173,11 +173,11 @@ Models are created based on configuration:
        @abstractmethod
        def execute(self):
            pass
-   
+
    class LoadDataCommand(AnalysisCommand):
        def execute(self):
            # Load experimental data
-           
+
    class OptimizeCommand(AnalysisCommand):
        def execute(self):
            # Run optimization
@@ -213,16 +213,16 @@ Error Handling Strategy
 
    class HomodyneError(Exception):
        """Base exception for all homodyne errors"""
-   
+
    class ConfigurationError(HomodyneError):
        """Configuration-related errors"""
-   
+
    class DataFormatError(HomodyneError):
        """Data format and loading errors"""
-   
+
    class OptimizationError(HomodyneError):
        """Optimization convergence errors"""
-   
+
    class MCMCConvergenceError(OptimizationError):
        """MCMC-specific convergence issues"""
 
@@ -251,7 +251,7 @@ Data and computations are loaded only when needed:
        def __init__(self, file_path):
            self.file_path = file_path
            self._data = None
-       
+
        @property
        def data(self):
            if self._data is None:
@@ -265,7 +265,7 @@ Expensive computations are cached:
 .. code-block:: python
 
    from functools import lru_cache
-   
+
    @lru_cache(maxsize=128)
    def compute_model_expensive(tau_tuple, params_tuple, q):
        # Expensive model computation
@@ -284,10 +284,10 @@ MCMC and data processing use parallelization:
            chains=4,
            cores=4
        )
-   
+
    # Data processing
    from concurrent.futures import ProcessPoolExecutor
-   
+
    with ProcessPoolExecutor(max_workers=4) as executor:
        results = executor.map(process_angle_data, angle_chunks)
 
@@ -302,15 +302,15 @@ The package supports extensions through plugins:
        @abstractmethod
        def get_model_name(self) -> str:
            pass
-       
+
        @abstractmethod
        def compute_correlation(self, tau, params, q, phi=None):
            pass
-   
+
    class CustomFlowModel(ModelPlugin):
        def get_model_name(self) -> str:
            return "custom_flow"
-       
+
        def compute_correlation(self, tau, params, q, phi=None):
            # Custom model implementation
            pass
@@ -349,7 +349,7 @@ Testing Architecture
                "values": [1000, -0.5, 100]
            }
        }
-   
+
    @pytest.fixture
    def synthetic_data():
        tau = np.logspace(-6, 1, 100)
@@ -366,11 +366,11 @@ Memory Management
    class ChunkedDataProcessor:
        def __init__(self, chunk_size: int = 1000):
            self.chunk_size = chunk_size
-       
+
        def process_large_dataset(self, data):
            for chunk in self.chunk_data(data):
                yield self.process_chunk(chunk)
-       
+
        def chunk_data(self, data):
            for i in range(0, len(data), self.chunk_size):
                yield data[i:i + self.chunk_size]
@@ -380,7 +380,7 @@ Memory Management
 .. code-block:: python
 
    import psutil
-   
+
    def monitor_memory_usage(func):
        def wrapper(*args, **kwargs):
            initial_memory = psutil.Process().memory_info().rss / 1024**2

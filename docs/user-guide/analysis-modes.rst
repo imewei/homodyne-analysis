@@ -51,7 +51,7 @@ where there is no angular dependence in the correlation function.
 **Parameters (3 total)**:
 
 - **D₀**: Effective diffusion coefficient
-- **α**: Time exponent characterizing dynamic scaling  
+- **α**: Time exponent characterizing dynamic scaling
 - **D_offset**: Baseline diffusion component
 
 **Key Features**:
@@ -92,7 +92,7 @@ Static Anisotropic Mode
 **Key Features**:
 
 - **Angle filtering enabled**: For optimization efficiency
-- **phi_angles_file loaded**: For angle information  
+- **phi_angles_file loaded**: For angle information
 - **Per-angle scaling optimization**: Accounts for angular variations
 
 **When to Use**:
@@ -142,7 +142,7 @@ The full expression combines diffusive and shear contributions:
 - **α**: Time exponent for diffusion scaling
 - **D_offset**: Baseline diffusion component
 
-**Shear Parameters**:  
+**Shear Parameters**:
 - **γ̇₀**: Shear rate amplitude
 - **β**: Shear rate time exponent
 - **γ̇_offset**: Baseline shear rate
@@ -153,7 +153,7 @@ The full expression combines diffusive and shear contributions:
 The laminar flow mode captures:
 
 - **Brownian diffusion**: Random thermal motion characterized by D₀, α, D_offset
-- **Advective shear flow**: Systematic flow characterized by γ̇₀, β, γ̇_offset, φ₀  
+- **Advective shear flow**: Systematic flow characterized by γ̇₀, β, γ̇_offset, φ₀
 - **Angular dependencies**: Full angular coverage with flow direction effects
 
 **Example Configuration**:
@@ -185,7 +185,7 @@ Progressive Analysis Strategy
 A recommended approach is to use progressive complexity:
 
 1. **Exploration**: Start with isotropic mode for initial parameter estimates
-2. **Validation**: Compare with anisotropic mode to check for angular effects  
+2. **Validation**: Compare with anisotropic mode to check for angular effects
 3. **Full Analysis**: Use laminar flow mode for complete characterization
 
 **Example Workflow**:
@@ -194,10 +194,10 @@ A recommended approach is to use progressive complexity:
 
    # Step 1: Quick isotropic analysis
    python run_homodyne.py --static-isotropic --method classical
-   
+
    # Step 2: Check for angular effects
    python run_homodyne.py --static-anisotropic --method classical
-   
+
    # Step 3: Full flow analysis (if needed)
    python run_homodyne.py --laminar-flow --method mcmc
 

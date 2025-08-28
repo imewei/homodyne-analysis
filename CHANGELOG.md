@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Cross-Platform Compatibility**: Fixed Windows path separator issues in completion tests
-- **Module Import Issues**: Resolved AttributeError in isotropic mode integration tests 
+- **Module Import Issues**: Resolved AttributeError in isotropic mode integration tests
 - **Configuration Template Handling**: Fixed MODE_DEPENDENT placeholder resolution in static mode tests
 - **Performance Test Thresholds**: Adjusted completion performance expectations for CI environments
 - **Code Quality**: Fixed import sorting and formatting issues

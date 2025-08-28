@@ -21,10 +21,10 @@ Installation Issues
 
    # Check installation
    pip list | grep homodyne
-   
+
    # Reinstall if missing
    pip install -e .
-   
+
    # For development install
    pip install -e .[dev]
 
@@ -39,7 +39,7 @@ Installation Issues
    # Create fresh environment
    conda create -n homodyne-env python=3.12
    conda activate homodyne-env
-   
+
    # Install dependencies step by step
    pip install numpy scipy matplotlib
    pip install numba
@@ -59,7 +59,7 @@ Installation Issues
 
    # Install MCMC dependencies
    pip install pymc arviz pytensor
-   
+
    # Test installation
    python -c "import pymc; print('PyMC available')"
    python -c "import arviz; print('ArviZ available')"
@@ -81,7 +81,7 @@ Configuration Issues
 
    # Validate JSON syntax
    python -m json.tool my_config.json
-   
+
    # Check for common issues:
    # - Missing commas
    # - Trailing commas
@@ -103,7 +103,7 @@ Configuration Issues
    # Use configuration validation
    from homodyne import ConfigManager
    from homodyne.utils import ConfigurationError
-   
+
    try:
        config = ConfigManager("my_config.json")
        config.validate()
@@ -124,14 +124,14 @@ Configuration Issues
 .. code-block:: python
 
    import os
-   
+
    # Check if file exists
    data_file = "data/my_data.h5"
    if not os.path.exists(data_file):
        print(f"File not found: {data_file}")
        print(f"Current directory: {os.getcwd()}")
        print(f"Available files: {os.listdir('.')}")
-   
+
    # Use absolute paths when possible
    data_file = os.path.abspath("data/my_data.h5")
 
@@ -151,7 +151,7 @@ Data Loading Issues
 .. code-block:: python
 
    import h5py
-   
+
    # Check file integrity
    try:
        with h5py.File("data.h5", 'r') as f:
@@ -173,12 +173,12 @@ Data Loading Issues
 .. code-block:: python
 
    import numpy as np
-   
+
    # Check data shape
    data = np.load("my_data.npz")
    print("Data shape:", data['correlation_data'].shape)
    print("Expected shape: (n_time_points, n_angles)")
-   
+
    # Reshape if needed
    if data.ndim == 1:
        data = data.reshape(-1, 1)  # Single angle
@@ -255,7 +255,7 @@ Optimization Issues
 
    # Plot fit to visualize issues
    from homodyne.utils import plot_fit_results
-   
+
    fig = plot_fit_results(
        experimental_data,
        fitted_data,
@@ -307,7 +307,7 @@ MCMC Issues
 
    # Check convergence diagnostics
    mcmc_result = analysis.run_mcmc_sampling()
-   
+
    for param, rhat in mcmc_result["rhat"].items():
        if rhat > 1.1:
            print(f"⚠️ {param}: R̂ = {rhat:.3f} (poor convergence)")
@@ -427,7 +427,7 @@ Performance Issues
 .. code-block:: python
 
    import psutil
-   
+
    process = psutil.Process()
    memory_mb = process.memory_info().rss / 1024**2
    print(f"Current memory usage: {memory_mb:.1f} MB")
@@ -497,7 +497,7 @@ Development Issues
 
    # Run specific test with verbose output
    pytest homodyne/tests/test_specific.py::test_function -v -s
-   
+
    # Run with debugging
    pytest homodyne/tests/test_specific.py --pdb
 

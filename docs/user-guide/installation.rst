@@ -88,7 +88,7 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[completion]
    # Then install completion for your shell:
    homodyne --install-completion bash  # or zsh, fish, powershell
-   
+
    # To remove completion later:
    homodyne --uninstall-completion bash  # or zsh, fish, powershell
 
@@ -111,7 +111,7 @@ The completion system provides multiple interaction methods:
 
    # After installation, restart shell or reload config
    source ~/.zshrc  # or ~/.bashrc for bash
-   
+
    # Test shortcuts (always work even if tab completion fails)
    hc --verbose     # homodyne --method classical --verbose
    homodyne_help    # Show all options and current config files
@@ -140,7 +140,7 @@ For development, contributing, or accessing the latest unreleased features:
 
    # Install with all development dependencies
    pip install -e .[all]
-   
+
    # Or install minimal development setup
    pip install -e .[dev]
 
@@ -153,7 +153,7 @@ Test your installation:
 
    import homodyne
    print(f"Homodyne version: {homodyne.__version__}")
-   
+
    # Test basic functionality
    from homodyne import ConfigManager
    config = ConfigManager()
@@ -169,7 +169,7 @@ If you encounter import errors, try reinstalling the package:
 .. code-block:: bash
 
    pip install --upgrade homodyne-analysis
-   
+
    # Or with all dependencies
    pip install --upgrade homodyne-analysis[all]
 
@@ -180,7 +180,7 @@ For MCMC functionality, ensure the mcmc extras are installed:
 .. code-block:: bash
 
    pip install homodyne-analysis[mcmc]
-   
+
    # Test MCMC availability
    python -c "import pymc; print('PyMC available')"
 
@@ -201,7 +201,7 @@ Gurobi optimization requires a valid license. For academic users, free licenses 
 
    # Install Gurobi
    pip install gurobipy
-   
+
    # Verify license (should not raise errors)
    python -c "import gurobipy as gp; m = gp.Model(); print('✅ Gurobi license valid')"
 

@@ -36,13 +36,13 @@ jobs:
         else
           TAG="${{ github.ref_name }}"
         fi
-        
+
         # Validate tag format
         if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Invalid tag format: $TAG. Expected format: v1.2.3"
           exit 1
         fi
-        
+
         VERSION="${TAG#v}"
         echo "tag=$TAG" >> $GITHUB_OUTPUT
         echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -57,7 +57,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.12', '3.13']
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -122,11 +122,11 @@ jobs:
       run: |
         echo "Running Bandit..."
         bandit -r homodyne/ --configfile pyproject.toml
-        
+
         echo "Running Safety check..."
         pip install -e .
         safety check
-        
+
         echo "Running pip-audit..."
         pip-audit --requirement requirements.txt
 
@@ -148,16 +148,16 @@ jobs:
       run: |
         # Get previous tag
         PREV_TAG=$(git tag --sort=-version:refname | grep -A1 ${{ needs.validate-tag.outputs.tag }} | tail -1)
-        
+
         if [ -z "$PREV_TAG" ]; then
           PREV_TAG=$(git rev-list --max-parents=0 HEAD)
         fi
-        
+
         echo "Generating changelog from $PREV_TAG to ${{ needs.validate-tag.outputs.tag }}"
-        
+
         # Generate changelog
         CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ needs.validate-tag.outputs.tag }})
-        
+
         # Save to file and output
         echo "$CHANGELOG" > changelog.md
         echo "changelog<<EOF" >> $GITHUB_OUTPUT
@@ -178,22 +178,22 @@ jobs:
         name: Release ${{ needs.validate-tag.outputs.tag }}
         body: |
           ## Changes in ${{ needs.validate-tag.outputs.tag }}
-          
+
           ${{ steps.changelog.outputs.changelog }}
-          
+
           ## Installation
-          
+
           ```bash
           pip install homodyne-analysis==${{ needs.validate-tag.outputs.version }}
           ```
-          
+
           ## Verification
-          
+
           This release has been automatically built and tested on:
           - Ubuntu (Python 3.12, 3.13)
-          - Windows (Python 3.12, 3.13)  
+          - Windows (Python 3.12, 3.13)
           - macOS (Python 3.12, 3.13)
-          
+
           Security scans have been performed with bandit, safety, and pip-audit.
         draft: false
         prerelease: ${{ contains(needs.validate-tag.outputs.version, 'rc') || contains(needs.validate-tag.outputs.version, 'beta') || contains(needs.validate-tag.outputs.version, 'alpha') }}

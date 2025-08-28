@@ -39,7 +39,7 @@ Quick Start
 .. code-block:: python
 
    from homodyne import HomodyneAnalysisCore, ConfigManager
-   
+
    config = ConfigManager("config.json")
    analysis = HomodyneAnalysisCore(config)
    results = analysis.optimize_classical()  # Classical methods
@@ -56,16 +56,16 @@ Quick Start
 
    # Main analysis command
    homodyne                                    # Default classical method
-   homodyne --method robust                    # Robust optimization only  
+   homodyne --method robust                    # Robust optimization only
    homodyne --method mcmc                      # MCMC sampling only
    homodyne --method all --verbose             # All methods with debug logging
 
    # Analysis mode control
    homodyne --static-isotropic                 # Force 3-parameter isotropic mode
-   homodyne --static-anisotropic               # Force 3-parameter anisotropic mode  
+   homodyne --static-anisotropic               # Force 3-parameter anisotropic mode
    homodyne --laminar-flow                     # Force 7-parameter flow mode
 
-   # Data visualization  
+   # Data visualization
    homodyne --plot-experimental-data           # Validate experimental data
    homodyne --plot-simulated-data              # Plot theoretical correlations
    homodyne --plot-simulated-data --contrast 1.5 --offset 0.1 --phi-angles "0,45,90,135"
@@ -77,7 +77,7 @@ Quick Start
 Analysis Modes
 --------------
 
-.. list-table:: 
+.. list-table::
    :widths: 20 15 25 25 15
    :header-rows: 1
 
@@ -91,7 +91,7 @@ Analysis Modes
      - Fastest, isotropic systems
      - ⭐⭐⭐
      - ``--static-isotropic``
-   * - **Static Anisotropic** 
+   * - **Static Anisotropic**
      - 3
      - Static with angular dependencies
      - ⭐⭐
@@ -134,7 +134,7 @@ User Guide
 
 .. toctree::
    :maxdepth: 2
-   
+
    user-guide/installation
    user-guide/quickstart
    user-guide/analysis-modes
@@ -147,7 +147,7 @@ API Reference
 
 .. toctree::
    :maxdepth: 2
-   
+
    api-reference/core
    api-reference/mcmc
    api-reference/utilities
@@ -157,7 +157,7 @@ Developer Guide
 
 .. toctree::
    :maxdepth: 2
-   
+
    developer-guide/contributing
    developer-guide/testing
    developer-guide/performance
@@ -181,7 +181,7 @@ The package implements three key equations describing correlation functions in n
 **Key Parameters:**
 
 - q⃗: scattering wavevector [Å⁻¹]
-- h: gap between stator and rotor [Å]  
+- h: gap between stator and rotor [Å]
 - φ(t): angle between shear/flow direction and q⃗ [degrees]
 - γ̇(t): time-dependent shear rate [s⁻¹]
 - D(t): time-dependent diffusion coefficient [Å²/s]

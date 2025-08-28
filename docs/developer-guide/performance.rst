@@ -4,7 +4,7 @@ Performance Optimization
 This guide covers performance optimization strategies for the homodyne package.
 
 .. note::
-   **NEW**: See the comprehensive :doc:`../performance` guide for the latest performance improvements, 
+   **NEW**: See the comprehensive :doc:`../performance` guide for the latest performance improvements,
    including recent optimizations that delivered 10-17x speedups in key calculations.
 
 .. toctree::
@@ -86,7 +86,7 @@ Enable Numba for computational functions:
 .. code-block:: python
 
    from numba import jit
-   
+
    @jit(nopython=True, cache=True)
    def compute_correlation_fast(tau, params, q):
        # JIT-compiled computation
@@ -124,13 +124,13 @@ Optimize MCMC sampling configuration with thinning support:
 
    # No thinning (default for laminar flow mode)
    "thin": 1
-   
+
    # Moderate thinning (recommended for static modes)
    "thin": 2    # Keep every 2nd sample
-   
+
    # Aggressive thinning (high autocorrelation cases)
    "thin": 5    # Keep every 5th sample
-   
+
    # Memory-constrained systems
    "thin": 10   # Keep every 10th sample
 
@@ -144,14 +144,14 @@ Estimate memory requirements before analysis:
 .. code-block:: python
 
    from homodyne.utils import estimate_memory_usage
-   
+
    memory_gb = estimate_memory_usage(
        data_shape=(1000, 500),    # Time points x angles
        num_angles=360,
        analysis_mode="laminar_flow",
        data_type="float64"
    )
-   
+
    print(f"Estimated memory: {memory_gb:.1f} GB")
 
 **2. Chunked Processing**
@@ -175,16 +175,16 @@ Monitor memory usage during analysis:
 .. code-block:: python
 
    import psutil
-   
+
    def monitor_memory():
        process = psutil.Process()
        memory_mb = process.memory_info().rss / 1024**2
        print(f"Memory usage: {memory_mb:.1f} MB")
-   
+
    # Use during analysis
    analysis.load_experimental_data()
    monitor_memory()
-   
+
    result = analysis.optimize_classical()
    monitor_memory()
 
@@ -198,11 +198,11 @@ Optimize thread usage:
 .. code-block:: python
 
    import os
-   
+
    # Set thread counts
    os.environ['OMP_NUM_THREADS'] = '4'
    os.environ['NUMBA_NUM_THREADS'] = '4'
-   
+
    config = {
        "performance_settings": {
            "num_threads": 4  # Match your CPU cores
@@ -228,14 +228,14 @@ Profile CPU usage to identify bottlenecks:
 
    import cProfile
    import pstats
-   
+
    # Profile analysis
    profiler = cProfile.Profile()
    profiler.enable()
-   
+
    # Run analysis
    result = analysis.optimize_classical()
-   
+
    profiler.disable()
    stats = pstats.Stats(profiler)
    stats.sort_stats('cumulative').print_stats(10)
@@ -258,7 +258,7 @@ Choose appropriate optimization algorithms:
            }
        }
    }
-   
+
    # For complex landscapes
    config = {
        "optimization_config": {
@@ -300,15 +300,15 @@ Optimize MCMC parameters for efficiency:
        "chains": 4,
        "target_accept": 0.95
    }
-   
-   # Static Anisotropic Mode (3 parameters)  
+
+   # Static Anisotropic Mode (3 parameters)
    {
        "draws": 8000,
        "thin": 2,        # Good convergence expected
        "chains": 4,
        "target_accept": 0.95
    }
-   
+
    # Laminar Flow Mode (7 parameters)
    {
        "draws": 10000,
@@ -436,7 +436,7 @@ Profiling Tools
 
    import time
    from functools import wraps
-   
+
    def time_it(func):
        @wraps(func)
        def wrapper(*args, **kwargs):
@@ -446,7 +446,7 @@ Profiling Tools
            print(f"{func.__name__}: {end - start:.2f}s")
            return result
        return wrapper
-   
+
    @time_it
    def optimize_classical(self):
        # Timed function
@@ -457,7 +457,7 @@ Profiling Tools
 .. code-block:: python
 
    from memory_profiler import profile
-   
+
    @profile
    def analyze_data():
        # Memory-profiled function
@@ -469,7 +469,7 @@ Profiling Tools
 
    # Install line_profiler
    pip install line_profiler
-   
+
    # Profile specific functions
    kernprof -l -v my_script.py
 

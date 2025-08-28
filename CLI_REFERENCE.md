@@ -324,7 +324,7 @@ homodyne
 
 5. **Python 3.12+ required**: Both commands check for Python 3.12 or higher.
 
-6. **Optional dependencies**: 
+6. **Optional dependencies**:
    - MCMC requires PyMC installation
    - Robust optimization requires CVXPY
    - Some features require numba for performance

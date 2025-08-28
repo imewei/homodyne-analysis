@@ -35,10 +35,10 @@ Example 1: Basic Isotropic Analysis
 
    # Run classical analysis (results saved to ./homodyne_results/)
    python run_homodyne.py --config isotropic_example.json --method classical
-   
+
    # Generate data validation plots only (saved to ./homodyne_results/exp_data/)
    python run_homodyne.py --config isotropic_example.json --plot-experimental-data
-   
+
    # Run in quiet mode for batch processing
    python run_homodyne.py --config isotropic_example.json --method classical --quiet
 
@@ -49,7 +49,7 @@ Example 1: Basic Isotropic Analysis
    ✅ Analysis completed successfully
    📊 Results summary:
    - D₀: 1423.5 ± 45.2
-   - α: -0.76 ± 0.03  
+   - α: -0.76 ± 0.03
    - D_offset: 62.1 ± 8.9
    - Chi-squared: 1.23
    - Analysis time: 12.3s
@@ -105,13 +105,13 @@ Example 2: Flow Analysis with MCMC
 
    # Step 1: Data validation (optional, saves to ./homodyne_results/exp_data/)
    python run_homodyne.py --config flow_mcmc_example.json --plot-experimental-data
-   
+
    # Step 2: Classical optimization for initial estimates (saves to ./homodyne_results/classical/)
    python run_homodyne.py --config flow_mcmc_example.json --method classical
-   
+
    # Step 3: MCMC sampling for uncertainty quantification (saves to ./homodyne_results/mcmc/)
    python run_homodyne.py --config flow_mcmc_example.json --method mcmc
-   
+
    # Step 4: Complete analysis with both methods (recommended)
    python run_homodyne.py --config flow_mcmc_example.json --method all
 
@@ -122,7 +122,7 @@ Example 2: Flow Analysis with MCMC
    Classical Results:
    - D₀: 1876.3, α: -0.94, D_offset: 112.5, γ̇₀: 12.8
    - Chi-squared: 1.45
-   
+
    MCMC Results:
    - Convergence: ✅ Excellent (R̂ < 1.01)
    - D₀: 1876 ± 89, α: -0.94 ± 0.08
@@ -141,7 +141,7 @@ Example 3: Performance-Optimized Analysis
    {
      "analysis_settings": {
        "static_mode": true,
-       "static_submode": "anisotropic", 
+       "static_submode": "anisotropic",
        "enable_angle_filtering": true,
        "angle_filter_ranges": [[-3, 3], [177, 183]]
      },
@@ -179,14 +179,14 @@ Example 4: Batch Processing Multiple Samples
    import os
    import json
    from homodyne import HomodyneAnalysisCore, ConfigManager
-   
+
    # Sample list
    samples = [
        {"name": "sample_01", "file": "data/sample_01.h5"},
        {"name": "sample_02", "file": "data/sample_02.h5"},
        {"name": "sample_03", "file": "data/sample_03.h5"}
    ]
-   
+
    # Base configuration
    base_config = {
        "analysis_settings": {
@@ -197,47 +197,47 @@ Example 4: Batch Processing Multiple Samples
            "values": [1000, -0.5, 100]
        }
    }
-   
+
    results = {}
-   
+
    for sample in samples:
        print(f"Processing {sample['name']}...")
-       
+
        # Create sample-specific config
        config = base_config.copy()
        config["file_paths"] = {"c2_data_file": sample["file"]}
        config["metadata"] = {"sample_name": sample["name"]}
-       
+
        # Save temporary config
        config_file = f"temp_{sample['name']}.json"
        with open(config_file, 'w') as f:
            json.dump(config, f, indent=2)
-       
+
        # Run analysis
        try:
            config_manager = ConfigManager(config_file)
            analysis = HomodyneAnalysisCore(config_manager)
            result = analysis.optimize_classical()
-           
+
            results[sample['name']] = {
                "parameters": result.x,
                "chi_squared": result.fun,
                "success": result.success
            }
-           
+
            print(f"✅ {sample['name']}: χ² = {result.fun:.3f}")
-           
+
        except Exception as e:
            print(f"❌ {sample['name']}: {str(e)}")
            results[sample['name']] = {"error": str(e)}
-       
+
        # Cleanup
        os.remove(config_file)
-   
+
    # Save batch results
    with open("batch_results.json", 'w') as f:
        json.dump(results, f, indent=2)
-   
+
    print(f"Batch processing complete. Results saved to batch_results.json")
 
 Example 5: Progressive Analysis Workflow
@@ -251,14 +251,14 @@ Example 5: Progressive Analysis Workflow
 
    from homodyne import HomodyneAnalysisCore, ConfigManager
    import json
-   
+
    def progressive_analysis(data_file, angles_file):
        """
        Perform progressive analysis: isotropic → anisotropic → flow
        """
-       
+
        results = {}
-       
+
        # Step 1: Isotropic analysis (fastest)
        print("Step 1: Isotropic analysis...")
        iso_config = {
@@ -266,27 +266,27 @@ Example 5: Progressive Analysis Workflow
            "file_paths": {"c2_data_file": data_file},
            "initial_parameters": {"values": [1000, -0.5, 100]}
        }
-       
+
        iso_result = run_analysis(iso_config, "isotropic")
        results["isotropic"] = iso_result
-       
-       # Step 2: Anisotropic analysis  
+
+       # Step 2: Anisotropic analysis
        print("Step 2: Anisotropic analysis...")
        aniso_config = iso_config.copy()
        aniso_config["analysis_settings"]["static_submode"] = "anisotropic"
        aniso_config["analysis_settings"]["enable_angle_filtering"] = True
        aniso_config["file_paths"]["phi_angles_file"] = angles_file
-       
+
        aniso_result = run_analysis(aniso_config, "anisotropic")
        results["anisotropic"] = aniso_result
-       
+
        # Compare isotropic vs anisotropic
        iso_chi2 = results["isotropic"]["chi_squared"]
        aniso_chi2 = results["anisotropic"]["chi_squared"]
        improvement = (iso_chi2 - aniso_chi2) / iso_chi2 * 100
-       
+
        print(f"Chi-squared improvement: {improvement:.1f}%")
-       
+
        # Step 3: Flow analysis (if significant improvement)
        if improvement > 5:  # 5% improvement threshold
            print("Step 3: Flow analysis...")
@@ -297,26 +297,26 @@ Example 5: Progressive Analysis Workflow
                "values": list(aniso_result["parameters"]) + [10, 0.5, 1, 0],
                "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0"]
            }
-           
+
            flow_result = run_analysis(flow_config, "flow")
            results["flow"] = flow_result
        else:
            print("Skipping flow analysis - anisotropic improvement < 5%")
-       
+
        return results
-   
+
    def run_analysis(config_dict, mode_name):
        """Run analysis with given configuration"""
        config_file = f"temp_{mode_name}.json"
-       
+
        with open(config_file, 'w') as f:
            json.dump(config_dict, f, indent=2)
-       
+
        try:
            config = ConfigManager(config_file)
            analysis = HomodyneAnalysisCore(config)
            result = analysis.optimize_classical()
-           
+
            return {
                "parameters": result.x.tolist(),
                "chi_squared": float(result.fun),
@@ -326,14 +326,14 @@ Example 5: Progressive Analysis Workflow
            import os
            if os.path.exists(config_file):
                os.remove(config_file)
-   
+
    # Run progressive analysis
    if __name__ == "__main__":
        results = progressive_analysis(
-           "data/my_sample.h5", 
+           "data/my_sample.h5",
            "data/my_angles.txt"
        )
-       
+
        with open("progressive_results.json", 'w') as f:
            json.dump(results, f, indent=2)
 
@@ -347,12 +347,12 @@ Common Patterns
    try:
        analysis = HomodyneAnalysisCore(config)
        result = analysis.optimize_classical()
-       
+
        if result.success:
            print(f"✅ Optimization successful: χ² = {result.fun:.3f}")
        else:
            print(f"⚠️ Optimization failed: {result.message}")
-           
+
    except FileNotFoundError as e:
        print(f"❌ File not found: {e}")
    except ValueError as e:
@@ -364,16 +364,16 @@ Common Patterns
 
    def validate_parameters(params, mode="isotropic"):
        """Validate parameter values are physically reasonable"""
-       
+
        if mode == "isotropic":
            D0, alpha, D_offset = params[:3]
-           
+
            if not (100 <= D0 <= 10000):
                print(f"⚠️ D0 = {D0} may be outside typical range [100, 10000]")
-           
+
            if not (-2.0 <= alpha <= 0.0):
                print(f"⚠️ α = {alpha} may be outside typical range [-2.0, 0.0]")
-               
+
            if abs(D_offset) > 100:
                print(f"⚠️ D_offset = {D_offset} is outside typical range [-100, 100]")
 
@@ -383,18 +383,18 @@ Common Patterns
 
    def compare_results(result1, result2, labels=["Method 1", "Method 2"]):
        """Compare two analysis results"""
-       
+
        chi2_1, chi2_2 = result1.fun, result2.fun
        improvement = (chi2_1 - chi2_2) / chi2_1 * 100
-       
+
        print(f"{labels[0]} χ²: {chi2_1:.4f}")
        print(f"{labels[1]} χ²: {chi2_2:.4f}")
        print(f"Improvement: {improvement:+.1f}%")
-       
+
        if improvement > 5:
            print("✅ Significant improvement")
        elif improvement > 1:
-           print("⚠️ Modest improvement") 
+           print("⚠️ Modest improvement")
        else:
            print("❌ No significant improvement")
 
@@ -448,7 +448,7 @@ Starting from version 6.0, the analysis results are organized into method-specif
 
 - **Main results file**: Now saved in output directory instead of current directory
 - **Classical method**: Results organized in dedicated ``./homodyne_results/classical/`` subdirectory
-- **MCMC method**: Results organized in dedicated ``./homodyne_results/mcmc/`` subdirectory  
+- **MCMC method**: Results organized in dedicated ``./homodyne_results/mcmc/`` subdirectory
 - **Experimental data plots**: Saved to ``./homodyne_results/exp_data/`` when using ``--plot-experimental-data``
 - **Data files**: Both classical and MCMC methods save experimental, fitted, and residuals data as ``.npz`` files
 - **Method-specific outputs**:
@@ -520,7 +520,7 @@ Key Features
 ~~~~~~~~~~~~
 
 1. **Adaptive Content**: Appropriate placeholders shown when data unavailable
-2. **Cross-Method Comparison**: Easy comparison of different optimization approaches  
+2. **Cross-Method Comparison**: Easy comparison of different optimization approaches
 3. **Quality Assessment**: Convergence and fitting quality metrics at a glance
 4. **Statistical Analysis**: Residuals analysis and uncertainty quantification
 5. **Professional Formatting**: Consistent styling with grid lines, proper labels, and legends
@@ -559,20 +559,20 @@ Complete data structure for each method:
 .. code-block:: python
 
    import numpy as np
-   
+
    # Load method-specific data
    data = np.load("fitted_data.npz")
-   
+
    # Primary correlation function data
    c2_fitted = data["c2_fitted"]           # Method-specific fitted data (n_angles, n_t2, n_t1)
    c2_experimental = data["c2_experimental"] # Original experimental data (n_angles, n_t2, n_t1)
    residuals = data["residuals"]           # Method-specific residuals (n_angles, n_t2, n_t1)
-   
+
    # Parameter and fit results
    parameters = data["parameters"]         # Fitted parameter values (n_params,)
    uncertainties = data["uncertainties"]   # Parameter uncertainties (n_params,)
    chi_squared = data["chi_squared"]       # Chi-squared goodness-of-fit (scalar)
-   
+
    # Coordinate arrays
    phi_angles = data["phi_angles"]         # Angular coordinates (n_angles,) [degrees]
    t1 = data["t1"]                        # First correlation time array (n_t1,) [seconds]
@@ -596,7 +596,7 @@ Method-Specific Characteristics
 
 **Classical Methods (Nelder-Mead, Gurobi)**
   - Point estimates only with deterministic convergence metrics
-  - Faster execution with iterations and function evaluations tracking  
+  - Faster execution with iterations and function evaluations tracking
   - Termination reasons and solver-specific status information
   - No built-in uncertainty quantification from optimization method
 
@@ -633,7 +633,7 @@ All parameters use **Normal distributions** in the MCMC implementation:
 .. code-block:: python
 
    import pymc as pm
-   
+
    # Standard prior distributions used in homodyne MCMC
    with pm.Model() as model:
        # All parameters use Normal distributions
@@ -674,7 +674,7 @@ Example 6: Logging Control for Different Scenarios
 
    # Normal interactive analysis with console and file logging
    homodyne --config my_config.json --method classical
-   
+
    # With detailed debugging information
    homodyne --config my_config.json --method all --verbose
 
@@ -696,21 +696,21 @@ Example 6: Logging Control for Different Scenarios
 
    #!/bin/bash
    # Batch processing script with quiet logging
-   
+
    SAMPLES_DIR="./data/samples"
    RESULTS_DIR="./results"
-   
+
    for config_file in configs/*.json; do
        sample_name=$(basename "$config_file" .json)
-       
+
        echo "Processing ${sample_name}..."
-       
+
        # Run analysis in quiet mode
        homodyne --config "$config_file" \
                --output-dir "${RESULTS_DIR}/${sample_name}" \
                --method classical \
                --quiet
-       
+
        # Check if analysis succeeded (logs are in file)
        if [ -f "${RESULTS_DIR}/${sample_name}/run.log" ]; then
            echo "✅ ${sample_name}: Check ${RESULTS_DIR}/${sample_name}/run.log"
@@ -718,7 +718,7 @@ Example 6: Logging Control for Different Scenarios
            echo "❌ ${sample_name}: Analysis failed"
        fi
    done
-   
+
    echo "Batch processing complete. Check individual run.log files for details."
 
 **Debugging Mode** (verbose logging):
@@ -727,7 +727,7 @@ Example 6: Logging Control for Different Scenarios
 
    # Troubleshoot analysis with detailed logging
    homodyne --config problem_sample.json --method all --verbose
-   
+
    # Debug MCMC convergence issues
    homodyne --config mcmc_issue.json --method mcmc --verbose
 
@@ -745,7 +745,7 @@ Example 6: Logging Control for Different Scenarios
    ./output_directory/
    ├── run.log                    # Complete analysis log
    ├── classical/                 # Classical method results
-   ├── mcmc/                      # MCMC method results  
+   ├── mcmc/                      # MCMC method results
    └── homodyne_analysis_results.json  # Main results
 
 **Error Handling Note**: In quiet mode, errors are only logged to files, so check ``run.log`` files for troubleshooting.
@@ -766,40 +766,40 @@ Example 7: Performance Monitoring and Optimization
    )
    import time
    import numpy as np
-   
+
    # Performance-monitored analysis function
    def analyze_sample_with_monitoring(config_file, output_dir):
        """Analyze sample with comprehensive performance monitoring."""
        from homodyne import HomodyneAnalysisCore, ConfigManager
-       
+
        with performance_monitor.time_function("full_analysis"):
            config = ConfigManager(config_file)
            analyzer = HomodyneAnalysisCore(config)
-           
+
            # Perform analysis with monitoring
            results = analyzer.optimize_classical()
-           
+
        # Log performance summary
        performance_monitor.log_performance_summary()
        return results
-   
+
    # Setup and warmup
    def setup_optimized_environment():
        """Setup optimized numerical environment."""
        # Initialize performance monitoring
        print("Setting up performance monitoring...")
        performance_monitor.reset_timings()
-       
+
        print("✓ Performance monitoring initialized")
        print("✓ Numba available: True (JIT compilation enabled)")
        print("✓ Multi-threading enabled")
-       
+
        return True
-   
+
    # Performance benchmarking example
    def benchmark_analysis_performance():
        """Benchmark analysis performance with different strategies."""
-       
+
        def sample_computation():
            """Sample computation for benchmarking."""
            # Simulate typical analysis computation
@@ -807,22 +807,22 @@ Example 7: Performance Monitoring and Optimization
            result = np.sum(data @ data.T)
            time.sleep(0.001)  # Simulate I/O overhead
            return result
-       
+
        print("=== Performance Benchmarking ===")
-       
+
        # Standard stable benchmarking
        print("Running stable benchmark...")
        stable_results = stable_benchmark(
-           sample_computation, 
-           warmup_runs=5, 
+           sample_computation,
+           warmup_runs=5,
            measurement_runs=15,
            outlier_threshold=2.0
        )
-       
+
        cv_stable = stable_results['std'] / stable_results['mean']
        print(f"Stable benchmark: {stable_results['mean']:.4f}s ± {cv_stable:.3f} CV")
        print(f"Outliers removed: {stable_results['outlier_count']}/{len(stable_results['times'])}")
-       
+
        # Adaptive benchmarking
        print("Running adaptive benchmark...")
        adaptive_results = adaptive_stable_benchmark(
@@ -831,23 +831,23 @@ Example 7: Performance Monitoring and Optimization
            max_runs=30,
            min_runs=10
        )
-       
+
        print(f"Adaptive benchmark: {adaptive_results['cv']:.3f} CV in {adaptive_results['total_runs']} runs")
        print(f"Target achieved: {adaptive_results['achieved_target']}")
-       
+
        return stable_results, adaptive_results
-   
+
    # Memory and cache monitoring
    def monitor_cache_performance():
        """Monitor smart cache performance."""
        cache = get_performance_cache()
-       
+
        # Simulate some cached operations
        for i in range(10):
            key = f"test_data_{i}"
            data = np.random.rand(100, 100)
            cache.put(key, data)
-       
+
        # Get cache statistics
        stats = cache.stats()
        print("=== Cache Performance ===")
@@ -855,40 +855,40 @@ Example 7: Performance Monitoring and Optimization
        print(f"Memory usage: {stats['memory_mb']:.1f} MB")
        print(f"Utilization: {stats['utilization']:.1%}")
        print(f"Memory utilization: {stats['memory_utilization']:.1%}")
-       
+
        return stats
-   
+
    # Complete performance analysis workflow
    def run_performance_analysis_example():
        """Complete example of performance-optimized analysis."""
        print("=== Homodyne Performance Analysis Example ===")
-       
+
        # Step 1: Environment setup and warmup
        warmup_results, kernel_config = setup_optimized_environment()
-       
+
        # Step 2: Performance benchmarking
        stable_results, adaptive_results = benchmark_analysis_performance()
-       
+
        # Step 3: Cache monitoring
        cache_stats = monitor_cache_performance()
-       
+
        # Step 4: Run sample analysis with monitoring
        # Note: This would need actual data files
        print("=== Sample Analysis (simulated) ===")
-       
+
        def simulated_analysis():
            # Simulate analysis computation with performance monitoring
            with performance_monitor.time_function("simulated_analysis"):
                time.sleep(0.1)
            return {"chi_squared": 1.23, "parameters": [1.0, 0.1, 0.05]}
-       
+
        result = simulated_analysis()
        print(f"Analysis result: {result}")
-       
+
        # Step 5: Get comprehensive performance summary
        summary = get_performance_summary()
        print("=== Performance Summary ===")
-       
+
        if summary:
            for func_name, stats in summary.items():
                if isinstance(stats, dict) and "calls" in stats:
@@ -896,29 +896,29 @@ Example 7: Performance Monitoring and Optimization
                    print(f"  Calls: {stats['calls']}")
                    print(f"  Avg time: {stats['avg_time']:.4f}s")
                    print(f"  Total time: {stats['total_time']:.4f}s")
-       
-       # Performance achievements and recommendations  
+
+       # Performance achievements and recommendations
        print("=== Performance Stability Achievements ===")
        print("✓ Chi-squared calculations: CV < 0.31 across all array sizes")
        print("✓ 97% reduction in performance variability achieved")
        print("✓ Conservative threading (max 4 cores) for optimal stability")
        print("✓ Balanced JIT optimization for numerical precision")
-       
+
        print("=== Performance Recommendations ===")
-       
+
        if warmup_results.get('total_warmup_time', 0) > 2.0:
            print("⚠ Consider caching warmup results for faster startup")
-       
+
        if cv_stable > 0.31:  # Updated threshold reflecting rebalanced performance
            print("⚠ Performance variability above rebalanced threshold - check system load")
        elif cv_stable < 0.10:
            print("✓ Excellent stability achieved (CV < 0.10)")
-       
+
        if cache_stats['memory_utilization'] > 0.80:
            print("⚠ Cache memory usage high - consider increasing max_memory_mb")
-       
+
        print("✓ Performance analysis complete")
-       
+
        return {
            'warmup': warmup_results,
            'kernel_config': kernel_config,
@@ -926,7 +926,7 @@ Example 7: Performance Monitoring and Optimization
            'cache_stats': cache_stats,
            'performance_summary': summary
        }
-   
+
    # Run the complete example
    if __name__ == "__main__":
        results = run_performance_analysis_example()
@@ -968,7 +968,7 @@ Example 7: Performance Monitoring and Optimization
 **Key Performance Features Demonstrated**:
 
 - **JIT Warmup**: Pre-compile kernels for stable performance
-- **Adaptive Benchmarking**: Automatically find optimal measurement counts  
+- **Adaptive Benchmarking**: Automatically find optimal measurement counts
 - **Memory Monitoring**: Track and optimize memory usage
 - **Smart Caching**: Memory-aware LRU caching with cleanup
 - **Performance Profiling**: Comprehensive monitoring and statistics

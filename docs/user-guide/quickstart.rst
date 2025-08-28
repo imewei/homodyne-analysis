@@ -22,10 +22,10 @@ Installation
    pip install homodyne-analysis[completion]
    homodyne --install-completion zsh  # or bash, fish, powershell
    source ~/.zshrc                    # Restart shell or reload config
-   
+
    # To remove completion later:
    # homodyne --uninstall-completion zsh
-   
+
    # Test shortcuts (work immediately)
    homodyne_help                      # Show all available options
 
@@ -35,7 +35,7 @@ Installation
 
    # Create a configuration for isotropic analysis (fastest)
    homodyne-config --mode static_isotropic --sample my_sample
-   
+
    # Or using shortcuts after shell enhancement:
    # Tab completion: homodyne-config --mode <TAB>  (shows modes)
    # Fast reference: homodyne_help                (shows all options)
@@ -54,15 +54,15 @@ Ensure your experimental data is in the correct format:
    # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
    homodyne --config my_sample_config.json --plot-experimental-data
    # Or with shortcuts: hplot (if config file is homodyne_config.json)
-   
+
    # Basic analysis (fastest, saves results to ./homodyne_results/)
    homodyne --config my_sample_config.json --method classical
    # Or with shortcuts: hc --config my_sample_config.json
-   
+
    # Run all methods with verbose output
-   homodyne --config my_sample_config.json --method all --verbose  
+   homodyne --config my_sample_config.json --method all --verbose
    # Or with shortcuts: ha --config my_sample_config.json --verbose
-   
+
    # Quick analysis using different methods:
    # hc        # homodyne --method classical
    # hm        # homodyne --method mcmc
@@ -83,7 +83,7 @@ Results are saved to the ``homodyne_results/`` directory with organized subdirec
 
 - **Classical** (``./classical/``): Method-specific directories with fast point estimates, consolidated ``fitted_data.npz`` files
 - **Robust** (``./robust/``): Noise-resistant optimization with method-specific directories (wasserstein, scenario, ellipsoidal)
-- **MCMC** (``./mcmc/``): Full posterior distributions, convergence diagnostics, trace plots, corner plots, 3D surface plots  
+- **MCMC** (``./mcmc/``): Full posterior distributions, convergence diagnostics, trace plots, corner plots, 3D surface plots
 - **All methods**: Save experimental, fitted, and residuals data in consolidated ``fitted_data.npz`` files per method
 
 Python API Example
@@ -92,20 +92,20 @@ Python API Example
 .. code-block:: python
 
    from homodyne import HomodyneAnalysisCore, ConfigManager
-   
+
    # Load configuration
    config = ConfigManager("my_experiment.json")
-   
+
    # Initialize analysis
    analysis = HomodyneAnalysisCore(config)
-   
+
    # Load experimental data
    analysis.load_experimental_data()
-   
+
    # Run classical optimization
    classical_results = analysis.optimize_classical()
    print(f"Classical chi-squared: {classical_results.fun:.3f}")
-   
+
    # Optional: Run MCMC for uncertainty quantification
    if config.is_mcmc_enabled():
        mcmc_results = analysis.run_mcmc_sampling()
@@ -119,7 +119,7 @@ Choose the appropriate mode for your system:
 **Static Isotropic (Fastest)**
 
 - Use when: System is isotropic, no angular dependencies
-- Parameters: 3 (D₀, α, D_offset)  
+- Parameters: 3 (D₀, α, D_offset)
 - Speed: ⭐⭐⭐
 - Command: ``--static-isotropic``
 
@@ -127,7 +127,7 @@ Choose the appropriate mode for your system:
 
 - Use when: System has angular dependencies but no flow
 - Parameters: 3 (D₀, α, D_offset)
-- Speed: ⭐⭐  
+- Speed: ⭐⭐
 - Command: ``--static-anisotropic``
 
 **Laminar Flow (Most Complete)**
@@ -205,13 +205,13 @@ The homodyne package provides flexible logging control for different use cases:
 
    # Normal mode with INFO-level logging
    homodyne --config my_config.json --method classical
-   
+
    # Verbose mode with detailed debugging
    homodyne --config my_config.json --method all --verbose
-   
+
    # Quiet mode for batch processing (logs only to file)
    homodyne --config my_config.json --method classical --quiet
-   
+
    # Error: Cannot combine conflicting options
    homodyne --verbose --quiet  # ERROR
 
@@ -229,7 +229,7 @@ Automatic Numba kernel pre-compilation eliminates JIT overhead:
 .. code-block:: python
 
    from homodyne.core.kernels import warmup_numba_kernels
-   
+
    # Warmup all computational kernels
    warmup_results = warmup_numba_kernels()
    print(f"Kernels warmed up in {warmup_results['total_warmup_time']:.3f}s")
@@ -241,13 +241,13 @@ Built-in performance monitoring with automatic optimization:
 .. code-block:: python
 
    from homodyne.core.config import performance_monitor
-   
+
    # Monitor function performance
    def my_analysis():
        with performance_monitor.time_function("my_analysis"):
            # Your analysis code here
            pass
-   
+
    # Access performance statistics
    stats = performance_monitor.get_timing_summary()
    print(f"Performance stats: {stats}")
@@ -259,12 +259,12 @@ Stable and adaptive benchmarking for research:
 .. code-block:: python
 
    from homodyne.core.profiler import stable_benchmark, adaptive_stable_benchmark
-   
+
    # Standard benchmarking with outlier filtering
    results = stable_benchmark(my_function, warmup_runs=5, measurement_runs=15)
    cv = results['std'] / results['mean']
    print(f"Performance: {results['mean']:.4f}s ± {cv:.3f} CV")
-   
+
    # Adaptive benchmarking (finds optimal measurement count)
    results = adaptive_stable_benchmark(my_function, target_cv=0.10)
    print(f"Achieved {results['cv']:.3f} CV in {results['total_runs']} runs")

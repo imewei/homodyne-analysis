@@ -7,7 +7,7 @@ _homodyne_complete() {
     local cur="${BUFFER##* }"
     local line="$BUFFER"
     local words=("${(@)${(z)line}}")
-    
+
     # Get the previous word - fix the parsing logic
     local prev=""
     if (( ${#words} > 1 )); then
@@ -19,10 +19,10 @@ _homodyne_complete() {
             prev="${words[-2]}"
         fi
     fi
-    
+
     # Generate completions based on context
     local -a completions
-    
+
     case "$prev" in
         --method)
             completions=(classical mcmc robust all)
@@ -60,12 +60,12 @@ _homodyne_complete() {
             fi
             ;;
     esac
-    
+
     # Filter completions based on current input
     if [[ -n "$cur" ]]; then
         completions=(${(M)completions:#${cur}*})
     fi
-    
+
     # Set up completion
     if (( ${#completions} > 0 )); then
         compadd -a completions
@@ -77,7 +77,7 @@ _homodyne_config_complete() {
     local cur="${BUFFER##* }"
     local line="$BUFFER"
     local words=("${(@)${(z)line}}")
-    
+
     # Get the previous word - fix the parsing logic
     local prev=""
     if (( ${#words} > 1 )); then
@@ -89,10 +89,10 @@ _homodyne_config_complete() {
             prev="${words[-2]}"
         fi
     fi
-    
+
     # Generate completions based on context
     local -a completions
-    
+
     case "$prev" in
         --mode|-m)
             completions=(static_isotropic static_anisotropic laminar_flow)
@@ -129,12 +129,12 @@ _homodyne_config_complete() {
             fi
             ;;
     esac
-    
+
     # Filter completions based on current input
     if [[ -n "$cur" ]]; then
         completions=(${(M)completions:#${cur}*})
     fi
-    
+
     # Set up completion
     if (( ${#completions} > 0 )); then
         compadd -a completions
@@ -162,7 +162,7 @@ alias hplot='homodyne --plot-experimental-data'
 
 # homodyne-config shortcuts
 alias hc-iso='homodyne-config --mode static_isotropic'
-alias hc-aniso='homodyne-config --mode static_anisotropic'  
+alias hc-aniso='homodyne-config --mode static_anisotropic'
 alias hc-flow='homodyne-config --mode laminar_flow'
 alias hc-config='homodyne-config'
 
@@ -172,7 +172,7 @@ homodyne_help() {
     echo ""
     echo "Method shortcuts:"
     echo "  hc  = homodyne --method classical"
-    echo "  hm  = homodyne --method mcmc" 
+    echo "  hm  = homodyne --method mcmc"
     echo "  hr  = homodyne --method robust"
     echo "  ha  = homodyne --method all"
     echo ""
@@ -213,7 +213,7 @@ if ! compdef _homodyne_config_complete homodyne-config 2>/dev/null; then
         echo "Note: Automatic completion for homodyne-config may not work."
         echo "Use Ctrl-X followed by 'c' for manual completion, or use these shortcuts:"
         echo "  homodyne-config --mode static_isotropic"
-        echo "  homodyne-config --mode static_anisotropic" 
+        echo "  homodyne-config --mode static_anisotropic"
         echo "  homodyne-config --mode laminar_flow"
     fi
 fi

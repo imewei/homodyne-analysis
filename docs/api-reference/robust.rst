@@ -9,7 +9,7 @@ Key Features
 ------------
 
 - **Wasserstein DRO**: Distributionally robust optimization using Wasserstein uncertainty sets
-- **Scenario-based Robust**: Multi-scenario optimization using bootstrap resampling  
+- **Scenario-based Robust**: Multi-scenario optimization using bootstrap resampling
 - **Ellipsoidal Uncertainty**: Robust least squares with bounded uncertainty
 - **CVXPY Integration**: High-performance convex optimization with multiple solvers
 - **Automatic Scaling**: Proper ``fitted = contrast × theory + offset`` relationship
@@ -80,9 +80,9 @@ Usage Examples
 .. code-block:: python
 
    from homodyne.optimization.robust import RobustHomodyneOptimizer
-   
+
    optimizer = RobustHomodyneOptimizer(analysis_core, config)
-   
+
    # Run all robust methods
    results = optimizer.optimize_robust(
        theta_init=np.array([1000, -0.5, 100]),
@@ -99,13 +99,13 @@ Usage Examples
        theta_init, phi_angles, c2_experimental,
        uncertainty_radius=0.02
    )
-   
+
    # Scenario-based robust optimization
    result = optimizer._solve_scenario_robust(
        theta_init, phi_angles, c2_experimental,
        n_scenarios=30
    )
-   
+
    # Ellipsoidal uncertainty sets
    result = optimizer._solve_ellipsoidal_robust(
        theta_init, phi_angles, c2_experimental,

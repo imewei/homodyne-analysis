@@ -14,7 +14,7 @@ The package includes integrated security scanning tools:
 
    # Security linting with Bandit
    bandit -r homodyne/ --configfile pyproject.toml
-   
+
    # Dependency vulnerability scanning with pip-audit
    pip-audit --requirement requirements.txt
 
@@ -85,10 +85,10 @@ Testing Security
    # Run all security checks
    bandit -r homodyne/ --configfile pyproject.toml
    pip-audit --requirement requirements.txt
-   
+
    # Check for hardcoded secrets
    bandit -r homodyne/ -f json | grep -i password,secret,token,key
-   
+
    # Verify no high-severity issues
    bandit -r homodyne/ --severity-level high
 
@@ -131,7 +131,7 @@ The homodyne package operates with the following security assumptions:
 **Security Controls**
 
 1. **Static Analysis**: Bandit security linting with scientific code patterns
-2. **Dependency Scanning**: pip-audit for known vulnerabilities  
+2. **Dependency Scanning**: pip-audit for known vulnerabilities
 3. **Input Validation**: Schema-based configuration validation
 4. **Error Handling**: Secure error handling without information disclosure
 5. **Resource Management**: Proper cleanup and resource limits
@@ -182,5 +182,5 @@ When contributing:
    pip-audit
    # Verify no secrets in code
    git diff --staged | grep -iE '(password|secret|token|key|api)'
-   
+
 For questions about security practices or to report concerns, contact the development team at wchen@anl.gov.

@@ -300,10 +300,10 @@ jobs:
         echo "Security status: ${{ needs.security.result }}"
         echo "Docs status: ${{ needs.docs.result }}"
         echo "Build status: ${{ needs.build.result }}"
-        
-        if [[ "${{ needs.test.result }}" == "success" && 
-              "${{ needs.quality.result }}" == "success" && 
-              "${{ needs.docs.result }}" == "success" && 
+
+        if [[ "${{ needs.test.result }}" == "success" &&
+              "${{ needs.quality.result }}" == "success" &&
+              "${{ needs.docs.result }}" == "success" &&
               "${{ needs.build.result }}" == "success" ]]; then
           echo "✅ All CI checks passed!"
         else
@@ -321,9 +321,9 @@ jobs:
         echo "| Documentation | ${{ needs.docs.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Package Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        if [[ "${{ needs.test.result }}" == "success" && 
-              "${{ needs.quality.result }}" == "success" && 
-              "${{ needs.docs.result }}" == "success" && 
+        if [[ "${{ needs.test.result }}" == "success" &&
+              "${{ needs.quality.result }}" == "success" &&
+              "${{ needs.docs.result }}" == "success" &&
               "${{ needs.build.result }}" == "success" ]]; then
           echo "Overall Status: **success**" >> $GITHUB_STEP_SUMMARY
         else

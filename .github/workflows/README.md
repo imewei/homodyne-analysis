@@ -6,7 +6,7 @@ This directory contains GitHub Actions workflows for the homodyne repository.
 
 ### [`deploy-docs.yml`](./deploy-docs.yml) - Documentation Build Testing
 - **Purpose**: Test documentation builds to ensure ReadTheDocs deployment will succeed
-- **Trigger**: 
+- **Trigger**:
   - Push to `main` branch
   - Pull requests to `main`
   - Manual workflow dispatch

@@ -332,7 +332,7 @@ The homodyne analysis package supports three distinct analysis modes, each optim
 
 ### Static Isotropic Mode (3 parameters)
 - **Physical Context**: Analysis of systems at equilibrium with isotropic scattering where results don't depend on scattering angle
-- **Parameters**: 
+- **Parameters**:
   - $D_0$: Effective diffusion coefficient
   - $\alpha$: Time exponent characterizing dynamic scaling
   - $D_{\text{offset}}$: Baseline diffusion component
@@ -353,9 +353,9 @@ The homodyne analysis package supports three distinct analysis modes, each optim
 - **When to Use**: Static samples with measurable angular variations, moderate computational resources
 - **Model**: Same as isotropic mode but with angle filtering to focus optimization on specific angular ranges
 
-### Laminar Flow Mode (7 parameters) 
+### Laminar Flow Mode (7 parameters)
 - **Physical Context**: Analysis of systems under controlled shear flow conditions with full physics model
-- **Parameters**: 
+- **Parameters**:
   - $D_0$, $\alpha$, $D_{\text{offset}}$: Same as static modes
   - $\dot{\gamma}_0$: Characteristic shear rate
   - $\beta$: Shear rate exponent for flow scaling
@@ -882,7 +882,7 @@ c2_at_angle = c2_fitted[angle_idx, :, :]  # Shape: (n_t2, n_t1)
 ```json
 {
   "method_name": "Gurobi",
-  "method_type": "Classical Optimization", 
+  "method_type": "Classical Optimization",
   "convergence_info": {
     "success": true,
     "iterations": 50,
@@ -1140,7 +1140,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Shell completion support** for bash, zsh, fish, and PowerShell
 - **Interactive help system** with `homodyne_help` command
 
-#### **Developer Resources** 
+#### **Developer Resources**
 - **[Architecture Overview](docs/developer-guide/architecture.rst)**: Package structure and design
 - **[Contributing Guide](docs/developer-guide/contributing.rst)**: Development workflow and standards
 - **[Performance Guide](docs/developer-guide/performance.rst)**: Optimization techniques and benchmarking

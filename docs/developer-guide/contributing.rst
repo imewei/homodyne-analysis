@@ -13,7 +13,7 @@ Getting Started
    # Fork the repository on GitHub, then:
    git clone https://github.com/YOUR_USERNAME/homodyne.git
    cd homodyne
-   
+
    # Add upstream remote
    git remote add upstream https://github.com/imewei/homodyne.git
 
@@ -24,10 +24,10 @@ Getting Started
    # Create development environment
    conda create -n homodyne-dev python=3.12
    conda activate homodyne-dev
-   
+
    # Install in development mode
    pip install -e .[dev]
-   
+
    # Install pre-commit hooks
    pre-commit install
 
@@ -37,7 +37,7 @@ Getting Started
 
    # Run tests to verify everything works
    pytest homodyne/tests/ -v
-   
+
    # Check code quality and security tools
    black --check homodyne/
    isort --check-only homodyne/
@@ -57,7 +57,7 @@ Development Workflow
    git fetch upstream
    git checkout main
    git merge upstream/main
-   
+
    # Create feature branch
    git checkout -b feature/your-feature-name
 
@@ -74,10 +74,10 @@ Development Workflow
 
    # Run relevant tests
    pytest homodyne/tests/test_your_changes.py -v
-   
+
    # Run full test suite
    pytest homodyne/tests/
-   
+
    # Check coverage
    pytest homodyne/tests/ --cov=homodyne --cov-report=html
 
@@ -87,13 +87,13 @@ Development Workflow
 
    # Format code
    black homodyne/
-   
+
    # Check linting
    flake8 homodyne/
-   
+
    # Type checking
    mypy homodyne/
-   
+
    # Check documentation
    cd docs/
    make html
@@ -104,14 +104,14 @@ Development Workflow
 
    # Stage changes
    git add .
-   
+
    # Commit with descriptive message
    git commit -m "Add feature: brief description
-   
+
    - Detailed description of changes
    - Why the change was made
    - Any breaking changes or migration notes"
-   
+
    # Push to your fork
    git push origin feature/your-feature-name
 
@@ -134,12 +134,12 @@ Follow PEP 8 with these specifics:
    # Line length: 88 characters (Black default)
    # Use Black for formatting
    # Use meaningful variable names
-   
+
    # Good
    def compute_correlation_function(tau_values, model_parameters, scattering_vector):
        """Compute correlation function with given parameters."""
        pass
-   
+
    # Avoid
    def compute_g1(t, p, q):
        pass
@@ -152,7 +152,7 @@ Use type hints for all public functions:
 
    from typing import List, Optional, Tuple, Union
    import numpy as np
-   
+
    def optimize_parameters(
        initial_params: List[float],
        bounds: Optional[List[Tuple[float, float]]] = None,
@@ -174,7 +174,7 @@ Use NumPy-style docstrings:
    ) -> float:
        """
        Compute chi-squared goodness of fit.
-       
+
        Parameters
        ----------
        experimental_data : np.ndarray
@@ -183,12 +183,12 @@ Use NumPy-style docstrings:
            Theoretical model predictions.
        uncertainties : np.ndarray, optional
            Experimental uncertainties. If None, assumes uniform weighting.
-       
+
        Returns
        -------
        float
            Chi-squared value.
-       
+
        Examples
        --------
        >>> exp_data = np.array([1.0, 0.8, 0.6])
@@ -206,21 +206,21 @@ Use specific exception types:
 .. code-block:: python
 
    from homodyne.utils import ConfigurationError, DataFormatError
-   
+
    def load_configuration(config_path: str) -> dict:
        """Load and validate configuration file."""
        if not os.path.exists(config_path):
            raise FileNotFoundError(f"Configuration file not found: {config_path}")
-       
+
        try:
            with open(config_path) as f:
                config = json.load(f)
        except json.JSONDecodeError as e:
            raise ConfigurationError(f"Invalid JSON in config file: {e}")
-       
+
        if "analysis_settings" not in config:
            raise ConfigurationError("Missing required 'analysis_settings' section")
-       
+
        return config
 
 Testing Guidelines
@@ -235,21 +235,21 @@ Aim for >90% test coverage for new code:
    # Test all public functions
    # Test edge cases and error conditions
    # Test with realistic data
-   
+
    class TestNewFeature:
        def test_basic_functionality(self):
            """Test basic feature operation."""
            pass
-       
+
        def test_edge_cases(self):
            """Test boundary conditions."""
            pass
-       
+
        def test_error_handling(self):
            """Test error conditions."""
            with pytest.raises(ValueError):
                invalid_operation()
-       
+
        @pytest.mark.parametrize("param,expected", [
            (1.0, 2.0),
            (2.0, 4.0),
@@ -281,12 +281,12 @@ Test complete workflows:
        """Test end-to-end analysis workflow."""
        # Create test configuration
        config_file = create_test_config(tmp_path)
-       
+
        # Run complete analysis
        analysis = HomodyneAnalysisCore(config_file)
        analysis.load_experimental_data()
        result = analysis.optimize_classical()
-       
+
        # Verify results
        assert result.success
        assert result.fun < threshold
@@ -372,18 +372,18 @@ Include comprehensive descriptions:
 
    ## Summary
    Brief description of changes
-   
+
    ## Changes Made
    - Specific change 1
    - Specific change 2
-   
+
    ## Testing
    - How was this tested?
    - Any new test cases added?
-   
+
    ## Breaking Changes
    - Any backward compatibility issues?
-   
+
    ## Related Issues
    - Fixes #123
    - Related to #456

@@ -30,10 +30,10 @@ Basic Usage
 
    # Basic experimental data plotting
    homodyne --plot-experimental-data --config experiment.json
-   
+
    # With verbose output for debugging
    homodyne --plot-experimental-data --config experiment.json --verbose
-   
+
    # Quiet mode for batch processing
    homodyne --plot-experimental-data --config experiment.json --quiet
 
@@ -73,7 +73,7 @@ Pre-processed correlation data in NumPy compressed format:
 .. code-block:: python
 
    import numpy as np
-   
+
    # Example NPZ file structure
    data = np.load("experimental_c2_data.npz")
    c2_data = data["c2_data"]          # Shape: (4, 60, 60) for 4 angles
@@ -90,7 +90,7 @@ Experimental data plots are saved to ``./homodyne_results/exp_data/``:
 
    ./homodyne_results/exp_data/
    ├── data_validation_phi_0.png      # Phi = 0° analysis
-   ├── data_validation_phi_45.png     # Phi = 45° analysis  
+   ├── data_validation_phi_45.png     # Phi = 45° analysis
    ├── data_validation_phi_90.png     # Phi = 90° analysis
    └── data_validation_phi_135.png    # Phi = 135° analysis
 
@@ -127,10 +127,10 @@ Basic Usage
 
    # Basic simulated data plotting
    homodyne --plot-simulated-data --config theory.json
-   
+
    # With custom scaling parameters
    homodyne --plot-simulated-data --config theory.json --contrast 0.3 --offset 1.2
-   
+
    # Override phi angles from command line
    homodyne --plot-simulated-data --config theory.json --phi-angles 0,45,90,135
 
@@ -145,7 +145,7 @@ The core feature of simulated data plotting is the scaling transformation:
 
 **Parameters:**
 - ``contrast``: Scaling factor (default: 1.0, no scaling)
-- ``offset``: Baseline offset (default: 0.0, no offset) 
+- ``offset``: Baseline offset (default: 0.0, no offset)
 - ``phi-angles``: Comma-separated angles in degrees
 
 **Physical Interpretation:**
@@ -162,7 +162,7 @@ Scaling Parameters
 
    # Custom contrast and offset
    --contrast 0.25 --offset 1.1
-   
+
    # Default values (no scaling)
    --contrast 1.0 --offset 0.0
 
@@ -173,10 +173,10 @@ Phi Angles Override
 
    # Standard angles
    --phi-angles 0,45,90,135
-   
+
    # High-resolution angular sampling
    --phi-angles 0,15,30,45,60,75,90,105,120,135,150,165
-   
+
    # Specific angles of interest
    --phi-angles 0,90,180
 
@@ -293,7 +293,7 @@ Data Quality Assessment
 
    # Quick validation of experimental data
    homodyne --plot-experimental-data --config experiment.json
-   
+
    # Detailed debugging output
    homodyne --plot-experimental-data --config experiment.json --verbose
 
@@ -310,10 +310,10 @@ Theoretical Prediction Visualization
 
    # Display raw theoretical predictions
    homodyne --plot-simulated-data --config theory.json
-   
+
    # Scale predictions to match experimental conditions
    homodyne --plot-simulated-data --config theory.json --contrast 0.3 --offset 1.1
-   
+
    # Custom angular sampling for detailed analysis
    homodyne --plot-simulated-data --config theory.json --phi-angles 0,30,60,90,120,150
 
@@ -324,10 +324,10 @@ Model Validation Workflow
 
    # Step 1: Validate experimental data quality
    homodyne --plot-experimental-data --config experiment.json --verbose
-   
+
    # Step 2: Generate theoretical predictions
    homodyne --plot-simulated-data --config model.json --contrast 0.25
-   
+
    # Step 3: Run full analysis for comparison
    homodyne --config combined.json --method classical --plot-c2-heatmaps
 
@@ -398,7 +398,7 @@ Common Issues
 
 .. code-block:: bash
 
-   # Error: Cannot parse phi angles  
+   # Error: Cannot parse phi angles
    # Solution: Use proper comma-separated format
    --phi-angles 0,45,90,135  # Correct
    --phi-angles "0 45 90 135"  # Incorrect

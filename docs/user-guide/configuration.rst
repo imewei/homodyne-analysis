@@ -149,13 +149,13 @@ The homodyne package implements comprehensive physical constraints to ensure sci
 The package automatically enforces positivity for time-dependent functions:
 
 - **D(t) = D₀(t)^α + D_offset** → **max(D(t), 1×10⁻¹⁰)**
-  
+
   - Prevents negative diffusion coefficients from any parameter combination
   - Maintains numerical stability with minimal threshold
 
 - **γ̇(t) = γ̇₀(t)^β + γ̇_offset** → **max(γ̇(t), 1×10⁻¹⁰)**
-  
-  - Prevents negative shear rates from any parameter combination  
+
+  - Prevents negative shear rates from any parameter combination
   - Ensures physical validity in all optimization scenarios
 
 **Scaling Parameters for Correlation Functions**
@@ -222,7 +222,7 @@ Optimization Configuration
 - **Gurobi**: Quadratic programming solver (requires license), good for smooth functions with bounds
 
 .. note::
-   Gurobi is automatically detected if installed and licensed. It uses quadratic approximation 
+   Gurobi is automatically detected if installed and licensed. It uses quadratic approximation
    via finite differences and excels with smooth objective functions and bounds constraints.
 
 **Robust Optimization Configuration**:
@@ -262,7 +262,7 @@ Optimization Configuration
 **Robust Methods Available**:
 
 - **Wasserstein DRO**: Distributionally robust optimization using Wasserstein uncertainty sets
-- **Scenario-based**: Multi-scenario optimization using bootstrap resampling for outlier resistance  
+- **Scenario-based**: Multi-scenario optimization using bootstrap resampling for outlier resistance
 - **Ellipsoidal**: Robust least squares with bounded uncertainty in correlation functions
 
 **MCMC Configuration**:
@@ -337,7 +337,7 @@ Configuration Templates
 
    {
      "metadata": {
-       "config_version": "6.0", 
+       "config_version": "6.0",
        "analysis_mode": "laminar_flow"
      },
      "analysis_settings": {
@@ -379,7 +379,7 @@ Configuration Validation
 .. code-block:: python
 
    from homodyne import ConfigManager
-   
+
    # Load and validate configuration
    config = ConfigManager("my_config.json")
    config.validate()

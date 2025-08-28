@@ -67,17 +67,17 @@ Example Usage
 .. code-block:: python
 
    from homodyne import HomodyneAnalysisCore, ConfigManager
-   
+
    # Initialize configuration
    config = ConfigManager("my_experiment.json")
-   
+
    # Create analysis instance
    analysis = HomodyneAnalysisCore(config)
-   
+
    # Load data and run analysis
    analysis.load_experimental_data()
    results = analysis.run_analysis()
-   
+
    print(f"Analysis completed: {len(results)} angle analyses")
    print(f"Best chi-squared: {min(r['chi_squared'] for r in results):.4f}")
 
@@ -86,17 +86,17 @@ Example Usage
 .. code-block:: python
 
    from homodyne import ConfigManager
-   
+
    config = ConfigManager("advanced_config.json")
-   
+
    # Check analysis mode
    mode = config.get_analysis_mode()
    print(f"Analysis mode: {mode}")
-   
+
    # Get active parameters
    params = config.get_active_parameters()
    print(f"Active parameters: {params}")
-   
+
    # Check if angle filtering is enabled
    if config.is_angle_filtering_enabled():
        ranges = config.get_target_angle_ranges()
@@ -111,12 +111,12 @@ Example Usage
        create_time_integral_matrix_numba,
        performance_monitor
    )
-   
+
    # Use performance monitoring
    with performance_monitor() as monitor:
        # Compute correlation with JIT compilation
        g1_values = compute_g1_correlation_numba(
            diffusion_coeff, shear_rate, time_points, angles
        )
-   
+
    print(f"Computation time: {monitor.elapsed_time:.4f}s")

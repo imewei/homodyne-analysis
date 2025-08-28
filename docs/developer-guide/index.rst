@@ -39,10 +39,10 @@ Quick Developer Setup
    black homodyne/
    isort homodyne/
    flake8 homodyne/
-   
+
    # Type checking
    mypy homodyne/
-   
+
    # Security scanning
    bandit -r homodyne/
    pip-audit

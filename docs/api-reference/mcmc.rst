@@ -55,13 +55,13 @@ Usage Examples
 
    from homodyne.optimization.mcmc import MCMCSampler
    from homodyne import ConfigManager
-   
+
    config = ConfigManager("mcmc_config.json")
    sampler = MCMCSampler(config)
-   
+
    # Setup the Bayesian model
    sampler.setup_model(experimental_data, angles)
-   
+
    # Run MCMC sampling
    trace = sampler.run_sampling(
        draws=2000,
@@ -69,7 +69,7 @@ Usage Examples
        chains=4,
        cores=4
    )
-   
+
    # Check convergence
    diagnostics = sampler.diagnose_convergence(trace)
    print(f"All parameters converged: {diagnostics['converged']}")
@@ -79,7 +79,7 @@ Usage Examples
 .. code-block:: python
 
    from homodyne.optimization.mcmc import compute_rhat, effective_sample_size
-   
+
    # Compute R-hat for each parameter
    rhat_values = compute_rhat(trace)
    for param, rhat in rhat_values.items():
@@ -87,7 +87,7 @@ Usage Examples
            print(f"⚠️ {param}: R̂ = {rhat:.3f} (poor convergence)")
        else:
            print(f"✅ {param}: R̂ = {rhat:.3f} (good convergence)")
-   
+
    # Check effective sample sizes
    ess_values = effective_sample_size(trace)
    for param, ess in ess_values.items():
@@ -100,7 +100,7 @@ All parameters use **Normal distributions** in the MCMC implementation:
 .. code-block:: python
 
    import pymc as pm
-   
+
    # Standard prior distributions used in homodyne MCMC
    with pm.Model() as model:
        # Positive parameters use TruncatedNormal, others use Normal
@@ -120,19 +120,19 @@ The MCMC implementation includes physical scaling constraints to ensure valid co
 
    # Scaling optimization: c2_fitted = c2_theory * contrast + offset
    # Physical constraints: c2_fitted ∈ [1,2], c2_theory ∈ [0,1]
-   
+
    with pm.Model() as model:
        # Bounded priors for scaling parameters
        contrast = pm.TruncatedNormal("contrast", mu=0.3, sigma=0.1, lower=0.05, upper=0.5)
        offset = pm.TruncatedNormal("offset", mu=1.0, sigma=0.2, lower=0.05, upper=1.95)
-       
+
        # Apply scaling transformation
        c2_fitted = c2_theory * contrast + offset
-       
+
        # Physical constraint enforcement
-       pm.Potential("physical_constraint", 
-                   pt.switch(pt.and_(pt.ge(pt.min(c2_fitted), 1.0), 
-                                   pt.le(pt.max(c2_fitted), 2.0)), 
+       pm.Potential("physical_constraint",
+                   pt.switch(pt.and_(pt.ge(pt.min(c2_fitted), 1.0),
+                                   pt.le(pt.max(c2_fitted), 2.0)),
                            0.0, -np.inf))
 
 Convergence Thresholds
