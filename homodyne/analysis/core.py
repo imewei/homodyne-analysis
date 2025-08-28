@@ -109,9 +109,9 @@ import multiprocessing as mp
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -184,7 +184,7 @@ class HomodyneAnalysisCore:
     def __init__(
         self,
         config_file: str = "homodyne_config.json",
-        config_override: Optional[Dict[str, Any]] = None,
+        config_override: dict[str, Any] | None = None,
     ):
         """
         Initialize the core analysis system.
@@ -362,8 +362,8 @@ class HomodyneAnalysisCore:
                 self.time_length} frames)"
         )
         logger.info(f"  • Time step: {self.dt} s/frame")
-        logger.info(f"  • Wavevector: {self.wavevector_q:.6f} Å⁻¹")
-        logger.info(f"  • Gap size: {self.stator_rotor_gap / 1e4:.1f} μm")
+        logger.info(f"  • Wavevector: {self.wavevector_q:.6f} A^-1")
+        logger.info(f"  • Gap size: {self.stator_rotor_gap / 1e4:.1f} um")
         logger.info(f"  • Threads: {self.num_threads}")
         logger.info(
             f"  • Optimizations: {
@@ -480,7 +480,7 @@ class HomodyneAnalysisCore:
             # Return all parameters as provided
             return parameters.copy()
 
-    def _apply_config_overrides(self, overrides: Dict[str, Any]):
+    def _apply_config_overrides(self, overrides: dict[str, Any]):
         """Apply configuration overrides with deep merging."""
 
         def deep_update(base, update):
@@ -504,7 +504,7 @@ class HomodyneAnalysisCore:
     @memory_efficient_cache(maxsize=32)
     def load_experimental_data(
         self,
-    ) -> Tuple[np.ndarray, int, np.ndarray, int]:
+    ) -> tuple[np.ndarray, int, np.ndarray, int]:
         """
         Load experimental correlation data with caching.
 
@@ -841,7 +841,7 @@ class HomodyneAnalysisCore:
         self,
         parameters: np.ndarray,
         phi_angle: float,
-        precomputed_D_t: Optional[np.ndarray] = None,
+        precomputed_D_t: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Calculate correlation function for a single angle.
@@ -928,7 +928,7 @@ class HomodyneAnalysisCore:
         D_integral: np.ndarray,
         is_static: bool,
         shear_params: np.ndarray,
-        gamma_integral: Optional[np.ndarray] = None,
+        gamma_integral: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Fast correlation function calculation with pre-computed values.
@@ -1176,7 +1176,7 @@ class HomodyneAnalysisCore:
         method_name: str = "",
         return_components: bool = False,
         filter_angles_for_optimization: bool = False,
-    ) -> Union[float, Dict[str, Any]]:
+    ) -> float | dict[str, Any]:
         """
         Calculate chi-squared goodness of fit with per-angle analysis and uncertainty estimation.
 
@@ -1607,7 +1607,7 @@ class HomodyneAnalysisCore:
                 )
                 # Log reduced chi-square per angle
                 for i, (phi, chi2_red_angle) in enumerate(
-                    zip(phi_angles, angle_chi2_reduced)
+                    zip(phi_angles, angle_chi2_reduced, strict=False)
                 ):
                     logger.info(
                         f"  Angle {
@@ -1667,8 +1667,8 @@ class HomodyneAnalysisCore:
         c2_experimental: np.ndarray,
         method_name: str = "Final",
         save_to_file: bool = True,
-        output_dir: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        output_dir: str | None = None,
+    ) -> dict[str, Any]:
         """
         Comprehensive per-angle reduced chi-squared analysis with quality assessment.
 
@@ -2078,7 +2078,7 @@ class HomodyneAnalysisCore:
         return per_angle_results
 
     def save_results_with_config(
-        self, results: Dict[str, Any], output_dir: Optional[str] = None
+        self, results: dict[str, Any], output_dir: str | None = None
     ) -> None:
         """
         Save optimization results along with configuration to JSON file.
@@ -2095,7 +2095,7 @@ class HomodyneAnalysisCore:
         """
         # Create comprehensive results with configuration
 
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         output_data = {
             "timestamp": timestamp,
@@ -2335,8 +2335,8 @@ Validation:
 
     def _generate_analysis_plots(
         self,
-        results: Dict[str, Any],
-        output_data: Dict[str, Any],
+        results: dict[str, Any],
+        output_data: dict[str, Any],
         skip_generic_plots: bool = False,
     ) -> None:
         """
@@ -2525,8 +2525,8 @@ Validation:
             logger.error(f"Unexpected error during plot generation: {e}")
 
     def _prepare_plot_data(
-        self, results: Dict[str, Any], config: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, results: dict[str, Any], config: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """
         Prepare data for plotting from analysis results.
 
@@ -2577,7 +2577,7 @@ Validation:
                 )
                 if len(param_names) == len(best_params_list):
                     plot_data["best_parameters"] = dict(
-                        zip(param_names, best_params_list)
+                        zip(param_names, best_params_list, strict=False)
                     )
                 else:
                     # Use generic names if parameter names don't match
@@ -2598,7 +2598,7 @@ Validation:
                 )
                 if len(param_names) == len(initial_params):
                     plot_data["initial_parameters"] = dict(
-                        zip(param_names, initial_params)
+                        zip(param_names, initial_params, strict=False)
                     )
 
             # Try to reconstruct experimental and theoretical data for plotting
@@ -2768,7 +2768,8 @@ Validation:
 
             # Call the main correlation calculation method
             theoretical_data = self.calculate_c2_nonequilibrium_laminar_parallel(
-                parameters, phi_angles  # type: ignore
+                np.array(parameters),
+                phi_angles,  # type: ignore
             )
 
             logger.debug(

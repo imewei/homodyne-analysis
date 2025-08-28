@@ -27,9 +27,7 @@ import os
 import sys
 import tempfile
 import time
-import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
 from unittest.mock import Mock
 
 import numpy as np
@@ -162,7 +160,7 @@ def handle_numba_threading_error(func, *args, **kwargs):
         ):
             pytest.skip(
                 "Skipping due to NUMBA threading configuration conflict in test environment. "
-                f"Error: {str(e)}"
+                f"Error: {e!s}"
             )
         else:
             raise
@@ -617,7 +615,6 @@ class TestImportPerformance:
     @pytest.mark.performance
     def test_lazy_import_mcmc(self):
         """Test MCMC module lazy import performance."""
-        import importlib
         import sys
 
         # Remove module if already loaded to test fresh import
@@ -666,9 +663,7 @@ class TestImportPerformance:
         import_time = time.perf_counter() - start_time
 
         # Import should be fast due to lazy loading
-        assert (
-            import_time < 0.5
-        ), f"Plotting import too slow: {
+        assert import_time < 0.5, f"Plotting import too slow: {
             import_time:.3f}s"
         print(f"✓ Plotting import time: {import_time:.3f}s")
 
@@ -766,9 +761,7 @@ class TestStableBenchmarking:
                 is_ci = os.getenv("CI", "").lower() in (
                     "true",
                     "1",
-                ) or os.getenv(
-                    "GITHUB_ACTIONS", ""
-                ).lower() in ("true", "1")
+                ) or os.getenv("GITHUB_ACTIONS", "").lower() in ("true", "1")
 
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
@@ -970,9 +963,12 @@ class TestOptimizationFeatures:
 
         # Handle case where timing is too small to be meaningful (< 1ms)
         if first_call_time < 0.001 and second_call_time < 0.001:
-            print(
-                f"✓ Config caching: both calls too fast to measure accurately (< 1ms)"
-            )
+            print("✓ Config caching: both calls too fast to measure accurately (< 1ms)")
+        elif first_call_time < 0.001:
+            # First call was unmeasurably fast, allow second call to be up to 50ms
+            assert (
+                second_call_time < 0.05
+            ), f"Cached call too slow when first call was unmeasurable (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
         else:
             assert (
                 second_call_time < first_call_time * max_slowdown
@@ -1128,7 +1124,7 @@ class TestOptimizationFeatures:
         )
 
         assert isinstance(result, dict), "Should return dict with components"
-        assert "valid" in result and result["valid"], "Result should be valid"
+        assert result.get("valid"), "Result should be valid"
         assert "scaling_solutions" in result, "Should include scaling solutions"
 
         scaling_solutions = result["scaling_solutions"]
@@ -1869,9 +1865,7 @@ class TestPerformanceRegression:
         # Memory regression threshold: should use less than 50MB for medium
         # dataset
         max_acceptable_memory = 50.0  # MB
-        assert (
-            memory_increase < max_acceptable_memory
-        ), f"Memory usage too high: {
+        assert memory_increase < max_acceptable_memory, f"Memory usage too high: {
             memory_increase:.1f}MB > {
             max_acceptable_memory:.0f}MB threshold"
 
@@ -1975,9 +1969,9 @@ class TestMCMCThinningPerformance:
 
         config_with_thin = copy.deepcopy(config_no_thin)
         config_with_thin["optimization_config"]["mcmc_sampling"]["thin"] = 2
-        config_with_thin["optimization_config"]["mcmc_sampling"][
-            "draws"
-        ] = 400  # More draws to compensate
+        config_with_thin["optimization_config"]["mcmc_sampling"]["draws"] = (
+            400  # More draws to compensate
+        )
 
         # Test thinning parameter extraction and validation
         from homodyne.optimization.mcmc import MCMCSampler
@@ -2123,9 +2117,7 @@ class TestMCMCThinningPerformance:
 
         # All setups should be fast
         for description, setup_time in setup_times.items():
-            assert (
-                setup_time < 0.05
-            ), f"{description} setup too slow: {
+            assert setup_time < 0.05, f"{description} setup too slow: {
                 setup_time:.4f}s"
 
     @pytest.mark.performance
@@ -2202,13 +2194,9 @@ class TestMCMCThinningPerformance:
             assert avg_thinning >= 0, f"Negative thinning time: {avg_thinning:.4f}s"
 
         # Both should be reasonably fast
-        assert (
-            avg_baseline < 0.1
-        ), f"Baseline setup too slow: {
+        assert avg_baseline < 0.1, f"Baseline setup too slow: {
             avg_baseline:.4f}s"
-        assert (
-            avg_thinning < 0.1
-        ), f"Thinning setup too slow: {
+        assert avg_thinning < 0.1, f"Thinning setup too slow: {
             avg_thinning:.4f}s"
 
 
@@ -2271,8 +2259,6 @@ class TestNumbaCompilationDiagnostics:
         from homodyne.core.kernels import (
             calculate_diffusion_coefficient_numba,
             calculate_shear_rate_numba,
-            compute_g1_correlation_numba,
-            compute_sinc_squared_numba,
             create_time_integral_matrix_numba,
         )
 
@@ -2482,9 +2468,7 @@ class TestNumbaCompilationDiagnostics:
         )
 
         # Allow up to 5x slower than baseline for CI environment variability
-        assert (
-            performance_factor < 5.0
-        ), f"Performance regression: {
+        assert performance_factor < 5.0, f"Performance regression: {
             performance_factor:.2f}x slower than baseline"
 
 
