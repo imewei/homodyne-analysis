@@ -5,6 +5,28 @@ All notable changes to the Homodyne Scattering Analysis Package will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2025-08-28
+
+### Fixed
+- **Critical Windows CI Test Failures**: Fixed Windows path separator compatibility issues in shell completion system
+  - Shell completion functions now properly use `os.sep` for Windows backslash (`\`) path separators
+  - Fixed test assertions to expect platform-appropriate path separators instead of hardcoded forward slashes
+  - Resolved `TestHomodyneCompleter.test_output_dir_completer` and `TestCompletionFunctions.test_complete_output_dir` failures
+- **Enhanced Cross-Platform Test Reliability**: All completion tests now pass consistently across Windows, macOS, and Linux
+  - Updated `cli_completion.py` and `completion_fast.py` to use proper cross-platform path handling
+  - Fixed multiple test assertions in `test_cli_completion.py` and `test_completion_fast.py`
+  - Added missing `import os` for cross-platform path separator support
+
+### Technical Details
+- **Path Separator Logic**: Enhanced directory completion to append `os.sep` instead of hardcoded `/`
+- **Test Coverage**: All 30+ completion tests now pass on Windows with native backslash path separators
+- **Backward Compatibility**: Maintains full compatibility with existing Unix-style forward slash usage
+
+### Impact
+- **Windows Users**: Shell completion now works correctly with Windows path conventions
+- **CI/CD Pipeline**: Windows CI tests now pass reliably without path separator conflicts
+- **Developer Experience**: Consistent cross-platform behavior for all completion functionality
+
 ## [0.7.0] - 2025-08-28
 
 ### Added
