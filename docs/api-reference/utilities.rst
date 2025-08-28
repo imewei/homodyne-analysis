@@ -201,4 +201,3 @@ Save matplotlib figures with proper formatting and publication-quality settings.
        logger.error(f"Missing dependencies: {e}")
    except Exception as e:
        logger.error(f"Unexpected error during analysis: {e}")
-

@@ -1,14 +1,18 @@
 # Homodyne CLI - Actual Implementation
 
-**Version 0.6.6+** | **Python 3.12+ Required** | **Trust Region Gurobi ✅** | **Code Quality: Black ✅ isort ✅**
+**Version 0.6.6+** | **Python 3.12+ Required** | **Trust Region Gurobi ✅** | **Code
+Quality: Black ✅ isort ✅**
 
 ## Overview
-The Homodyne project provides two command-line tools for analyzing X-ray Photon Correlation Spectroscopy (XPCS) data:
+
+The Homodyne project provides two command-line tools for analyzing X-ray Photon
+Correlation Spectroscopy (XPCS) data:
 
 1. **`homodyne`** - Main analysis command with enhanced Gurobi trust region optimization
-2. **`homodyne-config`** - Configuration file generator
+1. **`homodyne-config`** - Configuration file generator
 
 **Recent Improvements (v0.6.6+):**
+
 - **Enhanced Gurobi optimization** with iterative trust region SQP approach
 - **Improved code quality** with comprehensive formatting and linting (Black, isort)
 - **Shell completion support** for enhanced CLI experience
@@ -22,11 +26,13 @@ The Homodyne project provides two command-line tools for analyzing X-ray Photon 
 Runs the complete homodyne scattering analysis for XPCS under nonequilibrium conditions.
 
 #### Usage
+
 ```bash
 homodyne [OPTIONS]
 ```
 
 #### Options
+
 ```bash
   -h, --help                    Show help message and exit
   --method {classical,mcmc,robust,all}
@@ -50,14 +56,18 @@ homodyne [OPTIONS]
 ```
 
 #### Methods
-- **classical**: Traditional optimization (Nelder-Mead, **Enhanced Gurobi with Trust Regions**)
-  - **Gurobi**: Iterative trust region SQP optimization for robust convergence (requires license)
+
+- **classical**: Traditional optimization (Nelder-Mead, **Enhanced Gurobi with Trust
+  Regions**)
+  - **Gurobi**: Iterative trust region SQP optimization for robust convergence (requires
+    license)
   - **Nelder-Mead**: Derivative-free simplex algorithm, robust for noisy functions
 - **robust**: Robust optimization with uncertainty quantification (requires CVXPY)
 - **mcmc**: Bayesian MCMC sampling using PyMC and NUTS
 - **all**: Run all available methods
 
 **Gurobi Trust Region Features (v0.6.5+):**
+
 - **Iterative optimization**: Up to 50 outer iterations with progressive χ² improvement
 - **Adaptive trust region**: Radius adapts from 0.1 → 1e-8 to 1.0 based on step quality
 - **Parameter-scaled finite differences**: Enhanced numerical stability
@@ -65,6 +75,7 @@ homodyne [OPTIONS]
 - **Expected convergence**: 10-30 iterations for typical XPCS problems
 
 #### Examples
+
 ```bash
 # Run with default classical method
 homodyne
@@ -104,6 +115,7 @@ homodyne --quiet --method all
 ```
 
 #### Output Structure
+
 ```
 homodyne_results/
 ├── homodyne_analysis_results.json    # Main results with config and metadata
@@ -153,18 +165,20 @@ homodyne_results/
     └── theoretical_c2_data.npz         # Theoretical data arrays
 ```
 
----
+______________________________________________________________________
 
 ### 2. `homodyne-config` - Configuration Generator
 
 Creates homodyne analysis configuration files from mode-specific templates.
 
 #### Usage
+
 ```bash
 homodyne-config [OPTIONS]
 ```
 
 #### Options
+
 ```bash
   -h, --help            Show help message and exit
   --mode, -m {static_isotropic,static_anisotropic,laminar_flow}
@@ -177,11 +191,13 @@ homodyne-config [OPTIONS]
 ```
 
 #### Analysis Modes
+
 1. **static_isotropic** - Fastest: Single dummy angle, no angle filtering, 3 parameters
-2. **static_anisotropic** - Static with angle filtering optimization, 3 parameters  
-3. **laminar_flow** - Full flow analysis with 7 parameters (default)
+1. **static_anisotropic** - Static with angle filtering optimization, 3 parameters
+1. **laminar_flow** - Full flow analysis with 7 parameters (default)
 
 #### Examples
+
 ```bash
 # Create laminar flow configuration (default)
 homodyne-config
@@ -197,6 +213,7 @@ homodyne-config --mode static_anisotropic --sample collagen --author "Your Name"
 ```
 
 #### Generated Configuration Structure
+
 ```json
 {
     "metadata": {
@@ -254,14 +271,9 @@ export HOMODYNE_PROFILE=1
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0    | Success |
-| 1    | General error or Python version mismatch |
-| 2    | Configuration error |
-| 3    | Data format/loading error |
-| 4    | Optimization failed |
-| 5    | Missing dependencies |
+| Code | Meaning | |------|---------| | 0 | Success | | 1 | General error or Python
+version mismatch | | 2 | Configuration error | | 3 | Data format/loading error | | 4 |
+Optimization failed | | 5 | Missing dependencies |
 
 ## Python Module Usage
 
@@ -285,6 +297,7 @@ create_config_from_template(
 ## Workflow Example
 
 ### Complete Analysis Workflow
+
 ```bash
 # Step 1: Generate configuration
 homodyne-config --mode laminar_flow --sample experimental_data --output exp_config.json
@@ -302,6 +315,7 @@ ls plots/                       # Generated plots
 ```
 
 ### Quick Start for Testing
+
 ```bash
 # Generate default config
 homodyne-config
@@ -314,37 +328,47 @@ homodyne
 
 ## Limitations and Notes
 
-1. **No subcommands**: Unlike the idealized CLI structure, the current implementation doesn't have subcommands like `homodyne analyze`, `homodyne mcmc`, etc.
+1. **No subcommands**: Unlike the idealized CLI structure, the current implementation
+   doesn't have subcommands like `homodyne analyze`, `homodyne mcmc`, etc.
 
-2. **Method selection**: Different optimization methods are selected via the `--method` flag, not separate commands.
+1. **Method selection**: Different optimization methods are selected via the `--method`
+   flag, not separate commands.
 
-3. **Data preprocessing**: No separate preprocessing command; preprocessing happens automatically during analysis.
+1. **Data preprocessing**: No separate preprocessing command; preprocessing happens
+   automatically during analysis.
 
-4. **Validation**: No separate validation command; validation is integrated into the analysis pipeline.
+1. **Validation**: No separate validation command; validation is integrated into the
+   analysis pipeline.
 
-5. **Python 3.12+ required**: Both commands check for Python 3.12 or higher.
+1. **Python 3.12+ required**: Both commands check for Python 3.12 or higher.
 
-6. **Optional dependencies**:
+1. **Optional dependencies**:
+
    - MCMC requires PyMC installation
    - Robust optimization requires CVXPY
    - Some features require numba for performance
    - Shell completion requires `argcomplete`
-   - **Note**: Interactive CLI mode has been **removed** in v0.6.5+ - use shell completion for enhanced CLI experience
+   - **Note**: Interactive CLI mode has been **removed** in v0.6.5+ - use shell
+     completion for enhanced CLI experience
 
 ## Shell Completion
 
-The homodyne CLI supports multiple completion methods for enhanced user experience across shells.
+The homodyne CLI supports multiple completion methods for enhanced user experience
+across shells.
 
 ### Installation
 
 Install completion support with optional dependencies:
+
 ```bash
 pip install homodyne-analysis[completion]  # Updated in v0.6.5+
 ```
 
-**Note**: The `interactive` dependency group has been **removed** in v0.6.5+. Use `completion` group for shell tab completion only.
+**Note**: The `interactive` dependency group has been **removed** in v0.6.5+. Use
+`completion` group for shell tab completion only.
 
 Enable shell completion for your shell (one-time setup):
+
 ```bash
 # For bash
 homodyne --install-completion bash
@@ -360,6 +384,7 @@ homodyne --install-completion powershell
 ```
 
 To remove shell completion later:
+
 ```bash
 # For bash
 homodyne --uninstall-completion bash
@@ -375,6 +400,7 @@ homodyne --uninstall-completion powershell
 ```
 
 After installation, restart your shell or source the configuration file:
+
 ```bash
 # Bash/Zsh
 source ~/.bashrc  # or ~/.zshrc
@@ -388,6 +414,7 @@ source ~/.config/fish/config.fish
 The completion system provides multiple tiers of functionality:
 
 #### 1. **Tab Completion** (Primary Method)
+
 - **Method completion**: Tab complete `--method` options (classical, mcmc, robust, all)
 - **File completion**: Tab complete `--config` with available .json files
 - **Directory completion**: Tab complete `--output-dir` with available directories
@@ -395,7 +422,9 @@ The completion system provides multiple tiers of functionality:
 - **Cross-platform**: Works on Linux, macOS, and Windows
 
 #### 2. **Command Shortcuts** (Always Available)
+
 Fast shortcuts for common operations:
+
 ```bash
 hc          # homodyne --method classical
 hm          # homodyne --method mcmc
@@ -406,6 +435,7 @@ hplot       # homodyne --plot-experimental-data
 ```
 
 #### 3. **Completion Help System**
+
 ```bash
 homodyne_help    # Show all available options and current config files
 ```
@@ -413,6 +443,7 @@ homodyne_help    # Show all available options and current config files
 ### Usage Examples
 
 #### Tab Completion (if working)
+
 ```bash
 # Tab completion examples (press TAB at cursor position)
 homodyne --method <TAB>          # Shows: classical, mcmc, robust, all
@@ -422,6 +453,7 @@ homodyne-config --mode <TAB>     # Shows: static_isotropic, static_anisotropic, 
 ```
 
 #### Command Shortcuts (always work)
+
 ```bash
 # Quick method selection
 hc                               # homodyne --method classical
@@ -435,6 +467,7 @@ hplot                            # homodyne --plot-experimental-data
 ```
 
 #### Help and Reference
+
 ```bash
 homodyne_help                    # Show completion help and available options
 ```
@@ -444,12 +477,14 @@ homodyne_help                    # Show completion help and available options
 The completion system is designed to be robust with multiple fallback mechanisms:
 
 #### If Tab Completion Doesn't Work
+
 1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha` always work
-2. **Check installation**: Run `homodyne --install-completion zsh` again
-3. **Reload shell**: `source ~/.zshrc` or restart terminal
-4. **Use help reference**: `homodyne_help` shows all options
+1. **Check installation**: Run `homodyne --install-completion zsh` again
+1. **Reload shell**: `source ~/.zshrc` or restart terminal
+1. **Use help reference**: `homodyne_help` shows all options
 
 #### Common Issues
+
 ```bash
 # Issue: Tab completion not working after installation  
 # Solution: Restart shell or source config
@@ -472,22 +507,23 @@ The homodyne CLI is built with high code quality standards:
 
 ### Code Quality Status
 
-| Tool | Status | Issues | Notes |
-|------|--------|---------|-------|
-| **Black** | ✅ 100% | 0 | 88-character line length |
-| **isort** | ✅ 100% | 0 | Import sorting and optimization |
-| **flake8** | ⚠️ ~400 | E501, F401 | Mostly line length and data scripts |
-| **mypy** | ⚠️ ~285 | Various | Missing library stubs, annotations |
+| Tool | Status | Issues | Notes | |------|--------|---------|-------| | **Black** | ✅
+100% | 0 | 88-character line length | | **isort** | ✅ 100% | 0 | Import sorting and
+optimization | | **flake8** | ⚠️ ~400 | E501, F401 | Mostly line length and data scripts
+| | **mypy** | ⚠️ ~285 | Various | Missing library stubs, annotations |
 
 ### Recent Code Quality Improvements
 
 **Major Cleanup (v0.6.5):**
+
 - **Removed 308 lines** of unused fallback implementations from `kernels.py`
 - **Fixed critical issues**: Comparison operators (`== False` → `is False`)
 - **Enhanced imports**: Resolved redefinition warnings and optimized import patterns
-- **Added missing functions**: `_solve_least_squares_batch_fallback`, `_compute_chi_squared_batch_fallback`
+- **Added missing functions**: `_solve_least_squares_batch_fallback`,
+  `_compute_chi_squared_batch_fallback`
 
 **Enhanced Algorithms:**
+
 - **Gurobi optimization**: Complete rewrite with iterative trust region SQP approach
 - **Performance optimization**: 3-5x speedup with JIT compilation and optimized kernels
 - **Numerical stability**: Parameter-scaled finite differences and improved convergence
@@ -495,6 +531,7 @@ The homodyne CLI is built with high code quality standards:
 ### Development Standards
 
 **Formatting and Style:**
+
 ```bash
 # All code formatted with Black (88-character line length)
 black homodyne --line-length 88
@@ -510,6 +547,7 @@ mypy homodyne --ignore-missing-imports
 ```
 
 **Testing and Validation:**
+
 - **Comprehensive test suite**: Unit, integration, and performance tests
 - **Performance regression detection**: Automated benchmarking
 - **95%+ test coverage**: Maintained across all critical components
@@ -520,6 +558,7 @@ mypy homodyne --ignore-missing-imports
 ### Common Issues and Solutions
 
 **Gurobi Optimization Issues:**
+
 ```bash
 # Issue: Gurobi license not found
 # Solution: Install and activate Gurobi license
@@ -545,6 +584,7 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 ```
 
 **Shell Completion Issues:**
+
 ```bash
 # Issue: Tab completion not working after installation
 # Solution: Source the shell configuration or use shortcuts
@@ -566,6 +606,7 @@ homodyne_help     # Shows all methods, config files, and flags
 ```
 
 **Performance Issues:**
+
 ```bash
 # Issue: Slow classical optimization
 # Solution: Enable angle filtering and use Gurobi
@@ -579,8 +620,9 @@ homodyne --static-isotropic --method classical
 ## Future Enhancement Possibilities
 
 The CLI could be extended with additional commands:
+
 - `homodyne-validate` - Validate data format
-- `homodyne-benchmark` - Run performance benchmarks  
+- `homodyne-benchmark` - Run performance benchmarks
 - `homodyne-plot` - Generate plots from existing results
 - `homodyne-convert` - Convert between data formats
 

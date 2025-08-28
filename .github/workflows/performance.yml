@@ -2,24 +2,24 @@ name: Performance Tests
 
 "on":
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'homodyne/**'
-      - 'tests/**'
-      - 'pyproject.toml'
+      - "homodyne/**"
+      - "tests/**"
+      - "pyproject.toml"
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'homodyne/**'
-      - 'tests/**'
-      - 'pyproject.toml'
+      - "homodyne/**"
+      - "tests/**"
+      - "pyproject.toml"
   schedule:
     # Run performance tests daily at 6 AM UTC
-    - cron: '0 6 * * *'
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       update_baselines:
-        description: 'Update performance baselines'
+        description: "Update performance baselines"
         required: false
         default: false
         type: boolean
@@ -29,103 +29,103 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.12', '3.13']
+        python-version: ["3.12", "3.13"]
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev,performance,mcmc]"
-        pip install pytest-benchmark psutil
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,performance,mcmc]"
+          pip install pytest-benchmark psutil
 
-    - name: Set up performance test environment
-      run: |
-        # Set consistent threading for reproducible results
-        echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
-        echo "MKL_NUM_THREADS=1" >> $GITHUB_ENV
-        echo "NUMEXPR_NUM_THREADS=1" >> $GITHUB_ENV
-        echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
+      - name: Set up performance test environment
+        run: |
+          # Set consistent threading for reproducible results
+          echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "MKL_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "NUMEXPR_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
 
-    - name: Run quick performance tests
-      run: |
-        pytest -m "performance and not slow" --tb=short --disable-warnings -v homodyne/tests/test_performance.py
+      - name: Run quick performance tests
+        run: |
+          pytest -m "performance and not slow" --tb=short --disable-warnings -v homodyne/tests/test_performance.py
 
-    - name: Run performance regression tests
-      run: |
-        pytest -m "performance and regression" --tb=short --disable-warnings --performance-threshold=2.0 -v homodyne/tests/test_performance.py
+      - name: Run performance regression tests
+        run: |
+          pytest -m "performance and regression" --tb=short --disable-warnings --performance-threshold=2.0 -v homodyne/tests/test_performance.py
 
-    - name: Run benchmark tests (if pytest-benchmark is available)
-      continue-on-error: true
-      run: |
-        pytest -m "benchmark" --benchmark-only --benchmark-sort=mean --benchmark-columns=min,max,mean,stddev --benchmark-warmup=on --benchmark-warmup-iterations=3 --tb=short homodyne/tests/test_performance.py
+      - name: Run benchmark tests (if pytest-benchmark is available)
+        continue-on-error: true
+        run: |
+          pytest -m "benchmark" --benchmark-only --benchmark-sort=mean --benchmark-columns=min,max,mean,stddev --benchmark-warmup=on --benchmark-warmup-iterations=3 --tb=short homodyne/tests/test_performance.py
 
-    - name: Run memory profiling tests
-      run: |
-        pytest -m "memory" --tb=short --disable-warnings -v homodyne/tests/test_performance.py
+      - name: Run memory profiling tests
+        run: |
+          pytest -m "memory" --tb=short --disable-warnings -v homodyne/tests/test_performance.py
 
-    - name: Update performance baselines (if requested)
-      if: github.event.inputs.update_baselines == 'true' && github.ref == 'refs/heads/main'
-      run: |
-        pytest -m "performance" --update-baselines --tb=short homodyne/tests/test_performance.py
+      - name: Update performance baselines (if requested)
+        if: github.event.inputs.update_baselines == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          pytest -m "performance" --update-baselines --tb=short homodyne/tests/test_performance.py
 
-    - name: Upload performance results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: performance-results-${{ matrix.python-version }}
-        path: |
-          homodyne/tests/performance_baselines.json
-          .benchmarks/
-        retention-days: 30
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-${{ matrix.python-version }}
+          path: |
+            homodyne/tests/performance_baselines.json
+            .benchmarks/
+          retention-days: 30
 
-    - name: Comment performance results on PR
-      if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const fs = require('fs');
-          const path = './homodyne/tests/performance_baselines.json';
+      - name: Comment performance results on PR
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './homodyne/tests/performance_baselines.json';
 
-          if (fs.existsSync(path)) {
-            const baselines = JSON.parse(fs.readFileSync(path, 'utf8'));
-            let comment = '## Performance Test Results 📊\n\n';
-            comment += '| Test | Metric | Value |\n';
-            comment += '|------|--------|-------|\n';
+            if (fs.existsSync(path)) {
+              const baselines = JSON.parse(fs.readFileSync(path, 'utf8'));
+              let comment = '## Performance Test Results 📊\n\n';
+              comment += '| Test | Metric | Value |\n';
+              comment += '|------|--------|-------|\n';
 
-            for (const [testName, metrics] of Object.entries(baselines)) {
-              const shortName = testName.replace('test_', '').replace(/_/g, ' ');
-              for (const [metricName, value] of Object.entries(metrics)) {
-                const displayValue = typeof value === 'number' ?
-                  (value < 0.001 ? `${(value * 1000).toFixed(3)}ms` :
-                   value < 1 ? `${(value * 1000).toFixed(1)}ms` :
-                   metricName.includes('memory') ? `${value.toFixed(1)}MB` :
-                   `${value.toFixed(3)}s`) : value;
-                comment += `| ${shortName} | ${metricName} | ${displayValue} |\n`;
+              for (const [testName, metrics] of Object.entries(baselines)) {
+                const shortName = testName.replace('test_', '').replace(/_/g, ' ');
+                for (const [metricName, value] of Object.entries(metrics)) {
+                  const displayValue = typeof value === 'number' ?
+                    (value < 0.001 ? `${(value * 1000).toFixed(3)}ms` :
+                     value < 1 ? `${(value * 1000).toFixed(1)}ms` :
+                     metricName.includes('memory') ? `${value.toFixed(1)}MB` :
+                     `${value.toFixed(3)}s`) : value;
+                  comment += `| ${shortName} | ${metricName} | ${displayValue} |\n`;
+                }
               }
+
+              comment += '\n✅ All performance tests passed without significant regressions.';
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
             }
-
-            comment += '\n✅ All performance tests passed without significant regressions.';
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-          }
 
   performance-comparison:
     runs-on: ubuntu-latest
@@ -133,148 +133,148 @@ jobs:
     needs: performance-tests
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev,performance,mcmc]"
-        pip install pytest-benchmark psutil
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,performance,mcmc]"
+          pip install pytest-benchmark psutil
 
-    - name: Download current performance results
-      uses: actions/download-artifact@v4
-      with:
-        name: performance-results-3.12
-        path: ./current-results/
+      - name: Download current performance results
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-results-3.12
+          path: ./current-results/
 
-    - name: Run baseline performance tests (main branch)
-      run: |
-        git checkout origin/main
-        pytest -m "performance and not slow" --tb=short --disable-warnings --json-report --json-report-file=baseline-performance.json homodyne/tests/test_performance.py || true
+      - name: Run baseline performance tests (main branch)
+        run: |
+          git checkout origin/main
+          pytest -m "performance and not slow" --tb=short --disable-warnings --json-report --json-report-file=baseline-performance.json homodyne/tests/test_performance.py || true
 
-    - name: Run current performance tests (PR branch)
-      run: |
-        git checkout ${{ github.event.pull_request.head.sha }}
-        pytest -m "performance and not slow" --tb=short --disable-warnings --json-report --json-report-file=current-performance.json homodyne/tests/test_performance.py || true
+      - name: Run current performance tests (PR branch)
+        run: |
+          git checkout ${{ github.event.pull_request.head.sha }}
+          pytest -m "performance and not slow" --tb=short --disable-warnings --json-report --json-report-file=current-performance.json homodyne/tests/test_performance.py || true
 
-    - name: Compare performance results
-      run: |
-        python -c "
-        import json
-        import os
+      - name: Compare performance results
+        run: |
+          python -c "
+          import json
+          import os
 
-        def load_results(file):
-            if os.path.exists(file):
-                with open(file) as f:
-                    return json.load(f)
-            return {}
+          def load_results(file):
+              if os.path.exists(file):
+                  with open(file) as f:
+                      return json.load(f)
+              return {}
 
-        baseline = load_results('baseline-performance.json')
-        current = load_results('current-performance.json')
+          baseline = load_results('baseline-performance.json')
+          current = load_results('current-performance.json')
 
-        print('Performance Comparison Summary:')
-        print('=' * 50)
+          print('Performance Comparison Summary:')
+          print('=' * 50)
 
-        if baseline.get('tests') and current.get('tests'):
-            baseline_times = {test['nodeid']: test.get('duration', 0) for test in baseline['tests']}
-            current_times = {test['nodeid']: test.get('duration', 0) for test in current['tests']}
+          if baseline.get('tests') and current.get('tests'):
+              baseline_times = {test['nodeid']: test.get('duration', 0) for test in baseline['tests']}
+              current_times = {test['nodeid']: test.get('duration', 0) for test in current['tests']}
 
-            for test_id in set(baseline_times.keys()) & set(current_times.keys()):
-                baseline_time = baseline_times[test_id]
-                current_time = current_times[test_id]
+              for test_id in set(baseline_times.keys()) & set(current_times.keys()):
+                  baseline_time = baseline_times[test_id]
+                  current_time = current_times[test_id]
 
-                if baseline_time > 0:
-                    ratio = current_time / baseline_time
-                    status = '🚀' if ratio < 0.9 else '⚠️' if ratio > 1.1 else '✅'
-                    print(f'{status} {test_id}: {current_time:.3f}s vs {baseline_time:.3f}s ({ratio:.2f}x)')
-                else:
-                    print(f'📊 {test_id}: {current_time:.3f}s (new test)')
-        else:
-            print('Could not compare performance - missing test data')
-        "
+                  if baseline_time > 0:
+                      ratio = current_time / baseline_time
+                      status = '🚀' if ratio < 0.9 else '⚠️' if ratio > 1.1 else '✅'
+                      print(f'{status} {test_id}: {current_time:.3f}s vs {baseline_time:.3f}s ({ratio:.2f}x)')
+                  else:
+                      print(f'📊 {test_id}: {current_time:.3f}s (new test)')
+          else:
+              print('Could not compare performance - missing test data')
+          "
 
   performance-monitoring:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev,performance,mcmc]"
-        pip install pytest-benchmark psutil
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,performance,mcmc]"
+          pip install pytest-benchmark psutil
 
-    - name: Run comprehensive performance benchmark
-      run: |
-        python performance_benchmark_optimized.py --detailed > performance_report.txt 2>&1 || true
+      - name: Run comprehensive performance benchmark
+        run: |
+          python performance_benchmark_optimized.py --detailed > performance_report.txt 2>&1 || true
 
-    - name: Store performance metrics
-      run: |
-        # Create performance history file
-        timestamp=$(date -u +"%Y-%m-%d_%H-%M-%S")
-        mkdir -p performance_history
+      - name: Store performance metrics
+        run: |
+          # Create performance history file
+          timestamp=$(date -u +"%Y-%m-%d_%H-%M-%S")
+          mkdir -p performance_history
 
-        if [ -f "benchmark_results_optimized.json" ]; then
-          cp benchmark_results_optimized.json "performance_history/benchmark_${timestamp}.json"
-        fi
+          if [ -f "benchmark_results_optimized.json" ]; then
+            cp benchmark_results_optimized.json "performance_history/benchmark_${timestamp}.json"
+          fi
 
-        if [ -f "performance_report.txt" ]; then
-          cp performance_report.txt "performance_history/report_${timestamp}.txt"
-        fi
+          if [ -f "performance_report.txt" ]; then
+            cp performance_report.txt "performance_history/report_${timestamp}.txt"
+          fi
 
-    - name: Upload performance history
-      uses: actions/upload-artifact@v4
-      with:
-        name: performance-history
-        path: performance_history/
-        retention-days: 90
+      - name: Upload performance history
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-history
+          path: performance_history/
+          retention-days: 90
 
-    - name: Check for performance alerts
-      run: |
-        python -c "
-        import json
-        import os
+      - name: Check for performance alerts
+        run: |
+          python -c "
+          import json
+          import os
 
-        if os.path.exists('benchmark_results_optimized.json'):
-            with open('benchmark_results_optimized.json') as f:
-                results = json.load(f)
+          if os.path.exists('benchmark_results_optimized.json'):
+              with open('benchmark_results_optimized.json') as f:
+                  results = json.load(f)
 
-            # Check for performance alerts
-            alerts = []
+              # Check for performance alerts
+              alerts = []
 
-            if 'imports' in results:
-                total_import_time = sum(results['imports'].values())
-                if total_import_time > 15.0:  # Alert if imports take > 15s
-                    alerts.append(f'Import time high: {total_import_time:.1f}s')
+              if 'imports' in results:
+                  total_import_time = sum(results['imports'].values())
+                  if total_import_time > 15.0:  # Alert if imports take > 15s
+                      alerts.append(f'Import time high: {total_import_time:.1f}s')
 
-            # Check angle filtering performance
-            for test_name, data in results.items():
-                if 'angle_filtering' in test_name and isinstance(data, dict):
-                    if 'speedup' in data and data['speedup'] < 0.5:
-                        alerts.append(f'Poor angle filtering performance: {data[\"speedup\"]:.2f}x')
+              # Check angle filtering performance
+              for test_name, data in results.items():
+                  if 'angle_filtering' in test_name and isinstance(data, dict):
+                      if 'speedup' in data and data['speedup'] < 0.5:
+                          alerts.append(f'Poor angle filtering performance: {data[\"speedup\"]:.2f}x')
 
-            if alerts:
-                print('Performance Alerts:')
-                for alert in alerts:
-                    print(f'⚠️ {alert}')
+              if alerts:
+                  print('Performance Alerts:')
+                  for alert in alerts:
+                      print(f'⚠️ {alert}')
 
-                # You could integrate with monitoring services here
-            else:
-                print('✅ No performance alerts')
-        else:
-            print('❌ No benchmark results found')
-        "
+                  # You could integrate with monitoring services here
+              else:
+                  print('✅ No performance alerts')
+          else:
+              print('❌ No benchmark results found')
+          "

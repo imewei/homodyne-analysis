@@ -1,12 +1,14 @@
 # Homodyne API Reference
 
-**Python 3.12+ Required** | **JAX Integration Available** | **Code Quality: Black ✅ isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
+**Python 3.12+ Required** | **JAX Integration Available** | **Code Quality: Black ✅
+isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
 
 ## Core Modules
 
 ### `homodyne.analysis.core`
 
 #### `HomodyneAnalysisCore`
+
 Main analysis engine for XPCS data processing.
 
 ```python
@@ -26,6 +28,7 @@ class HomodyneAnalysisCore:
 ```
 
 **Example Usage:**
+
 ```python
 from homodyne.analysis.core import HomodyneAnalysisCore
 
@@ -35,11 +38,12 @@ core.load_data("experimental_data.h5")
 core.preprocess_data()
 ```
 
----
+______________________________________________________________________
 
 ### `homodyne.optimization.classical`
 
 #### `ClassicalOptimizer`
+
 Classical optimization methods (Nelder-Mead, Gurobi if available).
 
 ```python
@@ -66,6 +70,7 @@ class ClassicalOptimizer:
 ```
 
 **Example Usage:**
+
 ```python
 from homodyne.optimization.classical import ClassicalOptimizer
 
@@ -77,27 +82,38 @@ print(f"Final chi-squared: {result.fun}")
 print(f"Success: {result.success}")
 ```
 
-**Note**: L-BFGS-B is no longer used. Available methods are "nelder-mead" and "gurobi" (if licensed).
+**Note**: L-BFGS-B is no longer used. Available methods are "nelder-mead" and "gurobi"
+(if licensed).
 
 #### Gurobi Trust Region Implementation (Enhanced v0.6.5+)
-The Gurobi optimization now uses an **iterative trust region SQP approach** for robust convergence:
+
+The Gurobi optimization now uses an **iterative trust region SQP approach** for robust
+convergence:
 
 **Algorithm Overview:**
+
 1. **Build quadratic approximation** around current point using finite differences
-2. **Solve QP subproblem** with trust region constraints using native Gurobi QP solver  
-3. **Evaluate actual objective** at new candidate point
-4. **Update trust region** based on actual vs. predicted improvement
-5. **Iterate until convergence** or maximum iterations reached
+1. **Solve QP subproblem** with trust region constraints using native Gurobi QP solver
+1. **Evaluate actual objective** at new candidate point
+1. **Update trust region** based on actual vs. predicted improvement
+1. **Iterate until convergence** or maximum iterations reached
 
 **Key Features:**
-- **Trust region management**: Radius adapts from 0.1 initial → 1e-8 to 1.0 range based on step quality
-- **Parameter-scaled finite differences**: Epsilon scales with parameter magnitudes for numerical stability
-- **Diagonal Hessian approximation**: More stable than full Hessian for chi-squared problems
-- **Convergence criteria**: Gradient norm < tolerance, objective improvement < tolerance, or trust region collapse
-- **Parameter bounds**: Native Gurobi constraint support ensures physical parameter ranges
+
+- **Trust region management**: Radius adapts from 0.1 initial → 1e-8 to 1.0 range based
+  on step quality
+- **Parameter-scaled finite differences**: Epsilon scales with parameter magnitudes for
+  numerical stability
+- **Diagonal Hessian approximation**: More stable than full Hessian for chi-squared
+  problems
+- **Convergence criteria**: Gradient norm < tolerance, objective improvement \<
+  tolerance, or trust region collapse
+- **Parameter bounds**: Native Gurobi constraint support ensures physical parameter
+  ranges
 - **Progress logging**: Debug messages show iteration progress and χ² convergence
 
 **Configuration Options:**
+
 ```python
 method_options = {
     "Gurobi": {
@@ -111,13 +127,15 @@ method_options = {
 }
 ```
 
-**Performance:** Expected convergence in 10-30 iterations for typical XPCS problems with progressive χ² improvement.
+**Performance:** Expected convergence in 10-30 iterations for typical XPCS problems with
+progressive χ² improvement.
 
----
+______________________________________________________________________
 
 ### `homodyne.optimization.robust`
 
 #### `RobustHomodyneOptimizer`
+
 Robust optimization with uncertainty quantification.
 
 ```python
@@ -143,16 +161,19 @@ class RobustHomodyneOptimizer:
 ```
 
 **Available Methods:**
-- `wasserstein`: Wasserstein Distributionally Robust Optimization  
+
+- `wasserstein`: Wasserstein Distributionally Robust Optimization
 - `scenario`: Scenario-based robust optimization
 - `ellipsoidal`: Ellipsoidal uncertainty sets
 
 **Available Solvers:**
+
 - `clarabel`: Default high-performance solver (CLARABEL)
 - `scs`: Splitting Conic Solver (SCS)
 - `cvxopt`: CVXOPT solver (fallback)
 
 **Example Usage:**
+
 ```python
 from homodyne.optimization.robust import RobustHomodyneOptimizer
 
@@ -172,11 +193,12 @@ print(f"Robust optimal parameters: {optimal_params}")
 print(f"Final chi-squared: {info['final_chi_squared']}")
 ```
 
----
+______________________________________________________________________
 
 ### `homodyne.optimization.mcmc`
 
 #### `MCMCSampler`
+
 Bayesian MCMC sampling using PyMC with NUTS.
 
 ```python
@@ -198,6 +220,7 @@ class MCMCSampler:
 ```
 
 **Return Structure:**
+
 ```python
 {
     "trace": arviz.InferenceData,           # MCMC trace
@@ -209,6 +232,7 @@ class MCMCSampler:
 ```
 
 **Example Usage:**
+
 ```python
 from homodyne.optimization.mcmc import MCMCSampler
 
@@ -228,11 +252,12 @@ print(f"Posterior means: {result['posterior_means']}")
 print(f"R-hat diagnostics: {result['diagnostics']['r_hat']}")
 ```
 
----
+______________________________________________________________________
 
 ### `homodyne.core.config`
 
 #### `ConfigManager`
+
 Configuration management and validation.
 
 ```python
@@ -254,6 +279,7 @@ class ConfigManager:
 ```
 
 **Example Usage:**
+
 ```python
 from homodyne.core.config import ConfigManager
 
@@ -277,7 +303,7 @@ print(f"Parameter bounds: {bounds}")
 # Returns: [(1e-3, 1e6), (-2.0, 2.0), (-5000, 5000), ...]
 ```
 
----
+______________________________________________________________________
 
 ### `homodyne.plotting`
 
@@ -311,6 +337,7 @@ def plot_robust_optimization_results(
 ```
 
 **Example Usage:**
+
 ```python
 from homodyne.plotting import plot_c2_heatmaps, plot_optimization_results
 
@@ -330,7 +357,7 @@ plot_optimization_results(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Utility Functions
 
@@ -349,6 +376,7 @@ def filter_angles_by_ranges(
 ### `homodyne.core.kernels` (Performance Optimized v0.6.5+)
 
 **JIT-Compiled Computational Kernels:**
+
 ```python
 # High-performance correlation calculations with Numba JIT
 def compute_g1_correlation_numba(diffusion_coeff, shear_rate, time_points, angles) -> np.ndarray
@@ -362,8 +390,10 @@ def _compute_chi_squared_batch_fallback(theory_batch, exp_batch, contrast_batch,
 ```
 
 **Recent Improvements:**
+
 - **Code cleanup**: Removed 308 lines of unused fallback implementations
-- **Added missing functions**: `_solve_least_squares_batch_fallback` and `_compute_chi_squared_batch_fallback`
+- **Added missing functions**: `_solve_least_squares_batch_fallback` and
+  `_compute_chi_squared_batch_fallback`
 - **Performance optimization**: 3-5x speedup with JIT compilation
 - **Numerical stability**: Enhanced finite difference calculations
 
@@ -381,7 +411,7 @@ def optimize_numerical_environment() -> None
 def profile_function(func: Callable) -> Callable
 ```
 
----
+______________________________________________________________________
 
 ## Advanced Usage
 
@@ -453,7 +483,7 @@ def analyze_with_monitoring(config_file: str):
 result = analyze_with_monitoring("my_config.json")
 ```
 
----
+______________________________________________________________________
 
 ## Error Handling
 
@@ -496,7 +526,7 @@ except Exception as e:
     print(f"Unexpected error: {e}")
 ```
 
----
+______________________________________________________________________
 
 ## CLI and Shell Integration
 
@@ -505,6 +535,7 @@ except Exception as e:
 The package provides comprehensive shell completion support for enhanced CLI experience:
 
 **Installation:**
+
 ```bash
 # Install completion support
 pip install homodyne-analysis[completion]
@@ -523,31 +554,37 @@ homodyne --uninstall-completion powershell  # For PowerShell
 ```
 
 **Features:**
+
 - **Method completion**: `--method <TAB>` → classical, mcmc, robust, all
 - **Config file completion**: `--config <TAB>` → available .json files
 - **Directory completion**: `--output-dir <TAB>` → available directories
 - **Context-aware**: Adapts based on current command context
 - **Cross-platform**: Works on Linux, macOS, and Windows
 
-**Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use shell completion for enhanced CLI experience.
+**Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use shell completion
+for enhanced CLI experience.
 
 ### Code Quality Standards (v0.6.5+)
 
 The homodyne package maintains high code quality with comprehensive tooling:
 
 **Formatting and Style:**
+
 - ✅ **Black**: 100% compliant (88-character line length)
 - ✅ **isort**: Import sorting and optimization
 - ⚠️ **flake8**: ~400 remaining issues (mostly line length in data scripts)
 - ⚠️ **mypy**: ~285 type annotation issues (missing library stubs)
 
 **Recent Improvements:**
-- **Code reduction**: Removed 308 lines of unused fallback implementations from kernels.py
+
+- **Code reduction**: Removed 308 lines of unused fallback implementations from
+  kernels.py
 - **Import optimization**: Cleaned up import patterns and resolved redefinition warnings
-- **Critical fixes**: Fixed comparison operators (`== False` → `is False`) and missing function definitions
+- **Critical fixes**: Fixed comparison operators (`== False` → `is False`) and missing
+  function definitions
 - **Enhanced algorithms**: Improved Gurobi optimization with trust region methods
 
----
+______________________________________________________________________
 
 ## Backend Integration
 
@@ -572,12 +609,14 @@ print(f"JAX backend available: {JAX_AVAILABLE}")
 ```
 
 **JAX Integration Features:**
+
 - **Automatic detection**: JAX used when available, graceful NumPy fallback
 - **GPU acceleration**: Utilizes GPU devices when present
 - **JIT compilation**: Additional performance boost beyond Numba
 - **Lazy loading**: JAX imported only when needed
 
 **Installation for JAX:**
+
 ```bash
 pip install jax jaxlib  # CPU version
 # OR for GPU support:
@@ -597,7 +636,7 @@ config = {
 }
 ```
 
----
+______________________________________________________________________
 
 ## Testing and Validation
 
@@ -627,7 +666,7 @@ c2_synthetic = generate_synthetic_data(
 is_valid = validate_optimization_result(result, expected_params)
 ```
 
----
+______________________________________________________________________
 
 ## Migration Guide
 

@@ -1,5 +1,6 @@
 # Optional dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies]
+# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
 
 # Include core dependencies
 -r requirements.txt
@@ -25,5 +26,11 @@ cvxpy>=1.4.0
 # Gurobi optimization solver (requires license)
 gurobipy>=11.0.0
 
-# Shell completion
+# Shell completion (cross-platform support)
 argcomplete>=3.0.0
+
+# Note: Shell completion now includes:
+# - Windows PowerShell support
+# - Cross-platform path handling
+# - Fast completion caching
+# - Robust fallback mechanisms

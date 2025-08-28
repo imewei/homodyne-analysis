@@ -3,17 +3,17 @@ name: Performance Regression Testing
 "on":
   # Run on pushes to main branch
   push:
-    branches: [ main, master ]
+    branches: [main, master]
 
   # Run on pull requests
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
   # Allow manual triggering
   workflow_dispatch:
     inputs:
       update_baselines:
-        description: 'Update performance baselines'
+        description: "Update performance baselines"
         required: false
         type: boolean
         default: false
@@ -24,114 +24,114 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.12', '3.13']
+        python-version: ["3.12", "3.13"]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Full history for git tracking
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for git tracking
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-benchmark pytest-xdist
-        pip install numpy scipy numba lz4 psutil
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-benchmark pytest-xdist
+          pip install numpy scipy numba lz4 psutil
 
-        # Install GitPython for version tracking
-        pip install GitPython
+          # Install GitPython for version tracking
+          pip install GitPython
 
-        # Install package in development mode
-        if [ -f pyproject.toml ]; then
-          pip install -e .
-        elif [ -f setup.py ]; then
-          pip install -e .
-        elif [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        fi
+          # Install package in development mode
+          if [ -f pyproject.toml ]; then
+            pip install -e .
+          elif [ -f setup.py ]; then
+            pip install -e .
+          elif [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
-    - name: Setup performance baseline cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ci_performance_baselines.json
-          test_performance_baselines.json
-        key: performance-baselines-${{ matrix.python-version }}-${{ hashFiles('homodyne/core/*.py') }}
-        restore-keys: |
-          performance-baselines-${{ matrix.python-version }}-
-          performance-baselines-
+      - name: Setup performance baseline cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ci_performance_baselines.json
+            test_performance_baselines.json
+          key: performance-baselines-${{ matrix.python-version }}-${{ hashFiles('homodyne/core/*.py') }}
+          restore-keys: |
+            performance-baselines-${{ matrix.python-version }}-
+            performance-baselines-
 
-    - name: Run performance regression tests
-      id: performance_tests
-      run: |
-        echo "Running performance regression tests..."
+      - name: Run performance regression tests
+        id: performance_tests
+        run: |
+          echo "Running performance regression tests..."
 
-        # Run the performance test suite
-        cd homodyne/tests
-        python test_performance.py --ci
+          # Run the performance test suite
+          cd homodyne/tests
+          python test_performance.py --ci
 
-        # Capture exit code
-        echo "performance_exit_code=$?" >> $GITHUB_OUTPUT
-      continue-on-error: true
+          # Capture exit code
+          echo "performance_exit_code=$?" >> $GITHUB_OUTPUT
+        continue-on-error: true
 
-    - name: Update baselines (if requested)
-      if: ${{ github.event.inputs.update_baselines == 'true' && github.ref == 'refs/heads/main' }}
-      run: |
-        echo "Updating performance baselines..."
-        cd homodyne/tests
-        python test_performance.py --baseline --iterations 10
+      - name: Update baselines (if requested)
+        if: ${{ github.event.inputs.update_baselines == 'true' && github.ref == 'refs/heads/main' }}
+        run: |
+          echo "Updating performance baselines..."
+          cd homodyne/tests
+          python test_performance.py --baseline --iterations 10
 
-    - name: Upload performance report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: performance-report-py${{ matrix.python-version }}
-        path: |
-          performance_regression_report.md
-          ci_performance_baselines.json
-          test_performance_baselines.json
-        retention-days: 30
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-report-py${{ matrix.python-version }}
+          path: |
+            performance_regression_report.md
+            ci_performance_baselines.json
+            test_performance_baselines.json
+          retention-days: 30
 
-    - name: Comment PR with performance results
-      uses: actions/github-script@v6
-      if: github.event_name == 'pull_request' && always()
-      with:
-        script: |
-          const fs = require('fs');
-          const path = 'performance_regression_report.md';
+      - name: Comment PR with performance results
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request' && always()
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'performance_regression_report.md';
 
-          if (fs.existsSync(path)) {
-            const report = fs.readFileSync(path, 'utf8');
-            const truncatedReport = report.length > 65000 ?
-              report.substring(0, 65000) + '\n\n... (report truncated)' : report;
+            if (fs.existsSync(path)) {
+              const report = fs.readFileSync(path, 'utf8');
+              const truncatedReport = report.length > 65000 ?
+                report.substring(0, 65000) + '\n\n... (report truncated)' : report;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## Performance Regression Test Results (Python ${{ matrix.python-version }})\n\n${truncatedReport}`
-            });
-          }
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## Performance Regression Test Results (Python ${{ matrix.python-version }})\n\n${truncatedReport}`
+              });
+            }
 
-    - name: Fail job if performance regression detected
-      if: steps.performance_tests.outputs.performance_exit_code != '0'
-      run: |
-        echo "❌ Performance regression detected!"
-        echo "Check the performance report artifact for details."
-        exit 1
+      - name: Fail job if performance regression detected
+        if: steps.performance_tests.outputs.performance_exit_code != '0'
+        run: |
+          echo "❌ Performance regression detected!"
+          echo "Check the performance report artifact for details."
+          exit 1
 
   performance-summary:
     runs-on: ubuntu-latest
@@ -139,34 +139,34 @@ jobs:
     if: always()
 
     steps:
-    - name: Download performance reports
-      uses: actions/download-artifact@v4
-      with:
-        path: performance-reports
+      - name: Download performance reports
+        uses: actions/download-artifact@v4
+        with:
+          path: performance-reports
 
-    - name: Generate summary report
-      run: |
-        echo "# Performance Test Summary" > summary.md
-        echo "" >> summary.md
-        echo "Performance regression tests completed across all Python versions." >> summary.md
-        echo "" >> summary.md
+      - name: Generate summary report
+        run: |
+          echo "# Performance Test Summary" > summary.md
+          echo "" >> summary.md
+          echo "Performance regression tests completed across all Python versions." >> summary.md
+          echo "" >> summary.md
 
-        # List all reports
-        if [ -d "performance-reports" ]; then
-          echo "## Available Reports" >> summary.md
-          for dir in performance-reports/*/; do
-            if [ -d "$dir" ]; then
-              echo "- $(basename "$dir")" >> summary.md
-            fi
-          done
-        fi
+          # List all reports
+          if [ -d "performance-reports" ]; then
+            echo "## Available Reports" >> summary.md
+            for dir in performance-reports/*/; do
+              if [ -d "$dir" ]; then
+                echo "- $(basename "$dir")" >> summary.md
+              fi
+            done
+          fi
 
-        echo "" >> summary.md
-        echo "Generated: $(date)" >> summary.md
+          echo "" >> summary.md
+          echo "Generated: $(date)" >> summary.md
 
-    - name: Upload summary
-      uses: actions/upload-artifact@v4
-      with:
-        name: performance-summary
-        path: summary.md
-        retention-days: 30
+      - name: Upload summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-summary
+          path: summary.md
+          retention-days: 30

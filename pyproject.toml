@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with iterative Gurobi optimization and robust methods"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, pre-commit hooks, and cross-platform shell completion"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -48,6 +48,11 @@ keywords = [
     "jit-compilation",
     "performance-optimization",
     "code-quality",
+    "pre-commit-hooks",
+    "shell-completion",
+    "cross-platform",
+    "windows-compatibility",
+    "security-scanning",
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -145,7 +150,14 @@ packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"
 include-package-data = true
 
 [tool.setuptools.package-data]
-homodyne = ["config_*.json", "templates/*.json", "typings/**/*.pyi"]
+homodyne = [
+    "config_*.json",
+    "templates/*.json",
+    "typings/**/*.pyi",
+    "completion_fast.py",
+    "cli_completion.py",
+    "*_complete"
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "homodyne.__version__"}
@@ -313,3 +325,5 @@ skips = [
     "B603",  # Skip subprocess without shell (we control the input)
 ]
 severity_level = "medium"  # Only report medium and high severity issues
+format = "json"  # JSON output for CI integration
+output = "bandit_report.json"  # Save results for analysis
