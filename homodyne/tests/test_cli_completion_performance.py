@@ -91,7 +91,7 @@ class TestCompletionPerformance:
                 if cached_time > 0.001:  # 1ms threshold
                     assert (
                         speedup > 1.1
-                    ), f"Cache speedup only {speedup:.1f}x (first: {first_time*1000:.2f}ms, cached: {cached_time*1000:.2f}ms)"
+                    ), f"Cache speedup only {speedup:.1f}x (first: {first_time * 1000:.2f}ms, cached: {cached_time * 1000:.2f}ms)"
                 # If cached call is < 1ms, that's success regardless of speedup ratio
 
                 # Results should be correct

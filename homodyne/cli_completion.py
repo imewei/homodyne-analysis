@@ -168,8 +168,8 @@ class HomodyneCompleter:
     @staticmethod
     def config_files_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest JSON config files - instant cached lookup."""
-        # Handle path with directory
-        if "/" in prefix:
+        # Handle path with directory (cross-platform)
+        if os.sep in prefix or "/" in prefix:
             dir_path, file_prefix = os.path.split(prefix)
             if not dir_path:
                 dir_path = "."
@@ -198,8 +198,8 @@ class HomodyneCompleter:
     @staticmethod
     def output_dir_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest directories - instant cached lookup."""
-        # Handle path with directory
-        if "/" in prefix:
+        # Handle path with directory (cross-platform)
+        if os.sep in prefix or "/" in prefix:
             parent_dir, dir_prefix = os.path.split(prefix)
             if not parent_dir:
                 parent_dir = "."
