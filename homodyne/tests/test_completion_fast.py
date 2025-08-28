@@ -241,13 +241,13 @@ class TestCompletionFunctions:
 
             # Test with no prefix
             dirs = complete_output_dir("")
-            assert "output/" in dirs
-            assert "results/" in dirs
+            assert "output" + os.sep in dirs
+            assert "results" + os.sep in dirs
 
             # Test with prefix
             mock_cache.get_dirs.return_value = ["output", "other"]
-            assert "output/" in complete_output_dir("out")
-            assert "other/" not in complete_output_dir("out")
+            assert "output" + os.sep in complete_output_dir("out")
+            assert "other" + os.sep not in complete_output_dir("out")
 
     def test_complete_output_dir_with_directory(self):
         """Test output directory completion with directory prefix."""
@@ -302,7 +302,7 @@ class TestMainFunction:
                 main()
 
         captured = capsys.readouterr()
-        assert "output/" in captured.out
+        assert "output" + os.sep in captured.out
 
     def test_main_unknown_completion(self, capsys):
         """Test main function with unknown completion type."""
