@@ -213,9 +213,9 @@ class HomodyneCompleter:
             results = []
             for d in dirs:
                 if parent_dir == ".":
-                    results.append(d + "/")
+                    results.append(d + os.sep)
                 else:
-                    results.append(os.path.join(parent_dir, d) + "/")
+                    results.append(os.path.join(parent_dir, d) + os.sep)
             return results
         # Filter by prefix (case-insensitive)
         dir_prefix_lower = dir_prefix.lower()
@@ -223,9 +223,9 @@ class HomodyneCompleter:
         for d in dirs:
             if d.lower().startswith(dir_prefix_lower):
                 if parent_dir == ".":
-                    matches.append(d + "/")
+                    matches.append(d + os.sep)
                 else:
-                    matches.append(os.path.join(parent_dir, d) + "/")
+                    matches.append(os.path.join(parent_dir, d) + os.sep)
         return matches
 
     @staticmethod

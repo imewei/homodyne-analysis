@@ -119,7 +119,7 @@ def complete_mode(prefix: str) -> List[str]:
 def complete_config(prefix: str) -> List[str]:
     """Complete config files - cached lookup."""
     # Handle directory prefix
-    if "/" in prefix:
+    if os.sep in prefix or "/" in prefix:
         dir_path, file_prefix = os.path.split(prefix)
         if not dir_path:
             dir_path = "."
@@ -153,7 +153,7 @@ def complete_config(prefix: str) -> List[str]:
 def complete_output_dir(prefix: str) -> List[str]:
     """Complete output directories - cached lookup."""
     # Handle directory prefix
-    if "/" in prefix:
+    if os.sep in prefix or "/" in prefix:
         parent_dir, dir_prefix = os.path.split(prefix)
         if not parent_dir:
             parent_dir = "."
@@ -169,9 +169,9 @@ def complete_output_dir(prefix: str) -> List[str]:
         results = []
         for d in dirs:
             if parent_dir == ".":
-                results.append(d + "/")
+                results.append(d + os.sep)
             else:
-                results.append(os.path.join(parent_dir, d) + "/")
+                results.append(os.path.join(parent_dir, d) + os.sep)
         return results
 
     # Filter by prefix
@@ -180,9 +180,9 @@ def complete_output_dir(prefix: str) -> List[str]:
     for d in dirs:
         if d.lower().startswith(dir_prefix_lower):
             if parent_dir == ".":
-                matches.append(d + "/")
+                matches.append(d + os.sep)
             else:
-                matches.append(os.path.join(parent_dir, d) + "/")
+                matches.append(os.path.join(parent_dir, d) + os.sep)
 
     return matches
 
