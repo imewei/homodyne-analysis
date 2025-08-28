@@ -25,6 +25,19 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - Fixed multiple test assertions in `test_cli_completion.py` and
     `test_completion_fast.py`
   - Added missing `import os` for cross-platform path separator support
+- **Windows Unicode Encoding Issues**: Fixed Windows cp1252 encoding errors in logging
+  - Replaced Unicode characters (Å⁻¹, μm) with ASCII equivalents (A^-1, um) to prevent
+    Windows encoding errors
+  - Fixed logging output in `HomodyneAnalysisCore` initialization summary
+- **Performance Test Stability**: Improved timing assertion handling
+  - Fixed performance test failures when timing measurements are unmeasurably fast
+  - Added proper handling for edge cases in `test_config_caching_optimization`
+- **Type Compatibility**: Fixed type conversion issues
+  - Convert list parameters to numpy arrays for function compatibility
+  - Resolved type errors in `calculate_c2_nonequilibrium_laminar_parallel`
+- **Code Quality**: Applied consistent formatting and style
+  - Fixed black code formatting issues across test files
+  - Removed auto-generated files from version control
 
 ### Technical Details
 
@@ -34,14 +47,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   path separators
 - **Backward Compatibility**: Maintains full compatibility with existing Unix-style
   forward slash usage
+- **CI Pipeline**: All formatting and linting checks now pass consistently
 
 ### Impact
 
 - **Windows Users**: Shell completion now works correctly with Windows path conventions
 - **CI/CD Pipeline**: Windows CI tests now pass reliably without path separator
-  conflicts
+  conflicts or Unicode encoding issues
 - **Developer Experience**: Consistent cross-platform behavior for all completion
-  functionality
+  functionality and improved code quality standards
 
 ## [0.7.0] - 2025-08-28
 
