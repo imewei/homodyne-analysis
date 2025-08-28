@@ -88,6 +88,9 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[completion]
    # Then install completion for your shell:
    homodyne --install-completion bash  # or zsh, fish, powershell
+   
+   # To remove completion later:
+   homodyne --uninstall-completion bash  # or zsh, fish, powershell
 
 **For Security and Code Quality Tools:**
 

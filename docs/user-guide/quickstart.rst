@@ -23,6 +23,9 @@ Installation
    homodyne --install-completion zsh  # or bash, fish, powershell
    source ~/.zshrc                    # Restart shell or reload config
    
+   # To remove completion later:
+   # homodyne --uninstall-completion zsh
+   
    # Test shortcuts (work immediately)
    homodyne_help                      # Show all available options
 

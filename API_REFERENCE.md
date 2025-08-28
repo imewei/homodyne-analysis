@@ -514,6 +514,12 @@ homodyne --install-completion bash    # For bash
 homodyne --install-completion zsh     # For zsh  
 homodyne --install-completion fish    # For fish
 homodyne --install-completion powershell  # For PowerShell
+
+# To remove completion later
+homodyne --uninstall-completion bash    # For bash
+homodyne --uninstall-completion zsh     # For zsh  
+homodyne --uninstall-completion fish    # For fish
+homodyne --uninstall-completion powershell  # For PowerShell
 ```
 
 **Features:**

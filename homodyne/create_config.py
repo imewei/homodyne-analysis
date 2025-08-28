@@ -39,6 +39,18 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Import shell completion functionality
+try:
+    from homodyne.cli_completion import setup_shell_completion
+
+    COMPLETION_AVAILABLE = True
+except ImportError:
+    COMPLETION_AVAILABLE = False
+
+    def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
+        """Fallback when completion is not available."""
+        pass
+
 
 def create_config_from_template(
     output_file="my_config.json",
@@ -98,10 +110,7 @@ def create_config_from_template(
 
     if mode not in valid_modes:
         raise ValueError(
-            f"Invalid mode '{mode}'. Valid modes: {
-                list(
-                    valid_modes.keys())[
-                    :-1]}"
+            f"Invalid mode '{mode}'. Valid modes: {list(valid_modes.keys())[:-1]}"
         )
 
     # Get template path (now that we're inside the homodyne package)
@@ -118,7 +127,7 @@ def create_config_from_template(
         raise FileNotFoundError(f"Template not found: {template_file}")
 
     # Load template
-    with open(template_file, "r", encoding="utf-8") as f:
+    with open(template_file, encoding="utf-8") as f:
         config = json.load(f)
 
     # Remove template-specific fields from final config
@@ -231,8 +240,7 @@ def main():
     # Check Python version requirement
     if sys.version_info < (3, 12):
         print(
-            f"Error: Python 3.12+ is required. You are using Python {
-                sys.version}",
+            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
             file=sys.stderr,
         )
         print(
@@ -286,6 +294,10 @@ Examples:
     parser.add_argument("--experiment", "-e", help="Experiment description")
 
     parser.add_argument("--author", "-a", help="Author name")
+
+    # Setup shell completion if available
+    if COMPLETION_AVAILABLE:
+        setup_shell_completion(parser)
 
     args = parser.parse_args()
 

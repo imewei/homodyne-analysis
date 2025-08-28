@@ -5,6 +5,32 @@ All notable changes to the Homodyne Scattering Analysis Package will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10] - 2025-08-28
+
+### Added
+- **Shell Completion Uninstall Feature**: New `homodyne --uninstall-completion {bash,zsh,fish,powershell}` command to cleanly remove shell completion
+- **Enhanced Shell Completion System**: Improved reliability and error handling for shell completion installation
+- **Cross-Platform Uninstall Support**: Uninstall functionality works across all supported shells and platforms
+- **Comprehensive Documentation**: Updated all documentation with uninstall examples and usage instructions
+
+### Fixed
+- **homodyne-config Completion**: Fixed shell completion for `homodyne-config` command that was not showing correct options
+- **Import Path Issues**: Resolved relative import issues in completion system that caused failures when run as script
+- **Shell Parsing Logic**: Fixed completion parsing logic for proper handling of command-line arguments
+- **Zsh Completion Fallback**: Enhanced zsh completion fallback system to handle more edge cases
+
+### Enhanced
+- **Completion Documentation**: Updated README.md, CLI_REFERENCE.md, API_REFERENCE.md, and docs/ with comprehensive examples
+- **Error Handling**: Improved error messages and graceful degradation for completion system
+- **Code Quality**: Applied black formatting, flake8 linting, mypy type checking, and ruff formatting to all new code
+- **Type Annotations**: Added proper type hints to all new completion-related functions
+
+### Developer Experience
+- **Bypass Completion File**: Enhanced `homodyne_completion_bypass.zsh` with support for both commands and all options
+- **Manual Completion**: Added manual completion triggers (Ctrl-X + c) for when automatic completion fails  
+- **Convenience Aliases**: Added shortcuts like `hc-iso`, `hc-aniso`, `hc-flow` for common `homodyne-config` operations
+- **Help Function**: Enhanced `homodyne_help` to show all available shortcuts and completion options
+
 ## [0.6.9] - 2025-08-27
 
 ### Added

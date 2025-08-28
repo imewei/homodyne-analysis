@@ -69,7 +69,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 # CRITICAL: Handle shell completion BEFORE any heavy imports
@@ -174,6 +174,7 @@ try:
     from .cli_completion import (
         install_shell_completion,
         setup_shell_completion,
+        uninstall_shell_completion,
     )
 
     COMPLETION_AVAILABLE = True
@@ -181,10 +182,13 @@ except ImportError:
     COMPLETION_AVAILABLE = False
 
     # Define dummy functions to avoid Pylance errors
-    def setup_shell_completion(parser):
+    def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
         pass
 
-    def install_shell_completion(shell):
+    def install_shell_completion(shell: str) -> int:
+        return 1
+
+    def uninstall_shell_completion(shell: str) -> int:
         return 1
 
 
@@ -339,13 +343,13 @@ def print_banner(args: argparse.Namespace) -> None:
     print(f"Output directory: {args.output_dir}")
     if args.quiet:
         print(
-            f"Logging:          File only ({
-                'DEBUG' if args.verbose else 'INFO'} level)"
+            f"Logging:          File only ({'DEBUG' if args.verbose else 'INFO'} level)"
         )
     else:
         print(
             f"Verbose logging:  {
-                'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'}"
+                'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'
+            }"
         )
 
     # Show analysis mode
@@ -388,20 +392,14 @@ def run_analysis(args: argparse.Namespace) -> None:
     # 1. Verify the config file exists; exit with clear error if not
     config_path = Path(args.config)
     if not config_path.exists():
-        logger.error(
-            f"❌ Configuration file not found: {
-                config_path.absolute()}"
-        )
+        logger.error(f"❌ Configuration file not found: {config_path.absolute()}")
         logger.error(
             "Please check the file path and ensure the configuration file exists."
         )
         sys.exit(1)
 
     if not config_path.is_file():
-        logger.error(
-            f"❌ Configuration path is not a file: {
-                config_path.absolute()}"
-        )
+        logger.error(f"❌ Configuration path is not a file: {config_path.absolute()}")
         sys.exit(1)
 
     logger.info(f"✓ Configuration file found: {config_path.absolute()}")
@@ -417,7 +415,7 @@ def run_analysis(args: argparse.Namespace) -> None:
         logger.info(f"Initializing Homodyne Analysis with config: {config_path}")
 
         # Apply mode override if specified
-        config_override: Optional[Dict[str, Any]] = None
+        config_override: dict[str, Any] | None = None
         if args.static_isotropic:
             config_override = {
                 "analysis_settings": {
@@ -564,7 +562,8 @@ def run_analysis(args: argparse.Namespace) -> None:
             successful_methods = results.get("methods_used", [])
             logger.info(
                 f"Running per-angle chi-squared analysis for methods: {
-                    ', '.join(successful_methods)}"
+                    ', '.join(successful_methods)
+                }"
             )
 
             for method in successful_methods:
@@ -584,21 +583,16 @@ def run_analysis(args: argparse.Namespace) -> None:
                                     )
                                     logger.info(
                                         f"  Convergence status: {
-                                            diag.get(
-                                                'assessment',
-                                                'Unknown')}"
+                                            diag.get('assessment', 'Unknown')
+                                        }"
                                     )
                                     logger.info(
                                         f"  Maximum R̂ (R-hat): {
-                                            diag.get(
-                                                'max_rhat',
-                                                'N/A'):.4f}"
+                                            diag.get('max_rhat', 'N/A'):.4f}"
                                     )
                                     logger.info(
                                         f"  Minimum ESS: {
-                                            diag.get(
-                                                'min_ess',
-                                                'N/A'):.0f}"
+                                            diag.get('min_ess', 'N/A'):.0f}"
                                     )
 
                                     # Quality assessment based on convergence
@@ -655,10 +649,7 @@ def run_analysis(args: argparse.Namespace) -> None:
                                     else:
                                         quality = "poor"
 
-                                    logger.info(
-                                        f"  MCMC quality: {
-                                            quality.upper()}"
-                                    )
+                                    logger.info(f"  MCMC quality: {quality.upper()}")
 
                                     # Additional metrics if available
                                     if "trace" in mcmc_results:
@@ -702,8 +693,7 @@ def run_analysis(args: argparse.Namespace) -> None:
             if len(methods_attempted) == 1:
                 # Single method failed - this is a hard failure
                 logger.error(
-                    f"The only requested method ({
-                        args.method}) failed to complete"
+                    f"The only requested method ({args.method}) failed to complete"
                 )
                 sys.exit(1)
             else:
@@ -975,8 +965,7 @@ def run_robust_optimization(
                 success=True,
             )
             logger.info(
-                f"✓ Best robust method: {best_method} with χ²={
-                    best_chi_squared:.6f}"
+                f"✓ Best robust method: {best_method} with χ²={best_chi_squared:.6f}"
             )
         else:
             result = None
@@ -1133,10 +1122,7 @@ def run_mcmc_optimization(
         )
 
         mcmc_execution_time = time.time() - mcmc_start_time
-        logger.info(
-            f"✓ MCMC sampling completed in {
-                mcmc_execution_time:.2f} seconds"
-        )
+        logger.info(f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
 
         # Step 5 & 6: Save inference data and write convergence diagnostics
         if output_dir is None:
@@ -1187,12 +1173,7 @@ def run_mcmc_optimization(
             logger.info(f"  Max R-hat: {diagnostics.get('max_rhat', 'N/A')}")
             logger.info(f"  Min ESS: {diagnostics.get('min_ess', 'N/A')}")
             logger.info(f"  Converged: {diagnostics.get('converged', False)}")
-            logger.info(
-                f"  Assessment: {
-                    diagnostics.get(
-                        'assessment',
-                        'Unknown')}"
-            )
+            logger.info(f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
 
             if not diagnostics.get("converged", False):
                 logger.warning(
@@ -1260,10 +1241,7 @@ def run_mcmc_optimization(
             else:
                 convergence_quality = "poor"
 
-            logger.info(
-                f"MCMC convergence quality: {
-                    convergence_quality.upper()}"
-            )
+            logger.info(f"MCMC convergence quality: {convergence_quality.upper()}")
             logger.info(f"MCMC posterior mean parameters: {best_params}")
         else:
             logger.warning("No convergence diagnostics available for MCMC results")
@@ -1648,7 +1626,8 @@ def _generate_classical_plots(
                 # Generate plots for each successful method
                 logger.info(
                     f"Generating C2 correlation heatmaps for {
-                        len(successful_methods)} optimization methods..."
+                        len(successful_methods)
+                    } optimization methods..."
                 )
                 all_success = True
 
@@ -1878,10 +1857,7 @@ def _save_individual_method_results(
             # Save method-specific analysis results
             analysis_results_file = (
                 method_dir
-                / f"analysis_results_{
-                    method_name.lower().replace(
-                        '-',
-                        '_')}.json"
+                / f"analysis_results_{method_name.lower().replace('-', '_')}.json"
             )
             with open(analysis_results_file, "w") as f:
                 json.dump(method_info, f, indent=2)
@@ -1933,9 +1909,7 @@ def _save_individual_method_results(
             logger.info(f"✓ All method results saved to {classical_dir}/")
             logger.info(f"  - Summary: {summary_file}")
             logger.info(
-                f"  - Individual method folders: {
-                    ', '.join(
-                        all_methods_data.keys())}"
+                f"  - Individual method folders: {', '.join(all_methods_data.keys())}"
             )
 
     except Exception as e:
@@ -2236,8 +2210,8 @@ def _save_individual_robust_method_results(
             logger.info(f"  - Summary: {summary_file}")
             logger.info(
                 f"  - Individual method folders: {
-                    ', '.join(
-                        all_robust_methods_data.keys())}"
+                    ', '.join(all_robust_methods_data.keys())
+                }"
             )
 
     except Exception as e:
@@ -2595,8 +2569,9 @@ def _generate_mcmc_plots(
                             for i, params in enumerate(param_samples_subset):
                                 if i % 50 == 0:  # Log progress every 50 samples
                                     logger.debug(
-                                        f"Processing posterior sample {
-                                            i + 1}/{n_samples}"
+                                        f"Processing posterior sample {i + 1}/{
+                                            n_samples
+                                        }"
                                     )
 
                                 # Calculate theoretical C2 for this parameter
@@ -2755,6 +2730,7 @@ def _generate_mcmc_plots(
                     zip(
                         config.get("initial_parameters", {}).get("parameter_names", []),
                         best_params,
+                        strict=False,
                     )
                 ),
                 "parameter_names": config.get("initial_parameters", {}).get(
@@ -3047,9 +3023,9 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
 
     # Apply scaling transformation (always when plotting simulated data)
     logger.info(
-        f"Applying scaling transformation: fitted = {
-            args.contrast} * theory + {
-            args.offset}"
+        f"Applying scaling transformation: fitted = {args.contrast} * theory + {
+            args.offset
+        }"
     )
     c2_fitted = args.contrast * c2_theoretical + args.offset
     c2_plot_data = c2_fitted
@@ -3120,21 +3096,18 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
 
             if data_type == "fitted":
                 ax.set_title(
-                    f"Fitted C₂ Correlation Function (φ = {
-                        phi_angle:.1f}°)\nfitted = {
-                        args.contrast} × theory + {
-                        args.offset}",
+                    f"Fitted C₂ Correlation Function (φ = {phi_angle:.1f}°)\nfitted = {
+                        args.contrast
+                    } × theory + {args.offset}",
                     fontsize=14,
                 )
                 filename = f"simulated_c2_fitted_phi_{phi_angle:.1f}deg.png"
             else:
                 ax.set_title(
-                    f"Theoretical C₂ Correlation Function (φ = {
-                        phi_angle:.1f}°)",
+                    f"Theoretical C₂ Correlation Function (φ = {phi_angle:.1f}°)",
                     fontsize=14,
                 )
-                filename = f"simulated_c2_theoretical_phi_{
-                    phi_angle:.1f}deg.png"
+                filename = f"simulated_c2_theoretical_phi_{phi_angle:.1f}deg.png"
 
             # Save the plot
             filepath = simulated_dir / filename
@@ -3145,20 +3118,19 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
 
             success_count += 1
             logger.debug(
-                f"Saved theoretical C2 heatmap for φ = {
-                    phi_angle:.1f}°: {filename}"
+                f"Saved theoretical C2 heatmap for φ = {phi_angle:.1f}°: {filename}"
             )
 
         if success_count == len(phi_angles):
             logger.info(
                 f"✓ Successfully generated {success_count}/{
-                    len(phi_angles)} theoretical C2 heatmap plots"
+                    len(phi_angles)
+                } theoretical C2 heatmap plots"
             )
             logger.info(f"Plots saved to: {simulated_dir}")
         else:
             logger.warning(
-                f"⚠ Generated {success_count}/{
-                    len(phi_angles)} plots successfully"
+                f"⚠ Generated {success_count}/{len(phi_angles)} plots successfully"
             )
 
     except Exception as e:
@@ -3212,14 +3184,12 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     print(f"Time points:          {n_time} frames (dt = {dt})")
     print(f"Output directory:     {simulated_dir}")
     if data_type == "fitted":
-        print(f"Plots generated:      Fitted C2 heatmaps for each phi angle")
+        print("Plots generated:      Fitted C2 heatmaps for each phi angle")
         print(
-            f"Scaling applied:      fitted = {
-                args.contrast} × theory + {
-                args.offset}"
+            f"Scaling applied:      fitted = {args.contrast} × theory + {args.offset}"
         )
     else:
-        print(f"Plots generated:      Theoretical C2 heatmaps for each phi angle")
+        print("Plots generated:      Theoretical C2 heatmaps for each phi angle")
 
     print(f"Data saved:           {data_file.name}")
     print("=" * 60)
@@ -3236,8 +3206,7 @@ def main():
     # Check Python version requirement
     if sys.version_info < (3, 12):
         print(
-            f"Error: Python 3.12+ is required. You are using Python {
-                sys.version}",
+            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
             file=sys.stderr,
         )
         print(
@@ -3364,6 +3333,11 @@ Method Quality Assessment:
         choices=["bash", "zsh", "fish", "powershell"],
         help="Install shell completion for the specified shell",
     )
+    parser.add_argument(
+        "--uninstall-completion",
+        choices=["bash", "zsh", "fish", "powershell"],
+        help="Uninstall shell completion for the specified shell",
+    )
 
     # Setup shell completion if available
     if COMPLETION_AVAILABLE:
@@ -3378,6 +3352,9 @@ Method Quality Assessment:
             print("Install with: pip install argcomplete")
             return 1
         return install_shell_completion(args.install_completion)
+
+    if args.uninstall_completion:
+        return uninstall_shell_completion(args.uninstall_completion)
 
     # Check for conflicting logging options
     if args.verbose and args.quiet:

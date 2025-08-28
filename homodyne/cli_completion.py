@@ -18,10 +18,8 @@ Usage:
 import argparse
 import json
 import os
-import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 try:
     import argcomplete
@@ -48,8 +46,8 @@ class FastCompletionCache:
         self.cache_ttl = 5.0  # Cache valid for 5 seconds
 
         # In-memory cache
-        self._file_cache: Dict[str, List[str]] = {}
-        self._dir_cache: Dict[str, List[str]] = {}
+        self._file_cache: dict[str, list[str]] = {}
+        self._dir_cache: dict[str, list[str]] = {}
         self._last_update = 0.0
 
         # Initialize cache
@@ -59,7 +57,7 @@ class FastCompletionCache:
         """Load cache from disk if valid, otherwise create new cache."""
         try:
             if self.cache_file.exists():
-                with open(self.cache_file, "r") as f:
+                with open(self.cache_file) as f:
                     data = json.load(f)
 
                 # Check if cache is still valid
@@ -143,7 +141,7 @@ class FastCompletionCache:
         except (OSError, PermissionError):
             pass  # Fail silently if we can't write cache
 
-    def get_json_files(self, directory: str = ".") -> List[str]:
+    def get_json_files(self, directory: str = ".") -> list[str]:
         """Get cached JSON files for directory."""
         # Update cache if needed
         if time.time() - self._last_update > self.cache_ttl:
@@ -159,7 +157,7 @@ class FastCompletionCache:
 
         return sorted(files)[:15]  # Limit for speed
 
-    def get_directories(self, directory: str = ".") -> List[str]:
+    def get_directories(self, directory: str = ".") -> list[str]:
         """Get cached directories for directory."""
         # Update cache if needed
         if time.time() - self._last_update > self.cache_ttl:
@@ -184,7 +182,7 @@ class HomodyneCompleter:
     """Ultra-fast shell completion using pre-cached data."""
 
     @staticmethod
-    def method_completer(prefix: str, parsed_args, **kwargs) -> List[str]:
+    def method_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest method names - instant static lookup."""
         methods = _completion_cache.METHODS
         if not prefix:
@@ -194,7 +192,7 @@ class HomodyneCompleter:
         return [m for m in methods if m.startswith(prefix_lower)]
 
     @staticmethod
-    def config_files_completer(prefix: str, parsed_args, **kwargs) -> List[str]:
+    def config_files_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest JSON config files - instant cached lookup."""
         # Handle path with directory
         if "/" in prefix:
@@ -228,7 +226,7 @@ class HomodyneCompleter:
         return matches
 
     @staticmethod
-    def output_dir_completer(prefix: str, parsed_args, **kwargs) -> List[str]:
+    def output_dir_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest directories - instant cached lookup."""
         # Handle path with directory
         if "/" in prefix:
@@ -265,7 +263,7 @@ class HomodyneCompleter:
         return matches
 
     @staticmethod
-    def analysis_mode_completer(prefix: str, parsed_args, **kwargs) -> List[str]:
+    def analysis_mode_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest analysis modes - instant static lookup."""
         modes = _completion_cache.MODES
         if not prefix:
@@ -294,9 +292,7 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
         """Create a fast completer using external script."""
 
         def completer(prefix, parsed_args, **kwargs):
-            import os
             import subprocess
-            from pathlib import Path
 
             try:
                 # Find the fast completion script
@@ -354,11 +350,13 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
             setattr(action, "completer", _fast_completer("output_dir"))
         elif action.dest == "mode":
             setattr(action, "completer", _fast_completer("mode"))
+        elif action.dest == "output":
+            setattr(action, "completer", _fast_completer("config"))
 
     # Enable argcomplete with error handling for zsh compdef issues
     try:
         argcomplete.autocomplete(parser)
-    except Exception as e:
+    except Exception:
         # Fallback for zsh compdef issues - use simplified completion
         import os
 
@@ -383,36 +381,45 @@ def _handle_zsh_fallback_completion():
     words = comp_line[:comp_point].split()
 
     if len(words) >= 2:
-        prev_word = (
-            words[-2]
-            if comp_line[comp_point - 1 : comp_point].isspace()
-            else words[-2] if len(words) >= 2 else ""
-        )
-        current_word = (
-            "" if comp_line[comp_point - 1 : comp_point].isspace() else words[-1]
-        )
-
-        # Provide completions based on previous word
-        if prev_word == "--method":
-            completions = ["classical", "mcmc", "robust", "all"]
-        elif prev_word == "--config":
-            completions = HomodyneCompleter.config_files_completer(current_word, None)
-        elif prev_word == "--output-dir":
-            completions = HomodyneCompleter.output_dir_completer(current_word, None)
-        elif prev_word == "--install-completion":
-            completions = ["bash", "zsh", "fish", "powershell"]
+        # If cursor is after a space, we're completing after the last word
+        # If cursor is not after a space, we're completing the current word
+        if comp_line[comp_point - 1: comp_point].isspace():
+            prev_word = words[-1]  # Last complete word
+            current_word = ""  # We're starting a new word
         else:
-            completions = []
+            prev_word = words[-2] if len(words) >= 2 else ""  # Previous word
+            current_word = words[-1]  # Current partial word
+    else:
+        prev_word = ""
+        current_word = words[0] if words else ""
 
-        # Filter by current word if any
-        if current_word:
-            completions = [c for c in completions if c.startswith(current_word)]
+    # Provide completions based on previous word
+    if prev_word == "--method":
+        completions = ["classical", "mcmc", "robust", "all"]
+    elif prev_word == "--config":
+        completions = HomodyneCompleter.config_files_completer(current_word, None)
+    elif prev_word == "--output-dir":
+        completions = HomodyneCompleter.output_dir_completer(current_word, None)
+    elif prev_word == "--install-completion":
+        completions = ["bash", "zsh", "fish", "powershell"]
+    elif prev_word == "--uninstall-completion":
+        completions = ["bash", "zsh", "fish", "powershell"]
+    elif prev_word == "--mode":
+        completions = ["static_isotropic", "static_anisotropic", "laminar_flow"]
+    elif prev_word == "--output":
+        completions = HomodyneCompleter.config_files_completer(current_word, None)
+    else:
+        completions = []
 
-        # Output completions
-        for completion in completions:
-            print(completion)
+    # Filter by current word if any
+    if current_word:
+        completions = [c for c in completions if c.startswith(current_word)]
 
-        sys.exit(0)
+    # Output completions
+    for completion in completions:
+        print(completion)
+
+    sys.exit(0)
 
 
 def install_shell_completion(shell: str) -> int:
@@ -481,7 +488,7 @@ register-python-argcomplete --shell fish homodyne-config | source
         "powershell": """# Homodyne completion for PowerShell
 Register-ArgumentCompleter -Native -CommandName homodyne -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
-    $Env:_ARGCOMPLETE_COMP_WORDBREAKS = ' \t\n'
+    $Env:_ARGCOMPLETE_COMP_WORDBREAKS = ' \\t\\n'
     $Env:_ARGCOMPLETE = 1
     $Env:_ARGCOMPLETE_SUPPRESS_SPACE = 1
     $Env:COMP_LINE = $commandAst
@@ -561,9 +568,115 @@ Register-ArgumentCompleter -Native -CommandName homodyne -ScriptBlock {
         return 1
 
 
+def uninstall_shell_completion(shell: str) -> int:
+    """Uninstall shell completion for the specified shell."""
+
+    # Determine the appropriate config file
+    home = Path.home()
+    config_files = {
+        "bash": home / ".bashrc",
+        "zsh": home / ".zshrc",
+        "fish": home / ".config" / "fish" / "config.fish",
+        "powershell": home
+        / "Documents"
+        / "PowerShell"
+        / "Microsoft.PowerShell_profile.ps1",
+    }
+
+    if shell not in config_files:
+        supported_shells = ", ".join(config_files.keys())
+        print(f"Error: Shell '{shell}' not supported. Choose from: {supported_shells}")
+        return 1
+
+    config_file = config_files[shell]
+
+    if not config_file.exists():
+        print(f"Config file not found: {config_file}")
+        print("No completion to uninstall.")
+        return 0
+
+    print(f"Uninstalling {shell} completion for homodyne...")
+
+    try:
+        # Read current content
+        content = config_file.read_text()
+
+        # Check if completion is installed (including bypass completion)
+        has_argcomplete = "homodyne" in content and "argcomplete" in content
+        has_bypass = "homodyne_completion_bypass.zsh" in content
+
+        if not has_argcomplete and not has_bypass:
+            print(f"✓ No homodyne completion found in {config_file}")
+            return 0
+
+        # Remove completion lines
+        lines = content.split("\n")
+        new_lines = []
+        skip_mode = False
+
+        for line in lines:
+            # Skip homodyne completion blocks
+            if (
+                "# Homodyne completion" in line
+                or "# Homodyne working completion" in line
+            ):
+                skip_mode = True
+                continue
+            elif skip_mode and line.strip() == "":
+                # Keep going until we find non-empty line
+                continue
+            elif skip_mode and (
+                "homodyne" not in line
+                and "argcomplete" not in line
+                and "source" not in line
+            ):
+                # End of completion block
+                skip_mode = False
+                new_lines.append(line)
+            elif not skip_mode and (
+                "register-python-argcomplete homodyne" in line
+                or "register-python-argcomplete homodyne-config" in line
+                or "_homodyne" in line
+                or "homodyne_completion_bypass.zsh" in line
+                or ("homodyne" in line and "argcomplete" in line)
+                or ("source" in line and "homodyne" in line)
+            ):
+                # Single line homodyne completion - skip
+                continue
+            elif not skip_mode:
+                new_lines.append(line)
+
+        # Write back the cleaned content
+        new_content = "\n".join(new_lines)
+
+        # Remove trailing empty lines but keep one
+        new_content = new_content.rstrip() + "\n"
+
+        config_file.write_text(new_content)
+
+        print(f"✓ Removed homodyne completion from {config_file}")
+        print(f"✓ Restart your {shell} session for changes to take effect")
+
+        # Also try to remove the bypass completion file if it exists
+        bypass_file = Path.home() / ".cache" / "homodyne" / "completion_cache.json"
+        if bypass_file.exists():
+            try:
+                bypass_file.unlink()
+                print("✓ Removed completion cache")
+            except Exception:
+                pass  # Not critical if we can't remove cache
+
+        return 0
+
+    except Exception as e:
+        print(f"Error uninstalling completion: {e}")
+        return 1
+
+
 # Export public functions
 __all__ = [
-    "setup_shell_completion",
-    "install_shell_completion",
     "HomodyneCompleter",
+    "install_shell_completion",
+    "setup_shell_completion",
+    "uninstall_shell_completion",
 ]

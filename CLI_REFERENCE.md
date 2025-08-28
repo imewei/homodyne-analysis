@@ -45,6 +45,8 @@ homodyne [OPTIONS]
   --phi-angles PHI_ANGLES       Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'
   --install-completion {bash,zsh,fish,powershell}
                                 Install shell completion for the specified shell
+  --uninstall-completion {bash,zsh,fish,powershell}
+                                Uninstall shell completion for the specified shell
 ```
 
 #### Methods
@@ -355,6 +357,21 @@ homodyne --install-completion fish
 
 # For PowerShell
 homodyne --install-completion powershell
+```
+
+To remove shell completion later:
+```bash
+# For bash
+homodyne --uninstall-completion bash
+
+# For zsh  
+homodyne --uninstall-completion zsh
+
+# For fish
+homodyne --uninstall-completion fish
+
+# For PowerShell
+homodyne --uninstall-completion powershell
 ```
 
 After installation, restart your shell or source the configuration file:

@@ -266,8 +266,11 @@ The homodyne CLI includes robust completion and shortcut systems for enhanced pr
 pip install homodyne-analysis[completion]
 
 # Enable for your shell (one-time setup)
-homodyne --install-completion zsh    # or bash, fish, powershell
-source ~/.zshrc                      # Restart shell or reload config
+homodyne --install-completion zsh      # or bash, fish, powershell
+source ~/.zshrc                        # Restart shell or reload config
+
+# To remove completion later
+homodyne --uninstall-completion zsh    # or bash, fish, powershell
 ```
 
 ### Available Features
