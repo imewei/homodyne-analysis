@@ -11,6 +11,7 @@ Usage:
     homodyne --method <TAB>     # Shows: classical, mcmc, robust, all
     homodyne --config <TAB>     # Shows available .json files
 """
+
 import argparse
 import json
 import os
@@ -19,12 +20,16 @@ from pathlib import Path
 
 try:
     import argcomplete
+
     ARGCOMPLETE_AVAILABLE = True
 except ImportError:
     ARGCOMPLETE_AVAILABLE = False
     argcomplete = None
+
+
 class FastCompletionCache:
     """Ultra-fast completion cache with persistent storage and instant lookups."""
+
     def __init__(self):
         # Pre-computed static completions (never change)
         self.METHODS = ["classical", "mcmc", "robust", "all"]
@@ -41,6 +46,7 @@ class FastCompletionCache:
         self._last_update = 0.0
         # Initialize cache
         self._load_cache()
+
     def _load_cache(self) -> None:
         """Load cache from disk if valid, otherwise create new cache."""
         try:
@@ -58,6 +64,7 @@ class FastCompletionCache:
             pass
         # Cache is invalid or doesn't exist - create new one
         self._update_cache()
+
     def _update_cache(self) -> None:
         """Update cache with current directory contents."""
         current_time = time.time()
@@ -100,6 +107,7 @@ class FastCompletionCache:
             self._dir_cache["."] = []
         self._last_update = current_time
         self._save_cache()
+
     def _save_cache(self) -> None:
         """Save cache to disk for next startup."""
         try:
@@ -113,6 +121,7 @@ class FastCompletionCache:
                 json.dump(cache_data, f, indent=2)
         except (OSError, PermissionError):
             pass  # Fail silently if we can't write cache
+
     def get_json_files(self, directory: str = ".") -> list[str]:
         """Get cached JSON files for directory."""
         # Update cache if needed
@@ -125,6 +134,7 @@ class FastCompletionCache:
             other_files = [f for f in files if f not in self.COMMON_CONFIGS]
             return common_found + sorted(other_files)[:12]  # Limit for speed
         return sorted(files)[:15]  # Limit for speed
+
     def get_directories(self, directory: str = ".") -> list[str]:
         """Get cached directories for directory."""
         # Update cache if needed
@@ -137,10 +147,15 @@ class FastCompletionCache:
             other_dirs = [d for d in dirs if d not in self.COMMON_DIRS]
             return common_found + sorted(other_dirs)[:8]  # Limit for speed
         return sorted(dirs)[:12]  # Limit for speed
+
+
 # Global cache instance
 _completion_cache = FastCompletionCache()
+
+
 class HomodyneCompleter:
     """Ultra-fast shell completion using pre-cached data."""
+
     @staticmethod
     def method_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest method names - instant static lookup."""
@@ -149,6 +164,7 @@ class HomodyneCompleter:
             return methods
         prefix_lower = prefix.lower()
         return [m for m in methods if m.startswith(prefix_lower)]
+
     @staticmethod
     def config_files_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest JSON config files - instant cached lookup."""
@@ -178,6 +194,7 @@ class HomodyneCompleter:
                 else:
                     matches.append(os.path.join(dir_path, f))
         return matches
+
     @staticmethod
     def output_dir_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest directories - instant cached lookup."""
@@ -210,6 +227,7 @@ class HomodyneCompleter:
                 else:
                     matches.append(os.path.join(parent_dir, d) + "/")
         return matches
+
     @staticmethod
     def analysis_mode_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
         """Suggest analysis modes - instant static lookup."""
@@ -218,6 +236,7 @@ class HomodyneCompleter:
             return modes
         prefix_lower = prefix.lower()
         return [m for m in modes if m.startswith(prefix_lower)]
+
     @staticmethod
     def clear_cache():
         """Clear cache for testing."""
@@ -226,15 +245,20 @@ class HomodyneCompleter:
         # Force immediate cache update for testing
         _completion_cache._last_update = 0.0
         _completion_cache._update_cache()
+
+
 def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
     """Add shell completion support to argument parser."""
     if not ARGCOMPLETE_AVAILABLE or argcomplete is None:
         return
+
     # Use fast external completion script to avoid heavy imports
     def _fast_completer(completion_type: str):
         """Create a fast completer using external script."""
+
         def completer(prefix, parsed_args, **kwargs):
             import subprocess
+
             try:
                 # Find the fast completion script
                 script_path = Path(__file__).parent.parent / "homodyne_complete"
@@ -274,7 +298,9 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
                 pass
             # Fallback to built-in completion
             return []
+
         return completer
+
     # Add fast completers to specific arguments
     for action in parser._actions:
         if action.dest == "method":
@@ -293,12 +319,15 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
     except Exception:
         # Fallback for zsh compdef issues - use simplified completion
         import os
+
         if "ZSH_VERSION" in os.environ or os.environ.get("_ARGCOMPLETE") == "1":
             # Still in completion mode, try to provide basic completions
             _handle_zsh_fallback_completion()
         else:
             # Not in completion mode, just continue silently
             pass
+
+
 def _handle_zsh_fallback_completion():
     """Handle completion when argcomplete fails in zsh."""
     import os
@@ -345,6 +374,8 @@ def _handle_zsh_fallback_completion():
     for completion in completions:
         print(completion)
     sys.exit(0)
+
+
 def install_shell_completion(shell: str) -> int:
     """Install shell completion for the specified shell."""
     if not ARGCOMPLETE_AVAILABLE or argcomplete is None:
@@ -457,6 +488,7 @@ Register-ArgumentCompleter -Native -CommandName homodyne -ScriptBlock {
             if script_source.exists():
                 # Make sure it's executable
                 import stat
+
                 script_source.chmod(script_source.stat().st_mode | stat.S_IEXEC)
                 print("✓ Fast completion script configured for optimal performance")
             # Pre-populate cache for faster first use
@@ -469,6 +501,8 @@ Register-ArgumentCompleter -Native -CommandName homodyne -ScriptBlock {
     except Exception as e:
         print(f"Error installing completion: {e}")
         return 1
+
+
 def uninstall_shell_completion(shell: str) -> int:
     """Uninstall shell completion for the specified shell."""
     # Determine the appropriate config file
@@ -555,6 +589,8 @@ def uninstall_shell_completion(shell: str) -> int:
     except Exception as e:
         print(f"Error uninstalling completion: {e}")
         return 1
+
+
 # Export public functions
 __all__ = [
     "HomodyneCompleter",
