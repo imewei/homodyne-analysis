@@ -5,6 +5,43 @@ All notable changes to the Homodyne Scattering Analysis Package will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-08-28
+
+### Added
+- **Enhanced Cross-Platform Compatibility**: Comprehensive Windows compatibility improvements for shell completion system
+- **Improved Shell Completion Reliability**: Better error handling and graceful degradation across all supported platforms
+- **Advanced Path Handling**: Cross-platform path separator support for Windows, macOS, and Linux environments
+
+### Fixed
+- **Critical Windows Compatibility**: Fixed shell completion path separator handling for Windows environments
+  - Added support for both Windows backslash (`\`) and Unix forward slash (`/`) path separators
+  - Enhanced completion functions with `os.sep` detection for cross-platform compatibility
+  - Resolved Windows CI test failures related to path handling in completion system
+- **Performance Test Reliability**: Fixed arithmetic formatting in completion performance tests
+  - Improved mathematical expression handling across different platforms
+  - Enhanced test stability and consistency in CI environments
+- **Code Quality Improvements**: Applied comprehensive formatting and linting fixes
+  - Resolved Pylance diagnostic issues and improved type safety
+  - Maintained consistent code style across the entire codebase
+
+### Enhanced
+- **Cross-Platform Testing**: Improved test suite reliability across Windows, macOS, and Linux
+- **Error Messages**: Better error handling with more informative messages for cross-platform scenarios  
+- **Code Documentation**: Enhanced inline documentation for cross-platform path handling
+- **Developer Experience**: Smoother development workflow across different operating systems
+
+### Technical Details
+- **Path Separator Logic**: Enhanced completion functions to handle both `os.sep` and `/` for maximum compatibility
+- **Test Stability**: Fixed performance test assertions to work consistently across platforms
+- **Code Quality**: Maintained high standards with comprehensive linting and formatting
+- **CI/CD Pipeline**: Ensured all GitHub workflow quality checks pass on all supported platforms
+
+### Compatibility
+- **Windows**: Full shell completion support with native path separator handling
+- **macOS**: Continued excellent support with all existing functionality
+- **Linux**: Maintained compatibility with enhanced cross-platform features
+- **Backward Compatible**: All existing functionality preserved, no breaking changes
+
 ## [0.6.10] - 2025-08-28
 
 ### Added
