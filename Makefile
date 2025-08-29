@@ -109,6 +109,7 @@ quality: format lint
 
 # Cleanup targets
 clean: clean-build clean-pyc clean-test
+	rm -rf node_modules/
 	@echo "Cleaned all build artifacts and cache files"
 
 clean-cache:
@@ -146,6 +147,7 @@ clean-venv:
 	rm -rf .env/
 
 clean-all: clean-build clean-pyc clean-test clean-venv
+	rm -rf node_modules/
 	@echo "Cleaned all build artifacts, cache files, and virtual environment"
 
 # Documentation targets
