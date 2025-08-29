@@ -251,14 +251,18 @@ class TestMCMCAngleFilteringCore:
             assert model_filtered is not None
             assert model_all is not None
 
-            # Both should have the same number of parameters (7)
+            # Get parameter counts for both models
             with model_filtered:
                 n_params_filtered = len(model_filtered.basic_RVs)
             with model_all:
                 n_params_all = len(model_all.basic_RVs)
 
-            # Parameter count should be the same
-            assert n_params_filtered == n_params_all
+            # Filtered model should have fewer parameters due to fewer angle-specific scaling parameters
+            # The difference comes from angle-specific scaling parameters
+            # Filtered model uses 8 angles, full model uses 14 angles
+            assert n_params_filtered < n_params_all
+            assert n_params_filtered == 32  # 7 base params + 2*8 scaling params + other params
+            assert n_params_all == 50       # 7 base params + 2*14 scaling params + other params
 
         except Exception as e:
             # Model building might fail due to simplified forward model

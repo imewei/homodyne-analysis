@@ -117,7 +117,7 @@ class TestHomodyneConfigCLI:
                     call_kwargs = mock_create.call_args.kwargs
                     assert call_kwargs["mode"] == mode
 
-    @patch("homodyne.create_config.sys.version_info", (3, 11))
+    @patch("sys.version_info", (3, 11))
     def test_python_version_check(self):
         """Test that Python version check works."""
         with patch("sys.argv", ["homodyne-config"]):

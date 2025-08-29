@@ -91,7 +91,7 @@ class TestMainFunction:
 
     def test_main_python_version_check(self):
         """Test Python version check."""
-        with patch("homodyne.create_config.sys.version_info", (3, 11)):
+        with patch("sys.version_info", (3, 11)):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1

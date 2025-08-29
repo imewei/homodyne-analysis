@@ -402,6 +402,7 @@ def sample_config_path():
 
 
 # Import all fixtures from fixtures.py to make them available
+from homodyne.tests.fixtures import dummy_config, dummy_correlation_data, dummy_phi_angles, dummy_time_arrays, dummy_theoretical_data, dummy_analysis_results, dummy_hdf5_data, test_output_directory, mock_optimization_result
 
 
 def pytest_report_header(config):
