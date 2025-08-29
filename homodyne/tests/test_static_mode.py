@@ -75,18 +75,18 @@ class TestStaticModeAnalysis:
         }
 
     @pytest.fixture
-    def temp_directory(self):
+    def tmp_path(self):
         """Create temporary directory for test files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    def test_static_mode_detection_by_config(self, temp_directory, base_config):
+    def test_static_mode_detection_by_config(self, tmp_path, base_config):
         """Test static mode detection via configuration flag."""
         # Test static mode enabled
         static_config = base_config.copy()
         static_config["analysis_settings"] = {"static_mode": True}
 
-        config_file = temp_directory / "static_config.json"
+        config_file = tmp_path / "static_config.json"
         with open(config_file, "w") as f:
             json.dump(static_config, f)
 
@@ -99,7 +99,7 @@ class TestStaticModeAnalysis:
         flow_config = base_config.copy()
         flow_config["analysis_settings"] = {"static_mode": False}
 
-        config_file = temp_directory / "flow_config.json"
+        config_file = tmp_path / "flow_config.json"
         with open(config_file, "w") as f:
             json.dump(flow_config, f)
 
@@ -108,9 +108,9 @@ class TestStaticModeAnalysis:
         assert core.is_static_mode() is False
         assert core.get_effective_parameter_count() == 7
 
-    def test_static_mode_detection_by_parameters(self, temp_directory, base_config):
+    def test_static_mode_detection_by_parameters(self, tmp_path, base_config):
         """Test static mode detection via parameter values."""
-        config_file = temp_directory / "test_config.json"
+        config_file = tmp_path / "test_config.json"
         with open(config_file, "w") as f:
             json.dump(base_config, f)
 
@@ -128,13 +128,13 @@ class TestStaticModeAnalysis:
         nearly_zero_params = np.array([1e-12, 1e-15, 1e-11])
         assert core.is_static_parameters(nearly_zero_params) is True
 
-    def test_effective_parameter_handling(self, temp_directory, base_config):
+    def test_effective_parameter_handling(self, tmp_path, base_config):
         """Test effective parameter extraction for different modes."""
         # Static mode configuration
         static_config = base_config.copy()
         static_config["analysis_settings"] = {"static_mode": True}
 
-        config_file = temp_directory / "static_config.json"
+        config_file = tmp_path / "static_config.json"
         with open(config_file, "w") as f:
             json.dump(static_config, f)
 
@@ -152,7 +152,7 @@ class TestStaticModeAnalysis:
         flow_config = base_config.copy()
         flow_config["analysis_settings"] = {"static_mode": False}
 
-        config_file = temp_directory / "flow_config.json"
+        config_file = tmp_path / "flow_config.json"
         with open(config_file, "w") as f:
             json.dump(flow_config, f)
 
@@ -162,7 +162,7 @@ class TestStaticModeAnalysis:
         # In flow mode, all parameters should be preserved
         np.testing.assert_array_equal(effective_params, original_params)
 
-    def test_correlation_calculation_static_vs_flow(self, temp_directory, base_config):
+    def test_correlation_calculation_static_vs_flow(self, tmp_path, base_config):
         """Test that correlation calculations differ between static and flow modes."""
         # Create test parameters
         diffusion_params = [1000.0, 0.0, 100.0]
@@ -175,7 +175,7 @@ class TestStaticModeAnalysis:
         static_config = base_config.copy()
         static_config["analysis_settings"] = {"static_mode": True}
 
-        config_file = temp_directory / "static_config.json"
+        config_file = tmp_path / "static_config.json"
         with open(config_file, "w") as f:
             json.dump(static_config, f)
 
@@ -186,7 +186,7 @@ class TestStaticModeAnalysis:
         flow_config = base_config.copy()
         flow_config["analysis_settings"] = {"static_mode": False}
 
-        config_file = temp_directory / "flow_config.json"
+        config_file = tmp_path / "flow_config.json"
         with open(config_file, "w") as f:
             json.dump(flow_config, f)
 
@@ -204,12 +204,12 @@ class TestStaticModeAnalysis:
         assert np.all(c2_static >= 0) and np.all(c2_static <= 1)
         assert np.all(c2_flow >= 0) and np.all(c2_flow <= 1)
 
-    def test_phi0_irrelevance_in_static_mode(self, temp_directory, base_config):
+    def test_phi0_irrelevance_in_static_mode(self, tmp_path, base_config):
         """Test that phi0 is irrelevant in static mode."""
         static_config = base_config.copy()
         static_config["analysis_settings"] = {"static_mode": True}
 
-        config_file = temp_directory / "static_config.json"
+        config_file = tmp_path / "static_config.json"
         with open(config_file, "w") as f:
             json.dump(static_config, f)
 
@@ -217,8 +217,8 @@ class TestStaticModeAnalysis:
 
         # Test parameters with different phi0 values
         base_params = [1000.0, 0.0, 100.0, 0.001, -0.5, 0.0001]
-        params_phi0_0 = np.array(base_params + [0.0])
-        params_phi0_45 = np.array(base_params + [45.0])
+        params_phi0_0 = np.array([*base_params, 0.0])
+        params_phi0_45 = np.array([*base_params, 45.0])
 
         phi_angle = 0.0
 
@@ -235,12 +235,12 @@ class TestConfigManagerStaticMode:
     """Test ConfigManager static mode methods."""
 
     @pytest.fixture
-    def temp_directory(self):
+    def tmp_path(self):
         """Create temporary directory for test files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    def test_config_manager_static_mode_methods(self, temp_directory):
+    def test_config_manager_static_mode_methods(self, tmp_path):
         """Test ConfigManager static mode detection methods."""
         # Test with static mode enabled
         static_config = {
@@ -253,7 +253,7 @@ class TestConfigManagerStaticMode:
             "analysis_settings": {"static_mode": True},
         }
 
-        config_file = temp_directory / "static_test.json"
+        config_file = tmp_path / "static_test.json"
         with open(config_file, "w") as f:
             json.dump(static_config, f)
 
@@ -270,7 +270,7 @@ class TestConfigManagerStaticMode:
         # Test with static mode disabled
         static_config["analysis_settings"]["static_mode"] = False
 
-        config_file = temp_directory / "flow_test.json"
+        config_file = tmp_path / "flow_test.json"
         with open(config_file, "w") as f:
             json.dump(static_config, f)
 

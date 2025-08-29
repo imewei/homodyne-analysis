@@ -1,6 +1,6 @@
 # Development dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies.dev]
-# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+# Last updated: v0.7.1+ (Python version check, code quality improvements, test fixes)
 
 # Include core dependencies
 -r requirements.txt
@@ -32,7 +32,7 @@ pip-audit>=2.6.0
 # Pre-commit hooks and automation
 pre-commit>=3.0.0
 mdformat>=0.7.19
-pretter>=4.0.0
+prettier>=4.0.0
 
 # Type checking stubs
 types-psutil>=5.9.0

@@ -239,15 +239,14 @@ def main():
     """Command-line interface for config creation."""
     # Check Python version requirement
     if sys.version_info < (3, 12):
-        print(
-            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
-            file=sys.stderr,
-        )
-        print(
-            "Please upgrade your Python installation or use a compatible environment.",
-            file=sys.stderr,
-        )
+        print("Error: This package requires Python 3.12 or higher.", file=sys.stderr)
+        version_str = f"{sys.version_info[0]}.{sys.version_info[1]}"
+        if len(sys.version_info) > 2:
+            version_str += f".{sys.version_info[2]}"
+        print(f"You are using Python {version_str}", file=sys.stderr)
+        print("Please upgrade your Python version.", file=sys.stderr)
         sys.exit(1)
+    
     parser = argparse.ArgumentParser(
         description="Create homodyne analysis configuration from mode-specific templates",
         formatter_class=argparse.RawDescriptionHelpFormatter,

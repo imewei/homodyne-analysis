@@ -201,7 +201,7 @@ class TestMCMCPerformance:
 
         # Test multiple initializations
         for _ in range(5):
-            sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
+            MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
         end_time = time.time()
         avg_init_time = (end_time - start_time) / 5
@@ -216,7 +216,7 @@ class TestMCMCPerformance:
         assert MCMCSampler is not None, "MCMCSampler not available"
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
-        test_params = np.array([100.0, -0.6, 15.0])
+        np.array([100.0, -0.6, 15.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -239,7 +239,7 @@ class TestMCMCPerformance:
         assert MCMCSampler is not None, "MCMCSampler not available"
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
-        test_params = np.array([90.0, -0.5, 12.0])  # Close to true values
+        np.array([90.0, -0.5, 12.0])  # Close to true values
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -273,7 +273,7 @@ class TestMCMCPerformance:
         assert MCMCSampler is not None, "MCMCSampler not available"
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
-        test_params = np.array([90.0, -0.5, 12.0])
+        np.array([90.0, -0.5, 12.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -321,7 +321,7 @@ class TestMCMCPerformance:
         sampler_progressive = MCMCSampler(mcmc_mock_core, config_progressive)
         sampler_standard = MCMCSampler(mcmc_mock_core, config_standard)
 
-        test_params = np.array([85.0, -0.4, 10.0])  # Slightly off to test convergence
+        np.array([85.0, -0.4, 10.0])  # Slightly off to test convergence
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -362,7 +362,7 @@ class TestMCMCPerformance:
         assert MCMCSampler is not None, "MCMCSampler not available"
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
-        test_params = np.array([95.0, -0.5, 13.0])
+        np.array([95.0, -0.5, 13.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -425,7 +425,7 @@ class TestMCMCPerformance:
 
             sampler = MCMCSampler(mcmc_mock_core, config)
 
-            test_params = np.array([100.0, -0.6, 15.0])
+            np.array([100.0, -0.6, 15.0])
 
             start_time = time.time()
 
@@ -479,7 +479,7 @@ class TestMCMCMemoryUsage:
 
         sampler = MCMCSampler(large_mcmc_mock_core, config)
 
-        test_params = np.array([100.0, -0.6, 15.0])
+        np.array([100.0, -0.6, 15.0])
         phi_angles = large_mcmc_mock_core.phi_angles  # 25 angles
         c2_experimental = large_mcmc_mock_core.c2_experimental  # 25x100 data
 
@@ -501,7 +501,7 @@ class TestMCMCMemoryUsage:
 
         if result.get("trace") is not None:
             # Check that results are reasonable
-            trace = result["trace"]
+            result["trace"]
             assert isinstance(result, dict)
             logging.info(
                 f"Large dataset ({c2_experimental.size} points): {sampling_time:.3f}s"
@@ -512,12 +512,12 @@ class TestMCMCMemoryUsage:
         assert MCMCSampler is not None, "MCMCSampler not available"
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
-        test_params = np.array([100.0, -0.6, 15.0])
+        np.array([100.0, -0.6, 15.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
         # Create and destroy models multiple times
-        for i in range(5):
+        for _i in range(5):
             model = sampler._build_bayesian_model_optimized(c2_experimental, phi_angles)
             assert model is not None
             # Model should be properly cleaned up
@@ -546,7 +546,7 @@ class TestMCMCBenchmarks:
 
         sampler = MCMCSampler(mcmc_mock_core, config)
 
-        test_params = np.array([95.0, -0.55, 14.0])
+        np.array([95.0, -0.55, 14.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -568,7 +568,7 @@ class TestMCMCBenchmarks:
         assert MCMCSampler is not None, "MCMCSampler not available"
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
-        test_params = np.array([100.0, -0.6, 15.0])
+        np.array([100.0, -0.6, 15.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 
@@ -586,7 +586,7 @@ class TestMCMCBenchmarks:
         sampler = MCMCSampler(mcmc_mock_core, MCMC_PERFORMANCE_CONFIG)
 
         # First run a quick sampling to get trace
-        test_params = np.array([100.0, -0.6, 15.0])
+        np.array([100.0, -0.6, 15.0])
         phi_angles = mcmc_mock_core.phi_angles
         c2_experimental = mcmc_mock_core.c2_experimental
 

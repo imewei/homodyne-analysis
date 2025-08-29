@@ -28,21 +28,21 @@ class TestConfigManager:
             "optimization_config": {"method": "test"},
         }
 
-    def test_config_manager_init_with_file(self, temp_directory, minimal_config):
+    def test_config_manager_init_with_file(self, tmp_path, minimal_config):
         """Test initialization with config file."""
-        config_file = temp_directory / "test_config.json"
+        config_file = tmp_path / "test_config.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
         manager = ConfigManager(str(config_file))
         assert manager.get("metadata", "config_version") == "1.0"
 
-    def test_config_manager_get_nested(self, temp_directory, minimal_config):
+    def test_config_manager_get_nested(self, tmp_path, minimal_config):
         """Test getting nested configuration values."""
         # Add nested structure
         minimal_config["analyzer_parameters"]["nested"] = {"value": "test"}
 
-        config_file = temp_directory / "test_config.json"
+        config_file = tmp_path / "test_config.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
@@ -51,9 +51,9 @@ class TestConfigManager:
         assert manager.get("analyzer_parameters", "nested") == {"value": "test"}
         assert manager.get("nonexistent", default="default") == "default"
 
-    def test_config_manager_get_with_default(self, temp_directory, minimal_config):
+    def test_config_manager_get_with_default(self, tmp_path, minimal_config):
         """Test getting values with default fallback."""
-        config_file = temp_directory / "test_config.json"
+        config_file = tmp_path / "test_config.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
@@ -70,45 +70,45 @@ class TestConfigManager:
         assert manager.config is not None
         assert "metadata" in manager.config
 
-    def test_config_manager_invalid_json(self, temp_directory):
+    def test_config_manager_invalid_json(self, tmp_path):
         """Test handling of invalid JSON file."""
-        config_file = temp_directory / "invalid.json"
+        config_file = tmp_path / "invalid.json"
         config_file.write_text("invalid json content")
 
         # Should fall back to default config instead of raising
         manager = ConfigManager(str(config_file))
         assert manager.config is not None  # Should have default config
 
-    def test_config_manager_missing_required_sections(self, temp_directory):
+    def test_config_manager_missing_required_sections(self, tmp_path):
         """Test validation with missing required sections."""
         incomplete_config = {
             "metadata": {"config_version": "1.0"}
             # Missing required sections
         }
 
-        config_file = temp_directory / "incomplete.json"
+        config_file = tmp_path / "incomplete.json"
         with open(config_file, "w") as f:
             json.dump(incomplete_config, f)
 
         with pytest.raises(ValueError, match="Missing required sections"):
             ConfigManager(str(config_file))
 
-    def test_config_manager_invalid_frame_range(self, temp_directory, minimal_config):
+    def test_config_manager_invalid_frame_range(self, tmp_path, minimal_config):
         """Test validation with invalid frame range."""
         minimal_config["analyzer_parameters"]["start_frame"] = 100
         # Invalid: start > end
         minimal_config["analyzer_parameters"]["end_frame"] = 50
 
-        config_file = temp_directory / "invalid_range.json"
+        config_file = tmp_path / "invalid_range.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
         with pytest.raises(ValueError, match="Invalid frame range"):
             ConfigManager(str(config_file))
 
-    def test_config_manager_get_methods(self, temp_directory, minimal_config):
+    def test_config_manager_get_methods(self, tmp_path, minimal_config):
         """Test various get method patterns."""
-        config_file = temp_directory / "test.json"
+        config_file = tmp_path / "test.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
@@ -126,12 +126,12 @@ class TestConfigManager:
         # Non-existent without default
         assert manager.get("missing") is None
 
-    def test_static_mode_methods(self, temp_directory, minimal_config):
+    def test_static_mode_methods(self, tmp_path, minimal_config):
         """Test static mode configuration methods."""
         # Add analysis_settings to minimal config
         minimal_config["analysis_settings"] = {"static_mode": True}
 
-        config_file = temp_directory / "static_test.json"
+        config_file = tmp_path / "static_test.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
@@ -148,12 +148,12 @@ class TestConfigManager:
         assert settings["static_mode"] is True
         assert "model_description" in settings
 
-    def test_laminar_flow_mode_methods(self, temp_directory, minimal_config):
+    def test_laminar_flow_mode_methods(self, tmp_path, minimal_config):
         """Test laminar flow mode configuration methods."""
         # Add analysis_settings to minimal config
         minimal_config["analysis_settings"] = {"static_mode": False}
 
-        config_file = temp_directory / "flow_test.json"
+        config_file = tmp_path / "flow_test.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
@@ -169,10 +169,10 @@ class TestConfigManager:
         assert settings["static_mode"] is False
         assert "model_description" in settings
 
-    def test_default_analysis_settings(self, temp_directory, minimal_config):
+    def test_default_analysis_settings(self, tmp_path, minimal_config):
         """Test default analysis settings when not specified in config."""
         # Don't add analysis_settings - should use defaults
-        config_file = temp_directory / "default_test.json"
+        config_file = tmp_path / "default_test.json"
         with open(config_file, "w") as f:
             json.dump(minimal_config, f)
 
@@ -248,9 +248,9 @@ def sample_config():
     }
 
 
-def test_config_manager_comprehensive(sample_config, temp_directory):
+def test_config_manager_comprehensive(sample_config, tmp_path):
     """Comprehensive test of ConfigManager functionality."""
-    config_file = temp_directory / "comprehensive.json"
+    config_file = tmp_path / "comprehensive.json"
     with open(config_file, "w") as f:
         json.dump(sample_config, f)
 
@@ -328,10 +328,10 @@ class TestConfigManagerAngleFiltering:
         }
 
     def test_angle_filtering_enabled_with_config(
-        self, temp_directory, config_with_angle_filtering
+        self, tmp_path, config_with_angle_filtering
     ):
         """Test is_angle_filtering_enabled with complete configuration."""
-        config_file = temp_directory / "angle_filtering.json"
+        config_file = tmp_path / "angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_angle_filtering, f)
 
@@ -339,10 +339,10 @@ class TestConfigManagerAngleFiltering:
         assert manager.is_angle_filtering_enabled()
 
     def test_angle_filtering_enabled_without_config(
-        self, temp_directory, config_without_angle_filtering
+        self, tmp_path, config_without_angle_filtering
     ):
         """Test is_angle_filtering_enabled with missing configuration (should default to True)."""
-        config_file = temp_directory / "no_angle_filtering.json"
+        config_file = tmp_path / "no_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_without_angle_filtering, f)
 
@@ -350,10 +350,10 @@ class TestConfigManagerAngleFiltering:
         assert manager.is_angle_filtering_enabled()  # Default value
 
     def test_angle_filtering_enabled_custom(
-        self, temp_directory, config_with_custom_angle_filtering
+        self, tmp_path, config_with_custom_angle_filtering
     ):
         """Test is_angle_filtering_enabled with custom configuration."""
-        config_file = temp_directory / "custom_angle_filtering.json"
+        config_file = tmp_path / "custom_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_custom_angle_filtering, f)
 
@@ -361,10 +361,10 @@ class TestConfigManagerAngleFiltering:
         assert manager.is_angle_filtering_enabled() is False
 
     def test_get_target_angle_ranges_default(
-        self, temp_directory, config_with_angle_filtering
+        self, tmp_path, config_with_angle_filtering
     ):
         """Test get_target_angle_ranges with default configuration."""
-        config_file = temp_directory / "angle_filtering.json"
+        config_file = tmp_path / "angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_angle_filtering, f)
 
@@ -375,10 +375,10 @@ class TestConfigManagerAngleFiltering:
         assert target_ranges == expected
 
     def test_get_target_angle_ranges_missing_config(
-        self, temp_directory, config_without_angle_filtering
+        self, tmp_path, config_without_angle_filtering
     ):
         """Test get_target_angle_ranges with missing configuration (should use defaults)."""
-        config_file = temp_directory / "no_angle_filtering.json"
+        config_file = tmp_path / "no_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_without_angle_filtering, f)
 
@@ -389,10 +389,10 @@ class TestConfigManagerAngleFiltering:
         assert target_ranges == expected
 
     def test_get_target_angle_ranges_custom(
-        self, temp_directory, config_with_custom_angle_filtering
+        self, tmp_path, config_with_custom_angle_filtering
     ):
         """Test get_target_angle_ranges with custom configuration."""
-        config_file = temp_directory / "custom_angle_filtering.json"
+        config_file = tmp_path / "custom_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_custom_angle_filtering, f)
 
@@ -403,10 +403,10 @@ class TestConfigManagerAngleFiltering:
         assert target_ranges == expected
 
     def test_should_fallback_to_all_angles_default(
-        self, temp_directory, config_with_angle_filtering
+        self, tmp_path, config_with_angle_filtering
     ):
         """Test should_fallback_to_all_angles with default configuration."""
-        config_file = temp_directory / "angle_filtering.json"
+        config_file = tmp_path / "angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_angle_filtering, f)
 
@@ -414,10 +414,10 @@ class TestConfigManagerAngleFiltering:
         assert manager.should_fallback_to_all_angles()
 
     def test_should_fallback_to_all_angles_custom(
-        self, temp_directory, config_with_custom_angle_filtering
+        self, tmp_path, config_with_custom_angle_filtering
     ):
         """Test should_fallback_to_all_angles with custom configuration."""
-        config_file = temp_directory / "custom_angle_filtering.json"
+        config_file = tmp_path / "custom_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_custom_angle_filtering, f)
 
@@ -425,10 +425,10 @@ class TestConfigManagerAngleFiltering:
         assert manager.should_fallback_to_all_angles() is False
 
     def test_get_angle_filtering_config_complete(
-        self, temp_directory, config_with_angle_filtering
+        self, tmp_path, config_with_angle_filtering
     ):
         """Test get_angle_filtering_config with complete configuration."""
-        config_file = temp_directory / "angle_filtering.json"
+        config_file = tmp_path / "angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_angle_filtering, f)
 
@@ -446,10 +446,10 @@ class TestConfigManagerAngleFiltering:
         assert angle_config["fallback_to_all_angles"]
 
     def test_get_angle_filtering_config_defaults(
-        self, temp_directory, config_without_angle_filtering
+        self, tmp_path, config_without_angle_filtering
     ):
         """Test get_angle_filtering_config with missing configuration (should provide defaults)."""
-        config_file = temp_directory / "no_angle_filtering.json"
+        config_file = tmp_path / "no_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_without_angle_filtering, f)
 
@@ -468,7 +468,7 @@ class TestConfigManagerAngleFiltering:
         ]
         assert angle_config["target_ranges"] == expected_ranges
 
-    def test_angle_filtering_config_validation(self, temp_directory):
+    def test_angle_filtering_config_validation(self, tmp_path):
         """Test angle filtering configuration validation with invalid ranges."""
         invalid_config = {
             "metadata": {"config_version": "5.1"},
@@ -493,7 +493,7 @@ class TestConfigManagerAngleFiltering:
             },
         }
 
-        config_file = temp_directory / "invalid_angle_filtering.json"
+        config_file = tmp_path / "invalid_angle_filtering.json"
         with open(config_file, "w") as f:
             json.dump(invalid_config, f)
 
@@ -505,7 +505,7 @@ class TestConfigManagerAngleFiltering:
         assert len(valid_ranges) == 1  # Only one valid range
         assert valid_ranges[0] == {"min_angle": 175.0, "max_angle": 185.0}
 
-    def test_angle_filtering_empty_ranges(self, temp_directory):
+    def test_angle_filtering_empty_ranges(self, tmp_path):
         """Test behavior with empty target ranges."""
         empty_ranges_config = {
             "metadata": {"config_version": "5.1"},
@@ -522,7 +522,7 @@ class TestConfigManagerAngleFiltering:
             },
         }
 
-        config_file = temp_directory / "empty_ranges.json"
+        config_file = tmp_path / "empty_ranges.json"
         with open(config_file, "w") as f:
             json.dump(empty_ranges_config, f)
 
@@ -553,8 +553,8 @@ class TestConfigManagerAngleFiltering:
             for range_tuple in ranges:
                 assert isinstance(range_tuple, tuple)
                 assert len(range_tuple) == 2
-                assert isinstance(range_tuple[0], (int, float))
-                assert isinstance(range_tuple[1], (int, float))
+                assert isinstance(range_tuple[0], int | float)
+                assert isinstance(range_tuple[1], int | float)
 
         # Test with template config
         template_path = Path(__file__).parent.parent / "config_template.json"
@@ -649,9 +649,9 @@ class TestPlottingConfigurationConsistency:
             },
         }
 
-    def test_parameter_name_consistency(self, temp_directory, plotting_config):
+    def test_parameter_name_consistency(self, tmp_path, plotting_config):
         """Test that parameter names are consistent across configuration sections."""
-        config_file = temp_directory / "plotting_test.json"
+        config_file = tmp_path / "plotting_test.json"
         with open(config_file, "w") as f:
             json.dump(plotting_config, f)
 
@@ -666,9 +666,9 @@ class TestPlottingConfigurationConsistency:
         assert param_names == bound_names
         assert len(param_names) == len(bound_names) == 7
 
-    def test_parameter_count_consistency(self, temp_directory, plotting_config):
+    def test_parameter_count_consistency(self, tmp_path, plotting_config):
         """Test that parameter counts are consistent across all sections."""
-        config_file = temp_directory / "count_test.json"
+        config_file = tmp_path / "count_test.json"
         with open(config_file, "w") as f:
             json.dump(plotting_config, f)
 
@@ -686,9 +686,9 @@ class TestPlottingConfigurationConsistency:
         effective_count = manager.get_effective_parameter_count()
         assert len(param_names) == effective_count
 
-    def test_plotting_configuration_validation(self, temp_directory, plotting_config):
+    def test_plotting_configuration_validation(self, tmp_path, plotting_config):
         """Test plotting configuration validation."""
-        config_file = temp_directory / "plot_config_test.json"
+        config_file = tmp_path / "plot_config_test.json"
         with open(config_file, "w") as f:
             json.dump(plotting_config, f)
 

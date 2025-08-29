@@ -321,7 +321,7 @@ class TestMCMCConfigurationUsage:
         """Test validation of trace dimensions against configuration."""
         # This test simulates what should happen with actual trace files
         draws, chains, tune = 2000, 4, 500
-        config = self.create_test_config(draws=draws, chains=chains, tune=tune)
+        self.create_test_config(draws=draws, chains=chains, tune=tune)
 
         # Mock a trace object with the expected dimensions
         mock_trace = Mock()
@@ -359,7 +359,7 @@ class TestMCMCConfigurationUsage:
         mock_core = self.create_mock_core()
 
         with patch("homodyne.optimization.mcmc.logger") as mock_logger:
-            sampler = MCMCSampler(mock_core, config)
+            MCMCSampler(mock_core, config)
 
             # Check that initialization was logged
             mock_logger.info.assert_called()

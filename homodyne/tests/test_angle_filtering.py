@@ -231,8 +231,8 @@ class TestAngleFilteringCore:
         )
 
         # Both should return valid numbers
-        assert isinstance(chi2_all, (int, float))
-        assert isinstance(chi2_filtered, (int, float))
+        assert isinstance(chi2_all, int | float)
+        assert isinstance(chi2_filtered, int | float)
         assert chi2_all > 0
         assert chi2_filtered > 0
 
@@ -383,7 +383,7 @@ class TestAngleFilteringCore:
 
         # Should be identical (both use all angles)
         assert chi2_default == chi2_no_filter
-        assert isinstance(chi2_default, (int, float))
+        assert isinstance(chi2_default, int | float)
         assert chi2_default > 0
 
     def test_empty_optimization_angles_fallback(self, mock_analyzer):
@@ -410,7 +410,7 @@ class TestAngleFilteringCore:
         )
 
         # Should still return a valid result
-        assert isinstance(chi2_fallback, (int, float))
+        assert isinstance(chi2_fallback, int | float)
         assert chi2_fallback > 0
 
 
@@ -656,7 +656,8 @@ class TestAngleFilteringEdgeCases:
                     break
 
             assert is_included == should_include, f"Angle {angle}° should be {
-                'included' if should_include else 'excluded'}"
+                'included' if should_include else 'excluded'
+            }"
 
     def test_optimization_methods_use_config_manager(self):
         """Test that optimization methods read angle filtering settings from ConfigManager."""

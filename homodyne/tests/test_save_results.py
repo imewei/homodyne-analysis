@@ -59,8 +59,8 @@ class TestSaveResultsWithConfig:
         self, mock_analyzer, sample_results_with_uncertainty
     ):
         """Test saving results with a valid configuration."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch("builtins.open", mock_open()) as mock_file:
+        with tempfile.TemporaryDirectory():
+            with patch("builtins.open", mock_open()):
                 with patch("json.dump") as mock_json:
                     mock_analyzer.save_results_with_config(
                         sample_results_with_uncertainty
@@ -92,7 +92,7 @@ class TestSaveResultsWithConfig:
         analyzer = HomodyneAnalysisCore.__new__(HomodyneAnalysisCore)
         analyzer.config = None  # Explicitly set to None
 
-        with patch("builtins.open", mock_open()) as mock_file:
+        with patch("builtins.open", mock_open()):
             with patch("json.dump") as mock_json:
                 # This should not raise an exception
                 analyzer.save_results_with_config(sample_results_with_uncertainty)
@@ -254,7 +254,7 @@ class TestSaveResultsWithConfig:
         with tempfile.TemporaryDirectory() as temp_dir:
             custom_output_dir = temp_dir
 
-            with patch("builtins.open", mock_open()) as mock_file:
+            with patch("builtins.open", mock_open()):
                 with patch("json.dump") as mock_json:
                     # Test with output_dir parameter
                     mock_analyzer.save_results_with_config(
@@ -280,7 +280,7 @@ class TestSaveResultsWithConfig:
         self, mock_analyzer, sample_results_with_uncertainty
     ):
         """Test saving results without output directory parameter (default behavior)."""
-        with patch("builtins.open", mock_open()) as mock_file:
+        with patch("builtins.open", mock_open()):
             with patch("json.dump") as mock_json:
                 # Test without output_dir parameter (backward compatibility)
                 mock_analyzer.save_results_with_config(sample_results_with_uncertainty)

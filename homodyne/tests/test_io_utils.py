@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from homodyne.tests.fixtures import dummy_config
+
 # Import the modules to test
 from homodyne.core.io_utils import (
     ensure_dir,
@@ -31,9 +33,9 @@ from homodyne.core.io_utils import (
 class TestDirectoryCreation:
     """Test directory creation and file existence functionality."""
 
-    def test_ensure_dir_creates_new_directory(self, temp_directory):
+    def test_ensure_dir_creates_new_directory(self, tmp_path):
         """Test that ensure_dir creates a new directory."""
-        new_dir = temp_directory / "new_test_dir"
+        new_dir = tmp_path / "new_test_dir"
         assert not new_dir.exists()
 
         result = ensure_dir(new_dir)
@@ -42,9 +44,9 @@ class TestDirectoryCreation:
         assert new_dir.is_dir()
         assert result == new_dir
 
-    def test_ensure_dir_nested_directories(self, temp_directory):
+    def test_ensure_dir_nested_directories(self, tmp_path):
         """Test creation of nested directory structures."""
-        nested_path = temp_directory / "level1" / "level2" / "level3"
+        nested_path = tmp_path / "level1" / "level2" / "level3"
         assert not nested_path.exists()
 
         result = ensure_dir(nested_path)
@@ -54,12 +56,12 @@ class TestDirectoryCreation:
         assert result == nested_path
 
         # Check that all parent directories were created
-        assert (temp_directory / "level1").exists()
-        assert (temp_directory / "level1" / "level2").exists()
+        assert (tmp_path / "level1").exists()
+        assert (tmp_path / "level1" / "level2").exists()
 
-    def test_ensure_dir_existing_directory(self, temp_directory):
+    def test_ensure_dir_existing_directory(self, tmp_path):
         """Test that ensure_dir handles existing directories gracefully."""
-        existing_dir = temp_directory / "existing"
+        existing_dir = tmp_path / "existing"
         existing_dir.mkdir()
         assert existing_dir.exists()
 
@@ -68,12 +70,12 @@ class TestDirectoryCreation:
         assert existing_dir.exists()
         assert result == existing_dir
 
-    def test_ensure_dir_permissions(self, temp_directory):
+    def test_ensure_dir_permissions(self, tmp_path):
         """Test directory creation with custom permissions."""
         if os.name == "nt":  # Skip permission tests on Windows
             pytest.skip("Permission tests not applicable on Windows")
 
-        perm_dir = temp_directory / "perm_test"
+        perm_dir = tmp_path / "perm_test"
         result = ensure_dir(perm_dir, permissions=0o755)
 
         assert result.exists()
@@ -83,17 +85,17 @@ class TestDirectoryCreation:
             "775",
         ]  # Account for umask
 
-    def test_ensure_dir_with_string_path(self, temp_directory):
+    def test_ensure_dir_with_string_path(self, tmp_path):
         """Test that ensure_dir works with string paths."""
-        str_path = str(temp_directory / "string_path")
+        str_path = str(tmp_path / "string_path")
         result = ensure_dir(str_path)
 
         assert Path(str_path).exists()
         assert isinstance(result, Path)
 
-    def test_ensure_dir_file_exists_error(self, temp_directory):
+    def test_ensure_dir_file_exists_error(self, tmp_path):
         """Test error when trying to create directory where file exists."""
-        file_path = temp_directory / "test_file"
+        file_path = tmp_path / "test_file"
         file_path.write_text("test content")
 
         with pytest.raises(OSError, match="Path exists but is not a directory"):
@@ -188,14 +190,14 @@ class TestFilenameGeneration:
 class TestDataSaving:
     """Test data saving functions."""
 
-    def test_save_json_success(self, temp_directory):
+    def test_save_json_success(self, tmp_path):
         """Test successful JSON saving."""
         data = {
             "test": "data",
             "numbers": [1, 2, 3],
             "nested": {"key": "value"},
         }
-        filepath = temp_directory / "test.json"
+        filepath = tmp_path / "test.json"
 
         result = save_json(data, filepath)
 
@@ -207,10 +209,10 @@ class TestDataSaving:
             loaded_data = json.load(f)
         assert loaded_data == data
 
-    def test_save_json_creates_directory(self, temp_directory):
+    def test_save_json_creates_directory(self, tmp_path):
         """Test that save_json creates parent directories."""
         data = {"test": "data"}
-        filepath = temp_directory / "nested" / "directory" / "test.json"
+        filepath = tmp_path / "nested" / "directory" / "test.json"
 
         result = save_json(data, filepath)
 
@@ -218,11 +220,11 @@ class TestDataSaving:
         assert filepath.exists()
         assert filepath.parent.exists()
 
-    def test_save_json_non_serializable(self, temp_directory):
+    def test_save_json_non_serializable(self, tmp_path):
         """Test JSON saving with non-serializable data."""
         # Complex number is not JSON serializable by default
         data = {"complex": complex(1, 2)}
-        filepath = temp_directory / "test.json"
+        filepath = tmp_path / "test.json"
 
         result = save_json(data, filepath)
 
@@ -232,10 +234,10 @@ class TestDataSaving:
             # If file exists, it should be very small (essentially empty)
             assert filepath.stat().st_size < 100  # Very small file
 
-    def test_save_numpy_compressed(self, temp_directory):
+    def test_save_numpy_compressed(self, tmp_path):
         """Test NumPy array saving with compression."""
         data = np.random.rand(10, 10)
-        filepath = temp_directory / "test_array.npz"
+        filepath = tmp_path / "test_array.npz"
 
         result = save_numpy(data, filepath, compressed=True)
 
@@ -246,10 +248,10 @@ class TestDataSaving:
         loaded = np.load(filepath)
         np.testing.assert_array_equal(loaded["data"], data)
 
-    def test_save_numpy_uncompressed(self, temp_directory):
+    def test_save_numpy_uncompressed(self, tmp_path):
         """Test NumPy array saving without compression."""
         data = np.random.rand(5, 5)
-        filepath = temp_directory / "test_array.npy"
+        filepath = tmp_path / "test_array.npy"
 
         result = save_numpy(data, filepath, compressed=False)
 
@@ -260,10 +262,10 @@ class TestDataSaving:
         loaded = np.load(filepath)
         np.testing.assert_array_equal(loaded, data)
 
-    def test_save_pickle_success(self, temp_directory):
+    def test_save_pickle_success(self, tmp_path):
         """Test successful pickle saving."""
-        data = {"complex_object": [1, 2, {"nested": set([3, 4, 5])}]}
-        filepath = temp_directory / "test.pkl"
+        data = {"complex_object": [1, 2, {"nested": {3, 4, 5}}]}
+        filepath = tmp_path / "test.pkl"
 
         result = save_pickle(data, filepath)
 
@@ -276,12 +278,12 @@ class TestDataSaving:
             loaded_data = pickle.load(f)  # nosec B301 - Safe: loading trusted test data
         assert loaded_data == data
 
-    def test_save_figure_success(self, temp_directory):
+    def test_save_figure_success(self, tmp_path):
         """Test matplotlib figure saving."""
         fig, ax = plt.subplots()
         ax.plot([1, 2, 3], [1, 4, 2])
         ax.set_title("Test Plot")
-        filepath = temp_directory / "test_plot.png"
+        filepath = tmp_path / "test_plot.png"
 
         result = save_fig(fig, filepath, dpi=100)
 
@@ -293,24 +295,24 @@ class TestDataSaving:
 
         plt.close(fig)
 
-    def test_save_figure_with_format(self, temp_directory):
+    def test_save_figure_with_format(self, tmp_path):
         """Test figure saving with specific format."""
         fig, ax = plt.subplots()
         ax.plot([1, 2, 3], [1, 4, 2])
-        filepath = temp_directory / "test_plot"  # No extension
+        filepath = tmp_path / "test_plot"  # No extension
 
         result = save_fig(fig, filepath, format="pdf", dpi=150)
 
         assert result is True
         # The actual saved file should have the format
-        saved_files = list(temp_directory.glob("test_plot*"))
+        saved_files = list(tmp_path.glob("test_plot*"))
         assert len(saved_files) >= 1
 
         plt.close(fig)
 
-    def test_save_figure_invalid_object(self, temp_directory):
+    def test_save_figure_invalid_object(self, tmp_path):
         """Test figure saving with invalid figure object."""
-        filepath = temp_directory / "invalid.png"
+        filepath = tmp_path / "invalid.png"
 
         result = save_fig("not_a_figure", filepath)
 
@@ -321,10 +323,10 @@ class TestDataSaving:
 class TestOutputDirectory:
     """Test output directory management."""
 
-    def test_get_output_directory_from_config(self, temp_directory, dummy_config):
+    def test_get_output_directory_from_config(self, tmp_path, dummy_config):
         """Test getting output directory from configuration."""
         dummy_config["output_settings"]["results_directory"] = str(
-            temp_directory / "custom_results"
+            tmp_path / "custom_results"
         )
 
         result = get_output_directory(dummy_config)
@@ -332,11 +334,11 @@ class TestOutputDirectory:
         assert result.exists()
         assert result.name == "custom_results"
 
-    def test_get_output_directory_default(self, temp_directory):
+    def test_get_output_directory_default(self, tmp_path):
         """Test getting default output directory."""
         # Change to temp directory to avoid creating "./results" in project
         original_cwd = Path.cwd()
-        os.chdir(temp_directory)
+        os.chdir(tmp_path)
 
         try:
             result = get_output_directory(None)
@@ -345,10 +347,10 @@ class TestOutputDirectory:
         finally:
             os.chdir(original_cwd)
 
-    def test_get_output_directory_no_config(self, temp_directory):
+    def test_get_output_directory_no_config(self, tmp_path):
         """Test output directory with empty config."""
         original_cwd = Path.cwd()
-        os.chdir(temp_directory)
+        os.chdir(tmp_path)
 
         try:
             result = get_output_directory({})
@@ -361,10 +363,10 @@ class TestOutputDirectory:
 class TestAnalysisResultsSaving:
     """Test complete analysis results saving."""
 
-    def test_save_analysis_results_complete(self, temp_directory, dummy_config):
+    def test_save_analysis_results_complete(self, tmp_path, dummy_config):
         """Test saving complete analysis results."""
         dummy_config["output_settings"]["results_directory"] = str(
-            temp_directory / "test_output"
+            tmp_path / "test_output"
         )
 
         results = {
@@ -391,10 +393,10 @@ class TestAnalysisResultsSaving:
         assert len(npz_files) >= 1
         assert len(pkl_files) >= 1
 
-    def test_save_analysis_results_minimal(self, temp_directory):
+    def test_save_analysis_results_minimal(self, tmp_path):
         """Test saving minimal analysis results."""
         original_cwd = Path.cwd()
-        os.chdir(temp_directory)
+        os.chdir(tmp_path)
 
         try:
             results = {"chi_squared": 5.678}
@@ -405,7 +407,7 @@ class TestAnalysisResultsSaving:
             assert save_status["json"] is True
 
             # Check results directory was created
-            results_dir = temp_directory / "homodyne_results"
+            results_dir = tmp_path / "homodyne_results"
             assert results_dir.exists()
 
         finally:
@@ -415,13 +417,13 @@ class TestAnalysisResultsSaving:
 class TestErrorHandling:
     """Test error handling in IO operations."""
 
-    def test_save_json_permission_error(self, temp_directory):
+    def test_save_json_permission_error(self, tmp_path):
         """Test JSON saving with permission error."""
         if os.name == "nt":  # Skip on Windows due to different permission model
             pytest.skip("Permission tests not reliable on Windows")
 
         # Create a read-only directory
-        readonly_dir = temp_directory / "readonly"
+        readonly_dir = tmp_path / "readonly"
         readonly_dir.mkdir(mode=0o444)
         filepath = readonly_dir / "test.json"
 
@@ -433,19 +435,19 @@ class TestErrorHandling:
             readonly_dir.chmod(0o755)
 
     @patch("builtins.open", side_effect=OSError("Simulated IO error"))
-    def test_save_json_io_error(self, mock_open_func, temp_directory):
+    def test_save_json_io_error(self, mock_open_func, tmp_path):
         """Test JSON saving with IO error."""
-        filepath = temp_directory / "test.json"
+        filepath = tmp_path / "test.json"
 
         result = save_json({"test": "data"}, filepath)
 
         assert result is False
 
-    def test_save_numpy_invalid_data(self, temp_directory):
+    def test_save_numpy_invalid_data(self, tmp_path):
         """Test NumPy saving with invalid data."""
         # Object arrays with unhashable types can cause issues
-        invalid_data = np.array([{"unhashable": set([1, 2, 3])}], dtype=object)
-        filepath = temp_directory / "invalid.npz"
+        invalid_data = np.array([{"unhashable": {1, 2, 3}}], dtype=object)
+        filepath = tmp_path / "invalid.npz"
 
         result = save_numpy(invalid_data, filepath)
 
@@ -453,13 +455,13 @@ class TestErrorHandling:
         # The test mainly checks that the function handles it gracefully
         assert isinstance(result, bool)
 
-    def test_ensure_dir_permission_denied(self, temp_directory):
+    def test_ensure_dir_permission_denied(self, tmp_path):
         """Test directory creation when permission is denied."""
         if os.name == "nt":
             pytest.skip("Permission tests not reliable on Windows")
 
         # Create a directory with no write permissions
-        no_write_dir = temp_directory / "no_write"
+        no_write_dir = tmp_path / "no_write"
         no_write_dir.mkdir(mode=0o444)
 
         try:

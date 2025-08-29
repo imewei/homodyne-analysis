@@ -404,7 +404,7 @@ class TestMCMCConfigurationReading:
         mock_core.num_threads = 4
 
         # Create MCMCSampler instance
-        sampler = MCMCSampler(mock_core, test_config)
+        MCMCSampler(mock_core, test_config)
 
         # Test that parameter bounds are accessed correctly
         param_bounds = test_config.get("parameter_space", {}).get("bounds", [])

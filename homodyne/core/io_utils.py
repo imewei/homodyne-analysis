@@ -207,14 +207,11 @@ def _json_serializer(obj):
     """
     if isinstance(obj, np.ndarray):
         return obj.tolist()
-    elif isinstance(obj, (np.integer, np.floating)):
+    elif isinstance(obj, np.integer | np.floating):
         return obj.item()
-    elif isinstance(obj, (np.complexfloating, complex)):
+    elif isinstance(obj, np.complexfloating | complex):
         # Don't serialize complex numbers - let them fail for testing
-        raise TypeError(
-            f"Object of type {
-                type(obj).__name__} is not JSON serializable"
-        )
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
     elif hasattr(obj, "__dict__"):
         return str(obj)  # Convert complex objects to string
     else:
@@ -525,9 +522,7 @@ def save_classical_optimization_results(
 
     if method_results:
         logger.info(
-            f"Saving method-specific results for: {
-                list(
-                    method_results.keys())}"
+            f"Saving method-specific results for: {list(method_results.keys())}"
         )
         # Save individual method results
         for method, method_data in method_results.items():

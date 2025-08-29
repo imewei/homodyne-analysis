@@ -281,7 +281,7 @@ class TestMCMCScalingConsistency:
             for key in key_path:
                 assert (
                     key in current
-                ), f"Missing key: {'.'.join(key_path[:key_path.index(key) + 1])}"
+                ), f"Missing key: {'.'.join(key_path[: key_path.index(key) + 1])}"
                 current = current[key]
 
 

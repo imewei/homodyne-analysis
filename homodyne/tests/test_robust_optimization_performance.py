@@ -158,7 +158,7 @@ class MockAnalysisCorePerformance:
             # Fill 3D correlation matrix
             for j in range(self.n_times):
                 for k in range(self.n_times):
-                    tau = abs(time_delays[j] - time_delays[k])
+                    abs(time_delays[j] - time_delays[k])
                     decay = np.exp(-0.01 * D_eff[min(j, k)])
                     c2_theory[i, j, k] = 1.0 + contrast * decay
 
@@ -677,7 +677,7 @@ class TestRobustOptimizationBenchmarks:
             performance_mock_core, config_no_cache
         )
 
-        test_params = np.array([150.0, -0.8, 20.0])
+        np.array([150.0, -0.8, 20.0])
 
         # First call (both should be similar)
         start_time = time.time()
@@ -688,7 +688,7 @@ class TestRobustOptimizationBenchmarks:
         start_time = time.time()
         for _ in range(5):
             _ = optimizer_no_cache._get_parameter_bounds()
-        no_cache_time = time.time() - start_time
+        time.time() - start_time
 
         # Second call with same number of iterations (cached should be faster or similar)
         start_time = time.time()

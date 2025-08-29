@@ -18,10 +18,10 @@ import numpy as np
 class TestRunHomodyneIntegration:
     """Test run_homodyne.py script integration and behavior."""
 
-    def test_plot_experimental_data_flag_behavior(self, temp_directory):
+    def test_plot_experimental_data_flag_behavior(self, tmp_path):
         """Test that --plot-experimental-data flag creates correct output structure."""
         # Create expected output structure for experimental data plots
-        exp_data_dir = temp_directory / "homodyne_results" / "exp_data"
+        exp_data_dir = tmp_path / "homodyne_results" / "exp_data"
         exp_data_dir.mkdir(parents=True, exist_ok=True)
 
         # Simulate files that would be created by --plot-experimental-data
@@ -44,15 +44,15 @@ class TestRunHomodyneIntegration:
             assert (exp_data_dir / filename).exists()
 
         # Verify files are NOT in old location
-        old_location = temp_directory / "plots" / "data_validation"
+        old_location = tmp_path / "plots" / "data_validation"
         if old_location.exists():
             for filename in expected_files:
                 assert not (old_location / filename).exists()
 
-    def test_classical_method_output_structure(self, temp_directory):
+    def test_classical_method_output_structure(self, tmp_path):
         """Test that classical method creates correct output structure."""
         # Create expected output structure for classical method
-        classical_dir = temp_directory / "homodyne_results" / "classical"
+        classical_dir = tmp_path / "homodyne_results" / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
 
         # Create method-specific directories
@@ -129,9 +129,9 @@ class TestRunHomodyneIntegration:
         # Verify summary file exists
         assert (classical_dir / "all_classical_methods_summary.json").exists()
 
-    def test_main_results_file_location(self, temp_directory):
+    def test_main_results_file_location(self, tmp_path):
         """Test that main results file is saved to output directory."""
-        results_dir = temp_directory / "homodyne_results"
+        results_dir = tmp_path / "homodyne_results"
         results_dir.mkdir(parents=True, exist_ok=True)
 
         # Create mock main results file (homodyne_analysis_results.json stays
@@ -160,9 +160,9 @@ class TestRunHomodyneIntegration:
         assert loaded_results["config"]["test"] == "config"
         assert loaded_results["execution_metadata"]["analysis_success"] is True
 
-    def test_complete_directory_structure_integration(self, temp_directory):
+    def test_complete_directory_structure_integration(self, tmp_path):
         """Test complete directory structure as it would be created by run_homodyne.py."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Create complete expected structure
         directories = [base_dir, base_dir / "classical", base_dir / "exp_data"]
@@ -189,12 +189,6 @@ class TestRunHomodyneIntegration:
         }
 
         # Mock per-angle results
-        per_angle_data = {
-            "method": "Classical",
-            "overall_reduced_chi_squared": 17.12216371557179,
-            "n_optimization_angles": 1,
-            "quality_assessment": {"overall_quality": "poor"},
-        }
 
         with open(main_results, "w") as f:
             json.dump(main_results_data, f, indent=2)
@@ -286,21 +280,20 @@ class TestRunHomodyneIntegration:
 class TestRunHomodyneMockExecution:
     """Test run_homodyne.py execution with mocked components."""
 
-    def test_plot_experimental_data_early_exit_simulation(self, temp_directory):
+    def test_plot_experimental_data_early_exit_simulation(self, tmp_path):
         """Simulate the early exit behavior of --plot-experimental-data."""
 
         def mock_run_homodyne_with_plot_experimental_data():
             """Mock implementation of run_homodyne.py with --plot-experimental-data."""
             # Simulate command line argument parsing
             plot_experimental_data = True
-            method = None  # Not set when using --plot-experimental-data
-            output_dir = temp_directory / "homodyne_results" / "exp_data"
+            output_dir = tmp_path / "homodyne_results" / "exp_data"
 
             # Create output directory
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # Simulate loading experimental data and creating plots
-            mock_experimental_data = np.random.rand(3, 30, 40) + 1.0
+            np.random.rand(3, 30, 40) + 1.0
 
             # Create mock validation plots
             validation_files = [
@@ -336,19 +329,18 @@ class TestRunHomodyneMockExecution:
         assert result["status"] == "experimental_data_plotted"
 
         # Verify output files were created
-        exp_data_dir = temp_directory / "homodyne_results" / "exp_data"
+        exp_data_dir = tmp_path / "homodyne_results" / "exp_data"
         assert exp_data_dir.exists()
         assert len(list(exp_data_dir.glob("*.png"))) == 3
         assert (exp_data_dir / "summary_statistics.txt").exists()
 
-    def test_classical_method_execution_simulation(self, temp_directory):
+    def test_classical_method_execution_simulation(self, tmp_path):
         """Simulate the execution of run_homodyne.py with --method classical."""
 
         def mock_run_homodyne_with_classical_method():
             """Mock implementation of run_homodyne.py with --method classical."""
             # Simulate command line argument parsing
-            method = "classical"
-            output_dir = temp_directory / "homodyne_results"
+            output_dir = tmp_path / "homodyne_results"
             classical_dir = output_dir / "classical"
 
             # Create output directories
@@ -446,7 +438,7 @@ class TestRunHomodyneMockExecution:
         assert result["chi_squared"] > 0
 
         # Verify file structure
-        output_dir = temp_directory / "homodyne_results"
+        output_dir = tmp_path / "homodyne_results"
         classical_dir = output_dir / "classical"
 
         assert output_dir.exists()
@@ -485,7 +477,7 @@ class TestRunHomodyneMockExecution:
 class TestBackwardCompatibilityIntegration:
     """Test that the changes maintain backward compatibility for existing workflows."""
 
-    def test_existing_configurations_still_work(self, temp_directory):
+    def test_existing_configurations_still_work(self, tmp_path):
         """Test that existing configuration files work with new directory structure."""
         # Create a configuration similar to what existed before changes
         old_style_config = {
@@ -501,7 +493,7 @@ class TestBackwardCompatibilityIntegration:
         }
 
         # Save configuration
-        config_file = temp_directory / "legacy_config.json"
+        config_file = tmp_path / "legacy_config.json"
         with open(config_file, "w") as f:
             json.dump(old_style_config, f, indent=2)
 
@@ -516,9 +508,9 @@ class TestBackwardCompatibilityIntegration:
         # even with old configuration files (this would be tested in actual
         # execution)
 
-    def test_results_file_backward_compatibility(self, temp_directory):
+    def test_results_file_backward_compatibility(self, tmp_path):
         """Test that results files maintain expected format while changing location."""
-        output_dir = temp_directory / "homodyne_results"
+        output_dir = tmp_path / "homodyne_results"
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Create results file in new location
@@ -558,10 +550,10 @@ class TestBackwardCompatibilityIntegration:
 class TestMCMCIntegration:
     """Test MCMC method integration with new directory structure."""
 
-    def test_mcmc_method_output_structure(self, temp_directory):
+    def test_mcmc_method_output_structure(self, tmp_path):
         """Test that MCMC method creates correct output structure."""
         # Create expected output structure for MCMC method
-        mcmc_dir = temp_directory / "homodyne_results" / "mcmc"
+        mcmc_dir = tmp_path / "homodyne_results" / "mcmc"
         mcmc_dir.mkdir(parents=True, exist_ok=True)
 
         # Simulate files that would be created by MCMC method
@@ -619,14 +611,13 @@ class TestMCMCIntegration:
         assert "chi_squared" in data
         assert data["c2_experimental"].shape == (3, 20, 30)
 
-    def test_mcmc_method_execution_simulation(self, temp_directory):
+    def test_mcmc_method_execution_simulation(self, tmp_path):
         """Simulate the execution of run_homodyne.py with --method mcmc."""
 
         def mock_run_homodyne_with_mcmc_method():
             """Mock implementation of run_homodyne.py with --method mcmc."""
             # Simulate command line argument parsing
-            method = "mcmc"
-            output_dir = temp_directory / "homodyne_results"
+            output_dir = tmp_path / "homodyne_results"
             mcmc_dir = output_dir / "mcmc"
 
             # Create output directories
@@ -718,7 +709,7 @@ class TestMCMCIntegration:
         assert result["convergence_quality"] == "excellent"
 
         # Verify file structure
-        output_dir = temp_directory / "homodyne_results"
+        output_dir = tmp_path / "homodyne_results"
         mcmc_dir = output_dir / "mcmc"
 
         assert output_dir.exists()
@@ -759,9 +750,9 @@ class TestMCMCIntegration:
         assert "convergence_diagnostics" in summary
         assert summary["convergence_diagnostics"]["converged"] is True
 
-    def test_mcmc_vs_classical_method_separation(self, temp_directory):
+    def test_mcmc_vs_classical_method_separation(self, tmp_path):
         """Test that MCMC and classical methods create separate directories."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Simulate running both methods
         classical_dir = base_dir / "classical"

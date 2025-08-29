@@ -62,10 +62,10 @@ class TestConfigurationIntegration:
         }
 
     def test_core_analysis_uses_config_manager_ranges(
-        self, temp_directory, config_with_custom_angle_filtering
+        self, tmp_path, config_with_custom_angle_filtering
     ):
         """Test that core analysis reads target ranges from ConfigManager."""
-        config_file = temp_directory / "custom_ranges.json"
+        config_file = tmp_path / "custom_ranges.json"
         with open(config_file, "w") as f:
             json.dump(config_with_custom_angle_filtering, f)
 
@@ -118,10 +118,10 @@ class TestConfigurationIntegration:
             assert optimization_indices == expected_indices
 
     def test_core_analysis_respects_disabled_filtering(
-        self, temp_directory, config_with_disabled_angle_filtering
+        self, tmp_path, config_with_disabled_angle_filtering
     ):
         """Test that core analysis respects disabled angle filtering."""
-        config_file = temp_directory / "disabled_filtering.json"
+        config_file = tmp_path / "disabled_filtering.json"
         with open(config_file, "w") as f:
             json.dump(config_with_disabled_angle_filtering, f)
 
@@ -145,7 +145,7 @@ class TestConfigurationIntegration:
         expected_indices = [0, 1, 2, 3, 4]  # All angles
         assert optimization_indices == expected_indices
 
-    def test_core_analysis_fallback_behavior(self, temp_directory):
+    def test_core_analysis_fallback_behavior(self, tmp_path):
         """Test core analysis fallback behavior with no matching angles."""
         # Create config with ranges that won't match any test angles
         config_with_no_matches = {
@@ -168,7 +168,7 @@ class TestConfigurationIntegration:
             },
         }
 
-        config_file = temp_directory / "no_matches.json"
+        config_file = tmp_path / "no_matches.json"
         with open(config_file, "w") as f:
             json.dump(config_with_no_matches, f)
 
@@ -199,7 +199,7 @@ class TestConfigurationIntegration:
 
         assert optimization_indices == [0, 1, 2, 3, 4]
 
-    def test_core_analysis_no_fallback_behavior(self, temp_directory):
+    def test_core_analysis_no_fallback_behavior(self, tmp_path):
         """Test core analysis with fallback disabled (should raise error)."""
         # Create config with no fallback
         config_no_fallback = {
@@ -222,7 +222,7 @@ class TestConfigurationIntegration:
             },
         }
 
-        config_file = temp_directory / "no_fallback.json"
+        config_file = tmp_path / "no_fallback.json"
         with open(config_file, "w") as f:
             json.dump(config_no_fallback, f)
 
@@ -256,10 +256,10 @@ class TestConfigurationIntegration:
         assert error_expected
 
     def test_optimization_methods_integration(
-        self, temp_directory, config_with_custom_angle_filtering
+        self, tmp_path, config_with_custom_angle_filtering
     ):
         """Test that optimization methods properly integrate with ConfigManager."""
-        config_file = temp_directory / "integration_test.json"
+        config_file = tmp_path / "integration_test.json"
         with open(config_file, "w") as f:
             json.dump(config_with_custom_angle_filtering, f)
 

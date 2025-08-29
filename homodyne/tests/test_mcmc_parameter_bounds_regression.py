@@ -37,7 +37,7 @@ class TestMCMCParameterBoundsRegression:
     """Regression tests for MCMC parameter bounds initialization issues."""
 
     @pytest.fixture
-    def temp_directory(self):
+    def tmp_path(self):
         """Create temporary directory for test files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
@@ -312,13 +312,9 @@ class TestMCMCParameterBoundsRegression:
             f"  Initial position: exactly at center (distance from center: {
                 distance_from_center:.3f})"
         )
-        print(
-            f"  Jittering room: {
-                room_below:.1f} below, {
-                room_above:.1f} above"
-        )
+        print(f"  Jittering room: {room_below:.1f} below, {room_above:.1f} above")
 
-    def test_alpha_bounds_configuration_comparison(self, temp_directory):
+    def test_alpha_bounds_configuration_comparison(self, tmp_path):
         """Test that demonstrates the difference between problematic and safe alpha bounds."""
 
         # Test problematic configuration (narrow bounds, initial at boundary)
@@ -381,13 +377,9 @@ class TestMCMCParameterBoundsRegression:
         assert safe_bound["min"] < safe_alpha < safe_bound["max"]
 
         print(
-            f"✓ Problematic alpha bounds: width={
-                prob_width:.1f}, initial at boundary"
+            f"✓ Problematic alpha bounds: width={prob_width:.1f}, initial at boundary"
         )
-        print(
-            f"✓ Safe alpha bounds: width={
-                safe_width:.1f}, initial at center"
-        )
+        print(f"✓ Safe alpha bounds: width={safe_width:.1f}, initial at center")
 
     def test_mcmc_bounds_validation_edge_cases(self):
         """Test edge cases for MCMC parameter bounds validation."""
@@ -418,8 +410,8 @@ class TestMCMCParameterBoundsRegression:
             # Check if value is within bounds (inclusive)
             within_bounds = bound["min"] <= value <= bound["max"]
             assert within_bounds, f"Value {value} should be within bounds [{
-                bound['min']}, {
-                bound['max']}] for case {case_name}"
+                bound['min']
+            }, {bound['max']}] for case {case_name}"
 
             # Check distance from boundaries
             dist_from_min = abs(value - bound["min"])
@@ -529,7 +521,7 @@ class TestMCMCBoundsIntegration:
             json.dump(realistic_config, f, indent=2)
 
         # Test configuration loading
-        config_manager = ConfigManager(str(config_file))
+        ConfigManager(str(config_file))
 
         # Verify bounds are loaded correctly
         param_bounds = realistic_config["parameter_space"]["bounds"]

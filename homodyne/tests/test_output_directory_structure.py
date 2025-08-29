@@ -12,14 +12,16 @@ in the homodyne analysis module, including:
 
 import numpy as np
 
+from homodyne.tests.fixtures import dummy_config, test_output_directory
+
 
 class TestOutputDirectoryStructure:
     """Test the new output directory structure and file organization."""
 
-    def test_classical_output_directory_structure(self, temp_directory):
+    def test_classical_output_directory_structure(self, tmp_path):
         """Test that classical method creates the correct directory structure."""
         # Create expected classical output directory
-        classical_dir = temp_directory / "homodyne_results" / "classical"
+        classical_dir = tmp_path / "homodyne_results" / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
 
         # Expected files and directories in new classical structure
@@ -57,10 +59,10 @@ class TestOutputDirectoryStructure:
                 filename = file_template.format(method=method)
                 assert (method_dir / filename).exists()
 
-    def test_experimental_data_output_directory_structure(self, temp_directory):
+    def test_experimental_data_output_directory_structure(self, tmp_path):
         """Test that experimental data plots create the correct directory structure."""
         # Create expected experimental data output directory
-        exp_data_dir = temp_directory / "homodyne_results" / "exp_data"
+        exp_data_dir = tmp_path / "homodyne_results" / "exp_data"
         exp_data_dir.mkdir(parents=True, exist_ok=True)
 
         # Expected files in exp_data directory
@@ -79,9 +81,9 @@ class TestOutputDirectoryStructure:
         for filename in expected_files:
             assert (exp_data_dir / filename).exists()
 
-    def test_main_results_file_location(self, temp_directory):
+    def test_main_results_file_location(self, tmp_path):
         """Test that main results file is saved to output directory."""
-        results_dir = temp_directory / "homodyne_results"
+        results_dir = tmp_path / "homodyne_results"
         results_dir.mkdir(parents=True, exist_ok=True)
 
         # Main results file should be in output directory, not current
@@ -92,9 +94,9 @@ class TestOutputDirectoryStructure:
         assert main_results_file.exists()
         assert main_results_file.parent == results_dir
 
-    def test_complete_directory_structure(self, temp_directory):
+    def test_complete_directory_structure(self, tmp_path):
         """Test the complete expected directory structure."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Create complete expected structure with new method-specific
         # directories
@@ -193,9 +195,9 @@ class TestOutputDirectoryStructure:
         assert (base_dir / "exp_data").is_dir()
         assert (base_dir / "exp_data" / "data_validation_phi_0.0deg.png").exists()
 
-    def test_multiple_phi_angles_heatmap_naming(self, temp_directory):
+    def test_multiple_phi_angles_heatmap_naming(self, tmp_path):
         """Test that heatmap files are named correctly for multiple phi angles."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
         classical_dir = base_dir / "classical"
 
         # Create classical method directories
@@ -225,9 +227,9 @@ class TestOutputDirectoryStructure:
                 heatmap_file.touch()
                 assert heatmap_file.exists()
 
-    def test_diagnostic_summary_plots(self, temp_directory):
+    def test_diagnostic_summary_plots(self, tmp_path):
         """Test that diagnostic summary plots are generated for each method."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Test classical method diagnostic plots
         classical_dir = base_dir / "classical"
@@ -253,9 +255,9 @@ class TestOutputDirectoryStructure:
 class TestNPZDataFiles:
     """Test NPZ data file creation for classical method."""
 
-    def test_npz_data_structure(self, temp_directory):
+    def test_npz_data_structure(self, tmp_path):
         """Test the structure of NPZ data files in method-specific directories."""
-        classical_dir = temp_directory / "classical"
+        classical_dir = tmp_path / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
 
         # Create method directory
@@ -302,7 +304,7 @@ class TestNPZDataFiles:
         assert data_loaded["parameters"].shape == (3,)
         assert data_loaded["uncertainties"].shape == (3,)
 
-    def test_fitted_data_calculation(self, temp_directory):
+    def test_fitted_data_calculation(self, tmp_path):
         """Test that fitted data follows the expected scaling relationship."""
         # Mock theoretical and experimental data
         n_angles, n_t2, n_t1 = 2, 15, 20
@@ -341,7 +343,7 @@ class TestNPZDataFiles:
             # Residuals should be small for perfect fit
             assert np.mean(np.abs(residuals_data)) < 0.1
 
-    def test_residuals_calculation(self, temp_directory):
+    def test_residuals_calculation(self, tmp_path):
         """Test that residuals are correctly calculated as experimental - fitted."""
         # Create test data
         n_angles, n_t2, n_t1 = 2, 10, 12
@@ -352,7 +354,7 @@ class TestNPZDataFiles:
         expected_residuals = experimental_data - fitted_data
 
         # Save and load to test file I/O
-        classical_dir = temp_directory / "classical"
+        classical_dir = tmp_path / "classical"
         classical_dir.mkdir(parents=True, exist_ok=True)
 
         exp_file = classical_dir / "experimental_data.npz"
@@ -397,10 +399,10 @@ class TestPlotExperimentalDataBehavior:
         assert not fitting_performed
         assert results_directory == "homodyne_results/exp_data"
 
-    def test_experimental_data_output_path(self, temp_directory):
+    def test_experimental_data_output_path(self, tmp_path):
         """Test that experimental data plots are saved to correct path."""
         # Create expected path for experimental data plots
-        exp_data_path = temp_directory / "homodyne_results" / "exp_data"
+        exp_data_path = tmp_path / "homodyne_results" / "exp_data"
         exp_data_path.mkdir(parents=True, exist_ok=True)
 
         # Create mock experimental data plot files
@@ -419,7 +421,7 @@ class TestPlotExperimentalDataBehavior:
             assert (exp_data_path / filename).exists()
 
         # Verify they are NOT in the old location (./plots/data_validation/)
-        old_path = temp_directory / "plots" / "data_validation"
+        old_path = tmp_path / "plots" / "data_validation"
         if old_path.exists():
             for filename in plot_files:
                 assert not (old_path / filename).exists()
@@ -477,10 +479,10 @@ class TestBackwardCompatibility:
 class TestMCMCOutputDirectoryStructure:
     """Test the new output directory structure for MCMC method."""
 
-    def test_mcmc_output_directory_structure(self, temp_directory):
+    def test_mcmc_output_directory_structure(self, tmp_path):
         """Test that MCMC method creates the correct directory structure."""
         # Create expected MCMC output directory
-        mcmc_dir = temp_directory / "homodyne_results" / "mcmc"
+        mcmc_dir = tmp_path / "homodyne_results" / "mcmc"
         mcmc_dir.mkdir(parents=True, exist_ok=True)
 
         # Expected files in mcmc directory
@@ -506,10 +508,10 @@ class TestMCMCOutputDirectoryStructure:
         for filename in expected_files:
             assert (mcmc_dir / filename).exists()
 
-    def test_mcmc_3d_plotting_files(self, temp_directory):
+    def test_mcmc_3d_plotting_files(self, tmp_path):
         """Test that MCMC method creates 3D surface plotting files."""
         # Create expected MCMC output directory
-        mcmc_dir = temp_directory / "homodyne_results" / "mcmc"
+        mcmc_dir = tmp_path / "homodyne_results" / "mcmc"
         mcmc_dir.mkdir(parents=True, exist_ok=True)
 
         # Expected 3D plotting files
@@ -531,9 +533,9 @@ class TestMCMCOutputDirectoryStructure:
         # Verify they are in the correct MCMC directory
         assert all((mcmc_dir / f).parent == mcmc_dir for f in expected_3d_files)
 
-    def test_mcmc_npz_data_structure(self, temp_directory):
+    def test_mcmc_npz_data_structure(self, tmp_path):
         """Test the structure of MCMC NPZ data files."""
-        mcmc_dir = temp_directory / "mcmc"
+        mcmc_dir = tmp_path / "mcmc"
         mcmc_dir.mkdir(parents=True, exist_ok=True)
 
         # Create mock correlation data
@@ -569,7 +571,7 @@ class TestMCMCOutputDirectoryStructure:
         assert fitted_loaded["data"].shape == (n_angles, n_t2, n_t1)
         assert residuals_loaded["data"].shape == (n_angles, n_t2, n_t1)
 
-    def test_mcmc_fitted_data_calculation(self, temp_directory):
+    def test_mcmc_fitted_data_calculation(self, tmp_path):
         """Test that MCMC fitted data follows the expected scaling relationship."""
         # Mock theoretical and experimental data
         n_angles, n_t2, n_t1 = 2, 15, 20
@@ -608,9 +610,9 @@ class TestMCMCOutputDirectoryStructure:
             # Residuals should be small for perfect fit
             assert np.mean(np.abs(residuals_data)) < 0.1
 
-    def test_mcmc_vs_classical_directory_separation(self, temp_directory):
+    def test_mcmc_vs_classical_directory_separation(self, tmp_path):
         """Test that MCMC and classical results are properly separated."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Create both directory structures
         classical_dir = base_dir / "classical"
@@ -662,9 +664,9 @@ class TestMCMCOutputDirectoryStructure:
         assert not (classical_dir / "mcmc_summary.json").exists()
         assert not (classical_dir / "mcmc_trace.nc").exists()
 
-    def test_complete_directory_structure_with_mcmc(self, temp_directory):
+    def test_complete_directory_structure_with_mcmc(self, tmp_path):
         """Test the complete expected directory structure including MCMC."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Create complete expected structure with new classical/robust
         # structure + MCMC

@@ -150,8 +150,7 @@ def assert_performance_within_bounds(
     lower_bound = expected_time * (1 - tolerance)
     upper_bound = expected_time * (1 + tolerance)
     assert lower_bound <= execution_time <= upper_bound, (
-        f"Test {test_name}: Execution time {
-            execution_time:.4f}s outside bounds "
+        f"Test {test_name}: Execution time {execution_time:.4f}s outside bounds "
         f"[{lower_bound:.4f}s, {upper_bound:.4f}s]"
     )
 
@@ -267,7 +266,8 @@ def setup_performance_environment():
         optimizations = optimize_numerical_environment()
         print(
             f"✓ Performance testing environment configured ({
-                len(optimizations)} optimizations)"
+                len(optimizations)
+            } optimizations)"
         )
     except RuntimeError as e:
         if "NUMBA_NUM_THREADS" in str(e):
@@ -545,12 +545,12 @@ def assert_memory_usage(
 # These are now imported from homodyne.core.profiler for consistency
 __all__ = [
     "PerformanceRecorder",
-    "assert_performance_regression",
     "assert_memory_usage",
-    "assert_performance_within_bounds",  # From profiler
+    "assert_performance_regression",
     "assert_performance_stability",  # From profiler
-    "stable_benchmark",  # From profiler
+    "assert_performance_within_bounds",  # From profiler
     "optimize_numerical_environment",  # From profiler
+    "stable_benchmark",  # From profiler
 ]
 
 
@@ -854,7 +854,7 @@ class UniversalOptimizationMockCore:
 
             for j in range(self.n_times):
                 for k in range(self.n_times):
-                    tau = abs(self.time_delays[j] - self.time_delays[k])
+                    abs(self.time_delays[j] - self.time_delays[k])
                     D_eff = D0 * self.time_delays[min(j, k)] ** abs(alpha) + D_offset
                     decay = np.exp(-0.01 * D_eff)
                     c2_theory[i, j, k] = 1.0 + contrast * decay

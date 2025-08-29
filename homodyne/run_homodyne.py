@@ -2524,8 +2524,6 @@ def _generate_mcmc_plots(
 
                 # Get parameter samples from the trace
                 try:
-                    import arviz as az
-
                     # Extract posterior samples - convert InferenceData to
                     # numpy array
                     if hasattr(trace, "posterior"):
@@ -3050,7 +3048,6 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
 
     # Import matplotlib for custom plotting
     try:
-        import matplotlib.colors as colors
         import matplotlib.pyplot as plt
     except ImportError:
         logger.error("❌ Failed to import matplotlib")
@@ -3204,16 +3201,6 @@ def main():
     with classical and Bayesian optimization approaches.
     """
     # Check Python version requirement
-    if sys.version_info < (3, 12):
-        print(
-            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
-            file=sys.stderr,
-        )
-        print(
-            "Please upgrade your Python installation or use a compatible environment.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
     parser = argparse.ArgumentParser(
         description="Run homodyne scattering analysis for XPCS under nonequilibrium conditions",
         formatter_class=argparse.RawDescriptionHelpFormatter,

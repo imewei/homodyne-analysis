@@ -356,18 +356,16 @@ class HomodyneAnalysisCore:
         """Print initialization summary."""
         logger.info("HomodyneAnalysis Core initialized:")
         logger.info(
-            f"  • Frames: {
-                self.start_frame}-{
-                self.end_frame} ({
-                self.time_length} frames)"
+            f"  • Frames: {self.start_frame}-{self.end_frame} ({
+                self.time_length
+            } frames)"
         )
         logger.info(f"  • Time step: {self.dt} s/frame")
         logger.info(f"  • Wavevector: {self.wavevector_q:.6f} A^-1")
         logger.info(f"  • Gap size: {self.stator_rotor_gap / 1e4:.1f} um")
         logger.info(f"  • Threads: {self.num_threads}")
         logger.info(
-            f"  • Optimizations: {
-                'Numba JIT' if NUMBA_AVAILABLE else 'Pure Python'}"
+            f"  • Optimizations: {'Numba JIT' if NUMBA_AVAILABLE else 'Pure Python'}"
         )
 
     def is_static_mode(self) -> bool:
@@ -649,10 +647,9 @@ class HomodyneAnalysisCore:
         logger.info(f"Opening HDF5 data file: {full_path}")
         logger.debug(f"Exchange key: {exchange_key}")
         logger.debug(
-            f"Frame range: {
-                self.start_frame}-{
-                self.end_frame} (length: {
-                self.time_length})"
+            f"Frame range: {self.start_frame}-{self.end_frame} (length: {
+                self.time_length
+            })"
         )
 
         # Open data file
@@ -700,8 +697,8 @@ class HomodyneAnalysisCore:
                 c2_experimental[0] = sliced_data.astype(np.float64)
                 logger.debug(
                     f"  Isotropic mode - Raw data shape: {
-                        raw_data_np.shape} -> sliced: {
-                        sliced_data.shape}"
+                        raw_data_np.shape
+                    } -> sliced: {sliced_data.shape}"
                 )
 
             except Exception as e:
@@ -722,9 +719,7 @@ class HomodyneAnalysisCore:
                     )
                     if raw_data is None:
                         raise ValueError(
-                            f"get_twotime_c2 returned None for angle {
-                                i +
-                                1} (φ={
+                            f"get_twotime_c2 returned None for angle {i + 1} (φ={
                                 angle_deg:.2f}°)"
                         )
                     # Ensure raw_data is a NumPy array
@@ -735,22 +730,20 @@ class HomodyneAnalysisCore:
                     ]
                     c2_experimental[i] = sliced_data.astype(np.float64)
                     logger.debug(
-                        f"  Raw data shape: {
-                            raw_data_np.shape} -> sliced: {
-                            sliced_data.shape}"
+                        f"  Raw data shape: {raw_data_np.shape} -> sliced: {
+                            sliced_data.shape
+                        }"
                     )
                 except Exception as e:
                     logger.error(
-                        f"Failed to load data for angle {
-                            i +
-                            1} (φ={
-                            angle_deg:.2f}°): {e}"
+                        f"Failed to load data for angle {i + 1} (φ={angle_deg:.2f}°): {
+                            e
+                        }"
                     )
                     raise
 
         logger.info(
-            f"Successfully loaded raw data with final shape: {
-                c2_experimental.shape}"
+            f"Successfully loaded raw data with final shape: {c2_experimental.shape}"
         )
         return c2_experimental
 
@@ -1314,10 +1307,7 @@ class HomodyneAnalysisCore:
                     param_max = bound.get("max", np.inf)
 
                     if not (param_min <= param_val <= param_max):
-                        reason = f'Parameter {
-                            bound.get(
-                                "name",
-                                f"p{i}")} out of bounds'
+                        reason = f"Parameter {bound.get('name', f'p{i}')} out of bounds"
                         return (
                             np.inf
                             if not return_components
@@ -1382,15 +1372,12 @@ class HomodyneAnalysisCore:
 
                 logger.debug(
                     f"Filtering angles for optimization: using {
-                        len(optimization_indices)}/{
-                        len(phi_angles)} angles"
+                        len(optimization_indices)
+                    }/{len(phi_angles)} angles"
                 )
                 if optimization_indices:
                     filtered_angles = phi_angles[optimization_indices]
-                    logger.debug(
-                        f"Optimization angles: {
-                            filtered_angles.tolist()}"
-                    )
+                    logger.debug(f"Optimization angles: {filtered_angles.tolist()}")
                 else:
                     # Check if fallback is enabled
                     should_fallback = True
@@ -1570,8 +1557,9 @@ class HomodyneAnalysisCore:
                     reduced_chi2_uncertainty = 0.0
 
                 logger.debug(
-                    f"Using average of {n_optimization_angles} optimization angles: χ²_red = {
-                        reduced_chi2:.6e} ± {
+                    f"Using average of {
+                        n_optimization_angles
+                    } optimization angles: χ²_red = {reduced_chi2:.6e} ± {
                         reduced_chi2_uncertainty:.6e}"
                 )
             else:
@@ -1600,21 +1588,15 @@ class HomodyneAnalysisCore:
             )
             if OPTIMIZATION_COUNTER % log_freq == 0:
                 logger.info(
-                    f"Iteration {
-                        OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {
-                        reduced_chi2:.6e} ± {
-                        reduced_chi2_uncertainty:.6e}"
+                    f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {
+                        reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
                 # Log reduced chi-square per angle
                 for i, (phi, chi2_red_angle) in enumerate(
                     zip(phi_angles, angle_chi2_reduced, strict=False)
                 ):
                     logger.info(
-                        f"  Angle {
-                            i +
-                            1} (φ={
-                            phi:.1f}°): χ²_red = {
-                            chi2_red_angle:.6e}"
+                        f"  Angle {i + 1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
                     )
 
             if return_components:
@@ -1848,8 +1830,7 @@ class HomodyneAnalysisCore:
                 "poor" if per_angle_quality != "critical" else per_angle_quality
             )
             quality_issues.append(
-                f"{
-                    unacceptable_fraction:.1%} angles unacceptable (max allowed: {
+                f"{unacceptable_fraction:.1%} angles unacceptable (max allowed: {
                     max_outlier_fraction:.1%})"
             )
 
@@ -1858,8 +1839,7 @@ class HomodyneAnalysisCore:
                 "warning" if per_angle_quality == "excellent" else per_angle_quality
             )
             quality_issues.append(
-                f"{
-                    outlier_fraction:.1%} statistical outliers (max recommended: {
+                f"{outlier_fraction:.1%} statistical outliers (max recommended: {
                     max_outlier_fraction:.1%})"
             )
 
@@ -1999,49 +1979,42 @@ class HomodyneAnalysisCore:
         overall_uncertainty = chi_results.get("reduced_chi_squared_uncertainty", 0.0)
         if overall_uncertainty > 0:
             logger.info(
-                f"  Overall χ²_red: {
-                    chi_results['reduced_chi_squared']:.6e} ± {
+                f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ± {
                     overall_uncertainty:.6e} ({overall_quality})"
             )
         else:
             logger.info(
-                f"  Overall χ²_red: {
-                    chi_results['reduced_chi_squared']:.6e} ({overall_quality})"
+                f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ({
+                    overall_quality
+                })"
             )
         logger.info(
-            f"  Mean per-angle χ²_red: {
-                mean_chi2_red:.6e} ± {
-                std_chi2_red:.6e}"
+            f"  Mean per-angle χ²_red: {mean_chi2_red:.6e} ± {std_chi2_red:.6e}"
         )
         logger.info(f"  Range: {min_chi2_red:.6e} - {max_chi2_red:.6e}")
 
         # Quality assessment logging
         logger.info(f"  Quality Assessment: {combined_quality.upper()}")
         logger.info(
-            f"    Overall: {overall_quality} (threshold: {
-                acceptable_overall:.1f})"
+            f"    Overall: {overall_quality} (threshold: {acceptable_overall:.1f})"
         )
         logger.info(f"    Per-angle: {per_angle_quality}")
 
         # Angle categorization
         logger.info("  Angle Categorization:")
         logger.info(
-            f"    Good angles: {num_good_angles}/{
-                len(angles)} ({
-                100 * num_good_angles / len(angles):.1f}%) [χ²_red ≤ {acceptable_per_angle}]"
+            f"    Good angles: {num_good_angles}/{len(angles)} ({
+                100 * num_good_angles / len(angles):.1f}%) [χ²_red ≤ {
+                acceptable_per_angle
+            }]"
         )
         logger.info(
-            f"    Unacceptable angles: {
-                len(unacceptable_angles)}/{
-                len(angles)} ({
+            f"    Unacceptable angles: {len(unacceptable_angles)}/{len(angles)} ({
                 100 * unacceptable_fraction:.1f}%) [χ²_red > {acceptable_per_angle}]"
         )
         logger.info(
-            f"    Statistical outliers: {
-                len(outlier_angles)}/{
-                len(angles)} ({
-                100 * outlier_fraction:.1f}%) [χ²_red > {
-                    outlier_threshold:.3f}]"
+            f"    Statistical outliers: {len(outlier_angles)}/{len(angles)} ({
+                100 * outlier_fraction:.1f}%) [χ²_red > {outlier_threshold:.3f}]"
         )
 
         # Warnings and issues
@@ -2201,10 +2174,7 @@ class HomodyneAnalysisCore:
             time_t2 = np.arange(n_t2) * dt
             time_t1 = np.arange(n_t1) * dt
 
-            logger.debug(
-                f"Data shape for validation plot: {
-                    c2_experimental.shape}"
-            )
+            logger.debug(f"Data shape for validation plot: {c2_experimental.shape}")
             logger.debug(
                 f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s"
             )
@@ -2269,9 +2239,9 @@ Diagonal mean: {diag_mean:.4f}
 Contrast: {contrast:.3f}
 
 Validation:
-{'✓' if 0.9 < mean_val < 1.2 else '✗'} Mean around 1.0
-{'✓' if diag_mean > mean_val else '✗'} Diagonal enhanced
-{'✓' if contrast > 0.001 else '✗'} Sufficient contrast"""
+{"✓" if 0.9 < mean_val < 1.2 else "✗"} Mean around 1.0
+{"✓" if diag_mean > mean_val else "✗"} Diagonal enhanced
+{"✓" if contrast > 0.001 else "✗"} Sufficient contrast"""
 
                 ax2.text(
                     0.05,
@@ -2281,7 +2251,7 @@ Validation:
                     fontsize=9,
                     verticalalignment="top",
                     fontfamily="monospace",
-                    bbox=dict(boxstyle="round", facecolor="lightblue", alpha=0.7),
+                    bbox={"boxstyle": "round", "facecolor": "lightblue", "alpha": 0.7},
                 )
 
             # Overall title
@@ -2761,10 +2731,7 @@ Validation:
 
         try:
             # Use the existing physics model to generate theoretical data
-            logger.debug(
-                f"Generating theoretical data for {
-                    len(phi_angles)} angles"
-            )
+            logger.debug(f"Generating theoretical data for {len(phi_angles)} angles")
 
             # Call the main correlation calculation method
             theoretical_data = self.calculate_c2_nonequilibrium_laminar_parallel(
@@ -2774,7 +2741,8 @@ Validation:
 
             logger.debug(
                 f"Successfully generated theoretical data with shape: {
-                    theoretical_data.shape}"
+                    theoretical_data.shape
+                }"
             )
             return theoretical_data
 

@@ -24,7 +24,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 
-from homodyne.core.io_utils import ensure_dir, save_fig
+from .core.io_utils import ensure_dir, save_fig
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -140,6 +140,37 @@ def setup_matplotlib_style(plot_config: dict[str, Any]) -> None:
     )
 
 
+def _setup_plot_environment(config: dict | None, outdir: str | Path) -> tuple[dict[str, Any], Path]:
+    """Set up common plotting environment and return config and output directory."""
+    plot_config = get_plot_config(config)
+    setup_matplotlib_style(plot_config)
+    output_dir = ensure_dir(outdir)
+    return plot_config, output_dir
+
+
+def _setup_plot_style(config: dict | None) -> dict[str, Any]:
+    """Set up plotting style without directory setup."""
+    plot_config = get_plot_config(config)
+    setup_matplotlib_style(plot_config)
+    return plot_config
+
+
+def _save_plot_with_logging(fig: plt.Figure, output_path: Path, plot_type: str, **save_kwargs: Any) -> None:
+    """Save plot with consistent logging and cleanup."""
+    try:
+        if save_kwargs:
+            # Use custom save parameters
+            plt.savefig(output_path, **save_kwargs)
+        else:
+            # Use standard save_fig utility
+            save_fig(fig, output_path)
+        logger.info(f"✓ {plot_type} plot saved to: {output_path}")
+    except Exception as e:
+        logger.error(f"❌ Failed to save {plot_type} plot: {e}")
+    finally:
+        plt.close(fig)
+
+
 def plot_c2_heatmaps(
     exp: np.ndarray,
     theory: np.ndarray,
@@ -175,12 +206,8 @@ def plot_c2_heatmaps(
         logger.error("Invalid phi_angles parameter - must be array-like")
         return False
 
-    # Get plotting configuration
-    plot_config = get_plot_config(config)
-    setup_matplotlib_style(plot_config)
-
-    # Ensure output directory exists
-    outdir = ensure_dir(outdir)
+    # Set up plotting environment
+    plot_config, outdir = _setup_plot_environment(config, outdir)
 
     # Validate exp and theory inputs
     try:
@@ -196,18 +223,14 @@ def plot_c2_heatmaps(
 
     # Validate input dimensions
     if exp.shape != theory.shape:
-        logger.error(
-            f"Shape mismatch: exp {
-                exp.shape} vs theory {
-                theory.shape}"
-        )
+        logger.error(f"Shape mismatch: exp {exp.shape} vs theory {theory.shape}")
         return False
 
     if len(phi_angles) != exp.shape[0]:
         logger.error(
-            f"Number of angles ({
-                len(phi_angles)}) doesn't match data shape ({
-                exp.shape[0]})"
+            f"Number of angles ({len(phi_angles)}) doesn't match data shape ({
+                exp.shape[0]
+            })"
         )
         return False
 
@@ -360,7 +383,7 @@ def plot_c2_heatmaps(
                 stats_text,
                 transform=ax3.transAxes,
                 verticalalignment="top",
-                bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+                bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
             )
 
             # Save the plot
@@ -380,23 +403,17 @@ def plot_c2_heatmaps(
                 # Simplified format for method directories:
                 # c2_heatmaps_[method_name].png
                 if len(phi_angles) == 1:
-                    filename = f"c2_heatmaps_{method_name}.{
-                        plot_config['plot_format']}"
+                    filename = f"c2_heatmaps_{method_name}.{plot_config['plot_format']}"
                 else:
-                    filename = f"c2_heatmaps_{method_name}_phi_{
-                        phi:.1f}deg.{
-                        plot_config['plot_format']}"
+                    filename = f"c2_heatmaps_{method_name}_phi_{phi:.1f}deg.{
+                        plot_config['plot_format']
+                    }"
             else:
                 # Original format for backward compatibility
-                method_prefix = (
-                    f"{
-                        method_name.lower()}_"
-                    if method_name
-                    else ""
-                )
-                filename = f"{method_prefix}c2_heatmaps_phi_{
-                    phi:.1f}deg.{
-                    plot_config['plot_format']}"
+                method_prefix = f"{method_name.lower()}_" if method_name else ""
+                filename = f"{method_prefix}c2_heatmaps_phi_{phi:.1f}deg.{
+                    plot_config['plot_format']
+                }"
             filepath = outdir / filename
 
             if save_fig(
@@ -417,10 +434,77 @@ def plot_c2_heatmaps(
             plt.close("all")  # Clean up any partial figures
 
     logger.info(
-        f"Successfully created {success_count}/{
-            len(phi_angles)} C2 heatmap plots"
+        f"Successfully created {success_count}/{len(phi_angles)} C2 heatmap plots"
     )
     return success_count == len(phi_angles)
+
+
+def _get_active_parameters(config: dict | None) -> list[str] | None:
+    """Extract active parameter names from config."""
+    if (
+        config
+        and "initial_parameters" in config
+        and "active_parameters" in config["initial_parameters"]
+    ):
+        active_params = config["initial_parameters"]["active_parameters"]
+        logger.debug(f"Active parameters for corner plot: {active_params}")
+        return active_params
+    return None
+
+
+def _convert_trace_to_samples(trace_data: Any, active_param_names: list[str] | None) -> Any:
+    """Convert various trace data formats to samples suitable for plotting."""
+    # Validate trace data format first
+    if callable(trace_data):
+        logger.error("Trace data is a function, not actual data - cannot create corner plot")
+        return None
+
+    # Handle different trace data formats
+    if hasattr(trace_data, "posterior"):
+        # ArviZ InferenceData
+        samples = trace_data.posterior
+
+        # Filter to only active parameters if specified
+        if active_param_names and hasattr(samples, "data_vars"):
+            filtered_vars = {
+                var: samples[var]
+                for var in active_param_names
+                if var in samples.data_vars
+            }
+            if filtered_vars:
+                import xarray as xr
+                samples = xr.Dataset(filtered_vars)
+                logger.debug(f"Filtered to active parameters: {list(samples.data_vars)}")
+        return samples
+
+    elif isinstance(trace_data, dict):
+        # Dictionary of samples
+        samples = trace_data
+        # Filter to only active parameters if specified
+        if active_param_names:
+            samples = {
+                var: samples[var] for var in active_param_names if var in samples
+            }
+        return samples
+
+    elif isinstance(trace_data, np.ndarray):
+        # NumPy array - convert to ArviZ InferenceData
+        try:
+            if not ARVIZ_AVAILABLE:
+                logger.error("ArviZ required for numpy array conversion")
+                return None
+            
+            import arviz as az
+            samples = az.convert_to_inference_data(trace_data).posterior
+        except Exception as conversion_error:
+            logger.error(f"Failed to convert numpy trace to ArviZ format: {conversion_error}")
+            return None
+
+    else:
+        logger.error(f"Unsupported trace data type: {type(trace_data)}")
+        return None
+        
+    return samples
 
 
 def plot_mcmc_corner(
@@ -451,12 +535,8 @@ def plot_mcmc_corner(
 
     logger.info("Creating MCMC corner plot")
 
-    # Get plotting configuration
-    plot_config = get_plot_config(config)
-    setup_matplotlib_style(plot_config)
-
-    # Ensure output directory exists
-    outdir = ensure_dir(outdir)
+    # Set up plotting environment
+    plot_config, outdir = _setup_plot_environment(config, outdir)
 
     try:
         # Get active parameters from config to filter out inactive ones
@@ -493,9 +573,7 @@ def plot_mcmc_corner(
 
                     samples = xr.Dataset(filtered_vars)
                     logger.debug(
-                        f"Filtered to active parameters: {
-                            list(
-                                samples.data_vars)}"
+                        f"Filtered to active parameters: {list(samples.data_vars)}"
                     )
 
         elif isinstance(trace_data, dict):
@@ -508,9 +586,7 @@ def plot_mcmc_corner(
                     var: samples[var] for var in active_param_names if var in samples
                 }
                 logger.debug(
-                    f"Filtered dict to active parameters: {
-                        list(
-                            samples.keys())}"
+                    f"Filtered dict to active parameters: {list(samples.keys())}"
                 )
         elif isinstance(trace_data, np.ndarray):
             # NumPy array - use directly
@@ -527,7 +603,8 @@ def plot_mcmc_corner(
             except Exception as conversion_error:
                 logger.error(
                     f"Unsupported trace data format for corner plot: {
-                        type(trace_data)}, error: {conversion_error}"
+                        type(trace_data)
+                    }, error: {conversion_error}"
                 )
                 return False
 
@@ -537,11 +614,7 @@ def plot_mcmc_corner(
             stacked_samples = samples.stack(sample=("chain", "draw"))  # type: ignore
             logger.debug(f"Stacked ArviZ samples: {type(stacked_samples)}")
             if hasattr(stacked_samples, "data_vars"):
-                logger.debug(
-                    f"Available variables: {
-                        list(
-                            stacked_samples.data_vars)}"
-                )
+                logger.debug(f"Available variables: {list(stacked_samples.data_vars)}")
             if hasattr(stacked_samples, "dims"):
                 logger.debug(f"Dimensions: {stacked_samples.dims}")
         else:
@@ -624,10 +697,8 @@ def plot_mcmc_corner(
             logger.debug(f"Stacked samples type: {type(stacked_samples)}")
             logger.debug(
                 f"Stacked samples shape: {
-                    getattr(
-                        stacked_samples,
-                        'shape',
-                        'No shape attr')}"
+                    getattr(stacked_samples, 'shape', 'No shape attr')
+                }"
             )
             logger.debug(f"Ranges: {ranges}")
 
@@ -650,34 +721,24 @@ def plot_mcmc_corner(
                         var_data = stacked_samples[var_name].values.flatten()
                         param_arrays.append(var_data)
                         logger.debug(
-                            f"Variable {var_name} shape after flatten: {
-                                var_data.shape}"
+                            f"Variable {var_name} shape after flatten: {var_data.shape}"
                         )
 
                     # Stack parameter arrays to create (n_samples, n_params)
                     # array
                     corner_data = np.column_stack(param_arrays)
-                    logger.debug(
-                        f"Stacked corner data shape: {
-                            corner_data.shape}"
-                    )
+                    logger.debug(f"Stacked corner data shape: {corner_data.shape}")
 
                 elif hasattr(stacked_samples, "to_numpy"):
                     corner_data = stacked_samples.to_numpy()  # type: ignore
-                    logger.debug(
-                        f"Converted to numpy shape: {
-                            corner_data.shape}"
-                    )
+                    logger.debug(f"Converted to numpy shape: {corner_data.shape}")
                 # type: ignore
                 elif hasattr(stacked_samples, "values") and not callable(
                     stacked_samples.values
                 ):
                     # .values is a property, not a method - access it correctly
                     corner_data = stacked_samples.values  # type: ignore
-                    logger.debug(
-                        f"Using .values property shape: {
-                            corner_data.shape}"
-                    )
+                    logger.debug(f"Using .values property shape: {corner_data.shape}")
                 else:
                     corner_data = stacked_samples  # type: ignore
 
@@ -694,14 +755,14 @@ def plot_mcmc_corner(
                             corner_data = corner_data.to_numpy()  # type: ignore
                             logger.debug(
                                 f"Converted Dataset to numpy with shape: {
-                                    corner_data.shape}"
+                                    corner_data.shape
+                                }"
                             )
                         else:
                             # Convert using pandas if possible
                             corner_data = corner_data.to_pandas().values  # type: ignore
                             logger.debug(
-                                f"Converted via pandas with shape: {
-                                    corner_data.shape}"
+                                f"Converted via pandas with shape: {corner_data.shape}"
                             )
                     except Exception as conversion_error:
                         logger.debug(
@@ -747,9 +808,9 @@ def plot_mcmc_corner(
                     if filtered_param_names and i < len(filtered_param_names):
                         if filtered_param_units and i < len(filtered_param_units):
                             labels.append(
-                                f"{
-                                    filtered_param_names[i]}\n[{
-                                    filtered_param_units[i]}]"
+                                f"{filtered_param_names[i]}\n[{
+                                    filtered_param_units[i]
+                                }]"
                             )
                         else:
                             labels.append(filtered_param_names[i])
@@ -1106,8 +1167,7 @@ def plot_mcmc_convergence_diagnostics(
             # Only plot if we have data
             if param_names_plot and r_hat_values:
                 logger.debug(
-                    f"Creating R-hat plot with {
-                        len(param_names_plot)} parameters"
+                    f"Creating R-hat plot with {len(param_names_plot)} parameters"
                 )
                 colors = [
                     "green" if r < 1.1 else "orange" if r < 1.2 else "red"
@@ -1374,7 +1434,7 @@ def plot_mcmc_convergence_diagnostics(
             fontsize=11,
             verticalalignment="top",
             fontfamily="monospace",
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.5),
+            bbox={"boxstyle": "round,pad=0.5", "facecolor": "lightgray", "alpha": 0.5},
         )
 
         # Add overall title
@@ -1686,13 +1746,14 @@ def plot_diagnostic_summary(
                             residuals = exp_data - theory_data
                             logger.debug(
                                 f"Computed residuals from exp - theory data, shape: {
-                                    residuals.shape}"
+                                    residuals.shape
+                                }"
                             )
                         else:
                             logger.warning(
                                 f"Shape mismatch: exp_data {
-                                    exp_data.shape} vs theory_data {
-                                    theory_data.shape}"
+                                    exp_data.shape
+                                } vs theory_data {theory_data.shape}"
                             )
                 except Exception as e:
                     logger.warning(f"Could not compute residuals from data: {e}")
@@ -1770,8 +1831,7 @@ def plot_diagnostic_summary(
 
         # Save the plot
         method_prefix = f"{method_name.lower()}_" if method_name else ""
-        filename = f"{method_prefix}diagnostic_summary.{
-            plot_config['plot_format']}"
+        filename = f"{method_prefix}diagnostic_summary.{plot_config['plot_format']}"
         filepath = outdir / filename
 
         success = save_fig(
@@ -2019,9 +2079,9 @@ def plot_3d_surface(
         # Validate inputs
         if c2_experimental.shape != c2_fitted.shape:
             logger.error(
-                f"Shape mismatch: experimental {
-                    c2_experimental.shape} vs fitted {
-                    c2_fitted.shape}"
+                f"Shape mismatch: experimental {c2_experimental.shape} vs fitted {
+                    c2_fitted.shape
+                }"
             )
             return False
 
@@ -2042,9 +2102,9 @@ def plot_3d_surface(
         # Validate meshgrid shapes
         if T1.shape != c2_experimental.shape or T2.shape != c2_experimental.shape:
             logger.error(
-                f"Meshgrid shape {
-                    T1.shape} doesn't match data shape {
-                    c2_experimental.shape}"
+                f"Meshgrid shape {T1.shape} doesn't match data shape {
+                    c2_experimental.shape
+                }"
             )
             return False
 
@@ -2053,10 +2113,9 @@ def plot_3d_surface(
         lower_ci = None
         if posterior_samples is not None:
             logger.info(
-                f"Calculating {
-                    confidence_level *
-                    100:.1f}% confidence intervals from {
-                    posterior_samples.shape[0]} samples"
+                f"Calculating {confidence_level * 100:.1f}% confidence intervals from {
+                    posterior_samples.shape[0]
+                } samples"
             )
 
             # Calculate percentiles for confidence intervals
@@ -2070,15 +2129,14 @@ def plot_3d_surface(
             # Validate CI shapes
             if lower_ci.shape != c2_experimental.shape:
                 logger.warning(
-                    f"CI shape {
-                        lower_ci.shape} doesn't match data shape {
-                        c2_experimental.shape}"
+                    f"CI shape {lower_ci.shape} doesn't match data shape {
+                        c2_experimental.shape
+                    }"
                 )
                 lower_ci = upper_ci = None
 
         # Set up plotting style
-        plot_config = get_plot_config(config)
-        setup_matplotlib_style(plot_config)
+        plot_config = _setup_plot_style(config)
 
         # Create figure with two subplots: experimental and fitted
         fig = plt.figure(figsize=(16, 7))
@@ -2125,9 +2183,7 @@ def plot_3d_surface(
             )
 
             title1 = f"Experimental $C_2$ Data with {
-                confidence_level *
-                100:.0f}% CI\nφ = {
-                phi_angle:.1f}°"
+                confidence_level * 100:.0f}% CI\nφ = {phi_angle:.1f}°"
         else:
             title1 = f"Experimental $C_2$ Data\nφ = {phi_angle:.1f}°"
 
@@ -2169,8 +2225,7 @@ def plot_3d_surface(
         ax2.set_ylabel(r"$t_2$ (time units)", fontsize=12, labelpad=10)
         ax2.set_zlabel(r"$C_2$ (correlation)", fontsize=12, labelpad=8)
         ax2.set_title(
-            f"Fitted vs Experimental Data\nφ = {
-                phi_angle:.1f}°",
+            f"Fitted vs Experimental Data\nφ = {phi_angle:.1f}°",
             fontsize=14,
             pad=20,
         )
@@ -2211,18 +2266,16 @@ def plot_3d_surface(
         output_path = outdir / filename
 
         # Save with high quality
-        plt.savefig(
-            output_path,
+        _save_plot_with_logging(
+            fig, 
+            output_path, 
+            "3D surface",
             dpi=300,
             bbox_inches="tight",
             facecolor="white",
             edgecolor="none",
-            format="png",
+            format="png"
         )
-
-        plt.close()
-
-        logger.info(f"✓ 3D surface plot saved to: {output_path}")
 
         # =================================================================
         # Create additional residuals 3D plot if fitted data available
@@ -2275,18 +2328,16 @@ def plot_3d_surface(
             residuals_filename = f"3d_residuals_phi_{phi_angle:.1f}deg.png"
             residuals_path = outdir / residuals_filename
 
-            plt.savefig(
+            _save_plot_with_logging(
+                fig_res,
                 residuals_path,
+                "3D residuals",
                 dpi=300,
                 bbox_inches="tight",
                 facecolor="white",
                 edgecolor="none",
-                format="png",
+                format="png"
             )
-
-            plt.close()
-
-            logger.info(f"✓ 3D residuals plot saved to: {residuals_path}")
 
         except Exception as e:
             logger.warning(f"Failed to create residuals plot: {e}")

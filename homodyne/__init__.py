@@ -41,13 +41,6 @@ Institution: Argonne National Laboratory
 """
 
 # Check Python version requirement early
-import sys
-
-if sys.version_info < (3, 12):
-    raise RuntimeError(
-        f"Python 3.12+ is required. You are using Python {sys.version}. "
-        "Please upgrade your Python installation or use a compatible environment."
-    )
 
 # Performance profiling utilities removed - functionality available via
 # core.config.performance_monitor
@@ -96,24 +89,24 @@ except ImportError as e:
     )
 
 __all__ = [
+    # Optimization methods (optional)
+    "ClassicalOptimizer",
     # Core functionality
     "ConfigManager",
-    "configure_logging",
-    "performance_monitor",
     "HomodyneAnalysisCore",
-    # Computational kernels
-    "create_time_integral_matrix_numba",
+    "MCMCSampler",
+    "RobustHomodyneOptimizer",
     "calculate_diffusion_coefficient_numba",
     "calculate_shear_rate_numba",
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
-    "memory_efficient_cache",
-    # Optimization methods (optional)
-    "ClassicalOptimizer",
-    "RobustHomodyneOptimizer",
-    "create_robust_optimizer",
-    "MCMCSampler",
+    "configure_logging",
     "create_mcmc_sampler",
+    "create_robust_optimizer",
+    # Computational kernels
+    "create_time_integral_matrix_numba",
+    "memory_efficient_cache",
+    "performance_monitor",
 ]
 
 # Version information

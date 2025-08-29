@@ -230,11 +230,6 @@ class TestImportPerformance:
 
         # Optional optimizers might be None (which is fine)
         # or available (also fine)
-        optimizers = [
-            homodyne.ClassicalOptimizer,
-            homodyne.RobustHomodyneOptimizer,
-            homodyne.MCMCSampler,
-        ]
 
         # At least core should work
         assert any(

@@ -17,6 +17,7 @@ import json
 import os
 import time
 from pathlib import Path
+from typing import Any, Optional
 
 try:
     import argcomplete
@@ -24,7 +25,7 @@ try:
     ARGCOMPLETE_AVAILABLE = True
 except ImportError:
     ARGCOMPLETE_AVAILABLE = False
-    argcomplete = None
+    argcomplete: Optional[Any] = None
 
 
 class FastCompletionCache:
@@ -157,7 +158,7 @@ class HomodyneCompleter:
     """Ultra-fast shell completion using pre-cached data."""
 
     @staticmethod
-    def method_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
+    def method_completer(prefix: str, parsed_args: Any, **kwargs: Any) -> list[str]:
         """Suggest method names - instant static lookup."""
         methods = _completion_cache.METHODS
         if not prefix:
@@ -166,7 +167,7 @@ class HomodyneCompleter:
         return [m for m in methods if m.startswith(prefix_lower)]
 
     @staticmethod
-    def config_files_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
+    def config_files_completer(prefix: str, parsed_args: Any, **kwargs: Any) -> list[str]:
         """Suggest JSON config files - instant cached lookup."""
         # Handle path with directory (cross-platform)
         if os.sep in prefix or "/" in prefix:
@@ -196,7 +197,7 @@ class HomodyneCompleter:
         return matches
 
     @staticmethod
-    def output_dir_completer(prefix: str, parsed_args, **kwargs) -> list[str]:
+    def output_dir_completer(prefix: str, parsed_args: Any, **kwargs: Any) -> list[str]:
         """Suggest directories - instant cached lookup."""
         # Handle path with directory (cross-platform)
         if os.sep in prefix or "/" in prefix:

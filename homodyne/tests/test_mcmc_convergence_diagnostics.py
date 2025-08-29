@@ -277,8 +277,8 @@ class TestMCMCConvergenceDiagnostics:
         # Verify that convergence status is meaningful
         diagnostics = mcmc_result["diagnostics"]
         assert diagnostics["assessment"] in ["Converged", "Not converged"]
-        assert isinstance(diagnostics["max_rhat"], (int, float))
-        assert isinstance(diagnostics["min_ess"], (int, float))
+        assert isinstance(diagnostics["max_rhat"], int | float)
+        assert isinstance(diagnostics["min_ess"], int | float)
 
     def test_mcmc_config_validation_thresholds(self, mock_config_with_mcmc_thresholds):
         """Test that MCMC configuration contains proper validation thresholds."""

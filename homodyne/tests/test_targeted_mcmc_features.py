@@ -18,6 +18,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+from homodyne.tests.fixtures import dummy_config
+
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -138,7 +140,6 @@ class TestMCMCFunctionBehavior:
             target_accept = config.get("target_accept", 0.9)
 
             # Simulate model building (mocked)
-            model = mock_model
 
             # Simulate sampling (mocked)
             start_time = time.time()

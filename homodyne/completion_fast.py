@@ -66,7 +66,7 @@ class FastCache:
                 "dirs": {".": []},
             }
 
-    def get_files(self, directory="."):
+    def get_files(self, directory: str = ".") -> list[str]:
         """Get cached JSON files."""
         files = self._data.get("files", {}).get(directory, [])
 
@@ -77,7 +77,7 @@ class FastCache:
 
         return priority + others[:12]  # Limit results
 
-    def get_dirs(self, directory="."):
+    def get_dirs(self, directory: str = ".") -> list[str]:
         """Get cached directories."""
         dirs = self._data.get("dirs", {}).get(directory, [])
 

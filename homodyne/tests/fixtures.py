@@ -6,7 +6,6 @@ Provides dummy datasets and configurations for unit and integration tests.
 """
 
 import json
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -14,11 +13,7 @@ import numpy as np
 import pytest
 
 
-@pytest.fixture
-def temp_directory():
-    """Create a temporary directory for test outputs."""
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        yield Path(tmp_dir)
+# Using pytest's built-in tmp_path fixture instead of custom implementation
 
 
 @pytest.fixture
@@ -365,12 +360,12 @@ def dummy_analysis_results(
 
 
 @pytest.fixture
-def dummy_hdf5_data(temp_directory):
+def dummy_hdf5_data(tmp_path):
     """Create a dummy HDF5-like data structure for testing data loading."""
     # This would normally create an actual HDF5 file, but for testing
     # we'll use a simple numpy array structure that mimics the expected format
 
-    data_dir = temp_directory / "test_data"
+    data_dir = tmp_path / "test_data"
     data_dir.mkdir(exist_ok=True)
 
     # Create dummy correlation data

@@ -27,9 +27,15 @@ diffusion and advective shear flow.
 - **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations,
   and optimized memory usage
 - **Performance monitoring**: Comprehensive regression testing and automated
-  benchmarking
+  benchmarking  
 - **Scientific accuracy**: Automatic $g_2 = \\text{offset} + \\text{contrast} \\times
   g_1$ fitting for proper $\\chi^2$ calculations
+- **Robust testing infrastructure**: 500+ tests with comprehensive coverage,
+  automated CI/CD, and performance regression detection
+- **Code quality assurance**: Automated formatting, linting, type checking, and
+  security scanning with pre-commit hooks
+- **Cross-platform shell completion**: Fast tab completion for CLI commands with
+  intelligent caching
 
 ## Table of Contents
 
@@ -45,6 +51,8 @@ diffusion and advective shear flow.
 - [Documentation](#documentation)
 
 ## Installation
+
+**Requirements:** Python 3.12 or higher is required. The package will automatically check your Python version and provide helpful error messages if you're using an older version.
 
 ### PyPI Installation (Recommended)
 

@@ -183,7 +183,7 @@ class TestUltraFastCompletion:
         # Simulate rapid successive completion calls
         total_start = time.perf_counter()
 
-        for i in range(10):
+        for _i in range(10):
             results1 = completer.method_completer("c", argparse.Namespace())
             results2 = completer.analysis_mode_completer("s", argparse.Namespace())
 

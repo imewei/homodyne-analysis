@@ -206,7 +206,7 @@ class UnifiedMockAnalysisCore:
 
             for j in range(self.n_times):
                 for k in range(self.n_times):
-                    tau = abs(time_delays[j] - time_delays[k])
+                    abs(time_delays[j] - time_delays[k])
                     decay = np.exp(-0.009 * D_eff[min(j, k)])
                     c2_theory[i, j, k] = 1.0 + contrast * decay
 

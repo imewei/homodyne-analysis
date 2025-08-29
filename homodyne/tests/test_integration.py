@@ -16,7 +16,14 @@ import pytest
 # Import the modules to test
 from homodyne.tests.fixtures import (
     create_minimal_config_file,
+    dummy_config,
+    dummy_analysis_results,
+    dummy_correlation_data,
+    dummy_phi_angles,
+    dummy_theoretical_data,
+    mock_optimization_result
 )
+# tmp_path is built-in pytest fixture, no need to import
 
 # Import modules being tested
 try:
@@ -92,12 +99,12 @@ class TestCompleteWorkflow:
         reason="Required modules not available",
     )
     def test_full_analysis_pipeline(
-        self, temp_directory, dummy_analysis_results, dummy_config
+        self, tmp_path, dummy_analysis_results, dummy_config
     ):
         """Test complete pipeline: data processing → analysis → plotting → saving."""
         # Set up output directory in temp space
         dummy_config["output_settings"]["results_directory"] = str(
-            temp_directory / "full_pipeline"
+            tmp_path / "full_pipeline"
         )
 
         # Step 1: Create output directories
@@ -128,9 +135,9 @@ class TestCompleteWorkflow:
         assert isinstance(saved_results, dict)
         assert "best_chi_squared" in saved_results
 
-    def test_directory_creation_workflow(self, temp_directory):
+    def test_directory_creation_workflow(self, tmp_path):
         """Test that the entire directory structure is created correctly."""
-        base_dir = temp_directory / "analysis_workspace"
+        base_dir = tmp_path / "analysis_workspace"
 
         # Test nested directory creation
         required_dirs = [
@@ -158,9 +165,9 @@ class TestCompleteWorkflow:
         assert test_file.exists()
         assert test_file.read_text() == "test content"
 
-    def test_new_output_directory_structure(self, temp_directory):
+    def test_new_output_directory_structure(self, tmp_path):
         """Test the new organized output directory structure."""
-        base_dir = temp_directory / "homodyne_results"
+        base_dir = tmp_path / "homodyne_results"
 
         # Create the new expected directory structure with method-specific
         # directories
@@ -263,7 +270,7 @@ class TestMockedHeavyComputation:
     """Test integration with mocked heavy computational components."""
 
     def test_mock_optimization_workflow(
-        self, temp_directory, dummy_config, mock_optimization_result
+        self, tmp_path, dummy_config, mock_optimization_result
     ):
         """Test analysis workflow with mocked optimization."""
 
@@ -273,9 +280,7 @@ class TestMockedHeavyComputation:
 
             # Simulate analysis workflow
             config = dummy_config.copy()
-            config["output_settings"]["results_directory"] = str(
-                temp_directory / "mock_opt"
-            )
+            config["output_settings"]["results_directory"] = str(tmp_path / "mock_opt")
 
             # Create mock analysis function
             def mock_analysis_function():
@@ -313,11 +318,11 @@ class TestMockedHeavyComputation:
                 )
                 assert save_status["json"] is True
 
-    def test_mock_data_loading(self, temp_directory, dummy_config):
+    def test_mock_data_loading(self, tmp_path, dummy_config):
         """Test data loading workflow with mocked file I/O."""
 
         # Create mock data files
-        data_dir = temp_directory / "mock_data"
+        data_dir = tmp_path / "mock_data"
         data_dir.mkdir()
 
         # Mock HDF5 data loading
@@ -350,7 +355,7 @@ class TestMockedHeavyComputation:
             assert np.array_equal(data["phi_angles"], mock_phi_angles)
 
     @pytest.mark.skipif(not PLOTTING_AVAILABLE, reason="Plotting module not available")
-    def test_plotting_workflow_integration(self, temp_directory, dummy_config):
+    def test_plotting_workflow_integration(self, tmp_path, dummy_config):
         """Test plotting workflow integration without parameter evolution."""
 
         # Test that plotting works without the removed parameter evolution
@@ -365,23 +370,23 @@ class TestMockedHeavyComputation:
 
         # This should work with actual plotting functions
         success = plot_c2_heatmaps(
-            exp_data, theory_data, phi_angles, temp_directory, dummy_config
+            exp_data, theory_data, phi_angles, tmp_path, dummy_config
         )
 
         # Should succeed and create plot files
         assert success is True
-        plot_files = list(temp_directory.glob("*.png"))
+        plot_files = list(tmp_path.glob("*.png"))
         assert len(plot_files) > 0
 
 
 class TestErrorHandlingIntegration:
     """Test error handling across the complete workflow."""
 
-    def test_partial_failure_recovery(self, temp_directory, dummy_config):
+    def test_partial_failure_recovery(self, tmp_path, dummy_config):
         """Test that workflow continues when some components fail."""
         config = dummy_config.copy()
         config["output_settings"]["results_directory"] = str(
-            temp_directory / "partial_failure"
+            tmp_path / "partial_failure"
         )
 
         # Create results with some missing components
@@ -400,7 +405,7 @@ class TestErrorHandlingIntegration:
         # Plotting should handle missing data gracefully
         if PLOTTING_AVAILABLE:
             plot_status = create_all_plots(
-                partial_results, temp_directory / "partial_failure", config
+                partial_results, tmp_path / "partial_failure", config
             )
 
             # Some plots may fail, but the function should return status
@@ -408,7 +413,7 @@ class TestErrorHandlingIntegration:
             # At least one plot type should succeed (parameter evolution)
             assert any(plot_status.values())
 
-    def test_configuration_error_handling(self, temp_directory):
+    def test_configuration_error_handling(self, tmp_path):
         """Test handling of invalid configurations."""
         invalid_config = {
             "analyzer_parameters": {
@@ -420,7 +425,7 @@ class TestErrorHandlingIntegration:
             }
         }
 
-        config_file = temp_directory / "invalid_config.json"
+        config_file = tmp_path / "invalid_config.json"
         with open(config_file, "w") as f:
             json.dump(invalid_config, f)
 
@@ -437,13 +442,13 @@ class TestErrorHandlingIntegration:
             > loaded_config["analyzer_parameters"]["temporal"]["end_frame"]
         )
 
-    def test_file_permission_error_handling(self, temp_directory):
+    def test_file_permission_error_handling(self, tmp_path):
         """Test handling of file permission errors."""
         if os.name == "nt":  # Skip on Windows
             pytest.skip("Permission tests not reliable on Windows")
 
         # Create a read-only directory
-        readonly_dir = temp_directory / "readonly"
+        readonly_dir = tmp_path / "readonly"
         readonly_dir.mkdir(mode=0o444)
 
         try:
@@ -504,8 +509,7 @@ class TestDataValidation:
 
             # Check physical constraints for specific parameters
             if bound["name"] in ["D0", "gamma_dot_t0"]:
-                assert bound["min"] > 0, f"{
-                    bound['name']} must have positive minimum"
+                assert bound["min"] > 0, f"{bound['name']} must have positive minimum"
 
             # Check that bounds are reasonable
             assert not np.isinf(bound["min"])
@@ -538,7 +542,7 @@ class TestMemoryManagement:
     """Test memory-efficient operations and cleanup."""
 
     @pytest.mark.memory
-    def test_large_array_handling(self, temp_directory):
+    def test_large_array_handling(self, tmp_path):
         """Test handling of large data arrays without excessive memory usage."""
         # Create moderately large arrays to test memory handling
         large_shape = (10, 100, 150)  # Still manageable in CI environments
@@ -564,7 +568,7 @@ class TestMemoryManagement:
         if IO_UTILS_AVAILABLE:
             from homodyne.core.io_utils import save_numpy
 
-            filepath = temp_directory / "large_array.npz"
+            filepath = tmp_path / "large_array.npz"
             success = save_numpy(large_data, filepath, compressed=True)
 
             assert success is True
@@ -575,7 +579,7 @@ class TestMemoryManagement:
             np.testing.assert_array_equal(loaded["data"], large_data)
 
     @pytest.mark.memory
-    def test_cleanup_after_plotting(self, temp_directory, dummy_config):
+    def test_cleanup_after_plotting(self, tmp_path, dummy_config):
         """Test that matplotlib figures are properly cleaned up."""
         import matplotlib.pyplot as plt
 
@@ -591,9 +595,7 @@ class TestMemoryManagement:
             theory_data = np.random.random((1, 10, 10)) + 1.0
             phi_angles = np.array([0.0])
 
-            success = plot_c2_heatmaps(
-                exp_data, theory_data, phi_angles, temp_directory, dummy_config
-            )
+            plot_c2_heatmaps(exp_data, theory_data, phi_angles, tmp_path, dummy_config)
 
             # Check that figures were cleaned up
             final_figs = len(plt.get_fignums())
@@ -607,9 +609,7 @@ class TestMemoryManagement:
 class TestPerAngleAnalysisIntegration:
     """Integration tests for per-angle chi-squared analysis."""
 
-    def test_per_angle_analysis_with_quality_assessment(
-        self, temp_directory, dummy_config
-    ):
+    def test_per_angle_analysis_with_quality_assessment(self, tmp_path, dummy_config):
         """Test per-angle analysis integration with quality assessment."""
         from unittest.mock import Mock, patch
 
@@ -672,7 +672,7 @@ class TestPerAngleAnalysisIntegration:
                 phi_angles,
                 c2_exp,
                 save_to_file=True,
-                output_dir=str(temp_directory),
+                output_dir=str(tmp_path),
             )
 
             # Verify analysis was called
@@ -683,7 +683,7 @@ class TestPerAngleAnalysisIntegration:
             assert "angle_categorization" in result
             assert result["quality_assessment"]["combined_quality"] == "warning"
 
-    def test_per_angle_results_integration(self, temp_directory, dummy_config):
+    def test_per_angle_results_integration(self, tmp_path, dummy_config):
         """Test that per-angle results are properly included in main results."""
 
         # Create mock results that would be included in main analysis results
@@ -720,11 +720,11 @@ class TestPerAngleAnalysisIntegration:
 class TestConcurrencyAndRaceConditions:
     """Test handling of concurrent operations and race conditions."""
 
-    def test_concurrent_directory_creation(self, temp_directory):
+    def test_concurrent_directory_creation(self, tmp_path):
         """Test that concurrent directory creation is handled safely."""
         from concurrent.futures import ThreadPoolExecutor
 
-        base_dir = temp_directory / "concurrent_test"
+        base_dir = tmp_path / "concurrent_test"
         results = []
         errors = []
 
@@ -755,7 +755,7 @@ class TestConcurrencyAndRaceConditions:
         for subdir in subdirs:
             assert (base_dir / subdir).exists()
 
-    def test_concurrent_file_saving(self, temp_directory):
+    def test_concurrent_file_saving(self, tmp_path):
         """Test concurrent file saving operations."""
         from concurrent.futures import ThreadPoolExecutor
 
@@ -767,7 +767,7 @@ class TestConcurrencyAndRaceConditions:
         def save_test_file(file_id):
             """Function to save file in thread."""
             data = {"id": file_id, "data": list(range(file_id, file_id + 10))}
-            filepath = temp_directory / f"concurrent_file_{file_id}.json"
+            filepath = tmp_path / f"concurrent_file_{file_id}.json"
             return save_json(data, filepath)
 
         # Save multiple files concurrently
@@ -782,7 +782,7 @@ class TestConcurrencyAndRaceConditions:
 
         # Verify all files exist and have correct content
         for file_id in file_ids:
-            filepath = temp_directory / f"concurrent_file_{file_id}.json"
+            filepath = tmp_path / f"concurrent_file_{file_id}.json"
             assert filepath.exists()
 
             with open(filepath, encoding="utf-8") as f:
@@ -799,10 +799,10 @@ class TestAnalysisWorkflowIntegration:
         not CORE_ANALYSIS_AVAILABLE,
         reason="Core analysis module not available",
     )
-    def test_analysis_plotting_integration(self, temp_directory):
+    def test_analysis_plotting_integration(self, tmp_path):
         """Test that analysis workflow integrates properly with plotting."""
 
-        config_file = create_minimal_config_file(temp_directory / "test_config.json")
+        config_file = create_minimal_config_file(tmp_path / "test_config.json")
 
         try:
             # Initialize analyzer
@@ -842,13 +842,11 @@ class TestAnalysisWorkflowIntegration:
         not (CORE_ANALYSIS_AVAILABLE and PLOTTING_AVAILABLE),
         reason="Core analysis or plotting not available",
     )
-    def test_mcmc_results_plotting_integration(self, temp_directory):
+    def test_mcmc_results_plotting_integration(self, tmp_path):
         """Test MCMC results integration with plotting workflow."""
         from homodyne.tests.fixtures import create_minimal_config_file
 
-        config_file = create_minimal_config_file(
-            temp_directory / "mcmc_test_config.json"
-        )
+        config_file = create_minimal_config_file(tmp_path / "mcmc_test_config.json")
 
         try:
             import arviz as az
@@ -911,7 +909,7 @@ class TestAnalysisWorkflowIntegration:
                 plot_mcmc_trace,
             )
 
-            plots_dir = temp_directory / "mcmc_plots"
+            plots_dir = tmp_path / "mcmc_plots"
             plots_dir.mkdir(exist_ok=True)
 
             # Test corner plot
@@ -961,11 +959,11 @@ class TestAnalysisWorkflowIntegration:
         not CORE_ANALYSIS_AVAILABLE,
         reason="Core analysis module not available",
     )
-    def test_configuration_consistency_integration(self, temp_directory):
+    def test_configuration_consistency_integration(self, tmp_path):
         """Test that configuration is consistent across analysis workflow."""
 
         config_file = create_minimal_config_file(
-            temp_directory / "consistency_test_config.json"
+            tmp_path / "consistency_test_config.json"
         )
 
         try:
@@ -1010,7 +1008,7 @@ class TestAnalysisWorkflowIntegration:
             else:
                 raise
 
-    def test_end_to_end_plotting_workflow(self, temp_directory, dummy_config):
+    def test_end_to_end_plotting_workflow(self, tmp_path, dummy_config):
         """Test complete end-to-end plotting workflow."""
         # Set up comprehensive mock results with all plot types
         comprehensive_results = {
@@ -1095,7 +1093,7 @@ class TestAnalysisWorkflowIntegration:
             pass  # Skip MCMC parts if ArviZ not available
 
         # Test plotting workflow
-        plots_dir = temp_directory / "comprehensive_plots"
+        plots_dir = tmp_path / "comprehensive_plots"
         plots_dir.mkdir(exist_ok=True)
 
         plot_status = create_all_plots(comprehensive_results, plots_dir, dummy_config)

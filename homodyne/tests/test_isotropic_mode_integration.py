@@ -80,16 +80,14 @@ class TestIsotropicModeIntegration:
         }
 
     @pytest.fixture
-    def temp_directory(self):
+    def tmp_path(self):
         """Create temporary directory for test files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    def test_config_manager_isotropic_mode_detection(
-        self, temp_directory, isotropic_config
-    ):
+    def test_config_manager_isotropic_mode_detection(self, tmp_path, isotropic_config):
         """Test that ConfigManager correctly detects isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -106,9 +104,9 @@ class TestIsotropicModeIntegration:
         # Test angle filtering is automatically disabled
         assert manager.is_angle_filtering_enabled() is False
 
-    def test_isotropic_mode_core_initialization(self, temp_directory, isotropic_config):
+    def test_isotropic_mode_core_initialization(self, tmp_path, isotropic_config):
         """Test HomodyneAnalysisCore initialization with isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -130,11 +128,11 @@ class TestIsotropicModeIntegration:
         mock_exists,
         mock_load,
         mock_savez,
-        temp_directory,
+        tmp_path,
         isotropic_config,
     ):
         """Test that isotropic mode skips loading phi_angles_file."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -176,11 +174,11 @@ class TestIsotropicModeIntegration:
         mock_exists,
         mock_load,
         mock_savez,
-        temp_directory,
+        tmp_path,
         isotropic_config,
     ):
         """Test complete optimization workflow in isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -212,11 +210,9 @@ class TestIsotropicModeIntegration:
             assert num_angles == 1  # Isotropic mode uses single angle
             assert phi_angles[0] == 0.0  # Dummy angle
 
-    def test_isotropic_mode_correlation_calculation(
-        self, temp_directory, isotropic_config
-    ):
+    def test_isotropic_mode_correlation_calculation(self, tmp_path, isotropic_config):
         """Test C2 correlation calculation in isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -246,11 +242,9 @@ class TestIsotropicModeIntegration:
         # Results should be identical (within numerical precision)
         np.testing.assert_array_almost_equal(c2_result, c2_result_2, decimal=15)
 
-    def test_isotropic_mode_chi_squared_calculation(
-        self, temp_directory, isotropic_config
-    ):
+    def test_isotropic_mode_chi_squared_calculation(self, tmp_path, isotropic_config):
         """Test chi-squared calculation supports dummy angles in isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -274,7 +268,7 @@ class TestIsotropicModeIntegration:
                 assert np.all(np.isfinite(c2_result))
                 assert np.all(c2_result >= 0)  # C2 should be non-negative
 
-    def test_isotropic_mode_caching_behavior(self, temp_directory, isotropic_config):
+    def test_isotropic_mode_caching_behavior(self, tmp_path, isotropic_config):
         """Test caching behavior with dummy angles in isotropic mode."""
         # Reset any global state that might interfere with this test
         import importlib
@@ -287,10 +281,10 @@ class TestIsotropicModeIntegration:
         # Clear any potential module-level imports that might interfere
         importlib.reload(analysis_core)
 
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
 
         # Create the cache directory that the config references
-        cache_dir = temp_directory / "data" / "test"
+        cache_dir = tmp_path / "data" / "test"
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Update config to use the temp directory
@@ -310,53 +304,60 @@ class TestIsotropicModeIntegration:
         assert core.cached_experimental_data is None  # Initially None
         assert core.cached_phi_angles is None  # Initially None
 
-        # Use more specific and safer mocking approach
-        with patch.object(
-            core, "_load_raw_data", return_value=mock_c2_data
-        ) as mock_load_raw:
-            with patch("os.path.isfile", return_value=False) as mock_isfile:
-                # Ensure instance cache is cleared before test
-                core.cached_experimental_data = None
-                core.cached_phi_angles = None
+        # Use more specific and safer mocking approach  
+        # Store original values for cleanup
+        original_cache_data = core.cached_experimental_data
+        original_cache_angles = core.cached_phi_angles
+        
+        try:
+            with patch.object(
+                core, "_load_raw_data", return_value=mock_c2_data
+            ) as mock_load_raw:
+                with patch("homodyne.analysis.core.os.path.isfile", return_value=False):
+                    # Ensure instance cache is cleared before test
+                    core.cached_experimental_data = None
+                    core.cached_phi_angles = None
 
-                # Load data - should trigger internal caching
-                c2_data, time_length, phi_angles, num_angles = (
-                    core.load_experimental_data()
-                )
+                    # Load data - should trigger internal caching
+                    c2_data, time_length, phi_angles, num_angles = (
+                        core.load_experimental_data()
+                    )
 
-                # Verify isotropic mode characteristics
-                assert num_angles == 1
-                assert len(phi_angles) == 1
-                assert phi_angles[0] == 0.0
+                    # Verify isotropic mode characteristics
+                    assert num_angles == 1
+                    assert len(phi_angles) == 1
+                    assert phi_angles[0] == 0.0
 
-                # Verify internal memory caching occurred
-                assert (
-                    core.cached_experimental_data is not None
-                ), f"Cache not populated! Actual: {core.cached_experimental_data}"
-                assert (
-                    core.cached_phi_angles is not None
-                ), f"Phi angles cache not populated! Actual: {core.cached_phi_angles}"
-                assert len(core.cached_phi_angles) == 1
-                assert core.cached_phi_angles[0] == 0.0
+                    # Verify internal memory caching occurred
+                    assert (
+                        core.cached_experimental_data is not None
+                    ), f"Cache not populated! Actual: {core.cached_experimental_data}"
+                    assert (
+                        core.cached_phi_angles is not None
+                    ), f"Phi angles cache not populated! Actual: {core.cached_phi_angles}"
+                    assert len(core.cached_phi_angles) == 1
+                    assert core.cached_phi_angles[0] == 0.0
 
-                # Verify second call uses cache (raw data load should not be
-                # called again)
-                mock_load_raw.reset_mock()
-                c2_data_2, _, phi_angles_2, num_angles_2 = core.load_experimental_data()
+                    # Verify second call uses cache (raw data load should not be
+                    # called again)
+                    mock_load_raw.reset_mock()
+                    c2_data_2, _, phi_angles_2, num_angles_2 = core.load_experimental_data()
 
-                # Should return same data from cache
-                assert num_angles_2 == 1
-                assert phi_angles_2[0] == 0.0
-                np.testing.assert_array_equal(c2_data, c2_data_2)
+                    # Should return same data from cache
+                    assert num_angles_2 == 1
+                    assert phi_angles_2[0] == 0.0
+                    np.testing.assert_array_equal(c2_data, c2_data_2)
 
-                # Raw data loading should not have been called again
-                mock_load_raw.assert_not_called()
+                    # Raw data loading should not have been called again
+                    mock_load_raw.assert_not_called()
+        finally:
+            # Restore original cache values for test isolation
+            core.cached_experimental_data = original_cache_data
+            core.cached_phi_angles = original_cache_angles
 
-    def test_isotropic_mode_parameter_validation(
-        self, temp_directory, isotropic_config
-    ):
+    def test_isotropic_mode_parameter_validation(self, tmp_path, isotropic_config):
         """Test parameter validation in isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
@@ -377,7 +378,7 @@ class TestIsotropicModeIntegration:
         assert processed_params[5] == 0.0  # gamma_dot_t_offset
         assert processed_params[6] == 0.0  # phi0
 
-    def test_isotropic_vs_anisotropic_mode_comparison(self, temp_directory):
+    def test_isotropic_vs_anisotropic_mode_comparison(self, tmp_path):
         """Test that isotropic and anisotropic modes produce different behavior."""
         base_config = {
             "metadata": {"config_version": "6.0"},
@@ -414,7 +415,7 @@ class TestIsotropicModeIntegration:
         iso_config = base_config.copy()
         iso_config["analysis_settings"]["static_submode"] = "isotropic"
 
-        iso_config_file = temp_directory / "iso_config.json"
+        iso_config_file = tmp_path / "iso_config.json"
         with open(iso_config_file, "w") as f:
             json.dump(iso_config, f)
 
@@ -424,7 +425,7 @@ class TestIsotropicModeIntegration:
         aniso_config = base_config.copy()
         aniso_config["analysis_settings"]["static_submode"] = "anisotropic"
 
-        aniso_config_file = temp_directory / "aniso_config.json"
+        aniso_config_file = tmp_path / "aniso_config.json"
         with open(aniso_config_file, "w") as f:
             json.dump(aniso_config, f)
 
@@ -448,16 +449,16 @@ class TestIsotropicModeIntegration:
         assert iso_manager.get_effective_parameter_count() == 3
         assert aniso_manager.get_effective_parameter_count() == 3
 
-    def test_isotropic_mode_end_to_end_workflow(self, temp_directory, isotropic_config):
+    def test_isotropic_mode_end_to_end_workflow(self, tmp_path, isotropic_config):
         """Test complete end-to-end workflow for isotropic mode."""
-        config_file = temp_directory / "isotropic_config.json"
+        config_file = tmp_path / "isotropic_config.json"
         with open(config_file, "w") as f:
             json.dump(isotropic_config, f)
 
         # Mock all file operations and data loading
         with patch("homodyne.analysis.core.os.path.exists", return_value=False):
             with patch("homodyne.analysis.core.np.load") as mock_load:
-                with patch("homodyne.analysis.core.np.savez_compressed") as mock_savez:
+                with patch("homodyne.analysis.core.np.savez_compressed"):
                     # Setup mock data for single angle
                     n_times = 49
                     mock_c2_data = np.exp(-np.linspace(0, 3, n_times)).reshape(
@@ -502,12 +503,12 @@ class TestIsotropicModeEdgeCases:
     """Test edge cases and error conditions for isotropic mode."""
 
     @pytest.fixture
-    def temp_directory(self):
+    def tmp_path(self):
         """Create temporary directory for test files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    def test_isotropic_mode_with_invalid_submode(self, temp_directory):
+    def test_isotropic_mode_with_invalid_submode(self, tmp_path):
         """Test handling of invalid static_submode values."""
         config = {
             "metadata": {"config_version": "6.0"},
@@ -522,7 +523,7 @@ class TestIsotropicModeEdgeCases:
             },
         }
 
-        config_file = temp_directory / "invalid_config.json"
+        config_file = tmp_path / "invalid_config.json"
         with open(config_file, "w") as f:
             json.dump(config, f)
 
@@ -533,7 +534,7 @@ class TestIsotropicModeEdgeCases:
         assert manager.get_analysis_mode() == "static_anisotropic"
         assert manager.is_static_isotropic_enabled() is False
 
-    def test_isotropic_mode_case_insensitive_submode(self, temp_directory):
+    def test_isotropic_mode_case_insensitive_submode(self, tmp_path):
         """Test that static_submode is case-insensitive."""
         test_cases = [
             ("isotropic", True),
@@ -562,7 +563,7 @@ class TestIsotropicModeEdgeCases:
                 },
             }
 
-            config_file = temp_directory / f"test_{submode}_config.json"
+            config_file = tmp_path / f"test_{submode}_config.json"
             with open(config_file, "w") as f:
                 json.dump(config, f)
 
@@ -575,7 +576,7 @@ class TestIsotropicModeEdgeCases:
                 assert not manager.is_static_isotropic_enabled()
                 assert manager.get_analysis_mode() == "static_anisotropic"
 
-    def test_isotropic_mode_with_none_submode(self, temp_directory):
+    def test_isotropic_mode_with_none_submode(self, tmp_path):
         """Test handling when static_submode is None or missing."""
         config = {
             "metadata": {"config_version": "6.0"},
@@ -590,7 +591,7 @@ class TestIsotropicModeEdgeCases:
             },
         }
 
-        config_file = temp_directory / "none_submode_config.json"
+        config_file = tmp_path / "none_submode_config.json"
         with open(config_file, "w") as f:
             json.dump(config, f)
 
@@ -600,7 +601,7 @@ class TestIsotropicModeEdgeCases:
         assert manager.get_static_submode() == "anisotropic"
         assert manager.get_analysis_mode() == "static_anisotropic"
 
-    def test_isotropic_mode_angle_filtering_override_warning(self, temp_directory):
+    def test_isotropic_mode_angle_filtering_override_warning(self, tmp_path):
         """Test that angle filtering configuration is properly overridden in isotropic mode."""
         config = {
             "metadata": {"config_version": "6.0"},
@@ -621,7 +622,7 @@ class TestIsotropicModeEdgeCases:
             },
         }
 
-        config_file = temp_directory / "angle_filtering_config.json"
+        config_file = tmp_path / "angle_filtering_config.json"
         with open(config_file, "w") as f:
             json.dump(config, f)
 

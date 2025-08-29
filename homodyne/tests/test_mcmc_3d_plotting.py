@@ -15,6 +15,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
+from homodyne.tests.fixtures import dummy_config
+
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -330,7 +332,7 @@ class TestMCMCPosteriorSampleProcessing:
 
         # Generate samples with some variation
         c2_samples = []
-        for i in range(n_samples):
+        for _i in range(n_samples):
             sample = base_data + 0.02 * np.random.randn(n_t2, n_t1)
             c2_samples.append(sample)
 

@@ -283,20 +283,21 @@ class MCMCSampler:
 
             if optimization_indices:
                 # Filter experimental data to optimization angles only
-                c2_data_unfiltered = c2_experimental
                 c2_experimental = c2_experimental[optimization_indices]
                 phi_angles_filtered = phi_angles[optimization_indices]
 
                 print(
-                    f"   MCMC angle filtering: using {
-                        len(optimization_indices)}/{n_angles} angles"
+                    f"   MCMC angle filtering: using {len(optimization_indices)}/{
+                        n_angles
+                    } angles"
                 )
                 print(
                     f"   Optimization angles: {[f'{angle:.1f}°' for angle in phi_angles_filtered]}"
                 )
                 logger.info(
-                    f"MCMC using filtered angles: {
-                        len(optimization_indices)}/{n_angles} angles"
+                    f"MCMC using filtered angles: {len(optimization_indices)}/{
+                        n_angles
+                    } angles"
                 )
             else:
                 print(
@@ -321,9 +322,9 @@ class MCMCSampler:
             subsample_indices = np.arange(0, n_time, subsample_factor)
             c2_data = c2_experimental[:, subsample_indices, :][:, :, subsample_indices]
             print(
-                f"   Subsampling data by factor {subsample_factor}: {n_time}x{n_time} -> {
-                    len(subsample_indices)}x{
-                    len(subsample_indices)}"
+                f"   Subsampling data by factor {subsample_factor}: {n_time}x{
+                    n_time
+                } -> {len(subsample_indices)}x{len(subsample_indices)}"
             )
         else:
             c2_data = c2_experimental
@@ -348,8 +349,8 @@ class MCMCSampler:
             # bounds
             print(
                 f"   Building {effective_param_count}-parameter model for {
-                    (
-                        'static' if is_static_mode else 'laminar flow')} mode"
+                    ('static' if is_static_mode else 'laminar flow')
+                } mode"
             )
 
             # Helper function to create priors from bounds
@@ -418,7 +419,8 @@ class MCMCSampler:
                     else:
                         logger.warning(
                             f"Parameter name mismatch: expected {param_name}, got {
-                                bound.get('name')}"
+                                bound.get('name')
+                            }"
                         )
 
                 # Fallback: use hardcoded values with fallback distribution
@@ -448,10 +450,7 @@ class MCMCSampler:
 
                 if param_name in fallback_params:
                     params = fallback_params[param_name]
-                    print(
-                        f"   Using fallback prior for {param_name}: {
-                            params['type']}"
-                    )
+                    print(f"   Using fallback prior for {param_name}: {params['type']}")
 
                     if params["type"] == "TruncatedNormal":
                         if pm is not None:
@@ -555,17 +554,14 @@ class MCMCSampler:
                 if np.any(valid_mask):
                     c2_mean_valid = np.mean(c2_data[valid_mask])
                     c2_data = np.where(np.isnan(c2_data), c2_mean_valid, c2_data)
-                    print(
-                        f"   ✓ Replaced NaN values with mean: {
-                            c2_mean_valid:.4f}"
-                    )
+                    print(f"   ✓ Replaced NaN values with mean: {c2_mean_valid:.4f}")
                 else:
                     print("   ⚠ All data is NaN, using fallback value 1.0")
                     c2_data = np.ones_like(c2_data)
 
             # Convert to shared variables for efficiency
             c2_data_shared = shared(c2_data.astype(dtype), name="c2_data")
-            phi_angles_shared = shared(phi_angles.astype(dtype), name="phi_angles")
+            shared(phi_angles.astype(dtype), name="phi_angles")
 
             # Forward model (simplified for computational efficiency)
             # Note: D(t) and γ̇(t) positivity is enforced at the function level
@@ -812,11 +808,13 @@ class MCMCSampler:
 
                 print(
                     f"   Created {
-                        len(likelihood_components)} per-angle likelihood components"
+                        len(likelihood_components)
+                    } per-angle likelihood components"
                 )
                 logger.info(
                     f"MCMC using full forward model with {
-                        len(likelihood_components)} angle-specific scaling parameters"
+                        len(likelihood_components)
+                    } angle-specific scaling parameters"
                 )
 
             # Add validation checks
@@ -824,9 +822,7 @@ class MCMCSampler:
                 D_positive = pm.Deterministic("D_positive", D0 > 0)  # noqa: F841
                 if not is_static_mode and effective_param_count > 3:
                     # Only check gamma_dot_t0 positivity in laminar flow mode
-                    gamma_positive = pm.Deterministic(
-                        "gamma_positive", gamma_dot_t0 > 0
-                    )
+                    pm.Deterministic("gamma_positive", gamma_dot_t0 > 0)
                 D_total = pm.Deterministic("D_total", D0 + D_offset)  # noqa: F841
             else:
                 raise ImportError("PyMC not available")
@@ -1034,7 +1030,7 @@ class MCMCSampler:
 
         # Create initvals for all chains with small perturbations
         initvals = []
-        for chain_idx in range(chains):
+        for _chain_idx in range(chains):
             chain_initvals = {}
             for param, value in better_params.items():
                 # Add small random perturbation for chain diversity
@@ -1239,9 +1235,9 @@ class MCMCSampler:
                     adjusted_params[0], 500.0
                 )  # Cap D0 at 500 for safety
                 print(
-                    f"     Adjusted D0 from {
-                        init_params[0]} to {
-                        adjusted_params[0]} for constraint safety"
+                    f"     Adjusted D0 from {init_params[0]} to {
+                        adjusted_params[0]
+                    } for constraint safety"
                 )
                 init_params = adjusted_params
 
@@ -1847,7 +1843,7 @@ class MCMCSampler:
             raise ValueError(f"chains must be a positive integer, got {mcmc_chains}")
 
         target_accept = self.mcmc_config.get("target_accept", 0.95)
-        if not isinstance(target_accept, (int, float)) or not 0 < target_accept < 1:
+        if not isinstance(target_accept, int | float) or not 0 < target_accept < 1:
             raise ValueError(
                 f"target_accept must be between 0 and 1, got {target_accept}"
             )
@@ -1919,8 +1915,7 @@ class MCMCSampler:
             if critical_violation:
                 print(
                     f"       D0={D0} -> theory={
-                        theory_normalized:.3f} -> fitted range [{
-                        fitted_min:.3f}, {
+                        theory_normalized:.3f} -> fitted range [{fitted_min:.3f}, {
                         fitted_max:.3f}]"
                 )
                 print(
@@ -1933,8 +1928,7 @@ class MCMCSampler:
             if fitted_min < 1.0 or fitted_max > 2.0:
                 print(
                     f"       D0={D0} -> theory={
-                        theory_normalized:.3f} -> fitted range [{
-                        fitted_min:.3f}, {
+                        theory_normalized:.3f} -> fitted range [{fitted_min:.3f}, {
                         fitted_max:.3f}]"
                 )
                 print(
@@ -1990,10 +1984,7 @@ class MCMCSampler:
 
             # Shear rate should be non-negative
             if "gamma_dot_t0" in param_dict and param_dict["gamma_dot_t0"] < 0:
-                logger.warning(
-                    f"Negative shear rate: {
-                        param_dict['gamma_dot_t0']}"
-                )
+                logger.warning(f"Negative shear rate: {param_dict['gamma_dot_t0']}")
                 return False
 
             return True
@@ -2087,8 +2078,7 @@ class MCMCSampler:
                     f"Thinning reduces effective draws to {effective_draws} (< 1000)"
                 )
                 validation_results["recommendations"].append(
-                    f"Consider increasing draws to {
-                        thin * 1000} or reducing thinning"
+                    f"Consider increasing draws to {thin * 1000} or reducing thinning"
                 )
             validation_results["recommendations"].append(
                 f"Using thinning={thin} for reduced autocorrelation (effective samples: {effective_draws})"
@@ -2405,9 +2395,8 @@ if __name__ == "__main__":
     if PYMC_AVAILABLE:
         print(
             f"PyMC Version: {
-                pm.__version__ if pm and hasattr(
-                    pm,
-                    '__version__') else 'unknown'}"
+                pm.__version__ if pm and hasattr(pm, '__version__') else 'unknown'
+            }"
         )
         print(f"ArviZ Available: {az is not None}")
 

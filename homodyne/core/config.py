@@ -218,10 +218,9 @@ def configure_logging(cfg: dict[str, Any]) -> logging.Logger:
             root_logger.addHandler(file_handler)
             module_logger.addHandler(file_handler)
             handlers_created.append(
-                f"RotatingFileHandler({filename}, {
-                    max_bytes //
-                    1024 //
-                    1024}MB, {backup_count} backups)"
+                f"RotatingFileHandler({filename}, {max_bytes // 1024 // 1024}MB, {
+                    backup_count
+                } backups)"
             )
 
         except OSError as e:
@@ -245,10 +244,7 @@ def configure_logging(cfg: dict[str, Any]) -> logging.Logger:
     if handlers_created:
         handler_list = ", ".join(handlers_created)
         logger.info(
-            f"Logging configured: {handler_list} (level={
-                cfg.get(
-                    'level',
-                    'INFO')})"
+            f"Logging configured: {handler_list} (level={cfg.get('level', 'INFO')})"
         )
 
         # Log initial message to verify setup
@@ -481,17 +477,13 @@ class ConfigManager:
             .get("minimum_frames", 10)
         )
         if end - start < min_frames:
-            raise ValueError(
-                f"Insufficient frames: {
-                    end - start} < {min_frames}"
-            )
+            raise ValueError(f"Insufficient frames: {end - start} < {min_frames}")
 
         # Validate physical parameters
         self._validate_physical_parameters()
 
         logger.info(
-            f"Configuration validated: frames {start}-{end} ({
-                end - start} frames)"
+            f"Configuration validated: frames {start}-{end} ({end - start} frames)"
         )
 
     def _validate_physical_parameters(self) -> None:

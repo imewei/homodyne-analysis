@@ -221,9 +221,9 @@ class TestPerAngleChiSquaredCalculation:
             acceptable_overall = overall_config.get("acceptable_threshold", 5.0)
             warning_overall = overall_config.get("warning_threshold", 10.0)
 
-            excellent_per_angle = per_angle_config.get("excellent_threshold", 2.0)
+            per_angle_config.get("excellent_threshold", 2.0)
             acceptable_per_angle = per_angle_config.get("acceptable_threshold", 5.0)
-            warning_per_angle = per_angle_config.get("warning_threshold", 10.0)
+            per_angle_config.get("warning_threshold", 10.0)
 
             # Overall quality assessment (updated logic)
             overall_chi2 = chi_results["reduced_chi_squared"]
@@ -571,5 +571,5 @@ class TestQualityAssessmentIntegration:
         )
 
         assert isinstance(result_with_components, dict)
-        assert isinstance(result_without_components, (int, float))
+        assert isinstance(result_without_components, int | float)
         assert result_without_components == 10.0

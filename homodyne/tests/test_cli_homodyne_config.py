@@ -146,7 +146,7 @@ class TestHomodyneConfigCLI:
                     output_file=output_file, mode="invalid_mode"
                 )
                 # Should not reach here
-                assert False, "Expected ValueError for invalid mode"
+                raise AssertionError("Expected ValueError for invalid mode")
             except ValueError as e:
                 assert "Invalid mode 'invalid_mode'" in str(e)
 
@@ -166,7 +166,7 @@ class TestHomodyneConfigCLI:
             pass
         except Exception as e:
             # Any other exception is a problem with our test setup
-            assert False, f"Unexpected exception: {e}"
+            raise AssertionError(f"Unexpected exception: {e}")
 
     def test_create_config_invalid_mode(self):
         """Test that invalid mode raises ValueError."""
@@ -305,7 +305,7 @@ class TestConfigModeSpecificBehavior:
                 pass
             except ValueError as e:
                 if "Invalid mode" in str(e):
-                    assert False, f"Mode {mode} should be valid"
+                    raise AssertionError(f"Mode {mode} should be valid")
 
 
 if __name__ == "__main__":

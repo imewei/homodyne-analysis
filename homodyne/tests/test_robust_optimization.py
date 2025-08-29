@@ -180,7 +180,7 @@ class MockAnalysisCore:
             decay_factor = D0 * time_delays ** abs(alpha) + D_offset * time_delays
             for j in range(n_times):
                 for k in range(n_times):
-                    tau = abs(time_delays[j] - time_delays[k])
+                    abs(time_delays[j] - time_delays[k])
                     decay = np.exp(-decay_factor[min(j, k)])
                     c2_theory[i, j, k] = 1.0 + 0.3 * decay
 
@@ -656,7 +656,7 @@ class TestRobustOptimizationInterface:
             results[method] = result
 
         # Check that each method returns reasonable results
-        for method, (optimal_params, info) in results.items():
+        for method, (optimal_params, _info) in results.items():
             if optimal_params is not None:
                 assert isinstance(optimal_params, np.ndarray)
                 assert len(optimal_params) == 3
@@ -760,7 +760,7 @@ class TestClassicalOptimizerIntegration:
                     optimization_result.x, np.array([100.0, -0.5, 10.0])
                 )
         else:
-            assert success == False
+            assert not success
 
     def test_robust_optimization_error_handling(self, mock_analysis_core, test_config):
         """Test error handling when robust optimization fails."""
@@ -782,7 +782,7 @@ class TestClassicalOptimizerIntegration:
             method_options=None,
         )
 
-        assert success == False
+        assert not success
         assert isinstance(result, Exception) or hasattr(result, "success")
 
 

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, pre-commit hooks, and cross-platform shell completion"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, robust testing infrastructure, automated code quality checks, and cross-platform shell completion"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -53,6 +53,9 @@ keywords = [
     "cross-platform",
     "windows-compatibility",
     "security-scanning",
+    "testing-infrastructure",
+    "type-checking",
+    "automated-quality-assurance",
 ]
 requires-python = ">=3.12"
 dependencies = [

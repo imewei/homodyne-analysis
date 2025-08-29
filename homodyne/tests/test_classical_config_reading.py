@@ -47,7 +47,7 @@ class TestClassicalOptimizationConfigurationReading:
         mock_core.num_threads = 4
 
         # Create ClassicalOptimizer instance
-        optimizer = ClassicalOptimizer(mock_core, test_config)
+        ClassicalOptimizer(mock_core, test_config)
 
         # Test that it can access initial parameters correctly
         expected_values = np.array([1000.0, -0.5, 100.0, 0.001, 0.2, 0.0001, 5.0])
@@ -124,7 +124,7 @@ class TestClassicalOptimizationConfigurationReading:
         mock_core.num_threads = 4
 
         # Create ClassicalOptimizer instance
-        optimizer = ClassicalOptimizer(mock_core, test_config)
+        ClassicalOptimizer(mock_core, test_config)
 
         # Test parameter bounds access
         param_bounds = test_config.get("parameter_space", {}).get("bounds", [])
@@ -166,7 +166,7 @@ class TestClassicalOptimizationConfigurationReading:
         mock_core.num_threads = 4
 
         # Create ClassicalOptimizer instance
-        optimizer = ClassicalOptimizer(mock_core, test_config)
+        ClassicalOptimizer(mock_core, test_config)
 
         # Test bounds extraction (simulating what happens in
         # get_parameter_bounds method)
@@ -240,7 +240,7 @@ class TestClassicalOptimizationConfigurationReading:
         mock_core.num_threads = 4
 
         # Create ClassicalOptimizer instance
-        optimizer = ClassicalOptimizer(mock_core, test_config)
+        ClassicalOptimizer(mock_core, test_config)
 
         # Test parameter selection for static mode (simulating
         # run_classical_optimization_optimized logic)

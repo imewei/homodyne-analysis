@@ -15,7 +15,9 @@ import pytest
 from homodyne.tests.fixtures import (
     create_invalid_config_file,
     create_minimal_config_file,
+    dummy_config
 )
+# tmp_path is built-in pytest fixture
 
 # Import the modules to test
 
@@ -35,9 +37,9 @@ except ImportError:
 class TestJSONParsing:
     """Test JSON file parsing and loading."""
 
-    def test_load_valid_json_config(self, temp_directory):
+    def test_load_valid_json_config(self, tmp_path):
         """Test loading a valid JSON configuration file."""
-        config_file = temp_directory / "valid_config.json"
+        config_file = tmp_path / "valid_config.json"
         test_config = {
             "metadata": {"version": "test"},
             "analyzer_parameters": {
@@ -81,25 +83,25 @@ class TestJSONParsing:
         assert "metadata" in loaded_config
         assert "analyzer_parameters" in loaded_config
 
-    def test_load_invalid_json_syntax(self, temp_directory):
+    def test_load_invalid_json_syntax(self, tmp_path):
         """Test handling of invalid JSON syntax."""
-        config_file = temp_directory / "invalid_syntax.json"
+        config_file = tmp_path / "invalid_syntax.json"
         create_invalid_config_file(config_file, "syntax")
 
         with pytest.raises(json.JSONDecodeError):
             with open(config_file) as f:
                 json.load(f)
 
-    def test_config_manager_with_valid_file(self, temp_directory):
+    def test_config_manager_with_valid_file(self, tmp_path):
         """Test ConfigManager with valid configuration file."""
-        config_file = temp_directory / "test_config.json"
+        config_file = tmp_path / "test_config.json"
         create_minimal_config_file(config_file)
 
         # Change to temp directory so ConfigManager can find the file
         import os
 
         original_cwd = os.getcwd()
-        os.chdir(temp_directory)
+        os.chdir(tmp_path)
 
         try:
             config_manager = ConfigManager("test_config.json")
@@ -114,12 +116,12 @@ class TestJSONParsing:
         finally:
             os.chdir(original_cwd)
 
-    def test_config_manager_with_missing_file(self, temp_directory):
+    def test_config_manager_with_missing_file(self, tmp_path):
         """Test ConfigManager with missing configuration file."""
         import os
 
         original_cwd = os.getcwd()
-        os.chdir(temp_directory)
+        os.chdir(tmp_path)
 
         try:
             # This should not raise an exception, but use defaults
@@ -172,10 +174,9 @@ class TestParameterValidation:
             assert "name" in bound
             assert "min" in bound
             assert "max" in bound
-            assert bound["min"] < bound["max"], f"Invalid bound for {
-                bound['name']}: {
-                bound['min']} >= {
-                bound['max']}"
+            assert bound["min"] < bound["max"], f"Invalid bound for {bound['name']}: {
+                bound['min']
+            } >= {bound['max']}"
 
             # Check specific physical constraints
             if bound["name"] == "D0":
@@ -334,9 +335,11 @@ class TestParameterTypes:
                 # LogNormal parameters should have positive bounds
                 if bound["type"] == "LogNormal":
                     assert bound["min"] > 0, f"LogNormal parameter {
-                        bound['name']} must have positive min bound"
+                        bound['name']
+                    } must have positive min bound"
                     assert bound["max"] > 0, f"LogNormal parameter {
-                        bound['name']} must have positive max bound"
+                        bound['name']
+                    } must have positive max bound"
 
     def test_physical_parameter_constraints(self, dummy_config):
         """Test physical constraints on specific parameters."""
@@ -455,21 +458,21 @@ class TestJSONSchemaCompliance:
         initial_values = dummy_config["initial_parameters"]["values"]
         for value in initial_values:
             assert isinstance(
-                value, (int, float)
+                value, int | float
             ), f"Parameter value {value} is not numeric"
 
         # Check bounds
         for bound in dummy_config["parameter_space"]["bounds"]:
             assert isinstance(
-                bound["min"], (int, float)
+                bound["min"], int | float
             ), f"Bound min {bound['min']} is not numeric"
             assert isinstance(
-                bound["max"], (int, float)
+                bound["max"], int | float
             ), f"Bound max {bound['max']} is not numeric"
 
         # Check temporal parameters
         temporal = dummy_config["analyzer_parameters"]["temporal"]
-        assert isinstance(temporal["dt"], (int, float)), "dt must be numeric"
+        assert isinstance(temporal["dt"], int | float), "dt must be numeric"
         assert isinstance(temporal["start_frame"], int), "start_frame must be integer"
         assert isinstance(temporal["end_frame"], int), "end_frame must be integer"
 
@@ -506,10 +509,9 @@ class TestJSONSchemaCompliance:
                         or key.lower().startswith("use_")
                     ):
                         # These should probably be booleans
-                        assert isinstance(
-                            value, bool
-                        ), f"{current_path} should be boolean but is {
-                            type(value)}"
+                        assert isinstance(value, bool), f"{
+                            current_path
+                        } should be boolean but is {type(value)}"
                     else:
                         check_boolean_recursive(value, current_path)
             elif isinstance(obj, list):
@@ -524,7 +526,7 @@ class TestJSONSchemaCompliance:
 class TestConfigErrorHandling:
     """Test error handling for various configuration issues."""
 
-    def test_missing_required_section(self, temp_directory):
+    def test_missing_required_section(self, tmp_path):
         """Test handling of missing required sections."""
         incomplete_config = {
             "metadata": {"version": "test"},
@@ -532,7 +534,7 @@ class TestConfigErrorHandling:
             "experimental_data": {"data_folder_path": "./"},
         }
 
-        config_file = temp_directory / "incomplete.json"
+        config_file = tmp_path / "incomplete.json"
         with open(config_file, "w") as f:
             json.dump(incomplete_config, f)
 
@@ -573,7 +575,7 @@ class TestConfigErrorHandling:
             # But the values are physically invalid (would need validation
             # logic to catch)
 
-    def test_unicode_handling_in_config(self, temp_directory):
+    def test_unicode_handling_in_config(self, tmp_path):
         """Test proper handling of unicode characters in configuration."""
         unicode_config = {
             "metadata": {"description": "Configuration with unicode: α, β, γ, Å, °"},
@@ -584,7 +586,7 @@ class TestConfigErrorHandling:
             "initial_parameters": {"units": ["Å²/s", "dimensionless", "s⁻¹", "°"]},
         }
 
-        config_file = temp_directory / "unicode_config.json"
+        config_file = tmp_path / "unicode_config.json"
         with open(config_file, "w", encoding="utf-8") as f:
             json.dump(unicode_config, f, ensure_ascii=False, indent=2)
 

@@ -13,7 +13,7 @@ for reliable and comparable results across different optimization approaches.
 """
 
 # Import with error handling for optional dependencies
-from typing import TYPE_CHECKING, Any, List, Optional, Type
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .classical import ClassicalOptimizer
@@ -31,7 +31,7 @@ except ImportError as e:
     ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc]
     import warnings
 
-    warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning)
+    warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning, stacklevel=2)
 
 # Conditionally import MCMC components
 try:
@@ -44,7 +44,9 @@ except ImportError as e:
     import warnings
 
     warnings.warn(
-        f"MCMC functionality not available (PyMC required): {e}", ImportWarning
+        f"MCMC functionality not available (PyMC required): {e}",
+        ImportWarning,
+        stacklevel=2,
     )
 
 # Dynamic __all__ - suppress Pylance warning as this is intentional

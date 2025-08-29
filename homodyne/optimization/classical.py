@@ -248,16 +248,11 @@ class ClassicalOptimizer:
                         best_chi2 = result.fun
                         best_method = method  # Track which method produced this result
                         print(
-                            f"    ✓ New best: χ²_red = {
-                                result.fun:.6e} ({
+                            f"    ✓ New best: χ²_red = {result.fun:.6e} ({
                                 elapsed:.1f}s)"
                         )
                     else:
-                        print(
-                            f"    χ²_red = {
-                                result.fun:.6e} ({
-                                elapsed:.1f}s)"
-                        )
+                        print(f"    χ²_red = {result.fun:.6e} ({elapsed:.1f}s)")
                 else:
                     # Store exception for analysis
                     all_results.append((method, result))
@@ -317,14 +312,10 @@ class ClassicalOptimizer:
 
             # Log results
             logger.info(
-                f"Classical optimization completed in {
-                    total_time:.2f}s, best χ²_red = {
+                f"Classical optimization completed in {total_time:.2f}s, best χ²_red = {
                     best_chi2:.6e} (method: {best_method})"
             )
-            print(
-                f"  Best result: χ²_red = {
-                    best_chi2:.6e} (method: {best_method})"
-            )
+            print(f"  Best result: χ²_red = {best_chi2:.6e} (method: {best_method})")
 
             # Store best parameters
             self.best_params_classical = best_params
@@ -804,9 +795,6 @@ class ClassicalOptimizer:
                                 function_evaluations += 1
 
                                 # Trust region update logic
-                                predicted_reduction = (
-                                    model.objVal
-                                )  # Should be negative for minimization
                                 actual_reduction = f_current - f_new
 
                                 if actual_reduction > 0:
@@ -906,8 +894,9 @@ class ClassicalOptimizer:
         method: str,
         objective_func,
         initial_parameters: np.ndarray,
-        bounds: list[tuple[float, float]]
-        | None = None,  # Used by robust optimizer internally
+        bounds: (
+            list[tuple[float, float]] | None
+        ) = None,  # Used by robust optimizer internally
         method_options: dict[str, Any] | None = None,
     ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
@@ -956,9 +945,11 @@ class ClassicalOptimizer:
                     "Robust optimization requires phi_angles and c2_experimental "
                     "to be available in the analysis core. "
                     f"Found phi_angles: {
-                        'present' if phi_angles is not None else 'missing'}, "
+                        'present' if phi_angles is not None else 'missing'
+                    }, "
                     f"c2_experimental: {
-                        'present' if c2_experimental is not None else 'missing'}"
+                        'present' if c2_experimental is not None else 'missing'
+                    }"
                 )
 
             # Map method names to robust optimization types

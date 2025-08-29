@@ -6,25 +6,32 @@ Comprehensive testing strategies and practices for the homodyne package.
 Test Organization
 -----------------
 
-The test suite is organized hierarchically:
+The test suite is comprehensive with 500+ tests covering all major functionality:
 
 .. code-block:: text
 
    homodyne/tests/
-   ├── unit/                         # Unit tests
-   │   ├── test_config.py           # Configuration tests
-   │   ├── test_models.py           # Model function tests
-   │   ├── test_optimization.py     # Optimization tests
-   │   └── test_utils.py            # Utility function tests
-   ├── integration/                  # Integration tests
-   │   ├── test_full_workflow.py    # End-to-end workflow
-   │   ├── test_mcmc_integration.py # MCMC integration
-   │   └── test_performance.py      # Performance benchmarks
-   ├── fixtures/                     # Test data and fixtures
-   │   ├── sample_configs/          # Sample configurations
-   │   ├── synthetic_data/          # Generated test data
-   │   └── reference_results/       # Expected results
-   └── conftest.py                   # Shared fixtures
+   ├── fixtures.py                       # Central test fixtures and data
+   ├── test_config.py                   # Configuration management tests
+   ├── test_config_integration.py      # Configuration integration tests
+   ├── test_integration.py             # End-to-end workflow tests
+   ├── test_isotropic_mode_integration.py  # Isotropic mode tests
+   ├── test_performance.py             # Performance benchmark tests  
+   ├── test_plotting.py                # Visualization tests
+   ├── test_mcmc_*.py                  # MCMC-related tests
+   ├── test_optimization_*.py          # Optimization method tests
+   ├── test_cli_*.py                   # Command-line interface tests
+   ├── test_create_config_*.py         # Configuration creation tests
+   └── test_*.py                       # Additional feature tests
+
+**Recent Test Infrastructure Improvements**:
+
+- **Robust fixture system**: Centralized test data generation with proper isolation
+- **Performance regression detection**: Automated benchmarking with CI integration  
+- **Code coverage tracking**: Comprehensive coverage reporting with HTML output
+- **Parallel test execution**: Multi-core test running with pytest-xdist
+- **Property-based testing**: Hypothesis integration for robust edge case detection
+- **Test isolation**: Proper cleanup and state management to prevent test interference
 
 Running Tests
 -------------
@@ -43,17 +50,37 @@ Running Tests
 
 .. code-block:: bash
 
-   # Unit tests only
-   pytest homodyne/tests/unit/ -v
+   # Quick tests (exclude slow tests)
+   pytest homodyne/tests/ -m "not slow" -v
 
    # Integration tests only
-   pytest homodyne/tests/integration/ -v
+   pytest homodyne/tests/ -m integration -v
 
-   # MCMC tests (slower)
-   pytest homodyne/tests/ -m mcmc
+   # MCMC tests (requires PyMC dependencies)
+   pytest homodyne/tests/ -m mcmc -v
 
-   # Quick tests only
-   pytest homodyne/tests/ -m "not slow"
+   # Performance benchmarks
+   pytest homodyne/tests/ -m benchmark -v
+
+   # Memory usage tests
+   pytest homodyne/tests/ -m memory -v
+
+   # JAX/GPU acceleration tests
+   pytest homodyne/tests/ -m jax -v
+
+**Available Test Markers**:
+
+The following test markers are defined in ``pyproject.toml``:
+
+- ``slow``: Long-running tests (>30s)
+- ``integration``: End-to-end integration tests
+- ``mcmc``: Tests requiring PyMC/ArviZ dependencies
+- ``performance``: Performance-related tests
+- ``benchmark``: Benchmarking tests with pytest-benchmark
+- ``memory``: Memory usage monitoring tests
+- ``regression``: Performance regression detection tests
+- ``jax``: Tests requiring JAX dependencies
+- ``gpu``: Tests that can utilize GPU acceleration
 
 **Parallel Testing**:
 
