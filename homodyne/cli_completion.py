@@ -554,7 +554,9 @@ def uninstall_shell_completion(shell: str) -> int:
                 and i < len(lines) - 1
             ):
                 # Check if this looks like an orphaned line by looking at context
-                prev_lines = [line.strip() for line in lines[max(0, i - 3) : i] if line.strip()]
+                prev_lines = [
+                    line.strip() for line in lines[max(0, i - 3) : i] if line.strip()
+                ]
                 next_lines = [
                     line.strip()
                     for line in lines[i + 1 : min(len(lines), i + 4)]
@@ -563,9 +565,11 @@ def uninstall_shell_completion(shell: str) -> int:
 
                 # If surrounded by non-homodyne content, it's likely orphaned
                 if not any(
-                    "homodyne" in line or "argcomplete" in line for line in prev_lines[-2:]
+                    "homodyne" in line or "argcomplete" in line
+                    for line in prev_lines[-2:]
                 ) and not any(
-                    "homodyne" in line or "argcomplete" in line for line in next_lines[:2]
+                    "homodyne" in line or "argcomplete" in line
+                    for line in next_lines[:2]
                 ):
                     continue
 
