@@ -252,67 +252,42 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
     if not ARGCOMPLETE_AVAILABLE or argcomplete is None:
         return
 
-    # Use fast external completion script to avoid heavy imports
-    def _fast_completer(completion_type: str):
-        """Create a fast completer using external script."""
+    # Create completion methods for specific argument types
+    def _create_completer(completion_type: str):
+        """Create a completer for the specified completion type."""
 
         def completer(prefix, parsed_args, **kwargs):
-            import subprocess
-
-            try:
-                # Find the fast completion script
-                script_path = Path(__file__).parent.parent / "homodyne_complete"
-                if not script_path.exists():
-                    # Fallback to slow method if script not found
-                    if completion_type == "method":
-                        return HomodyneCompleter.method_completer(
-                            prefix, parsed_args, **kwargs
-                        )
-                    elif completion_type == "config":
-                        return HomodyneCompleter.config_files_completer(
-                            prefix, parsed_args, **kwargs
-                        )
-                    elif completion_type == "output_dir":
-                        return HomodyneCompleter.output_dir_completer(
-                            prefix, parsed_args, **kwargs
-                        )
-                    elif completion_type == "mode":
-                        return HomodyneCompleter.analysis_mode_completer(
-                            prefix, parsed_args, **kwargs
-                        )
-                # Call fast completion script
-                result = subprocess.run(
-                    [str(script_path), completion_type, prefix or ""],
-                    capture_output=True,
-                    text=True,
-                    timeout=1.0,
+            # Use built-in completion methods directly
+            if completion_type == "method":
+                return HomodyneCompleter.method_completer(prefix, parsed_args, **kwargs)
+            elif completion_type == "config":
+                return HomodyneCompleter.config_files_completer(
+                    prefix, parsed_args, **kwargs
                 )
-                if result.returncode == 0:
-                    return [
-                        line.strip()
-                        for line in result.stdout.strip().split("\n")
-                        if line.strip()
-                    ]
-            except Exception:
-                # Fast completion failed, fallback to built-in completion
-                pass
-            # Fallback to built-in completion
+            elif completion_type == "output_dir":
+                return HomodyneCompleter.output_dir_completer(
+                    prefix, parsed_args, **kwargs
+                )
+            elif completion_type == "mode":
+                return HomodyneCompleter.analysis_mode_completer(
+                    prefix, parsed_args, **kwargs
+                )
             return []
 
         return completer
 
-    # Add fast completers to specific arguments
+    # Add completers to specific arguments
     for action in parser._actions:
         if action.dest == "method":
-            setattr(action, "completer", _fast_completer("method"))
+            action.completer = _create_completer("method")
         elif action.dest == "config":
-            setattr(action, "completer", _fast_completer("config"))
+            action.completer = _create_completer("config")
         elif action.dest == "output_dir":
-            setattr(action, "completer", _fast_completer("output_dir"))
+            action.completer = _create_completer("output_dir")
         elif action.dest == "mode":
-            setattr(action, "completer", _fast_completer("mode"))
+            action.completer = _create_completer("mode")
         elif action.dest == "output":
-            setattr(action, "completer", _fast_completer("config"))
+            action.completer = _create_completer("config")
     # Enable argcomplete with error handling for zsh compdef issues
     try:
         argcomplete.autocomplete(parser)
@@ -387,47 +362,9 @@ def install_shell_completion(shell: str) -> int:
 eval "$(register-python-argcomplete homodyne)"
 eval "$(register-python-argcomplete homodyne-config)"
 """,
-        "zsh": """# Homodyne completion for zsh with fallback for compdef issues
-# Try standard argcomplete first
-if eval "$(register-python-argcomplete homodyne 2>/dev/null)"; then
-    eval "$(register-python-argcomplete homodyne-config 2>/dev/null)"
-else
-    # Fallback completion for zsh compdef issues
-    _homodyne_simple() {
-        local cur prev
-        cur="${words[CURRENT]}"
-        prev="${words[CURRENT-1]}"
-        case "${prev}" in
-            --method)
-                compadd classical mcmc robust all
-                return 0
-                ;;
-            --config)
-                compadd *.json(N) config/*.json(N) configs/*.json(N)
-                return 0
-                ;;
-            --output-dir)
-                compadd -S / -q */
-                return 0
-                ;;
-        esac
-        if [[ "${cur}" == --* ]]; then
-            compadd --method --config --output-dir --verbose --quiet \\
-                    --static-isotropic --static-anisotropic --laminar-flow \\
-                    --plot-experimental-data --plot-simulated-data
-            return 0
-        fi
-        return 1
-    }
-    # Try to register with compdef, fall back to aliases if it fails
-    if ! compdef _homodyne_simple homodyne 2>/dev/null; then
-        # Create convenience aliases as ultimate fallback
-        alias homodyne-classical='homodyne --method classical'
-        alias homodyne-mcmc='homodyne --method mcmc'
-        alias homodyne-robust='homodyne --method robust'
-        alias homodyne-all='homodyne --method all'
-        echo "Note: Tab completion may not work. Use aliases: homodyne-classical, homodyne-mcmc, homodyne-robust, homodyne-all"
-    fi
+        "zsh": """# Homodyne completion - load bypass script from installed location
+if [[ -f "$HOME/.config/homodyne/homodyne_completion_bypass.zsh" ]]; then
+    source "$HOME/.config/homodyne/homodyne_completion_bypass.zsh"
 fi
 """,
         "fish": """# Homodyne completion for fish
@@ -482,15 +419,32 @@ Register-ArgumentCompleter -Native -CommandName homodyne -ScriptBlock {
         print("  homodyne --method <TAB>")
         print("  homodyne --config <TAB>")
         print("  homodyne --output-dir <TAB>")
-        # Install fast completion script
+        # Install bypass completion script
         try:
-            script_source = Path(__file__).parent.parent / "homodyne_complete"
-            if script_source.exists():
-                # Make sure it's executable
-                import stat
+            # Install bypass completion script to accessible location
+            bypass_source = (
+                Path(__file__).parent.parent / "homodyne_completion_bypass.zsh"
+            )
+            if bypass_source.exists():
+                # Copy to user's home directory for easy access
+                bypass_dest = (
+                    Path.home()
+                    / ".config"
+                    / "homodyne"
+                    / "homodyne_completion_bypass.zsh"
+                )
+                bypass_dest.parent.mkdir(parents=True, exist_ok=True)
 
-                script_source.chmod(script_source.stat().st_mode | stat.S_IEXEC)
-                print("✓ Fast completion script configured for optimal performance")
+                import shutil
+
+                shutil.copy2(bypass_source, bypass_dest)
+                print(f"✓ Bypass completion script installed at {bypass_dest}")
+
+                # Also copy to current directory for immediate access
+                if not Path("homodyne_completion_bypass.zsh").exists():
+                    shutil.copy2(bypass_source, "homodyne_completion_bypass.zsh")
+                    print("✓ Bypass script also copied to current directory")
+
             # Pre-populate cache for faster first use
             _completion_cache._update_cache()
             print("✓ Completion cache pre-populated for instant response")
@@ -539,6 +493,8 @@ def uninstall_shell_completion(shell: str) -> int:
         lines = content.split("\n")
         new_lines = []
         skip_mode = False
+        brace_count = 0
+
         for line in lines:
             # Skip homodyne completion blocks
             if (
@@ -547,17 +503,18 @@ def uninstall_shell_completion(shell: str) -> int:
             ):
                 skip_mode = True
                 continue
-            elif skip_mode and line.strip() == "":
-                # Keep going until we find non-empty line
+            elif skip_mode:
+                # Count braces to track if/else/fi blocks
+                if "if " in line and ("homodyne" in line or "argcomplete" in line):
+                    brace_count += 1
+                elif line.strip() == "fi" and brace_count > 0:
+                    brace_count -= 1
+                elif line.strip() == "fi" and brace_count == 0:
+                    # This is the final 'fi' - end of completion block
+                    skip_mode = False
+                    continue
+                # Skip all lines in completion block
                 continue
-            elif skip_mode and (
-                "homodyne" not in line
-                and "argcomplete" not in line
-                and "source" not in line
-            ):
-                # End of completion block
-                skip_mode = False
-                new_lines.append(line)
             elif not skip_mode and (
                 "register-python-argcomplete homodyne" in line
                 or "register-python-argcomplete homodyne-config" in line
@@ -565,26 +522,92 @@ def uninstall_shell_completion(shell: str) -> int:
                 or "homodyne_completion_bypass.zsh" in line
                 or ("homodyne" in line and "argcomplete" in line)
                 or ("source" in line and "homodyne" in line)
+                or ("unset" in line and "_argcomplete_works" in line)
+                or ("Clean up argcomplete" in line)
+                or (
+                    line.strip() in ["# Clean up variables", "fi"]
+                    and len(new_lines) > 0
+                    and any(
+                        "homodyne" in prev_line or "argcomplete" in prev_line
+                        for prev_line in new_lines[-3:]
+                        if prev_line.strip()
+                    )
+                )
             ):
-                # Single line homodyne completion - skip
+                # Single line homodyne completion or orphaned cleanup - skip
                 continue
             elif not skip_mode:
                 new_lines.append(line)
         # Write back the cleaned content
         new_content = "\n".join(new_lines)
+
+        # Post-process to remove orphaned cleanup lines and empty lines
+        final_lines = []
+        lines = new_content.split("\n")
+
+        for i, line in enumerate(lines):
+            # Skip orphaned cleanup patterns that might have been missed
+            if (
+                line.strip()
+                in ["# Clean up variables", "fi", "unset _argcomplete_works"]
+                and i > 0
+                and i < len(lines) - 1
+            ):
+                # Check if this looks like an orphaned line by looking at context
+                prev_lines = [line.strip() for line in lines[max(0, i - 3) : i] if line.strip()]
+                next_lines = [
+                    line.strip()
+                    for line in lines[i + 1 : min(len(lines), i + 4)]
+                    if line.strip()
+                ]
+
+                # If surrounded by non-homodyne content, it's likely orphaned
+                if not any(
+                    "homodyne" in line or "argcomplete" in line for line in prev_lines[-2:]
+                ) and not any(
+                    "homodyne" in line or "argcomplete" in line for line in next_lines[:2]
+                ):
+                    continue
+
+            final_lines.append(line)
+
+        new_content = "\n".join(final_lines)
         # Remove trailing empty lines but keep one
         new_content = new_content.rstrip() + "\n"
         config_file.write_text(new_content)
         print(f"✓ Removed homodyne completion from {config_file}")
         print(f"✓ Restart your {shell} session for changes to take effect")
-        # Also try to remove the bypass completion file if it exists
-        bypass_file = Path.home() / ".cache" / "homodyne" / "completion_cache.json"
-        if bypass_file.exists():
+
+        # Remove the bypass completion script
+        bypass_script = (
+            Path.home() / ".config" / "homodyne" / "homodyne_completion_bypass.zsh"
+        )
+        if bypass_script.exists():
             try:
-                bypass_file.unlink()
+                bypass_script.unlink()
+                print("✓ Removed bypass completion script")
+            except Exception as e:
+                print(f"⚠ Could not remove bypass script: {e}")
+
+        # Remove completion cache
+        cache_file = Path.home() / ".cache" / "homodyne" / "completion_cache.json"
+        if cache_file.exists():
+            try:
+                cache_file.unlink()
                 print("✓ Removed completion cache")
             except Exception:
                 pass  # Not critical if we can't remove cache
+
+        # Remove the homodyne config directory if it's empty
+        config_dir = Path.home() / ".config" / "homodyne"
+        if config_dir.exists() and config_dir.is_dir():
+            try:
+                # Only remove if directory is empty
+                if not any(config_dir.iterdir()):
+                    config_dir.rmdir()
+                    print("✓ Removed empty homodyne config directory")
+            except Exception:
+                pass  # Not critical if we can't remove directory
         return 0
     except Exception as e:
         print(f"Error uninstalling completion: {e}")

@@ -282,6 +282,9 @@ warn_unreachable = true
 strict_equality = true
 show_error_codes = true
 pretty = true
+exclude = [
+    "homodyne_complete",  # Standalone script causes __main__ conflicts
+]
 
 [[tool.mypy.overrides]]
 module = [
