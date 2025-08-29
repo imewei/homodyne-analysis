@@ -923,8 +923,9 @@ class MCMCSampler:
 
             # Check if GPU is actually available before claiming GPU acceleration
             import jax
+
             backend = jax.default_backend()
-            if backend == 'gpu':
+            if backend == "gpu":
                 logger.info("Using JAX backend with NumPyro NUTS for GPU acceleration")
             else:
                 logger.info(f"Using JAX backend with NumPyro NUTS on {backend.upper()}")
