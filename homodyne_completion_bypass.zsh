@@ -90,12 +90,12 @@ _homodyne_gpu_complete() {
         fi
     fi
 
-    # homodyne-gpu uses same completions as homodyne
+    # homodyne-gpu only supports mcmc and all methods (classical/robust show error)
     local -a completions
 
     case "$prev" in
         --method)
-            completions=(classical mcmc robust all)
+            completions=(mcmc all)
             ;;
         --config)
             completions=(*.json(N) config/*.json(N) configs/*.json(N))
@@ -218,11 +218,13 @@ alias hm='homodyne --method mcmc'
 alias hr='homodyne --method robust'
 alias ha='homodyne --method all'
 
-# homodyne-gpu shortcuts
-alias hgc='homodyne-gpu --method classical'
+# homodyne-gpu shortcuts (only supports mcmc and all)
 alias hgm='homodyne-gpu --method mcmc'
-alias hgr='homodyne-gpu --method robust'
 alias hga='homodyne-gpu --method all'
+
+# Deprecated aliases that show helpful errors
+alias hgc='echo "❌ homodyne-gpu --method classical not supported. Use: homodyne --method classical" && false'
+alias hgr='echo "❌ homodyne-gpu --method robust not supported. Use: homodyne --method robust" && false'
 
 # Config file shortcuts
 alias hconfig='homodyne --config'
@@ -245,11 +247,12 @@ homodyne_help() {
     echo "  hr  = homodyne --method robust"
     echo "  ha  = homodyne --method all"
     echo ""
-    echo "homodyne-gpu shortcuts:"
-    echo "  hgc = homodyne-gpu --method classical"
+    echo "homodyne-gpu shortcuts (GPU acceleration, Linux only):"
     echo "  hgm = homodyne-gpu --method mcmc"
-    echo "  hgr = homodyne-gpu --method robust"
     echo "  hga = homodyne-gpu --method all"
+    echo ""
+    echo "Note: homodyne-gpu only supports mcmc/all methods"
+    echo "      For classical/robust, use regular homodyne command"
     echo ""
     echo "Other shortcuts:"
     echo "  hconfig  = homodyne --config"
@@ -262,7 +265,10 @@ homodyne_help() {
     echo "  hc-flow   = homodyne-config --mode laminar_flow"
     echo "  hc-config = homodyne-config"
     echo ""
-    echo "Available methods: classical mcmc robust all"
+    echo "Available methods:"
+    echo "  homodyne: classical mcmc robust all (all methods)"
+    echo "  homodyne-gpu: mcmc all (GPU acceleration only)"
+    echo ""
     echo "Config files in current dir:"
     local configs=(*.json(N))
     if (( ${#configs} > 0 )); then
@@ -272,6 +278,8 @@ homodyne_help() {
     fi
     echo ""
     echo "Common flags: --verbose --quiet --static-isotropic --static-anisotropic --laminar-flow"
+    echo ""
+    echo "GPU requirements: Linux with CUDA-enabled JAX"
 }
 
 # Try compdef registration, but don't fail if it doesn't work
