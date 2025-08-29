@@ -66,35 +66,57 @@ def setup_gpu_environment():
     try:
         import platform
         import site
-        
+
         # Check if running on Linux (GPU acceleration requirement)
         if platform.system() != "Linux":
             print(f"GPU acceleration not available on {platform.system()}")
             print("GPU acceleration requires Linux with CUDA-enabled JAX")
             print("Using CPU-only mode")
             return False
-        
+
         site_packages = site.getsitepackages()[0]
-        
+
         # Build NVIDIA library paths
         nvidia_libs = []
-        for lib in ["cublas", "cudnn", "cufft", "curand", "cusolver", "cusparse", 
-                   "nccl", "nvjitlink", "cuda_runtime", "cuda_cupti", "cuda_nvcc", "cuda_nvrtc"]:
+        for lib in [
+            "cublas",
+            "cudnn",
+            "cufft",
+            "curand",
+            "cusolver",
+            "cusparse",
+            "nccl",
+            "nvjitlink",
+            "cuda_runtime",
+            "cuda_cupti",
+            "cuda_nvcc",
+            "cuda_nvrtc",
+        ]:
             lib_dir = os.path.join(site_packages, "nvidia", lib, "lib")
             if os.path.exists(lib_dir):
                 nvidia_libs.append(lib_dir)
-        
+
         if nvidia_libs:
             # Clean existing CUDA paths to avoid conflicts
             current_path = os.environ.get("LD_LIBRARY_PATH", "")
-            clean_path = ":".join([p for p in current_path.split(":") if "/usr/local/cuda" not in p and p]) if current_path else ""
+            clean_path = (
+                ":".join(
+                    [
+                        p
+                        for p in current_path.split(":")
+                        if "/usr/local/cuda" not in p and p
+                    ]
+                )
+                if current_path
+                else ""
+            )
             new_path = ":".join(nvidia_libs + ([clean_path] if clean_path else []))
-            
+
             # Set environment variables
             os.environ["LD_LIBRARY_PATH"] = new_path
             os.environ["XLA_FLAGS"] = f"--xla_gpu_cuda_data_dir={site_packages}/nvidia"
             os.environ["JAX_PLATFORMS"] = ""
-            
+
             print(f"GPU environment configured for Linux")
             return True
         else:
@@ -102,7 +124,7 @@ def setup_gpu_environment():
             return False
     except Exception:
         pass
-    
+
     return False
 
 
@@ -111,7 +133,7 @@ def activate_gpu():
     # Try direct environment setup first
     if setup_gpu_environment():
         return
-    
+
     # Fall back to activation script method
     script_path = find_activation_script()
     if not script_path:
@@ -141,18 +163,20 @@ def activate_gpu():
 def main():
     """Main entry point for homodyne-gpu wrapper."""
     import platform
-    
+
     # Check if method is compatible with GPU wrapper
     if "--method" in sys.argv:
         method_idx = sys.argv.index("--method") + 1
         if method_idx < len(sys.argv):
             method = sys.argv[method_idx]
             if method in ["classical", "robust"]:
-                print(f"homodyne-gpu: GPU acceleration not needed for --method {method}")
+                print(
+                    f"homodyne-gpu: GPU acceleration not needed for --method {method}"
+                )
                 print("Classical and robust methods run on CPU only")
                 print(f"Use 'homodyne --method {method}' instead")
                 sys.exit(1)
-    
+
     # Check platform requirement
     if platform.system() != "Linux":
         print(f"homodyne-gpu: GPU acceleration not supported on {platform.system()}")
@@ -161,10 +185,10 @@ def main():
         print()
     else:
         print("homodyne-gpu: Attempting to activate GPU support on Linux...")
-        
+
     # Set GPU intent flag to signal that user explicitly wants GPU acceleration
     os.environ["HOMODYNE_GPU_INTENT"] = "true"
-        
+
     # Activate GPU support (will handle platform checks internally)
     activate_gpu()
 

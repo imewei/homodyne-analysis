@@ -261,8 +261,12 @@ class TestMCMCAngleFilteringCore:
             # The difference comes from angle-specific scaling parameters
             # Filtered model uses 8 angles, full model uses 14 angles
             assert n_params_filtered < n_params_all
-            assert n_params_filtered == 32  # 7 base params + 2*8 scaling params + other params
-            assert n_params_all == 50       # 7 base params + 2*14 scaling params + other params
+            assert (
+                n_params_filtered == 32
+            )  # 7 base params + 2*8 scaling params + other params
+            assert (
+                n_params_all == 50
+            )  # 7 base params + 2*14 scaling params + other params
 
         except Exception as e:
             # Model building might fail due to simplified forward model
