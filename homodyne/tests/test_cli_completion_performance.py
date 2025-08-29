@@ -154,8 +154,8 @@ class TestCompletionPerformance:
                         f"Cache didn't find directories. Actual dirs: {actual_dirs}, level1 dirs: {level1_dirs}"
                     )
                 else:
-                    assert (
-                        len(results) >= min(8, len(level1_dirs))
+                    assert len(results) >= min(
+                        8, len(level1_dirs)
                     ), f"Expected at least {min(8, len(level1_dirs))} directories, got {len(results)}. Results: {results}"
 
                 # Test cached performance
