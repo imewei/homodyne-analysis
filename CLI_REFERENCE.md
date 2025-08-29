@@ -5,10 +5,11 @@ Quality: Black ✅ isort ✅**
 
 ## Overview
 
-The Homodyne project provides two command-line tools for analyzing X-ray Photon
+The Homodyne project provides three command-line tools for analyzing X-ray Photon
 Correlation Spectroscopy (XPCS) data:
 
 1. **`homodyne`** - Main analysis command with enhanced Gurobi trust region optimization
+1. **`homodyne-gpu`** - GPU-accelerated analysis with automatic JAX/CUDA activation
 1. **`homodyne-config`** - Configuration file generator
 
 **Recent Improvements (v0.6.6+):**
@@ -167,7 +168,69 @@ homodyne_results/
 
 ______________________________________________________________________
 
-### 2. `homodyne-config` - Configuration Generator
+### 2. `homodyne-gpu` - GPU-Accelerated Analysis Command
+
+Identical to `homodyne` but automatically activates GPU support by sourcing
+`activate_gpu.sh` before running analysis. Provides seamless GPU acceleration with
+JAX/CUDA without manual environment setup.
+
+#### Usage
+
+```bash
+homodyne-gpu [OPTIONS]
+```
+
+#### Options
+
+All options are identical to `homodyne` command. See Section 1 above for complete option
+list.
+
+#### GPU Requirements
+
+- **CUDA-capable GPU** with compute capability 5.2+
+- **JAX with CUDA support** installed via:
+  ```bash
+  pip install homodyne-analysis[jax]  # Installs JAX with CUDA 12 support on Linux
+  ```
+- **GPU activation script**: `activate_gpu.sh` must be present in:
+  - Current working directory, OR
+  - Package installation directory, OR
+  - Site-packages directory
+
+#### Examples
+
+```bash
+# GPU-accelerated classical analysis
+homodyne-gpu --method classical
+
+# GPU-accelerated MCMC with all methods
+homodyne-gpu --method all --verbose
+
+# GPU analysis with custom config
+homodyne-gpu --config gpu_config.json --method mcmc
+
+# Force static mode with GPU acceleration
+homodyne-gpu --static-isotropic --method classical
+```
+
+#### Performance Benefits
+
+- **5-10x speedup** for MCMC sampling with NumPyro/JAX
+- **3-5x speedup** for classical optimization with JAX-compiled kernels
+- **Automatic fallback** to CPU if GPU activation fails
+- **Seamless integration** - same interface as `homodyne`
+
+#### GPU Activation Process
+
+1. **Automatic detection**: Searches for `activate_gpu.sh` in common locations
+1. **Environment setup**: Sources script to configure CUDA paths and environment
+   variables
+1. **Fallback handling**: Continues with CPU if GPU activation fails
+1. **Transparent operation**: Same analysis pipeline with GPU acceleration
+
+______________________________________________________________________
+
+### 3. `homodyne-config` - Configuration Generator
 
 Creates homodyne analysis configuration files from mode-specific templates.
 
@@ -426,12 +489,20 @@ The completion system provides multiple tiers of functionality:
 Fast shortcuts for common operations:
 
 ```bash
+# homodyne shortcuts
 hc          # homodyne --method classical
 hm          # homodyne --method mcmc
 hr          # homodyne --method robust
 ha          # homodyne --method all
 hconfig     # homodyne --config
 hplot       # homodyne --plot-experimental-data
+
+# homodyne-gpu shortcuts  
+hgc         # homodyne-gpu --method classical
+hgm         # homodyne-gpu --method mcmc
+hgr         # homodyne-gpu --method robust
+hga         # homodyne-gpu --method all
+hgconfig    # homodyne-gpu --config
 ```
 
 #### 3. **Completion Help System**
@@ -449,20 +520,28 @@ homodyne_help    # Show all available options and current config files
 homodyne --method <TAB>          # Shows: classical, mcmc, robust, all
 homodyne --config <TAB>          # Shows available .json files
 homodyne --output-dir <TAB>      # Shows available directories
+homodyne-gpu --method <TAB>      # Shows: classical, mcmc, robust, all (same as homodyne)
 homodyne-config --mode <TAB>     # Shows: static_isotropic, static_anisotropic, laminar_flow
 ```
 
 #### Command Shortcuts (always work)
 
 ```bash
-# Quick method selection
+# Quick method selection - CPU
 hc                               # homodyne --method classical
 hm --verbose                     # homodyne --method mcmc --verbose
 hr --config my_config.json       # homodyne --method robust --config my_config.json
 ha                               # homodyne --method all
 
+# Quick method selection - GPU
+hgc                              # homodyne-gpu --method classical
+hgm --verbose                    # homodyne-gpu --method mcmc --verbose
+hgr --config gpu_config.json     # homodyne-gpu --method robust --config gpu_config.json
+hga                              # homodyne-gpu --method all
+
 # Quick config and plotting
 hconfig my_config.json           # homodyne --config my_config.json
+hgconfig gpu_config.json         # homodyne-gpu --config gpu_config.json
 hplot                            # homodyne --plot-experimental-data
 ```
 
@@ -472,13 +551,52 @@ hplot                            # homodyne --plot-experimental-data
 homodyne_help                    # Show completion help and available options
 ```
 
+### Manual Completion (Bypass Method)
+
+If standard tab completion fails, use the bypass completion system with manual key
+bindings:
+
+#### Loading Bypass Completion
+
+```bash
+# Load bypass completion in current session
+source /path/to/homodyne_completion_bypass.zsh
+
+# Add to .zshrc for permanent use
+echo "source /path/to/homodyne_completion_bypass.zsh" >> ~/.zshrc
+```
+
+#### Manual Key Bindings
+
+When tab completion doesn't work, use these manual key combinations:
+
+```bash
+# Manual completion key bindings (after loading bypass script)
+Ctrl-X h                         # Manual homodyne completion
+Ctrl-X g                         # Manual homodyne-gpu completion  
+Ctrl-X c                         # Manual homodyne-config completion
+```
+
+#### Bypass Script Features
+
+The bypass script provides multiple fallback mechanisms:
+
+1. **Manual key bindings** for direct completion when compdef fails
+1. **Command shortcuts** that always work regardless of completion status
+1. **Help system** with `homodyne_help` function
+1. **Automatic compdef** registration with fallback handling
+
 ### Troubleshooting Completion
 
 The completion system is designed to be robust with multiple fallback mechanisms:
 
 #### If Tab Completion Doesn't Work
 
-1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha` always work
+1. **Load bypass script**: `source homodyne_completion_bypass.zsh`
+1. **Use manual keys**: `Ctrl-X h` (homodyne), `Ctrl-X g` (homodyne-gpu), `Ctrl-X c`
+   (config)
+1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha`, `hgc`, `hgm`, `hgr`, `hga` always
+   work
 1. **Check installation**: Run `homodyne --install-completion zsh` again
 1. **Reload shell**: `source ~/.zshrc` or restart terminal
 1. **Use help reference**: `homodyne_help` shows all options
@@ -493,8 +611,12 @@ exec zsh                         # Restart shell
 source ~/.zshrc                  # Reload config
 
 # Issue: compdef errors in zsh
-# Solution: Use shortcuts which bypass the issue
+# Solution: Use bypass script and manual keys or shortcuts
+source homodyne_completion_bypass.zsh  # Load bypass script
+# Then use: Ctrl-X h for homodyne, Ctrl-X g for homodyne-gpu
+# OR use shortcuts which always work:
 hc --verbose                     # Instead of homodyne --method classical --verbose
+hgc --verbose                    # Instead of homodyne-gpu --method classical --verbose
 
 # Issue: Forgot available options
 # Solution: Use help system

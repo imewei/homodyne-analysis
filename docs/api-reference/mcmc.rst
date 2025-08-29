@@ -258,16 +258,16 @@ The MCMC module automatically uses GPU acceleration when:
    # Then in Python:
    from homodyne.optimization.mcmc import HodomyneMCMC
    import jax
-   
+
    # Check GPU availability
    print(f"JAX devices: {jax.devices()}")  # Should show GPU devices
-   
+
    # Initialize with GPU support (automatic)
    mcmc = HodomyneMCMC(
        mode="laminar_flow",
        use_jax_backend=True  # Default, enables GPU when available
    )
-   
+
    # Run sampling - will use GPU automatically
    result = mcmc.run_mcmc(
        data=data,
@@ -290,7 +290,7 @@ The MCMC module automatically uses GPU acceleration when:
 
    # During sampling, the module will log:
    # INFO - Using JAX backend with NumPyro NUTS for GPU acceleration
-   
+
    # Monitor GPU memory
    from jax import devices
    gpu = devices('gpu')[0]

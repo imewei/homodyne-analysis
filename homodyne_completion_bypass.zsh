@@ -72,6 +72,76 @@ _homodyne_complete() {
     fi
 }
 
+# Create the completion function for homodyne-gpu
+_homodyne_gpu_complete() {
+    local cur="${BUFFER##* }"
+    local line="$BUFFER"
+    local words=("${(@)${(z)line}}")
+
+    # Get the previous word - fix the parsing logic
+    local prev=""
+    if (( ${#words} > 1 )); then
+        # If the line ends with a space, we're completing after the last word
+        if [[ "$line" =~ ' $' ]]; then
+            prev="${words[-1]}"
+        else
+            # Otherwise we're in the middle of a word, so previous is words[-2]
+            prev="${words[-2]}"
+        fi
+    fi
+
+    # homodyne-gpu uses same completions as homodyne
+    local -a completions
+
+    case "$prev" in
+        --method)
+            completions=(classical mcmc robust all)
+            ;;
+        --config)
+            completions=(*.json(N) config/*.json(N) configs/*.json(N))
+            ;;
+        --output-dir)
+            completions=(*/(N))
+            ;;
+        --install-completion|--uninstall-completion)
+            completions=(bash zsh fish powershell)
+            ;;
+        *)
+            if [[ "$cur" == --* ]]; then
+                completions=(
+                    --method
+                    --config
+                    --output-dir
+                    --verbose
+                    --quiet
+                    --static-isotropic
+                    --static-anisotropic
+                    --laminar-flow
+                    --plot-experimental-data
+                    --plot-simulated-data
+                    --contrast
+                    --offset
+                    --phi-angles
+                    --install-completion
+                    --uninstall-completion
+                )
+            else
+                completions=(*)
+            fi
+            ;;
+    esac
+
+    # Filter completions based on current input
+    if [[ -n "$cur" ]]; then
+        completions=(${(M)completions:#${cur}*})
+    fi
+
+    # Set up completion
+    if (( ${#completions} > 0 )); then
+        compadd -a completions
+    fi
+}
+
 # Create the completion function for homodyne-config
 _homodyne_config_complete() {
     local cur="${BUFFER##* }"
@@ -141,14 +211,6 @@ _homodyne_config_complete() {
     fi
 }
 
-# Create a widget for the completion
-zle -C _homodyne_complete_widget complete-word _homodyne_complete
-zle -C _homodyne_config_complete_widget complete-word _homodyne_config_complete
-
-# Bind the widget to a key sequence
-# This creates a manual completion that works when compdef fails
-bindkey '^Xh' _homodyne_complete_widget
-bindkey '^Xc' _homodyne_config_complete_widget
 
 # Create convenient aliases as completion alternatives
 alias hc='homodyne --method classical'
@@ -156,9 +218,16 @@ alias hm='homodyne --method mcmc'
 alias hr='homodyne --method robust'
 alias ha='homodyne --method all'
 
+# homodyne-gpu shortcuts
+alias hgc='homodyne-gpu --method classical'
+alias hgm='homodyne-gpu --method mcmc'
+alias hgr='homodyne-gpu --method robust'
+alias hga='homodyne-gpu --method all'
+
 # Config file shortcuts
 alias hconfig='homodyne --config'
 alias hplot='homodyne --plot-experimental-data'
+alias hgconfig='homodyne-gpu --config'
 
 # homodyne-config shortcuts
 alias hc-iso='homodyne-config --mode static_isotropic'
@@ -176,9 +245,16 @@ homodyne_help() {
     echo "  hr  = homodyne --method robust"
     echo "  ha  = homodyne --method all"
     echo ""
+    echo "homodyne-gpu shortcuts:"
+    echo "  hgc = homodyne-gpu --method classical"
+    echo "  hgm = homodyne-gpu --method mcmc"
+    echo "  hgr = homodyne-gpu --method robust"
+    echo "  hga = homodyne-gpu --method all"
+    echo ""
     echo "Other shortcuts:"
-    echo "  hconfig = homodyne --config"
-    echo "  hplot   = homodyne --plot-experimental-data"
+    echo "  hconfig  = homodyne --config"
+    echo "  hgconfig = homodyne-gpu --config"
+    echo "  hplot    = homodyne --plot-experimental-data"
     echo ""
     echo "homodyne-config shortcuts:"
     echo "  hc-iso    = homodyne-config --mode static_isotropic"
@@ -201,6 +277,7 @@ homodyne_help() {
 # Try compdef registration, but don't fail if it doesn't work
 # (Silent registration - no startup messages)
 compdef _homodyne_complete homodyne 2>/dev/null
+compdef _homodyne_gpu_complete homodyne-gpu 2>/dev/null
 
 # For homodyne-config, compdef has issues with the dash, so use compctl as fallback
 if ! compdef _homodyne_config_complete homodyne-config 2>/dev/null; then
@@ -209,9 +286,9 @@ if ! compdef _homodyne_config_complete homodyne-config 2>/dev/null; then
         # Successfully registered with compctl
         true
     else
-        # If both compdef and compctl fail, provide manual completion
+        # If both compdef and compctl fail, provide alternative shortcuts
         echo "Note: Automatic completion for homodyne-config may not work."
-        echo "Use Ctrl-X followed by 'c' for manual completion, or use these shortcuts:"
+        echo "Use these shortcuts instead:"
         echo "  homodyne-config --mode static_isotropic"
         echo "  homodyne-config --mode static_anisotropic"
         echo "  homodyne-config --mode laminar_flow"

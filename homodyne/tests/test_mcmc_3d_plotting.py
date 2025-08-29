@@ -7,16 +7,13 @@ into the MCMC workflow, including posterior sample processing and confidence
 interval generation.
 """
 
-import json
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
-
-from homodyne.tests.fixtures import dummy_config
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))

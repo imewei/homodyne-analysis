@@ -16,7 +16,6 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import List
 
 
 class FastCache:
@@ -98,7 +97,7 @@ METHODS = ["classical", "mcmc", "robust", "all"]
 MODES = ["static_isotropic", "static_anisotropic", "laminar_flow"]
 
 
-def complete_method(prefix: str) -> List[str]:
+def complete_method(prefix: str) -> list[str]:
     """Complete method names - instant."""
     if not prefix:
         return METHODS
@@ -107,7 +106,7 @@ def complete_method(prefix: str) -> List[str]:
     return [m for m in METHODS if m.startswith(prefix_lower)]
 
 
-def complete_mode(prefix: str) -> List[str]:
+def complete_mode(prefix: str) -> list[str]:
     """Complete analysis modes - instant."""
     if not prefix:
         return MODES
@@ -116,7 +115,7 @@ def complete_mode(prefix: str) -> List[str]:
     return [m for m in MODES if m.startswith(prefix_lower)]
 
 
-def complete_config(prefix: str) -> List[str]:
+def complete_config(prefix: str) -> list[str]:
     """Complete config files - cached lookup."""
     # Handle directory prefix
     if os.sep in prefix or "/" in prefix:
@@ -150,7 +149,7 @@ def complete_config(prefix: str) -> List[str]:
     return matches
 
 
-def complete_output_dir(prefix: str) -> List[str]:
+def complete_output_dir(prefix: str) -> list[str]:
     """Complete output directories - cached lookup."""
     # Handle directory prefix
     if os.sep in prefix or "/" in prefix:

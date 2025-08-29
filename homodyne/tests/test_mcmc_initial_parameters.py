@@ -22,10 +22,7 @@ results are available, otherwise --method mcmc will use the 'classical'
 best-fit results."
 """
 
-import json
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -272,7 +269,6 @@ class TestMCMCInitialParameterHandling:
             patch("homodyne.run_homodyne.run_classical_optimization") as mock_classical,
             patch("homodyne.run_homodyne.run_mcmc_optimization") as mock_mcmc,
         ):
-
             mock_classical.return_value = mock_classical_results
             mock_mcmc.return_value = mock_mcmc_results
 
@@ -402,7 +398,6 @@ class TestMCMCInitialParameterHandling:
             patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
             patch("logging.getLogger") as mock_logger,
         ):
-
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
                 "trace": None,
@@ -453,7 +448,6 @@ class TestMCMCInitialParameterHandling:
             patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
             patch("logging.getLogger") as mock_logger,
         ):
-
             mock_sampler = Mock()
             mock_sampler.run_mcmc_analysis.return_value = {
                 "trace": None,
@@ -515,7 +509,6 @@ class TestMCMCInitialParameterHandling:
             patch("homodyne.run_homodyne.run_classical_optimization") as mock_classical,
             patch("homodyne.run_homodyne.run_mcmc_optimization") as mock_mcmc,
         ):
-
             mock_classical.return_value = None  # Classical fails
             mock_mcmc.return_value = mock_mcmc_results
 

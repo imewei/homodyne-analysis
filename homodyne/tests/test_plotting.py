@@ -5,24 +5,12 @@ Tests for Plotting Module
 Tests plot image generation, matplotlib figure creation, and visualization functions.
 """
 
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-
-from homodyne.tests.fixtures import (
-    dummy_analysis_results,
-    dummy_config,
-    dummy_correlation_data,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    dummy_time_arrays,
-    temp_directory,
-)
 
 matplotlib.use("Agg")  # Use non-interactive backend for testing
 
@@ -50,7 +38,7 @@ except ImportError as e:
 
     # Define dummy functions for type checking when plotting module is not available
     # These functions are never actually called since tests are skipped
-    from typing import Any, Dict
+    from typing import Any
 
     def plot_c2_heatmaps(*args: Any, **kwargs: Any) -> bool:
         return False
@@ -67,10 +55,10 @@ except ImportError as e:
     def plot_mcmc_convergence_diagnostics(*args: Any, **kwargs: Any) -> bool:
         return False
 
-    def create_all_plots(*args: Any, **kwargs: Any) -> Dict[str, bool]:
+    def create_all_plots(*args: Any, **kwargs: Any) -> dict[str, bool]:
         return {}
 
-    def get_plot_config(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+    def get_plot_config(*args: Any, **kwargs: Any) -> dict[str, Any]:
         return {}
 
     def setup_matplotlib_style(*args: Any, **kwargs: Any) -> None:
@@ -633,9 +621,7 @@ class TestMCMCPlots:
                 )
                 print(f"All files in directory: {all_files}")
 
-            assert (
-                len(plot_files) == 1
-            ), f"Expected 1 trace plot file, found {
+            assert len(plot_files) == 1, f"Expected 1 trace plot file, found {
                 len(plot_files)}. All files: {all_files}"
 
             file_size = plot_files[0].stat().st_size

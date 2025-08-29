@@ -17,18 +17,6 @@ import numpy as np
 import pytest
 
 # Import specific fixtures needed by tests - avoid star import to prevent circular imports
-from .fixtures import (
-    dummy_analysis_results,
-    dummy_config,
-    dummy_correlation_data,
-    dummy_hdf5_data,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    dummy_time_arrays,
-    mock_optimization_result,
-    temp_directory,
-    test_output_directory,
-)
 
 # CRITICAL: Set threading environment variables BEFORE any imports that might use Numba
 # This must happen before importing pytest, numpy, matplotlib, etc.
@@ -386,9 +374,6 @@ def reset_matplotlib():
 @pytest.fixture(autouse=True)
 def suppress_dlascl_warnings():
     """Suppress DLASCL warnings from LAPACK while preserving other stderr output."""
-    import contextlib
-    import threading
-    from io import StringIO
 
     # For now, let's try a simpler approach - just yield without capturing
     # since stderr redirection can be tricky with multiprocessing

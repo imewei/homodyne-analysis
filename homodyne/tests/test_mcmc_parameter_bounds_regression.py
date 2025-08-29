@@ -10,12 +10,9 @@ failures with "Initial evaluation of model at starting point failed!" error.
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
 
-import numpy as np
 import pytest
 
-from homodyne.analysis.core import HomodyneAnalysisCore
 from homodyne.core.config import ConfigManager
 
 # Test PyMC availability
@@ -420,9 +417,7 @@ class TestMCMCParameterBoundsRegression:
 
             # Check if value is within bounds (inclusive)
             within_bounds = bound["min"] <= value <= bound["max"]
-            assert (
-                within_bounds
-            ), f"Value {value} should be within bounds [{
+            assert within_bounds, f"Value {value} should be within bounds [{
                 bound['min']}, {
                 bound['max']}] for case {case_name}"
 

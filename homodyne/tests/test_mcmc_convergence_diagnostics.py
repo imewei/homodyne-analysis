@@ -10,16 +10,11 @@ analysis for Bayesian methods, including:
 - Configuration-driven validation thresholds
 """
 
-import json
 import os
 import sys
-import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
-import numpy as np
 import pytest
-from run_homodyne import main as run_homodyne_main
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 

@@ -663,9 +663,7 @@ class TestImportPerformance:
         import_time = time.perf_counter() - start_time
 
         # Import should be fast due to lazy loading
-        assert (
-            import_time < 0.5
-        ), f"Plotting import too slow: {
+        assert import_time < 0.5, f"Plotting import too slow: {
             import_time:.3f}s"
         print(f"✓ Plotting import time: {import_time:.3f}s")
 
@@ -763,9 +761,7 @@ class TestStableBenchmarking:
                 is_ci = os.getenv("CI", "").lower() in (
                     "true",
                     "1",
-                ) or os.getenv(
-                    "GITHUB_ACTIONS", ""
-                ).lower() in ("true", "1")
+                ) or os.getenv("GITHUB_ACTIONS", "").lower() in ("true", "1")
 
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
@@ -1869,9 +1865,7 @@ class TestPerformanceRegression:
         # Memory regression threshold: should use less than 50MB for medium
         # dataset
         max_acceptable_memory = 50.0  # MB
-        assert (
-            memory_increase < max_acceptable_memory
-        ), f"Memory usage too high: {
+        assert memory_increase < max_acceptable_memory, f"Memory usage too high: {
             memory_increase:.1f}MB > {
             max_acceptable_memory:.0f}MB threshold"
 
@@ -1975,9 +1969,9 @@ class TestMCMCThinningPerformance:
 
         config_with_thin = copy.deepcopy(config_no_thin)
         config_with_thin["optimization_config"]["mcmc_sampling"]["thin"] = 2
-        config_with_thin["optimization_config"]["mcmc_sampling"][
-            "draws"
-        ] = 400  # More draws to compensate
+        config_with_thin["optimization_config"]["mcmc_sampling"]["draws"] = (
+            400  # More draws to compensate
+        )
 
         # Test thinning parameter extraction and validation
         from homodyne.optimization.mcmc import MCMCSampler
@@ -2123,9 +2117,7 @@ class TestMCMCThinningPerformance:
 
         # All setups should be fast
         for description, setup_time in setup_times.items():
-            assert (
-                setup_time < 0.05
-            ), f"{description} setup too slow: {
+            assert setup_time < 0.05, f"{description} setup too slow: {
                 setup_time:.4f}s"
 
     @pytest.mark.performance
@@ -2202,13 +2194,9 @@ class TestMCMCThinningPerformance:
             assert avg_thinning >= 0, f"Negative thinning time: {avg_thinning:.4f}s"
 
         # Both should be reasonably fast
-        assert (
-            avg_baseline < 0.1
-        ), f"Baseline setup too slow: {
+        assert avg_baseline < 0.1, f"Baseline setup too slow: {
             avg_baseline:.4f}s"
-        assert (
-            avg_thinning < 0.1
-        ), f"Thinning setup too slow: {
+        assert avg_thinning < 0.1, f"Thinning setup too slow: {
             avg_thinning:.4f}s"
 
 
@@ -2480,9 +2468,7 @@ class TestNumbaCompilationDiagnostics:
         )
 
         # Allow up to 5x slower than baseline for CI environment variability
-        assert (
-            performance_factor < 5.0
-        ), f"Performance regression: {
+        assert performance_factor < 5.0, f"Performance regression: {
             performance_factor:.2f}x slower than baseline"
 
 

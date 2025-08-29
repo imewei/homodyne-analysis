@@ -8,9 +8,8 @@ Tests directory creation, file existence, and data saving operations.
 import json
 import os
 import pickle
-import tempfile
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,7 +26,6 @@ from homodyne.core.io_utils import (
     save_pickle,
     timestamped_filename,
 )
-from homodyne.tests.fixtures import dummy_config
 
 
 class TestDirectoryCreation:
@@ -205,7 +203,7 @@ class TestDataSaving:
         assert filepath.exists()
 
         # Verify content
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             loaded_data = json.load(f)
         assert loaded_data == data
 

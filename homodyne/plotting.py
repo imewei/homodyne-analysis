@@ -18,7 +18,7 @@ Institution: Argonne National Laboratory
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -70,7 +70,7 @@ except ImportError:
 _plotting_deps = None
 
 
-def get_plot_config(config: Optional[Dict] = None) -> Dict[str, Any]:
+def get_plot_config(config: dict | None = None) -> dict[str, Any]:
     """
     Extract plotting configuration from the main config dictionary.
 
@@ -104,7 +104,7 @@ def get_plot_config(config: Optional[Dict] = None) -> Dict[str, Any]:
     return plot_config
 
 
-def setup_matplotlib_style(plot_config: Dict[str, Any]) -> None:
+def setup_matplotlib_style(plot_config: dict[str, Any]) -> None:
     """
     Configure matplotlib with publication-quality settings.
 
@@ -144,11 +144,11 @@ def plot_c2_heatmaps(
     exp: np.ndarray,
     theory: np.ndarray,
     phi_angles: np.ndarray,
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-    t2: Optional[np.ndarray] = None,
-    t1: Optional[np.ndarray] = None,
-    method_name: Optional[str] = None,
+    outdir: str | Path,
+    config: dict | None = None,
+    t2: np.ndarray | None = None,
+    t1: np.ndarray | None = None,
+    method_name: str | None = None,
 ) -> bool:
     """
     Create side-by-side heatmaps comparing experimental and theoretical C2 correlation functions,
@@ -425,10 +425,10 @@ def plot_c2_heatmaps(
 
 def plot_mcmc_corner(
     trace_data: Any,
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-    param_names: Optional[List[str]] = None,
-    param_units: Optional[List[str]] = None,
+    outdir: str | Path,
+    config: dict | None = None,
+    param_names: list[str] | None = None,
+    param_units: list[str] | None = None,
     title_prefix: str = "MCMC",
 ) -> bool:
     """
@@ -828,10 +828,10 @@ def plot_mcmc_corner(
 
 def plot_mcmc_trace(
     trace_data: Any,
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-    param_names: Optional[List[str]] = None,
-    param_units: Optional[List[str]] = None,
+    outdir: str | Path,
+    config: dict | None = None,
+    param_names: list[str] | None = None,
+    param_units: list[str] | None = None,
 ) -> bool:
     """
     Create MCMC trace plots showing parameter evolution across chains.
@@ -940,7 +940,9 @@ def plot_mcmc_trace(
 
         # Add parameter units to y-labels if available
         if param_names and param_units:
-            for i, (name, unit) in enumerate(zip(param_names, param_units)):
+            for i, (name, unit) in enumerate(
+                zip(param_names, param_units, strict=False)
+            ):
                 if i < len(axes):
                     # Find the KDE plot (right column)
                     if len(axes.shape) > 1 and axes.shape[1] > 1:
@@ -977,10 +979,10 @@ def plot_mcmc_trace(
 
 def plot_mcmc_convergence_diagnostics(
     trace_data: Any,
-    diagnostics: Dict[str, Any],
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-    param_names: Optional[List[str]] = None,
+    diagnostics: dict[str, Any],
+    outdir: str | Path,
+    config: dict | None = None,
+    param_names: list[str] | None = None,
 ) -> bool:
     """
     Create comprehensive MCMC convergence diagnostic plots.
@@ -1076,9 +1078,7 @@ def plot_mcmc_convergence_diagnostics(
                     r_hat_dict = r_hat_summary.to_dict()  # type: ignore
                 else:
                     # Convert DataArray to dict
-                    r_hat_dict = {
-                        str(k): float(v) for k, v in r_hat_summary.items()
-                    }  # type: ignore
+                    r_hat_dict = {str(k): float(v) for k, v in r_hat_summary.items()}  # type: ignore
                 logger.debug(f"Computed R-hat dict: {r_hat_dict}")
             except Exception as e:
                 logger.warning(f"Could not compute R-hat from trace data: {e}")
@@ -1100,7 +1100,7 @@ def plot_mcmc_convergence_diagnostics(
             param_names_plot = available_params
             r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names_plot]
             logger.debug(
-                f"R-hat values for plotting: {dict(zip(param_names_plot, r_hat_values))}"
+                f"R-hat values for plotting: {dict(zip(param_names_plot, r_hat_values, strict=False))}"
             )
 
             # Only plot if we have data
@@ -1120,7 +1120,7 @@ def plot_mcmc_convergence_diagnostics(
                     ax1.set_xlim(0.9, max(max(r_hat_values) * 1.1, 1.3))
 
                 # Add value labels
-                for bar, value in zip(bars, r_hat_values):
+                for bar, value in zip(bars, r_hat_values, strict=False):
                     width = bar.get_width()
                     ax1.text(
                         width + 0.01,
@@ -1204,7 +1204,7 @@ def plot_mcmc_convergence_diagnostics(
                     ax2.set_xlim(0, max(ess_values) * 1.1)
 
                 # Add value labels
-                for bar, value in zip(bars, ess_values):
+                for bar, value in zip(bars, ess_values, strict=False):
                     width = bar.get_width()
                     ax2.text(
                         width + max(ess_values) * 0.01,
@@ -1292,7 +1292,7 @@ def plot_mcmc_convergence_diagnostics(
                     ax3.set_xlim(0, max(mcse_values) * 1.1)
 
                 # Add value labels
-                for bar, value in zip(bars, mcse_values):
+                for bar, value in zip(bars, mcse_values, strict=False):
                     width = bar.get_width()
                     ax3.text(
                         width + max(mcse_values) * 0.01,
@@ -1406,10 +1406,10 @@ def plot_mcmc_convergence_diagnostics(
 
 
 def plot_diagnostic_summary(
-    results: Dict[str, Any],
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-    method_name: Optional[str] = None,
+    results: dict[str, Any],
+    outdir: str | Path,
+    config: dict | None = None,
+    method_name: str | None = None,
 ) -> bool:
     """
     Create a comprehensive diagnostic summary plot combining multiple visualizations.
@@ -1475,7 +1475,7 @@ def plot_diagnostic_summary(
             ax1.set_yscale("log")
 
             # Add value labels
-            for bar, value in zip(bars, chi2_values):
+            for bar, value in zip(bars, chi2_values, strict=False):
                 bar_width = bar.get_width()
                 if bar_width > 0:  # Avoid division by zero
                     ax1.text(
@@ -1628,7 +1628,7 @@ def plot_diagnostic_summary(
 
                 r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names]
                 logger.debug(
-                    f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values))}"
+                    f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values, strict=False))}"
                 )
 
                 if param_names and r_hat_values:  # Check if we have data
@@ -1797,10 +1797,10 @@ def plot_diagnostic_summary(
 
 # Utility function to create all plots at once
 def create_all_plots(
-    results: Dict[str, Any],
-    outdir: Union[str, Path],
-    config: Optional[Dict] = None,
-) -> Dict[str, bool]:
+    results: dict[str, Any],
+    outdir: str | Path,
+    config: dict | None = None,
+) -> dict[str, bool]:
     """
     Create all available plots based on the results dictionary.
     For classical optimization results, creates method-specific plots.
@@ -1956,12 +1956,12 @@ if __name__ == "__main__":
 def plot_3d_surface(
     c2_experimental: np.ndarray,
     c2_fitted: np.ndarray,
-    posterior_samples: Optional[np.ndarray] = None,
+    posterior_samples: np.ndarray | None = None,
     phi_angle: float = 0.0,
-    outdir: Union[str, Path] = "./",
-    config: Optional[Dict] = None,
-    t2: Optional[np.ndarray] = None,
-    t1: Optional[np.ndarray] = None,
+    outdir: str | Path = "./",
+    config: dict | None = None,
+    t2: np.ndarray | None = None,
+    t1: np.ndarray | None = None,
     confidence_level: float = 0.95,
 ) -> bool:
     """
@@ -2016,7 +2016,6 @@ def plot_3d_surface(
     logger.info(f"Creating 3D surface plot for φ = {phi_angle:.1f}°")
 
     try:
-
         # Validate inputs
         if c2_experimental.shape != c2_fitted.shape:
             logger.error(

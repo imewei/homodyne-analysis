@@ -9,12 +9,9 @@ This module tests the enhanced chi-squared calculation that includes:
 - Integration with optimization methods
 """
 
-import json
 import os
 import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -658,9 +655,7 @@ class TestAngleFilteringEdgeCases:
                     is_included = True
                     break
 
-            assert (
-                is_included == should_include
-            ), f"Angle {angle}° should be {
+            assert is_included == should_include, f"Angle {angle}° should be {
                 'included' if should_include else 'excluded'}"
 
     def test_optimization_methods_use_config_manager(self):

@@ -141,10 +141,10 @@ MCMC Optimization
 
    # Or programmatically:
    from homodyne.optimization.mcmc import HodomyneMCMC
-   
+
    # GPU acceleration is automatic when available
    mcmc = HodomyneMCMC(mode="laminar_flow", use_jax_backend=True)
-   
+
    # Verify GPU detection:
    import jax
    print(f"JAX devices: {jax.devices()}")  # Shows GPU devices if available
@@ -326,7 +326,7 @@ When you install the package with MCMC or performance extras on a Linux system w
    pip install homodyne-analysis[mcmc]        # For GPU-accelerated MCMC
    pip install homodyne-analysis[performance] # Full performance stack
    pip install homodyne-analysis[jax]         # JAX with GPU support
-   
+
    # IMPORTANT: Activate GPU support after installation
    source activate_gpu.sh
 
@@ -348,15 +348,15 @@ When you install the package with MCMC or performance extras on a Linux system w
 
    # Then in Python:
    import jax
-   
+
    # Check available devices
    print(f"JAX devices: {jax.devices()}")
    # Should show: [CudaDevice(id=0), ...] for GPU
-   
+
    # Check default backend
    print(f"Backend: {jax.default_backend()}")
    # Should show: 'gpu' if GPU is being used
-   
+
    # Test GPU performance
    import jax.numpy as jnp
    x = jnp.ones((1000, 1000))
@@ -369,16 +369,16 @@ The MCMC module automatically detects and uses GPU when available:
 .. code-block:: python
 
    from homodyne.optimization.mcmc import HodomyneMCMC
-   
+
    # GPU acceleration is automatic
    mcmc = HodomyneMCMC(
        mode="laminar_flow",
        use_jax_backend=True  # Default: True
    )
-   
+
    # The module will log:
    # INFO - Using JAX backend with NumPyro NUTS for GPU acceleration
-   
+
    # Run sampling (will use GPU if available)
    result = mcmc.run_mcmc(
        data=data,
@@ -393,12 +393,12 @@ The MCMC module automatically detects and uses GPU when available:
 
    # Monitor GPU memory usage
    from jax import devices
-   
+
    # Get GPU memory info
    gpu = devices('gpu')[0]
    memory_stats = gpu.memory_stats()
    print(f"GPU memory used: {memory_stats['bytes_in_use'] / 1e9:.2f} GB")
-   
+
    # Clear GPU memory if needed
    import gc
    gc.collect()
@@ -411,13 +411,13 @@ The MCMC module automatically detects and uses GPU when available:
 
       # Make sure you activated GPU support
       source activate_gpu.sh
-      
+
       # Check NVIDIA driver
       nvidia-smi
-      
+
       # Check CUDA version
       nvcc --version
-      
+
       # If still not working, reinstall JAX with specific CUDA version
       pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 

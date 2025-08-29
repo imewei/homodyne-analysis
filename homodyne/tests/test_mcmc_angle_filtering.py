@@ -9,12 +9,10 @@ This module tests the enhanced MCMC sampling that includes:
 - Performance optimizations through data reduction
 """
 
-import json
 import os
 import sys
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -356,7 +354,7 @@ class TestMCMCAngleFilteringIntegration:
         # Read the runner file to check for explicit filtering call
         runner_path = Path(__file__).parent.parent.parent / "run_homodyne.py"
         if runner_path.exists():
-            with open(runner_path, "r") as f:
+            with open(runner_path) as f:
                 content = f.read()
 
             # Check that MCMC call includes angle filtering

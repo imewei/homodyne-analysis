@@ -8,9 +8,7 @@ and robust optimization methods.
 import json
 import os
 import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -184,7 +182,7 @@ class TestMethodResultsSaving:
             ), f"parameters.json not created for {method_name}"
 
             # Load and validate JSON content
-            with open(params_file, "r") as f:
+            with open(params_file) as f:
                 method_info = json.load(f)
 
             assert "parameters" in method_info
@@ -232,7 +230,7 @@ class TestMethodResultsSaving:
         summary_file = classical_dir / "all_classical_methods_summary.json"
         assert summary_file.exists()
 
-        with open(summary_file, "r") as f:
+        with open(summary_file) as f:
             summary = json.load(f)
 
         assert summary["analysis_type"] == "Classical Optimization"
@@ -276,7 +274,7 @@ class TestMethodResultsSaving:
             assert params_file.exists()
 
             # Load and validate JSON content
-            with open(params_file, "r") as f:
+            with open(params_file) as f:
                 method_info = json.load(f)
 
             assert method_info["method_type"] == "Robust Optimization"
@@ -332,7 +330,7 @@ class TestMethodResultsSaving:
         assert len(uncertainties) == len(params)
         assert all(u > 0 for u in uncertainties), "All uncertainties should be positive"
         assert all(
-            u < abs(p) for u, p in zip(uncertainties, params)
+            u < abs(p) for u, p in zip(uncertainties, params, strict=False)
         ), "Uncertainties should be reasonable relative to parameter values"
 
     def test_handles_missing_method_results(
@@ -420,7 +418,7 @@ class TestMethodResultsSaving:
 
         # Load a method's parameters file
         params_file = tmp_path / "classical" / "nelder_mead" / "parameters.json"
-        with open(params_file, "r") as f:
+        with open(params_file) as f:
             method_info = json.load(f)
 
         # Should have default parameter names

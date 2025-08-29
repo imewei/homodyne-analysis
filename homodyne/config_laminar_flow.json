@@ -8,10 +8,21 @@
     "plotting_features": {
       "experimental_data_plotting": "Use --plot-experimental-data for comprehensive flow analysis validation",
       "simulated_data_plotting": "Use --plot-simulated-data with flow scaling transformation",
-      "scaling_examples": ["--contrast 0.25 --offset 1.2", "--phi-angles 0,30,60,90,120,150"],
+      "scaling_examples": [
+        "--contrast 0.25 --offset 1.2",
+        "--phi-angles 0,30,60,90,120,150"
+      ],
       "multi_angle_support": "Individual plots for each phi angle with optimized color scaling"
     },
-    "parameters_optimized": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+    "parameters_optimized": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ],
     "angle_filtering": "enabled_with_performance_boost",
     "script_compatibility": "homodyne v0.6.5.dev0"
   },
@@ -67,8 +78,24 @@
   "initial_parameters": {
     "_comment": "Starting values for 7-parameter laminar flow optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
     "values": [100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0],
-    "parameter_names": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
-    "units": ["Å²/s", "dimensionless", "Å²/s", "s⁻¹", "dimensionless", "s⁻¹", "degrees"],
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ],
+    "units": [
+      "Å²/s",
+      "dimensionless",
+      "Å²/s",
+      "s⁻¹",
+      "dimensionless",
+      "s⁻¹",
+      "degrees"
+    ],
     "physical_meaning": {
       "D0": "Reference diffusion coefficient",
       "alpha": "Power-law exponent for D(t) evolution",
@@ -78,7 +105,15 @@
       "gamma_dot_t_offset": "Baseline shear rate",
       "phi0": "Angular offset between flow and scattering"
     },
-    "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0", "beta", "gamma_dot_t_offset", "phi0"],
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma_dot_t0",
+      "beta",
+      "gamma_dot_t_offset",
+      "phi0"
+    ],
     "parameter_units": {
       "D0": "Å²/s",
       "alpha": "dimensionless",
@@ -95,8 +130,8 @@
       "enabled": true,
       "_flow_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits",
       "target_ranges": [
-        {"min_angle": -10.0, "max_angle": 10.0},
-        {"min_angle": 170.0, "max_angle": 190.0}
+        { "min_angle": -10.0, "max_angle": 10.0 },
+        { "min_angle": 170.0, "max_angle": 190.0 }
       ],
       "fallback_to_all_angles": true,
       "_fallback_note": "Use all angles if no angles found in target ranges",
@@ -128,7 +163,7 @@
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 1500,
           "_max_iterations_note": "More iterations needed for complex 7-parameter flow case",
-          "tolerance": 1e-06,
+          "tolerance": 1e-6,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -225,7 +260,7 @@
       "_thin_note": "No thinning for complex flow dynamics",
       "chains": 4,
       "cores": 4,
-      "target_accept": 0.90,
+      "target_accept": 0.9,
       "_target_accept_note": "Slightly lower for complex parameter space",
       "max_treedepth": 12,
       "_max_treedepth_note": "Increased depth for complex 7-parameter model",
@@ -233,8 +268,8 @@
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
-      "fitted_range": {"min": 1.0, "max": 2.0},
-      "theory_range": {"min": 0.0, "max": 1.0},
+      "fitted_range": { "min": 1.0, "max": 2.0 },
+      "theory_range": { "min": 0.0, "max": 1.0 },
       "contrast": {
         "min": 0.05,
         "max": 0.5,
@@ -283,7 +318,7 @@
       },
       {
         "name": "gamma_dot_t0",
-        "min": 1e-06,
+        "min": 1e-6,
         "max": 1.0,
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
@@ -356,15 +391,15 @@
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-08,
+      "relative_tolerance": 1e-8,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-08,
+      "convergence_tolerance": 1e-8,
       "max_function_evaluations": 15000,
       "_max_function_evaluations_note": "Increased for 7-parameter complexity",
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-08
+      "finite_difference_step": 1e-8
     }
   },
   "performance_settings": {
@@ -407,7 +442,7 @@
         "stable_benchmarking": false,
         "adaptive_benchmarking": false,
         "performance_baselines": false,
-        "target_cv": 0.10,
+        "target_cv": 0.1,
         "memory_monitoring": true,
         "smart_caching": {
           "enabled": true,

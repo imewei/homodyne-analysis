@@ -6,21 +6,15 @@ Tests JSON parsing, configuration validation, and parameter correctness.
 """
 
 import json
-import tempfile
-from pathlib import Path
 
 # Import config management from homodyne module
 from typing import Any
-from unittest.mock import mock_open, patch
 
-import numpy as np
 import pytest
 
 from homodyne.tests.fixtures import (
     create_invalid_config_file,
     create_minimal_config_file,
-    dummy_config,
-    temp_directory,
 )
 
 # Import the modules to test
@@ -80,7 +74,7 @@ class TestJSONParsing:
         create_minimal_config_file(config_file, test_config)
 
         # Test JSON parsing
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             loaded_config = json.load(f)
 
         assert loaded_config == test_config
@@ -93,7 +87,7 @@ class TestJSONParsing:
         create_invalid_config_file(config_file, "syntax")
 
         with pytest.raises(json.JSONDecodeError):
-            with open(config_file, "r") as f:
+            with open(config_file) as f:
                 json.load(f)
 
     def test_config_manager_with_valid_file(self, temp_directory):
@@ -178,9 +172,7 @@ class TestParameterValidation:
             assert "name" in bound
             assert "min" in bound
             assert "max" in bound
-            assert (
-                bound["min"] < bound["max"]
-            ), f"Invalid bound for {
+            assert bound["min"] < bound["max"], f"Invalid bound for {
                 bound['name']}: {
                 bound['min']} >= {
                 bound['max']}"
@@ -206,7 +198,7 @@ class TestParameterValidation:
             bound["name"]: bound for bound in dummy_config["parameter_space"]["bounds"]
         }
 
-        for param_name, value in zip(parameter_names, initial_values):
+        for param_name, value in zip(parameter_names, initial_values, strict=False):
             if param_name in bounds:
                 bound = bounds[param_name]
                 assert (
@@ -224,7 +216,7 @@ class TestParameterValidation:
             ), "Number of units must match number of parameters"
 
             # Check expected units for specific parameters
-            unit_dict = dict(zip(parameter_names, units))
+            unit_dict = dict(zip(parameter_names, units, strict=False))
 
             if "D0" in unit_dict:
                 assert "Å²/s" in unit_dict["D0"] or "A²/s" in unit_dict["D0"]
@@ -341,13 +333,9 @@ class TestParameterTypes:
 
                 # LogNormal parameters should have positive bounds
                 if bound["type"] == "LogNormal":
-                    assert (
-                        bound["min"] > 0
-                    ), f"LogNormal parameter {
+                    assert bound["min"] > 0, f"LogNormal parameter {
                         bound['name']} must have positive min bound"
-                    assert (
-                        bound["max"] > 0
-                    ), f"LogNormal parameter {
+                    assert bound["max"] > 0, f"LogNormal parameter {
                         bound['name']} must have positive max bound"
 
     def test_physical_parameter_constraints(self, dummy_config):
@@ -549,7 +537,7 @@ class TestConfigErrorHandling:
             json.dump(incomplete_config, f)
 
         # Loading should work, but validation might fail
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             loaded = json.load(f)
 
         assert "metadata" in loaded
@@ -601,7 +589,7 @@ class TestConfigErrorHandling:
             json.dump(unicode_config, f, ensure_ascii=False, indent=2)
 
         # Should be able to load it back
-        with open(config_file, "r", encoding="utf-8") as f:
+        with open(config_file, encoding="utf-8") as f:
             loaded = json.load(f)
 
         assert loaded == unicode_config

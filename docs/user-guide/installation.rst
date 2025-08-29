@@ -239,7 +239,7 @@ When you install with ``[jax]``, ``[mcmc]``, or ``[performance]`` options on a L
    pip install homodyne-analysis[jax]
    pip install homodyne-analysis[mcmc]        # Includes NumPyro for GPU MCMC
    pip install homodyne-analysis[performance]
-   
+
    # IMPORTANT: Activate GPU support after installation
    source activate_gpu.sh
 
@@ -251,7 +251,7 @@ For pip-installed JAX, you must activate GPU support:
 
    # First, activate GPU support (required for pip-installed NVIDIA libraries)
    source activate_gpu.sh
-   
+
    # Then verify GPU detection
    python -c "import jax; print(f'JAX devices: {jax.devices()}')"
    # Should show: [CudaDevice(id=0)]
@@ -262,7 +262,7 @@ For pip-installed JAX, you must activate GPU support:
    import jax
    print(f"JAX devices: {jax.devices()}")
    # Output should show: [CudaDevice(id=0), ...] for GPU
-   
+
    print(f"JAX backend: {jax.default_backend()}")
    # Should show 'gpu' if GPU is available
 
@@ -273,10 +273,10 @@ The MCMC module automatically uses GPU acceleration when available:
 .. code-block:: python
 
    from homodyne.optimization.mcmc import HodomyneMCMC
-   
+
    # GPU acceleration is automatic when use_jax_backend=True (default)
    mcmc = HodomyneMCMC(mode="laminar_flow", use_jax_backend=True)
-   
+
    # The module will log:
    # "Using JAX backend with NumPyro NUTS for GPU acceleration"
 

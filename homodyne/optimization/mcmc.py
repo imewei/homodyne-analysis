@@ -18,13 +18,13 @@ Institution: Argonne National Laboratory
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
 # Import homodyne modules using relative import - keep for potential future use
 try:
-    from ..analysis.core import HomodyneAnalysisCore  # noqa: F401
+    from ..analysis.core import HomodyneAnalysisCore
 
     HOMODYNE_CORE_AVAILABLE = True
 except ImportError:
@@ -129,7 +129,7 @@ class MCMCSampler:
     - Mode-aware sampling (static vs laminar flow)
     """
 
-    def __init__(self, analysis_core, config: Dict[str, Any]):
+    def __init__(self, analysis_core, config: dict[str, Any]):
         """
         Initialize MCMC sampler.
 
@@ -260,9 +260,9 @@ class MCMCSampler:
 
         # Data preprocessing for efficiency
         if c2_experimental.ndim == 3:
-            n_angles, n_time, _ = c2_experimental.shape  # noqa: F841
+            n_angles, n_time, _ = c2_experimental.shape
         elif c2_experimental.ndim == 2:
-            n_angles, n_time = c2_experimental.shape  # noqa: F841
+            n_angles, n_time = c2_experimental.shape
         else:
             raise ValueError(
                 f"Expected 2D or 3D c2_experimental data, got {c2_experimental.ndim}D"
@@ -565,15 +565,13 @@ class MCMCSampler:
 
             # Convert to shared variables for efficiency
             c2_data_shared = shared(c2_data.astype(dtype), name="c2_data")
-            phi_angles_shared = shared(
-                phi_angles.astype(dtype), name="phi_angles"
-            )  # noqa: F841
+            phi_angles_shared = shared(phi_angles.astype(dtype), name="phi_angles")
 
             # Forward model (simplified for computational efficiency)
             # Note: D(t) and γ̇(t) positivity is enforced at the function level
             if is_static_mode:
                 # Static mode: only diffusion parameters
-                params = pt.stack([D0, alpha, D_offset])  # noqa: F841
+                params = pt.stack([D0, alpha, D_offset])
             else:
                 # Laminar flow mode: all parameters
                 params = pt.stack(  # noqa: F841
@@ -628,7 +626,8 @@ class MCMCSampler:
                     # Use type ignore for complex PyTensor operations that
                     # Pylance doesn't fully understand
                     mu = pm.Deterministic(
-                        "mu", pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001  # type: ignore
+                        "mu",
+                        pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001,  # type: ignore
                     )
                 else:
                     raise ImportError("PyMC/PyTensor not available")
@@ -827,7 +826,7 @@ class MCMCSampler:
                     # Only check gamma_dot_t0 positivity in laminar flow mode
                     gamma_positive = pm.Deterministic(
                         "gamma_positive", gamma_dot_t0 > 0
-                    )  # noqa: F841
+                    )
                 D_total = pm.Deterministic("D_total", D0 + D_offset)  # noqa: F841
             else:
                 raise ImportError("PyMC not available")
@@ -878,7 +877,7 @@ class MCMCSampler:
 
     def _get_adaptive_mcmc_settings(
         self, data_size: int, n_params: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Adapt MCMC settings based on problem characteristics."""
         base_draws = self.mcmc_config.get("draws", 1000)
         base_tune = self.mcmc_config.get("tune", 500)
@@ -910,7 +909,7 @@ class MCMCSampler:
             "init": self._get_optimized_mass_matrix_strategy(n_params, data_size),
         }
 
-    def _use_jax_sampling(self, draws: int, tune: int, chains: int) -> Optional[Any]:
+    def _use_jax_sampling(self, draws: int, tune: int, chains: int) -> Any | None:
         """Use JAX backend for faster sampling when available."""
         if not self.use_jax_backend or not JAX_AVAILABLE:
             return None
@@ -1023,7 +1022,7 @@ class MCMCSampler:
 
     def _extract_better_initvals_from_trace(
         self, trace, chains: int
-    ) -> List[Dict[str, float]]:
+    ) -> list[dict[str, float]]:
         """Extract better initialization values from exploration trace."""
         param_names = self.config["initial_parameters"]["parameter_names"]
 
@@ -1049,12 +1048,12 @@ class MCMCSampler:
         self,
         c2_experimental: np.ndarray,
         phi_angles: np.ndarray,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         filter_angles_for_optimization: bool = True,
         is_static_mode: bool = False,
         analysis_mode: str = "laminar_flow",
         effective_param_count: int = 7,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run MCMC NUTS sampling for parameter uncertainty quantification.
 
@@ -1436,11 +1435,11 @@ class MCMCSampler:
 
     def run_mcmc_analysis(
         self,
-        c2_experimental: Optional[np.ndarray] = None,
-        phi_angles: Optional[np.ndarray] = None,
-        mcmc_config: Optional[Dict[str, Any]] = None,
-        filter_angles_for_optimization: Optional[bool] = None,
-    ) -> Dict[str, Any]:
+        c2_experimental: np.ndarray | None = None,
+        phi_angles: np.ndarray | None = None,
+        mcmc_config: dict[str, Any] | None = None,
+        filter_angles_for_optimization: bool | None = None,
+    ) -> dict[str, Any]:
         """
         Run complete MCMC analysis including model building and sampling.
 
@@ -1533,7 +1532,7 @@ class MCMCSampler:
 
         return results
 
-    def compute_convergence_diagnostics(self, trace) -> Dict[str, Any]:
+    def compute_convergence_diagnostics(self, trace) -> dict[str, Any]:
         """
         Compute convergence diagnostics for MCMC chains.
 
@@ -1604,7 +1603,7 @@ class MCMCSampler:
             logger.warning(f"Failed to compute convergence diagnostics: {e}")
             return {"error": str(e)}
 
-    def extract_posterior_statistics(self, trace) -> Dict[str, Any]:
+    def extract_posterior_statistics(self, trace) -> dict[str, Any]:
         """
         Extract comprehensive posterior statistics.
 
@@ -1661,7 +1660,7 @@ class MCMCSampler:
             logger.warning(f"Failed to extract posterior statistics: {e}")
             return {"error": str(e)}
 
-    def generate_posterior_samples(self, n_samples: int = 1000) -> Optional[np.ndarray]:
+    def generate_posterior_samples(self, n_samples: int = 1000) -> np.ndarray | None:
         """
         Generate posterior parameter samples for uncertainty propagation.
 
@@ -1709,7 +1708,7 @@ class MCMCSampler:
             logger.error(f"Failed to generate posterior samples: {e}")
             return None
 
-    def assess_chain_mixing(self, trace) -> Dict[str, Any]:
+    def assess_chain_mixing(self, trace) -> dict[str, Any]:
         """
         Assess MCMC chain mixing and identify potential issues.
 
@@ -1774,7 +1773,7 @@ class MCMCSampler:
 
     def _get_mixing_recommendations(
         self, divergent_fraction: float, min_ess_ratio: float
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get recommendations for improving chain mixing.
 
@@ -1968,7 +1967,9 @@ class MCMCSampler:
 
             # Check bounds if available
             if bounds and len(bounds) == len(params):
-                for i, (param, value) in enumerate(zip(param_names, params)):
+                for i, (param, value) in enumerate(
+                    zip(param_names, params, strict=False)
+                ):
                     if len(bounds[i]) >= 2:
                         lower, upper = bounds[i][:2]
                         if not (lower <= value <= upper):
@@ -1978,7 +1979,7 @@ class MCMCSampler:
                             return False
 
             # Physical constraints
-            param_dict = dict(zip(param_names, params))
+            param_dict = dict(zip(param_names, params, strict=False))
 
             # Diffusion coefficient should be positive
             if "D0" in param_dict and param_dict["D0"] <= 0:
@@ -2001,7 +2002,7 @@ class MCMCSampler:
             logger.error(f"Error validating parameters: {e}")
             return False
 
-    def validate_model_setup(self) -> Dict[str, Any]:
+    def validate_model_setup(self) -> dict[str, Any]:
         """
         Validate the Bayesian model setup and configuration.
 
@@ -2118,7 +2119,7 @@ class MCMCSampler:
 
         return validation_results
 
-    def _estimate_performance_improvement(self) -> Dict[str, float]:
+    def _estimate_performance_improvement(self) -> dict[str, float]:
         """Estimate expected performance improvements from enhancements."""
         speedup_factors = {"baseline": 1.0}
 
@@ -2143,7 +2144,7 @@ class MCMCSampler:
 
         return speedup_factors
 
-    def get_model_summary(self) -> Optional[Dict[str, Any]]:
+    def get_model_summary(self) -> dict[str, Any] | None:
         """
         Get summary information about the current Bayesian model.
 
@@ -2184,9 +2185,7 @@ class MCMCSampler:
             logger.error(f"Failed to get model summary: {e}")
             return None
 
-    def get_best_params(
-        self, stage: str = "mcmc"
-    ) -> Optional[np.ndarray]:  # noqa: ARG002
+    def get_best_params(self, stage: str = "mcmc") -> np.ndarray | None:
         """
         Get best parameters from MCMC posterior analysis.
 
@@ -2216,7 +2215,7 @@ class MCMCSampler:
             logger.error(f"Failed to extract best parameters: {e}")
             return None
 
-    def get_parameter_uncertainties(self) -> Optional[Dict[str, float]]:
+    def get_parameter_uncertainties(self) -> dict[str, float] | None:
         """
         Get parameter uncertainty estimates from MCMC posterior.
 
@@ -2311,7 +2310,7 @@ class MCMCSampler:
         try:
             import json
 
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 results = json.load(f)
 
             # Restore basic results (note: trace cannot be serialized/restored)
@@ -2324,7 +2323,7 @@ class MCMCSampler:
             return False
 
 
-def create_mcmc_sampler(analysis_core, config: Dict[str, Any]) -> MCMCSampler:
+def create_mcmc_sampler(analysis_core, config: dict[str, Any]) -> MCMCSampler:
     """
     Factory function to create an MCMC sampler instance.
 

@@ -22,7 +22,7 @@ available. However, all tests are properly protected with pytest skip markers.
 import json
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
@@ -65,9 +65,9 @@ class TestMCMCConfigurationUsage:
 
     def create_test_config(
         self,
-        draws: Union[int, str] = 10000,
+        draws: int | str = 10000,
         chains: int = 8,
-        tune: Union[int, str] = 1000,
+        tune: int | str = 1000,
         thin: int = 1,
     ):
         """Create a test configuration with specified MCMC parameters.
@@ -379,7 +379,7 @@ class TestMCMCConfigurationUsage:
 
         try:
             # Load config from file
-            with open(temp_config_path, "r") as f:
+            with open(temp_config_path) as f:
                 loaded_config = json.load(f)
 
             mock_core = self.create_mock_core()
@@ -580,10 +580,10 @@ class TestMCMCThinningConfiguration:
 
     def create_test_config(
         self,
-        draws: Union[int, str] = 10000,
+        draws: int | str = 10000,
         chains: int = 4,
-        tune: Union[int, str] = 1000,
-        thin: Union[int, str] = 1,
+        tune: int | str = 1000,
+        thin: int | str = 1,
     ):
         """Create a test configuration with specified MCMC parameters including thinning."""
         return {

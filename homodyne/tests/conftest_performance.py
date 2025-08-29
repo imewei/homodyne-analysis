@@ -18,7 +18,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -183,14 +183,14 @@ class PerformanceRecorder:
         self.baselines = self.load_baselines()
         self.current_results = {}
 
-    def load_baselines(self) -> Dict[str, Any]:
+    def load_baselines(self) -> dict[str, Any]:
         """Load performance baselines from file."""
         if PERFORMANCE_BASELINE_FILE.exists():
             try:
-                with open(PERFORMANCE_BASELINE_FILE, "r") as f:
+                with open(PERFORMANCE_BASELINE_FILE) as f:
                     data: dict[str, Any] = json.load(f)
                     return data
-            except (json.JSONDecodeError, IOError):
+            except (OSError, json.JSONDecodeError):
                 pass
         return {}
 
@@ -199,7 +199,7 @@ class PerformanceRecorder:
         try:
             with open(PERFORMANCE_BASELINE_FILE, "w") as f:
                 json.dump(self.baselines, f, indent=2)
-        except IOError:
+        except OSError:
             pass
 
     def record_metric(self, test_name: str, metric_name: str, value: float):
@@ -435,7 +435,7 @@ def performance_config_factory():
         time_length: int = 30,
         mode: str = "static",
         enable_advanced_settings: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a performance test configuration."""
 
         phi_angles = np.linspace(0, 90, n_angles).tolist()
@@ -704,7 +704,7 @@ def get_performance_threshold_for_metric(metric: str) -> float:
 
 
 def assert_optimization_performance(
-    elapsed_time: float, method: str, custom_threshold: Optional[float] = None
+    elapsed_time: float, method: str, custom_threshold: float | None = None
 ):
     """Assert optimization performance is within bounds."""
     threshold = custom_threshold or get_optimization_timeout(method)
@@ -911,7 +911,7 @@ def universal_mock_core_large():
     )
 
 
-def log_optimization_performance(method: str, results: Dict[str, Any]):
+def log_optimization_performance(method: str, results: dict[str, Any]):
     """Log optimization performance results."""
     import logging
 
@@ -925,7 +925,7 @@ def log_optimization_performance(method: str, results: Dict[str, Any]):
             logger.info(f"  {metric}: {value}")
 
 
-def compare_optimization_methods(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+def compare_optimization_methods(results: list[dict[str, Any]]) -> dict[str, Any]:
     """Compare performance across optimization methods."""
     if not results:
         return {}

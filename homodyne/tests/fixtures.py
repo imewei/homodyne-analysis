@@ -8,7 +8,7 @@ Provides dummy datasets and configurations for unit and integration tests.
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pytest
@@ -33,7 +33,6 @@ def test_output_directory():
     this fixture will NOT mark it as a test artifact. It will only mark
     directories that it creates itself.
     """
-    import time
     from pathlib import Path
 
     # Avoid circular import by importing inside function
@@ -343,6 +342,7 @@ def dummy_analysis_results(
             zip(
                 dummy_config["initial_parameters"]["parameter_names"],
                 dummy_config["initial_parameters"]["values"],
+                strict=False,
             )
         ),
         "optimization_history": [
@@ -397,7 +397,7 @@ def dummy_hdf5_data(temp_directory):
 
 
 def create_minimal_config_file(
-    filepath: Path, config: Optional[Dict[str, Any]] = None
+    filepath: Path, config: dict[str, Any] | None = None
 ) -> Path:
     """Create a minimal JSON config file for testing."""
     if config is None:

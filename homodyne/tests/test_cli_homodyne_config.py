@@ -5,12 +5,9 @@ This module tests the homodyne-config command-line interface,
 including argument parsing, template loading, and configuration generation.
 """
 
-import json
 import os
-import sys
 import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 

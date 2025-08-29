@@ -20,9 +20,7 @@ Institution: Argonne National Laboratory
 """
 
 import logging
-import os
 import time
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pytest
@@ -51,11 +49,7 @@ except ImportError:
     ROBUST_AVAILABLE = False
 
 try:
-    from homodyne.optimization.mcmc import (
-        JAX_AVAILABLE,
-        PYMC_AVAILABLE,
-        MCMCSampler,
-    )
+    from homodyne.optimization.mcmc import JAX_AVAILABLE, PYMC_AVAILABLE, MCMCSampler
 
     MCMC_AVAILABLE = True
 except ImportError:
@@ -249,9 +243,9 @@ class OptimizationBenchmarkResult:
         method: str,
         success: bool,
         time: float,
-        optimal_params: Optional[np.ndarray] = None,
-        final_chi_squared: Optional[float] = None,
-        extra_info: Optional[Dict] = None,
+        optimal_params: np.ndarray | None = None,
+        final_chi_squared: float | None = None,
+        extra_info: dict | None = None,
     ):
         self.method = method
         self.success = success
@@ -260,7 +254,7 @@ class OptimizationBenchmarkResult:
         self.final_chi_squared = final_chi_squared
         self.extra_info = extra_info or {}
 
-    def parameter_error(self, true_params: np.ndarray) -> Optional[float]:
+    def parameter_error(self, true_params: np.ndarray) -> float | None:
         """Compute relative parameter error compared to true values."""
         if self.optimal_params is None or not self.success:
             return None
@@ -320,7 +314,7 @@ class TestOptimizationBenchmarks:
 
     def _benchmark_classical_methods(
         self, mock_core, test_params, phi_angles, c2_experimental
-    ) -> List[OptimizationBenchmarkResult]:
+    ) -> list[OptimizationBenchmarkResult]:
         """Benchmark classical optimization methods."""
         results = []
 
@@ -390,7 +384,7 @@ class TestOptimizationBenchmarks:
 
     def _benchmark_robust_methods(
         self, mock_core, test_params, phi_angles, c2_experimental
-    ) -> List[OptimizationBenchmarkResult]:
+    ) -> list[OptimizationBenchmarkResult]:
         """Benchmark robust optimization methods."""
         results = []
 
@@ -463,7 +457,7 @@ class TestOptimizationBenchmarks:
 
     def _benchmark_mcmc_methods(
         self, mock_core, test_params, phi_angles, c2_experimental
-    ) -> List[OptimizationBenchmarkResult]:
+    ) -> list[OptimizationBenchmarkResult]:
         """Benchmark MCMC sampling methods."""
         results = []
 
@@ -478,9 +472,9 @@ class TestOptimizationBenchmarks:
             try:
                 config = BENCHMARK_CONFIG.copy()
                 config["optimization_config"]["mcmc_sampling"]["use_jax"] = use_jax
-                config["optimization_config"]["mcmc_sampling"][
-                    "draws"
-                ] = 60  # Reduced for benchmarking
+                config["optimization_config"]["mcmc_sampling"]["draws"] = (
+                    60  # Reduced for benchmarking
+                )
                 config["optimization_config"]["mcmc_sampling"]["tune"] = 30
 
                 sampler = MCMCSampler(mock_core, config)
@@ -532,7 +526,7 @@ class TestOptimizationBenchmarks:
         return results
 
     def _analyze_benchmark_results(
-        self, results: List[OptimizationBenchmarkResult], true_params: np.ndarray
+        self, results: list[OptimizationBenchmarkResult], true_params: np.ndarray
     ) -> None:
         """Analyze and report benchmark results."""
 
@@ -654,9 +648,9 @@ class TestOptimizationBenchmarks:
         if MCMC_AVAILABLE and PYMC_AVAILABLE:
             assert MCMCSampler is not None
             config = BENCHMARK_CONFIG.copy()
-            config["optimization_config"]["mcmc_sampling"][
-                "draws"
-            ] = 40  # Reduced for large dataset
+            config["optimization_config"]["mcmc_sampling"]["draws"] = (
+                40  # Reduced for large dataset
+            )
             config["optimization_config"]["mcmc_sampling"]["tune"] = 20
 
             sampler = MCMCSampler(large_benchmark_mock_core, config)

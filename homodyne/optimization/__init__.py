@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .mcmc import MCMCSampler
 
 # Track available exports
-_available_exports: List[str] = []
+_available_exports: list[str] = []
 
 # Always try to import ClassicalOptimizer
 try:
@@ -28,7 +28,7 @@ try:
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:
-    ClassicalOptimizer: Optional[Type[Any]] = None  # type: ignore[misc]
+    ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc]
     import warnings
 
     warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning)
@@ -39,8 +39,8 @@ try:
 
     _available_exports.extend(["MCMCSampler", "create_mcmc_sampler"])
 except ImportError as e:
-    MCMCSampler: Optional[Type[Any]] = None  # type: ignore[misc]
-    create_mcmc_sampler: Optional[Any] = None  # type: ignore[misc]
+    MCMCSampler: type[Any] | None = None  # type: ignore[misc]
+    create_mcmc_sampler: Any | None = None  # type: ignore[misc]
     import warnings
 
     warnings.warn(

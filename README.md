@@ -232,11 +232,13 @@ pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
 
 ### GPU Acceleration
 
-The package supports GPU acceleration for MCMC sampling and JAX-based computations on Linux systems with NVIDIA GPUs:
+The package supports GPU acceleration for MCMC sampling and JAX-based computations on
+Linux systems with NVIDIA GPUs:
 
 **Automatic GPU Detection:**
 
-On Linux systems, installing with `[jax]`, `[mcmc]`, or `[performance]` options automatically includes CUDA 12 support:
+On Linux systems, installing with `[jax]`, `[mcmc]`, or `[performance]` options
+automatically includes CUDA 12 support:
 
 ```bash
 # Any of these will install GPU support on Linux:

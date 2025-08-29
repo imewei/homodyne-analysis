@@ -14,7 +14,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -517,7 +517,7 @@ class TestPerAngleChiSquaredCalculation:
             assert expected_file.exists()
 
             # Verify file contents
-            with open(expected_file, "r") as f:
+            with open(expected_file) as f:
                 saved_data = json.load(f)
 
             assert saved_data["method"] == "TestSave"

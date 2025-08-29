@@ -27,7 +27,6 @@ import json
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -168,17 +167,11 @@ class TestMCMCConfigurationRegression:
         old_trace_chains, old_trace_draws = 2, 1000
 
         # Create mock traces
-        correct_trace = create_mock_trace(
-            chains=config_chains, draws=config_draws
-        )  # type: ignore
-        old_trace = create_mock_trace(
-            chains=old_trace_chains, draws=old_trace_draws
-        )  # type: ignore
+        correct_trace = create_mock_trace(chains=config_chains, draws=config_draws)  # type: ignore
+        old_trace = create_mock_trace(chains=old_trace_chains, draws=old_trace_draws)  # type: ignore
 
         # Validation should pass for correct trace
-        assert validate_trace_dimensions(
-            correct_trace, config_chains, config_draws
-        )  # type: ignore
+        assert validate_trace_dimensions(correct_trace, config_chains, config_draws)  # type: ignore
 
         # Validation should fail for old trace
         if validate_trace_dimensions is not None:
@@ -249,7 +242,7 @@ class TestMCMCConfigurationRegression:
 
         try:
             # Load configuration from file (simulating user workflow)
-            with open(temp_path, "r") as f:
+            with open(temp_path) as f:
                 loaded_config = json.load(f)
 
             # Create sampler with loaded config
@@ -353,9 +346,7 @@ class TestMCMCTraceFileRegression:
         old_file_chains, old_file_draws = 2, 1000
 
         # This mismatch caused the plotting issue
-        old_trace = create_mock_trace(
-            chains=old_file_chains, draws=old_file_draws
-        )  # type: ignore
+        old_trace = create_mock_trace(chains=old_file_chains, draws=old_file_draws)  # type: ignore
 
         # Extract values the way plotting functions do
         plot_chains = old_trace.posterior.sizes.get("chain", "Unknown")
@@ -379,9 +370,7 @@ class TestMCMCTraceFileRegression:
         config_chains, config_draws = 8, 10000
 
         # Fresh trace created with current config (after fix)
-        fresh_trace = create_mock_trace(
-            chains=config_chains, draws=config_draws
-        )  # type: ignore
+        fresh_trace = create_mock_trace(chains=config_chains, draws=config_draws)  # type: ignore
 
         # Extract values the way plotting functions do
         plot_chains = fresh_trace.posterior.sizes.get("chain", "Unknown")

@@ -134,9 +134,9 @@ class TestSaveResultsWithConfig:
     def test_different_result_formats(self, mock_analyzer):
         """Test saving with different output format configurations."""
         # Test JSON format
-        mock_analyzer.config["output_settings"]["file_formats"][
-            "results_format"
-        ] = "json"
+        mock_analyzer.config["output_settings"]["file_formats"]["results_format"] = (
+            "json"
+        )
         test_results = {"test": "data"}
 
         with patch("builtins.open", mock_open()) as mock_file:

@@ -38,7 +38,7 @@ import logging
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -46,7 +46,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
+def ensure_dir(path: str | Path, permissions: int = 0o755) -> Path:
     """
     Thread-safe recursive directory creation with comprehensive error handling.
 
@@ -97,7 +97,7 @@ def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
 
 
 def timestamped_filename(
-    base_name: str, chi2: Optional[float] = None, config: Optional[Dict] = None
+    base_name: str, chi2: float | None = None, config: dict | None = None
 ) -> str:
     """
     Generate intelligently formatted filenames with timestamps and analysis metadata.
@@ -221,7 +221,7 @@ def _json_serializer(obj):
         return str(obj)
 
 
-def save_json(data: Any, filepath: Union[str, Path], **kwargs: Any) -> bool:
+def save_json(data: Any, filepath: str | Path, **kwargs: Any) -> bool:
     """
     Save data as JSON with robust error handling and NumPy support.
 
@@ -291,7 +291,7 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs: Any) -> bool:
 
 def save_numpy(
     data: np.ndarray,
-    filepath: Union[str, Path],
+    filepath: str | Path,
     compressed: bool = True,
     **kwargs: Any,
 ) -> bool:
@@ -359,7 +359,7 @@ def save_numpy(
 
 def save_pickle(
     data: Any,
-    filepath: Union[str, Path],
+    filepath: str | Path,
     protocol: int = pickle.HIGHEST_PROTOCOL,
     **kwargs: Any,
 ) -> bool:
@@ -406,9 +406,9 @@ def save_pickle(
 
 def save_fig(
     figure: Any,
-    filepath: Union[str, Path],
+    filepath: str | Path,
     dpi: int = 300,
-    format: Optional[str] = None,
+    format: str | None = None,
     **kwargs: Any,
 ) -> bool:
     """
@@ -468,7 +468,7 @@ def save_fig(
 
 
 # Utility functions for common file operations
-def get_output_directory(config: Optional[Dict] = None) -> Path:
+def get_output_directory(config: dict | None = None) -> Path:
     """
     Get the output directory from configuration, creating it if necessary.
 
@@ -492,11 +492,11 @@ def get_output_directory(config: Optional[Dict] = None) -> Path:
 
 
 def save_classical_optimization_results(
-    results: Dict,
-    method_results: Optional[Dict] = None,
-    config: Optional[Dict] = None,
+    results: dict,
+    method_results: dict | None = None,
+    config: dict | None = None,
     base_name: str = "classical_results",
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """
     Save classical optimization results with method-specific organization.
 
@@ -579,10 +579,10 @@ def save_classical_optimization_results(
 
 
 def save_analysis_results(
-    results: Dict,
-    config: Optional[Dict] = None,
+    results: dict,
+    config: dict | None = None,
     base_name: str = "analysis_results",
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """
     Orchestrate comprehensive saving of analysis results in multiple formats.
 

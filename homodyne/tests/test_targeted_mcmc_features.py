@@ -18,8 +18,6 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import dummy_config
-
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -177,7 +175,6 @@ class TestMCMCFunctionBehavior:
 
         # Set up mocks
         with patch.dict("sys.modules", {"pymc": mock_pm}):
-
             # Call the simulated function
             result = simulate_run_mcmc_nuts_optimized(c2_data, phi_angles, mcmc_config)
 

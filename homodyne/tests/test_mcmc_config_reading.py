@@ -12,9 +12,6 @@ available. However, all tests are properly protected with pytest skip markers.
 
 # type: ignore
 
-import json
-import tempfile
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pytest

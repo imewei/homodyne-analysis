@@ -7,9 +7,8 @@ Tests complete analysis workflow with mocked heavy computations.
 
 import json
 import os
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -17,13 +16,6 @@ import pytest
 # Import the modules to test
 from homodyne.tests.fixtures import (
     create_minimal_config_file,
-    dummy_analysis_results,
-    dummy_config,
-    dummy_correlation_data,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    mock_optimization_result,
-    temp_directory,
 )
 
 # Import modules being tested
@@ -64,13 +56,13 @@ except ImportError:
         return {}
 
 
-from typing import Any, Optional
+from typing import Any
 
 
 # Define a type stub that matches the interface we need
 class _HomodyneAnalysisCoreStub:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.config: Optional[Any] = None
+        self.config: Any | None = None
 
     def _prepare_plot_data(self, *args: Any, **kwargs: Any) -> None:
         return None
@@ -131,7 +123,7 @@ class TestCompleteWorkflow:
         assert len(plot_files) >= 1
 
         # Verify JSON content is readable
-        with open(json_files[0], "r", encoding="utf-8") as f:
+        with open(json_files[0], encoding="utf-8") as f:
             saved_results = json.load(f)
         assert isinstance(saved_results, dict)
         assert "best_chi_squared" in saved_results
@@ -295,6 +287,7 @@ class TestMockedHeavyComputation:
                         zip(
                             config["initial_parameters"]["parameter_names"],
                             mock_optimization_result.x,
+                            strict=False,
                         )
                     ),
                     "best_chi_squared": mock_optimization_result.fun,
@@ -432,7 +425,7 @@ class TestErrorHandlingIntegration:
             json.dump(invalid_config, f)
 
         # Loading should work (JSON is valid)
-        with open(config_file, "r", encoding="utf-8") as f:
+        with open(config_file, encoding="utf-8") as f:
             loaded_config = json.load(f)
 
         assert loaded_config == invalid_config
@@ -511,9 +504,7 @@ class TestDataValidation:
 
             # Check physical constraints for specific parameters
             if bound["name"] in ["D0", "gamma_dot_t0"]:
-                assert (
-                    bound["min"] > 0
-                ), f"{
+                assert bound["min"] > 0, f"{
                     bound['name']} must have positive minimum"
 
             # Check that bounds are reasonable
@@ -694,9 +685,6 @@ class TestPerAngleAnalysisIntegration:
 
     def test_per_angle_results_integration(self, temp_directory, dummy_config):
         """Test that per-angle results are properly included in main results."""
-        import json
-        from pathlib import Path
-        from unittest.mock import Mock, patch
 
         # Create mock results that would be included in main analysis results
         mock_results = {
@@ -734,7 +722,6 @@ class TestConcurrencyAndRaceConditions:
 
     def test_concurrent_directory_creation(self, temp_directory):
         """Test that concurrent directory creation is handled safely."""
-        import threading
         from concurrent.futures import ThreadPoolExecutor
 
         base_dir = temp_directory / "concurrent_test"
@@ -798,7 +785,7 @@ class TestConcurrencyAndRaceConditions:
             filepath = temp_directory / f"concurrent_file_{file_id}.json"
             assert filepath.exists()
 
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 data = json.load(f)
 
             assert data["id"] == file_id
@@ -814,7 +801,6 @@ class TestAnalysisWorkflowIntegration:
     )
     def test_analysis_plotting_integration(self, temp_directory):
         """Test that analysis workflow integrates properly with plotting."""
-        from homodyne.tests.fixtures import create_minimal_config_file
 
         config_file = create_minimal_config_file(temp_directory / "test_config.json")
 
@@ -977,7 +963,6 @@ class TestAnalysisWorkflowIntegration:
     )
     def test_configuration_consistency_integration(self, temp_directory):
         """Test that configuration is consistent across analysis workflow."""
-        from homodyne.tests.fixtures import create_minimal_config_file
 
         config_file = create_minimal_config_file(
             temp_directory / "consistency_test_config.json"

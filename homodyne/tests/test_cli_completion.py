@@ -5,7 +5,7 @@ Tests for CLI completion and interactive features.
 import argparse
 import os
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -23,16 +23,16 @@ except ImportError:
     # Define dummy classes/functions to avoid errors
 
     class _DummyHomodyneCompleter:  # type: ignore[misc]
-        def method_completer(self, prefix: str, parsed_args: Any) -> List[str]:
+        def method_completer(self, prefix: str, parsed_args: Any) -> list[str]:
             return []
 
-        def config_files_completer(self, prefix: str, parsed_args: Any) -> List[str]:
+        def config_files_completer(self, prefix: str, parsed_args: Any) -> list[str]:
             return []
 
-        def output_dir_completer(self, prefix: str, parsed_args: Any) -> List[str]:
+        def output_dir_completer(self, prefix: str, parsed_args: Any) -> list[str]:
             return []
 
-        def analysis_mode_completer(self, prefix: str, parsed_args: Any) -> List[str]:
+        def analysis_mode_completer(self, prefix: str, parsed_args: Any) -> list[str]:
             return []
 
     HomodyneCompleter = _DummyHomodyneCompleter  # type: ignore[misc]
@@ -129,7 +129,6 @@ class TestShellCompletion:
             patch("pathlib.Path.read_text"),
             patch("builtins.open", create=True) as mock_open,
         ):
-
             # Setup mocks
             mock_home_path = MagicMock(spec=Path)
             mock_home.return_value = mock_home_path

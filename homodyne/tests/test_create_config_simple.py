@@ -5,17 +5,13 @@ This module tests the configuration template creation functionality
 with focus on testable aspects.
 """
 
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from homodyne.create_config import (
-    create_config_from_template,
-    main,
-)
+from homodyne.create_config import create_config_from_template, main
 
 
 class TestCreateConfig:

@@ -7,11 +7,7 @@
     "created_date": "2025-08-20",
     "updated_date": "2025-01-22",
     "analysis_mode": "static_isotropic",
-    "parameters_optimized": [
-      "D0",
-      "alpha",
-      "D_offset"
-    ],
+    "parameters_optimized": ["D0", "alpha", "D_offset"],
     "plotting_features": {
       "experimental_data_plotting": "Use --plot-experimental-data for validation",
       "simulated_data_plotting": "Use --plot-simulated-data with --contrast and --offset",
@@ -54,10 +50,7 @@
       "wavevector_q": 0.0237,
       "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
       "q_unit": "Å⁻¹",
-      "typical_range": [
-        0.001,
-        0.1
-      ]
+      "typical_range": [0.001, 0.1]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
@@ -74,31 +67,15 @@
   },
   "initial_parameters": {
     "_comment": "User-customized starting values for 3-parameter optimization",
-    "values": [
-      16000,
-      -1.5,
-      3.0
-    ],
-    "parameter_names": [
-      "D0",
-      "alpha",
-      "D_offset"
-    ],
-    "units": [
-      "Å²/s",
-      "dimensionless",
-      "Å²/s"
-    ],
+    "values": [16000, -1.5, 3.0],
+    "parameter_names": ["D0", "alpha", "D_offset"],
+    "units": ["Å²/s", "dimensionless", "Å²/s"],
     "physical_meaning": {
       "D0": "Reference diffusion coefficient",
       "alpha": "Power-law exponent for D(t) evolution",
       "D_offset": "Baseline diffusion coefficient"
     },
-    "active_parameters": [
-      "D0",
-      "alpha",
-      "D_offset"
-    ],
+    "active_parameters": ["D0", "alpha", "D_offset"],
     "parameter_units": {
       "D0": "Å²/s",
       "alpha": "dimensionless",
@@ -114,10 +91,7 @@
       "fallback_to_all_angles": true
     },
     "classical_optimization": {
-      "methods": [
-        "Nelder-Mead",
-        "Gurobi"
-      ],
+      "methods": ["Nelder-Mead", "Gurobi"],
       "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs all methods above in sequence, selects best result",
@@ -143,7 +117,7 @@
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter isotropic case",
-          "tolerance": 1e-06,
+          "tolerance": 1e-6,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -367,14 +341,14 @@
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-08,
+      "relative_tolerance": 1e-8,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-08,
+      "convergence_tolerance": 1e-8,
       "max_function_evaluations": 5000,
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-08
+      "finite_difference_step": 1e-8
     }
   },
   "performance_settings": {
@@ -416,7 +390,7 @@
         "stable_benchmarking": false,
         "adaptive_benchmarking": false,
         "performance_baselines": false,
-        "target_cv": 0.10,
+        "target_cv": 0.1,
         "memory_monitoring": true,
         "smart_caching": {
           "enabled": true,
@@ -534,10 +508,7 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": [
-        "png",
-        "pdf"
-      ],
+      "plot_formats": ["png", "pdf"],
       "detailed_summary": true,
       "convergence_diagnostics": true
     },
@@ -547,10 +518,7 @@
         "create_plots": true,
         "plot_format": "png",
         "dpi": 300,
-        "figure_size": [
-          10,
-          8
-        ],
+        "figure_size": [10, 8],
         "style": "publication",
         "save_plots": true,
         "show_plots": false
@@ -565,37 +533,24 @@
         "colormap": "viridis",
         "colorbar_position": "right",
         "title_prefix": "C2 Correlation Function (Static Isotropic)",
-        "figsize": [
-          12,
-          4
-        ]
+        "figsize": [12, 4]
       },
       "mcmc_plots": {
         "enabled": true,
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [
-            0.16,
-            0.5,
-            0.84
-          ],
+          "quantiles": [0.16, 0.5, 0.84],
           "show_truths": false,
           "use_arviz": true,
-          "figsize": [
-            9,
-            9
-          ]
+          "figsize": [9, 9]
         },
         "trace_plots": {
           "enabled": true,
           "show_chains": true,
           "show_warmup": false,
           "compact_layout": true,
-          "figsize": [
-            10,
-            6
-          ]
+          "figsize": [10, 6]
         },
         "convergence_diagnostics": {
           "enabled": true,

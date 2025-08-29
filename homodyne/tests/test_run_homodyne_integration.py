@@ -10,22 +10,9 @@ Tests the behavior of the main run_homodyne.py script, including:
 """
 
 import json
-import os
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
 
 import numpy as np
-import pytest
-
-from homodyne.tests.fixtures import (
-    create_minimal_config_file,
-    dummy_config,
-    temp_directory,
-    test_output_directory,
-)
 
 
 class TestRunHomodyneIntegration:
@@ -167,7 +154,7 @@ class TestRunHomodyneIntegration:
         assert results_file.name == "homodyne_analysis_results.json"
 
         # Verify content is correct
-        with open(results_file, "r", encoding="utf-8") as f:
+        with open(results_file, encoding="utf-8") as f:
             loaded_results = json.load(f)
 
         assert loaded_results["config"]["test"] == "config"
@@ -519,7 +506,7 @@ class TestBackwardCompatibilityIntegration:
             json.dump(old_style_config, f, indent=2)
 
         # Verify configuration is readable
-        with open(config_file, "r", encoding="utf-8") as f:
+        with open(config_file, encoding="utf-8") as f:
             loaded_config = json.load(f)
 
         assert loaded_config["metadata"]["config_version"] == "6.0"
@@ -553,7 +540,7 @@ class TestBackwardCompatibilityIntegration:
         assert results_file.parent == output_dir
 
         # Verify internal structure is preserved
-        with open(results_file, "r", encoding="utf-8") as f:
+        with open(results_file, encoding="utf-8") as f:
             loaded_data = json.load(f)
 
         required_keys = [
@@ -765,7 +752,7 @@ class TestMCMCIntegration:
         assert data["c2_experimental"].shape == (1, 60, 60)
 
         # Verify MCMC summary content
-        with open(mcmc_dir / "mcmc_summary.json", "r", encoding="utf-8") as f:
+        with open(mcmc_dir / "mcmc_summary.json", encoding="utf-8") as f:
             summary = json.load(f)
 
         assert summary["method"] == "MCMC_NUTS"

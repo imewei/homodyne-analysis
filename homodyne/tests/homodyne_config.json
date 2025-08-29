@@ -7,9 +7,7 @@
     "analysis_mode": "static_anisotropic",
     "created_date": "2025-08-20",
     "updated_date": "2025-01-22",
-    "authors": [
-      "Wei Chen"
-    ],
+    "authors": ["Wei Chen"],
     "institution": "Argonne National Laboratory",
     "experiment_name": "Test Suite",
     "sample_description": "Testing Configuration",
@@ -75,15 +73,7 @@
   "initial_parameters": {
     "_comment": "Initial parameters for optimization",
     "description": "Starting values for all model parameters",
-    "values": [
-      1000,
-      -0.5,
-      100,
-      0.1,
-      -0.1,
-      0.01,
-      15.0
-    ],
+    "values": [1000, -0.5, 100, 0.1, -0.1, 0.01, 15.0],
     "parameter_names": [
       "D0",
       "alpha",
@@ -127,19 +117,19 @@
       "_comment": "Angle filtering settings",
       "enabled": true,
       "target_ranges": [
-        [
-          10,
-          30
-        ],
-        [
-          45,
-          75
-        ]
+        [10, 30],
+        [45, 75]
       ],
       "fallback_to_all_angles": true
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi",
+        "Robust-Wasserstein",
+        "Robust-Scenario",
+        "Robust-Ellipsoidal"
+      ],
       "_methods_note": "Available: Nelder-Mead (always), Gurobi (if licensed), Robust-* (if CVXPY installed)",
       "_cli_usage": {
         "--method classical": "Runs ALL 5 methods above (classical + robust)",
@@ -151,15 +141,15 @@
       "method_options": {
         "Nelder-Mead": {
           "maxiter": 5000,
-          "xatol": 1e-08,
-          "fatol": 1e-08,
+          "xatol": 1e-8,
+          "fatol": 1e-8,
           "adaptive": true
         },
         "Gurobi": {
           "_comment": "Gurobi quadratic programming optimization options (requires Gurobi license)",
           "max_iterations": 1000,
           "_max_iterations_note": "Maximum number of optimization iterations",
-          "tolerance": 1e-06,
+          "tolerance": 1e-6,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -306,7 +296,7 @@
       },
       {
         "name": "gamma_dot_t0",
-        "min": 1e-06,
+        "min": 1e-6,
         "max": 1.0,
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
@@ -390,9 +380,7 @@
   "output_settings": {
     "reporting": {
       "generate_plots": true,
-      "plot_formats": [
-        "png"
-      ],
+      "plot_formats": ["png"],
       "detailed_summary": true
     },
     "plotting": {
@@ -400,10 +388,7 @@
         "create_plots": true,
         "plot_format": "png",
         "dpi": 150,
-        "figure_size": [
-          8,
-          6
-        ],
+        "figure_size": [8, 6],
         "style": "default"
       },
       "c2_heatmaps": {
@@ -417,17 +402,11 @@
         "enabled": true,
         "corner_plots": {
           "enabled": true,
-          "figsize": [
-            10,
-            10
-          ]
+          "figsize": [10, 10]
         },
         "trace_plots": {
           "enabled": true,
-          "figsize": [
-            12,
-            8
-          ]
+          "figsize": [12, 8]
         }
       }
     }

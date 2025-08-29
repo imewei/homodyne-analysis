@@ -9,7 +9,7 @@ end-to-end including data loading, analysis, and plotting with dummy phi angles.
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -458,7 +458,6 @@ class TestIsotropicModeIntegration:
         with patch("homodyne.analysis.core.os.path.exists", return_value=False):
             with patch("homodyne.analysis.core.np.load") as mock_load:
                 with patch("homodyne.analysis.core.np.savez_compressed") as mock_savez:
-
                     # Setup mock data for single angle
                     n_times = 49
                     mock_c2_data = np.exp(-np.linspace(0, 3, n_times)).reshape(

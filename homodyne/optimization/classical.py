@@ -25,7 +25,7 @@ Institution: Argonne National Laboratory
 
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import scipy.optimize as optimize
@@ -43,8 +43,10 @@ except ImportError:
 
 # Import robust optimization with graceful degradation
 try:
-    from .robust import RobustHomodyneOptimizer  # type: ignore
-    from .robust import create_robust_optimizer
+    from .robust import (
+        RobustHomodyneOptimizer,  # type: ignore
+        create_robust_optimizer,
+    )
 
     ROBUST_OPTIMIZATION_AVAILABLE = True
 except ImportError:
@@ -82,7 +84,7 @@ class ClassicalOptimizer:
     MCMC and maintaining the same physical constraints across all optimization methods.
     """
 
-    def __init__(self, analysis_core, config: Dict[str, Any]):
+    def __init__(self, analysis_core, config: dict[str, Any]):
         """
         Initialize classical optimizer.
 
@@ -104,11 +106,11 @@ class ClassicalOptimizer:
 
     def run_classical_optimization_optimized(
         self,
-        initial_parameters: Optional[np.ndarray] = None,
-        methods: Optional[List[str]] = None,
-        phi_angles: Optional[np.ndarray] = None,
-        c2_experimental: Optional[np.ndarray] = None,
-    ) -> Tuple[Optional[np.ndarray], Any]:
+        initial_parameters: np.ndarray | None = None,
+        methods: list[str] | None = None,
+        phi_angles: np.ndarray | None = None,
+        c2_experimental: np.ndarray | None = None,
+    ) -> tuple[np.ndarray | None, Any]:
         """
         Run Nelder-Mead optimization method.
 
@@ -237,7 +239,7 @@ class ClassicalOptimizer:
                 # Store result for analysis
                 if success and isinstance(result, optimize.OptimizeResult):
                     # Add timing info to result object
-                    setattr(result, "execution_time", elapsed)
+                    result.execution_time = elapsed
                     all_results.append((method, result))
 
                     if result.fun < best_chi2:
@@ -365,7 +367,7 @@ class ClassicalOptimizer:
                 f"Failed methods: {[method for method, _ in all_results]}"
             )
 
-    def get_available_methods(self) -> List[str]:
+    def get_available_methods(self) -> list[str]:
         """
         Get list of available classical optimization methods.
 
@@ -410,7 +412,7 @@ class ClassicalOptimizer:
             return GUROBI_AVAILABLE
         return False
 
-    def get_method_recommendations(self) -> Dict[str, List[str]]:
+    def get_method_recommendations(self) -> dict[str, list[str]]:
         """
         Get method recommendations based on problem characteristics.
 
@@ -438,7 +440,7 @@ class ClassicalOptimizer:
 
     def validate_parameters(
         self, parameters: np.ndarray, method_name: str = ""
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Validate physical parameters and bounds.
 
@@ -545,9 +547,9 @@ class ClassicalOptimizer:
         method: str,
         objective_func,
         initial_parameters: np.ndarray,
-        bounds: Optional[List[Tuple[float, float]]] = None,
-        method_options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[bool, Union[optimize.OptimizeResult, Exception]]:
+        bounds: list[tuple[float, float]] | None = None,
+        method_options: dict[str, Any] | None = None,
+    ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
         Run a single optimization method.
 
@@ -613,9 +615,9 @@ class ClassicalOptimizer:
         self,
         objective_func,
         initial_parameters: np.ndarray,
-        bounds: Optional[List[Tuple[float, float]]] = None,
-        method_options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[bool, Union[optimize.OptimizeResult, Exception]]:
+        bounds: list[tuple[float, float]] | None = None,
+        method_options: dict[str, Any] | None = None,
+    ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
         Run iterative Gurobi-based optimization using trust region approach.
 
@@ -794,7 +796,9 @@ class ClassicalOptimizer:
 
                             if model.status == GRB.OPTIMAL:
                                 # Extract step
-                                step_values = np.array([step[i].x for i in range(n_params)])  # type: ignore[attr-defined]
+                                step_values = np.array(
+                                    [step[i].x for i in range(n_params)]
+                                )  # type: ignore[attr-defined]
                                 x_new = x_current + step_values
                                 f_new = objective_func(x_new)
                                 function_evaluations += 1
@@ -902,11 +906,10 @@ class ClassicalOptimizer:
         method: str,
         objective_func,
         initial_parameters: np.ndarray,
-        bounds: Optional[
-            List[Tuple[float, float]]
-        ] = None,  # Used by robust optimizer internally
-        method_options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[bool, Union[optimize.OptimizeResult, Exception]]:
+        bounds: list[tuple[float, float]]
+        | None = None,  # Used by robust optimizer internally
+        method_options: dict[str, Any] | None = None,
+    ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
         Run robust optimization using CVXPY + Gurobi.
 
@@ -1014,8 +1017,8 @@ class ClassicalOptimizer:
 
     def analyze_optimization_results(
         self,
-        results: List[Tuple[str, bool, Union[optimize.OptimizeResult, Exception]]],
-    ) -> Dict[str, Any]:
+        results: list[tuple[str, bool, optimize.OptimizeResult | Exception]],
+    ) -> dict[str, Any]:
         """
         Analyze and summarize optimization results from Nelder-Mead method.
 
@@ -1077,9 +1080,9 @@ class ClassicalOptimizer:
 
     def get_parameter_bounds(
         self,
-        effective_param_count: Optional[int] = None,
-        is_static_mode: Optional[bool] = None,
-    ) -> List[Tuple[float, float]]:
+        effective_param_count: int | None = None,
+        is_static_mode: bool | None = None,
+    ) -> list[tuple[float, float]]:
         """
         Extract parameter bounds from configuration (unused by Nelder-Mead).
 
@@ -1131,8 +1134,8 @@ class ClassicalOptimizer:
 
     def compare_optimization_results(
         self,
-        results: List[Tuple[str, Union[optimize.OptimizeResult, Exception]]],
-    ) -> Dict[str, Any]:
+        results: list[tuple[str, optimize.OptimizeResult | Exception]],
+    ) -> dict[str, Any]:
         """
         Compare optimization results (typically just Nelder-Mead).
 
@@ -1188,7 +1191,7 @@ class ClassicalOptimizer:
         best_result: optimize.OptimizeResult,
         total_time: float,
         method_name: str = "unknown",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate comprehensive optimization summary.
 

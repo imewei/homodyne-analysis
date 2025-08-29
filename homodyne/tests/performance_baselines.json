@@ -38,8 +38,8 @@
   "test_chi_squared_calculation_benchmark": {
     "execution_time_median": 0.000202,
     "execution_time_mean": 0.000226,
-    "execution_time_95th_percentile": 0.000400,
-    "execution_time_max_acceptable": 0.002000,
+    "execution_time_95th_percentile": 0.0004,
+    "execution_time_max_acceptable": 0.002,
     "memory_mb": 8.0,
     "optimizations_applied": {
       "config_caching": "Cached validation and chi-squared configurations to avoid repeated dict lookups",
@@ -66,8 +66,8 @@
   "test_correlation_calculation_benchmark": {
     "execution_time_median": 0.000225,
     "execution_time_mean": 0.000234,
-    "execution_time_95th_percentile": 0.000350,
-    "execution_time_max_acceptable": 0.001000,
+    "execution_time_95th_percentile": 0.00035,
+    "execution_time_max_acceptable": 0.001,
     "memory_mb": 5.0,
     "variance_notes": "JIT compilation causes initial warmup overhead. Stable after 5 warmup runs with comprehensive function-level warmup.",
     "performance_characteristics": {
@@ -83,8 +83,8 @@
     }
   },
   "correlation_calculation_stable_benchmark": {
-    "expected_median_time": 0.000220,
-    "max_acceptable_time": 0.001000,
+    "expected_median_time": 0.00022,
+    "max_acceptable_time": 0.001,
     "performance_notes": "Optimized version maintains sub-millisecond performance with improved memory efficiency"
   },
   "performance_regression_thresholds": {

@@ -1,6 +1,7 @@
 # Contributing to Homodyne Analysis Package
 
-Thank you for your interest in contributing to the Homodyne Analysis Package! This guide provides essential information for contributors.
+Thank you for your interest in contributing to the Homodyne Analysis Package! This guide
+provides essential information for contributors.
 
 ## Development Setup
 
@@ -12,19 +13,22 @@ Thank you for your interest in contributing to the Homodyne Analysis Package! Th
 ### Getting Started
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/imewei/homodyne.git
    cd homodyne
    ```
 
-2. **Install development dependencies:**
+1. **Install development dependencies:**
+
    ```bash
    make dev-install
    # or manually:
    pip install -e ".[all,dev,docs]"
    ```
 
-3. **Run tests to verify setup:**
+1. **Run tests to verify setup:**
+
    ```bash
    make test
    # or manually:
@@ -64,11 +68,13 @@ make build         # Build distribution packages
 The repository should be kept clean of development artifacts. Use these commands:
 
 #### Quick Clean
+
 ```bash
 make clean
 ```
 
 #### Manual Clean (Advanced)
+
 ```bash
 # Remove all untracked files except data and results
 git clean -xfd --exclude=data --exclude=homodyne_results
@@ -119,9 +125,10 @@ pytest -v -m "performance"       # Only performance tests
 ### Test Categories
 
 Our tests are organized by markers:
+
 - `slow`: Time-intensive tests
 - `integration`: Integration tests
-- `mcmc`: MCMC-specific tests  
+- `mcmc`: MCMC-specific tests
 - `performance`: Performance benchmarks
 - `regression`: Regression tests
 
@@ -146,26 +153,30 @@ Documentation is built using Sphinx and hosted on Read the Docs.
 ## Submitting Changes
 
 1. **Create a feature branch:**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-2. **Make your changes** following the development guidelines
+1. **Make your changes** following the development guidelines
 
-3. **Clean up and test:**
+1. **Clean up and test:**
+
    ```bash
    make clean
    make test-all
    make lint
    ```
 
-4. **Commit your changes:**
+1. **Commit your changes:**
+
    ```bash
    git add .
    git commit -m "Descriptive commit message"
    ```
 
-5. **Push and create a pull request:**
+1. **Push and create a pull request:**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -201,10 +212,12 @@ make upload  # Upload to PyPI
 
 ## Getting Help
 
-- **Issues:** Report bugs and request features on [GitHub Issues](https://github.com/imewei/homodyne/issues)
+- **Issues:** Report bugs and request features on
+  [GitHub Issues](https://github.com/imewei/homodyne/issues)
 - **Documentation:** Check the [online documentation](https://homodyne.readthedocs.io/)
 - **Email:** Contact the maintainers at wchen@anl.gov
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the MIT
+License.

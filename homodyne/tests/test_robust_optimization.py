@@ -14,7 +14,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -954,7 +954,7 @@ class TestRobustOptimizationIntegration:
 
         try:
             # Test that configuration can be loaded
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 loaded_config = json.load(f)
 
             assert "optimization_config" in loaded_config

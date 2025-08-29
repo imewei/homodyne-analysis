@@ -5,8 +5,6 @@ This module tests the main package imports and optional dependency handling.
 """
 
 import sys
-import warnings
-from unittest.mock import patch
 
 import pytest
 
@@ -213,7 +211,6 @@ class TestImportPerformance:
             del sys.modules["homodyne"]
 
         start_time = time.time()
-        import homodyne
 
         import_time = time.time() - start_time
 
