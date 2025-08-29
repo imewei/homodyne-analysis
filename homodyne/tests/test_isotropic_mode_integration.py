@@ -304,11 +304,11 @@ class TestIsotropicModeIntegration:
         assert core.cached_experimental_data is None  # Initially None
         assert core.cached_phi_angles is None  # Initially None
 
-        # Use more specific and safer mocking approach  
+        # Use more specific and safer mocking approach
         # Store original values for cleanup
         original_cache_data = core.cached_experimental_data
         original_cache_angles = core.cached_phi_angles
-        
+
         try:
             with patch.object(
                 core, "_load_raw_data", return_value=mock_c2_data
@@ -341,7 +341,9 @@ class TestIsotropicModeIntegration:
                     # Verify second call uses cache (raw data load should not be
                     # called again)
                     mock_load_raw.reset_mock()
-                    c2_data_2, _, phi_angles_2, num_angles_2 = core.load_experimental_data()
+                    c2_data_2, _, phi_angles_2, num_angles_2 = (
+                        core.load_experimental_data()
+                    )
 
                     # Should return same data from cache
                     assert num_angles_2 == 1

@@ -15,8 +15,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import dummy_config
-
 # Import the modules to test
 from homodyne.core.io_utils import (
     ensure_dir,

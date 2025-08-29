@@ -231,6 +231,9 @@ select = [
 ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
+    "RUF001", # String contains ambiguous characters (mathematical notation is intentional)
+    "RUF002", # Docstring contains ambiguous characters (mathematical notation is intentional)
+    "RUF003", # Comment contains ambiguous characters (mathematical notation is intentional)
 ]
 
 [tool.ruff.lint.per-file-ignores]

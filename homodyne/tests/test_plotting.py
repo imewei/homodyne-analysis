@@ -15,14 +15,6 @@ import pytest
 matplotlib.use("Agg")  # Use non-interactive backend for testing
 
 # Import fixtures
-from homodyne.tests.fixtures import (
-    dummy_config,
-    dummy_correlation_data,
-    dummy_analysis_results,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    dummy_time_arrays
-)
 
 
 # Import plotting functions

@@ -12,7 +12,6 @@ from typing import Any
 import numpy as np
 import pytest
 
-
 # Using pytest's built-in tmp_path fixture instead of custom implementation
 
 

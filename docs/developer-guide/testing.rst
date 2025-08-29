@@ -16,7 +16,7 @@ The test suite is comprehensive with 500+ tests covering all major functionality
    ├── test_config_integration.py      # Configuration integration tests
    ├── test_integration.py             # End-to-end workflow tests
    ├── test_isotropic_mode_integration.py  # Isotropic mode tests
-   ├── test_performance.py             # Performance benchmark tests  
+   ├── test_performance.py             # Performance benchmark tests
    ├── test_plotting.py                # Visualization tests
    ├── test_mcmc_*.py                  # MCMC-related tests
    ├── test_optimization_*.py          # Optimization method tests
@@ -27,7 +27,7 @@ The test suite is comprehensive with 500+ tests covering all major functionality
 **Recent Test Infrastructure Improvements**:
 
 - **Robust fixture system**: Centralized test data generation with proper isolation
-- **Performance regression detection**: Automated benchmarking with CI integration  
+- **Performance regression detection**: Automated benchmarking with CI integration
 - **Code coverage tracking**: Comprehensive coverage reporting with HTML output
 - **Parallel test execution**: Multi-core test running with pytest-xdist
 - **Property-based testing**: Hypothesis integration for robust edge case detection

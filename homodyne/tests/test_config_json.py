@@ -15,8 +15,8 @@ import pytest
 from homodyne.tests.fixtures import (
     create_invalid_config_file,
     create_minimal_config_file,
-    dummy_config
 )
+
 # tmp_path is built-in pytest fixture
 
 # Import the modules to test

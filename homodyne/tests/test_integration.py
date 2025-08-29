@@ -14,15 +14,8 @@ import numpy as np
 import pytest
 
 # Import the modules to test
-from homodyne.tests.fixtures import (
-    create_minimal_config_file,
-    dummy_config,
-    dummy_analysis_results,
-    dummy_correlation_data,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    mock_optimization_result
-)
+from homodyne.tests.fixtures import create_minimal_config_file
+
 # tmp_path is built-in pytest fixture, no need to import
 
 # Import modules being tested

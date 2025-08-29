@@ -656,7 +656,7 @@ class TestRobustOptimizationInterface:
             results[method] = result
 
         # Check that each method returns reasonable results
-        for method, (optimal_params, _info) in results.items():
+        for _method, (optimal_params, _info) in results.items():
             if optimal_params is not None:
                 assert isinstance(optimal_params, np.ndarray)
                 assert len(optimal_params) == 3

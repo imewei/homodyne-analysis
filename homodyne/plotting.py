@@ -140,7 +140,9 @@ def setup_matplotlib_style(plot_config: dict[str, Any]) -> None:
     )
 
 
-def _setup_plot_environment(config: dict | None, outdir: str | Path) -> tuple[dict[str, Any], Path]:
+def _setup_plot_environment(
+    config: dict | None, outdir: str | Path
+) -> tuple[dict[str, Any], Path]:
     """Set up common plotting environment and return config and output directory."""
     plot_config = get_plot_config(config)
     setup_matplotlib_style(plot_config)
@@ -155,7 +157,9 @@ def _setup_plot_style(config: dict | None) -> dict[str, Any]:
     return plot_config
 
 
-def _save_plot_with_logging(fig: plt.Figure, output_path: Path, plot_type: str, **save_kwargs: Any) -> None:
+def _save_plot_with_logging(
+    fig: plt.Figure, output_path: Path, plot_type: str, **save_kwargs: Any
+) -> None:
     """Save plot with consistent logging and cleanup."""
     try:
         if save_kwargs:
@@ -452,11 +456,15 @@ def _get_active_parameters(config: dict | None) -> list[str] | None:
     return None
 
 
-def _convert_trace_to_samples(trace_data: Any, active_param_names: list[str] | None) -> Any:
+def _convert_trace_to_samples(
+    trace_data: Any, active_param_names: list[str] | None
+) -> Any:
     """Convert various trace data formats to samples suitable for plotting."""
     # Validate trace data format first
     if callable(trace_data):
-        logger.error("Trace data is a function, not actual data - cannot create corner plot")
+        logger.error(
+            "Trace data is a function, not actual data - cannot create corner plot"
+        )
         return None
 
     # Handle different trace data formats
@@ -473,8 +481,11 @@ def _convert_trace_to_samples(trace_data: Any, active_param_names: list[str] | N
             }
             if filtered_vars:
                 import xarray as xr
+
                 samples = xr.Dataset(filtered_vars)
-                logger.debug(f"Filtered to active parameters: {list(samples.data_vars)}")
+                logger.debug(
+                    f"Filtered to active parameters: {list(samples.data_vars)}"
+                )
         return samples
 
     elif isinstance(trace_data, dict):
@@ -493,17 +504,20 @@ def _convert_trace_to_samples(trace_data: Any, active_param_names: list[str] | N
             if not ARVIZ_AVAILABLE:
                 logger.error("ArviZ required for numpy array conversion")
                 return None
-            
+
             import arviz as az
+
             samples = az.convert_to_inference_data(trace_data).posterior
         except Exception as conversion_error:
-            logger.error(f"Failed to convert numpy trace to ArviZ format: {conversion_error}")
+            logger.error(
+                f"Failed to convert numpy trace to ArviZ format: {conversion_error}"
+            )
             return None
 
     else:
         logger.error(f"Unsupported trace data type: {type(trace_data)}")
         return None
-        
+
     return samples
 
 
@@ -2136,7 +2150,7 @@ def plot_3d_surface(
                 lower_ci = upper_ci = None
 
         # Set up plotting style
-        plot_config = _setup_plot_style(config)
+        _setup_plot_style(config)
 
         # Create figure with two subplots: experimental and fitted
         fig = plt.figure(figsize=(16, 7))
@@ -2267,14 +2281,14 @@ def plot_3d_surface(
 
         # Save with high quality
         _save_plot_with_logging(
-            fig, 
-            output_path, 
+            fig,
+            output_path,
             "3D surface",
             dpi=300,
             bbox_inches="tight",
             facecolor="white",
             edgecolor="none",
-            format="png"
+            format="png",
         )
 
         # =================================================================
@@ -2336,7 +2350,7 @@ def plot_3d_surface(
                 bbox_inches="tight",
                 facecolor="white",
                 edgecolor="none",
-                format="png"
+                format="png",
             )
 
         except Exception as e:

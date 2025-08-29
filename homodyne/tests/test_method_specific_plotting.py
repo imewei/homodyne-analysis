@@ -16,8 +16,8 @@ import pytest
 
 # Check plotting dependencies
 try:
-    import matplotlib
-    import matplotlib.pyplot as plt
+    import matplotlib  # noqa: F401
+    import matplotlib.pyplot as plt  # noqa: F401
 
     from homodyne.run_homodyne import _generate_classical_plots
 

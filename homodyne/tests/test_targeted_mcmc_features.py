@@ -18,8 +18,6 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from homodyne.tests.fixtures import dummy_config
-
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -46,7 +44,7 @@ class TestPyMCImportHandling:
         # Function to test import behavior
         def test_import_pymc():
             try:
-                import pymc
+                import pymc  # noqa: F401
 
                 return True
             except ImportError:
@@ -72,7 +70,7 @@ class TestPyMCImportHandling:
         """Test that PYMC_AVAILABLE flag reflects actual availability."""
         # Test actual PyMC availability
         try:
-            import pymc
+            import pymc  # noqa: F401
 
             actual_available = True
         except ImportError:

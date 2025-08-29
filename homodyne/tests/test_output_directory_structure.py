@@ -12,8 +12,6 @@ in the homodyne analysis module, including:
 
 import numpy as np
 
-from homodyne.tests.fixtures import dummy_config, test_output_directory
-
 
 class TestOutputDirectoryStructure:
     """Test the new output directory structure and file organization."""

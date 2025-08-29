@@ -17,7 +17,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     import argcomplete
@@ -25,7 +25,7 @@ try:
     ARGCOMPLETE_AVAILABLE = True
 except ImportError:
     ARGCOMPLETE_AVAILABLE = False
-    argcomplete: Optional[Any] = None
+    argcomplete: Any | None = None
 
 
 class FastCompletionCache:
@@ -167,7 +167,9 @@ class HomodyneCompleter:
         return [m for m in methods if m.startswith(prefix_lower)]
 
     @staticmethod
-    def config_files_completer(prefix: str, parsed_args: Any, **kwargs: Any) -> list[str]:
+    def config_files_completer(
+        prefix: str, parsed_args: Any, **kwargs: Any
+    ) -> list[str]:
         """Suggest JSON config files - instant cached lookup."""
         # Handle path with directory (cross-platform)
         if os.sep in prefix or "/" in prefix:
