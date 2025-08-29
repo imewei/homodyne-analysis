@@ -87,7 +87,8 @@ pip install homodyne-analysis[data]
 pip install homodyne-analysis[performance]
 # Includes:
 # - numba>=0.61.0,<0.62.0          # JIT compilation (3-5x speedup)
-# - jax>=0.7.0                     # High-performance numerical computing
+# - jax[cuda12]>=0.7.0 (Linux)     # JAX with GPU support on Linux
+# - jax>=0.7.0 (non-Linux)         # Standard JAX on other platforms
 # - jaxlib>=0.4.35                 # JAX backend library
 # - psutil>=5.8.0                  # Memory profiling and monitoring
 ```
@@ -97,8 +98,13 @@ pip install homodyne-analysis[performance]
 ```bash
 pip install homodyne-analysis[jax]
 # Includes:
-# - jax>=0.7.0                     # High-performance computations
-# - jaxlib>=0.4.35                 # JAX backend with CPU/GPU support
+# - jax[cuda12]>=0.7.0             # JAX with CUDA 12 support (Linux with NVIDIA GPU)
+# - jax>=0.7.0                     # Standard JAX (non-Linux platforms)
+# - jaxlib>=0.4.35                 # JAX backend library
+
+# Note: Linux systems automatically get CUDA 12 support for NVIDIA GPUs
+# For other CUDA versions or manual installation:
+# pip install "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
 **Bayesian MCMC Analysis:**
@@ -110,6 +116,9 @@ pip install homodyne-analysis[mcmc]
 # - arviz>=0.12.0                  # Bayesian data analysis
 # - pytensor>=2.8.0                # Tensor operations for PyMC
 # - corner>=2.2.0                  # Corner plots for MCMC results
+# - numpyro>=0.13.0                # GPU-accelerated MCMC with JAX
+# - jax[cuda12]>=0.7.0 (Linux)     # Automatic GPU support on Linux
+# - jaxlib>=0.4.35                 # JAX backend for NumPyro
 ```
 
 **Robust Optimization:**
@@ -220,6 +229,67 @@ pip install homodyne-analysis[all]  # Everything included
 ```bash
 pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
 ```
+
+### GPU Acceleration
+
+The package supports GPU acceleration for MCMC sampling and JAX-based computations on Linux systems with NVIDIA GPUs:
+
+**Automatic GPU Detection:**
+
+On Linux systems, installing with `[jax]`, `[mcmc]`, or `[performance]` options automatically includes CUDA 12 support:
+
+```bash
+# Any of these will install GPU support on Linux:
+pip install homodyne-analysis[jax]         # JAX with GPU
+pip install homodyne-analysis[mcmc]        # Includes NumPyro for GPU-accelerated MCMC
+pip install homodyne-analysis[performance] # Full performance stack with GPU
+```
+
+**Activate GPU Support:**
+
+For pip-installed JAX with CUDA, you need to activate GPU support:
+
+```bash
+# Activate GPU support (required for pip-installed NVIDIA libraries)
+source activate_gpu.sh
+
+# Then verify GPU detection
+python -c "import jax; print(f'JAX devices: {jax.devices()}')"
+# Should show: [CudaDevice(id=0)]
+```
+
+**Using GPU in Python:**
+
+```python
+# After activating GPU support with the script above
+import jax
+print(f"JAX devices: {jax.devices()}")  # Should show GPU device(s)
+
+# For MCMC GPU acceleration
+from homodyne.optimization.mcmc import MCMCSampler
+# GPU acceleration is automatic when available
+```
+
+**Manual GPU Setup:**
+
+If you need a different CUDA version or manual control:
+
+```bash
+# For CUDA 11.x
+pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+
+# For CPU-only (override automatic GPU installation)
+pip install --upgrade "jax[cpu]"
+```
+
+**Requirements for GPU Acceleration:**
+
+- Linux operating system
+- NVIDIA GPU with CUDA 12.x support
+- NVIDIA drivers installed
+- For MCMC: PyMC will automatically use JAX/NumPyro backend when available
+
+**Note:** See `GPU_SETUP.md` for detailed GPU setup instructions and troubleshooting.
 
 ## Quick Start
 

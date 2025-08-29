@@ -67,19 +67,26 @@ data = [
 ]
 performance = [
     "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
-    "jax>=0.7.0",  # High-performance numerical computations with JIT compilation
+    "jax[cuda12]>=0.7.0 ; sys_platform == 'linux'",  # JAX with CUDA 12 support for Linux GPU acceleration
+    "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library
     "psutil>=5.8.0",  # For memory profiling and system monitoring
 ]
 jax = [
-    "jax>=0.7.0",  # High-performance numerical computations with JIT compilation
+    "jax[cuda12]>=0.7.0 ; sys_platform == 'linux'",  # JAX with CUDA 12 support for Linux GPU acceleration
+    "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library for CPU/GPU acceleration
+    # Note: GPU requires activation script - run 'source activate_gpu.sh' before use
 ]
 mcmc = [
     "pymc>=5.0.0",
     "arviz>=0.12.0",
     "pytensor>=2.8.0",
     "corner>=2.2.0",  # For enhanced MCMC corner plots
+    "numpyro>=0.13.0",  # NumPyro for GPU-accelerated MCMC sampling with JAX
+    "jax[cuda12]>=0.7.0 ; sys_platform == 'linux'",  # JAX with CUDA 12 support for Linux GPU acceleration
+    "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
+    "jaxlib>=0.4.35",  # JAX backend library for NumPyro
 ]
 robust = [
     "cvxpy>=1.4.0",  # Convex optimization for robust methods
@@ -144,6 +151,7 @@ Issues = "https://github.com/imewei/homodyne/issues"
 [project.scripts]
 homodyne = "homodyne.run_homodyne:main"
 homodyne-config = "homodyne.create_config:main"
+homodyne-gpu = "homodyne.gpu_wrapper:main"
 
 [tool.setuptools]
 packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
@@ -156,7 +164,9 @@ homodyne = [
     "typings/**/*.pyi",
     "completion_fast.py",
     "cli_completion.py",
-    "*_complete"
+    "*_complete",
+    "activate_gpu.sh",
+    "GPU_SETUP.md"
 ]
 
 [tool.setuptools.dynamic]

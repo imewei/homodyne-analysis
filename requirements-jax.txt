@@ -1,19 +1,27 @@
 # JAX dependencies for high-performance computing
 # Generated from pyproject.toml [project.optional-dependencies.jax]
-# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+# Last updated: v0.7.2 (GPU acceleration support)
 
 # Include core dependencies
 -r requirements.txt
 
 # JAX for high-performance numerical computations
-jax>=0.7.0
+# Linux systems with NVIDIA GPU will automatically get CUDA 12 support
+jax[cuda12]>=0.7.0 ; sys_platform == 'linux'
+jax>=0.7.0 ; sys_platform != 'linux'
 jaxlib>=0.4.35
 
-# Note: For GPU support, install jaxlib with CUDA support:
-# pip install "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+# Note: GPU support on Linux
+# - Linux systems will automatically install JAX with CUDA 12 support
+# - IMPORTANT: Run 'source activate_gpu.sh' before using GPU
+# - Ensure you have CUDA 12.x installed and configured
+# - For other CUDA versions, manually install:
+#   pip install "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 #
 # For TPU support:
 # pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
 #
-# For CPU-only (default):
-# pip install jax jaxlib
+# For CPU-only on Linux (override default):
+# pip install --upgrade "jax[cpu]"
+#
+# See GPU_SETUP.md for detailed GPU setup instructions

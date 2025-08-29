@@ -7,9 +7,11 @@ include CLI_REFERENCE.md
 include API_REFERENCE.md
 include PRE_COMMIT_SETUP.md
 include SECURITY.md
+include GPU_SETUP.md
 include pyproject.toml
 include Makefile
 include requirements*.txt
+include activate_gpu.sh
 
 # Include type stubs for third-party libraries
 recursive-include homodyne/typings *.pyi

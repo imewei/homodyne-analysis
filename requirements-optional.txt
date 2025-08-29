@@ -1,6 +1,6 @@
 # Optional dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies]
-# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+# Last updated: v0.7.2 (GPU acceleration support with JAX/CUDA12 and NumPyro)
 
 # Include core dependencies
 -r requirements.txt
@@ -10,15 +10,19 @@ xpcs-viewer>=1.0.4
 
 # Performance optimization (includes JAX for high-performance computing)
 numba>=0.61.0,<0.62.0
-jax>=0.7.0
+jax[cuda12]>=0.7.0 ; sys_platform == 'linux'
+jax>=0.7.0 ; sys_platform != 'linux'
 jaxlib>=0.4.35
 psutil>=5.8.0
 
-# MCMC and Bayesian analysis
+# MCMC and Bayesian analysis (with GPU acceleration support)
 pymc>=5.0.0
 arviz>=0.12.0
 pytensor>=2.8.0
 corner>=2.2.0
+numpyro>=0.13.0
+# JAX dependencies for NumPyro GPU acceleration are included above
+# Note: Run 'source activate_gpu.sh' before using GPU acceleration
 
 # Robust optimization
 cvxpy>=1.4.0

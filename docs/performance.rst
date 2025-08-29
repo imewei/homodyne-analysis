@@ -21,9 +21,10 @@ Key Performance Features
    - Optimized for chi-squared calculations and correlation functions
 
 **JAX Backend Integration**
-   - GPU/TPU acceleration for MCMC sampling
-   - High-performance numerical computations
-   - Automatic fallback to CPU when needed
+   - GPU/TPU acceleration for MCMC sampling via NumPyro
+   - High-performance numerical computations with automatic differentiation
+   - Automatic GPU detection on Linux systems with NVIDIA GPUs
+   - Seamless fallback to CPU when GPU unavailable
 
 **Performance Monitoring**
    - Built-in profiling decorators
@@ -34,7 +35,7 @@ Key Performance Features
 **Optimization-Specific Performance**
    - **Classical**: Optimized angle filtering, vectorized operations
    - **Robust**: CVXPY solver optimization, caching, progressive optimization
-   - **MCMC**: JAX/NumPyro acceleration, thinning support, convergence diagnostics
+   - **MCMC**: JAX/NumPyro GPU acceleration, thinning support, convergence diagnostics
 
 Method Performance Comparison
 =============================
@@ -124,11 +125,11 @@ Robust Optimization
 MCMC Optimization
 -----------------
 
-**JAX Acceleration:**
+**JAX/NumPyro GPU Acceleration:**
 
 .. code-block:: python
 
-   # Enable JAX backend for GPU acceleration
+   # Enable JAX backend for GPU acceleration (automatic on Linux with NVIDIA GPU)
    config = {
        "optimization_config": {
            "mcmc_sampling": {
@@ -137,6 +138,16 @@ MCMC Optimization
            }
        }
    }
+
+   # Or programmatically:
+   from homodyne.optimization.mcmc import HodomyneMCMC
+   
+   # GPU acceleration is automatic when available
+   mcmc = HodomyneMCMC(mode="laminar_flow", use_jax_backend=True)
+   
+   # Verify GPU detection:
+   import jax
+   print(f"JAX devices: {jax.devices()}")  # Shows GPU devices if available
 
 **Sampling Efficiency:**
 
@@ -264,7 +275,8 @@ Troubleshooting Performance Issues
 **Common Issues and Solutions:**
 
 1. **Slow MCMC Sampling**
-   - Enable JAX backend: ``pip install jax jaxlib``
+   - Enable JAX backend: ``pip install homodyne-analysis[mcmc]``  # Includes JAX with GPU support on Linux
+   - Remember to run ``source activate_gpu.sh`` before use
    - Reduce problem size: Use angle filtering
    - Optimize MCMC settings: Increase ``thin`` parameter
 
@@ -299,6 +311,128 @@ Troubleshooting Performance Issues
    result = full_analysis()
    # Check logs for performance breakdown
 
+GPU Acceleration Guide
+======================
+
+The package provides comprehensive GPU acceleration for MCMC sampling and JAX-based computations through automatic CUDA support on Linux systems.
+
+**Automatic GPU Detection and Setup**
+
+When you install the package with MCMC or performance extras on a Linux system with NVIDIA GPU:
+
+.. code-block:: bash
+
+   # Any of these automatically include GPU support on Linux:
+   pip install homodyne-analysis[mcmc]        # For GPU-accelerated MCMC
+   pip install homodyne-analysis[performance] # Full performance stack
+   pip install homodyne-analysis[jax]         # JAX with GPU support
+   
+   # IMPORTANT: Activate GPU support after installation
+   source activate_gpu.sh
+
+**GPU Performance Benefits**
+
+- **MCMC Sampling**: 5-10x speedup with NumPyro/JAX backend
+- **Vectorized Operations**: Massive parallelization on GPU
+- **Multi-chain Sampling**: Efficient parallel chain execution
+- **Large Dataset Processing**: GPU memory enables bigger problems
+
+**Verifying GPU Setup**
+
+.. code-block:: bash
+
+   # First activate GPU support
+   source activate_gpu.sh
+
+.. code-block:: python
+
+   # Then in Python:
+   import jax
+   
+   # Check available devices
+   print(f"JAX devices: {jax.devices()}")
+   # Should show: [CudaDevice(id=0), ...] for GPU
+   
+   # Check default backend
+   print(f"Backend: {jax.default_backend()}")
+   # Should show: 'gpu' if GPU is being used
+   
+   # Test GPU performance
+   import jax.numpy as jnp
+   x = jnp.ones((1000, 1000))
+   y = x @ x  # Matrix multiplication on GPU
+
+**MCMC GPU Acceleration**
+
+The MCMC module automatically detects and uses GPU when available:
+
+.. code-block:: python
+
+   from homodyne.optimization.mcmc import HodomyneMCMC
+   
+   # GPU acceleration is automatic
+   mcmc = HodomyneMCMC(
+       mode="laminar_flow",
+       use_jax_backend=True  # Default: True
+   )
+   
+   # The module will log:
+   # INFO - Using JAX backend with NumPyro NUTS for GPU acceleration
+   
+   # Run sampling (will use GPU if available)
+   result = mcmc.run_mcmc(
+       data=data,
+       draws=4000,
+       tune=1000,
+       chains=4  # Parallel chains on GPU
+   )
+
+**GPU Memory Management**
+
+.. code-block:: python
+
+   # Monitor GPU memory usage
+   from jax import devices
+   
+   # Get GPU memory info
+   gpu = devices('gpu')[0]
+   memory_stats = gpu.memory_stats()
+   print(f"GPU memory used: {memory_stats['bytes_in_use'] / 1e9:.2f} GB")
+   
+   # Clear GPU memory if needed
+   import gc
+   gc.collect()
+
+**Troubleshooting GPU Issues**
+
+1. **GPU Not Detected**:
+
+   .. code-block:: bash
+
+      # Make sure you activated GPU support
+      source activate_gpu.sh
+      
+      # Check NVIDIA driver
+      nvidia-smi
+      
+      # Check CUDA version
+      nvcc --version
+      
+      # If still not working, reinstall JAX with specific CUDA version
+      pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+
+2. **Out of Memory Errors**:
+
+   - Reduce batch size or number of chains
+   - Enable memory-efficient sampling
+   - Use CPU for very large problems
+
+3. **Performance Not Improved**:
+
+   - Check if problem size is large enough for GPU benefit
+   - Verify JAX is using GPU backend
+   - Profile to identify bottlenecks
+
 Best Practices
 ==============
 
@@ -312,10 +446,10 @@ Best Practices
 
 **Production Deployment:**
 
-1. **Install performance extras**: ``pip install homodyne-analysis[performance,jax]``
+1. **Install performance extras**: ``pip install homodyne-analysis[performance,jax]``  # GPU support included on Linux
 2. **Configure environment variables** for optimal threading
 3. **Enable caching** in robust optimization settings
-4. **Use appropriate hardware** (GPU for MCMC, multi-core for classical/robust)
+4. **Use appropriate hardware** (NVIDIA GPU for MCMC on Linux, multi-core CPU for classical/robust)
 5. **Validate with benchmarks** before deployment
 
 Code Quality and Maintenance

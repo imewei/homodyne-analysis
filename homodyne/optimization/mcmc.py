@@ -921,7 +921,13 @@ class MCMCSampler:
             if pmjax is None:
                 return None
 
-            logger.info("Using JAX backend with NumPyro NUTS for GPU acceleration")
+            # Check if GPU is actually available before claiming GPU acceleration
+            import jax
+            backend = jax.default_backend()
+            if backend == 'gpu':
+                logger.info("Using JAX backend with NumPyro NUTS for GPU acceleration")
+            else:
+                logger.info(f"Using JAX backend with NumPyro NUTS on {backend.upper()}")
 
             # Use NumPyro NUTS for GPU acceleration
             trace = pmjax.sample_numpyro_nuts(
