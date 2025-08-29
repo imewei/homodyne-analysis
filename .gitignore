@@ -5,7 +5,6 @@ homodyne_results/
 homodyne_analysis_results.json
 run.log
 WARP.md
-my_conf*.json
 
 # Development scripts
 scripts/dev_cleanup/

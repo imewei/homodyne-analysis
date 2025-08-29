@@ -1,0 +1,642 @@
+{
+  "metadata": {
+    "_comment": "User Custom Configuration - Static Isotropic Mode",
+    "config_version": "0.6.5.dev0",
+    "description": "Custom static isotropic configuration for user experiments",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
+    "created_date": "2025-08-20",
+    "updated_date": "2025-01-22",
+    "analysis_mode": "static_isotropic",
+    "parameters_optimized": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data for validation",
+      "simulated_data_plotting": "Use --plot-simulated-data with --contrast and --offset",
+      "phi_angles_override": "Use --phi-angles 0,45,90,135 to override config angles"
+    },
+    "user_customized": true,
+    "script_compatibility": "homodyne v0.6.5.dev0"
+  },
+  "experimental_data": {
+    "_comment": "User's experimental data configuration",
+    "data_folder_path": "./",
+    "data_file_name": "your_data_file.hdf",
+    "phi_angles_path": "./",
+    "phi_angles_file": "phi_list.txt",
+    "exchange_key": "exchange",
+    "cache_file_path": "./",
+    "cache_filename_template": "cached_c2_100pa_isotropic_frames_{start_frame}_{end_frame}.npz",
+    "cache_compression": true,
+    "data_type": "float64",
+    "file_format": "NPZ",
+    "preprocessing": {
+      "apply_diagonal_correction": true,
+      "vectorized_correction": true,
+      "cache_processed_data": true,
+      "normalize_data": true,
+      "normalization_method": "baseline"
+    }
+  },
+  "analyzer_parameters": {
+    "_comment": "Analysis parameters customized for user's experiment",
+    "temporal": {
+      "dt": 0.5,
+      "_dt_note": "Time step between frames in seconds",
+      "dt_unit": "seconds",
+      "start_frame": 400,
+      "end_frame": 1000,
+      "frame_description": "User-defined analysis window"
+    },
+    "scattering": {
+      "wavevector_q": 0.0237,
+      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
+    },
+    "geometry": {
+      "stator_rotor_gap": 2000000,
+      "_gap_note": "Gap in Angstroms (modify as needed for your setup)",
+      "gap_unit": "Å",
+      "gap_in_microns": 200
+    },
+    "computational": {
+      "num_threads": "auto",
+      "auto_detect_cores": true,
+      "max_threads_limit": 6,
+      "memory_limit_gb": 8
+    }
+  },
+  "initial_parameters": {
+    "_comment": "User-customized starting values for 3-parameter optimization",
+    "values": [
+      16000,
+      -1.5,
+      3.0
+    ],
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
+    "units": [
+      "Å²/s",
+      "dimensionless",
+      "Å²/s"
+    ],
+    "physical_meaning": {
+      "D0": "Reference diffusion coefficient",
+      "alpha": "Power-law exponent for D(t) evolution",
+      "D_offset": "Baseline diffusion coefficient"
+    },
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s"
+    }
+  },
+  "optimization_config": {
+    "_comment": "Optimization settings for user's static isotropic analysis",
+    "angle_filtering": {
+      "enabled": false,
+      "_isotropic_note": "Disabled for isotropic analysis - user can enable if needed",
+      "target_ranges": [],
+      "fallback_to_all_angles": true
+    },
+    "classical_optimization": {
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
+      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
+      "_usage_flags": {
+        "--method classical": "Runs all methods above in sequence, selects best result",
+        "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
+        "--method all": "Runs classical (including robust) + MCMC for complete analysis"
+      },
+      "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
+      "_robust_availability": "Robust optimization methods require CVXPY (pip install cvxpy). Provides measurement noise resistance. Options: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+      "_robust_flag_note": "NEW: Use --method robust to run ONLY robust methods for dedicated noise-resistant estimation",
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": 8000,
+          "_maxiter_note": "Increased iterations for better convergence with 3 parameters",
+          "xatol": 1e-10,
+          "_xatol_note": "Tighter parameter tolerance for high precision",
+          "fatol": 1e-10,
+          "_fatol_note": "Tighter function tolerance for better fitting",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes for better convergence"
+        },
+        "Gurobi": {
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
+          "max_iterations": 500,
+          "_max_iterations_note": "Fewer iterations needed for 3-parameter isotropic case",
+          "tolerance": 1e-06,
+          "_tolerance_note": "Convergence tolerance for optimization",
+          "output_flag": 0,
+          "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
+          "method": 2,
+          "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
+          "time_limit": 120,
+          "_time_limit_note": "Shorter time limit for simple 3-parameter problem",
+          "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
+          "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
+          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          }
+        }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
+    },
+    "robust_optimization": {
+      "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # NEW: Run only robust methods",
+        "python run_homodyne.py --method robust --static-isotropic  # Robust in static mode",
+        "python run_homodyne.py --method classical  # Run all methods including robust"
+      ],
+      "_robust_flag_benefits": "NEW --method robust flag runs ONLY robust methods for dedicated noise-resistant estimation",
+      "_optimization_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "enabled": true,
+      "_enabled_note": "Set to false to disable robust optimization methods",
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Primary method: wasserstein (DRO), scenario (bootstrap), ellipsoidal (bounded uncertainty)",
+      "uncertainty_radius": 0.005,
+      "_uncertainty_radius_note": "Aggressive 0.5% for testing - minimal uncertainty to allow better fit",
+      "n_scenarios": 30,
+      "_n_scenarios_note": "Increased to 20 for better uncertainty capture while maintaining performance",
+      "regularization_alpha": 0.001,
+      "_regularization_alpha_note": "Very low 0.001 for minimal smoothing - testing aggressive settings",
+      "regularization_beta": 0.0001,
+      "_regularization_beta_note": "Very low 0.0001 for maximum parameter freedom",
+      "jacobian_epsilon": 1e-7,
+      "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
+      "enable_caching": true,
+      "_enable_caching_note": "Enable performance caching for repeated computations",
+      "enable_progressive_optimization": false,
+      "_enable_progressive_note": "Disabled for direct optimization - may achieve better fit",
+      "preferred_solver": "CLARABEL",
+      "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
+      "solver_settings": {
+        "_comment": "Gurobi solver configuration optimized for XPCS problems",
+        "Method": 2,
+        "_Method_note": "Barrier method (2) recommended for robust QP/SOCP problems",
+        "CrossOver": 0,
+        "_CrossOver_note": "Skip crossover for numerical stability with experimental data",
+        "BarHomogeneous": 1,
+        "_BarHomogeneous_note": "Use homogeneous barrier method for better convergence",
+        "TimeLimit": 600,
+        "_TimeLimit_note": "Increased to 600s for better convergence quality",
+        "MIPGap": 1e-6,
+        "_MIPGap_note": "Tightened to 1e-6 for better fit quality",
+        "NumericFocus": 1,
+        "_NumericFocus_note": "Reduced to 1 for better accuracy vs speed balance",
+        "OutputFlag": 0,
+        "_OutputFlag_note": "Silent mode - change to 1 for debug output"
+      },
+      "method_options": {
+        "_comment": "Method-specific parameters for different robust optimization approaches",
+        "wasserstein": {
+          "_description": "Distributionally Robust Optimization with Wasserstein uncertainty sets",
+          "uncertainty_radius": 0.003,
+          "_uncertainty_radius_note": "Very aggressive 0.3% for Wasserstein - testing minimal uncertainty",
+          "regularization_alpha": 0.0005,
+          "_advantages": "Theoretical guarantees, handles measurement noise well, smooth convergence",
+          "_best_for": "Noisy experimental data, when measurement uncertainty is well-characterized"
+        },
+        "scenario": {
+          "_description": "Scenario-based robust optimization using bootstrap resampling",
+          "n_scenarios": 25,
+          "_n_scenarios_note": "Optimized to 25 scenarios for better uncertainty capture",
+          "bootstrap_method": "residual",
+          "_bootstrap_method_note": "Resample from correlation function residuals",
+          "parallel_scenarios": true,
+          "_advantages": "Outlier resistance, computationally intuitive, handles model misspecification",
+          "_best_for": "Data with outliers, when correlation function model may be approximate"
+        },
+        "ellipsoidal": {
+          "_description": "Ellipsoidal uncertainty sets for bounded data uncertainty",
+          "gamma": 0.02,
+          "_gamma_note": "Reduced to 2% for tighter uncertainty bounds and better fit",
+          "l1_regularization": 0.0003,
+          "l2_regularization": 0.003,
+          "_advantages": "Bounded uncertainty, efficient computation, parameter sparsity control",
+          "_best_for": "Well-characterized noise levels, when uncertainty bounds are known"
+        }
+      },
+      "_first_run_recommendation": "Start with wasserstein method for theoretical guarantees and smooth convergence",
+      "_runtime_performance_note": "Robust methods typically 2-5x slower than classical but provide uncertainty resistance",
+      "_requirements": "Requires CVXPY (pip install cvxpy). Gurobi license recommended for best performance.",
+      "_robust_only_recommendations": {
+        "when_to_use_robust_flag": "Use --method robust when you specifically want noise-resistant estimation without classical methods",
+        "optimal_settings_for_robust_only": {
+          "uncertainty_radius": "0.05-0.08 for noisy data, 0.03 for clean data",
+          "n_scenarios": "30-50 for balanced performance, increase for higher precision",
+          "time_limit": "5-10 minutes sufficient for 3-parameter problems"
+        },
+        "expected_output": "Results saved to /robust/ directory with method-specific plots",
+        "comparison_strategy": "All three robust methods run, best chi-squared selected automatically"
+      }
+    },
+    "mcmc_sampling": {
+      "enabled": true,
+      "sampler": "NUTS",
+      "draws": 6000,
+      "_draws_note": "Fewer draws needed with only 3 parameters",
+      "tune": 1000,
+      "thin": 2,
+      "_thin_note": "Moderate thinning for static mode (good convergence expected)",
+      "chains": 4,
+      "cores": 8,
+      "target_accept": 0.95,
+      "max_treedepth": 12,
+      "return_inferencedata": true
+    },
+    "scaling_parameters": {
+      "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "contrast": {
+        "min": 1e-4,
+        "max": 0.5,
+        "prior_mu": 0.05,
+        "prior_sigma": 0.01,
+        "type": "TruncatedNormal"
+      },
+      "offset": {
+        "min": 1.0,
+        "max": 1.5,
+        "prior_mu": 1.3,
+        "prior_sigma": 0.01,
+        "type": "TruncatedNormal"
+      }
+    }
+  },
+  "parameter_space": {
+    "_comment": "Parameter bounds for user's 3-parameter optimization",
+    "bounds": [
+      {
+        "name": "D0",
+        "min": 1.0,
+        "max": 1000000.0,
+        "type": "TruncatedNormal",
+        "prior_mu": 10000.0,
+        "prior_sigma": 1000.0,
+        "unit": "Å²/s"
+      },
+      {
+        "name": "alpha",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "Normal",
+        "prior_mu": -1.5,
+        "prior_sigma": 0.1,
+        "unit": "dimensionless"
+      },
+      {
+        "name": "D_offset",
+        "min": -100,
+        "max": 100,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 10.0,
+        "unit": "Å²/s"
+      }
+    ]
+  },
+  "analysis_settings": {
+    "_comment": "User's analysis mode settings",
+    "static_mode": true,
+    "_static_mode_note": "True for static analysis (only D0, alpha, D_offset)",
+    "static_submode": "isotropic",
+    "_submode_note": "Isotropic mode - no angle dependence",
+    "model_description": {
+      "static_isotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with isotropic symmetry"
+    }
+  },
+  "advanced_settings": {
+    "_comment": "Advanced computational settings",
+    "data_loading": {
+      "use_diagonal_correction": true,
+      "vectorized_diagonal_fix": true
+    },
+    "chi_squared_calculation": {
+      "method": "standard",
+      "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
+      "uncertainty_estimation_factor": 0.1,
+      "minimum_sigma": 1e-10,
+      "fast_computation": true,
+      "uncertainty_calculation": {
+        "enable_uncertainty": true,
+        "report_uncertainty": true,
+        "minimum_angles_for_uncertainty": 1
+      },
+      "validity_check": {
+        "check_positive_D0": true,
+        "check_positive_gamma_dot_t0": false,
+        "check_positive_time_dependent": true,
+        "check_parameter_bounds": true
+      }
+    },
+    "numerical_integration": {
+      "method": "simpson",
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-12
+    },
+    "optimization_controls": {
+      "convergence_tolerance": 1e-08,
+      "max_function_evaluations": 5000,
+      "parameter_scaling": "auto",
+      "finite_difference_step": 1e-08
+    }
+  },
+  "performance_settings": {
+    "_comment": "Performance settings optimized for user's system",
+    "caching": {
+      "enable_memory_cache": true,
+      "enable_disk_cache": true,
+      "cache_size_limit_mb": 500,
+      "auto_cleanup": true
+    },
+    "parallel_processing": {
+      "enable_multiprocessing": true,
+      "chunk_size": "auto",
+      "backend": "threading"
+    },
+    "memory_management": {
+      "low_memory_mode": false,
+      "garbage_collection_frequency": 10,
+      "memory_monitoring": false
+    },
+    "numba_optimization": {
+      "enable_numba": true,
+      "warmup_numba": true,
+      "parallel_numba": true,
+      "cache_numba": true,
+      "stability_enhancements": {
+        "enable_kernel_warmup": true,
+        "warmup_iterations": 3,
+        "optimize_memory_layout": true,
+        "enable_nogil": true,
+        "environment_optimization": {
+          "auto_configure": true,
+          "max_threads": 2,
+          "gc_optimization": true
+        }
+      },
+      "performance_monitoring": {
+        "enable_profiling": false,
+        "stable_benchmarking": false,
+        "adaptive_benchmarking": false,
+        "performance_baselines": false,
+        "target_cv": 0.10,
+        "memory_monitoring": true,
+        "smart_caching": {
+          "enabled": true,
+          "max_items": 50,
+          "max_memory_mb": 250.0
+        }
+      }
+    },
+    "noise_model": {
+      "use_simple_forward_model": false,
+      "_note": "False uses full forward model consistent with classical optimization",
+      "sigma_prior": 0.1
+    }
+  },
+  "validation_rules": {
+    "_comment": "Data validation and quality control for user analysis",
+    "data_quality": {
+      "check_data_range": true,
+      "correlation_minimum": 0.0,
+      "correlation_maximum": 10.0,
+      "check_nan_values": true,
+      "nan_handling": "raise"
+    },
+    "parameter_validation": {
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true
+    },
+    "fit_quality": {
+      "_comment": "Quality thresholds for user's optimization",
+      "overall_chi_squared": {
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
+      },
+      "per_angle_chi_squared": {
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "outlier_threshold_multiplier": 2.5,
+        "max_outlier_fraction": 0.25,
+        "min_good_angles": 1
+      }
+    },
+    "mcmc_convergence": {
+      "_comment": "MCMC convergence criteria for 3-parameter case",
+      "rhat_thresholds": {
+        "excellent_threshold": 1.01,
+        "good_threshold": 1.05,
+        "acceptable_threshold": 1.1,
+        "critical_threshold": 1.2
+      },
+      "ess_thresholds": {
+        "excellent_threshold": 400,
+        "good_threshold": 200,
+        "acceptable_threshold": 100,
+        "minimum_threshold": 50
+      },
+      "divergence_thresholds": {
+        "max_divergences_fraction": 0.05,
+        "warning_divergences_fraction": 0.01
+      }
+    },
+    "frame_range": {
+      "minimum_frames": 10,
+      "maximum_frames": null,
+      "check_continuity": true
+    }
+  },
+  "workflow_integration": {
+    "_comment": "Analysis workflow settings",
+    "analysis_workflow": {
+      "auto_generate_plots": true,
+      "plot_integration_enabled": true,
+      "plot_experimental_data_on_load": false,
+      "cache_plot_data": true,
+      "save_intermediate_plots": false
+    },
+    "mcmc_integration": {
+      "auto_save_traces": true,
+      "trace_file_format": "netcdf",
+      "include_warmup_in_traces": false,
+      "convergence_diagnostics_auto": true,
+      "plot_mcmc_results": true
+    },
+    "data_management": {
+      "experimental_data_cache": true,
+      "theoretical_data_cache": true,
+      "cache_directory": "./cache",
+      "auto_cleanup_cache": false,
+      "cache_retention_days": 30
+    },
+    "error_handling": {
+      "continue_on_plot_errors": true,
+      "log_plot_errors": true,
+      "fallback_plotting": true,
+      "validate_plot_data": true
+    }
+  },
+  "output_settings": {
+    "_comment": "Output and reporting configuration",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",
+    "results_directory": "./homodyne_results",
+    "file_formats": {
+      "results_format": "json",
+      "save_intermediate": false,
+      "compression": true,
+      "precision": "float64"
+    },
+    "file_naming": {
+      "timestamp_format": "%Y%m%d_%H%M%S",
+      "include_config_name": true,
+      "include_chi_squared": true
+    },
+    "reporting": {
+      "generate_plots": true,
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
+      "detailed_summary": true,
+      "convergence_diagnostics": true
+    },
+    "plotting": {
+      "_comment": "Plotting configuration for user's analysis",
+      "general": {
+        "create_plots": true,
+        "plot_format": "png",
+        "dpi": 300,
+        "figure_size": [
+          10,
+          8
+        ],
+        "style": "publication",
+        "save_plots": true,
+        "show_plots": false
+      },
+      "c2_heatmaps": {
+        "enabled": true,
+        "_method_specific_note": "When multiple optimization methods are used (e.g., Nelder-Mead + Gurobi), separate heatmaps are generated for each method with method names in filenames",
+        "layout": "single_row",
+        "include_experimental": true,
+        "include_theoretical": true,
+        "include_residuals": true,
+        "colormap": "viridis",
+        "colorbar_position": "right",
+        "title_prefix": "C2 Correlation Function (Static Isotropic)",
+        "figsize": [
+          12,
+          4
+        ]
+      },
+      "mcmc_plots": {
+        "enabled": true,
+        "corner_plots": {
+          "enabled": true,
+          "show_titles": true,
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
+          "show_truths": false,
+          "use_arviz": true,
+          "figsize": [
+            9,
+            9
+          ]
+        },
+        "trace_plots": {
+          "enabled": true,
+          "show_chains": true,
+          "show_warmup": false,
+          "compact_layout": true,
+          "figsize": [
+            10,
+            6
+          ]
+        },
+        "convergence_diagnostics": {
+          "enabled": true,
+          "show_rhat": true,
+          "show_ess": true,
+          "show_mcse": true,
+          "show_energy": true,
+          "rhat_threshold": 1.1,
+          "ess_threshold": 100
+        }
+      },
+      "diagnostic_plots": {
+        "enabled": true,
+        "chi_squared_summary": true,
+        "parameter_correlations": true,
+        "residual_analysis": true,
+        "convergence_history": true
+      },
+      "output": {
+        "base_directory": "./plots",
+        "subdirectories": {
+          "c2_heatmaps": "c2_correlation",
+          "parameter_plots": "parameters",
+          "mcmc_plots": "mcmc_analysis",
+          "diagnostics": "diagnostics"
+        },
+        "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
+        "include_timestamp": true,
+        "overwrite_existing": false
+      }
+    },
+    "logging": {
+      "log_level": "INFO",
+      "log_to_file": true,
+      "log_to_console": true,
+      "log_filename": "homodyne_static_isotropic.log",
+      "rotation": {
+        "max_bytes": 10485760,
+        "backup_count": 3
+      }
+    }
+  }
+}
