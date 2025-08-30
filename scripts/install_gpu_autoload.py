@@ -50,9 +50,6 @@ def get_shell_type():
     return "bash"  # Default to bash
 
 
-def get_shell():
-    """Alias for get_shell_type() for backward compatibility."""
-    return get_shell_type()
 
 
 def get_venv_config_dir():
@@ -193,9 +190,6 @@ _homodyne_complete() {
         --output-dir)
             completions=(*/(N))
             ;;
-        --install-completion|--uninstall-completion)
-            completions=(bash zsh fish powershell)
-            ;;
         *)
             if [[ "$cur" == --* ]]; then
                 completions=(
@@ -212,8 +206,6 @@ _homodyne_complete() {
                     --contrast
                     --offset
                     --phi-angles
-                    --install-completion
-                    --uninstall-completion
                 )
             else
                 completions=(*)
@@ -263,9 +255,6 @@ _homodyne_gpu_complete() {
         --output-dir)
             completions=(*/(N))
             ;;
-        --install-completion|--uninstall-completion)
-            completions=(bash zsh fish powershell)
-            ;;
         *)
             if [[ "$cur" == --* ]]; then
                 completions=(
@@ -282,8 +271,6 @@ _homodyne_gpu_complete() {
                     --contrast
                     --offset
                     --phi-angles
-                    --install-completion
-                    --uninstall-completion
                 )
             else
                 completions=(*)
@@ -605,58 +592,8 @@ unfunction homodyne_gpu_activate homodyne_gpu_status homodyne_help 2>/dev/null |
     return activate_script, deactivate_script
 
 
-def create_conda_activate_script(config_dir):
-    """Create conda environment activation script."""
-    import sys
-    conda_env_dir = Path(sys.prefix)
-    conda_activate_dir = conda_env_dir / "etc" / "conda" / "activate.d"
-    conda_activate_dir.mkdir(parents=True, exist_ok=True)
-    
-    activate_script = conda_activate_dir / "homodyne-gpu-activate.sh"
-    activate_content = f'''#!/bin/bash
-# Homodyne GPU auto-activation script for conda environment
-# This script is automatically sourced when the conda environment is activated
-
-# Source homodyne configuration if available
-if [[ -f "{config_dir}/homodyne_config.sh" ]]; then
-    source "{config_dir}/homodyne_config.sh"
-fi
-'''
-    activate_script.write_text(activate_content, encoding='utf-8')
-    activate_script.chmod(0o755)
-    return activate_script
 
 
-def create_conda_deactivate_script(config_dir):
-    """Create conda environment deactivation script."""
-    import sys
-    conda_env_dir = Path(sys.prefix)
-    conda_deactivate_dir = conda_env_dir / "etc" / "conda" / "deactivate.d"
-    conda_deactivate_dir.mkdir(parents=True, exist_ok=True)
-    
-    deactivate_script = conda_deactivate_dir / "homodyne-gpu-deactivate.sh"
-    deactivate_content = '''#!/bin/bash
-# Homodyne GPU deactivation script for conda environment
-# This script is automatically sourced when the conda environment is deactivated
-
-# Clean up homodyne environment variables
-unset HOMODYNE_GPU_ACTIVATED
-unset HOMODYNE_GPU_INTENT
-unset HOMODYNE_CONFIG_LOADED
-
-# Remove homodyne aliases and functions
-unalias hgm hga hm ha hc hr 2>/dev/null || true
-unalias hgconfig hconfig hexp hsim 2>/dev/null || true
-unalias hc-iso hc-aniso hc-flow hc-config 2>/dev/null || true
-unalias homodyne-gpu-activate 2>/dev/null || true
-
-# Remove completion functions
-unfunction _homodyne_complete _homodyne_gpu_complete _homodyne_config_complete 2>/dev/null || true
-unfunction homodyne_gpu_activate homodyne_gpu_status homodyne_help 2>/dev/null || true
-'''
-    deactivate_script.write_text(deactivate_content, encoding='utf-8')
-    deactivate_script.chmod(0o755)
-    return deactivate_script
 
 
 def install_shell_integration(shell_type, config_dir):

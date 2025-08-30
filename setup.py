@@ -37,7 +37,7 @@ class PostInstallCommand(install):
                 print("  homodyne-gpu     - GPU-accelerated analysis (Linux)")
                 print("  homodyne-config  - Configuration generator")
                 print("  homodyne-cleanup - Environment cleanup utility")
-                print("\n📝 For shell completion: homodyne --install-completion zsh")
+                print("\n📝 Shell completion: Automatically configured in conda environment")
                 print("="*60)
         except Exception as e:
             # Don't fail installation if post-install has issues
@@ -78,7 +78,7 @@ class PostDevelopCommand(develop):
                 print("  homodyne-gpu     - GPU-accelerated analysis (Linux)")
                 print("  homodyne-config  - Configuration generator")
                 print("  homodyne-cleanup - Environment cleanup utility")
-                print("\n📝 For shell completion: homodyne --install-completion zsh")
+                print("\n📝 Shell completion: Automatically configured in conda environment")
                 print("="*60)
         except Exception as e:
             # Don't fail installation if post-install has issues

@@ -171,11 +171,7 @@ import numpy as np
 
 # Import completion support
 try:
-    from .cli_completion import (
-        install_shell_completion,
-        setup_shell_completion,
-        uninstall_shell_completion,
-    )
+    from .cli_completion import setup_shell_completion
 
     COMPLETION_AVAILABLE = True
 except ImportError:
@@ -184,12 +180,6 @@ except ImportError:
     # Define dummy functions to avoid Pylance errors
     def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
         pass
-
-    def install_shell_completion(shell: str) -> int:
-        return 1
-
-    def uninstall_shell_completion(shell: str) -> int:
-        return 1
 
 
 def print_method_documentation():
@@ -3314,34 +3304,12 @@ Method Quality Assessment:
         help="Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'",
     )
 
-    # Shell completion and interactive mode
-    parser.add_argument(
-        "--install-completion",
-        choices=["bash", "zsh", "fish", "powershell"],
-        help="Install shell completion for the specified shell",
-    )
-    parser.add_argument(
-        "--uninstall-completion",
-        choices=["bash", "zsh", "fish", "powershell"],
-        help="Uninstall shell completion for the specified shell",
-    )
 
     # Setup shell completion if available
     if COMPLETION_AVAILABLE:
         setup_shell_completion(parser)
 
     args = parser.parse_args()
-
-    # Handle special commands first
-    if args.install_completion:
-        if not COMPLETION_AVAILABLE:
-            print("Error: Shell completion requires additional packages.")
-            print("Install with: pip install argcomplete")
-            return 1
-        return install_shell_completion(args.install_completion)
-
-    if args.uninstall_completion:
-        return uninstall_shell_completion(args.uninstall_completion)
 
     # Check for conflicting logging options
     if args.verbose and args.quiet:
