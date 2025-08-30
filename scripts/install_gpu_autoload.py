@@ -142,7 +142,7 @@ fi
 alias homodyne-gpu-activate='homodyne_gpu_activate && echo "✓ Homodyne GPU support activated"'
 '''
     
-    gpu_script.write_text(script_content)
+    gpu_script.write_text(script_content, encoding='utf-8')
     gpu_script.chmod(0o755)
     return gpu_script
 
@@ -464,7 +464,7 @@ fi
 '''
     
     try:
-        dest_script.write_text(script_content)
+        dest_script.write_text(script_content, encoding='utf-8')
         dest_script.chmod(0o755)
         print(f"✓ Created compatible completion script: {dest_script}")
         return dest_script
@@ -545,7 +545,7 @@ if [[ -z "$HOMODYNE_CONFIG_LOADED" ]]; then
 fi
 '''
     
-    config_script.write_text(script_content)
+    config_script.write_text(script_content, encoding='utf-8')
     config_script.chmod(0o755)
     return config_script
 
@@ -574,7 +574,7 @@ if [[ -f "{config_dir}/homodyne_config.sh" ]]; then
 fi
 '''
     
-    activate_script.write_text(activate_content)
+    activate_script.write_text(activate_content, encoding='utf-8')
     activate_script.chmod(0o755)
     
     # Create deactivation script
@@ -599,7 +599,7 @@ unfunction _homodyne_complete _homodyne_gpu_complete _homodyne_config_complete 2
 unfunction homodyne_gpu_activate homodyne_gpu_status homodyne_help 2>/dev/null || true
 '''
     
-    deactivate_script.write_text(deactivate_content)
+    deactivate_script.write_text(deactivate_content, encoding='utf-8')
     deactivate_script.chmod(0o755)
     
     return activate_script, deactivate_script
@@ -622,7 +622,7 @@ if [[ -f "{config_dir}/homodyne_config.sh" ]]; then
     source "{config_dir}/homodyne_config.sh"
 fi
 '''
-    activate_script.write_text(activate_content)
+    activate_script.write_text(activate_content, encoding='utf-8')
     activate_script.chmod(0o755)
     return activate_script
 
@@ -654,7 +654,7 @@ unalias homodyne-gpu-activate 2>/dev/null || true
 unfunction _homodyne_complete _homodyne_gpu_complete _homodyne_config_complete 2>/dev/null || true
 unfunction homodyne_gpu_activate homodyne_gpu_status homodyne_help 2>/dev/null || true
 '''
-    deactivate_script.write_text(deactivate_content)
+    deactivate_script.write_text(deactivate_content, encoding='utf-8')
     deactivate_script.chmod(0o755)
     return deactivate_script
 
@@ -716,7 +716,7 @@ def uninstall_shell_integration(shell_type):
             if not skip_next:
                 new_lines.append(line)
         
-        rc_file.write_text("\n".join(new_lines))
+        rc_file.write_text("\n".join(new_lines), encoding='utf-8')
         print(f"✓ Removed shell integration from {rc_file}")
         return True
     except Exception as e:

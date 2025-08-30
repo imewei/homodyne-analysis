@@ -188,7 +188,10 @@ class TestMCMCGPUIntegration:
                 patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True),
                 patch("logging.Logger.info") as mock_info,
             ):
-                sampler = MCMCSampler(MockCore(), config)
+                try:
+                    sampler = MCMCSampler(MockCore(), config)
+                except ImportError:
+                    pytest.skip("PyMC dependencies not available in test environment")
 
                 # Should force CPU-only mode
                 assert (
@@ -211,7 +214,10 @@ class TestMCMCGPUIntegration:
                 patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True),
                 patch("logging.Logger.info") as mock_info,
             ):
-                sampler = MCMCSampler(MockCore(), config)
+                try:
+                    sampler = MCMCSampler(MockCore(), config)
+                except ImportError:
+                    pytest.skip("PyMC dependencies not available in test environment")
 
                 # Should allow GPU backend (if JAX available)
                 info_calls = [call.args[0] for call in mock_info.call_args_list]
