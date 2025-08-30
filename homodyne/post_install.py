@@ -42,22 +42,31 @@ def run_gpu_autoload_install():
         try:
             import homodyne
 
-            package_dir = Path(homodyne.__file__).parent.parent
-            script_locations.append(package_dir / "scripts" / "install_gpu_autoload.py")
-        except ImportError:
+            if homodyne.__file__ is not None:
+                package_dir = Path(homodyne.__file__).parent.parent
+                script_locations.append(package_dir / "scripts" / "install_gpu_autoload.py")
+            else:
+                # For editable installs, try to find via __path__
+                if hasattr(homodyne, '__path__') and homodyne.__path__:
+                    homodyne_path = Path(homodyne.__path__[0])
+                    package_dir = homodyne_path.parent
+                    script_locations.append(package_dir / "scripts" / "install_gpu_autoload.py")
+        except (ImportError, AttributeError):
             pass
 
         # 2. Try site-packages (pip install)
         try:
             import site
-
-            site_packages = Path(site.getsitepackages()[0])
-            script_locations.extend(
-                [
-                    site_packages / "scripts" / "install_gpu_autoload.py",
-                    site_packages / "homodyne" / "scripts" / "install_gpu_autoload.py",
-                ]
-            )
+            
+            site_packages_list = site.getsitepackages()
+            if site_packages_list:
+                site_packages = Path(site_packages_list[0])
+                script_locations.extend(
+                    [
+                        site_packages / "scripts" / "install_gpu_autoload.py",
+                        site_packages / "homodyne" / "scripts" / "install_gpu_autoload.py",
+                    ]
+                )
         except (ImportError, IndexError):
             pass
 
@@ -88,6 +97,8 @@ def run_gpu_autoload_install():
             return True
         else:
             print("ℹ️  GPU auto-activation setup encountered issues (this is optional)")
+            if result.stderr.strip():
+                print(f"   Error: {result.stderr.strip()}")
             return False
 
     except Exception as e:
