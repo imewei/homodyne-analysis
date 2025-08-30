@@ -20,12 +20,11 @@ Installation
 
    # Enable shell completion and shortcuts for faster workflow
    pip install homodyne-analysis[completion]
-   homodyne --install-completion zsh  # or bash, fish, powershell
+   # Shell completion is automatically installed during package installation
    source ~/.zshrc                    # Restart shell or reload config
 
    # To remove completion later (conda environments):
    # homodyne-cleanup                 # Remove all conda environment scripts
-   # homodyne --uninstall-completion zsh  # For manual installations
 
    # Test shortcuts (work immediately)
    homodyne_help                      # Show all available options

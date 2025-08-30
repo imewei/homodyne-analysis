@@ -51,12 +51,6 @@ homodyne [OPTIONS]
   --contrast CONTRAST           Contrast parameter for scaling: fitted = contrast * theory + offset (default: 1.0)
   --offset OFFSET              Offset parameter for scaling: fitted = contrast * theory + offset (default: 0.0)
   --phi-angles PHI_ANGLES       Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'
-  --install-completion {bash,zsh,fish,powershell}
-                                Install shell completion for the specified shell
-                                (conda environments: checks current integration status)
-  --uninstall-completion {bash,zsh,fish,powershell}
-                                Uninstall shell completion for the specified shell
-                                (conda environments: use homodyne-cleanup for full removal)
 ```
 
 #### Methods
@@ -337,6 +331,7 @@ homodyne-cleanup
 - `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh`
 - `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh`  
 - `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh`
+- `$CONDA_PREFIX/etc/homodyne/homodyne_aliases.sh`
 - `$CONDA_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh`
 - `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh`
 - `$CONDA_PREFIX/etc/homodyne/` directory (if empty after cleanup)
@@ -483,56 +478,48 @@ homodyne
 
 ## Shell Completion
 
-The homodyne CLI supports multiple completion methods for enhanced user experience
-across shells.
+The homodyne CLI provides automatic shell completion that is configured during package installation with no manual setup required.
 
-### Installation
+### Automatic Installation
 
-Install completion support with optional dependencies:
+Shell completion is automatically installed when you install the homodyne package:
 
 ```bash
-pip install homodyne-analysis[completion]  # Updated in v0.6.5+
+pip install homodyne-analysis[completion]  # Includes shell completion support
 ```
 
-**Note**: The `interactive` dependency group has been **removed** in v0.6.5+. Use
-`completion` group for shell tab completion only.
+**Automatic Setup**: Shell completion and command shortcuts are automatically configured during installation:
+- **Linux**: Full shell completion with aliases and tab completion  
+- **macOS**: Shell aliases and shortcuts (compatible with both bash and zsh)
+- **Windows**: Batch file shortcuts for Command Prompt and PowerShell
 
-Enable shell completion for your shell (one-time setup):
+**Conda Environment Integration**: In conda/mamba environments, completion scripts are automatically installed to:
+- `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh` (main configuration)
+- `$CONDA_PREFIX/etc/homodyne/homodyne_aliases.sh` (shell aliases)
+- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh` (auto-activation)
+
+### Environment Activation
+
+To activate shell completion in your current session:
 
 ```bash
-# For bash
-homodyne --install-completion bash
+# If using conda/mamba, deactivate and reactivate the environment
+conda deactivate && conda activate your_env_name
 
-# For zsh  
-homodyne --install-completion zsh
-
-# For fish
-homodyne --install-completion fish
-
-# For PowerShell
-homodyne --install-completion powershell
+# Or for immediate use, source the configuration manually
+source $CONDA_PREFIX/etc/homodyne/homodyne_config.sh  # In conda environments
 ```
 
-**Conda Environment Note**: In conda environments, completion is automatically integrated during installation. The install command will show current status and provide guidance.
+### Removal
 
-To remove shell completion later:
-
-```bash
-# For conda environments (recommended):
-homodyne-cleanup                     # Remove all conda environment scripts
-
-# For manual installations:
-homodyne --uninstall-completion bash # or zsh, fish, powershell
-```
-
-After installation, restart your shell or source the configuration file:
+To remove shell completion:
 
 ```bash
-# Bash/Zsh
-source ~/.bashrc  # or ~/.zshrc
+# Complete removal (run BEFORE uninstalling the package)
+homodyne-cleanup
 
-# Fish
-source ~/.config/fish/config.fish
+# Then uninstall the package
+pip uninstall homodyne-analysis
 ```
 
 ### Completion Features
@@ -661,7 +648,7 @@ The completion system is designed to be robust with multiple fallback mechanisms
 
 #### If Tab Completion Doesn't Work
 
-1. **Check conda integration**: `homodyne --install-completion zsh` (shows status)
+1. **Reactivate environment**: `conda deactivate && conda activate your_env_name` (reloads completion scripts)
 1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha`, `hgm`, `hga`, `hc-iso`, `hc-aniso`, `hc-flow` always work
 1. **Clean reinstall**: `homodyne-cleanup && pip install --upgrade homodyne-analysis[completion]`
 1. **Reload shell**: `source ~/.zshrc` or restart terminal  

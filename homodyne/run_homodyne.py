@@ -3304,7 +3304,6 @@ Method Quality Assessment:
         help="Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'",
     )
 
-
     # Setup shell completion if available
     if COMPLETION_AVAILABLE:
         setup_shell_completion(parser)

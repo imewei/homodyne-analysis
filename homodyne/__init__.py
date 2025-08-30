@@ -110,12 +110,21 @@ __all__ = [
 ]
 
 # Version information
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"
 
-# Recent improvements (v0.6.6)
+# Recent improvements (v0.7.2)
+# - Simplified shell completion system: Removed manual --install-completion/--uninstall-completion
+# - Automatic shell completion installation during package installation
+# - Cross-platform shell completion support (Linux, macOS, Windows)
+# - Streamlined CLI experience with automatic setup
+# - Updated all documentation to reflect simplified completion system
+# - Removed 600+ lines of unused shell completion code for cleaner codebase
+# - Enhanced post-installation setup with automatic environment integration
+#
+# Previous improvements (v0.6.6):
 # - Added robust optimization framework with CVXPY + Gurobi
 # - Distributionally Robust Optimization (DRO) with Wasserstein uncertainty sets
 # - Scenario-based robust optimization with bootstrap resampling
@@ -123,11 +132,3 @@ __institution__ = "Argonne National Laboratory"
 # - Seamless integration with existing classical optimization workflow
 # - Comprehensive configuration support for robust methods
 # - Enhanced error handling and graceful degradation for optional dependencies
-#
-# Previous improvements (v0.6.2):
-# - Major performance optimizations: Chi-squared calculation 38% faster
-# - Memory access optimizations with vectorized operations
-# - Configuration caching to reduce overhead
-# - Optimized least squares solving for parameter scaling
-# - Memory pooling for reduced allocation overhead
-# - Enhanced performance regression testing

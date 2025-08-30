@@ -316,12 +316,6 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
         pass
 
 
-
-
-
-
-
-
 # Export public functions
 __all__ = [
     "HomodyneCompleter",

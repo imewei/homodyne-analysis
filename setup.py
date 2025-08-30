@@ -4,7 +4,7 @@ Setup script for the Homodyne Scattering Analysis Package with System CUDA and C
 
 Most configuration is in pyproject.toml following modern Python packaging standards.
 This file adds post-installation functionality for system CUDA GPU acceleration setup,
-conda environment integration, shell completion, and cleanup utilities not supported by pyproject.toml.
+conda environment integration, automatic shell completion setup, and cleanup utilities not supported by pyproject.toml.
 """
 
 import os

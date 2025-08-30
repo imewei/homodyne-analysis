@@ -72,32 +72,6 @@ class TestGPUInstallIntegration:
             assert "alias hm=" in content
             assert "alias hga=" in content
 
-    def test_create_conda_activation_scripts(self):
-        """Test conda activation/deactivation script creation."""
-        from scripts.install_gpu_autoload import (
-            create_conda_activate_script,
-            create_conda_deactivate_script,
-        )
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config_dir = Path(temp_dir)
-            conda_dir = Path(temp_dir) / "conda"
-            conda_dir.mkdir(parents=True, exist_ok=True)
-
-            # Test activation and deactivation scripts (mock sys.prefix to use our temp directory)
-            with patch("sys.prefix", str(temp_dir)):
-                activate_path = create_conda_activate_script(config_dir)
-                assert activate_path.exists()
-                content = activate_path.read_text()
-                assert str(config_dir) in content
-                assert "homodyne_config.sh" in content
-
-                # Test deactivation script
-                deactivate_path = create_conda_deactivate_script(config_dir)
-                assert deactivate_path.exists()
-                content = deactivate_path.read_text()
-                assert "HOMODYNE_GPU_ACTIVATED" in content
-
     @patch("platform.system")
     @patch("pathlib.Path.exists")
     @patch("sys.argv", ["install_gpu_autoload.py"])
@@ -110,7 +84,7 @@ class TestGPUInstallIntegration:
 
         with (
             patch.dict("os.environ", {"CONDA_PREFIX": "/test/conda/env"}),
-            patch("scripts.install_gpu_autoload.get_shell") as mock_shell,
+            patch("scripts.install_gpu_autoload.get_shell_type") as mock_shell,
             patch(
                 "scripts.install_gpu_autoload.create_gpu_activation_script"
             ) as mock_gpu,
@@ -153,9 +127,9 @@ class TestGPUInstallIntegration:
             result = main()
 
             assert result == 0
-            # Should print platform info message
+            # Should print Windows platform message
             print_calls = [str(call) for call in mock_print.call_args_list]
-            assert any("Linux" in call for call in print_calls)
+            assert any("Windows" in call for call in print_calls)
 
     @patch("platform.system")
     @patch("sys.argv", ["install_gpu_autoload.py"])
@@ -183,16 +157,16 @@ class TestGPUInstallIntegration:
 class TestCondaIntegrationHelpers:
     """Test helper functions for conda integration."""
 
-    def test_get_shell(self):
+    def test_get_shell_type(self):
         """Test shell detection."""
-        from scripts.install_gpu_autoload import get_shell
+        from scripts.install_gpu_autoload import get_shell_type
 
         with patch.dict("os.environ", {"SHELL": "/bin/zsh"}):
-            shell = get_shell()
+            shell = get_shell_type()
             assert shell == "zsh"
 
         with patch.dict("os.environ", {"SHELL": "/usr/bin/bash"}):
-            shell = get_shell()
+            shell = get_shell_type()
             assert shell == "bash"
 
     def test_get_shell_rc_file(self):
@@ -218,7 +192,7 @@ class TestCondaIntegrationHelpers:
         with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": "test"}):
             # Should detect as virtual environment
             with (
-                patch("scripts.install_gpu_autoload.get_shell") as mock_shell,
+                patch("scripts.install_gpu_autoload.get_shell_type") as mock_shell,
                 patch("platform.system") as mock_platform,
                 patch("builtins.print") as mock_print,
                 patch("sys.argv", ["install_gpu_autoload.py"]),
@@ -270,10 +244,9 @@ class TestScriptTemplates:
             required_elements = [
                 "CONDA_PREFIX",
                 "gpu_activation.sh",
-                "homodyne_completion_bypass.zsh",
+                "homodyne_aliases.sh",
                 "homodyne_gpu_status",
-                "SHELL",
-                "ZSH_VERSION",
+                "HOMODYNE_CONFIG_LOADED",
             ]
 
             for element in required_elements:
@@ -285,19 +258,26 @@ class TestScriptTemplates:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             config_dir = Path(temp_dir)
-            script_path = copy_completion_script(config_dir)
-            content = script_path.read_text()
 
-            # Check required aliases and functions
-            required_elements = [
+            # copy_completion_script creates both aliases and completion scripts
+            zsh_script_path = copy_completion_script(config_dir)
+            aliases_script_path = config_dir / "homodyne_aliases.sh"
+
+            # Check zsh completion script has completion functions
+            zsh_content = zsh_script_path.read_text()
+            zsh_elements = ["_homodyne_complete", "compdef"]
+            for element in zsh_elements:
+                assert (
+                    element in zsh_content
+                ), f"Missing zsh completion element: {element}"
+
+            # Check aliases script has required aliases and functions
+            aliases_content = aliases_script_path.read_text()
+            aliases_elements = [
                 "alias hm=",
                 "alias hga=",
                 "alias hconfig=",
-                "homodyne_gpu_activate",
                 "homodyne_help",
-                "_homodyne_complete",
-                "compdef",
             ]
-
-            for element in required_elements:
-                assert element in content, f"Missing required element: {element}"
+            for element in aliases_elements:
+                assert element in aliases_content, f"Missing aliases element: {element}"

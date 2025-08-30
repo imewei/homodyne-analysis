@@ -1,6 +1,6 @@
 # JAX dependencies for high-performance computing
 # Generated from pyproject.toml [project.optional-dependencies.jax]
-# Last updated: v0.7.1+ (Python version check, code quality improvements, conda integration, test fixes)
+# Last updated: v0.7.1+ (Python version check, code quality improvements, conda integration, simplified shell completion, test fixes)
 
 # Include core dependencies
 -r requirements.txt

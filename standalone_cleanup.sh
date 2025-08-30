@@ -41,6 +41,7 @@ SCRIPTS_TO_REMOVE=(
     "$ENV_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh"
     "$ENV_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh"
     "$ENV_PREFIX/etc/homodyne/gpu_activation.sh"
+    "$ENV_PREFIX/etc/homodyne/homodyne_aliases.sh"
     "$ENV_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh"
     "$ENV_PREFIX/etc/homodyne/homodyne_config.sh"
 )

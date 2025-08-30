@@ -532,27 +532,23 @@ ______________________________________________________________________
 
 ### Shell Tab Completion
 
-The package provides comprehensive shell completion support with conda environment integration for enhanced CLI experience:
+The package provides automatic shell completion that is configured during installation with no manual setup required:
 
 **Installation:**
 
 ```bash
-# Install completion support
+# Shell completion automatically installed
 pip install homodyne-analysis[completion]
 
-# Enable for your shell (one-time setup)
-homodyne --install-completion bash    # For bash
-homodyne --install-completion zsh     # For zsh  
-homodyne --install-completion fish    # For fish
-homodyne --install-completion powershell  # For PowerShell
+# Completion is automatically configured during installation:
+# - Linux: Full shell completion with aliases and tab completion  
+# - macOS: Shell aliases and shortcuts (bash/zsh compatible)
+# - Windows: Batch file shortcuts for Command Prompt and PowerShell
 
-# Conda environments: Completion is automatically integrated!
-# The install command will show current status and provide guidance.
+# Conda environments: Automatic integration via activation scripts!
 
 # To remove completion later
-homodyne-cleanup                      # Conda environments (recommended)
-homodyne --uninstall-completion bash  # Manual installations (bash)
-homodyne --uninstall-completion zsh   # Manual installations (zsh)
+homodyne-cleanup                      # Complete removal (run before uninstalling package)
 ```
 
 **Features:**
@@ -566,7 +562,7 @@ homodyne --uninstall-completion zsh   # Manual installations (zsh)
 - **Conda integration**: Automatic setup in conda environments
 - **Help system**: `homodyne_help`, `homodyne_gpu_status` functions
 
-**Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use shell completion
+**Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use automatic shell completion
 for enhanced CLI experience.
 
 ### Code Quality Standards (v0.6.5+)

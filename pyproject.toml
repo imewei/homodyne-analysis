@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, system CUDA GPU acceleration, robust testing infrastructure, automated code quality checks, conda environment integration, and cross-platform shell completion"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, system CUDA GPU acceleration, robust testing infrastructure, automated code quality checks, conda environment integration, and simplified cross-platform shell completion with automatic post-installation setup"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [

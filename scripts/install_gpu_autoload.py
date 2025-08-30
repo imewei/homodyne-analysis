@@ -50,11 +50,10 @@ def get_shell_type():
     return "bash"  # Default to bash
 
 
-
-
 def get_venv_config_dir():
     """Get the virtual environment config directory."""
     import sys
+
     venv_path = Path(sys.prefix)
     config_dir = venv_path / "etc" / "homodyne"
     return config_dir
@@ -65,7 +64,7 @@ def get_shell_rc_file(shell_type=None):
     if shell_type is None:
         shell_type = get_shell_type()
     home = Path.home()
-    
+
     if shell_type == "zsh":
         # Check for .zshrc
         zshrc = home / ".zshrc"
@@ -86,16 +85,16 @@ def get_shell_rc_file(shell_type=None):
         return bashrc
     elif shell_type == "fish":
         return home / ".config" / "fish" / "config.fish"
-    
+
     return home / ".bashrc"  # Default
 
 
 def create_gpu_activation_script(config_dir):
     """Create the GPU activation script in config directory using system CUDA."""
     gpu_script = config_dir / "gpu_activation.sh"
-    
+
     # Create a clean, working script from scratch
-    script_content = '''#!/bin/bash
+    script_content = """#!/bin/bash
 # Homodyne GPU Auto-activation Script
 # Automatically sourced to enable GPU support
 
@@ -137,20 +136,24 @@ fi
 
 # Create alias for manual activation
 alias homodyne-gpu-activate='homodyne_gpu_activate && echo "✓ Homodyne GPU support activated"'
-'''
-    
-    gpu_script.write_text(script_content, encoding='utf-8')
+"""
+
+    gpu_script.write_text(script_content, encoding="utf-8")
     gpu_script.chmod(0o755)
     return gpu_script
 
 
 def copy_completion_script(config_dir):
-    """Create a compatible shell completion script in config directory."""
+    """Create shell aliases and helper functions in config directory."""
+    # Create both zsh completion and simple aliases
+    create_aliases_script(config_dir)
+
+    # Also create the zsh completion script for compatibility
     completion_script_name = "homodyne_completion_bypass.zsh"
     dest_script = config_dir / completion_script_name
-    
+
     # Create a compatible completion script that matches the GPU activation function
-    script_content = '''#!/usr/bin/env zsh
+    script_content = """#!/usr/bin/env zsh
 # Homodyne Shell Completion - Compatible Version
 # This uses zsh's programmable completion directly
 
@@ -448,10 +451,10 @@ if ! compdef _homodyne_config_complete homodyne-config 2>/dev/null; then
         echo "  homodyne-config --mode laminar_flow"
     fi
 fi
-'''
-    
+"""
+
     try:
-        dest_script.write_text(script_content, encoding='utf-8')
+        dest_script.write_text(script_content, encoding="utf-8")
         dest_script.chmod(0o755)
         print(f"✓ Created compatible completion script: {dest_script}")
         return dest_script
@@ -460,11 +463,66 @@ fi
         return None
 
 
+def create_aliases_script(config_dir):
+    """Create a simple aliases script that works in both bash and zsh."""
+    aliases_script = config_dir / "homodyne_aliases.sh"
+
+    script_content = """#!/bin/bash
+# Homodyne Shell Aliases - Works in both bash and zsh
+
+# CPU-only aliases  
+alias hm='homodyne --method mcmc'
+alias hc='homodyne --method classical'
+alias hr='homodyne --method robust'
+alias ha='homodyne --method all'
+
+# GPU-accelerated aliases (with auto-activation)
+alias hgm='homodyne_gpu_activate 2>/dev/null; homodyne-gpu --method mcmc'
+alias hga='homodyne_gpu_activate 2>/dev/null; homodyne-gpu --method all'
+
+# Configuration shortcuts
+alias hconfig='homodyne --config'
+alias hgconfig='homodyne_gpu_activate 2>/dev/null; homodyne-gpu --config'
+
+# Plotting shortcuts
+alias hexp='homodyne --plot-experimental-data'
+alias hsim='homodyne --plot-simulated-data'
+
+# homodyne-config shortcuts
+alias hc-iso='homodyne-config --mode static_isotropic'
+alias hc-aniso='homodyne-config --mode static_anisotropic'
+alias hc-flow='homodyne-config --mode laminar_flow'
+alias hc-config='homodyne-config'
+
+# Helper function
+homodyne_help() {
+    echo "Homodyne command shortcuts:"
+    echo "  hc  = homodyne --method classical"
+    echo "  hm  = homodyne --method mcmc"
+    echo "  hr  = homodyne --method robust"
+    echo "  ha  = homodyne --method all"
+    echo ""
+    echo "GPU shortcuts (Linux only):"
+    echo "  hgm = homodyne-gpu --method mcmc"
+    echo "  hga = homodyne-gpu --method all"
+    echo ""
+    echo "Config shortcuts:"
+    echo "  hc-iso   = homodyne-config --mode static_isotropic"
+    echo "  hc-aniso = homodyne-config --mode static_anisotropic"
+    echo "  hc-flow  = homodyne-config --mode laminar_flow"
+}
+"""
+
+    aliases_script.write_text(script_content, encoding="utf-8")
+    aliases_script.chmod(0o755)
+    return aliases_script
+
+
 def create_config_script(config_dir):
     """Create the main homodyne configuration script for system CUDA integration."""
     config_script = config_dir / "homodyne_config.sh"
-    
-    script_content = '''#!/bin/bash
+
+    script_content = """#!/bin/bash
 # Homodyne Configuration Script for Virtual Environment (homodyne_config.sh)
 # Provides GPU auto-activation and shell completion
 
@@ -481,18 +539,9 @@ if [[ -f "${SCRIPT_DIR}/gpu_activation.sh" ]]; then
     source "${SCRIPT_DIR}/gpu_activation.sh"
 fi
 
-# Source shell completion if available (for zsh)
-if [[ -f "${SCRIPT_DIR}/homodyne_completion_bypass.zsh" ]]; then
-    # For zsh completion (only load in zsh)
-    if [[ "$SHELL" == *"zsh"* ]] || [[ -n "$ZSH_VERSION" ]]; then
-        # Initialize zsh completion system if needed
-        if [[ -z "$_comps" ]] && command -v compinit >/dev/null; then
-            autoload -U compinit && compinit -u 2>/dev/null
-        fi
-        source "${SCRIPT_DIR}/homodyne_completion_bypass.zsh" 2>/dev/null
-    fi
-    # Note: The completion script contains zsh-specific syntax
-    # For bash, users can install bash-completion separately
+# Source homodyne aliases (works in both bash and zsh)
+if [[ -f "${SCRIPT_DIR}/homodyne_aliases.sh" ]]; then
+    source "${SCRIPT_DIR}/homodyne_aliases.sh"
 fi
 
 # Utility function to check GPU status
@@ -530,9 +579,9 @@ if [[ -z "$HOMODYNE_CONFIG_LOADED" ]]; then
     # Uncomment the line below to see status on shell startup
     # echo "Homodyne configuration loaded from virtual environment. Use 'homodyne_gpu_status' to check GPU status."
 fi
-'''
-    
-    config_script.write_text(script_content, encoding='utf-8')
+"""
+
+    config_script.write_text(script_content, encoding="utf-8")
     config_script.chmod(0o755)
     return config_script
 
@@ -541,17 +590,18 @@ def create_conda_activation_scripts(config_dir):
     """Create conda environment activation/deactivation scripts."""
     # Get the conda environment directory
     import sys
+
     conda_env_dir = Path(sys.prefix)
     conda_activate_dir = conda_env_dir / "etc" / "conda" / "activate.d"
     conda_deactivate_dir = conda_env_dir / "etc" / "conda" / "deactivate.d"
-    
+
     # Create activation/deactivation directories
     conda_activate_dir.mkdir(parents=True, exist_ok=True)
     conda_deactivate_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create activation script
     activate_script = conda_activate_dir / "homodyne-gpu-activate.sh"
-    activate_content = f'''#!/bin/bash
+    activate_content = f"""#!/bin/bash
 # Homodyne GPU auto-activation script for conda environment
 # This script is automatically sourced when the conda environment is activated
 
@@ -559,14 +609,14 @@ def create_conda_activation_scripts(config_dir):
 if [[ -f "{config_dir}/homodyne_config.sh" ]]; then
     source "{config_dir}/homodyne_config.sh"
 fi
-'''
-    
-    activate_script.write_text(activate_content, encoding='utf-8')
+"""
+
+    activate_script.write_text(activate_content, encoding="utf-8")
     activate_script.chmod(0o755)
-    
+
     # Create deactivation script
     deactivate_script = conda_deactivate_dir / "homodyne-gpu-deactivate.sh"
-    deactivate_content = '''#!/bin/bash
+    deactivate_content = """#!/bin/bash
 # Homodyne GPU deactivation script for conda environment
 # This script is automatically sourced when the conda environment is deactivated
 
@@ -584,16 +634,12 @@ unalias homodyne-gpu-activate 2>/dev/null || true
 # Remove completion functions
 unfunction _homodyne_complete _homodyne_gpu_complete _homodyne_config_complete 2>/dev/null || true
 unfunction homodyne_gpu_activate homodyne_gpu_status homodyne_help 2>/dev/null || true
-'''
-    
-    deactivate_script.write_text(deactivate_content, encoding='utf-8')
+"""
+
+    deactivate_script.write_text(deactivate_content, encoding="utf-8")
     deactivate_script.chmod(0o755)
-    
+
     return activate_script, deactivate_script
-
-
-
-
 
 
 def install_shell_integration(shell_type, config_dir):
@@ -602,7 +648,9 @@ def install_shell_integration(shell_type, config_dir):
         activate_script, deactivate_script = create_conda_activation_scripts(config_dir)
         print(f"✓ Created conda activation script: {activate_script}")
         print(f"✓ Created conda deactivation script: {deactivate_script}")
-        print("✓ Homodyne will automatically activate when you activate this conda environment")
+        print(
+            "✓ Homodyne will automatically activate when you activate this conda environment"
+        )
         return True
     except Exception as e:
         print(f"✗ Failed to create conda activation scripts: {e}")
@@ -614,37 +662,41 @@ def uninstall_shell_integration(shell_type):
     # Remove conda activation scripts
     try:
         import sys
+
         conda_env_dir = Path(sys.prefix)
         conda_activate_dir = conda_env_dir / "etc" / "conda" / "activate.d"
         conda_deactivate_dir = conda_env_dir / "etc" / "conda" / "deactivate.d"
-        
+
         activate_script = conda_activate_dir / "homodyne-gpu-activate.sh"
         deactivate_script = conda_deactivate_dir / "homodyne-gpu-deactivate.sh"
-        
+
         if activate_script.exists():
             activate_script.unlink()
             print(f"✓ Removed conda activation script: {activate_script}")
-        
+
         if deactivate_script.exists():
             deactivate_script.unlink()
             print(f"✓ Removed conda deactivation script: {deactivate_script}")
-            
+
     except Exception as e:
         print(f"⚠️  Failed to remove conda scripts: {e}")
-    
+
     # Also clean up any legacy shell RC modifications
     rc_file = get_shell_rc_file(shell_type)
-    
+
     if not rc_file.exists():
         return True
-    
+
     try:
         lines = rc_file.read_text().split("\n")
         new_lines = []
         skip_next = False
-        
+
         for line in lines:
-            if "Homodyne GPU Auto-activation" in line or "Homodyne Configuration" in line:
+            if (
+                "Homodyne GPU Auto-activation" in line
+                or "Homodyne Configuration" in line
+            ):
                 skip_next = True
                 continue
             if skip_next and ("source" in line or "fi" in line):
@@ -652,8 +704,8 @@ def uninstall_shell_integration(shell_type):
                 continue
             if not skip_next:
                 new_lines.append(line)
-        
-        rc_file.write_text("\n".join(new_lines), encoding='utf-8')
+
+        rc_file.write_text("\n".join(new_lines), encoding="utf-8")
         print(f"✓ Removed shell integration from {rc_file}")
         return True
     except Exception as e:
@@ -663,41 +715,49 @@ def uninstall_shell_integration(shell_type):
 
 def main():
     import platform
-    
-    parser = argparse.ArgumentParser(description="Install GPU auto-activation for homodyne")
+
+    parser = argparse.ArgumentParser(
+        description="Install shell completion and GPU auto-activation for homodyne"
+    )
     parser.add_argument(
         "--uninstall",
         action="store_true",
-        help="Uninstall GPU auto-activation"
+        help="Uninstall shell completion and GPU auto-activation",
     )
     parser.add_argument(
         "--shell",
         choices=["bash", "zsh", "fish"],
-        help="Specify shell type (auto-detected by default)"
+        help="Specify shell type (auto-detected by default)",
     )
     args = parser.parse_args()
-    
-    # Check if running on Linux
-    if platform.system() != "Linux":
-        print("⚠️  GPU auto-activation requires Linux. This feature is not available on non-Linux platforms.")
-        print(f"   Current platform: {platform.system()}")
-        print("   For Linux systems: GPU acceleration requires CUDA-enabled JAX")
-        return 0
-    
+
+    system = platform.system()
+
+    # Handle different platforms
+    if system == "Darwin":  # macOS
+        print("🍎  Installing shell completion for macOS...")
+        return install_macos_completion(args)
+    elif system == "Windows":
+        print("🪟  Installing shell shortcuts for Windows...")
+        return install_windows_completion(args)
+    elif system != "Linux":
+        print(f"⚠️  Platform {system} is not supported.")
+        return 1
+
     # Determine shell type
     shell_type = args.shell or get_shell_type()
     print(f"Detected shell: {shell_type}")
-    
+
     # Use virtual environment config directory
     config_dir = get_venv_config_dir()
     print(f"Using config directory: {config_dir}")
-    
+
     if args.uninstall:
         print("\nUninstalling Homodyne GPU auto-activation...")
-        
+
         # Remove shell integration
         uninstall_shell_integration(shell_type)
-        
+
         # Remove config directory only if it's in virtual environment
         if config_dir.exists():
             try:
@@ -705,40 +765,42 @@ def main():
                 print(f"✓ Removed configuration directory: {config_dir}")
             except Exception as e:
                 print(f"✗ Failed to remove {config_dir}: {e}")
-        
+
         # Also try to remove old global config if it exists
         global_config_dir = Path.home() / ".config" / "homodyne"
         if global_config_dir.exists():
             try:
                 shutil.rmtree(global_config_dir)
-                print(f"✓ Removed old global configuration directory: {global_config_dir}")
+                print(
+                    f"✓ Removed old global configuration directory: {global_config_dir}"
+                )
             except Exception as e:
                 print(f"✗ Failed to remove old global config {global_config_dir}: {e}")
-        
+
         print("\n✓ Uninstallation complete")
         print("  Restart your shell or run: source ~/.bashrc (or ~/.zshrc)")
         return 0
-        
+
     else:
         print("\nInstalling Homodyne GPU auto-activation...")
-        
+
         # Create config directory
         config_dir.mkdir(parents=True, exist_ok=True)
         print(f"✓ Created configuration directory in virtual environment: {config_dir}")
-        
+
         # Create GPU activation script
         gpu_script = create_gpu_activation_script(config_dir)
         print(f"✓ Created GPU activation script: {gpu_script}")
-        
+
         # Copy shell completion script
         completion_script = copy_completion_script(config_dir)
         if completion_script:
             print(f"✓ Copied shell completion script: {completion_script}")
-        
+
         # Create main config script
         config_script = create_config_script(config_dir)
         print(f"✓ Created configuration script: {config_script}")
-        
+
         # Install conda environment activation hooks
         if install_shell_integration(shell_type, config_dir):
             print("\n✓ Installation complete!")
@@ -753,14 +815,114 @@ def main():
             print("  hgm --config config.json           # Shortcut for GPU MCMC")
             print("  hga --config config.json           # Shortcut for GPU all methods")
             print(f"\n✅ Conda integration: Scripts installed in {config_dir}")
-            print("🔄 GPU support automatically activates when you activate this environment!")
+            print(
+                "🔄 GPU support automatically activates when you activate this environment!"
+            )
             print("🧹 Clean deactivation when you switch to other environments.")
         else:
             print("\n⚠ Installation partially complete")
             print(f"  Manual sourcing required: source {config_dir}/homodyne_config.sh")
             return 1
-        
+
         return 0
+
+
+def install_macos_completion(args):
+    """Install shell completion for macOS."""
+    import sys
+    from pathlib import Path
+
+    venv_path = Path(sys.prefix)
+    config_dir = venv_path / "etc" / "homodyne"
+
+    if args.uninstall:
+        if config_dir.exists():
+            import shutil
+
+            shutil.rmtree(config_dir)
+            print("✓ Removed shell completion")
+        return 0
+
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create aliases script
+    aliases_script = config_dir / "homodyne_aliases.sh"
+    script_content = """#!/bin/bash
+# Homodyne Shell Aliases for macOS
+
+# CPU-only aliases  
+alias hm='homodyne --method mcmc'
+alias hc='homodyne --method classical'
+alias hr='homodyne --method robust'
+alias ha='homodyne --method all'
+
+# Configuration shortcuts
+alias hconfig='homodyne --config'
+alias hexp='homodyne --plot-experimental-data'
+alias hsim='homodyne --plot-simulated-data'
+
+# homodyne-config shortcuts
+alias hc-iso='homodyne-config --mode static_isotropic'
+alias hc-aniso='homodyne-config --mode static_anisotropic'
+alias hc-flow='homodyne-config --mode laminar_flow'
+
+homodyne_help() {
+    echo "Homodyne command shortcuts:"
+    echo "  hc = homodyne --method classical"
+    echo "  hm = homodyne --method mcmc"
+    echo "  hr = homodyne --method robust"
+    echo "  ha = homodyne --method all"
+}
+"""
+    aliases_script.write_text(script_content)
+    aliases_script.chmod(0o755)
+
+    # Setup conda activation if in conda environment
+    if os.environ.get("CONDA_PREFIX"):
+        activate_dir = venv_path / "etc" / "conda" / "activate.d"
+        activate_dir.mkdir(parents=True, exist_ok=True)
+        activate_script = activate_dir / "homodyne-activate.sh"
+        activate_script.write_text(f'#!/bin/bash\nsource "{aliases_script}"\n')
+        activate_script.chmod(0o755)
+
+    print("✅ Shell completion installed for macOS!")
+    print("   Restart your shell or run: source ~/.zshrc")
+    print("   Available shortcuts: hm, hc, hr, ha")
+    return 0
+
+
+def install_windows_completion(args):
+    """Install shell shortcuts for Windows."""
+    import sys
+    from pathlib import Path
+
+    scripts_dir = Path(sys.prefix) / "Scripts"
+    scripts_dir.mkdir(exist_ok=True)
+
+    if args.uninstall:
+        # Remove batch files
+        for name in ["hm.bat", "hc.bat", "hr.bat", "ha.bat"]:
+            batch_file = scripts_dir / name
+            if batch_file.exists():
+                batch_file.unlink()
+        print("✓ Removed shell shortcuts")
+        return 0
+
+    # Create batch file shortcuts
+    shortcuts = {
+        "hm.bat": "@echo off\nhomodyne --method mcmc %*",
+        "hc.bat": "@echo off\nhomodyne --method classical %*",
+        "hr.bat": "@echo off\nhomodyne --method robust %*",
+        "ha.bat": "@echo off\nhomodyne --method all %*",
+    }
+
+    for name, content in shortcuts.items():
+        (scripts_dir / name).write_text(content)
+
+    print("✅ Shell shortcuts installed for Windows!")
+    print("   Available commands: hm, hc, hr, ha")
+    print("   These work in Command Prompt and PowerShell")
+    return 0
 
 
 if __name__ == "__main__":

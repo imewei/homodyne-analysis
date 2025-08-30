@@ -415,14 +415,8 @@ productivity with full cross-platform support:
 # Install completion support
 pip install homodyne-analysis[completion]
 
-# Enable for your shell (one-time setup)
-homodyne --install-completion bash     # Linux/macOS
-homodyne --install-completion zsh      # macOS default
-homodyne --install-completion fish     # Fish shell
-homodyne --install-completion powershell  # Windows PowerShell
-
+# Completion is automatically installed during package installation
 # Conda environments: Completion is automatically integrated!
-# The install command will show current status and provide guidance.
 
 # Restart shell or reload config
 source ~/.bashrc   # Linux
@@ -431,7 +425,6 @@ source ~/.zshrc    # macOS
 
 # To remove completion later
 homodyne-cleanup                       # Conda environments (recommended)
-# homodyne --uninstall-completion bash   # Manual installations
 ```
 
 ### Available Features

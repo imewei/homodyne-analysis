@@ -1,5 +1,5 @@
 # Include the README and other documentation
-# Updated for v0.7.1+ with improved code quality, testing infrastructure, and conda integration
+# Updated for v0.7.1+ with improved code quality, testing infrastructure, conda integration, and simplified shell completion
 include README.md
 include LICENSE
 include CHANGELOG.md
@@ -23,12 +23,7 @@ recursive-include homodyne/typings *.pyi
 recursive-include homodyne *.json
 recursive-include homodyne/templates *.json
 
-# Include shell completion scripts - system CUDA and conda integration
-include homodyne_complete
-include homodyne_completion_bypass.zsh
-include homodyne/homodyne_completion_bypass.zsh
-recursive-include homodyne *_complete
-recursive-include homodyne completion_fast.py
+# Include shell completion scripts - simplified auto-configuration system
 recursive-include homodyne cli_completion.py
 include homodyne/uninstall_scripts.py
 

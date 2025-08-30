@@ -6,6 +6,49 @@ this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2025-08-30
+
+### Changed
+
+- **Simplified Shell Completion System**: Removed manual `--install-completion` and `--uninstall-completion` CLI options for streamlined user experience
+  - Shell completion is now automatically installed during package installation
+  - Cross-platform support: Linux (full completion), macOS (aliases), Windows (batch shortcuts)
+  - Conda/mamba environments: Automatic integration with environment activation scripts
+  - Removed 600+ lines of unused shell completion code for cleaner, more maintainable codebase
+
+### Improved
+
+- **Documentation Updates**: Comprehensive documentation updates to reflect simplified completion system
+  - Updated installation guide (`docs/user-guide/installation.rst`)
+  - Updated quickstart guide (`docs/user-guide/quickstart.rst`) 
+  - Updated README.md with automatic installation instructions
+  - Removed references to manual completion commands throughout documentation
+- **Post-Installation Process**: Enhanced automatic setup with cross-platform shell completion
+  - Streamlined post-installation hook with automatic environment detection
+  - Improved error handling and user feedback during setup
+- **Test Suite Cleanup**: Removed obsolete shell completion tests that referenced deleted functions
+  - Cleaned up `test_cli_completion.py` to remove tests for deleted manual installation functions
+  - Maintained tests for core completion functionality that remains
+
+### Removed
+
+- **Manual Shell Completion Commands**: Deprecated manual CLI options for better user experience
+  - Removed `homodyne --install-completion {bash,zsh,fish,powershell}` command
+  - Removed `homodyne --uninstall-completion {bash,zsh,fish,powershell}` command
+  - Removed `install_shell_completion()` and `uninstall_shell_completion()` functions from `cli_completion.py`
+  - Shell completion cleanup still available via `homodyne-cleanup` command
+
+### Technical Details
+
+- **Code Quality**: Major cleanup of shell completion implementation
+  - Removed unused completion bypass mechanisms
+  - Simplified completion cache and file system operations
+  - Enhanced cross-platform compatibility in post-installation setup
+- **User Experience**: Seamless out-of-the-box shell completion
+  - No manual setup required - works immediately after installation
+  - Consistent behavior across different operating systems and shell environments
+  - Maintains full backward compatibility with existing shell aliases and shortcuts
+
 ## [0.7.1] - 2025-08-28
 
 ### Fixed

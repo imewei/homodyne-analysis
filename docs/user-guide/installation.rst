@@ -93,14 +93,12 @@ You can install specific feature sets using pip extras:
 .. code-block:: bash
 
    pip install homodyne-analysis[completion]
-   # Then install completion for your shell:
-   homodyne --install-completion bash  # or zsh, fish, powershell
-
-   # To remove completion later:
-   homodyne --uninstall-completion bash  # or zsh, fish, powershell
+   # Shell completion is automatically installed during package installation
+   # Restart your shell or reload your shell configuration:
+   source ~/.zshrc  # or ~/.bashrc for bash
 
 .. note::
-   **Conda Environment Integration**: When installed in a conda environment, completion scripts are automatically integrated during installation. Use ``homodyne --install-completion`` to check status or ``homodyne-cleanup`` to remove all environment scripts during uninstallation.
+   **Automatic Installation**: Shell completion and aliases are automatically installed when the package is installed. In conda environments, completion scripts are integrated during installation. Use ``homodyne-cleanup`` to remove all environment scripts during uninstallation if needed.
 
 **For Security and Code Quality Tools:**
 
@@ -181,10 +179,10 @@ If tab completion or command shortcuts don't work after installation:
 
 .. code-block:: bash
 
-   # Check completion status (conda environments)
-   homodyne --install-completion zsh    # Shows current status
+   # Restart your shell or reload configuration
+   source ~/.zshrc    # or ~/.bashrc for bash
    
-   # Manual cleanup if needed
+   # Manual cleanup if needed (conda environments)
    homodyne-cleanup                     # Remove all conda environment scripts
    
    # Reinstall and restart shell
