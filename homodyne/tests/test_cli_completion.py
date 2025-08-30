@@ -15,7 +15,13 @@ try:
         HomodyneCompleter,
         install_shell_completion,
         setup_shell_completion,
+        uninstall_shell_completion,
     )
+    from homodyne.uninstall_scripts import (
+        cleanup_conda_scripts,
+        is_virtual_environment,
+    )
+    from homodyne.uninstall_scripts import main as cleanup_main
 
     COMPLETION_AVAILABLE = True
 except ImportError:
@@ -42,6 +48,18 @@ except ImportError:
 
     def install_shell_completion(shell: str) -> int:  # type: ignore[misc]
         return 1
+
+    def uninstall_shell_completion(shell: str) -> int:  # type: ignore[misc]
+        return 1
+
+    def cleanup_conda_scripts() -> bool:  # type: ignore[misc]
+        return True
+
+    def is_virtual_environment() -> bool:  # type: ignore[misc]
+        return False
+
+    def cleanup_main() -> int:  # type: ignore[misc]
+        return 0
 
 
 @pytest.mark.skipif(not COMPLETION_AVAILABLE, reason="Completion modules not available")
@@ -113,14 +131,78 @@ class TestHomodyneCompleter:
 
 @pytest.mark.skipif(not COMPLETION_AVAILABLE, reason="Completion modules not available")
 class TestShellCompletion:
-    """Test shell completion installation."""
+    """Test shell completion installation and conda integration."""
 
-    def test_install_completion_bash(self):
-        """Test bash completion installation."""
+    def test_install_completion_with_conda_environment(self):
+        """Test install completion detects conda environment."""
+        with (
+            patch.dict(
+                "os.environ", {"CONDA_PREFIX": "/home/user/miniconda3/envs/test"}
+            ),
+            patch("pathlib.Path.exists") as mock_exists,
+            patch("builtins.print") as mock_print,
+        ):
+            # Mock conda config file exists
+            mock_exists.return_value = True
+
+            result = install_shell_completion("zsh")
+            assert result == 0
+
+            # Should print conda integration message
+            print_calls = [str(call) for call in mock_print.call_args_list]
+            assert any("conda environment integration" in call for call in print_calls)
+            assert any("already installed" in call for call in print_calls)
+
+    def test_install_completion_conda_environment_missing_config(self):
+        """Test install completion when conda environment lacks config."""
+        import homodyne.cli_completion
+
+        with (
+            patch.dict(
+                "os.environ", {"CONDA_PREFIX": "/home/user/miniconda3/envs/test"}
+            ),
+            patch("pathlib.Path.exists") as mock_exists,
+            patch.object(homodyne.cli_completion, "ARGCOMPLETE_AVAILABLE", True),
+            patch.object(homodyne.cli_completion, "argcomplete", MagicMock()),
+            patch("pathlib.Path.home") as mock_home,
+            patch("builtins.open", create=True) as mock_open,
+        ):
+            # Mock conda config file doesn't exist
+            mock_exists.return_value = False
+            mock_home_path = MagicMock(spec=Path)
+            mock_home.return_value = mock_home_path
+
+            result = homodyne.cli_completion.install_shell_completion("bash")
+            # Should fall back to legacy installation
+            assert result == 0
+
+    def test_uninstall_completion_with_conda_environment(self):
+        """Test uninstall completion detects conda environment."""
+        with (
+            patch.dict(
+                "os.environ", {"CONDA_PREFIX": "/home/user/miniconda3/envs/test"}
+            ),
+            patch("pathlib.Path.exists") as mock_exists,
+            patch("builtins.print") as mock_print,
+        ):
+            # Mock conda config file exists
+            mock_exists.return_value = True
+
+            result = uninstall_shell_completion("zsh")
+            assert result == 0
+
+            # Should print conda management message
+            print_calls = [str(call) for call in mock_print.call_args_list]
+            assert any("conda environment integration" in call for call in print_calls)
+            assert any("homodyne-cleanup" in call for call in print_calls)
+
+    def test_install_completion_bash_legacy(self):
+        """Test bash completion installation (legacy mode)."""
         # Import the actual module to patch it directly
         import homodyne.cli_completion
 
         with (
+            patch.dict("os.environ", {}, clear=True),  # No CONDA_PREFIX
             patch.object(homodyne.cli_completion, "ARGCOMPLETE_AVAILABLE", True),
             patch.object(homodyne.cli_completion, "argcomplete", MagicMock()),
             patch("pathlib.Path.home") as mock_home,
@@ -150,8 +232,9 @@ class TestShellCompletion:
 
     def test_install_completion_unsupported_shell(self):
         """Test error handling for unsupported shell."""
-        result = install_shell_completion("unsupported")
-        assert result == 1
+        with patch.dict("os.environ", {}, clear=True):  # No CONDA_PREFIX
+            result = install_shell_completion("unsupported")
+            assert result == 1
 
     def test_setup_shell_completion(self):
         """Test setup of shell completion on parser."""
@@ -161,6 +244,107 @@ class TestShellCompletion:
 
             # Should not raise any errors
             setup_shell_completion(parser)
+
+
+@pytest.mark.skipif(not COMPLETION_AVAILABLE, reason="Completion modules not available")
+class TestUninstallScripts:
+    """Test the cleanup/uninstall functionality."""
+
+    def test_is_virtual_environment(self):
+        """Test virtual environment detection."""
+        # Test conda environment
+        with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": "test_env"}):
+            assert is_virtual_environment() == True
+
+        # Test virtual environment
+        with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": ""}, clear=True):
+            with (
+                patch("sys.prefix", "/home/user/venv"),
+                patch("sys.base_prefix", "/usr"),
+            ):
+                assert is_virtual_environment() == True
+
+        # Test no virtual environment - need to patch sys attributes and clear env
+        with (
+            patch.dict("os.environ", {}, clear=True),  # Clear all environment variables
+            patch("sys.prefix", "/usr"),
+            patch("sys.base_prefix", "/usr"),
+        ):
+            # Also patch hasattr to ensure no 'real_prefix'
+            with patch("builtins.hasattr", return_value=False):
+                assert is_virtual_environment() == False
+
+    def test_cleanup_conda_scripts_success(self):
+        """Test successful cleanup of conda scripts."""
+        mock_scripts = [
+            "/conda/prefix/etc/conda/activate.d/homodyne-gpu-activate.sh",
+            "/conda/prefix/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh",
+            "/conda/prefix/etc/homodyne/gpu_activation.sh",
+            "/conda/prefix/etc/homodyne/homodyne_completion_bypass.zsh",
+            "/conda/prefix/etc/homodyne/homodyne_config.sh",
+        ]
+
+        with (
+            patch("homodyne.uninstall_scripts.is_virtual_environment") as mock_is_venv,
+            patch("platform.system") as mock_platform,
+            patch("sys.prefix", "/conda/prefix"),
+            patch("pathlib.Path.exists") as mock_exists,
+            patch("pathlib.Path.unlink") as mock_unlink,
+            patch("pathlib.Path.rmdir") as mock_rmdir,
+            patch("pathlib.Path.iterdir") as mock_iterdir,
+        ):
+            mock_is_venv.return_value = True
+            mock_platform.return_value = "Linux"
+            mock_exists.return_value = True
+            mock_iterdir.return_value = []  # Empty directory
+
+            result = cleanup_conda_scripts()
+            assert result == True
+            # Should have called unlink for each script file
+            assert mock_unlink.call_count == len(mock_scripts)
+
+    def test_cleanup_conda_scripts_not_virtual_env(self):
+        """Test cleanup skips when not in virtual environment."""
+        with patch("homodyne.uninstall_scripts.is_virtual_environment") as mock_is_venv:
+            mock_is_venv.return_value = False
+
+            result = cleanup_conda_scripts()
+            assert result == False
+
+    def test_cleanup_conda_scripts_not_linux(self):
+        """Test cleanup skips when not on Linux."""
+        with (
+            patch("homodyne.uninstall_scripts.is_virtual_environment") as mock_is_venv,
+            patch("platform.system") as mock_platform,
+        ):
+            mock_is_venv.return_value = True
+            mock_platform.return_value = "Windows"
+
+            result = cleanup_conda_scripts()
+            assert result == True  # Returns True but prints info message
+
+    def test_cleanup_main_function(self):
+        """Test main cleanup function."""
+        with (
+            patch("homodyne.uninstall_scripts.cleanup_conda_scripts") as mock_cleanup,
+            patch("builtins.print") as mock_print,
+        ):
+            mock_cleanup.return_value = True
+
+            result = cleanup_main()
+            assert result == 0
+            mock_cleanup.assert_called_once()
+
+    def test_cleanup_main_function_failure(self):
+        """Test main cleanup function handles failures."""
+        with (
+            patch("homodyne.uninstall_scripts.cleanup_conda_scripts") as mock_cleanup,
+            patch("builtins.print") as mock_print,
+        ):
+            mock_cleanup.return_value = False
+
+            result = cleanup_main()
+            assert result == 1
 
 
 class TestCLIIntegration:
@@ -190,6 +374,20 @@ class TestCLIIntegration:
                     result = main()
                     assert result == 0
                     mock_install.assert_called_once_with("bash")
+
+    def test_uninstall_completion_argument(self):
+        """Test --uninstall-completion argument parsing."""
+        from homodyne.run_homodyne import main
+
+        with patch("sys.argv", ["homodyne", "--uninstall-completion", "zsh"]):
+            with patch("homodyne.run_homodyne.COMPLETION_AVAILABLE", True):
+                with patch(
+                    "homodyne.run_homodyne.uninstall_shell_completion"
+                ) as mock_uninstall:
+                    mock_uninstall.return_value = 0
+                    result = main()
+                    assert result == 0
+                    mock_uninstall.assert_called_once_with("zsh")
 
     def test_completion_unavailable_error_messages(self):
         """Test error messages when completion features are unavailable."""

@@ -1,112 +1,163 @@
-# GPU Setup Guide for Homodyne
+# GPU Setup Guide for Homodyne - System CUDA Integration
 
-Complete guide for setting up GPU acceleration with the homodyne package using
-pip-installed NVIDIA packages.
+**Complete guide for setting up GPU acceleration using system CUDA and cuDNN libraries instead of pip packages.**
 
-______________________________________________________________________
-
-## 🚀 Quick Solutions
-
-### Choose the Right Command for Your Needs
-
-**🖥️ CPU-Only Analysis (Recommended for most users):**
-```bash
-# MCMC on CPU (reliable, works on all platforms)
-homodyne --config my_config.json --method mcmc
-
-# All methods on CPU (classical + robust + MCMC)
-homodyne --config my_config.json --method all
-
-# Classical/robust methods (always CPU-only)
-homodyne --config my_config.json --method classical
-homodyne --config my_config.json --method robust
-```
-
-**🚀 GPU-Accelerated Analysis (Linux only):**
-```bash
-# MCMC with GPU acceleration (Linux with CUDA required)
-homodyne-gpu --config my_config.json --method mcmc
-
-# All methods with GPU for MCMC portion (Linux only)
-homodyne-gpu --config my_config.json --method all
-
-# ❌ These will show helpful error messages:
-# homodyne-gpu --method classical  # Error: Use homodyne instead
-# homodyne-gpu --method robust     # Error: Use homodyne instead
-```
-
-### MCMC Failed with GPU Errors?
-
-If you're using `homodyne-gpu` on Linux and see errors like `RuntimeError: Unable to load cuSPARSE` or
-`CUDA-enabled jaxlib is not installed`, try these fixes:
-
-```bash
-# Option 1: Activate GPU support manually first
-source activate_gpu.sh
-homodyne-gpu --config my_config.json --method mcmc
-
-# Option 2: Fall back to CPU-only mode
-homodyne --config my_config.json --method mcmc
-```
-
-**Why this happens:** pip installs NVIDIA libraries in Python's site-packages, but
-they're not in the system library path by default.
+This approach eliminates pip package conflicts and provides enterprise-grade CUDA integration for JAX GPU acceleration.
 
 ______________________________________________________________________
 
-## 📦 Installation & Setup
+## 🚀 System CUDA Quick Setup
 
-### 1. Install with GPU Support
+### System Requirements
 
+**Required for GPU acceleration:**
+- **Linux OS** (GPU acceleration only)
+- **System CUDA 12.6+** installed at `/usr/local/cuda`
+- **cuDNN 9.12+** in system libraries
+- **NVIDIA GPU** with driver 560.28+
+- **JAX local CUDA**: `pip install jax[cuda12-local]`
+
+### Quick Command Reference
+
+**🖥️ CPU-Only Analysis (All platforms):**
 ```bash
-pip install homodyne-analysis[mcmc]     # For MCMC (CPU + GPU capability)
-pip install homodyne-analysis[jax]      # For JAX with GPU support
-pip install homodyne-analysis[performance] # Full performance stack
+# MCMC on CPU (reliable, works everywhere)
+homodyne --config config.json --method mcmc
+
+# All methods on CPU
+homodyne --config config.json --method all
+
+# Classical/robust methods (CPU-only)
+homodyne --config config.json --method classical
+homodyne --config config.json --method robust
 ```
 
-**Note:** GPU acceleration only works on Linux. Windows/macOS installations will work but only provide CPU acceleration.
-
-### 2. Activate GPU Support
-
-**Method A: Use activation script**
-
+**🚀 System CUDA GPU-Accelerated Analysis (Linux only):**
 ```bash
+# Activate system CUDA environment
 source activate_gpu.sh
-python -c "import jax; print(f'Backend: {jax.default_backend()}')"  # Should show 'gpu'
+
+# GPU-accelerated MCMC (recommended)
+homodyne-gpu --config config.json --method mcmc
+
+# All methods with GPU acceleration for MCMC
+homodyne-gpu --config config.json --method all
+
+# Note: Classical/robust show efficiency warnings
+homodyne-gpu --method classical  # Recommends CPU version
 ```
 
-**Method B: Use wrapper command (automatic)**
+### GPU Issues? Try These Solutions
+
+**If you see CUDA/JAX errors:**
 
 ```bash
-homodyne-gpu --config my_config.json --method mcmc
+# 1. Check system CUDA installation
+nvcc --version                    # Should show CUDA 12.6
+nvidia-smi                        # Check GPU and driver
+ls /usr/local/cuda/lib64/         # Verify CUDA libraries
+
+# 2. Check cuDNN installation  
+ls /usr/lib/x86_64-linux-gnu/libcudnn.so.9*  # Should show cuDNN 9.x
+
+# 3. Install JAX with local CUDA support
+pip install jax[cuda12-local]
+
+# 4. Test GPU activation
+source activate_gpu.sh            # Should show system info
+
+# 5. Fall back to reliable CPU-only
+homodyne --config config.json --method mcmc
 ```
 
-### 3. Make It Permanent
+______________________________________________________________________
 
-**Option A: Source completion script (recommended)**
+## 📦 System CUDA Installation & Setup
 
-Add to your `~/.bashrc` or `~/.zshrc`:
+### 1. Install System CUDA and cuDNN
 
+**CUDA Toolkit Installation:**
 ```bash
-# Load homodyne completion with GPU support
-source /path/to/homodyne/homodyne_completion_bypass.zsh
+# Download and install CUDA Toolkit 12.6 from NVIDIA
+# https://developer.nvidia.com/cuda-downloads
+
+# Verify installation
+nvcc --version                    # Should show CUDA 12.6
+ls /usr/local/cuda/lib64/         # Should contain CUDA libraries
 ```
 
-This provides convenient aliases:
-- `hgm` = `homodyne-gpu --method mcmc`
-- `hga` = `homodyne-gpu --method all`
-- `hm` = `homodyne --method mcmc` (CPU-only)
-- `ha` = `homodyne --method all` (CPU-only)
-
-**Option B: Manual aliases**
-
-Add to your `~/.bashrc` or `~/.zshrc`:
-
+**cuDNN Installation:**
 ```bash
-# Homodyne GPU shortcuts
-alias hgpu='source /path/to/homodyne/activate_gpu.sh && homodyne-gpu'
-alias hgm='homodyne-gpu --method mcmc'
-alias hga='homodyne-gpu --method all'
+# Install cuDNN 9.x for CUDA 12
+# Download from: https://developer.nvidia.com/cudnn
+
+# Or install via package manager (Ubuntu/Debian):
+sudo apt update
+sudo apt install libcudnn9-dev
+
+# Verify installation
+ls /usr/lib/x86_64-linux-gnu/libcudnn.so.9*  # Should show cuDNN 9.x
+```
+
+### 2. Install JAX with Local CUDA Support
+
+**Install JAX for system CUDA:**
+```bash
+# Install homodyne base package
+pip install homodyne-analysis[mcmc]
+
+# Install JAX with local CUDA support
+pip install jax[cuda12-local]
+
+# Verify installation
+python -c "import jax; print('JAX version:', jax.__version__)"
+```
+
+### 3. Configure Virtual Environment Integration
+
+**Automatic setup (recommended):**
+```bash
+# Install virtual environment integration
+python scripts/install_gpu_autoload.py
+
+# This creates conda activation scripts that automatically:
+# - Configure system CUDA environment
+# - Enable shell completion
+# - Activate GPU support when environment loads
+```
+
+### 4. Manual Activation
+
+**Direct activation:**
+```bash
+# Manual GPU environment setup
+source activate_gpu.sh
+
+# Verify GPU detection
+python -c "import jax; print('JAX backend:', jax.default_backend())"
+```
+
+### 5. Shell Completion and Shortcuts
+
+**Automatic shell integration (recommended):**
+```bash
+# Load homodyne shortcuts and completion
+source homodyne_completion_bypass.zsh
+
+# This provides convenient aliases:
+# hm    = homodyne --method mcmc      (CPU)
+# hgm   = homodyne-gpu --method mcmc  (GPU, auto-activates)
+# ha    = homodyne --method all       (CPU)  
+# hga   = homodyne-gpu --method all   (GPU, auto-activates)
+```
+
+**Manual shell setup (if needed):**
+
+Add to your `~/.zshrc`:
+```bash
+# Homodyne system CUDA integration
+alias hgm='source activate_gpu.sh && homodyne-gpu --method mcmc'
+alias hga='source activate_gpu.sh && homodyne-gpu --method all'
 ```
 
 ______________________________________________________________________
@@ -238,6 +289,19 @@ ______________________________________________________________________
 ______________________________________________________________________
 
 ## 🔍 Detailed Troubleshooting
+
+### Uninstalling GPU Auto-activation
+
+To remove the automatic GPU setup:
+
+```bash
+python scripts/install_gpu_autoload.py --uninstall
+```
+
+This will:
+- Remove GPU activation scripts from your virtual environment
+- Clean up shell integration from ~/.bashrc or ~/.zshrc
+- Remove any old global configuration directories
 
 ### Current Status Summary
 

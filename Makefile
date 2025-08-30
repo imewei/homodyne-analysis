@@ -139,6 +139,7 @@ clean-test:
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	rm -rf .benchmarks/
+	rm -f test_report.html
 
 clean-venv:
 	rm -rf venv/

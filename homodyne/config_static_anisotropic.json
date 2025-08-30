@@ -1,18 +1,19 @@
 {
   "metadata": {
     "_comment": "Static Anisotropic Mode Configuration - 3 parameter optimization with angle filtering. Supports experimental and simulated data plotting.",
-    "config_version": "0.6.5.dev0",
+    "config_version": "0.7.1",
     "description": "Static anisotropic homodyne scattering analysis - 3-parameter model with angular dependence",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "analysis_mode": "static_anisotropic",
     "plotting_features": {
-      "experimental_data_plotting": "Use --plot-experimental-data for multi-angle validation",
-      "simulated_data_plotting": "Use --plot-simulated-data with scaling: --contrast 0.3 --offset 1.1",
+      "experimental_data_plotting": "Use --plot-experimental-data or 'hexp' shortcut for multi-angle validation",
+      "simulated_data_plotting": "Use --plot-simulated-data or 'hsim' shortcut with scaling: --contrast 0.3 --offset 1.1",
       "phi_angles_override": "Command-line --phi-angles overrides config file phi angles"
     },
     "parameters_optimized": ["D0", "alpha", "D_offset"],
     "angle_filtering": "enabled",
-    "script_compatibility": "homodyne v0.6.5.dev0"
+    "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
+    "script_compatibility": "homodyne v0.7.1"
   },
   "experimental_data": {
     "_comment": "Data source and loading configuration",
@@ -154,7 +155,7 @@
         "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
       ],
       "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
-      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "_performance_note": "v0.7.1+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
       "enabled": true,
       "uncertainty_model": "wasserstein",
       "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",

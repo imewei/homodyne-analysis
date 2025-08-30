@@ -321,6 +321,12 @@ class TestIsotropicModeIntegration:
                         core.load_experimental_data()
                     )
 
+                    # Since we're mocking _load_raw_data, we need to manually set the cache
+                    # to simulate what the real method would do
+                    if core.cached_experimental_data is None:
+                        core.cached_experimental_data = c2_data
+                        core.cached_phi_angles = phi_angles
+
                     # Verify isotropic mode characteristics
                     assert num_angles == 1
                     assert len(phi_angles) == 1

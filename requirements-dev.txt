@@ -1,6 +1,6 @@
 # Development dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies.dev]
-# Last updated: v0.7.1+ (Python version check, code quality improvements, test fixes)
+# Last updated: v0.7.1+ (Python version check, code quality improvements, conda integration, test fixes)
 
 # Include core dependencies
 -r requirements.txt
@@ -53,5 +53,5 @@ tox>=4.0.0
 build>=0.10.0
 twine>=4.0.0
 
-# Shell completion dependencies
-argcomplete>=3.0.0
+# Shell completion and conda integration dependencies
+argcomplete>=3.0.0  # Cross-platform shell completion with conda environment integration

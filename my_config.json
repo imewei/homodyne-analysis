@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "User Custom Configuration - Static Isotropic Mode",
-    "config_version": "0.6.5.dev0",
+    "config_version": "0.7.1",
     "description": "Custom static isotropic configuration for user experiments",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "created_date": "2025-08-20",
@@ -13,12 +13,13 @@
       "D_offset"
     ],
     "plotting_features": {
-      "experimental_data_plotting": "Use --plot-experimental-data for validation",
-      "simulated_data_plotting": "Use --plot-simulated-data with --contrast and --offset",
+      "experimental_data_plotting": "Use --plot-experimental-data or 'hexp' shortcut for validation",
+      "simulated_data_plotting": "Use --plot-simulated-data or 'hsim' shortcut with --contrast and --offset",
       "phi_angles_override": "Use --phi-angles 0,45,90,135 to override config angles"
     },
     "user_customized": true,
-    "script_compatibility": "homodyne v0.6.5.dev0"
+    "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
+    "script_compatibility": "homodyne v0.7.1"
   },
   "experimental_data": {
     "_comment": "User's experimental data configuration",
@@ -183,7 +184,7 @@
         "python run_homodyne.py --method classical  # Run all methods including robust"
       ],
       "_robust_flag_benefits": "NEW --method robust flag runs ONLY robust methods for dedicated noise-resistant estimation",
-      "_optimization_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "_optimization_performance_note": "v0.7.1+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
       "enabled": true,
       "_enabled_note": "Set to false to disable robust optimization methods",
       "uncertainty_model": "wasserstein",

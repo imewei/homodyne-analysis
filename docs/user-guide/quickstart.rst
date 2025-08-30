@@ -23,8 +23,9 @@ Installation
    homodyne --install-completion zsh  # or bash, fish, powershell
    source ~/.zshrc                    # Restart shell or reload config
 
-   # To remove completion later:
-   # homodyne --uninstall-completion zsh
+   # To remove completion later (conda environments):
+   # homodyne-cleanup                 # Remove all conda environment scripts
+   # homodyne --uninstall-completion zsh  # For manual installations
 
    # Test shortcuts (work immediately)
    homodyne_help                      # Show all available options
@@ -37,6 +38,9 @@ Installation
    homodyne-config --mode static_isotropic --sample my_sample
 
    # Or using shortcuts after shell enhancement:
+   # hc-iso      # homodyne-config --mode static_isotropic
+   # hc-aniso    # homodyne-config --mode static_anisotropic  
+   # hc-flow     # homodyne-config --mode laminar_flow
    # Tab completion: homodyne-config --mode <TAB>  (shows modes)
    # Fast reference: homodyne_help                (shows all options)
 
@@ -53,7 +57,11 @@ Ensure your experimental data is in the correct format:
 
    # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
    homodyne --config my_sample_config.json --plot-experimental-data
-   # Or with shortcuts: hplot (if config file is homodyne_config.json)
+   # Or with shortcuts: hexp (if config file is homodyne_config.json)
+   
+   # Plot simulated data (optional, for model validation)
+   homodyne --config my_sample_config.json --plot-simulated-data --contrast 0.3 --offset 1.1
+   # Or with shortcuts: hsim --config my_sample_config.json --contrast 0.3 --offset 1.1
 
    # Basic analysis (fastest, saves results to ./homodyne_results/)
    homodyne --config my_sample_config.json --method classical
@@ -65,9 +73,14 @@ Ensure your experimental data is in the correct format:
 
    # Quick analysis using different methods:
    # hc        # homodyne --method classical
-   # hm        # homodyne --method mcmc
+   # hm        # homodyne --method mcmc  
    # hr        # homodyne --method robust
    # ha        # homodyne --method all
+   
+   # GPU-accelerated analysis (Linux only):
+   # hgm       # homodyne-gpu --method mcmc
+   # hga       # homodyne-gpu --method all
+   # hgconfig  # homodyne-gpu --config
 
 **Step 4: View Results**
 

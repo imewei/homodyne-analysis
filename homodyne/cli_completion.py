@@ -1,15 +1,38 @@
 """
-Shell Completion for Homodyne Analysis
-=======================================
-Ultra-fast shell completion with persistent caching for instant response times.
-Usage:
-    # Enable shell completion (one-time setup)
+Shell Completion for Homodyne Analysis with Conda Environment Integration
+=========================================================================
+Ultra-fast shell completion with conda environment auto-loading and persistent
+caching for instant response times. Supports both CPU-only homodyne and
+GPU-accelerated homodyne-gpu commands with automatic conda integration.
+
+Commands supported:
+- homodyne: CPU analysis (all platforms)
+- homodyne-gpu: GPU analysis with system CUDA (Linux only)
+- homodyne-config: Configuration file generator
+
+Conda Environment Integration:
+    Shell completion is AUTOMATICALLY installed when you install homodyne-analysis
+    in a conda/virtual environment on Linux systems.
+
+    # Check if completion is active
+    homodyne --install-completion zsh    # Shows status for conda environments
+
+    # Available shortcuts after conda environment activation:
+    hm --help                            # homodyne --method mcmc
+    hga --config config.json             # homodyne-gpu --method all
+    homodyne_help                        # Show all available shortcuts
+
+Manual Installation (Legacy):
+    For non-conda environments or manual setup:
     homodyne --install-completion bash
     homodyne --install-completion zsh
     homodyne --install-completion fish
+
     # Shell completion in regular commands
-    homodyne --method <TAB>     # Shows: classical, mcmc, robust, all
-    homodyne --config <TAB>     # Shows available .json files
+    homodyne --method <TAB>         # Shows: classical, mcmc, robust, all
+    homodyne-gpu --method <TAB>     # Shows: mcmc, all (GPU-optimized)
+    homodyne --config <TAB>         # Shows available .json files
+    homodyne-config --mode <TAB>    # Shows: static_isotropic, etc.
 """
 
 import argparse
@@ -355,7 +378,30 @@ def _handle_zsh_fallback_completion():
 
 
 def install_shell_completion(shell: str) -> int:
-    """Install shell completion for the specified shell."""
+    """Install shell completion for the specified shell.
+
+    Note: For conda/virtual environments, shell completion is automatically
+    installed during package installation. This command provides legacy
+    shell RC file integration.
+    """
+    # Check if we're in a conda environment with automatic completion
+    if os.environ.get("CONDA_PREFIX"):
+        conda_config = (
+            Path(os.environ["CONDA_PREFIX"]) / "etc" / "homodyne" / "homodyne_config.sh"
+        )
+        if conda_config.exists():
+            print(
+                "✅ Shell completion is already installed via conda environment integration!"
+            )
+            print(f"   Config file: {conda_config}")
+            print("\nTo activate completion:")
+            print("   conda deactivate && conda activate <your-env-name>")
+            print("\nTo test completion:")
+            print("   hm --help          # Shortcut for: homodyne --method mcmc --help")
+            print("   homodyne --method <TAB>   # Tab completion")
+            print("   homodyne_help      # Show all available shortcuts")
+            return 0
+
     if not ARGCOMPLETE_AVAILABLE or argcomplete is None:
         print("Error: argcomplete package is required for shell completion.")
         print("Install with: pip install argcomplete")
@@ -365,9 +411,19 @@ def install_shell_completion(shell: str) -> int:
 eval "$(register-python-argcomplete homodyne)"
 eval "$(register-python-argcomplete homodyne-config)"
 """,
-        "zsh": """# Homodyne completion - load bypass script from installed location
-if [[ -f "$HOME/.config/homodyne/homodyne_completion_bypass.zsh" ]]; then
+        "zsh": """# Homodyne completion - conda-aware integration
+# Priority 1: Check if conda environment has homodyne completion
+if [[ -n "$CONDA_PREFIX" ]] && [[ -f "$CONDA_PREFIX/etc/homodyne/homodyne_config.sh" ]]; then
+    # Completion is automatically loaded via conda environment
+    echo "# Homodyne completion is managed via conda environment at:"
+    echo "# $CONDA_PREFIX/etc/homodyne/homodyne_config.sh"
+    echo "# No additional setup needed - activate your conda environment"
+# Priority 2: Check for user config
+elif [[ -f "$HOME/.config/homodyne/homodyne_completion_bypass.zsh" ]]; then
     source "$HOME/.config/homodyne/homodyne_completion_bypass.zsh"
+# Priority 3: Check local directory
+elif [[ -f "./homodyne_completion_bypass.zsh" ]]; then
+    source "./homodyne_completion_bypass.zsh"
 fi
 """,
         "fish": """# Homodyne completion for fish
@@ -461,7 +517,26 @@ Register-ArgumentCompleter -Native -CommandName homodyne -ScriptBlock {
 
 
 def uninstall_shell_completion(shell: str) -> int:
-    """Uninstall shell completion for the specified shell."""
+    """Uninstall shell completion for the specified shell.
+
+    Note: For conda/virtual environments, use 'homodyne-cleanup' before
+    'pip uninstall homodyne-analysis' to properly remove completion.
+    """
+    # Check if we're in a conda environment with automatic completion
+    if os.environ.get("CONDA_PREFIX"):
+        conda_config = (
+            Path(os.environ["CONDA_PREFIX"]) / "etc" / "homodyne" / "homodyne_config.sh"
+        )
+        if conda_config.exists():
+            print("🔧 Shell completion is managed by conda environment integration.")
+            print("\nTo properly uninstall:")
+            print("   1. homodyne-cleanup          # Remove environment scripts")
+            print("   2. pip uninstall homodyne-analysis  # Remove package")
+            print(f"\nConda config file: {conda_config}")
+            print("\nAlternatively, you can run the cleanup manually:")
+            print("   python -m homodyne.uninstall_scripts")
+            return 0
+
     # Determine the appropriate config file
     home = Path.home()
     config_files = {

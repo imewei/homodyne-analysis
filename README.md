@@ -35,7 +35,7 @@ diffusion and advective shear flow.
 - **Code quality assurance**: Automated formatting, linting, type checking, and security
   scanning with pre-commit hooks
 - **Cross-platform shell completion**: Fast tab completion for CLI commands with
-  intelligent caching
+  intelligent caching and conda environment integration
 
 ## Table of Contents
 
@@ -97,24 +97,23 @@ pip install homodyne-analysis[data]
 pip install homodyne-analysis[performance]
 # Includes:
 # - numba>=0.61.0,<0.62.0          # JIT compilation (3-5x speedup)
-# - jax[cuda12]>=0.7.0 (Linux)     # JAX with GPU support on Linux
+# - jax[cuda12-local]>=0.7.0 (Linux) # JAX with system CUDA 12.6+ support on Linux
 # - jax>=0.7.0 (non-Linux)         # Standard JAX on other platforms
 # - jaxlib>=0.4.35                 # JAX backend library
 # - psutil>=5.8.0                  # Memory profiling and monitoring
 ```
 
-**JAX Acceleration (GPU/TPU support):**
+**JAX Acceleration with System CUDA (GPU support):**
 
 ```bash
 pip install homodyne-analysis[jax]
 # Includes:
-# - jax[cuda12]>=0.7.0             # JAX with CUDA 12 support (Linux with NVIDIA GPU)
+# - jax[cuda12-local]>=0.7.0       # JAX with system CUDA 12.6+ support (Linux with NVIDIA GPU)
 # - jax>=0.7.0                     # Standard JAX (non-Linux platforms)
 # - jaxlib>=0.4.35                 # JAX backend library
 
-# Note: Linux systems automatically get CUDA 12 support for NVIDIA GPUs
-# For other CUDA versions or manual installation:
-# pip install "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+# Note: Requires system CUDA 12.6+ and cuDNN 9.12+ installed on Linux
+# For setup instructions: see GPU_SETUP.md
 ```
 
 **Bayesian MCMC Analysis:**
@@ -127,7 +126,7 @@ pip install homodyne-analysis[mcmc]
 # - pytensor>=2.8.0                # Tensor operations for PyMC
 # - corner>=2.2.0                  # Corner plots for MCMC results
 # - numpyro>=0.13.0                # GPU-accelerated MCMC with JAX
-# - jax[cuda12]>=0.7.0 (Linux)     # Automatic GPU support on Linux
+# - jax[cuda12-local]>=0.7.0 (Linux) # System CUDA 12.6+ support on Linux
 # - jaxlib>=0.4.35                 # JAX backend for NumPyro
 ```
 
@@ -240,29 +239,33 @@ pip install homodyne-analysis[all]  # Everything included
 pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
 ```
 
-### GPU Acceleration
+### System CUDA GPU Acceleration
 
-The package supports GPU acceleration for MCMC sampling and JAX-based computations on
-Linux systems with NVIDIA GPUs:
+The package supports system CUDA GPU acceleration for MCMC sampling and JAX-based computations on Linux systems with NVIDIA GPUs:
 
-**Automatic GPU Detection:**
+**System Requirements:**
 
-On Linux systems, installing with `[jax]`, `[mcmc]`, or `[performance]` options
-automatically includes CUDA 12 support:
+- Linux operating system
+- System CUDA 12.6+ installed at `/usr/local/cuda`
+- cuDNN 9.12+ in system libraries
+- NVIDIA GPU with driver 560.28+
+- NVIDIA drivers installed
+
+**Installation:**
+
+Installing with `[jax]`, `[mcmc]`, or `[performance]` options automatically includes system CUDA support:
 
 ```bash
-# Any of these will install GPU support on Linux:
-pip install homodyne-analysis[jax]         # JAX with GPU
+# Any of these will install system CUDA GPU support on Linux:
+pip install homodyne-analysis[jax]         # JAX with system CUDA
 pip install homodyne-analysis[mcmc]        # Includes NumPyro for GPU-accelerated MCMC
-pip install homodyne-analysis[performance] # Full performance stack with GPU
+pip install homodyne-analysis[performance] # Full performance stack with system CUDA
 ```
 
-**Activate GPU Support:**
-
-For pip-installed JAX with CUDA, you need to activate GPU support:
+**Activate System CUDA GPU Support:**
 
 ```bash
-# Activate GPU support (required for pip-installed NVIDIA libraries)
+# Activate system CUDA GPU support
 source activate_gpu.sh
 
 # Then verify GPU detection
@@ -270,38 +273,73 @@ python -c "import jax; print(f'JAX devices: {jax.devices()}')"
 # Should show: [CudaDevice(id=0)]
 ```
 
+**Command Usage:**
+
+```bash
+# CPU-only analysis (reliable, all platforms)
+homodyne --config config.json --method mcmc
+
+# System CUDA GPU-accelerated analysis (Linux only)  
+homodyne-gpu --config config.json --method mcmc
+```
+
 **Using GPU in Python:**
 
 ```python
-# After activating GPU support with the script above
+# After activating system CUDA GPU support with the script above
 import jax
 print(f"JAX devices: {jax.devices()}")  # Should show GPU device(s)
 
 # For MCMC GPU acceleration
 from homodyne.optimization.mcmc import MCMCSampler
-# GPU acceleration is automatic when available
+# GPU acceleration is automatic when available and activated
 ```
 
-**Manual GPU Setup:**
+**Note:** See `GPU_SETUP.md` for detailed system CUDA setup instructions and troubleshooting.
 
-If you need a different CUDA version or manual control:
+## Uninstallation
+
+To completely remove homodyne-analysis including all environment scripts, follow this **two-step process**:
 
 ```bash
-# For CUDA 11.x
-pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+# Step 1: Clean up environment scripts FIRST (while package is still installed)
+homodyne-cleanup
 
-# For CPU-only (override automatic GPU installation)
-pip install --upgrade "jax[cpu]"
+# Step 2: Uninstall the package
+pip uninstall homodyne-analysis
 ```
 
-**Requirements for GPU Acceleration:**
+**⚠️ Important**: The order matters! The `homodyne-cleanup` command is part of the package and removes conda environment scripts that `pip uninstall` cannot track:
 
-- Linux operating system
-- NVIDIA GPU with CUDA 12.x support
-- NVIDIA drivers installed
-- For MCMC: PyMC will automatically use JAX/NumPyro backend when available
+- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh` (conda activation hook)
+- `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh` (conda deactivation hook)
+- `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh` (GPU activation script)
+- `$CONDA_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh` (shell completion script)
+- `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh` (main configuration script)
+- `$CONDA_PREFIX/etc/homodyne/` (entire directory if empty after cleanup)
 
-**Note:** See `GPU_SETUP.md` for detailed GPU setup instructions and troubleshooting.
+### Alternative Cleanup Methods
+
+**Option 1: Standalone Cleanup Script** (if you forgot to run `homodyne-cleanup` first)
+
+```bash
+# Download and run the standalone cleanup script
+curl -sSL https://raw.githubusercontent.com/imewei/homodyne/main/standalone_cleanup.sh | bash
+
+# Or if you have the source code:
+bash /path/to/homodyne/standalone_cleanup.sh
+```
+
+**Option 2: Manual Cleanup**
+
+```bash
+# Remove conda activation scripts
+rm -f "$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh"
+rm -f "$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh"
+
+# Remove homodyne configuration directory
+rm -rf "$CONDA_PREFIX/etc/homodyne"
+```
 
 ## Quick Start
 
@@ -383,13 +421,17 @@ homodyne --install-completion zsh      # macOS default
 homodyne --install-completion fish     # Fish shell
 homodyne --install-completion powershell  # Windows PowerShell
 
+# Conda environments: Completion is automatically integrated!
+# The install command will show current status and provide guidance.
+
 # Restart shell or reload config
 source ~/.bashrc   # Linux
 source ~/.zshrc    # macOS
 # Windows PowerShell: restart terminal
 
 # To remove completion later
-homodyne --uninstall-completion bash   # or zsh, fish, powershell
+homodyne-cleanup                       # Conda environments (recommended)
+# homodyne --uninstall-completion bash   # Manual installations
 ```
 
 ### Available Features
@@ -397,12 +439,25 @@ homodyne --uninstall-completion bash   # or zsh, fish, powershell
 **🔥 Command Shortcuts (Always Available):**
 
 ```bash
+# CPU analysis shortcuts
 hc          # homodyne --method classical
 hm          # homodyne --method mcmc
 hr          # homodyne --method robust  
 ha          # homodyne --method all
 hconfig     # homodyne --config
-hplot       # homodyne --plot-experimental-data
+hexp        # homodyne --plot-experimental-data
+hsim        # homodyne --plot-simulated-data
+
+# GPU analysis shortcuts (Linux only)
+hgm         # homodyne_gpu_activate && homodyne-gpu --method mcmc
+hga         # homodyne_gpu_activate && homodyne-gpu --method all
+hgconfig    # homodyne_gpu_activate && homodyne-gpu --config
+
+# Configuration shortcuts
+hc-iso      # homodyne-config --mode static_isotropic
+hc-aniso    # homodyne-config --mode static_anisotropic
+hc-flow     # homodyne-config --mode laminar_flow
+hc-config   # homodyne-config
 ```
 
 **⚡ Tab Completion (When Working):**
@@ -416,7 +471,8 @@ homodyne --output-dir <TAB> # Shows available directories
 **📋 Help System:**
 
 ```bash
-homodyne_help              # Show all available options and current config files
+homodyne_help         # Show all available options and current config files
+homodyne_gpu_status   # Check GPU status and availability (conda environments)
 ```
 
 ### Usage Examples
@@ -1453,7 +1509,7 @@ Development workflow |
 **Performance:**
 
 - **JIT Compilation**: Numba warmup eliminates compilation overhead
-- **JAX Integration**: Optional GPU acceleration for MCMC
+- **JAX Integration**: Optional system CUDA GPU acceleration for MCMC
 - **Memory Management**: Automatic cleanup and smart caching
 - **Benchmarking**: Comprehensive performance regression testing
 - **Shell Completion**: Multi-tier fallback system for enhanced UX

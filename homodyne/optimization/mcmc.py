@@ -54,20 +54,19 @@ def _lazy_import_pymc():
     return pm, az, pt, shared
 
 
-# JAX backend for GPU acceleration
+# JAX backend for system CUDA GPU acceleration
 def _lazy_import_jax():
-    """Lazy import of JAX dependencies for GPU acceleration."""
+    """Lazy import of JAX dependencies for system CUDA GPU acceleration."""
     global pmjax, JAX_AVAILABLE
 
     if "pmjax" not in globals() or pmjax is None:
         try:
-            import platform
-
             import jax
             import pymc.sampling.jax as pmjax
 
             # Note: Platform checking moved to command level (gpu_wrapper.py)
             # This function is only called when GPU acceleration is explicitly requested
+            # Requires: Linux + system CUDA 12.6+ + cuDNN 9.12+ + jax[cuda12-local]
             # Test if JAX/GPU is properly configured
             devices = jax.devices()
             JAX_AVAILABLE = True
@@ -203,21 +202,24 @@ class MCMCSampler:
                     f"homodyne-gpu command detected on {platform.system()}: GPU not supported"
                 )
                 logger.info(
-                    "GPU acceleration only available on Linux with CUDA-enabled JAX"
+                    "System CUDA GPU acceleration only available on Linux with CUDA 12.6+ and cuDNN 9.12+"
                 )
                 logger.info("Will use CPU-only MCMC sampling")
             elif JAX_AVAILABLE:
                 logger.info(
-                    "homodyne-gpu command: JAX backend available for GPU acceleration"
+                    "homodyne-gpu command: JAX backend available for system CUDA GPU acceleration"
                 )
             else:
                 logger.info(
                     "homodyne-gpu command: JAX backend not available, using CPU sampling"
                 )
+                logger.info(
+                    "For GPU setup, ensure system CUDA 12.6+ and cuDNN 9.12+ are installed"
+                )
         else:
             logger.info("homodyne command: Using CPU-only MCMC sampling")
             logger.info(
-                "For GPU acceleration, use 'homodyne-gpu --method mcmc' instead"
+                "For system CUDA GPU acceleration, use 'homodyne-gpu --method mcmc' instead"
             )
 
     def _build_bayesian_model_optimized(
@@ -880,15 +882,15 @@ class MCMCSampler:
             os.environ["JAX_PLATFORMS"] = "cpu"
             self.use_jax_backend = False
             logger.info(
-                "MCMC running in CPU-only mode (use homodyne-gpu for GPU acceleration)"
+                "MCMC running in CPU-only mode (use homodyne-gpu for system CUDA GPU acceleration)"
             )
         else:
-            # Allow GPU acceleration for homodyne-gpu command
+            # Allow system CUDA GPU acceleration for homodyne-gpu command
             self.use_jax_backend = self.mcmc_config.get(
                 "use_jax_backend", JAX_AVAILABLE
             )
             logger.info(
-                "MCMC attempting GPU acceleration (homodyne-gpu command detected)"
+                "MCMC attempting system CUDA GPU acceleration (homodyne-gpu command detected)"
             )
 
         # Auto-tuning settings
@@ -956,7 +958,7 @@ class MCMCSampler:
         }
 
     def _use_jax_sampling(self, draws: int, tune: int, chains: int) -> Any | None:
-        """Use JAX backend for faster sampling when available."""
+        """Use JAX backend for faster sampling with system CUDA when available."""
         if not self.use_jax_backend or not JAX_AVAILABLE:
             return None
 
@@ -966,10 +968,10 @@ class MCMCSampler:
             # Check platform requirement first
             if platform.system() != "Linux":
                 logger.info(
-                    f"JAX GPU acceleration not available on {platform.system()}"
+                    f"JAX system CUDA GPU acceleration not available on {platform.system()}"
                 )
                 logger.info(
-                    "GPU acceleration only supported on Linux with CUDA-enabled JAX"
+                    "System CUDA GPU acceleration only supported on Linux with CUDA 12.6+ and cuDNN 9.12+"
                 )
                 logger.info("Falling back to CPU-only MCMC sampling")
                 return None
@@ -984,7 +986,9 @@ class MCMCSampler:
 
             backend = jax.default_backend()
             if backend == "gpu":
-                logger.info("Using JAX backend with NumPyro NUTS for GPU acceleration")
+                logger.info(
+                    "Using JAX backend with NumPyro NUTS for system CUDA GPU acceleration"
+                )
             else:
                 logger.info(f"Using JAX backend with NumPyro NUTS on {backend.upper()}")
 
@@ -1002,7 +1006,9 @@ class MCMCSampler:
             return trace
 
         except Exception as e:
-            logger.warning(f"JAX backend sampling failed: {e}, falling back to CPU")
+            logger.warning(
+                f"System CUDA JAX backend sampling failed: {e}, falling back to CPU"
+            )
             return None
 
     def _progressive_mcmc_sampling(
@@ -1379,7 +1385,7 @@ class MCMCSampler:
             # Try JAX backend first if available and enabled
             trace = None
             if self.use_jax_backend:
-                print("    Attempting JAX/GPU acceleration...")
+                print("    Attempting system CUDA JAX/GPU acceleration...")
                 trace = self._use_jax_sampling(draws, tune, chains)
 
             # Fallback to CPU sampling if JAX fails or not available
@@ -2162,7 +2168,7 @@ class MCMCSampler:
 
         # Note: JAX recommendations removed - users now explicitly choose CPU vs GPU via commands
         # - Use 'homodyne --method mcmc' for CPU-only reliable sampling
-        # - Use 'homodyne-gpu --method mcmc' for GPU acceleration (Linux only)
+        # - Use 'homodyne-gpu --method mcmc' for system CUDA GPU acceleration (Linux only)
 
         return validation_results
 
@@ -2171,7 +2177,9 @@ class MCMCSampler:
         speedup_factors = {"baseline": 1.0}
 
         if self.use_jax_backend and JAX_AVAILABLE:
-            speedup_factors["jax_backend"] = 5.0  # Conservative estimate for GPU
+            speedup_factors["jax_backend"] = (
+                5.0  # Conservative estimate for system CUDA GPU
+            )
 
         if self.auto_tune_enabled:
             speedup_factors["auto_tuning"] = 1.5  # Better convergence

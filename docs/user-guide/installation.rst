@@ -8,7 +8,7 @@ System Requirements
 - **Operating System**: Windows, macOS, or Linux
 - **Memory**: Minimum 4GB RAM (8GB+ recommended for MCMC)
 - **Storage**: ~500MB for full installation with dependencies
-- **GPU** (optional): NVIDIA GPU with CUDA 12.x support for accelerated MCMC and JAX computations
+- **GPU** (optional): NVIDIA GPU with system CUDA 12.6+ and cuDNN 9.12+ support for accelerated MCMC and JAX computations
 
 Quick Installation (Recommended)
 --------------------------------
@@ -45,7 +45,7 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[jax]
 
 .. note::
-   On Linux systems with NVIDIA GPUs, JAX will automatically install with CUDA 12 support for GPU acceleration.
+   On Linux systems with NVIDIA GPUs, JAX will automatically install with system CUDA 12.6+ support for GPU acceleration.
 
 **For MCMC Bayesian Analysis:**
 
@@ -54,7 +54,7 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[mcmc]
 
 .. note::
-   This now includes NumPyro for GPU-accelerated MCMC sampling. On Linux systems with NVIDIA GPUs, JAX with CUDA 12 support is automatically installed.
+   This now includes NumPyro for GPU-accelerated MCMC sampling. On Linux systems with NVIDIA GPUs, JAX with system CUDA 12.6+ support is automatically installed.
 
 **For Robust Optimization (Noise-Resistant Methods):**
 
@@ -99,6 +99,9 @@ You can install specific feature sets using pip extras:
    # To remove completion later:
    homodyne --uninstall-completion bash  # or zsh, fish, powershell
 
+.. note::
+   **Conda Environment Integration**: When installed in a conda environment, completion scripts are automatically integrated during installation. Use ``homodyne --install-completion`` to check status or ``homodyne-cleanup`` to remove all environment scripts during uninstallation.
+
 **For Security and Code Quality Tools:**
 
 .. code-block:: bash
@@ -110,8 +113,10 @@ You can install specific feature sets using pip extras:
 
 The completion system provides multiple interaction methods:
 
-- **Tab completion**: ``homodyne --method <TAB>`` shows available options
+- **Tab completion**: ``homodyne --method <TAB>`` shows available methods (classical, mcmc, robust, all)
 - **Command shortcuts**: ``hc`` (classical), ``hm`` (mcmc), ``hr`` (robust), ``ha`` (all)
+- **GPU shortcuts**: ``hgm`` (GPU mcmc), ``hga`` (GPU all) - Linux only
+- **Config shortcuts**: ``hconfig``, ``hgconfig`` for configuration files
 - **Help reference**: ``homodyne_help`` shows all available options and current config files
 
 .. code-block:: bash
@@ -121,6 +126,7 @@ The completion system provides multiple interaction methods:
 
    # Test shortcuts (always work even if tab completion fails)
    hc --verbose     # homodyne --method classical --verbose
+   hgm --config my.json  # GPU-accelerated MCMC (Linux only)
    homodyne_help    # Show all options and current config files
 
 **All Dependencies:**
@@ -168,6 +174,22 @@ Test your installation:
 
 Common Issues
 -------------
+
+**Shell Completion Not Working:**
+
+If tab completion or command shortcuts don't work after installation:
+
+.. code-block:: bash
+
+   # Check completion status (conda environments)
+   homodyne --install-completion zsh    # Shows current status
+   
+   # Manual cleanup if needed
+   homodyne-cleanup                     # Remove all conda environment scripts
+   
+   # Reinstall and restart shell
+   pip install --upgrade homodyne-analysis[completion]
+   source ~/.zshrc    # or ~/.bashrc for bash
 
 **Import Errors:**
 
@@ -224,32 +246,39 @@ If pip cannot find the package, ensure you're using the correct name:
    pip install homodyne-analysis  # Correct package name
    # NOT: pip install homodyne    # This won't work
 
-GPU Acceleration
-----------------
+System CUDA GPU Acceleration
+-----------------------------
 
-The package now supports GPU acceleration for MCMC sampling and JAX computations on Linux systems with NVIDIA GPUs.
+The package now supports system CUDA GPU acceleration for MCMC sampling and JAX computations on Linux systems with NVIDIA GPUs.
 
-**Automatic GPU Support**
+**System Requirements**
 
-When you install with ``[jax]``, ``[mcmc]``, or ``[performance]`` options on a Linux system, JAX will automatically be installed with CUDA 12 support:
+- Linux operating system
+- System CUDA 12.6+ installed at ``/usr/local/cuda``
+- cuDNN 9.12+ installed in system libraries
+- NVIDIA GPU with driver 560.28+
+
+**Automatic System CUDA Support**
+
+When you install with ``[jax]``, ``[mcmc]``, or ``[performance]`` options on a Linux system, JAX will automatically be installed with system CUDA 12.6+ support:
 
 .. code-block:: bash
 
-   # Any of these will include GPU support on Linux:
+   # Any of these will include system CUDA GPU support on Linux:
    pip install homodyne-analysis[jax]
    pip install homodyne-analysis[mcmc]        # Includes NumPyro for GPU MCMC
    pip install homodyne-analysis[performance]
 
-   # IMPORTANT: Activate GPU support after installation
+   # IMPORTANT: Activate system CUDA GPU support after installation
    source activate_gpu.sh
 
-**Activate and Verify GPU**
+**Activate and Verify System CUDA GPU**
 
-For pip-installed JAX, you must activate GPU support:
+For system CUDA JAX, you must activate GPU support:
 
 .. code-block:: bash
 
-   # First, activate GPU support (required for pip-installed NVIDIA libraries)
+   # First, activate system CUDA GPU support
    source activate_gpu.sh
 
    # Then verify GPU detection
@@ -278,36 +307,35 @@ The MCMC module automatically uses GPU acceleration when available:
    mcmc = HodomyneMCMC(mode="laminar_flow", use_jax_backend=True)
 
    # The module will log:
-   # "Using JAX backend with NumPyro NUTS for GPU acceleration"
+   # "Using JAX backend with NumPyro NUTS for system CUDA GPU acceleration"
 
-**Manual GPU Configuration**
-
-For different CUDA versions or manual control:
+**Command Usage**
 
 .. code-block:: bash
 
-   # For CUDA 11.x instead of 12.x:
-   pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+   # CPU-only analysis (reliable, all platforms)
+   homodyne --config config.json --method mcmc
 
-   # Force CPU-only installation (override automatic GPU):
-   pip install --upgrade "jax[cpu]"
+   # System CUDA GPU-accelerated analysis (Linux only)
+   homodyne-gpu --config config.json --method mcmc
 
-**GPU Requirements**
+**System CUDA Requirements**
 
-- **Operating System**: Linux (GPU acceleration not available on Windows/macOS via pip)
+- **Operating System**: Linux (system CUDA GPU acceleration not available on Windows/macOS)
 - **Hardware**: NVIDIA GPU with CUDA capability
-- **Software**: NVIDIA drivers and CUDA toolkit (12.x for default installation)
+- **Software**: System CUDA 12.6+ and cuDNN 9.12+ installed
+- **Drivers**: NVIDIA driver version 560.28+
 - **Memory**: GPU memory requirements depend on problem size
 
-**Troubleshooting GPU Issues**
+**Troubleshooting System CUDA GPU Issues**
 
 If GPU is not detected:
 
 1. Check NVIDIA drivers: ``nvidia-smi``
-2. Verify CUDA installation: ``nvcc --version``
-3. Reinstall JAX with explicit CUDA version
-4. Check JAX GPU guide: https://jax.readthedocs.io/en/latest/installation.html#gpu
-5. See ``GPU_SETUP.md`` for detailed troubleshooting and setup instructions
+2. Verify system CUDA installation: ``nvcc --version`` (should show 12.6+)
+3. Check cuDNN installation: ``ls /usr/lib/x86_64-linux-gnu/libcudnn.so.9*``
+4. Run GPU activation: ``source activate_gpu.sh``
+5. See ``GPU_SETUP.md`` for detailed system CUDA setup and troubleshooting instructions
 
 Getting Help
 ------------

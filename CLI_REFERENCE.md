@@ -5,12 +5,13 @@ Quality: Black ✅ isort ✅**
 
 ## Overview
 
-The Homodyne project provides three command-line tools for analyzing X-ray Photon
+The Homodyne project provides four command-line tools for analyzing X-ray Photon
 Correlation Spectroscopy (XPCS) data:
 
 1. **`homodyne`** - Main analysis command with enhanced Gurobi trust region optimization
-1. **`homodyne-gpu`** - GPU-accelerated analysis with automatic JAX/CUDA activation
+1. **`homodyne-gpu`** - System CUDA GPU-accelerated analysis with automatic JAX/CUDA activation
 1. **`homodyne-config`** - Configuration file generator
+1. **`homodyne-cleanup`** - Environment cleanup utility
 
 **Recent Improvements (v0.6.6+):**
 
@@ -52,8 +53,10 @@ homodyne [OPTIONS]
   --phi-angles PHI_ANGLES       Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'
   --install-completion {bash,zsh,fish,powershell}
                                 Install shell completion for the specified shell
+                                (conda environments: checks current integration status)
   --uninstall-completion {bash,zsh,fish,powershell}
                                 Uninstall shell completion for the specified shell
+                                (conda environments: use homodyne-cleanup for full removal)
 ```
 
 #### Methods
@@ -168,11 +171,9 @@ homodyne_results/
 
 ______________________________________________________________________
 
-### 2. `homodyne-gpu` - GPU-Accelerated Analysis Command
+### 2. `homodyne-gpu` - System CUDA GPU-Accelerated Analysis
 
-Identical to `homodyne` but automatically activates GPU support by sourcing
-`activate_gpu.sh` before running analysis. Provides seamless GPU acceleration with
-JAX/CUDA without manual environment setup.
+**GPU-accelerated homodyne analysis using system CUDA integration**. Automatically configures system CUDA 12.6+ and cuDNN 9.12+ for JAX GPU acceleration on Linux systems with `jax[cuda12-local]`.
 
 #### Usage
 
@@ -182,41 +183,44 @@ homodyne-gpu [OPTIONS]
 
 #### Options
 
-All options are identical to `homodyne` command. See Section 1 above for complete option
-list.
+All options are identical to `homodyne` command. See Section 1 above for complete option list.
 
-#### GPU Requirements
+#### System Requirements
 
-- **CUDA-capable GPU** with compute capability 5.2+
-- **JAX with CUDA support** installed via:
-  ```bash
-  pip install homodyne-analysis[jax]  # Installs JAX with CUDA 12 support on Linux
-  ```
-- **GPU activation script**: `activate_gpu.sh` must be present in:
-  - Current working directory, OR
-  - Package installation directory, OR
-  - Site-packages directory
+- **Linux OS** (GPU acceleration only)
+- **System CUDA 12.6+** installed at `/usr/local/cuda`
+- **cuDNN 9.12+** installed in system libraries (`/usr/lib/x86_64-linux-gnu`)
+- **JAX with local CUDA**: `pip install jax[cuda12-local]`
+- **NVIDIA GPU** with driver version 560.28+
+- **GPU activation script**: `activate_gpu.sh` (system CUDA version)
+
+#### System CUDA Integration
+
+- **No pip package conflicts**: Uses system CUDA libraries directly
+- **Professional setup**: Enterprise-grade CUDA toolkit integration  
+- **Automatic detection**: System CUDA and cuDNN version checking
+- **Virtual environment support**: Automatic activation scripts available
 
 #### Examples
 
 ```bash
-# GPU-accelerated classical analysis
-homodyne-gpu --method classical
+# GPU-accelerated MCMC analysis (recommended)
+homodyne-gpu --method mcmc --config config.json
 
-# GPU-accelerated MCMC with all methods
+# GPU-accelerated all methods comparison  
 homodyne-gpu --method all --verbose
 
-# GPU analysis with custom config
-homodyne-gpu --config gpu_config.json --method mcmc
+# GPU analysis with system CUDA auto-detection
+homodyne-gpu --config analysis_config.json --method mcmc
 
-# Force static mode with GPU acceleration
-homodyne-gpu --static-isotropic --method classical
+# Note: Classical/robust methods show efficiency warning
+homodyne-gpu --method classical  # Recommends CPU-only homodyne command
 ```
 
-#### Performance Benefits
+#### Performance Benefits with System CUDA
 
-- **5-10x speedup** for MCMC sampling with NumPyro/JAX
-- **3-5x speedup** for classical optimization with JAX-compiled kernels
+- **5-10x speedup** for MCMC sampling with JAX GPU acceleration
+- **Reliable performance**: Consistent system library integration
 - **Automatic fallback** to CPU if GPU activation fails
 - **Seamless integration** - same interface as `homodyne`
 
@@ -312,6 +316,69 @@ homodyne-config --mode static_anisotropic --sample collagen --author "Your Name"
         }
     }
 }
+```
+
+### 4. `homodyne-cleanup` - Environment Cleanup Utility
+
+Removes homodyne-related scripts and configurations from conda/virtual environments that are installed during package installation but not automatically removed during uninstallation.
+
+**Conda Environment Integration**: This utility is essential for conda environments where homodyne automatically installs activation scripts, completion scripts, and configuration files that pip uninstall cannot remove.
+
+#### Usage
+
+```bash
+homodyne-cleanup
+```
+
+**⚠️ Important Usage Order**: This command must be run **BEFORE** uninstalling the package because the cleanup utility is part of the homodyne package.
+
+#### What it removes
+
+- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh`
+- `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh`  
+- `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh`
+- `$CONDA_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh`
+- `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh`
+- `$CONDA_PREFIX/etc/homodyne/` directory (if empty after cleanup)
+
+#### Complete Uninstallation Process
+
+```bash
+# Step 1: Clean up environment scripts (while package is still installed)
+homodyne-cleanup
+
+# Step 2: Uninstall the package
+pip uninstall homodyne-analysis
+```
+
+#### Example Output
+
+```bash
+$ homodyne-cleanup
+============================================================
+🧹 Homodyne Script Cleanup
+============================================================
+🧹 Cleaning up Homodyne scripts in: /home/user/miniforge3/envs/myenv
+
+✓ Removed: /home/user/miniforge3/envs/myenv/etc/conda/activate.d/homodyne-gpu-activate.sh
+✓ Removed: /home/user/miniforge3/envs/myenv/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh
+✓ Removed: /home/user/miniforge3/envs/myenv/etc/homodyne/gpu_activation.sh
+✓ Removed: /home/user/miniforge3/envs/myenv/etc/homodyne/homodyne_completion_bypass.zsh
+✓ Removed: /home/user/miniforge3/envs/myenv/etc/homodyne/homodyne_config.sh
+✓ Removed empty directory: /home/user/miniforge3/envs/myenv/etc/homodyne
+
+✅ Successfully cleaned up 6 files/directories
+🔄 Restart your shell or reactivate the conda environment to complete cleanup
+
+✅ Cleanup completed successfully
+```
+
+#### Alternative Usage
+
+Can also be run as a Python module:
+
+```bash
+python -m homodyne.uninstall_scripts
 ```
 
 ## Environment Variables
@@ -446,20 +513,16 @@ homodyne --install-completion fish
 homodyne --install-completion powershell
 ```
 
+**Conda Environment Note**: In conda environments, completion is automatically integrated during installation. The install command will show current status and provide guidance.
+
 To remove shell completion later:
 
 ```bash
-# For bash
-homodyne --uninstall-completion bash
+# For conda environments (recommended):
+homodyne-cleanup                     # Remove all conda environment scripts
 
-# For zsh  
-homodyne --uninstall-completion zsh
-
-# For fish
-homodyne --uninstall-completion fish
-
-# For PowerShell
-homodyne --uninstall-completion powershell
+# For manual installations:
+homodyne --uninstall-completion bash # or zsh, fish, powershell
 ```
 
 After installation, restart your shell or source the configuration file:
@@ -489,26 +552,32 @@ The completion system provides multiple tiers of functionality:
 Fast shortcuts for common operations:
 
 ```bash
-# homodyne shortcuts
+# CPU homodyne shortcuts
 hc          # homodyne --method classical
 hm          # homodyne --method mcmc
 hr          # homodyne --method robust
 ha          # homodyne --method all
 hconfig     # homodyne --config
-hplot       # homodyne --plot-experimental-data
+hexp        # homodyne --plot-experimental-data
+hsim        # homodyne --plot-simulated-data
 
-# homodyne-gpu shortcuts  
-hgc         # homodyne-gpu --method classical
-hgm         # homodyne-gpu --method mcmc
-hgr         # homodyne-gpu --method robust
-hga         # homodyne-gpu --method all
-hgconfig    # homodyne-gpu --config
+# GPU homodyne shortcuts (Linux only)
+hgm         # homodyne_gpu_activate && homodyne-gpu --method mcmc
+hga         # homodyne_gpu_activate && homodyne-gpu --method all
+hgconfig    # homodyne_gpu_activate && homodyne-gpu --config
+
+# homodyne-config shortcuts
+hc-iso      # homodyne-config --mode static_isotropic
+hc-aniso    # homodyne-config --mode static_anisotropic
+hc-flow     # homodyne-config --mode laminar_flow
+hc-config   # homodyne-config
 ```
 
 #### 3. **Completion Help System**
 
 ```bash
-homodyne_help    # Show all available options and current config files
+homodyne_help         # Show all available options and current config files
+homodyne_gpu_status   # Check GPU status and availability (conda environments)
 ```
 
 ### Usage Examples
@@ -533,16 +602,16 @@ hm --verbose                     # homodyne --method mcmc --verbose
 hr --config my_config.json       # homodyne --method robust --config my_config.json
 ha                               # homodyne --method all
 
-# Quick method selection - GPU
-hgc                              # homodyne-gpu --method classical
-hgm --verbose                    # homodyne-gpu --method mcmc --verbose
-hgr --config gpu_config.json     # homodyne-gpu --method robust --config gpu_config.json
-hga                              # homodyne-gpu --method all
+# Quick method selection - GPU (Linux only)
+hgm --verbose                    # GPU-activated MCMC
+hga --config gpu_config.json     # GPU-activated all methods
+hgconfig gpu_config.json         # GPU-activated config analysis
 
-# Quick config and plotting
+# Configuration shortcuts
+hc-iso                           # homodyne-config --mode static_isotropic
+hc-aniso                         # homodyne-config --mode static_anisotropic
+hc-flow                          # homodyne-config --mode laminar_flow
 hconfig my_config.json           # homodyne --config my_config.json
-hgconfig gpu_config.json         # homodyne-gpu --config gpu_config.json
-hplot                            # homodyne --plot-experimental-data
 ```
 
 #### Help and Reference
@@ -592,14 +661,12 @@ The completion system is designed to be robust with multiple fallback mechanisms
 
 #### If Tab Completion Doesn't Work
 
-1. **Load bypass script**: `source homodyne_completion_bypass.zsh`
-1. **Use manual keys**: `Ctrl-X h` (homodyne), `Ctrl-X g` (homodyne-gpu), `Ctrl-X c`
-   (config)
-1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha`, `hgc`, `hgm`, `hgr`, `hga` always
-   work
-1. **Check installation**: Run `homodyne --install-completion zsh` again
-1. **Reload shell**: `source ~/.zshrc` or restart terminal
+1. **Check conda integration**: `homodyne --install-completion zsh` (shows status)
+1. **Use command shortcuts**: `hc`, `hm`, `hr`, `ha`, `hgm`, `hga`, `hc-iso`, `hc-aniso`, `hc-flow` always work
+1. **Clean reinstall**: `homodyne-cleanup && pip install --upgrade homodyne-analysis[completion]`
+1. **Reload shell**: `source ~/.zshrc` or restart terminal  
 1. **Use help reference**: `homodyne_help` shows all options
+1. **Manual cleanup**: `homodyne-cleanup` if scripts are outdated
 
 #### Common Issues
 

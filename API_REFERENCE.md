@@ -1,6 +1,6 @@
 # Homodyne API Reference
 
-**Python 3.12+ Required** | **JAX Integration Available** | **Code Quality: Black ✅
+**Python 3.12+ Required** | **System CUDA JAX Integration Available** | **Code Quality: Black ✅
 isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
 
 ## Core Modules
@@ -532,7 +532,7 @@ ______________________________________________________________________
 
 ### Shell Tab Completion
 
-The package provides comprehensive shell completion support for enhanced CLI experience:
+The package provides comprehensive shell completion support with conda environment integration for enhanced CLI experience:
 
 **Installation:**
 
@@ -546,11 +546,13 @@ homodyne --install-completion zsh     # For zsh
 homodyne --install-completion fish    # For fish
 homodyne --install-completion powershell  # For PowerShell
 
+# Conda environments: Completion is automatically integrated!
+# The install command will show current status and provide guidance.
+
 # To remove completion later
-homodyne --uninstall-completion bash    # For bash
-homodyne --uninstall-completion zsh     # For zsh  
-homodyne --uninstall-completion fish    # For fish
-homodyne --uninstall-completion powershell  # For PowerShell
+homodyne-cleanup                      # Conda environments (recommended)
+homodyne --uninstall-completion bash  # Manual installations (bash)
+homodyne --uninstall-completion zsh   # Manual installations (zsh)
 ```
 
 **Features:**
@@ -560,6 +562,9 @@ homodyne --uninstall-completion powershell  # For PowerShell
 - **Directory completion**: `--output-dir <TAB>` → available directories
 - **Context-aware**: Adapts based on current command context
 - **Cross-platform**: Works on Linux, macOS, and Windows
+- **Command shortcuts**: `hc`, `hm`, `hr`, `ha`, `hgm`, `hga`, `hc-iso`, `hc-aniso`, `hc-flow`
+- **Conda integration**: Automatic setup in conda environments
+- **Help system**: `homodyne_help`, `homodyne_gpu_status` functions
 
 **Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use shell completion
 for enhanced CLI experience.
@@ -588,9 +593,9 @@ ______________________________________________________________________
 
 ## Backend Integration
 
-### JAX Backend (GPU Acceleration)
+### JAX Backend (System CUDA GPU Acceleration)
 
-JAX integration provides GPU acceleration and JIT compilation for MCMC sampling:
+JAX integration provides system CUDA GPU acceleration and JIT compilation for MCMC sampling:
 
 ```python
 # JAX backend is automatically detected and used when available
@@ -611,16 +616,17 @@ print(f"JAX backend available: {JAX_AVAILABLE}")
 **JAX Integration Features:**
 
 - **Automatic detection**: JAX used when available, graceful NumPy fallback
-- **GPU acceleration**: Utilizes GPU devices when present
+- **System CUDA GPU acceleration**: Utilizes system CUDA 12.6+ and cuDNN 9.12+ when present
 - **JIT compilation**: Additional performance boost beyond Numba
 - **Lazy loading**: JAX imported only when needed
 
-**Installation for JAX:**
+**Installation for System CUDA JAX:**
 
 ```bash
 pip install jax jaxlib  # CPU version
-# OR for GPU support:
-pip install jax[cuda12]  # CUDA 12
+# OR for system CUDA GPU support:
+pip install jax[cuda12-local]  # System CUDA 12.6+ support
+# Requires: system CUDA 12.6+ and cuDNN 9.12+ installed
 ```
 
 ### NumPy Backend (Default Fallback)

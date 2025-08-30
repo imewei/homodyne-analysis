@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, robust testing infrastructure, automated code quality checks, and cross-platform shell completion"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, system CUDA GPU acceleration, robust testing infrastructure, automated code quality checks, conda environment integration, and cross-platform shell completion"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -44,12 +44,18 @@ keywords = [
     "trust-region-optimization",
     "gurobi",
     "jax",
+    "system-cuda",
+    "gpu-acceleration",
+    "cuda-12",
+    "cudnn",
     "high-performance-computing",
     "jit-compilation",
     "performance-optimization",
     "code-quality",
     "pre-commit-hooks",
     "shell-completion",
+    "conda-environment",
+    "virtual-environment",
     "cross-platform",
     "windows-compatibility",
     "security-scanning",
@@ -70,16 +76,16 @@ data = [
 ]
 performance = [
     "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
-    "jax[cuda12]>=0.7.0 ; sys_platform == 'linux'",  # JAX with CUDA 12 support for Linux GPU acceleration
+    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ support for Linux GPU acceleration
     "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library
     "psutil>=5.8.0",  # For memory profiling and system monitoring
 ]
 jax = [
-    "jax[cuda12]>=0.7.0 ; sys_platform == 'linux'",  # JAX with CUDA 12 support for Linux GPU acceleration
+    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ and cuDNN 9.12+ support for Linux GPU acceleration
     "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library for CPU/GPU acceleration
-    # Note: GPU requires activation script - run 'source activate_gpu.sh' before use
+    # Note: GPU requires system CUDA 12.6+ and cuDNN 9.12+ - run 'source activate_gpu.sh' before use
 ]
 mcmc = [
     "pymc>=5.0.0",
@@ -87,7 +93,7 @@ mcmc = [
     "pytensor>=2.8.0",
     "corner>=2.2.0",  # For enhanced MCMC corner plots
     "numpyro>=0.13.0",  # NumPyro for GPU-accelerated MCMC sampling with JAX
-    "jax[cuda12]>=0.7.0 ; sys_platform == 'linux'",  # JAX with CUDA 12 support for Linux GPU acceleration
+    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ support for Linux GPU acceleration
     "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library for NumPyro
 ]
@@ -155,6 +161,8 @@ Issues = "https://github.com/imewei/homodyne/issues"
 homodyne = "homodyne.run_homodyne:main"
 homodyne-config = "homodyne.create_config:main"
 homodyne-gpu = "homodyne.gpu_wrapper:main"
+homodyne-post-install = "homodyne.post_install:main"
+homodyne-cleanup = "homodyne.uninstall_scripts:main"
 
 [tool.setuptools]
 packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
@@ -167,8 +175,11 @@ homodyne = [
     "typings/**/*.pyi",
     "completion_fast.py",
     "cli_completion.py",
+    "uninstall_scripts.py",
+    "post_install.py",
     "*_complete",
     "activate_gpu.sh",
+    "homodyne_completion_bypass.zsh",
     "GPU_SETUP.md"
 ]
 

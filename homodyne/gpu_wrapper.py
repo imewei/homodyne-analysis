@@ -30,6 +30,25 @@ from pathlib import Path
 
 def find_activation_script():
     """Find the GPU activation script in common locations."""
+    # Check virtual environment config directory first (preferred)
+    try:
+        import site
+
+        venv_config_dir = (
+            Path(site.getsitepackages()[0]).parent.parent / "etc" / "homodyne"
+        )
+        venv_script = venv_config_dir / "gpu_activation.sh"
+        if venv_script.exists():
+            return venv_script
+    except (ImportError, IndexError):
+        pass
+
+    # Check user config directory (legacy/fallback)
+    config_dir = Path.home() / ".config" / "homodyne"
+    config_script = config_dir / "gpu_activation.sh"
+    if config_script.exists():
+        return config_script
+
     # Check current directory
     current_dir = Path.cwd()
     script_path = current_dir / "activate_gpu.sh"
@@ -47,85 +66,80 @@ def find_activation_script():
     except ImportError:
         pass
 
-    # Check site-packages
-    try:
-        import site
-
-        site_packages = Path(site.getsitepackages()[0])
-        script_path = site_packages.parent.parent / "bin" / "activate_gpu.sh"
-        if script_path.exists():
-            return script_path
-    except (ImportError, IndexError):
-        pass
-
     return None
 
 
 def setup_gpu_environment():
-    """Set up GPU environment variables directly."""
+    """
+    Configure GPU environment using system CUDA and cuDNN.
+
+    Sets up environment variables for JAX GPU acceleration using:
+    - System CUDA 12.6 at /usr/local/cuda
+    - System cuDNN 9.12 at /usr/lib/x86_64-linux-gnu
+    - jax[cuda12-local] package integration
+
+    Returns:
+        bool: True if GPU environment configured successfully, False otherwise
+    """
     try:
         import platform
-        import site
 
-        # Check if running on Linux (GPU acceleration requirement)
+        # Platform requirement check
         if platform.system() != "Linux":
-            print(f"GPU acceleration not available on {platform.system()}")
-            print("GPU acceleration requires Linux with CUDA-enabled JAX")
-            print("Using CPU-only mode")
-            return False
-
-        site_packages = site.getsitepackages()[0]
-
-        # Build NVIDIA library paths
-        nvidia_libs = []
-        for lib in [
-            "cublas",
-            "cudnn",
-            "cufft",
-            "curand",
-            "cusolver",
-            "cusparse",
-            "nccl",
-            "nvjitlink",
-            "cuda_runtime",
-            "cuda_cupti",
-            "cuda_nvcc",
-            "cuda_nvrtc",
-        ]:
-            lib_dir = os.path.join(site_packages, "nvidia", lib, "lib")
-            if os.path.exists(lib_dir):
-                nvidia_libs.append(lib_dir)
-
-        if nvidia_libs:
-            # Clean existing CUDA paths to avoid conflicts
-            current_path = os.environ.get("LD_LIBRARY_PATH", "")
-            clean_path = (
-                ":".join(
-                    [
-                        p
-                        for p in current_path.split(":")
-                        if "/usr/local/cuda" not in p and p
-                    ]
-                )
-                if current_path
-                else ""
+            print(
+                f"homodyne-gpu: GPU acceleration requires Linux (detected: {platform.system()})"
             )
-            new_path = ":".join(nvidia_libs + ([clean_path] if clean_path else []))
-
-            # Set environment variables
-            os.environ["LD_LIBRARY_PATH"] = new_path
-            os.environ["XLA_FLAGS"] = f"--xla_gpu_cuda_data_dir={site_packages}/nvidia"
-            os.environ["JAX_PLATFORMS"] = ""
-
-            print(f"GPU environment configured for Linux")
-            return True
-        else:
-            print("No NVIDIA CUDA libraries found in pip installation")
+            print("Falling back to CPU-only mode")
             return False
-    except Exception:
-        pass
 
-    return False
+        # Verify system CUDA installation
+        cuda_root = "/usr/local/cuda"
+        if not os.path.exists(cuda_root):
+            print("homodyne-gpu: System CUDA not found at /usr/local/cuda")
+            print("Please install CUDA Toolkit 12.x from NVIDIA")
+            return False
+
+        # Configure system CUDA environment
+        os.environ["CUDA_ROOT"] = cuda_root
+        os.environ["CUDA_HOME"] = cuda_root
+
+        # Add CUDA binaries to PATH
+        current_path = os.environ.get("PATH", "")
+        cuda_bin = os.path.join(cuda_root, "bin")
+        if cuda_bin not in current_path:
+            os.environ["PATH"] = f"{cuda_bin}:{current_path}"
+
+        # Configure library paths for system CUDA + system cuDNN
+        cuda_lib = os.path.join(cuda_root, "lib64")
+        cudnn_lib = "/usr/lib/x86_64-linux-gnu"
+        system_lib = "/lib/x86_64-linux-gnu"
+
+        # Build comprehensive library path
+        lib_paths = [cuda_lib, cudnn_lib, system_lib]
+        current_lib_path = os.environ.get("LD_LIBRARY_PATH", "")
+
+        # Add new paths to existing library path
+        new_lib_path = ":".join(lib_paths)
+        if current_lib_path:
+            os.environ["LD_LIBRARY_PATH"] = f"{new_lib_path}:{current_lib_path}"
+        else:
+            os.environ["LD_LIBRARY_PATH"] = new_lib_path
+
+        # JAX configuration for system CUDA
+        os.environ["XLA_FLAGS"] = f"--xla_gpu_cuda_data_dir={cuda_root}"
+        os.environ["JAX_PLATFORMS"] = ""  # Enable GPU detection
+
+        print("homodyne-gpu: System CUDA environment configured")
+        print(f"  • CUDA: {cuda_root}")
+        print(f"  • cuDNN: {cudnn_lib}")
+        print("  • JAX: jax[cuda12-local] integration")
+
+        return True
+
+    except Exception as e:
+        print(f"homodyne-gpu: Error configuring GPU environment: {e}")
+        print("Falling back to CPU-only mode")
+        return False
 
 
 def activate_gpu():
@@ -179,12 +193,43 @@ def main():
 
     # Check platform requirement
     if platform.system() != "Linux":
-        print(f"homodyne-gpu: GPU acceleration not supported on {platform.system()}")
-        print("GPU acceleration requires Linux with CUDA-enabled JAX")
-        print("Automatically falling back to standard homodyne command (CPU-only)")
+        print(f"homodyne-gpu: GPU requires Linux (detected: {platform.system()})")
+        print("System CUDA integration requires Linux with CUDA 12.6+ and cuDNN 9.12+")
+        print("Falling back to standard homodyne command (CPU-only)")
         print()
     else:
-        print("homodyne-gpu: Attempting to activate GPU support on Linux...")
+        print("homodyne-gpu: Configuring system CUDA integration on Linux...")
+
+        # Check system CUDA installation
+        if not os.path.exists("/usr/local/cuda"):
+            print("⚠️  System CUDA not found at /usr/local/cuda")
+            print("   Please install CUDA Toolkit 12.x from NVIDIA")
+            print("   Falling back to CPU-only mode")
+        else:
+            # Check JAX installation
+            try:
+                import jax
+
+                print(f"✅ JAX {jax.__version__} available for GPU acceleration")
+            except ImportError:
+                print(
+                    "⚠️  JAX not installed - install with: pip install jax[cuda12-local]"
+                )
+
+        # Check if GPU auto-activation is available in virtual environment
+        import site
+
+        try:
+            venv_config_dir = (
+                Path(site.getsitepackages()[0]).parent.parent / "etc" / "homodyne"
+            )
+            if venv_config_dir.exists():
+                print(f"✅ Virtual environment GPU integration: {venv_config_dir}")
+            else:
+                print("💡 Tip: Install virtual environment integration:")
+                print("   python scripts/install_gpu_autoload.py")
+        except (IndexError, AttributeError):
+            print("⚠️  Virtual environment detection failed")
 
     # Set GPU intent flag to signal that user explicitly wants GPU acceleration
     os.environ["HOMODYNE_GPU_INTENT"] = "true"

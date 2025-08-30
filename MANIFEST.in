@@ -1,5 +1,5 @@
 # Include the README and other documentation
-# Updated for v0.7.1+ with improved code quality and testing infrastructure
+# Updated for v0.7.1+ with improved code quality, testing infrastructure, and conda integration
 include README.md
 include LICENSE
 include CHANGELOG.md
@@ -9,10 +9,12 @@ include API_REFERENCE.md
 include PRE_COMMIT_SETUP.md
 include SECURITY.md
 include GPU_SETUP.md
+include INSTALL_UNINSTALL.md
 include pyproject.toml
 include Makefile
 include requirements*.txt
 include activate_gpu.sh
+include standalone_cleanup.sh
 
 # Include type stubs for third-party libraries
 recursive-include homodyne/typings *.pyi
@@ -21,11 +23,20 @@ recursive-include homodyne/typings *.pyi
 recursive-include homodyne *.json
 recursive-include homodyne/templates *.json
 
-# Include shell completion scripts
+# Include shell completion scripts - system CUDA and conda integration
 include homodyne_complete
+include homodyne_completion_bypass.zsh
+include homodyne/homodyne_completion_bypass.zsh
 recursive-include homodyne *_complete
 recursive-include homodyne completion_fast.py
 recursive-include homodyne cli_completion.py
+include homodyne/uninstall_scripts.py
+
+# Include GPU setup and installation scripts - system CUDA support and conda integration
+recursive-include scripts *.py
+include homodyne/post_install.py
+include homodyne/gpu_wrapper.py
+include homodyne/uninstall_scripts.py
 
 # Include documentation files
 recursive-include docs *.md

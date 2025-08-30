@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Project metadata for homodyne analysis testing",
-    "config_version": "0.6.5.dev0",
+    "config_version": "0.7.1",
     "description": "General Homodyne Analysis Configuration for Testing",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "analysis_mode": "static_anisotropic",
@@ -11,7 +11,8 @@
     "institution": "Argonne National Laboratory",
     "experiment_name": "Test Suite",
     "sample_description": "Testing Configuration",
-    "script_compatibility": "homodyne v0.6.5.dev0",
+    "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
+    "script_compatibility": "homodyne v0.7.1",
     "_cli_usage": {
       "description": "CLI usage for general homodyne analysis",
       "recommended_commands": [

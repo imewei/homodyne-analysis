@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-Standalone ultra-fast shell completion for homodyne, homodyne-gpu, and homodyne-config.
+Standalone ultra-fast shell completion for homodyne commands with system CUDA integration.
+
+Commands supported:
+- homodyne: CPU analysis (all platforms)
+- homodyne-gpu: GPU analysis with system CUDA (Linux only)
+- homodyne-config: Configuration file generator
 
 NOTE: This script is currently unused. The completion system uses the bypass script
-(homodyne_completion_bypass.zsh) directly for better reliability and simpler maintenance.
+(homodyne_completion_bypass.zsh) for better reliability and system CUDA integration.
 
 This script has ZERO dependencies on the homodyne package to ensure
 instant completion performance.

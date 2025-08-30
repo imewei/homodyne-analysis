@@ -1,6 +1,6 @@
 # Core dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.dependencies]
-# Last updated: v0.7.1+ (Python version check, code quality improvements, test fixes)
+# Last updated: v0.7.1+ (Python version check, code quality improvements, conda integration, test fixes)
 
 numpy>=1.24.0,<2.3.0
 scipy>=1.9.0
