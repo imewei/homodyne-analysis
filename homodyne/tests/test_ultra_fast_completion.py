@@ -52,12 +52,14 @@ class TestUltraFastCompletion:
 
         # Mock the completion_fast module for performance testing
         test_files = [f"config_{i:02d}.json" for i in range(50)]
-        
+
         # Test cached performance (should be instant)
         times = []
         for _ in range(50):
             start = time.perf_counter()
-            with patch("homodyne.cli_completion.complete_config", return_value=test_files):
+            with patch(
+                "homodyne.cli_completion.complete_config", return_value=test_files
+            ):
                 results = completer.config_files_completer(
                     "config", argparse.Namespace()
                 )
@@ -109,7 +111,9 @@ class TestUltraFastCompletion:
         test_files = [f"config_{i:03d}.json" for i in range(100)]
 
         # Test empty prefix (returns all items)
-        with patch("homodyne.cli_completion.complete_config", return_value=test_files[:15]):
+        with patch(
+            "homodyne.cli_completion.complete_config", return_value=test_files[:15]
+        ):
             times = []
             for _ in range(20):
                 start = time.perf_counter()
@@ -136,7 +140,7 @@ class TestUltraFastCompletion:
 
             try:
                 cache = FastCache()
-                
+
                 start = time.perf_counter()
                 cache._scan_current_dir()  # Force scan
                 update_time = (time.perf_counter() - start) * 1000

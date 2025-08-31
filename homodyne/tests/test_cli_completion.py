@@ -82,7 +82,7 @@ class TestHomodyneCompleter:
         # Mock the completion_fast module
         with patch("homodyne.cli_completion.complete_config") as mock_complete:
             mock_complete.return_value = ["config.json", "my_config.json", "test.json"]
-            
+
             results = completer.config_files_completer("config", argparse.Namespace())
             assert results == ["config.json", "my_config.json", "test.json"]
             mock_complete.assert_called_with("config")
@@ -95,10 +95,10 @@ class TestHomodyneCompleter:
         """Test directory completion."""
         completer = HomodyneCompleter()
 
-        # Mock the completion_fast module  
+        # Mock the completion_fast module
         with patch("homodyne.cli_completion.complete_output_dir") as mock_complete:
             mock_complete.return_value = ["results/", "data/", "output/"]
-            
+
             results = completer.output_dir_completer("res", argparse.Namespace())
             assert results == ["results/", "data/", "output/"]
             mock_complete.assert_called_with("res")
