@@ -8,7 +8,8 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-from homodyne.cli_completion import FastCompletionCache, HomodyneCompleter
+from homodyne.cli_completion import HomodyneCompleter
+from homodyne.completion_fast import FastCache
 
 
 class TestUltraFastCompletion:
@@ -47,18 +48,16 @@ class TestUltraFastCompletion:
 
     def test_cached_file_completion_speed(self):
         """Test that cached file completion is ultra-fast."""
-        # Mock a cache with pre-populated data
-        mock_cache = FastCompletionCache()
-        mock_cache._file_cache = {".": [f"config_{i:02d}.json" for i in range(50)]}
-        mock_cache._last_update = time.time()
-
         completer = HomodyneCompleter()
 
+        # Mock the completion_fast module for performance testing
+        test_files = [f"config_{i:02d}.json" for i in range(50)]
+        
         # Test cached performance (should be instant)
         times = []
         for _ in range(50):
             start = time.perf_counter()
-            with patch("homodyne.cli_completion._completion_cache", mock_cache):
+            with patch("homodyne.cli_completion.complete_config", return_value=test_files):
                 results = completer.config_files_completer(
                     "config", argparse.Namespace()
                 )
@@ -95,25 +94,22 @@ class TestUltraFastCompletion:
             # Test cache loading speed
             with patch.object(Path, "home", return_value=Path(tmpdir)):
                 start = time.perf_counter()
-                cache = FastCompletionCache()
+                cache = FastCache()
                 load_time = (time.perf_counter() - start) * 1000
 
                 assert load_time < 10, f"Cache loading too slow: {load_time:.2f}ms"
-                assert cache.get_json_files(".") == ["config.json", "my_config.json"]
-                assert cache.get_directories(".") == ["output", "results"]
+                assert cache.get_files(".") == ["config.json", "my_config.json"]
+                assert cache.get_dirs(".") == ["output", "results"]
 
     def test_empty_prefix_performance(self):
         """Test that empty prefix completion (worst case) is still fast."""
-        # Mock cache with many items
-        mock_cache = FastCompletionCache()
-        mock_cache._file_cache = {".": [f"config_{i:03d}.json" for i in range(100)]}
-        mock_cache._dir_cache = {".": [f"dir_{i:02d}" for i in range(50)]}
-        mock_cache._last_update = time.time()
-
         completer = HomodyneCompleter()
 
+        # Mock the completion_fast module with many items
+        test_files = [f"config_{i:03d}.json" for i in range(100)]
+
         # Test empty prefix (returns all items)
-        with patch("homodyne.cli_completion._completion_cache", mock_cache):
+        with patch("homodyne.cli_completion.complete_config", return_value=test_files[:15]):
             times = []
             for _ in range(20):
                 start = time.perf_counter()
@@ -139,18 +135,17 @@ class TestUltraFastCompletion:
             os.chdir(tmpdir)
 
             try:
-                cache = FastCompletionCache()
-                cache._last_update = 0  # Force update
-
+                cache = FastCache()
+                
                 start = time.perf_counter()
-                cache._update_cache()
+                cache._scan_current_dir()  # Force scan
                 update_time = (time.perf_counter() - start) * 1000
 
                 assert update_time < 50, f"Cache update too slow: {update_time:.2f}ms"
 
                 # Verify cache populated correctly
-                files = cache.get_json_files(".")
-                dirs = cache.get_directories(".")
+                files = cache.get_files(".")
+                dirs = cache.get_dirs(".")
                 assert len(files) > 0
                 assert len(dirs) > 0
 
@@ -162,18 +157,21 @@ class TestUltraFastCompletion:
         import sys
 
         # Create cache with reasonable amount of data
-        cache = FastCompletionCache()
-        cache._file_cache = {
-            ".": [f"config_{i:03d}.json" for i in range(100)],
-            "config": [f"sub_config_{i:02d}.json" for i in range(50)],
-        }
-        cache._dir_cache = {
-            ".": [f"dir_{i:02d}" for i in range(50)],
-            "output": [f"subdir_{i:02d}" for i in range(25)],
+        cache = FastCache()
+        cache._data = {
+            "timestamp": time.time(),
+            "files": {
+                ".": [f"config_{i:03d}.json" for i in range(100)],
+                "config": [f"sub_config_{i:02d}.json" for i in range(50)],
+            },
+            "dirs": {
+                ".": [f"dir_{i:02d}" for i in range(50)],
+                "output": [f"subdir_{i:02d}" for i in range(25)],
+            },
         }
 
         # Rough memory usage check (cache should be small)
-        cache_size = sys.getsizeof(cache._file_cache) + sys.getsizeof(cache._dir_cache)
+        cache_size = sys.getsizeof(cache._data)
         assert cache_size < 10000, f"Cache using too much memory: {cache_size} bytes"
 
     def test_concurrent_completion_calls(self):

@@ -8,7 +8,7 @@
 pip install homodyne-analysis
 ```
 
-**Automatic Setup (Linux + Virtual Environment)**: On Linux systems within conda or virtual environments, this automatically installs GPU auto-activation scripts, conda environment integration, and simplified shell completion with automatic post-installation setup for system CUDA integration.
+**Automatic Setup (Linux + Virtual Environment)**: On Linux systems within conda or virtual environments, this automatically installs GPU auto-activation scripts, conda environment integration, and ultra-fast shell completion (v0.7.2+) with automatic post-installation setup for system CUDA integration.
 
 ### Installation with Dependencies
 
@@ -69,7 +69,7 @@ The cleanup process removes:
 - `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh` (conda deactivation hook)
 - `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh` (GPU activation script)
 - `$CONDA_PREFIX/etc/homodyne/homodyne_aliases.sh` (shell aliases script)
-- `$CONDA_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh` (shell completion script)
+- `$CONDA_PREFIX/etc/homodyne/homodyne_completion.zsh` (fast shell completion script)
 - `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh` (main configuration script)
 - `$CONDA_PREFIX/etc/homodyne/` (empty directory after cleanup)
 

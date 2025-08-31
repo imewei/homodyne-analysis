@@ -79,35 +79,29 @@ class TestHomodyneCompleter:
         """Test config file completion."""
         completer = HomodyneCompleter()
 
-        # Mock the global cache to provide test data
-        with patch("homodyne.cli_completion._completion_cache") as mock_cache:
-            # Mock cache behavior
-            mock_cache.get_json_files.return_value = [
-                "config.json",
-                "my_config.json",
-                "test.json",
-            ]
-
+        # Mock the completion_fast module
+        with patch("homodyne.cli_completion.complete_config") as mock_complete:
+            mock_complete.return_value = ["config.json", "my_config.json", "test.json"]
+            
             results = completer.config_files_completer("config", argparse.Namespace())
-            assert "config.json" in results
-            mock_cache.get_json_files.assert_called_with(".")
+            assert results == ["config.json", "my_config.json", "test.json"]
+            mock_complete.assert_called_with("config")
 
             results = completer.config_files_completer("my", argparse.Namespace())
-            assert "my_config.json" in results
+            assert results == ["config.json", "my_config.json", "test.json"]
+            mock_complete.assert_called_with("my")
 
     def test_output_dir_completer(self):
         """Test directory completion."""
         completer = HomodyneCompleter()
 
-        # Mock the global cache to provide test data
-        with patch("homodyne.cli_completion._completion_cache") as mock_cache:
-            # Mock cache behavior
-            mock_cache.get_directories.return_value = ["results", "data", "output"]
-
+        # Mock the completion_fast module  
+        with patch("homodyne.cli_completion.complete_output_dir") as mock_complete:
+            mock_complete.return_value = ["results/", "data/", "output/"]
+            
             results = completer.output_dir_completer("res", argparse.Namespace())
-            # Should return directories only with trailing path separator
-            assert any("results" + os.sep in r for r in results)
-            mock_cache.get_directories.assert_called_with(".")
+            assert results == ["results/", "data/", "output/"]
+            mock_complete.assert_called_with("res")
 
     def test_analysis_mode_completer(self):
         """Test analysis mode completion."""
@@ -169,7 +163,8 @@ class TestUninstallScripts:
             "/conda/prefix/etc/conda/activate.d/homodyne-gpu-activate.sh",
             "/conda/prefix/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh",
             "/conda/prefix/etc/homodyne/gpu_activation.sh",
-            "/conda/prefix/etc/homodyne/homodyne_completion_bypass.zsh",
+            "/conda/prefix/etc/homodyne/homodyne_aliases.sh",
+            "/conda/prefix/etc/homodyne/homodyne_completion.zsh",
             "/conda/prefix/etc/homodyne/homodyne_config.sh",
         ]
 

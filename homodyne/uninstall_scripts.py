@@ -49,7 +49,8 @@ def cleanup_conda_scripts():
             / "deactivate.d"
             / "homodyne-gpu-deactivate.sh",
             conda_env_dir / "etc" / "homodyne" / "gpu_activation.sh",
-            conda_env_dir / "etc" / "homodyne" / "homodyne_completion_bypass.zsh",
+            conda_env_dir / "etc" / "homodyne" / "homodyne_aliases.sh",
+            conda_env_dir / "etc" / "homodyne" / "homodyne_completion.zsh",
             conda_env_dir / "etc" / "homodyne" / "homodyne_config.sh",
         ]
 

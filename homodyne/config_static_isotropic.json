@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Static Isotropic Mode Configuration - 3 parameter optimization (D0, alpha, D_offset). Supports --plot-experimental-data and --plot-simulated-data for data visualization.",
-    "config_version": "0.7.1",
+    "config_version": "0.7.2",
     "description": "Static isotropic homodyne scattering analysis - simplified 3-parameter model",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case)",
     "analysis_mode": "static_isotropic",
@@ -12,7 +12,7 @@
     },
     "parameters_optimized": ["D0", "alpha", "D_offset"],
     "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
-    "script_compatibility": "homodyne v0.7.1"
+    "script_compatibility": "homodyne v0.7.2"
   },
   "experimental_data": {
     "_comment": "Data source and loading configuration",

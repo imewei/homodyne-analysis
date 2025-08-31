@@ -148,6 +148,9 @@ def copy_completion_script(config_dir):
     # Create both zsh completion and simple aliases
     create_aliases_script(config_dir)
 
+    # Create proper completion script for better tab completion
+    create_proper_completion_script(config_dir)
+
     # Also create the zsh completion script for compatibility
     completion_script_name = "homodyne_completion_bypass.zsh"
     dest_script = config_dir / completion_script_name
@@ -463,6 +466,140 @@ fi
         return None
 
 
+def create_proper_completion_script(config_dir):
+    """Create fast preloaded completion script - no heavy module loading!"""
+    completion_script = config_dir / "homodyne_completion.zsh"
+
+    script_content = """#!/bin/zsh
+# Homodyne Shell Completion for zsh - Fast preloaded completion
+# This script provides instant tab completion without loading heavy modules
+
+# Skip argcomplete - it's too slow as it loads the entire homodyne module
+# Use preloaded fast completion instead
+
+# Fast preloaded completion - no heavy imports!
+_homodyne_completion() {
+    local cur="${words[CURRENT]}"
+    local prev="${words[CURRENT-1]}"
+    
+    # Complete method values
+    case $prev in
+        --method)
+            compadd classical mcmc robust all
+            return 0
+            ;;
+        --config)
+            # Fast JSON file completion
+            local -a json_files
+            json_files=(${(f)"$(find . -maxdepth 1 -name "*.json" -type f 2>/dev/null | sed 's|^\\./||')"})
+            [[ ${#json_files} -gt 0 ]] && compadd -a json_files
+            return 0
+            ;;
+        --output-dir)
+            # Fast directory completion  
+            _path_files -/
+            return 0
+            ;;
+        --phi-angles)
+            # Suggest common phi angle patterns
+            compadd "0,36,72,108,144" "0,45,90,135" "0,30,60,90,120,150" "0,60,120"
+            return 0
+            ;;
+        --contrast)
+            compadd "1.0" "0.8" "0.5"
+            return 0
+            ;;
+        --offset)  
+            compadd "0.0" "0.1" "1.0"
+            return 0
+            ;;
+    esac
+    
+    # Complete options starting with --
+    if [[ $cur == --* ]]; then
+        local -a opts
+        opts=(
+            '--method:Analysis method (classical, mcmc, robust, all)'
+            '--config:Configuration JSON file path'
+            '--output-dir:Output directory for results'
+            '--verbose:Enable verbose DEBUG logging'
+            '--quiet:Disable console logging'
+            '--static-isotropic:Force static isotropic mode'
+            '--static-anisotropic:Force static anisotropic mode' 
+            '--laminar-flow:Force laminar flow mode'
+            '--plot-experimental-data:Plot experimental data'
+            '--plot-simulated-data:Plot simulated data'
+            '--contrast:Scaling contrast factor'
+            '--offset:Scaling offset factor'
+            '--phi-angles:Comma-separated phi angles in degrees'
+            '--help:Show help message'
+        )
+        _describe 'options' opts
+        return 0
+    fi
+}
+
+_homodyne_config_completion() {
+    local cur="${words[CURRENT]}" 
+    local prev="${words[CURRENT-1]}"
+    
+    # Complete mode values
+    case $prev in
+        --mode|-m)
+            compadd static_isotropic static_anisotropic laminar_flow
+            return 0
+            ;;
+        --output|-o)
+            # Fast JSON file completion
+            local -a json_files
+            json_files=(${(f)"$(find . -maxdepth 1 -name "*.json" -type f 2>/dev/null | sed 's|^\\./||')"})
+            [[ ${#json_files} -gt 0 ]] && compadd -a json_files
+            # Also suggest common config names
+            compadd "config.json" "homodyne_config.json" "my_config.json"
+            return 0
+            ;;
+        --sample)
+            compadd "sample1" "test_sample" "my_sample"
+            return 0
+            ;;
+        --author)
+            compadd "$(whoami)" "User"
+            return 0
+            ;;
+    esac
+    
+    # Complete options
+    if [[ $cur == --* ]]; then
+        local -a opts
+        opts=(
+            '--mode:Analysis mode (static_isotropic, static_anisotropic, laminar_flow)'
+            '--output:Output configuration file'
+            '--sample:Sample name for metadata'
+            '--experiment:Experiment description'
+            '--author:Author name for metadata'
+            '--help:Show help message'
+        )
+        _describe 'options' opts
+        return 0
+    fi
+}
+
+# Register completion functions  
+compdef _homodyne_completion homodyne 2>/dev/null
+compdef _homodyne_completion homodyne-gpu 2>/dev/null  
+compdef _homodyne_config_completion homodyne-config 2>/dev/null
+"""
+
+    try:
+        completion_script.write_text(script_content, encoding="utf-8")
+        completion_script.chmod(0o755)
+        print(f"✓ Created proper completion script: {completion_script}")
+        return completion_script
+    except Exception as e:
+        print(f"⚠️  Failed to create proper completion script: {e}")
+        return None
+
+
 def create_aliases_script(config_dir):
     """Create a simple aliases script that works in both bash and zsh."""
     aliases_script = config_dir / "homodyne_aliases.sh"
@@ -572,6 +709,19 @@ except Exception as e:
 # Export functions for use
 export -f homodyne_gpu_activate 2>/dev/null
 export -f homodyne_gpu_status 2>/dev/null
+
+# Source shell completion for zsh
+if [[ -n "$ZSH_VERSION" ]]; then
+    # Initialize completion system if not already done
+    if [[ -z "$_comps" ]] && (( $+functions[compinit] == 0 )); then
+        autoload -U compinit && compinit -u 2>/dev/null
+    fi
+    
+    # Source completion script
+    if [[ -f "${SCRIPT_DIR}/homodyne_completion.zsh" ]]; then
+        source "${SCRIPT_DIR}/homodyne_completion.zsh" 2>/dev/null
+    fi
+fi
 
 # Info message (only show once per session)
 if [[ -z "$HOMODYNE_CONFIG_LOADED" ]]; then

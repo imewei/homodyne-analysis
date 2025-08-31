@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Laminar Flow Configuration - 7 parameter optimization for flow analysis. Full plotting support for experimental and simulated data.",
-    "config_version": "0.7.1",
+    "config_version": "0.7.2",
     "description": "Laminar flow homodyne scattering analysis - comprehensive 7-parameter nonequilibrium model",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (full flow model)",
     "analysis_mode": "laminar_flow",
@@ -25,7 +25,7 @@
     ],
     "angle_filtering": "enabled_with_performance_boost",
     "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
-    "script_compatibility": "homodyne v0.7.1"
+    "script_compatibility": "homodyne v0.7.2"
   },
   "experimental_data": {
     "_comment": "Data source and loading configuration",
@@ -201,7 +201,7 @@
         "python run_homodyne.py --method all  # Run classical (with robust) + MCMC"
       ],
       "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
-      "_performance_note": "v0.7.1+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "_performance_note": "v0.7.2+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
       "enabled": true,
       "uncertainty_model": "wasserstein",
       "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",

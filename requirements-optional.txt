@@ -1,6 +1,6 @@
 # Optional dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies]
-# Last updated: v0.7.1+ (Python version check, code quality improvements, conda integration, simplified shell completion, test fixes)
+# Last updated: v0.7.2 (Fast shell completion, code consolidation, improved performance)
 
 # Include core dependencies
 -r requirements.txt
@@ -30,12 +30,13 @@ cvxpy>=1.4.0
 # Gurobi optimization solver (requires license)
 gurobipy>=11.0.0
 
-# Shell completion and conda integration (cross-platform support)
+# Shell completion and conda integration (ultra-fast v0.7.2+)
 argcomplete>=3.0.0
 
-# Note: Shell completion features automatic setup:
+# Note: Ultra-fast shell completion (v0.7.2+) with automatic setup:
+# - Instant response times (< 0.1s) with preloaded completion - no heavy imports
 # - Conda environment integration with automatic post-installation configuration
-# - Linux: Full shell completion with aliases and tab completion  
+# - Linux: Ultra-fast preloaded completion with aliases and tab completion  
 # - macOS: Shell aliases and shortcuts (bash/zsh compatible)
 # - Windows: Batch file shortcuts for Command Prompt and PowerShell
 # - Command shortcuts (hm, hc, hr, ha, hgm, hga) always available

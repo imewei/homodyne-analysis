@@ -1,5 +1,5 @@
 # Include the README and other documentation
-# Updated for v0.7.1+ with improved code quality, testing infrastructure, conda integration, and simplified shell completion
+# Updated for v0.7.2 with fast shell completion, code consolidation, and improved performance
 include README.md
 include LICENSE
 include CHANGELOG.md
