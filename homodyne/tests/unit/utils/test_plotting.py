@@ -321,8 +321,10 @@ class TestDiagnosticPlots:
 
         # Check that plot files were created (one per phi angle)
         plot_files = list(tmp_path.glob("diagnostic_summary_phi_*.png"))
-        assert len(plot_files) == 3  # Should match number of phi angles (0, 45, 90 degrees)
-        
+        assert (
+            len(plot_files) == 3
+        )  # Should match number of phi angles (0, 45, 90 degrees)
+
         # Check that all files have reasonable size
         for plot_file in plot_files:
             assert plot_file.stat().st_size > 1000

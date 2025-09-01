@@ -1367,16 +1367,18 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
         try:
             from .plotting import plot_diagnostic_summary
             from pathlib import Path
-            
+
             logger.info("Creating overall diagnostic summary plot for --method all")
             output_path = Path(output_dir) if output_dir else Path("./homodyne_results")
             success = plot_diagnostic_summary(all_results, output_path, analyzer.config)
-            
+
             if success:
-                logger.info(f"✓ Diagnostic summary plot created: {output_path}/diagnostic_summary.png")
+                logger.info(
+                    f"✓ Diagnostic summary plot created: {output_path}/diagnostic_summary.png"
+                )
             else:
                 logger.warning("⚠ Failed to create diagnostic summary plot")
-                
+
         except Exception as e:
             logger.warning(f"⚠ Error creating diagnostic summary plot: {e}")
 
@@ -2633,7 +2635,7 @@ def _generate_mcmc_plots(
                 "mcmc_diagnostics": mcmc_results.get("diagnostics", {}),
                 "method": "MCMC",
             }
-            
+
             # Add chi-squared value for diagnostic plotting if available
             if "chi_squared" in mcmc_results:
                 plot_data["mcmc_chi_squared"] = mcmc_results["chi_squared"]

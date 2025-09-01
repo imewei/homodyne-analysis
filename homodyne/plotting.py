@@ -30,8 +30,6 @@ from .core.io_utils import ensure_dir, save_fig
 logger = logging.getLogger(__name__)
 
 
-
-
 # Check availability without importing - performance optimization
 try:
     import importlib.util
@@ -41,7 +39,6 @@ try:
 except ImportError:
     ARVIZ_AVAILABLE = False
     CORNER_AVAILABLE = False
-
 
 
 def get_plot_config(config: dict | None = None) -> dict[str, Any]:
@@ -415,10 +412,6 @@ def plot_c2_heatmaps(
         f"Successfully created {success_count}/{len(phi_angles)} C2 heatmap plots"
     )
     return success_count == len(phi_angles)
-
-
-
-
 
 
 def plot_mcmc_corner(
@@ -1390,7 +1383,7 @@ def plot_diagnostic_summary(
 
     Generates a 2×3 grid layout for each phi angle containing:
     - Method comparison with chi-squared values
-    - Parameter uncertainties visualization  
+    - Parameter uncertainties visualization
     - MCMC convergence diagnostics (R-hat values)
     - Residuals distribution analysis with normal distribution overlay
 
@@ -1414,13 +1407,15 @@ def plot_diagnostic_summary(
 
     # Ensure output directory exists
     outdir = ensure_dir(outdir)
-    
+
     # Extract phi angles from results
     phi_angles = results.get("phi_angles")
     if phi_angles is None:
-        logger.warning("No phi_angles found in results, creating single diagnostic plot")
+        logger.warning(
+            "No phi_angles found in results, creating single diagnostic plot"
+        )
         phi_angles = [0.0]  # Default single angle
-    
+
     success_count = 0
     total_angles = len(phi_angles)
     logger.info(f"Creating diagnostic plots for {total_angles} phi angle(s)")
@@ -1429,7 +1424,7 @@ def plot_diagnostic_summary(
     for angle_idx, phi_angle in enumerate(phi_angles):
         try:
             logger.debug(f"Creating diagnostic plot for phi = {phi_angle:.1f}°")
-            
+
             # Create a summary figure with multiple subplots
             fig = plt.figure(
                 figsize=(
@@ -1446,7 +1441,9 @@ def plot_diagnostic_summary(
 
             for key, value in results.items():
                 if "chi_squared" in key or "chi2" in key:
-                    chi2_method_name = key.replace("_chi_squared", "").replace("_chi2", "")
+                    chi2_method_name = key.replace("_chi_squared", "").replace(
+                        "_chi2", ""
+                    )
                     methods.append(chi2_method_name.replace("_", " ").title())
                     chi2_values.append(value)
 
@@ -1476,14 +1473,15 @@ def plot_diagnostic_summary(
             else:
                 # Show placeholder when no chi-squared values are available
                 ax1.text(
-                    0.5, 0.5,
+                    0.5,
+                    0.5,
                     "No χ² comparison data\navailable",
-                    horizontalalignment='center',
-                    verticalalignment='center',
+                    horizontalalignment="center",
+                    verticalalignment="center",
                     transform=ax1.transAxes,
                     fontsize=12,
-                    color='gray',
-                    style='italic'
+                    color="gray",
+                    style="italic",
                 )
                 ax1.set_title(f"Method Comparison (φ = {phi_angle:.1f}°)")
                 ax1.set_xticks([])
@@ -1507,7 +1505,9 @@ def plot_diagnostic_summary(
                             and "initial_parameters" in config
                             and "parameter_names" in config["initial_parameters"]
                         ):
-                            param_names = config["initial_parameters"]["parameter_names"]
+                            param_names = config["initial_parameters"][
+                                "parameter_names"
+                            ]
                         elif hasattr(trace_data.posterior, "data_vars"):
                             param_names = list(trace_data.posterior.data_vars.keys())
 
@@ -1515,7 +1515,9 @@ def plot_diagnostic_summary(
                             uncertainties = {}
                             for param in param_names:
                                 if param in trace_data.posterior:
-                                    samples = trace_data.posterior[param].values.flatten()
+                                    samples = trace_data.posterior[
+                                        param
+                                    ].values.flatten()
                                     uncertainties[param] = float(np.std(samples))
                             logger.debug(
                                 f"Computed parameter uncertainties: {uncertainties}"
@@ -1533,7 +1535,9 @@ def plot_diagnostic_summary(
                     and "initial_parameters" in config
                     and "active_parameters" in config["initial_parameters"]
                 ):
-                    active_param_names = config["initial_parameters"]["active_parameters"]
+                    active_param_names = config["initial_parameters"][
+                        "active_parameters"
+                    ]
                     param_names = [
                         name for name in active_param_names if name in uncertainties
                     ]
@@ -1579,7 +1583,9 @@ def plot_diagnostic_summary(
                     try:
                         if hasattr(r_hat_data, "items"):
                             # ArviZ Dataset object
-                            r_hat_dict = {str(k): float(v) for k, v in r_hat_data.items()}
+                            r_hat_dict = {
+                                str(k): float(v) for k, v in r_hat_data.items()
+                            }
                         elif isinstance(r_hat_data, dict):
                             # Already a dictionary
                             r_hat_dict = r_hat_data
@@ -1601,7 +1607,9 @@ def plot_diagnostic_summary(
                                 r_hat_dict = {
                                     str(k): float(v) for k, v in r_hat_summary.items()
                                 }  # type: ignore
-                            logger.debug(f"Computed R-hat dict for summary: {r_hat_dict}")
+                            logger.debug(
+                                f"Computed R-hat dict for summary: {r_hat_dict}"
+                            )
                     except Exception as e:
                         logger.warning(f"Could not compute R-hat for summary plot: {e}")
 
@@ -1769,7 +1777,11 @@ def plot_diagnostic_summary(
                 ax4.set_yticks([])
 
             # Add overall title
-            fig.suptitle(f"Analysis Diagnostic Summary (φ = {phi_angle:.1f}°)", fontsize=18, y=0.98)
+            fig.suptitle(
+                f"Analysis Diagnostic Summary (φ = {phi_angle:.1f}°)",
+                fontsize=18,
+                y=0.98,
+            )
 
             # Save the plot with phi angle in filename
             method_prefix = f"{method_name.lower()}_" if method_name else ""
@@ -1785,17 +1797,25 @@ def plot_diagnostic_summary(
             plt.close(fig)
 
             if plot_success:
-                logger.info(f"Successfully created diagnostic summary plot for φ = {phi_angle:.1f}°")
+                logger.info(
+                    f"Successfully created diagnostic summary plot for φ = {phi_angle:.1f}°"
+                )
                 success_count += 1
             else:
-                logger.error(f"Failed to save diagnostic summary plot for φ = {phi_angle:.1f}°")
+                logger.error(
+                    f"Failed to save diagnostic summary plot for φ = {phi_angle:.1f}°"
+                )
 
         except Exception as e:
-            logger.error(f"Error creating diagnostic summary plot for φ = {phi_angle:.1f}°: {e}")
+            logger.error(
+                f"Error creating diagnostic summary plot for φ = {phi_angle:.1f}°: {e}"
+            )
             plt.close("all")
-    
+
     # Return True if all plots were created successfully
-    logger.info(f"Created {success_count}/{total_angles} diagnostic summary plots successfully")
+    logger.info(
+        f"Created {success_count}/{total_angles} diagnostic summary plots successfully"
+    )
     return success_count == total_angles
 
 
@@ -1904,11 +1924,14 @@ def create_all_plots(
         # Check if this is a multi-method run by looking for methods_used or multiple method results
         methods_used = results.get("methods_used", [])
         is_multi_method_run = (
-            len(methods_used) > 1 or 
-            "methods_comparison" in results or
-            (not method_results and results.get("method") not in ["MCMC", "Classical", "Robust"])
+            len(methods_used) > 1
+            or "methods_comparison" in results
+            or (
+                not method_results
+                and results.get("method") not in ["MCMC", "Classical", "Robust"]
+            )
         )
-        
+
         if not method_results and is_multi_method_run:
             plot_status["diagnostic_summary"] = plot_diagnostic_summary(
                 results, outdir, config
