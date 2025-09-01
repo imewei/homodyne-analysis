@@ -11,9 +11,9 @@ include CLI_REFERENCE.md
 include API_REFERENCE.md
 include PRE_COMMIT_SETUP.md
 include SECURITY.md
-include GPU_SETUP.md
-include INSTALL_UNINSTALL.md
-include ADVANCED_FEATURES.md
+# GPU_SETUP.md - removed in reorganization
+# INSTALL_UNINSTALL.md - removed in reorganization
+# ADVANCED_FEATURES.md - removed in reorganization
 
 # Build configuration
 include pyproject.toml
@@ -31,16 +31,12 @@ recursive-include homodyne/templates *.json
 include homodyne/post_install.py
 include homodyne/uninstall_scripts.py
 
-# Shell completion system (unified)
-include homodyne/completion_advanced.sh
-
-# GPU acceleration system
-include homodyne/gpu_activation_smart.sh
+# GPU wrapper (still in homodyne root)
 include homodyne/gpu_wrapper.py
-include homodyne/gpu_optimizer.py
 
-# Advanced features system  
-include homodyne/system_validator.py
+# Runtime module (new organization)
+recursive-include homodyne/runtime *.py
+recursive-include homodyne/runtime *.sh
 
 # Legacy scripts directory (if exists)
 recursive-include scripts *.py
@@ -99,6 +95,9 @@ exclude benchmark_performance.py
 exclude my_config*.json
 exclude WARP.md
 exclude bandit_report.json
+exclude bandit-report.json
+exclude code_quality_report.md
+exclude pip_audit_report.json
 exclude .bandit
 exclude .security
 

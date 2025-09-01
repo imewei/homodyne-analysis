@@ -61,7 +61,7 @@ else:
 #     reason="PyMC is required for MCMC sampling but is not available.",
 # )
 try:
-    from homodyne.tests.test_utils_mcmc import (
+    from homodyne.tests.mcmc.test_utils_mcmc import (
         create_mock_analysis_core,
         create_mock_trace,
         create_realistic_user_config,

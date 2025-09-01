@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from homodyne.tests.fixtures import (
+from homodyne.tests.fixtures.data import (
     create_invalid_config_file,
     create_minimal_config_file,
 )

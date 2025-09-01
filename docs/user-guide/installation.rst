@@ -360,7 +360,7 @@ If GPU is not detected:
 2. Verify system CUDA installation: ``nvcc --version`` (should show 12.6+)
 3. Check cuDNN installation: ``ls /usr/lib/x86_64-linux-gnu/libcudnn.so.9*``
 4. Run GPU activation: ``source activate_gpu.sh``
-5. See ``GPU_SETUP.md`` for detailed system CUDA setup and troubleshooting instructions
+5. Run ``homodyne-post-install --gpu`` for automated GPU setup and troubleshooting
 
 Getting Help
 ------------

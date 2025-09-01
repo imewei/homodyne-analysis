@@ -28,4 +28,4 @@ jaxlib>=0.4.35
 # echo $PYTENSOR_FLAGS
 # homodyne_gpu_status  # (conda/mamba environments only)
 #
-# See GPU_SETUP.md for detailed setup instructions
+# Run 'homodyne-post-install --gpu' for automated GPU setup

@@ -188,7 +188,9 @@ def install_gpu_acceleration(force=False):
             import homodyne
 
             homodyne_src_dir = Path(homodyne.__file__).parent.parent
-            smart_gpu_script = homodyne_src_dir / "homodyne" / "gpu_activation_smart.sh"
+            smart_gpu_script = (
+                homodyne_src_dir / "homodyne" / "runtime" / "gpu" / "activation.sh"
+            )
 
             if not smart_gpu_script.exists():
                 print(f"⚠️  Smart GPU activation script not found at {smart_gpu_script}")
@@ -286,9 +288,9 @@ def install_advanced_features():
 
         # Check if advanced features files exist
         required_files = [
-            homodyne_src_dir / "homodyne" / "completion_advanced.sh",
-            homodyne_src_dir / "homodyne" / "gpu_optimizer.py",
-            homodyne_src_dir / "homodyne" / "system_validator.py",
+            homodyne_src_dir / "homodyne" / "runtime" / "shell" / "completion.sh",
+            homodyne_src_dir / "homodyne" / "runtime" / "gpu" / "optimizer.py",
+            homodyne_src_dir / "homodyne" / "runtime" / "utils" / "system_validator.py",
         ]
 
         missing_files = [f for f in required_files if not f.exists()]
@@ -306,8 +308,8 @@ def install_advanced_features():
         gpu_cmd = bin_dir / "homodyne-gpu-optimize"
         gpu_content = f"""#!/usr/bin/env python3
 import sys
-sys.path.insert(0, "{homodyne_src_dir / 'homodyne'}")
-from gpu_optimizer import main
+sys.path.insert(0, "{homodyne_src_dir / 'homodyne' / 'runtime' / 'gpu'}")
+from optimizer import main
 if __name__ == "__main__":
     main()
 """
@@ -318,7 +320,7 @@ if __name__ == "__main__":
         validator_cmd = bin_dir / "homodyne-validate"
         validator_content = f"""#!/usr/bin/env python3
 import sys
-sys.path.insert(0, "{homodyne_src_dir / 'homodyne'}")
+sys.path.insert(0, "{homodyne_src_dir / 'homodyne' / 'runtime' / 'utils'}")
 from system_validator import main
 if __name__ == "__main__":
     main()
@@ -334,8 +336,8 @@ if __name__ == "__main__":
             completion_script = activate_dir / "homodyne-advanced-completion.sh"
             completion_content = f"""#!/bin/bash
 # Advanced homodyne completion
-if [[ -f "{homodyne_src_dir / 'homodyne' / 'completion_advanced.sh'}" ]]; then
-    source "{homodyne_src_dir / 'homodyne' / 'completion_advanced.sh'}"
+if [[ -f "{homodyne_src_dir / 'homodyne' / 'runtime' / 'shell' / 'completion.sh'}" ]]; then
+    source "{homodyne_src_dir / 'homodyne' / 'runtime' / 'shell' / 'completion.sh'}"
 fi
 """
             completion_script.write_text(completion_content)

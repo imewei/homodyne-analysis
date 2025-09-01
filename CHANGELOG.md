@@ -55,10 +55,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - **Documentation Overhaul**: Complete documentation updates for unified system
   - Updated `README.md` with unified system quick start and features
-  - Comprehensive `ADVANCED_FEATURES.md` with new Phase 4-6 capabilities
-  - Enhanced `GPU_SETUP.md` with smart GPU detection and optimization
   - Updated `CLI_REFERENCE.md` with new advanced tools and unified commands
-  - Streamlined `INSTALL_UNINSTALL.md` with unified installation workflows
+  - Integrated setup instructions directly into main documentation
+  - Streamlined documentation structure with consolidated installation workflows
 
 - **Code Quality and Maintainability**: Significant codebase consolidation
   - Removed 500+ lines of redundant completion code
@@ -68,7 +67,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Technical Details
 
-- **GPU System Enhancements**: `gpu_activation_smart.sh` with intelligent CUDA configuration
+- **GPU System Enhancements**: `runtime/gpu/activation.sh` with intelligent CUDA configuration
   - Dynamic library path detection across installation types
   - Hardware-specific XLA flag optimization  
   - Safe environment variable management with conflict resolution

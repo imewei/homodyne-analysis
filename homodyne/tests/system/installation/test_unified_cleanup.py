@@ -366,8 +366,8 @@ class TestCleanupMainFunction:
         ):
             result = cleanup_main()
 
-            # Should complete but show warning
-            assert result == 0
+            # Should return 1 when not in virtual env (cleanup_all_files returns False)
+            assert result == 1
             print_calls = [str(call) for call in mock_print.call_args_list]
             assert any("virtual environment" in call for call in print_calls)
 

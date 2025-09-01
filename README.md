@@ -137,7 +137,7 @@ pip install homodyne-analysis[jax]
 # - jaxlib>=0.4.35                 # JAX backend library
 
 # Note: Requires system CUDA 12.6+ and cuDNN 9.12+ installed on Linux
-# For setup instructions: see GPU_SETUP.md
+# For automated setup: run 'homodyne-post-install --gpu'
 ```
 
 **Bayesian MCMC Analysis:**
@@ -326,7 +326,7 @@ from homodyne.optimization.mcmc import MCMCSampler
 # GPU acceleration is automatic when available and activated
 ```
 
-**Note:** See `GPU_SETUP.md` for detailed system CUDA setup instructions and troubleshooting.
+**Note:** Use `homodyne-post-install --gpu` for automated CUDA setup and `homodyne-validate` for troubleshooting.
 
 ## Uninstallation
 
@@ -1593,7 +1593,16 @@ cd homodyne
 pip install -e .[all]
 
 # Run tests
-python homodyne/run_tests.py
+# Quick development tests (< 10 seconds)
+pytest -c pytest-quick.ini
+
+# Full test suite with coverage
+pytest -c pytest-full.ini
+
+# Specific test categories
+pytest homodyne/tests/unit        # Unit tests only
+pytest homodyne/tests/integration # Integration tests
+pytest -m "not slow"              # Skip slow tests
 
 # Code quality and security checks
 black homodyne/                    # Format code

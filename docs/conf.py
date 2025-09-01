@@ -62,6 +62,13 @@ autodoc_mock_imports = [
     "homodyne.optimization.mcmc",
     "homodyne.optimization.classical",
     "homodyne.plotting",
+    # Runtime modules
+    "homodyne.runtime",
+    "homodyne.runtime.gpu",
+    "homodyne.runtime.gpu.optimizer", 
+    "homodyne.runtime.utils",
+    "homodyne.runtime.utils.system_validator",
+    "homodyne.runtime.shell",
 ]
 autodoc_preserve_defaults = True
 

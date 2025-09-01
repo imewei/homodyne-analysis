@@ -456,7 +456,7 @@ The MCMC module automatically detects and uses system CUDA GPU when available:
       # Check cuDNN installation
       ls /usr/lib/x86_64-linux-gnu/libcudnn.so.9*
 
-      # For detailed setup: see GPU_SETUP.md
+      # For automated GPU setup: run homodyne-post-install --gpu
 
 2. **Out of Memory Errors**:
 

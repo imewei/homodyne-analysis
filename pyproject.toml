@@ -7,7 +7,7 @@ name = "homodyne-analysis"
 dynamic = ["version"]
 description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with JAX backend GPU acceleration, unified shell completion system, comprehensive optimization methods, robust testing infrastructure, automated code quality checks, conda/mamba environment integration, and streamlined post-installation setup with advanced GPU optimization tools"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
 authors = [
     {name = "Wei Chen", email = "wchen@anl.gov"},
     {name = "Hongrui He"},
@@ -21,7 +21,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Chemistry",
     "Topic :: Scientific/Engineering :: Information Analysis",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -172,8 +171,8 @@ homodyne-config = "homodyne.create_config:main"
 homodyne-gpu = "homodyne.gpu_wrapper:main"
 homodyne-post-install = "homodyne.post_install:main"
 homodyne-cleanup = "homodyne.uninstall_scripts:main"
-homodyne-gpu-optimize = "homodyne.gpu_optimizer:main"
-homodyne-validate = "homodyne.system_validator:main"
+homodyne-gpu-optimize = "homodyne.runtime.gpu.optimizer:main"
+homodyne-validate = "homodyne.runtime.utils.system_validator:main"
 
 [tool.setuptools]
 packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
@@ -186,11 +185,9 @@ homodyne = [
     "typings/**/*.pyi",
     "post_install.py",
     "uninstall_scripts.py",
-    "completion_advanced.sh",
-    "gpu_activation_smart.sh",
     "gpu_wrapper.py",
-    "gpu_optimizer.py",
-    "system_validator.py",
+    "runtime/**/*.py",
+    "runtime/**/*.sh",
     "scripts/*.py",
     "scripts/*.md",
 ]
@@ -271,6 +268,8 @@ addopts = [
     "--color=yes",
     "-v",
     "-rs",  # Show reasons for skipped tests in summary
+    "--tb=short",  # Shorter tracebacks for better CI output
+    "--maxfail=5",  # Stop after 5 failures to save time
 ]
 testpaths = ["homodyne/tests"]
 markers = [
@@ -285,6 +284,10 @@ markers = [
     "optimization: marks tests for Phase 3 batch optimization features",
     "jax: marks tests requiring JAX dependencies",
     "gpu: marks tests that can utilize GPU acceleration (requires appropriate JAX installation)",
+    "fast: marks tests that run quickly (< 1s)",
+    "unit: marks unit tests (isolated, no external dependencies)",
+    "system: marks system-level tests (require environment setup)",
+    "ci_skip: marks tests to skip in CI environments",
 ]
 filterwarnings = [
     "error",
@@ -368,4 +371,4 @@ skips = [
 ]
 severity_level = "medium"  # Only report medium and high severity issues
 format = "json"  # JSON output for CI integration
-output = "bandit_report.json"  # Save results for analysis
+output = "bandit-report.json"  # Save results for analysis

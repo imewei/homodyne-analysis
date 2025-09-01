@@ -128,7 +128,7 @@ class TestMethodResultsSaving:
         return result
 
     @pytest.fixture
-    def test_data(self):
+    def experimental_data(self):
         """Create test experimental data."""
         phi_angles = np.array([0, 45, 90, 135])
         c2_exp = np.random.randn(4, 100)
@@ -147,12 +147,12 @@ class TestMethodResultsSaving:
         self,
         mock_analyzer,
         mock_result_classical,
-        test_data,
+        experimental_data,
         time_arrays,
         tmp_path,
     ):
         """Test saving individual classical method results."""
-        phi_angles, c2_exp = test_data
+        phi_angles, c2_exp = experimental_data
         t1, t2 = time_arrays
 
         # Call the function
@@ -241,12 +241,12 @@ class TestMethodResultsSaving:
         self,
         mock_analyzer,
         mock_result_robust,
-        test_data,
+        experimental_data,
         time_arrays,
         tmp_path,
     ):
         """Test saving individual robust method results."""
-        phi_angles, c2_exp = test_data
+        phi_angles, c2_exp = experimental_data
         t1, t2 = time_arrays
 
         # Call the function
@@ -315,9 +315,9 @@ class TestMethodResultsSaving:
                 dt_t2 = data["t2"][1] - data["t2"][0]
                 assert dt_t2 > 0, "dt should be positive"
 
-    def test_estimate_parameter_uncertainties(self, mock_analyzer, test_data):
+    def test_estimate_parameter_uncertainties(self, mock_analyzer, experimental_data):
         """Test parameter uncertainty estimation."""
-        phi_angles, c2_exp = test_data
+        phi_angles, c2_exp = experimental_data
         params = np.array([1.5, 2.0, 0.5])
         chi_squared_min = 0.5
 
@@ -334,10 +334,10 @@ class TestMethodResultsSaving:
         ), "Uncertainties should be reasonable relative to parameter values"
 
     def test_handles_missing_method_results(
-        self, mock_analyzer, test_data, time_arrays, tmp_path
+        self, mock_analyzer, experimental_data, time_arrays, tmp_path
     ):
         """Test handling of results without method_results attribute."""
-        phi_angles, c2_exp = test_data
+        phi_angles, c2_exp = experimental_data
         t1, t2 = time_arrays
 
         # Create result without method_results
@@ -359,10 +359,10 @@ class TestMethodResultsSaving:
         assert len(method_dirs) == 0
 
     def test_handles_failed_methods(
-        self, mock_analyzer, test_data, time_arrays, tmp_path
+        self, mock_analyzer, experimental_data, time_arrays, tmp_path
     ):
         """Test that failed methods are skipped."""
-        phi_angles, c2_exp = test_data
+        phi_angles, c2_exp = experimental_data
         t1, t2 = time_arrays
 
         # Create result with mix of successful and failed methods
@@ -395,12 +395,12 @@ class TestMethodResultsSaving:
         self,
         mock_analyzer,
         mock_result_classical,
-        test_data,
+        experimental_data,
         time_arrays,
         tmp_path,
     ):
         """Test fallback parameter naming when names not in config."""
-        phi_angles, c2_exp = test_data
+        phi_angles, c2_exp = experimental_data
         t1, t2 = time_arrays
 
         # Remove parameter names from config

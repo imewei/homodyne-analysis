@@ -685,7 +685,6 @@ class ConfigManager:
             self.get_angle_filtering_config().get("fallback_to_all_angles", True)
         )
 
-
     def is_static_mode_enabled(self) -> bool:
         """
         Check if static mode is enabled in configuration.

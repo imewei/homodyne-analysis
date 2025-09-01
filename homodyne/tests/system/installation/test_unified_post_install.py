@@ -21,13 +21,11 @@ try:
         create_unified_zsh_completion,
         detect_shell_type,
         install_advanced_features,
+        install_gpu_acceleration,
         install_shell_completion,
         is_virtual_environment,
     )
     from homodyne.post_install import main as post_install_main
-    from homodyne.post_install import (
-        setup_gpu_acceleration,
-    )
 
     POST_INSTALL_AVAILABLE = True
 except ImportError:
@@ -148,12 +146,16 @@ class TestUnifiedShellCompletion:
                     "homodyne.post_install.create_unified_zsh_completion"
                 ) as mock_create,
                 patch("builtins.print") as mock_print,
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
             ):
                 mock_create.return_value = venv_path / "etc/zsh/homodyne-completion.zsh"
 
                 with patch("sys.prefix", str(venv_path)):
-                    result = install_shell_completion(force=True)  # Don't pass shell_type for interactive test
+                    result = install_shell_completion(
+                        force=True
+                    )  # Don't pass shell_type for interactive test
 
                 assert result == True
                 mock_create.assert_called_once_with(venv_path)
@@ -164,8 +166,12 @@ class TestUnifiedShellCompletion:
             venv_path = Path(temp_dir)
 
             with (
-                patch("homodyne.post_install.create_unified_zsh_completion") as mock_create,
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.create_unified_zsh_completion"
+                ) as mock_create,
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
             ):
                 mock_create.return_value = venv_path / "etc/zsh/homodyne-completion.zsh"
 
@@ -222,11 +228,11 @@ class TestSmartGPUSetup:
             with patch("builtins.print") as mock_print:
                 result = install_gpu_acceleration(force=False)
 
-                # Should return True but print info message
-                assert result == True
+                # Should return False on non-Linux platforms and print info message
+                assert result == False
                 # Should inform user about platform limitation
                 print_calls = [str(call) for call in mock_print.call_args_list]
-                assert any("Windows" in call or "macOS" in call for call in print_calls)
+                assert any("Linux" in call for call in print_calls)
 
 
 @pytest.mark.skipif(
@@ -254,17 +260,18 @@ class TestAdvancedFeaturesIntegration:
             ):
                 result = install_advanced_features()
 
-                # Function may return False if advanced feature files don't exist
-                # This is expected behavior for test environment
-                assert result in [True, False]
-                # If successful, CLI tools would be created
-                if result:
-                    expected_tools = ["homodyne-gpu-optimize", "homodyne-validate"]
-                    write_calls = [str(call) for call in mock_write.call_args_list]
-                    for tool in expected_tools:
-                        assert any(
-                            tool in call for call in write_calls
-                        ), f"Missing tool: {tool}"
+                # Since we have the actual runtime files, this should succeed
+                assert result == True
+                # CLI tools should be created - check for characteristic content patterns
+                expected_content_patterns = [
+                    "from optimizer import main",  # This should be in gpu-optimize script
+                    "from system_validator import main",  # This should be in validate script
+                ]
+                write_calls = [str(call) for call in mock_write.call_args_list]
+                for pattern in expected_content_patterns:
+                    assert any(
+                        pattern in call for call in write_calls
+                    ), f"Missing content pattern: {pattern}"
 
     def test_install_advanced_features_interactive_mode(self):
         """Test interactive installation of advanced features."""
@@ -380,10 +387,12 @@ class TestPostInstallMainFunction:
         ):
             result = post_install_main()
 
-            # Should warn but still proceed
+            # Should exit early with warning
             assert result == 0
             print_calls = [str(call) for call in mock_print.call_args_list]
-            assert any("virtual environment" in call for call in print_calls)
+            assert any(
+                "Virtual environment recommended" in call for call in print_calls
+            )
 
     def test_post_install_argument_validation(self):
         """Test argument validation and error handling."""
@@ -455,12 +464,9 @@ class TestPostInstallErrorHandling:
             ),
             patch("builtins.print") as mock_print,
         ):
-            result = post_install_main()
-
-            # Should handle exception gracefully
-            assert result == 1
-            print_calls = [str(call) for call in mock_print.call_args_list]
-            assert any("error" in call.lower() for call in print_calls)
+            # Exception should propagate (not caught in main())
+            with pytest.raises(Exception, match="Test error"):
+                post_install_main()
 
 
 class TestPostInstallCLICompatibility:

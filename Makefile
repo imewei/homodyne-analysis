@@ -178,6 +178,9 @@ clean-test:
 	rm -rf .ruff_cache/
 	rm -rf .benchmarks/
 	rm -f test_report.html
+	rm -f bandit-report.json
+	rm -f code_quality_report.md
+	rm -f pip_audit_report.json
 
 clean-venv:
 	rm -rf venv/

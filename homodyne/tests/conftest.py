@@ -330,6 +330,23 @@ def pytest_configure(config):
         "benchmark: mark test for benchmarking (requires pytest-benchmark)",
     )
 
+    # Phase 4 optimization markers
+    config.addinivalue_line("markers", "fast: marks tests that run quickly (< 1s)")
+    config.addinivalue_line(
+        "markers", "unit: marks unit tests (isolated, no external dependencies)"
+    )
+    config.addinivalue_line(
+        "markers", "system: marks system-level tests (require environment setup)"
+    )
+    config.addinivalue_line(
+        "markers", "ci_skip: marks tests to skip in CI environments"
+    )
+    config.addinivalue_line(
+        "markers", "gpu: marks tests that can utilize GPU acceleration"
+    )
+    config.addinivalue_line("markers", "jax: marks tests requiring JAX dependencies")
+    config.addinivalue_line("markers", "mcmc: marks tests requiring MCMC dependencies")
+
     # Configure warnings filters
     config.addinivalue_line("filterwarnings", "ignore::UserWarning:matplotlib.*")
     config.addinivalue_line("filterwarnings", "ignore::UserWarning:homodyne.*")
@@ -389,6 +406,25 @@ def numpy_random_seed():
     np.random.seed()
 
 
+@pytest.fixture(autouse=True)
+def track_test_performance_auto(request):
+    """Automatically track test performance and apply markers."""
+    start_time = time.perf_counter()
+    yield
+    duration = time.perf_counter() - start_time
+
+    # Automatically mark tests based on execution time
+    if duration > 5.0:  # 5 seconds threshold for slow tests
+        if not any(marker.name == "slow" for marker in request.node.iter_markers()):
+            request.node.add_marker(pytest.mark.slow)
+    elif duration < 1.0:  # Fast test threshold
+        if not any(marker.name == "fast" for marker in request.node.iter_markers()):
+            request.node.add_marker(pytest.mark.fast)
+
+    # Store performance data for potential CI optimization
+    setattr(request.node, "_test_duration", duration)
+
+
 @pytest.fixture(scope="session")
 def test_data_dir():
     """Path to test data directory."""
@@ -401,8 +437,8 @@ def sample_config_path():
     return Path(__file__).parent.parent.parent / "homodyne_config.json"
 
 
-# Import all fixtures from fixtures.py to make them available
-from homodyne.tests.fixtures import (
+# Import all fixtures from fixtures module to make them available
+from homodyne.tests.fixtures.data import (
     dummy_analysis_results,
     dummy_config,
     dummy_correlation_data,

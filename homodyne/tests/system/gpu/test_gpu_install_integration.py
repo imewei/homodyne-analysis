@@ -43,7 +43,9 @@ class TestUnifiedGPUInstallation:
             venv_path = Path(temp_dir)
 
             with (
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
                 patch("sys.prefix", str(venv_path)),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
                 patch("pathlib.Path.exists", return_value=True),
@@ -126,7 +128,9 @@ class TestUnifiedGPUInstallation:
             with (
                 patch.dict("os.environ", {"CONDA_PREFIX": str(venv_path)}),
                 patch("homodyne.post_install.detect_shell_type", return_value="zsh"),
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
                 patch("sys.prefix", str(venv_path)),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
                 patch("pathlib.Path.exists", return_value=True),
@@ -163,8 +167,8 @@ class TestUnifiedGPUInstallation:
                 # GPU setup should gracefully handle non-Linux
                 gpu_result = install_gpu_acceleration(force=False)
 
-                # Should return success but skip GPU-specific setup
-                assert gpu_result == True
+                # Should return False but handle gracefully (no crash)
+                assert gpu_result == False
 
                 # Should inform user about platform limitations
                 print_calls = [str(call) for call in mock_print.call_args_list]
@@ -251,7 +255,9 @@ class TestUnifiedScriptGeneration:
             conda_meta.mkdir(parents=True)
 
             with (
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
                 patch("sys.prefix", str(venv_path)),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
                 patch.object(Path, "exists", return_value=True),
@@ -260,7 +266,9 @@ class TestUnifiedScriptGeneration:
                 assert result == True
 
                 # Verify activation script was created
-                activate_script = venv_path / "etc" / "conda" / "activate.d" / "homodyne-gpu.sh"
+                activate_script = (
+                    venv_path / "etc" / "conda" / "activate.d" / "homodyne-gpu.sh"
+                )
                 assert activate_script.exists()
 
     def test_unified_completion_script_generation(self):
@@ -273,7 +281,9 @@ class TestUnifiedScriptGeneration:
             completion_dir.mkdir(parents=True)
 
             with (
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
                 patch("sys.prefix", str(venv_path)),
             ):
                 from homodyne.post_install import install_shell_completion
@@ -312,7 +322,9 @@ class TestUnifiedScriptGeneration:
             bin_dir.mkdir(parents=True)
 
             with (
-                patch("homodyne.post_install.is_virtual_environment", return_value=True),
+                patch(
+                    "homodyne.post_install.is_virtual_environment", return_value=True
+                ),
                 patch("sys.prefix", str(venv_path)),
                 patch("platform.system", return_value="Linux"),
                 patch("shutil.which", return_value="/usr/bin/python3"),

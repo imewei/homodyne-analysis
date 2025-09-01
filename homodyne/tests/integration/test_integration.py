@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 # Import the modules to test
-from homodyne.tests.fixtures import create_minimal_config_file
+from homodyne.tests.fixtures.data import create_minimal_config_file
 
 # tmp_path is built-in pytest fixture, no need to import
 
@@ -837,7 +837,7 @@ class TestAnalysisWorkflowIntegration:
     )
     def test_mcmc_results_plotting_integration(self, tmp_path):
         """Test MCMC results integration with plotting workflow."""
-        from homodyne.tests.fixtures import create_minimal_config_file
+        from homodyne.tests.fixtures.data import create_minimal_config_file
 
         config_file = create_minimal_config_file(tmp_path / "mcmc_test_config.json")
 

@@ -12,6 +12,7 @@ Complete API documentation for the homodyne analysis package.
    robust
    utilities
    post-install
+   runtime
 
 Core Classes
 ------------
@@ -66,6 +67,9 @@ The package includes the following key modules:
 * **homodyne.optimization.classical** - Classical optimization (Nelder-Mead, Gurobi)
 * **homodyne.optimization.robust** - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
 * **homodyne.optimization.mcmc** - Bayesian MCMC sampling (NUTS)
+* **homodyne.runtime** - Runtime utilities and system tools
+* **homodyne.runtime.gpu** - GPU optimization and benchmarking
+* **homodyne.runtime.utils** - System validation and health checks
 * **homodyne.post_install** - Unified post-installation system
 * **homodyne.uninstall_scripts** - Cleanup and removal utilities
 * **homodyne.plotting** - Visualization utilities

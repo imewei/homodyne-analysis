@@ -34,17 +34,16 @@ class TestUnifiedSystemWorkflow:
                 ),
                 patch("homodyne.post_install.detect_shell_type", return_value="zsh"),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
-                patch("pathlib.Path.exists", return_value=True),
                 patch("pathlib.Path.mkdir") as mock_mkdir,
                 patch("pathlib.Path.write_text") as mock_write,
                 patch("pathlib.Path.chmod") as mock_chmod,
-                patch("builtins.print") as mock_print,
             ):
+                # Simulate post-install with all features
                 # Simulate post-install with all features
                 from homodyne.post_install import (
                     install_advanced_features,
-                    install_shell_completion,
                     install_gpu_acceleration,
+                    install_shell_completion,
                 )
 
                 # Step 1: Install shell completion
@@ -57,21 +56,35 @@ class TestUnifiedSystemWorkflow:
                     assert gpu_result == True
 
                 # Step 3: Install advanced features
+                # The runtime files exist, so this should work
                 advanced_result = install_advanced_features()
+                # Since the runtime files exist, this should succeed
                 assert advanced_result == True
 
-                # Verify expected files would be created
-                expected_calls = [
-                    "homodyne-completion.zsh",
-                    "homodyne-gpu-optimize",
-                    "homodyne-validate",
-                ]
+                # Verify expected files were created (only if advanced features succeeded)
+                if advanced_result:
+                    # Look for characteristic content instead of filenames
+                    expected_content_patterns = [
+                        "homodyne-completion.zsh",  # This should be in zsh completion content
+                        "from optimizer import main",  # This should be in gpu-optimize script
+                        "from system_validator import main",  # This should be in validate script
+                    ]
 
-                file_calls = [str(call) for call in mock_write.call_args_list]
-                for expected in expected_calls:
-                    assert any(
-                        expected in call for call in file_calls
-                    ), f"Missing: {expected}"
+                    file_calls = [str(call) for call in mock_write.call_args_list]
+                    for expected in expected_content_patterns:
+                        found = any(expected in call for call in file_calls)
+                        assert found, f"Missing content pattern: {expected}"
+                else:
+                    # If advanced features failed, only check for basic completion files
+                    expected_calls = [
+                        "homodyne-completion.zsh",
+                    ]
+
+                    file_calls = [str(call) for call in mock_write.call_args_list]
+                    for expected in expected_calls:
+                        assert any(
+                            expected in call for call in file_calls
+                        ), f"Missing: {expected}"
 
     def test_system_validation_after_installation(self):
         """Test system validation after complete installation."""

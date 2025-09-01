@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class TestResult:
-    """Result of a system test."""
+class ValidationResult:
+    """Result of a system validation check."""
 
     name: str
     success: bool
@@ -38,7 +38,7 @@ class SystemValidator:
 
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
-        self.results: List[TestResult] = []
+        self.results: List[ValidationResult] = []
         self.environment_info = {}
 
     def log(self, message: str, level: str = "info"):
@@ -59,7 +59,7 @@ class SystemValidator:
         except Exception as e:
             return False, "", str(e)
 
-    def test_environment_detection(self) -> TestResult:
+    def test_environment_detection(self) -> ValidationResult:
         """Test environment detection and basic setup."""
         start_time = time.perf_counter()
 
@@ -91,7 +91,7 @@ class SystemValidator:
 
             execution_time = time.perf_counter() - start_time
 
-            return TestResult(
+            return ValidationResult(
                 name="Environment Detection",
                 success=True,
                 message=f"Detected: {self.environment_info['platform']}, "
@@ -104,14 +104,14 @@ class SystemValidator:
 
         except Exception as e:
             execution_time = time.perf_counter() - start_time
-            return TestResult(
+            return ValidationResult(
                 name="Environment Detection",
                 success=False,
                 message=f"Failed to detect environment: {e}",
                 execution_time=execution_time,
             )
 
-    def test_homodyne_installation(self) -> TestResult:
+    def test_homodyne_installation(self) -> ValidationResult:
         """Test homodyne package installation."""
         start_time = time.perf_counter()
 
@@ -137,7 +137,7 @@ class SystemValidator:
             success, stdout, stderr = self.run_command(["homodyne", "--help"])
             if not success:
                 execution_time = time.perf_counter() - start_time
-                return TestResult(
+                return ValidationResult(
                     name="Homodyne Installation",
                     success=False,
                     message="homodyne --help failed",
@@ -148,7 +148,7 @@ class SystemValidator:
             # Check if help output looks correct
             if "homodyne scattering analysis" not in stdout.lower():
                 execution_time = time.perf_counter() - start_time
-                return TestResult(
+                return ValidationResult(
                     name="Homodyne Installation",
                     success=False,
                     message="homodyne help output doesn't look correct",
@@ -161,7 +161,7 @@ class SystemValidator:
             if missing_commands:
                 warnings.append(f"Missing commands: {', '.join(missing_commands)}")
 
-            return TestResult(
+            return ValidationResult(
                 name="Homodyne Installation",
                 success=True,
                 message=f"Found {len(found_commands)}/{len(commands)} commands",
@@ -175,14 +175,14 @@ class SystemValidator:
 
         except Exception as e:
             execution_time = time.perf_counter() - start_time
-            return TestResult(
+            return ValidationResult(
                 name="Homodyne Installation",
                 success=False,
                 message=f"Installation test failed: {e}",
                 execution_time=execution_time,
             )
 
-    def test_shell_completion(self) -> TestResult:
+    def test_shell_completion(self) -> ValidationResult:
         """Test shell completion system."""
         start_time = time.perf_counter()
 
@@ -235,7 +235,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
             if bash_test_passed:
                 message += " (aliases working)"
 
-            return TestResult(
+            return ValidationResult(
                 name="Shell Completion",
                 success=success,
                 message=message,
@@ -250,21 +250,21 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
 
         except Exception as e:
             execution_time = time.perf_counter() - start_time
-            return TestResult(
+            return ValidationResult(
                 name="Shell Completion",
                 success=False,
                 message=f"Shell completion test failed: {e}",
                 execution_time=execution_time,
             )
 
-    def test_gpu_setup(self) -> TestResult:
+    def test_gpu_setup(self) -> ValidationResult:
         """Test GPU setup and acceleration."""
         start_time = time.perf_counter()
 
         try:
             if self.environment_info.get("platform") != "Linux":
                 execution_time = time.perf_counter() - start_time
-                return TestResult(
+                return ValidationResult(
                     name="GPU Setup",
                     success=True,
                     message="GPU not available on non-Linux platforms",
@@ -340,7 +340,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
             else:
                 message = "GPU setup not found"
 
-            return TestResult(
+            return ValidationResult(
                 name="GPU Setup",
                 success=success,
                 message=message,
@@ -351,14 +351,14 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
 
         except Exception as e:
             execution_time = time.perf_counter() - start_time
-            return TestResult(
+            return ValidationResult(
                 name="GPU Setup",
                 success=False,
                 message=f"GPU test failed: {e}",
                 execution_time=execution_time,
             )
 
-    def test_integration(self) -> TestResult:
+    def test_integration(self) -> ValidationResult:
         """Test integration between components."""
         start_time = time.perf_counter()
 
@@ -411,7 +411,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
                 failed = [k for k, v in import_tests.items() if v is not True]
                 warnings.append(f"Module import failures: {len(failed)}")
 
-            return TestResult(
+            return ValidationResult(
                 name="Integration",
                 success=success,
                 message=f"Module imports: {success_count}/{total_count}",
@@ -426,14 +426,14 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
 
         except Exception as e:
             execution_time = time.perf_counter() - start_time
-            return TestResult(
+            return ValidationResult(
                 name="Integration",
                 success=False,
                 message=f"Integration test failed: {e}",
                 execution_time=execution_time,
             )
 
-    def run_all_tests(self) -> Dict[str, TestResult]:
+    def run_all_tests(self) -> Dict[str, ValidationResult]:
         """Run all system tests."""
         tests = [
             self.test_environment_detection,
