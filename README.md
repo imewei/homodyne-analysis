@@ -26,16 +26,20 @@ diffusion and advective shear flow.
   and outlier resistance
 - **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations,
   and optimized memory usage
-- **Performance monitoring**: Comprehensive regression testing and automated
-  benchmarking
+- **Smart GPU acceleration**: Automatic CUDA detection with hardware-specific optimization
+  and intelligent CPU/GPU selection
+- **Unified system integration**: Streamlined shell completion, GPU setup, and advanced
+  features with one-command installation
+- **Advanced tools**: GPU optimization (`homodyne-gpu-optimize`), system validation
+  (`homodyne-validate`), and performance monitoring
 - **Scientific accuracy**: Automatic $g_2 = \\text{offset} + \\text{contrast} \\times
   g_1$ fitting for proper $\\chi^2$ calculations
 - **Robust testing infrastructure**: 500+ tests with comprehensive coverage, automated
   CI/CD, and performance regression detection
 - **Code quality assurance**: Automated formatting, linting, type checking, and security
   scanning with pre-commit hooks
-- **Cross-platform shell completion**: Fast tab completion for CLI commands with
-  intelligent caching and conda environment integration
+- **Cross-platform shell completion**: Unified completion system with smart caching
+  and environment integration
 
 ## Table of Contents
 
@@ -56,10 +60,27 @@ diffusion and advective shear flow.
 check your Python version and provide helpful error messages if you're using an older
 version.
 
-### PyPI Installation (Recommended)
+### Quick Installation (Unified System)
 
+**Complete setup with unified system:**
 ```bash
+# Install with all features
 pip install homodyne-analysis[all]
+
+# Unified post-install setup
+homodyne-post-install --shell zsh --gpu --advanced
+
+# Test installation
+homodyne-validate
+```
+
+**Alternative installation approaches:**
+```bash
+# Standard installation
+pip install homodyne-analysis[all]
+
+# Interactive setup (choose features)
+homodyne-post-install --interactive
 ```
 
 ### Development Installation
@@ -68,6 +89,9 @@ pip install homodyne-analysis[all]
 git clone https://github.com/imewei/homodyne.git
 cd homodyne
 pip install -e .[all]
+
+# Development setup with unified system
+homodyne-post-install --shell zsh --advanced --gpu
 ```
 
 ### Dependencies
@@ -239,38 +263,45 @@ pip install homodyne-analysis[all]  # Everything included
 pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
 ```
 
-### System CUDA GPU Acceleration
+### Smart GPU Acceleration (Unified System)
 
-The package supports system CUDA GPU acceleration for MCMC sampling and JAX-based computations on Linux systems with NVIDIA GPUs:
+**Automatic GPU detection with intelligent CPU/GPU selection:**
 
-**System Requirements:**
+**Features:**
+- **Smart CUDA detection**: Finds CUDA in system, conda, or pip installations
+- **Hardware optimization**: Automatic GPU memory and performance tuning
+- **Intelligent fallback**: Seamless CPU fallback on unsupported platforms
+- **Platform-aware**: Linux GPU acceleration, Windows/macOS CPU-optimized
 
-- Linux operating system
-- System CUDA 12.6+ installed at `/usr/local/cuda`
-- cuDNN 9.12+ in system libraries
-- NVIDIA GPU with driver 560.28+
-- NVIDIA drivers installed
-
-**Installation:**
-
-Installing with `[jax]`, `[mcmc]`, or `[performance]` options automatically includes system CUDA support:
-
+**Setup:**
 ```bash
-# Any of these will install system CUDA GPU support on Linux:
-pip install homodyne-analysis[jax]         # JAX with system CUDA
-pip install homodyne-analysis[mcmc]        # Includes NumPyro for GPU-accelerated MCMC
-pip install homodyne-analysis[performance] # Full performance stack with system CUDA
+# Install with GPU support
+pip install homodyne-analysis[jax]
+
+# Smart GPU setup (unified system)
+homodyne-post-install --shell zsh --gpu --advanced
+
+# Test GPU system
+homodyne-validate --test gpu
+gpu-status                        # Check GPU activation status
 ```
 
-**Activate System CUDA GPU Support:**
-
+**Advanced GPU features:**
 ```bash
-# Activate system CUDA GPU support
-source activate_gpu.sh
+# Hardware-specific optimization
+homodyne-gpu-optimize --benchmark --apply
 
-# Then verify GPU detection
-python -c "import jax; print(f'JAX devices: {jax.devices()}')"
-# Should show: [CudaDevice(id=0)]
+# Performance monitoring
+gpu-bench                         # Built-in GPU benchmarking
+
+# System validation
+homodyne-validate --verbose       # Complete system report
+```
+
+**Smart usage (automatic GPU/CPU selection):**
+```bash
+hm config.json                    # MCMC with smart GPU detection
+ha config.json                    # All methods with intelligent selection
 ```
 
 **Command Usage:**
@@ -341,25 +372,49 @@ rm -f "$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh"
 rm -rf "$CONDA_PREFIX/etc/homodyne"
 ```
 
-## Quick Start
+## Quick Start (Unified System)
 
 ```bash
-# Install
+# Complete installation with unified system
 pip install homodyne-analysis[all]
+homodyne-post-install --shell zsh --gpu --advanced
+
+# Validate installation
+homodyne-validate
 
 # Create configuration
 homodyne-config --mode laminar_flow --sample my_sample
 
-# Run analysis
-homodyne --config my_config.json --method all
+# Run analysis with unified commands (smart GPU/CPU selection)
+hm my_config.json                   # homodyne --method mcmc (with smart GPU)
+ha my_config.json                   # homodyne --method all 
+hc my_config.json                   # homodyne --method classical
+hr my_config.json                   # homodyne --method robust
 
-# Run only robust optimization (noise-resistant)
-homodyne --config my_config.json --method robust
+# Advanced features
+gpu-status                          # Check GPU activation
+homodyne-gpu-optimize --benchmark   # Optimize GPU performance
 ```
 
-## CLI Commands
+## CLI Commands (Unified System)
 
-The homodyne package provides two main command-line tools:
+The homodyne package provides comprehensive command-line tools with unified system integration:
+
+### Unified Command Aliases (Smart GPU/CPU Selection)
+
+```bash
+# Smart analysis commands (post-install setup provides these)
+hm config.json                      # homodyne --method mcmc (smart GPU detection)
+hc config.json                      # homodyne --method classical  
+hr config.json                      # homodyne --method robust
+ha config.json                      # homodyne --method all
+
+# Advanced system tools
+gpu-status                          # homodyne_gpu_status  
+gpu-bench                           # homodyne_gpu_benchmark
+homodyne-validate                   # System validation
+homodyne-gpu-optimize              # GPU optimization
+```
 
 ### 1. `homodyne` - Main Analysis Command
 
@@ -404,68 +459,87 @@ homodyne-config --mode laminar_flow --output custom_config.json --sample microge
 
 **See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete command-line documentation.**
 
-## Shell Completion & Shortcuts
+## Unified Shell Integration
 
-The homodyne CLI includes robust completion and shortcut systems for enhanced
-productivity with full cross-platform support:
+The homodyne unified system provides comprehensive shell integration with smart completion, 
+GPU activation, and advanced features:
 
-### Quick Setup
+### One-Command Setup
 
 ```bash
-# Install completion support
-pip install homodyne-analysis[completion]
+# Complete unified setup
+homodyne-post-install --shell zsh --gpu --advanced
 
-# Completion is automatically installed during package installation
-# Conda environments: Completion is automatically integrated!
+# Interactive setup (choose features)
+homodyne-post-install --interactive
 
-# Restart shell or reload config
-source ~/.bashrc   # Linux
-source ~/.zshrc    # macOS
-# Windows PowerShell: restart terminal
-
-# To remove completion later
-homodyne-cleanup                       # Conda environments (recommended)
+# Basic shell completion only
+homodyne-post-install --shell zsh
 ```
 
-### Available Features
+### Unified System Features
 
-**🔥 Command Shortcuts (Always Available):**
+**🚀 Smart Completion System:**
+- Cross-shell compatibility (bash, zsh, fish)
+- Context-aware suggestions
+- Config file discovery with caching
+- Method completion based on config type
+
+**⚡ GPU Integration:**
+- Automatic GPU detection and activation
+- Hardware-specific optimization
+- Smart CPU/GPU selection
+- Performance monitoring tools
+
+**🛠️ Advanced Tools:**
+- System validation (`homodyne-validate`)  
+- GPU optimization (`homodyne-gpu-optimize`)
+- Performance benchmarking (`gpu-bench`)
+- Clean removal (`homodyne-cleanup`)
+
+### Unified Command Aliases
+
+**🚀 Smart Analysis Shortcuts (Unified System):**
 
 ```bash
-# CPU analysis shortcuts
-hc          # homodyne --method classical
-hm          # homodyne --method mcmc
-hr          # homodyne --method robust  
-ha          # homodyne --method all
-hconfig     # homodyne --config
-hexp        # homodyne --plot-experimental-data
-hsim        # homodyne --plot-simulated-data
+# Smart GPU/CPU analysis (automatically optimized)
+hm config.json      # homodyne --method mcmc (smart GPU detection)
+hc config.json      # homodyne --method classical  
+hr config.json      # homodyne --method robust
+ha config.json      # homodyne --method all (smart selection)
+hconfig             # homodyne-config
 
-# GPU analysis shortcuts (Linux only)
-hgm         # homodyne_gpu_activate && homodyne-gpu --method mcmc
-hga         # homodyne_gpu_activate && homodyne-gpu --method all
-hgconfig    # homodyne_gpu_activate && homodyne-gpu --config
-
-# Configuration shortcuts
-hc-iso      # homodyne-config --mode static_isotropic
-hc-aniso    # homodyne-config --mode static_anisotropic
-hc-flow     # homodyne-config --mode laminar_flow
-hc-config   # homodyne-config
+# Advanced system tools
+gpu-status          # homodyne_gpu_status
+gpu-bench           # homodyne_gpu_benchmark  
+gpu-on              # Manual GPU activation
+gpu-off             # Manual GPU deactivation
 ```
 
-**⚡ Tab Completion (When Working):**
+**⚡ Smart Completion System:**
 
 ```bash
-homodyne --method <TAB>     # Shows: classical, mcmc, robust, all
-homodyne --config <TAB>     # Shows available .json files
-homodyne --output-dir <TAB> # Shows available directories
+homodyne --method <TAB>     # Context-aware method suggestions
+homodyne --config <TAB>     # Cached config file discovery
+hm <TAB>                    # Smart config file completion
 ```
 
-**📋 Help System:**
+**🛠️ Advanced System Commands:**
 
 ```bash
-homodyne_help         # Show all available options and current config files
-homodyne_gpu_status   # Check GPU status and availability (conda environments)
+homodyne-validate           # Complete system validation
+homodyne-validate --verbose # Detailed system report
+homodyne-gpu-optimize       # GPU hardware optimization
+homodyne-post-install       # Unified setup system
+homodyne-cleanup           # Smart system cleanup
+```
+
+**📋 System Validation:**
+
+```bash
+homodyne-validate --test completion    # Test completion system
+homodyne-validate --test gpu           # Test GPU setup
+homodyne-validate --json               # JSON output for CI/CD
 ```
 
 ### Usage Examples

@@ -14,20 +14,19 @@ Installation
 5-Minute Tutorial
 -----------------
 
-**Step 0: Optional Shell Enhancement (Recommended)**
+**Step 0: Unified Post-Install Setup (Recommended)**
 
 .. code-block:: bash
 
-   # Enable shell completion and shortcuts for faster workflow
-   pip install homodyne-analysis[completion]
-   # Shell completion is automatically installed during package installation
-   source ~/.zshrc                    # Restart shell or reload config
+   # Run unified post-installation setup
+   homodyne-post-install --shell zsh --gpu --advanced
+   # Or use interactive mode: homodyne-post-install
 
-   # To remove completion later (conda environments):
-   # homodyne-cleanup                 # Remove all conda environment scripts
+   # Restart shell to enable features
+   source ~/.zshrc                    # or ~/.bashrc for bash
 
-   # Test shortcuts (work immediately)
-   homodyne_help                      # Show all available options
+   # Validate your setup
+   homodyne-validate --quick          # Quick system health check
 
 **Step 1: Create a Configuration**
 
@@ -36,12 +35,10 @@ Installation
    # Create a configuration for isotropic analysis (fastest)
    homodyne-config --mode static_isotropic --sample my_sample
 
-   # Or using shortcuts after shell enhancement:
-   # hc-iso      # homodyne-config --mode static_isotropic
-   # hc-aniso    # homodyne-config --mode static_anisotropic  
-   # hc-flow     # homodyne-config --mode laminar_flow
+   # Or using unified system shortcuts:
+   # hconfig --mode static_isotropic --sample my_sample
    # Tab completion: homodyne-config --mode <TAB>  (shows modes)
-   # Fast reference: homodyne_help                (shows all options)
+   # System validation: homodyne-validate          (comprehensive check)
 
 **Step 2: Prepare Your Data**
 
@@ -56,30 +53,24 @@ Ensure your experimental data is in the correct format:
 
    # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
    homodyne --config my_sample_config.json --plot-experimental-data
-   # Or with shortcuts: hexp (if config file is homodyne_config.json)
    
-   # Plot simulated data (optional, for model validation)
-   homodyne --config my_sample_config.json --plot-simulated-data --contrast 0.3 --offset 1.1
-   # Or with shortcuts: hsim --config my_sample_config.json --contrast 0.3 --offset 1.1
-
    # Basic analysis (fastest, saves results to ./homodyne_results/)
    homodyne --config my_sample_config.json --method classical
-   # Or with shortcuts: hc --config my_sample_config.json
+   # Or with unified shortcuts: hc my_sample_config.json
 
    # Run all methods with verbose output
    homodyne --config my_sample_config.json --method all --verbose
-   # Or with shortcuts: ha --config my_sample_config.json --verbose
+   # Or with shortcuts: ha my_sample_config.json --verbose
 
-   # Quick analysis using different methods:
+   # Quick analysis using unified shortcuts:
    # hc        # homodyne --method classical
    # hm        # homodyne --method mcmc  
    # hr        # homodyne --method robust
    # ha        # homodyne --method all
    
-   # GPU-accelerated analysis (Linux only):
-   # hgm       # homodyne-gpu --method mcmc
-   # hga       # homodyne-gpu --method all
-   # hgconfig  # homodyne-gpu --config
+   # GPU optimization and system monitoring:
+   # gpu-status                        # Check GPU status
+   # homodyne-gpu-optimize --benchmark # GPU benchmarking
 
 **Step 4: View Results**
 

@@ -1,85 +1,287 @@
-# Homodyne Installation & Uninstallation Guide
+# Homodyne Installation & Uninstallation Guide 📦
 
-## Installation
+**Unified installation system with smart shell completion, GPU acceleration, and advanced features.**
 
-### Standard Installation
+*Updated: 2024-08-31 - Streamlined post-install system with advanced features integration*
+
+______________________________________________________________________
+
+## 📦 Installation (Unified System)
+
+### Quick Installation
 
 ```bash
+# Standard installation
 pip install homodyne-analysis
-```
 
-**Automatic Setup (Linux + Virtual Environment)**: On Linux systems within conda or virtual environments, this automatically installs GPU auto-activation scripts, conda environment integration, and ultra-fast shell completion (v0.7.2+) with automatic post-installation setup for system CUDA integration.
-
-### Installation with Dependencies
-
-```bash
-# Full installation with all features
-pip install homodyne-analysis[all]
-
-# GPU support with JAX and system CUDA
+# With JAX GPU support
 pip install homodyne-analysis[jax]
 
-# MCMC analysis capabilities
-pip install homodyne-analysis[mcmc]
+# Complete installation with all features
+pip install homodyne-analysis[all]
 ```
 
-## Uninstallation
+### Unified Post-Installation Setup
 
-**⚠️ CRITICAL**: Follow this exact order to completely remove all components.
+**One-command setup (recommended):**
+```bash
+# Complete setup with all features
+homodyne-post-install --shell zsh --gpu --advanced
 
-### Complete Uninstallation (Recommended)
+# Interactive setup (choose features)
+homodyne-post-install --interactive
+
+# Basic shell completion only
+homodyne-post-install --shell zsh
+```
+
+### Unified System Features
+
+1. 🔧 **Smart Shell Completion** - Cross-shell compatibility with unified completion system
+2. 🚀 **Smart GPU Acceleration** - Automatic CUDA detection and optimization  
+3. 📝 **Unified Aliases** - Consistent shortcuts (`hm`, `hc`, `hr`, `ha`) across all shells
+4. 🛠️ **Advanced Tools** - GPU optimization, system validation, and performance monitoring
+5. 📋 **Environment Integration** - Automatic activation in conda, mamba, venv, virtualenv
+
+### Smart Environment Support
+
+Unified system works seamlessly with all virtual environments:
+
+| Environment | Shell Completion | GPU Setup | Advanced Features | Auto-Activation |
+|-------------|------------------|-----------|-------------------|------------------|
+| **Conda** | ✅ Unified completion | ✅ Smart detection | ✅ Full integration | ✅ Automatic |
+| **Mamba** | ✅ Unified completion | ✅ Smart detection | ✅ Full integration | ✅ Automatic |
+| **venv** | ✅ Unified completion | ✅ Smart detection | ✅ Full integration | 🔴 Manual sourcing |
+| **virtualenv** | ✅ Unified completion | ✅ Smart detection | ✅ Full integration | 🔴 Manual sourcing |
+
+### Installation Examples (Unified System)
+
+#### Complete Setup (Recommended)
 
 ```bash
-# Step 1: Clean up environment scripts FIRST (while package is still installed)
+# Create and activate environment
+conda create -n homodyne python=3.12
+conda activate homodyne
+
+# Install homodyne with JAX support
+pip install homodyne-analysis[jax]
+
+# Complete unified setup
+homodyne-post-install --shell zsh --gpu --advanced
+
+# Restart shell or reactivate environment
+conda deactivate && conda activate homodyne
+
+# Test unified system
+hm --help                         # homodyne --method mcmc
+gpu-status                        # GPU activation status
+homodyne-validate                 # System validation
+```
+
+#### Interactive Setup
+
+```bash
+# Interactive installation with choices
+homodyne-post-install --interactive
+
+# Choose features:
+# ✅ Shell completion (zsh/bash/fish) - unified completion system
+# ✅ GPU acceleration (Linux) - smart CUDA detection
+# ✅ Advanced features - GPU optimization & system validation
+```
+
+#### venv Environment
+
+```bash
+# Create and activate venv
+python -m venv homodyne-env
+source homodyne-env/bin/activate
+
+# Install homodyne
+pip install homodyne-analysis
+
+# Unified setup for venv
+homodyne-post-install --shell bash --gpu
+
+# Manual sourcing required for venv (one-time setup)
+echo "source $(python -c 'import sys; print(sys.prefix)')/etc/zsh/homodyne-completion.zsh" >> ~/.zshrc
+
+# Test unified system
+hm --help                         # Works after shell restart
+```
+
+### Smart Dependency Installation
+
+```bash
+# Complete installation (recommended)
+pip install homodyne-analysis[all]
+homodyne-post-install --shell zsh --gpu --advanced
+
+# GPU-optimized installation
+pip install homodyne-analysis[jax]
+homodyne-post-install --gpu --advanced
+
+# CPU-only installation
+pip install homodyne-analysis[mcmc]
+homodyne-post-install --shell zsh
+
+# Development installation
+pip install homodyne-analysis[dev]
+homodyne-post-install --shell zsh --advanced
+```
+
+### System Verification
+
+**Comprehensive validation (recommended):**
+```bash
+# Complete system validation
+homodyne-validate                 # Validates all installed components
+
+# Verbose system report
+homodyne-validate --verbose       # Detailed validation with timing
+
+# Component-specific testing
+homodyne-validate --test completion  # Test shell completion
+homodyne-validate --test gpu         # Test GPU setup (Linux)
+```
+
+**Manual verification:**
+```bash
+# Test unified commands
+hm --help                         # homodyne --method mcmc
+ha --help                         # homodyne --method all
+hc --help                         # homodyne --method classical
+
+# Test GPU system (if installed)
+gpu-status                        # GPU activation status
+gpu-bench                         # GPU performance benchmark
+homodyne-gpu-optimize --report    # Hardware report
+
+# Test advanced features
+homodyne-post-install --help      # Post-install help
+homodyne-cleanup --help           # Cleanup options
+```
+
+______________________________________________________________________
+
+## 🧹 Uninstallation (Unified System)
+
+### Complete Uninstallation
+
+**Recommended approach (unified system):** Clean up all components, then uninstall.
+
+```bash
+# Step 1: Interactive cleanup (choose what to remove)
+homodyne-cleanup --interactive
+
+# Or complete unified cleanup
 homodyne-cleanup
 
 # Step 2: Uninstall the package
 pip uninstall homodyne-analysis
+
+# Step 3: Verify cleanup
+homodyne-validate 2>/dev/null || echo "✅ Successfully uninstalled"
 ```
 
-### If You Forgot Step 1 (Cleanup After Uninstall)
+### Smart Interactive Cleanup
 
-**Option A: Standalone Script**
+Interactive cleanup with unified system support:
+
 ```bash
-# Download and run standalone cleanup
-curl -sSL https://raw.githubusercontent.com/imewei/homodyne/main/standalone_cleanup.sh | bash
+homodyne-cleanup --interactive
 
-# Or from local source
-bash /path/to/homodyne/standalone_cleanup.sh
+# Choose unified system components to remove:
+# ✅ Shell Completion - unified completion system & aliases
+# ✅ GPU Acceleration - smart GPU detection & optimization
+# ✅ Advanced Features - GPU tools & system validation
+# ✅ Legacy Files - old system files cleanup (recommended)
+
+# Dry run to preview changes
+homodyne-cleanup --dry-run
 ```
 
-**Option B: Manual Removal**
-```bash
-# Remove conda activation scripts
-rm -f "$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh"
-rm -f "$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh"
+### Manual Cleanup (If Package Already Uninstalled)
 
-# Remove homodyne configuration directory
+**Unified system manual cleanup:**
+
+```bash
+# Remove unified completion system
+rm -f "$CONDA_PREFIX/etc/zsh/homodyne-completion.zsh"
+rm -f "$CONDA_PREFIX/etc/conda/activate.d/homodyne-"*
+rm -f "$CONDA_PREFIX/etc/bash_completion.d/homodyne-"*
+rm -f "$CONDA_PREFIX/share/fish/vendor_completions.d/homodyne.fish"
+
+# Remove advanced features CLI tools
+rm -f "$CONDA_PREFIX/bin/homodyne-gpu-optimize"
+rm -f "$CONDA_PREFIX/bin/homodyne-validate"
+
+# Clean up configuration directories
 rm -rf "$CONDA_PREFIX/etc/homodyne"
+
+# Remove any remaining GPU activation scripts
+rm -f "$CONDA_PREFIX/etc/homodyne/gpu"/*
 ```
 
-## Why This Order Matters
+## 🔍 Why Cleanup Order Matters
 
-The `homodyne-cleanup` command is **part of the homodyne package**. When you run `pip uninstall`, the entire package (including the cleanup command) is removed, making it impossible to clean up environment scripts afterwards.
+The unified cleanup system is **part of the homodyne package**. Running `pip uninstall` first removes:
+- `homodyne-cleanup` command
+- `homodyne-validate` system validator  
+- Advanced cleanup intelligence
 
-## Files Cleaned Up
+**Always run cleanup first** to use the smart removal system.
 
-The cleanup process removes:
-- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh` (conda activation hook)
-- `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh` (conda deactivation hook)
-- `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh` (GPU activation script)
-- `$CONDA_PREFIX/etc/homodyne/homodyne_aliases.sh` (shell aliases script)
-- `$CONDA_PREFIX/etc/homodyne/homodyne_completion.zsh` (fast shell completion script)
-- `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh` (main configuration script)
-- `$CONDA_PREFIX/etc/homodyne/` (empty directory after cleanup)
+## 📁 Unified System Components Cleaned
 
-**Total**: 7 files/directories are automatically created during installation and removed during cleanup.
+Smart cleanup removes all unified system components:
 
-## Verification
+### Shell Completion (Unified)
+- `$CONDA_PREFIX/etc/zsh/homodyne-completion.zsh` (unified completion system)
+- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-completion.sh` (conda activation)
+- `$CONDA_PREFIX/etc/bash_completion.d/homodyne-completion.bash` (bash completion)
+- `$CONDA_PREFIX/share/fish/vendor_completions.d/homodyne.fish` (fish completion)
 
-After cleanup, restart your shell or reactivate your environment to ensure all scripts are properly unloaded.
+### GPU System (Smart)
+- `$CONDA_PREFIX/etc/homodyne/gpu/gpu_activation_smart.sh` (smart GPU activation)
+- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu.sh` (GPU environment setup)
+- GPU optimization profiles and configuration
+
+### Advanced Features
+- `$CONDA_PREFIX/bin/homodyne-gpu-optimize` (GPU optimization CLI)
+- `$CONDA_PREFIX/bin/homodyne-validate` (system validation CLI)
+- Performance benchmarking configuration
+- System validation cache and reports
+
+### Environment Integration
+- Smart environment variable management
+- Cross-shell alias consistency
+- Automatic activation/deactivation scripts
+- Configuration state tracking
+
+**Unified System Total:** 15+ components across shell completion, GPU acceleration, advanced tools, and environment integration are automatically managed.
+
+## ✅ Post-Uninstall Verification
+
+**Verify complete removal:**
 
 ```bash
-# Reactivate environment to complete cleanup
+# Restart shell to complete cleanup
 conda deactivate && conda activate <your-env>
+
+# Verify unified system is removed
+which hm 2>/dev/null || echo "✅ Aliases removed"
+which homodyne-validate 2>/dev/null || echo "✅ Advanced features removed"
+which gpu-status 2>/dev/null || echo "✅ GPU system removed"
+
+# Check if any homodyne files remain
+find "$CONDA_PREFIX" -name "*homodyne*" 2>/dev/null || echo "✅ All files cleaned"
 ```
+
+**Complete verification:**
+- ✅ Shell aliases (`hm`, `hc`, `hr`, `ha`) should not work
+- ✅ Tab completion for `homodyne` should not work
+- ✅ Advanced tools (`gpu-status`, `homodyne-validate`) should not be available
+- ✅ No homodyne files should remain in environment directories
+
+______________________________________________________________________

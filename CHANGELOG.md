@@ -6,6 +6,85 @@ this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2024-08-31
+
+### Major: Unified Post-Install System
+
+**Complete architectural redesign** of shell completion, GPU acceleration, and advanced features into a unified, streamlined system.
+
+### Added
+
+- **Unified Post-Install System**: Single command setup for all features
+  - `homodyne-post-install --shell zsh --gpu --advanced` - one-command complete setup
+  - `homodyne-post-install --interactive` - interactive feature selection
+  - Automatic platform detection and environment-specific configuration
+  - Smart CUDA detection across system, conda, and pip installations
+
+- **Advanced System Tools**: New CLI tools for GPU optimization and system validation
+  - `homodyne-gpu-optimize` - Hardware-specific GPU optimization and benchmarking
+  - `homodyne-validate` - Comprehensive system validation and testing framework
+  - `homodyne-cleanup` - Intelligent cleanup with dry-run support and component selection
+
+- **Smart GPU System**: Automatic GPU detection and intelligent CPU/GPU selection  
+  - Hardware-specific optimization profiles
+  - Automatic memory management and XLA flag configuration
+  - Performance benchmarking and system compatibility validation
+  - Cross-platform fallback (Linux GPU acceleration, Windows/macOS CPU optimization)
+
+- **Unified Shell Completion**: Cross-shell compatibility with consistent aliases
+  - Single completion file (`homodyne-completion.zsh`) supporting all shells
+  - Unified aliases: `hm`, `hc`, `hr`, `ha` with smart GPU detection
+  - Advanced shortcuts: `gpu-status`, `gpu-bench`, `gpu-on`, `gpu-off`
+  - Context-aware completion with cached file discovery
+
+### Changed
+
+- **Streamlined Architecture**: Consolidated and simplified codebase
+  - Merged advanced features installation into core post-install system  
+  - Removed redundant shell completion scripts and legacy activation files
+  - Unified GPU activation with smart detection and environment integration
+  - Consolidated documentation with updated system references throughout
+
+- **Enhanced User Experience**: Simplified installation and setup process
+  - One-command setup replaces multi-step manual configuration
+  - Interactive mode allows selective feature installation
+  - Comprehensive validation system ensures proper installation
+  - Smart error handling and troubleshooting guidance
+
+### Improved
+
+- **Documentation Overhaul**: Complete documentation updates for unified system
+  - Updated `README.md` with unified system quick start and features
+  - Comprehensive `ADVANCED_FEATURES.md` with new Phase 4-6 capabilities
+  - Enhanced `GPU_SETUP.md` with smart GPU detection and optimization
+  - Updated `CLI_REFERENCE.md` with new advanced tools and unified commands
+  - Streamlined `INSTALL_UNINSTALL.md` with unified installation workflows
+
+- **Code Quality and Maintainability**: Significant codebase consolidation
+  - Removed 500+ lines of redundant completion code
+  - Unified GPU activation logic with smart detection
+  - Consolidated packaging files and dependencies
+  - Enhanced testing framework with unified system validation
+
+### Technical Details
+
+- **GPU System Enhancements**: `gpu_activation_smart.sh` with intelligent CUDA configuration
+  - Dynamic library path detection across installation types
+  - Hardware-specific XLA flag optimization  
+  - Safe environment variable management with conflict resolution
+  - Automatic JAX backend configuration with fallback handling
+
+- **Shell Integration**: Unified completion system with cross-shell compatibility
+  - Single completion script supporting bash, zsh, and fish
+  - Consistent alias behavior across all shell environments
+  - Smart environment activation with conda/mamba integration
+  - Cached completion with performance optimization
+
+- **Advanced Tools Integration**: Professional-grade system management
+  - `homodyne-gpu-optimize`: Hardware detection, benchmarking, and profile application
+  - `homodyne-validate`: 5-category system validation with JSON output for CI/CD
+  - `homodyne-cleanup`: Smart cleanup with dry-run and interactive modes
+
 ## [0.7.2] - 2025-08-30
 
 ### Changed

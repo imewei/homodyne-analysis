@@ -10,7 +10,7 @@ This comprehensive guide covers performance optimization, monitoring, and best p
 Performance Overview (v0.6.5+)
 ===============================
 
-The homodyne package includes comprehensive performance optimizations across all analysis methods: classical optimization, robust optimization, and MCMC sampling. Key features include JIT compilation, system CUDA JAX acceleration, performance monitoring, and automated benchmarking.
+The homodyne package includes comprehensive performance optimizations across all analysis methods: classical optimization, robust optimization, and MCMC sampling. Key features include JIT compilation, JAX backend GPU acceleration with PyTensor environment variable auto-configuration, performance monitoring, and automated benchmarking.
 
 Key Performance Features
 ------------------------
@@ -20,11 +20,12 @@ Key Performance Features
    - Automatic warmup and caching
    - Optimized for chi-squared calculations and correlation functions
 
-**JAX Backend Integration**
-   - System CUDA GPU acceleration for MCMC sampling via NumPyro
+**JAX Backend GPU Acceleration with PyTensor Environment Variable Auto-Configuration**
+   - JAX backend handles GPU operations for MCMC sampling via NumPyro (Linux only)
+   - PyTensor environment variables automatically configured for CPU mode (avoids C compilation issues)
    - High-performance numerical computations with automatic differentiation
    - Automatic system CUDA GPU detection on Linux systems with NVIDIA GPUs
-   - Seamless fallback to CPU when GPU unavailable
+   - Seamless fallback to CPU when GPU unavailable or on non-Linux platforms
 
 **Performance Monitoring**
    - Built-in profiling decorators
@@ -35,7 +36,7 @@ Key Performance Features
 **Optimization-Specific Performance**
    - **Classical**: Optimized angle filtering, vectorized operations
    - **Robust**: CVXPY solver optimization, caching, progressive optimization
-   - **MCMC**: System CUDA JAX/NumPyro GPU acceleration, thinning support, convergence diagnostics
+   - **MCMC**: JAX backend GPU acceleration with NumPyro + PyTensor CPU mode (Linux only), thinning support, convergence diagnostics
 
 Method Performance Comparison
 =============================
@@ -311,45 +312,72 @@ Troubleshooting Performance Issues
    result = full_analysis()
    # Check logs for performance breakdown
 
-System CUDA GPU Acceleration Guide
-===================================
+JAX Backend GPU Acceleration with PyTensor Environment Variable Auto-Configuration
+====================================================================================
 
-The package provides comprehensive system CUDA GPU acceleration for MCMC sampling and JAX-based computations through automatic CUDA support on Linux systems.
+The package provides comprehensive JAX backend GPU acceleration for MCMC sampling with automatic PyTensor environment variable configuration on Linux systems.
 
-**System Requirements**
+**System Requirements (Linux Only)**
 
-- Linux operating system
+- Linux operating system (GPU acceleration not available on Windows/macOS)
 - System CUDA 12.6+ installed at ``/usr/local/cuda``
 - cuDNN 9.12+ installed in system libraries
 - NVIDIA GPU with driver 560.28+
+- Virtual environment (conda/mamba/venv/virtualenv) for automatic environment variable configuration
 
-**Automatic System CUDA GPU Detection and Setup**
+**Unified Post-Install GPU Setup**
 
-When you install the package with MCMC or performance extras on a Linux system with NVIDIA GPU:
+The package now includes a unified post-installation system for GPU acceleration setup:
 
 .. code-block:: bash
 
-   # Any of these automatically include system CUDA GPU support on Linux:
-   pip install homodyne-analysis[mcmc]        # For system CUDA GPU-accelerated MCMC
-   pip install homodyne-analysis[performance] # Full performance stack with system CUDA
-   pip install homodyne-analysis[jax]         # JAX with system CUDA GPU support
+   # Install with GPU support
+   pip install homodyne-analysis[all]
+   
+   # Run unified post-install setup
+   homodyne-post-install --shell zsh --gpu --advanced
+   
+   # Validate GPU setup
+   homodyne-validate --test gpu
+   gpu-status  # Check GPU status
 
-   # IMPORTANT: Activate system CUDA GPU support after installation
-   source activate_gpu.sh
+**Automatic JAX Backend GPU + PyTensor Environment Variable Configuration**
 
-**System CUDA GPU Performance Benefits**
+The unified system automatically configures:
 
-- **MCMC Sampling**: 5-10x speedup with NumPyro/JAX backend
-- **Vectorized Operations**: Massive parallelization on GPU
-- **Multi-chain Sampling**: Efficient parallel chain execution
+1. **JAX backend**: Installs with system CUDA 12.6+ support for GPU operations
+2. **PyTensor environment variables**: Auto-configured for CPU mode (avoids C compilation issues)
+3. **Environment integration**: Smart activation/deactivation scripts for all virtual environments
+4. **Advanced tools**: homodyne-gpu-optimize for hardware benchmarking
+
+.. code-block:: bash
+
+   # PyTensor environment variables automatically configured:
+   # PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
+
+**JAX Backend GPU Performance Benefits**
+
+- **MCMC Sampling**: 5-10x speedup with NumPyro/JAX backend GPU acceleration
+- **PyTensor Stability**: No C compilation issues (CPU mode with auto-configured environment variables)
+- **Vectorized Operations**: Massive parallelization on GPU through JAX backend
+- **Multi-chain Sampling**: Efficient parallel chain execution on GPU
 - **Large Dataset Processing**: GPU memory enables bigger problems
 
-**Verifying System CUDA GPU Setup**
+**Verifying JAX Backend GPU + PyTensor Configuration**
 
 .. code-block:: bash
 
-   # First activate system CUDA GPU support
-   source activate_gpu.sh
+   # Unified system validation
+   homodyne-validate --quick           # Quick system check
+   homodyne-validate --test gpu        # GPU-specific tests
+   
+   # GPU status and benchmarking
+   gpu-status                          # Check GPU hardware status
+   homodyne-gpu-optimize --benchmark   # GPU performance testing
+
+   # Manual verification - check PyTensor environment variables
+   echo $PYTENSOR_FLAGS
+   # Should show: device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx=
 
 .. code-block:: python
 

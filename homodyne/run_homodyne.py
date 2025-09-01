@@ -71,22 +71,13 @@ import time
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 
 # Fast completion handler removed - argcomplete provides better functionality
 
-import numpy as np
-
-# Import completion support
-try:
-    from .cli_completion import setup_shell_completion
-
-    COMPLETION_AVAILABLE = True
-except ImportError:
-    COMPLETION_AVAILABLE = False
-
-    # Define dummy functions to avoid Pylance errors
-    def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
-        pass
+# Shell completion is now handled by the unified post-install system
+# No runtime completion setup needed for argument parsing
+COMPLETION_AVAILABLE = False
 
 
 def print_method_documentation():
@@ -3211,9 +3202,7 @@ Method Quality Assessment:
         help="Comma-separated list of phi angles in degrees (e.g., '0,45,90,135'). Default: '0,36,72,108,144'",
     )
 
-    # Setup shell completion if available
-    if COMPLETION_AVAILABLE:
-        setup_shell_completion(parser)
+    # Shell completion is handled by post-install system, not at runtime
 
     args = parser.parse_args()
 

@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """
-Setup script for the Homodyne Scattering Analysis Package with System CUDA and Conda Integration.
+Setup script for the Homodyne Scattering Analysis Package with JAX Backend
+GPU Acceleration and Unified Shell Completion System.
 
 Most configuration is in pyproject.toml following modern Python packaging standards.
-This file adds post-installation functionality for system CUDA GPU acceleration setup,
-conda environment integration, automatic shell completion setup, and cleanup utilities not supported by pyproject.toml.
+This file adds post-installation functionality for:
+- JAX backend GPU acceleration setup with smart CUDA detection
+- Unified shell completion system with cross-shell compatibility
+- Conda/mamba environment integration with activation scripts
+- Advanced GPU optimization and system validation tools
+- Environment cleanup utilities not supported by pyproject.toml
+
+Updated: 2024-08-31 - Streamlined for unified completion and GPU system
 """
 
 import os
@@ -16,34 +23,39 @@ from setuptools.command.easy_install import easy_install
 
 
 class PostInstallCommand(install):
-    """Post-installation command for pip install with system CUDA and conda integration."""
+    """Post-installation command for pip install with unified shell completion
+    and smart GPU acceleration setup."""
     
     def run(self):
         install.run(self)
         self._run_post_install()
     
     def _run_post_install(self):
-        """Run post-installation setup with system CUDA and conda integration."""
+        """Run post-installation setup with unified shell completion
+        and smart GPU acceleration."""
         try:
-            # Only run post-install on Linux systems in virtual environments
-            if platform.system() == "Linux" and self._is_virtual_environment():
-                print("\n" + "="*60)
-                print("🚀 Setting up Homodyne with system CUDA and conda integration...")
+            # Only run post-install in virtual environments
+            if self._is_virtual_environment():
+                print("\n" + "="*70)
+                print("🚀 Setting up Homodyne with unified shell completion and GPU acceleration...")
                 # Import and run the post-install module
                 from homodyne.post_install import main
                 main()
                 print("\n🎆 Installation complete! Available commands:")
-                print("  homodyne         - Main analysis command")
-                print("  homodyne-gpu     - GPU-accelerated analysis (Linux)")
-                print("  homodyne-config  - Configuration generator")
-                print("  homodyne-cleanup - Environment cleanup utility")
-                print("\n📝 Shell completion: Automatically configured in conda environment")
-                print("="*60)
+                print("  homodyne                 - Main analysis command")
+                print("  homodyne-gpu             - GPU-accelerated analysis (JAX backend)")
+                print("  homodyne-config          - Configuration generator")
+                print("  homodyne-post-install    - Setup shell completion & GPU")
+                print("  homodyne-cleanup         - Environment cleanup utility")
+                print("\n📝 Shell completion: Unified system with aliases (hm, hc, hr, ha)")
+                print("🚀 GPU acceleration: Smart CUDA detection with optimization")
+                print("🔧 Advanced tools: homodyne-gpu-optimize, homodyne-validate")
+                print("="*70)
         except Exception as e:
             # Don't fail installation if post-install has issues
-            print(f"Note: System CUDA post-installation setup encountered an issue: {e}")
+            print(f"Note: Post-installation setup encountered an issue: {e}")
             print("You can manually run: homodyne-post-install")
-            print("For system CUDA setup, see: GPU_SETUP.md")
+            print("For help: homodyne-post-install --help")
             print("For cleanup: homodyne-cleanup")
     
     def _is_virtual_environment(self):
@@ -57,35 +69,41 @@ class PostInstallCommand(install):
 
 
 class PostDevelopCommand(develop):
-    """Post-installation command for pip install -e (development mode) with system CUDA and conda integration."""
+    """Post-installation command for pip install -e (development mode) with
+    unified shell completion and smart GPU acceleration setup."""
     
     def run(self):
         develop.run(self)
         self._run_post_install()
     
     def _run_post_install(self):
-        """Run post-installation setup with system CUDA and conda integration."""
+        """Run post-installation setup with unified shell completion
+        and smart GPU acceleration for development mode."""
         try:
-            # Only run post-install on Linux systems in virtual environments
-            if platform.system() == "Linux" and self._is_virtual_environment():
-                print("\n" + "="*60)
-                print("🚀 Setting up Homodyne development mode with system CUDA and conda integration...")
+            # Only run post-install in virtual environments
+            if self._is_virtual_environment():
+                print("\n" + "="*70)
+                print("🚀 Setting up Homodyne development mode with unified completion and GPU...")
                 # Import and run the post-install module
                 from homodyne.post_install import main
                 main()
                 print("\n🎆 Development installation complete! Available commands:")
-                print("  homodyne         - Main analysis command")
-                print("  homodyne-gpu     - GPU-accelerated analysis (Linux)")
-                print("  homodyne-config  - Configuration generator")
-                print("  homodyne-cleanup - Environment cleanup utility")
-                print("\n📝 Shell completion: Automatically configured in conda environment")
-                print("="*60)
+                print("  homodyne                 - Main analysis command")
+                print("  homodyne-gpu             - GPU-accelerated analysis (JAX backend)")
+                print("  homodyne-config          - Configuration generator")
+                print("  homodyne-post-install    - Setup shell completion & GPU")
+                print("  homodyne-cleanup         - Environment cleanup utility")
+                print("\n📝 Shell completion: Unified system with aliases (hm, hc, hr, ha)")
+                print("🚀 GPU acceleration: Smart CUDA detection with optimization")
+                print("🔧 Advanced tools: homodyne-gpu-optimize, homodyne-validate")
+                print("💻 Development: Use 'make setup-all' for full dev environment")
+                print("="*70)
         except Exception as e:
             # Don't fail installation if post-install has issues
-            print(f"Note: System CUDA post-installation setup encountered an issue: {e}")
-            print("You can manually run: python homodyne/post_install.py")
-            print("For system CUDA setup, see: GPU_SETUP.md")
-            print("For cleanup: homodyne-cleanup")
+            print(f"Note: Development post-installation setup encountered an issue: {e}")
+            print("You can manually run: homodyne-post-install")
+            print("Or use Makefile: make setup-all")
+            print("For help: homodyne-post-install --help")
     
     def _is_virtual_environment(self):
         """Check if running in a virtual environment."""
@@ -98,7 +116,8 @@ class PostDevelopCommand(develop):
 
 
 
-# Configuration is in pyproject.toml, but add custom install commands for system CUDA and conda integration
+# Configuration is in pyproject.toml, but add custom install commands for
+# unified shell completion and smart GPU acceleration setup
 setup(
     cmdclass={
         'install': PostInstallCommand,

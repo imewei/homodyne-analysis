@@ -1,7 +1,7 @@
 MCMC Module
 ===========
 
-The MCMC module provides Bayesian analysis capabilities using PyMC for uncertainty quantification, with automatic GPU acceleration on supported systems via JAX/NumPyro backend.
+The MCMC module provides Bayesian analysis capabilities using PyMC for uncertainty quantification, with automatic JAX backend GPU acceleration (Linux only) and PyTensor environment variable auto-configuration via JAX/NumPyro backend.
 
 MCMCSampler
 -----------
@@ -11,7 +11,7 @@ Main class for MCMC-based parameter estimation with Bayesian inference using PyM
 **Initialization:**
 
 * ``MCMCSampler(analysis_core, config)`` - Initialize with analysis core and configuration
-* ``use_jax_backend=True`` (default) - Enables automatic GPU acceleration when available
+* ``use_jax_backend=True`` (default) - Enables automatic JAX backend GPU acceleration (Linux only) with PyTensor CPU mode
 
 **Core Methods:**
 
@@ -237,21 +237,25 @@ Performance Tips
 GPU Acceleration
 ----------------
 
-**Automatic GPU Support**
+**Automatic JAX Backend GPU Support with PyTensor Environment Variable Auto-Configuration**
 
-The MCMC module automatically uses GPU acceleration when:
+The MCMC module automatically uses JAX backend GPU acceleration when:
 
-- Running on Linux with NVIDIA GPU
+- Running on Linux with NVIDIA GPU (GPU acceleration not available on Windows/macOS)
 - JAX with CUDA support is installed (automatic with ``pip install homodyne-analysis[mcmc]``)
-- GPU support is activated with ``source activate_gpu.sh``
+- PyTensor environment variables automatically configured for CPU mode during installation
 - ``use_jax_backend=True`` (default)
 
-**GPU Usage Example**:
+**JAX Backend GPU + PyTensor CPU Usage Example**:
 
 .. code-block:: bash
 
-   # First, activate GPU support (required for pip-installed NVIDIA libraries)
-   source activate_gpu.sh
+   # Check JAX backend GPU status and PyTensor configuration (conda/mamba environments)
+   homodyne_gpu_status
+
+   # Verify PyTensor environment variables (automatically configured)
+   echo $PYTENSOR_FLAGS
+   # Should show: device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx=
 
 .. code-block:: python
 
@@ -289,7 +293,7 @@ The MCMC module automatically uses GPU acceleration when:
 .. code-block:: python
 
    # During sampling, the module will log:
-   # INFO - Using JAX backend with NumPyro NUTS for GPU acceleration
+   # INFO - Using JAX backend with NumPyro NUTS for JAX backend GPU acceleration
 
    # Monitor GPU memory
    from jax import devices

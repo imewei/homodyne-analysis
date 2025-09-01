@@ -116,7 +116,7 @@ __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"
 
 # Recent improvements (v0.7.2)
-# - Simplified shell completion system: Removed manual --install-completion/--uninstall-completion
+# - Simplified shell completion system: Removed manual --install/--uninstall completion
 # - Automatic shell completion installation during package installation
 # - Cross-platform shell completion support (Linux, macOS, Windows)
 # - Streamlined CLI experience with automatic setup

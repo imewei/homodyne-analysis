@@ -1,5 +1,8 @@
-# Include the README and other documentation
-# Updated for v0.7.2 with fast shell completion, code consolidation, and improved performance
+# Homodyne Analysis Package - Distribution Manifest
+# ================================================
+# Updated: 2024-08-31 - Cleaned up for unified shell completion system
+
+# Core documentation
 include README.md
 include LICENSE
 include CHANGELOG.md
@@ -10,28 +13,38 @@ include PRE_COMMIT_SETUP.md
 include SECURITY.md
 include GPU_SETUP.md
 include INSTALL_UNINSTALL.md
+include ADVANCED_FEATURES.md
+
+# Build configuration
 include pyproject.toml
 include Makefile
 include requirements*.txt
-include activate_gpu.sh
-include standalone_cleanup.sh
 
-# Include type stubs for third-party libraries
+# Type stubs for third-party libraries
 recursive-include homodyne/typings *.pyi
 
-# Include configuration templates and data files
+# Configuration templates and data files
 recursive-include homodyne *.json
 recursive-include homodyne/templates *.json
 
-# Include shell completion scripts - simplified auto-configuration system
-recursive-include homodyne cli_completion.py
+# Post-installation and setup system (unified architecture)
+include homodyne/post_install.py
 include homodyne/uninstall_scripts.py
 
-# Include GPU setup and installation scripts - system CUDA support and conda integration
-recursive-include scripts *.py
-include homodyne/post_install.py
+# Shell completion system (unified)
+include homodyne/completion_advanced.sh
+
+# GPU acceleration system
+include homodyne/gpu_activation_smart.sh
 include homodyne/gpu_wrapper.py
-include homodyne/uninstall_scripts.py
+include homodyne/gpu_optimizer.py
+
+# Advanced features system  
+include homodyne/system_validator.py
+
+# Legacy scripts directory (if exists)
+recursive-include scripts *.py
+recursive-include scripts *.md
 
 # Include documentation files
 recursive-include docs *.md

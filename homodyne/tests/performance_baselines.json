@@ -58,9 +58,18 @@
       "phase_3_speedup": 2.71,
       "total_speedup_from_original": 2.71,
       "baseline_time_ms": 0.546,
+      "phase_1_time_ms": 0.463,
+      "phase_2_time_ms": 0.444,
       "optimized_time_ms": 0.202,
       "chi2_correlation_ratio": "Improved from 43x to 15.6x (64% reduction)",
-      "phase_3_improvement": "54.6% faster than Phase 2, 63.1% faster than original"
+      "phase_2_improvement": "4.2% faster than Phase 1",
+      "phase_3_improvement": "54.6% faster than Phase 2, 63.1% faster than original",
+      "phase_2_optimizations": {
+        "memory_pooling": "Reduced allocation overhead",
+        "solve_optimization": "Used solve() instead of lstsq() for 2x2 systems",
+        "early_validation": "Short-circuit returns for invalid parameters",
+        "vectorized_variance": "Pre-computed variance estimates"
+      }
     }
   },
   "test_correlation_calculation_benchmark": {

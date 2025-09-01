@@ -1,6 +1,6 @@
-# Optional dependencies for Homodyne Scattering Analysis Package
+# Optional dependencies for Homodyne Scattering Analysis Package with JAX backend GPU acceleration
 # Generated from pyproject.toml [project.optional-dependencies]
-# Last updated: v0.7.2 (Fast shell completion, code consolidation, improved performance)
+# Latest update: JAX backend GPU acceleration and PyTensor environment variable auto-configuration
 
 # Include core dependencies
 -r requirements.txt
@@ -8,21 +8,21 @@
 # Data handling
 xpcs-viewer>=1.0.4
 
-# Performance optimization (includes JAX for high-performance computing)
+# Performance optimization (includes JAX backend for GPU acceleration)
 numba>=0.61.0,<0.62.0
-jax[cuda12]>=0.7.0 ; sys_platform == 'linux'
+jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'
 jax>=0.7.0 ; sys_platform != 'linux'
 jaxlib>=0.4.35
 psutil>=5.8.0
 
-# MCMC and Bayesian analysis (with GPU acceleration support)
+# MCMC and Bayesian analysis (JAX backend GPU + PyTensor CPU auto-configured)
 pymc>=5.0.0
 arviz>=0.12.0
 pytensor>=2.8.0
 corner>=2.2.0
 numpyro>=0.13.0
-# JAX dependencies for NumPyro GPU acceleration are included above
-# Note: Run 'source activate_gpu.sh' before using GPU acceleration
+# JAX backend handles GPU operations, PyTensor environment variables auto-configured
+# PYTENSOR_FLAGS="device=cpu,cxx=" automatically set during pip install
 
 # Robust optimization
 cvxpy>=1.4.0
@@ -30,15 +30,15 @@ cvxpy>=1.4.0
 # Gurobi optimization solver (requires license)
 gurobipy>=11.0.0
 
-# Shell completion and conda integration (ultra-fast v0.7.2+)
+# Shell completion and conda/mamba environment integration
 argcomplete>=3.0.0
 
-# Note: Ultra-fast shell completion (v0.7.2+) with automatic setup:
-# - Instant response times (< 0.1s) with preloaded completion - no heavy imports
-# - Conda environment integration with automatic post-installation configuration
-# - Linux: Ultra-fast preloaded completion with aliases and tab completion  
-# - macOS: Shell aliases and shortcuts (bash/zsh compatible)
-# - Windows: Batch file shortcuts for Command Prompt and PowerShell
-# - Command shortcuts (hm, hc, hr, ha, hgm, hga) always available
-# - Help functions (homodyne_help, homodyne_gpu_status)
-# - GPU status checking in conda environments
+# Note: JAX backend GPU acceleration with PyTensor environment variable auto-configuration:
+# - JAX backend: Handles all GPU operations (MCMC sampling, numerical computations)
+# - PyTensor: CPU mode with environment variables auto-configured during pip install
+# - Environment variables: PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
+# - Virtual environments: conda/mamba activation scripts automatically created
+# - Shell completion: Ultra-fast preloaded completion with aliases and tab completion  
+# - Command shortcuts: hm, hc, hr, ha, hgm, hga always available
+# - Status functions: homodyne_gpu_status (conda/mamba environments)
+# - Cross-platform: Linux (full GPU), macOS/Windows (CPU with JAX optimizations)

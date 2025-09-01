@@ -1,11 +1,17 @@
 # Security Policy
 
+*Updated: 2024-08-31 - Security considerations for unified post-install system*
+
 ## Supported Versions
 
 We actively maintain security updates for the following versions:
 
-| Version | Supported | | ------- | ------------------ | | 0.7.x | ✅ Yes | | 0.6.x | ✅
-Yes | | < 0.6.0 | ❌ No |
+| Version | Supported | 
+| ------- | ------------------ | 
+| 0.7.2+ | ✅ Yes (Unified System) | 
+| 0.7.x | ✅ Yes | 
+| 0.6.x | ❌ Legacy Support Only |
+| < 0.6.0 | ❌ No |
 
 ## Security Features
 
@@ -18,10 +24,13 @@ Yes | | < 0.6.0 | ❌ No |
 
 ### Security Configuration
 
-- **Zero medium/high severity issues** as of v0.7.1
+- **Zero medium/high severity issues** as of v0.7.2 (Unified System)
 - **Safe coding practices**: No hardcoded secrets, secure file operations
 - **Dependency management**: Regular updates and vulnerability monitoring
-- **Shell completion security**: Safe command completion without shell injection
+- **Unified system security**: Safe shell integration and GPU environment setup
+- **Shell completion security**: Sandboxed command completion without shell injection risks
+- **Environment isolation**: Virtual environment integration without system contamination
+- **GPU security**: Safe CUDA library path configuration without privilege escalation
 
 ### Security Best Practices
 
@@ -30,6 +39,11 @@ Yes | | < 0.6.0 | ❌ No |
 1. **Input validation**: All user inputs are validated and sanitized
 1. **Dependency isolation**: Optional dependencies are properly compartmentalized
 1. **Cross-platform security**: Consistent security across Windows, macOS, and Linux
+1. **Unified system security**: 
+   - Safe virtual environment integration
+   - Secure shell completion without injection risks
+   - GPU environment setup with proper privilege separation
+   - System validation with controlled environment access
 
 ## Reporting a Vulnerability
 
@@ -77,18 +91,23 @@ Security updates are released as:
 
 ## Security Tools Integration
 
-### Pre-commit Hooks
+### Unified System Security Integration
 
 ```bash
-# Install security-focused pre-commit hooks
+# Install with security-focused development setup
 pip install homodyne-analysis[dev]
+homodyne-post-install --shell zsh --advanced
 pre-commit install
 
-# Security hooks include:
-# - bandit (security linting)
-# - pip-audit (dependency scanning)  
-# - safety (additional vulnerability checks)
+# Validate security configuration
+homodyne-validate --verbose
 ```
+
+**Security features in unified system:**
+- Safe shell completion with input sanitization
+- Secure environment variable management
+- GPU setup with proper privilege controls
+- System validation without elevated access
 
 ### Manual Security Scanning
 
@@ -134,4 +153,4 @@ Our GitHub Actions include:
 ______________________________________________________________________
 
 **Note**: This security policy is reviewed and updated regularly. Last updated:
-2025-01-15 (v0.7.1)
+2024-08-31 (v0.7.2 - Unified System Security)

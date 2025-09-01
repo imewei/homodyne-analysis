@@ -3,23 +3,34 @@
 This project uses [pre-commit](https://pre-commit.com/) hooks to ensure consistent code
 quality, formatting, and security standards across all contributions.
 
-## Quick Setup
+*Updated: 2024-08-31 - Compatible with unified post-install system*
 
-1. **Install pre-commit** (included in dev dependencies):
+## Quick Setup (Unified System)
+
+1. **Install with development dependencies**:
 
    ```bash
    pip install homodyne-analysis[dev]
-   # or
-   pip install pre-commit
+   
+   # Setup unified development environment
+   homodyne-post-install --shell zsh --advanced
    ```
 
-1. **Install the hooks**:
+1. **Install pre-commit hooks**:
 
    ```bash
    pre-commit install
    ```
 
-1. **That's it!** Hooks will now run automatically on every commit.
+1. **Validate installation**:
+
+   ```bash
+   # Test unified system + pre-commit setup
+   homodyne-validate
+   pre-commit run --all-files
+   ```
+
+**That's it!** Hooks will now run automatically on every commit, and you have the full unified development environment.
 
 ## Manual Usage
 
@@ -154,15 +165,25 @@ pre-commit install
 
 ## Integration with Development Workflow
 
-### Recommended Development Flow
+### Recommended Development Flow (Unified System)
 
-1. Make your changes
-1. Run tests: `pytest homodyne/tests/`
-1. Stage files: `git add .`
-1. Commit: `git commit -m "Your message"`
-   - Hooks run automatically and may modify files
+1. **Setup environment**: `homodyne-post-install --shell zsh --advanced`
+1. **Validate system**: `homodyne-validate`
+1. **Make your changes**
+1. **Run tests**: `pytest homodyne/tests/` (or use unified aliases)
+1. **Stage files**: `git add .`
+1. **Commit**: `git commit -m "Your message"`
+   - Pre-commit hooks run automatically and may modify files
    - If files are modified, stage and commit again
-1. Push: `git push`
+1. **Push**: `git push`
+
+**Advanced development commands**:
+```bash
+# Use unified system commands for development
+homodyne-validate --test completion     # Test shell completion
+homodyne-validate --test gpu            # Test GPU setup
+homodyne-gpu-optimize --benchmark       # Optimize development environment
+```
 
 ### CI/CD Integration
 

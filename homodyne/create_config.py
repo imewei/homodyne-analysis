@@ -39,17 +39,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Import shell completion functionality
-try:
-    from homodyne.cli_completion import setup_shell_completion
-
-    COMPLETION_AVAILABLE = True
-except ImportError:
-    COMPLETION_AVAILABLE = False
-
-    def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
-        """Fallback when completion is not available."""
-        pass
+# Shell completion is handled by unified post-install system
+COMPLETION_AVAILABLE = False
 
 
 def create_config_from_template(
@@ -289,9 +280,7 @@ Examples:
 
     parser.add_argument("--author", "-a", help="Author name")
 
-    # Setup shell completion if available
-    if COMPLETION_AVAILABLE:
-        setup_shell_completion(parser)
+    # Shell completion is handled by post-install system, not at runtime
 
     args = parser.parse_args()
 

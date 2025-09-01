@@ -264,7 +264,7 @@ class TestGPUSetupScriptLogic:
 
     def test_nvidia_library_detection_logic(self):
         """Test NVIDIA library detection logic used in scripts."""
-        # Simulate the library detection logic from activate_gpu.sh
+        # Simulate the library detection logic from gpu_activation_smart.sh
         try:
             import site
 
@@ -337,7 +337,7 @@ def test_integration_gpu_files_exist():
 
     repo_root = Path(__file__).parent.parent.parent
 
-    required_files = ["activate_gpu.sh", "GPU_SETUP.md", "homodyne/gpu_wrapper.py"]
+    required_files = ["homodyne/gpu_activation_smart.sh", "GPU_SETUP.md", "homodyne/gpu_wrapper.py"]
 
     for file_path in required_files:
         full_path = repo_root / file_path

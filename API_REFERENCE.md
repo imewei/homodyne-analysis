@@ -1,7 +1,8 @@
 # Homodyne API Reference
 
-**Python 3.12+ Required** | **System CUDA JAX Integration Available** | **Code Quality: Black ✅
-isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
+**Python 3.12+ Required** | **JAX Backend GPU Acceleration ✅** | **Unified Shell Completion ✅** | **Code Quality: Black ✅ Ruff ✅** | **Smart GPU Optimization ✅** | **Trust Region Gurobi ✅**
+
+*Updated: 2024-08-31 - Reflects unified completion system and streamlined tooling*
 
 ## Core Modules
 
@@ -199,7 +200,7 @@ ______________________________________________________________________
 
 #### `MCMCSampler`
 
-Bayesian MCMC sampling using PyMC with NUTS.
+Bayesian MCMC sampling using PyMC with NUTS and JAX backend GPU acceleration. PyTensor environment variables automatically configured to avoid C compilation issues.
 
 ```python
 class MCMCSampler:
@@ -530,22 +531,21 @@ ______________________________________________________________________
 
 ## CLI and Shell Integration
 
-### Shell Tab Completion
+### Unified Shell Completion System
 
-The package provides automatic shell completion that is configured during installation with no manual setup required:
+The package provides a streamlined shell completion system with cross-shell compatibility:
 
 **Installation:**
 
 ```bash
-# Shell completion automatically installed
-pip install homodyne-analysis[completion]
+# Unified completion system (automatic during installation)
+pip install homodyne-analysis
 
-# Completion is automatically configured during installation:
-# - Linux: Full shell completion with aliases and tab completion  
-# - macOS: Shell aliases and shortcuts (bash/zsh compatible)
-# - Windows: Batch file shortcuts for Command Prompt and PowerShell
+# Manual setup if needed
+homodyne-post-install --shell zsh
 
-# Conda environments: Automatic integration via activation scripts!
+# Complete setup (shell + GPU + advanced features)
+homodyne-post-install --shell zsh --gpu --advanced
 
 # To remove completion later
 homodyne-cleanup                      # Complete removal (run before uninstalling package)
@@ -553,17 +553,21 @@ homodyne-cleanup                      # Complete removal (run before uninstallin
 
 **Features:**
 
-- **Method completion**: `--method <TAB>` → classical, mcmc, robust, all
-- **Config file completion**: `--config <TAB>` → available .json files
-- **Directory completion**: `--output-dir <TAB>` → available directories
-- **Context-aware**: Adapts based on current command context
-- **Cross-platform**: Works on Linux, macOS, and Windows
-- **Command shortcuts**: `hc`, `hm`, `hr`, `ha`, `hgm`, `hga`, `hc-iso`, `hc-aniso`, `hc-flow`
-- **Conda integration**: Automatic setup in conda environments
-- **Help system**: `homodyne_help`, `homodyne_gpu_status` functions
+- **Unified aliases**: `hm`, `hc`, `hr`, `ha`, `hconfig` (cross-shell compatible)
+- **GPU aliases**: `hgm`, `hgc`, `hgr`, `hga` (Linux with GPU support)
+- **Smart activation**: Automatic activation in conda/mamba environments
+- **Shell functions**: `homodyne_help`, `homodyne_gpu_status`, `homodyne_gpu_benchmark`
+- **Advanced tools**: `homodyne-gpu-optimize`, `homodyne-validate` (with --advanced flag)
+- **Makefile integration**: `make setup-shell`, `make setup-all`, `make cleanup-homodyne`
 
-**Note**: Interactive CLI mode has been **removed** as of v0.6.5. Use automatic shell completion
-for enhanced CLI experience.
+**Advanced Completion:**
+
+```bash
+# Context-aware completion (with --advanced)
+homodyne --config <TAB>     # Recent config files
+homodyne --method <TAB>     # Suggests based on config mode
+homodyne --phi-angles <TAB> # Common angle sets
+```
 
 ### Code Quality Standards (v0.6.5+)
 
@@ -573,8 +577,9 @@ The homodyne package maintains high code quality with comprehensive tooling:
 
 - ✅ **Black**: 100% compliant (88-character line length)
 - ✅ **isort**: Import sorting and optimization
-- ⚠️ **flake8**: ~400 remaining issues (mostly line length in data scripts)
-- ⚠️ **mypy**: ~285 type annotation issues (missing library stubs)
+- ✅ **Ruff**: Modern fast linter with auto-fixing
+- ⚠️ **mypy**: Type checking with improved stubs
+- ✅ **Bandit**: Security scanning for vulnerabilities
 
 **Recent Improvements:**
 
@@ -589,24 +594,27 @@ ______________________________________________________________________
 
 ## Backend Integration
 
-### JAX Backend (System CUDA GPU Acceleration)
+### JAX Backend GPU Acceleration with PyTensor Environment Variable Auto-Configuration
 
-JAX integration provides system CUDA GPU acceleration and JIT compilation for MCMC sampling:
+JAX backend provides GPU acceleration while PyTensor environment variables are automatically configured to avoid C compilation issues:
 
 ```python
-# JAX backend is automatically detected and used when available
-# Configuration in mcmc.py handles lazy importing:
+# JAX backend handles GPU operations, PyTensor uses CPU mode
+# PyTensor environment variables auto-configured during pip install:
+# PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
 
 from homodyne.optimization.mcmc import _lazy_import_jax
 _lazy_import_jax()  # Automatically detects JAX availability
 
-# MCMC sampling with JAX (when available)
+# MCMC sampling with JAX backend (GPU) + PyTensor (CPU, no C compilation)
 sampler = MCMCSampler(analysis_core, config)
-result = sampler.run_mcmc_analysis()  # Uses JAX if available, NumPy fallback
+result = sampler.run_mcmc_analysis()  # JAX GPU + PyTensor CPU = optimal performance
 
-# Check if JAX is available
+# Check if JAX is available and PyTensor configuration
 from homodyne.optimization.mcmc import JAX_AVAILABLE
+import os
 print(f"JAX backend available: {JAX_AVAILABLE}")
+print(f"PyTensor flags: {os.environ.get('PYTENSOR_FLAGS')}")
 ```
 
 **JAX Integration Features:**

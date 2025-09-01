@@ -8,7 +8,7 @@ System Requirements
 - **Operating System**: Windows, macOS, or Linux
 - **Memory**: Minimum 4GB RAM (8GB+ recommended for MCMC)
 - **Storage**: ~500MB for full installation with dependencies
-- **GPU** (optional): NVIDIA GPU with system CUDA 12.6+ and cuDNN 9.12+ support for accelerated MCMC and JAX computations
+- **GPU** (optional, Linux only): NVIDIA GPU with system CUDA 12.6+ and cuDNN 9.12+ support for JAX backend GPU acceleration with PyTensor environment variable auto-configuration
 
 Quick Installation (Recommended)
 --------------------------------
@@ -45,7 +45,7 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[jax]
 
 .. note::
-   On Linux systems with NVIDIA GPUs, JAX will automatically install with system CUDA 12.6+ support for GPU acceleration.
+   On Linux systems with NVIDIA GPUs, JAX will automatically install with system CUDA 12.6+ support for GPU acceleration. PyTensor environment variables (``PYTENSOR_FLAGS``) are automatically configured to use CPU mode and avoid C compilation issues.
 
 **For MCMC Bayesian Analysis:**
 
@@ -54,7 +54,7 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[mcmc]
 
 .. note::
-   This now includes NumPyro for GPU-accelerated MCMC sampling. On Linux systems with NVIDIA GPUs, JAX with system CUDA 12.6+ support is automatically installed.
+   This now includes NumPyro for JAX backend GPU-accelerated MCMC sampling. On Linux systems with NVIDIA GPUs, JAX with system CUDA 12.6+ support is automatically installed, and PyTensor environment variables are auto-configured for optimal performance (JAX handles GPU operations, PyTensor uses CPU mode).
 
 **For Robust Optimization (Noise-Resistant Methods):**
 
@@ -88,17 +88,20 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[gurobi]
    # or manually: pip install gurobipy
 
-**For Shell Tab Completion:**
+**Unified Post-Installation Setup:**
 
 .. code-block:: bash
 
-   pip install homodyne-analysis[completion]
-   # Shell completion is automatically installed during package installation
-   # Restart your shell or reload your shell configuration:
-   source ~/.zshrc  # or ~/.bashrc for bash
+   pip install homodyne-analysis[all]
+   
+   # Run the unified post-install setup (recommended)
+   homodyne-post-install --shell zsh --gpu --advanced
+   
+   # Or interactive setup
+   homodyne-post-install
 
 .. note::
-   **Automatic Installation**: Shell completion and aliases are automatically installed when the package is installed. In conda environments, completion scripts are integrated during installation. Use ``homodyne-cleanup`` to remove all environment scripts during uninstallation if needed.
+   **Unified Post-Install System**: The package now includes a unified post-installation system that consolidates shell completion, GPU acceleration, and advanced tools into a single streamlined setup. This replaces the previous separate installation steps.
 
 **For Security and Code Quality Tools:**
 
@@ -107,25 +110,25 @@ You can install specific feature sets using pip extras:
    pip install homodyne-analysis[quality]
    # Includes black, isort, flake8, mypy, ruff, bandit, pip-audit
 
-**Enhanced Shell Experience:**
+**Unified Shell Experience:**
 
-The completion system provides multiple interaction methods:
+After running ``homodyne-post-install``, the system provides:
 
-- **Tab completion**: ``homodyne --method <TAB>`` shows available methods (classical, mcmc, robust, all)
-- **Command shortcuts**: ``hc`` (classical), ``hm`` (mcmc), ``hr`` (robust), ``ha`` (all)
-- **GPU shortcuts**: ``hgm`` (GPU mcmc), ``hga`` (GPU all) - Linux only
-- **Config shortcuts**: ``hconfig``, ``hgconfig`` for configuration files
-- **Help reference**: ``homodyne_help`` shows all available options and current config files
+- **Advanced CLI tools**: ``homodyne-gpu-optimize``, ``homodyne-validate``
+- **Unified completion**: Smart tab completion across shells (zsh, bash, fish)
+- **Convenient aliases**: ``hm`` (mcmc), ``hc`` (classical), ``hr`` (robust), ``ha`` (all)
+- **GPU utilities**: ``gpu-status`` for hardware monitoring
+- **System validation**: ``homodyne-validate --quick`` for health checks
 
 .. code-block:: bash
 
-   # After installation, restart shell or reload config
+   # After post-install setup, restart shell
    source ~/.zshrc  # or ~/.bashrc for bash
 
-   # Test shortcuts (always work even if tab completion fails)
-   hc --verbose     # homodyne --method classical --verbose
-   hgm --config my.json  # GPU-accelerated MCMC (Linux only)
-   homodyne_help    # Show all options and current config files
+   # Use convenient aliases and tools
+   hm config.json           # homodyne --method mcmc config.json
+   gpu-status              # Check GPU status
+   homodyne-validate       # Comprehensive system validation
 
 **All Dependencies:**
 
@@ -173,21 +176,24 @@ Test your installation:
 Common Issues
 -------------
 
-**Shell Completion Not Working:**
+**Post-Install Issues:**
 
-If tab completion or command shortcuts don't work after installation:
+If shell features don't work after installation:
 
 .. code-block:: bash
 
-   # Restart your shell or reload configuration
+   # Re-run the unified post-install setup
+   homodyne-post-install --shell zsh --gpu --advanced
+   
+   # Restart your shell
    source ~/.zshrc    # or ~/.bashrc for bash
    
-   # Manual cleanup if needed (conda environments)
-   homodyne-cleanup                     # Remove all conda environment scripts
+   # For cleanup and fresh start:
+   homodyne-cleanup                     # Interactive cleanup
+   homodyne-cleanup --all              # Remove all installed features
    
-   # Reinstall and restart shell
-   pip install --upgrade homodyne-analysis[completion]
-   source ~/.zshrc    # or ~/.bashrc for bash
+   # Validate system after setup
+   homodyne-validate --quick
 
 **Import Errors:**
 
@@ -244,64 +250,85 @@ If pip cannot find the package, ensure you're using the correct name:
    pip install homodyne-analysis  # Correct package name
    # NOT: pip install homodyne    # This won't work
 
-System CUDA GPU Acceleration
------------------------------
+JAX Backend GPU Acceleration with PyTensor Environment Variable Auto-Configuration
+----------------------------------------------------------------------------------
 
-The package now supports system CUDA GPU acceleration for MCMC sampling and JAX computations on Linux systems with NVIDIA GPUs.
+The package supports JAX backend GPU acceleration with automatic PyTensor environment variable configuration for optimal MCMC performance on Linux systems with NVIDIA GPUs.
 
-**System Requirements**
+**System Requirements (Linux Only)**
 
-- Linux operating system
+- Linux operating system (GPU acceleration not available on Windows/macOS)
 - System CUDA 12.6+ installed at ``/usr/local/cuda``
 - cuDNN 9.12+ installed in system libraries
 - NVIDIA GPU with driver 560.28+
+- Virtual environment (conda/mamba/venv/virtualenv) for automatic environment variable configuration
 
-**Automatic System CUDA Support**
+**Automatic JAX Backend GPU + PyTensor Environment Variable Setup**
 
-When you install with ``[jax]``, ``[mcmc]``, or ``[performance]`` options on a Linux system, JAX will automatically be installed with system CUDA 12.6+ support:
+When you install with ``[jax]``, ``[mcmc]``, or ``[performance]`` options on a Linux system:
 
-.. code-block:: bash
-
-   # Any of these will include system CUDA GPU support on Linux:
-   pip install homodyne-analysis[jax]
-   pip install homodyne-analysis[mcmc]        # Includes NumPyro for GPU MCMC
-   pip install homodyne-analysis[performance]
-
-   # IMPORTANT: Activate system CUDA GPU support after installation
-   source activate_gpu.sh
-
-**Activate and Verify System CUDA GPU**
-
-For system CUDA JAX, you must activate GPU support:
+1. **JAX backend**: Automatically installs with system CUDA 12.6+ support for GPU operations
+2. **PyTensor environment variables**: Automatically configured for CPU mode to avoid C compilation issues
+3. **Environment integration**: Automatic activation/deactivation scripts for conda/mamba environments
 
 .. code-block:: bash
 
-   # First, activate system CUDA GPU support
-   source activate_gpu.sh
+   # Any of these will include JAX backend GPU support + PyTensor auto-configuration on Linux:
+   pip install homodyne-analysis[jax]         # JAX GPU backend + PyTensor CPU mode
+   pip install homodyne-analysis[mcmc]        # Includes NumPyro for JAX backend GPU MCMC
+   pip install homodyne-analysis[performance] # Full performance optimization
 
-   # Then verify GPU detection
+   # PyTensor environment variables automatically configured:
+   # PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
+
+**Verify JAX Backend GPU + PyTensor Configuration**
+
+After installation, verify the setup:
+
+.. code-block:: bash
+
+   # Check JAX backend GPU status and PyTensor configuration (conda/mamba environments)
+   homodyne_gpu_status
+
+   # Manual verification - check PyTensor environment variables
+   echo $PYTENSOR_FLAGS
+   # Should show: device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx=
+
+   # Verify JAX GPU detection
    python -c "import jax; print(f'JAX devices: {jax.devices()}')"
    # Should show: [CudaDevice(id=0)]
 
 .. code-block:: python
 
-   # In Python (after activation):
+   # In Python - verify JAX backend GPU + PyTensor CPU configuration:
+   import os
+   print(f"PyTensor flags: {os.environ.get('PYTENSOR_FLAGS')}")
+   # Should show: device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx=
+   
    import jax
    print(f"JAX devices: {jax.devices()}")
    # Output should show: [CudaDevice(id=0), ...] for GPU
+   
+   # Verify PyTensor CPU configuration
+   try:
+       import pytensor
+       from pytensor import config
+       print(f"PyTensor device: {config.device}")  # Should show: cpu
+       print(f"PyTensor C++ compiler: '{config.cxx}'")  # Should show: ''
+   except ImportError:
+       print("PyTensor not installed")
 
-   print(f"JAX backend: {jax.default_backend()}")
-   # Should show 'gpu' if GPU is available
+**JAX Backend GPU MCMC with PyTensor CPU Mode**
 
-**Enable GPU for MCMC**
-
-The MCMC module automatically uses GPU acceleration when available:
+The MCMC module automatically uses JAX backend for GPU operations while PyTensor runs on CPU:
 
 .. code-block:: python
 
    from homodyne.optimization.mcmc import HodomyneMCMC
 
-   # GPU acceleration is automatic when use_jax_backend=True (default)
+   # JAX backend GPU + PyTensor CPU configuration is automatic
+   # - JAX handles GPU operations (MCMC sampling, numerical computations)
+   # - PyTensor uses CPU mode (avoids C compilation issues)
    mcmc = HodomyneMCMC(mode="laminar_flow", use_jax_backend=True)
 
    # The module will log:

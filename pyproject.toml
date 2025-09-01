@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, system CUDA GPU acceleration, robust testing infrastructure, automated code quality checks, conda environment integration, and simplified cross-platform shell completion with automatic post-installation setup"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with JAX backend GPU acceleration, unified shell completion system, comprehensive optimization methods, robust testing infrastructure, automated code quality checks, conda/mamba environment integration, and streamlined post-installation setup with advanced GPU optimization tools"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -44,6 +44,10 @@ keywords = [
     "trust-region-optimization",
     "gurobi",
     "jax",
+    "jax-backend",
+    "pytensor",
+    "pytensor-config",
+    "environment-variables",
     "system-cuda",
     "gpu-acceleration",
     "cuda-12",
@@ -55,6 +59,7 @@ keywords = [
     "pre-commit-hooks",
     "shell-completion",
     "conda-environment",
+    "mamba-environment",
     "virtual-environment",
     "cross-platform",
     "windows-compatibility",
@@ -85,7 +90,9 @@ jax = [
     "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ and cuDNN 9.12+ support for Linux GPU acceleration
     "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library for CPU/GPU acceleration
-    # Note: GPU requires system CUDA 12.6+ and cuDNN 9.12+ - run 'source activate_gpu.sh' before use
+    # Note: GPU requires system CUDA 12.6+ and cuDNN 9.12+
+    # PyTensor environment variables automatically configured during pip install
+    # JAX backend handles GPU operations while PyTensor uses CPU (no C compilation issues)
 ]
 mcmc = [
     "pymc>=5.0.0",
@@ -96,6 +103,8 @@ mcmc = [
     "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ support for Linux GPU acceleration
     "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
     "jaxlib>=0.4.35",  # JAX backend library for NumPyro
+    # PyTensor configured for CPU mode (device=cpu,cxx=) to avoid C compilation issues
+    # JAX backend handles all GPU operations for optimal MCMC performance
 ]
 robust = [
     "cvxpy>=1.4.0",  # Convex optimization for robust methods
@@ -163,6 +172,8 @@ homodyne-config = "homodyne.create_config:main"
 homodyne-gpu = "homodyne.gpu_wrapper:main"
 homodyne-post-install = "homodyne.post_install:main"
 homodyne-cleanup = "homodyne.uninstall_scripts:main"
+homodyne-gpu-optimize = "homodyne.gpu_optimizer:main"
+homodyne-validate = "homodyne.system_validator:main"
 
 [tool.setuptools]
 packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
@@ -173,14 +184,15 @@ homodyne = [
     "config_*.json",
     "templates/*.json",
     "typings/**/*.pyi",
-    "completion_fast.py",
-    "cli_completion.py",
-    "uninstall_scripts.py",
     "post_install.py",
-    "*_complete",
-    "activate_gpu.sh",
-    "homodyne_completion_bypass.zsh",
-    "GPU_SETUP.md"
+    "uninstall_scripts.py",
+    "completion_advanced.sh",
+    "gpu_activation_smart.sh",
+    "gpu_wrapper.py",
+    "gpu_optimizer.py",
+    "system_validator.py",
+    "scripts/*.py",
+    "scripts/*.md",
 ]
 
 [tool.setuptools.dynamic]

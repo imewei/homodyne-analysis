@@ -22,7 +22,7 @@ This package analyzes time-dependent intensity correlation functions c₂(φ,t�
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Multiple optimization methods**: Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
-- **High performance**: Numba JIT compilation with 3-5x speedup, JAX backend for GPU acceleration, comprehensive performance monitoring
+- **High performance**: Numba JIT compilation with 3-5x speedup, JAX backend GPU acceleration with PyTensor environment variable auto-configuration (Linux only), comprehensive performance monitoring
 - **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
 
 Quick Start
@@ -33,6 +33,7 @@ Quick Start
 .. code-block:: bash
 
    pip install homodyne-analysis[all]
+   homodyne-post-install --shell zsh --gpu --advanced  # Unified setup
 
 **Python API:**
 
@@ -60,15 +61,15 @@ Quick Start
    homodyne --method mcmc                      # MCMC sampling only
    homodyne --method all --verbose             # All methods with debug logging
 
-   # Analysis mode control
-   homodyne --static-isotropic                 # Force 3-parameter isotropic mode
-   homodyne --static-anisotropic               # Force 3-parameter anisotropic mode
-   homodyne --laminar-flow                     # Force 7-parameter flow mode
-
-   # Data visualization
-   homodyne --plot-experimental-data           # Validate experimental data
-   homodyne --plot-simulated-data              # Plot theoretical correlations
-   homodyne --plot-simulated-data --contrast 1.5 --offset 0.1 --phi-angles "0,45,90,135"
+   # Unified system shortcuts (after homodyne-post-install)
+   hm config.json                              # homodyne --method mcmc
+   hc config.json                              # homodyne --method classical
+   ha config.json                              # homodyne --method all
+   
+   # Advanced tools
+   homodyne-validate --quick                   # System health check
+   homodyne-gpu-optimize --benchmark          # GPU performance testing
+   gpu-status                                  # Hardware monitoring
 
    # Configuration and output
    homodyne --config my_config.json --output-dir ./results --verbose
@@ -105,11 +106,17 @@ Analysis Modes
 Key Features
 ------------
 
+**Unified Installation System**
+   Streamlined post-installation setup consolidating shell completion, GPU acceleration, and advanced tools
+
 **Multiple Analysis Modes**
    Static Isotropic (3 parameters), Static Anisotropic (3 parameters), and Laminar Flow (7 parameters)
 
 **High Performance**
    Numba JIT compilation, smart angle filtering, and optimized computational kernels
+
+**Advanced CLI Tools**
+   homodyne-validate for system health checks, homodyne-gpu-optimize for performance benchmarking
 
 **Scientific Accuracy**
    Automatic g₂ = offset + contrast × g₁ fitting for accurate chi-squared calculations
@@ -117,11 +124,11 @@ Key Features
 **Multiple Optimization Methods**
    Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 
-**Security and Code Quality**
-   Comprehensive security scanning with Bandit, dependency vulnerability checking with pip-audit, and automated code quality tools
+**Smart Environment Support**
+   Cross-platform virtual environment detection (conda, mamba, venv, virtualenv) with automatic configuration
 
 **Comprehensive Validation**
-   Experimental data validation plots and quality control
+   Experimental data validation plots and quality control with unified system testing
 
 **Visualization Tools**
    Parameter evolution tracking, MCMC diagnostics, and corner plots

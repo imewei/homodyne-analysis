@@ -11,6 +11,7 @@ Complete API documentation for the homodyne analysis package.
    mcmc
    robust
    utilities
+   post-install
 
 Core Classes
 ------------
@@ -20,6 +21,9 @@ Core Classes
 * :class:`~homodyne.optimization.classical.ClassicalOptimizer` - Classical optimization
 * :class:`~homodyne.optimization.robust.RobustHomodyneOptimizer` - Robust optimization
 * :class:`~homodyne.optimization.mcmc.MCMCSampler` - Bayesian analysis
+* :func:`~homodyne.post_install.install_shell_completion` - Shell completion setup
+* :func:`~homodyne.post_install.install_gpu_acceleration` - GPU acceleration setup
+* :func:`~homodyne.post_install.install_advanced_features` - Advanced CLI tools
 
 Quick Reference
 ---------------
@@ -62,6 +66,8 @@ The package includes the following key modules:
 * **homodyne.optimization.classical** - Classical optimization (Nelder-Mead, Gurobi)
 * **homodyne.optimization.robust** - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
 * **homodyne.optimization.mcmc** - Bayesian MCMC sampling (NUTS)
+* **homodyne.post_install** - Unified post-installation system
+* **homodyne.uninstall_scripts** - Cleanup and removal utilities
 * **homodyne.plotting** - Visualization utilities
 
 .. note::
