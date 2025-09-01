@@ -18,6 +18,8 @@ def pytest_collection_modifyitems(items):
         # Add performance marker to all tests in this directory
         item.add_marker(pytest.mark.performance)
         item.add_marker(pytest.mark.benchmark)
+        # Performance tests are typically slow
+        item.add_marker(pytest.mark.slow)
 
 
 class PerformanceTracker:

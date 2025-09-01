@@ -16,6 +16,8 @@ def pytest_collection_modifyitems(items):
     for item in items:
         # Add integration marker to all tests in this directory
         item.add_marker(pytest.mark.integration)
+        # Integration tests are typically slow
+        item.add_marker(pytest.mark.slow)
 
 
 @pytest.fixture
