@@ -356,26 +356,75 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    """Automatically mark tests based on their location and content."""
+    """Automatically mark tests based on their location and content.
+    
+    This runs AFTER local conftest.py hooks, so we check for existing markers
+    to avoid conflicts with subdirectory marking rules.
+    """
     for item in items:
-        # Mark integration tests
-        if "test_integration" in item.nodeid:
+        # Check what markers are already present from local conftest.py files
+        existing_markers = {marker.name for marker in item.iter_markers()}
+        
+        # Initialize marker flags based on existing markers
+        has_integration = "integration" in existing_markers
+        has_mcmc = "mcmc" in existing_markers
+        has_slow = "slow" in existing_markers
+        
+        # Only add markers if they're not already present
+        # Mark tests based on directory structure
+        if "/integration/" in item.nodeid and not has_integration:
             item.add_marker(pytest.mark.integration)
+            has_integration = True
+        
+        if "/mcmc/" in item.nodeid and not has_mcmc:
+            item.add_marker(pytest.mark.mcmc)
+            has_mcmc = True
+            
+        if "/performance/" in item.nodeid:
+            if "performance" not in existing_markers:
+                item.add_marker(pytest.mark.performance)
+            if not has_slow:
+                item.add_marker(pytest.mark.slow)
+                has_slow = True
+                
+        if "/system/" in item.nodeid:
+            if "system" not in existing_markers:
+                item.add_marker(pytest.mark.system)
+            if not has_slow:
+                item.add_marker(pytest.mark.slow)
+                has_slow = True
+
+        # Mark tests based on filename patterns
+        if "test_integration" in item.nodeid and not has_integration:
+            item.add_marker(pytest.mark.integration)
+            has_integration = True
 
         # Mark plotting tests
-        if "test_plotting" in item.nodeid or "plot" in item.name.lower():
+        if ("test_plotting" in item.nodeid or "plot" in item.name.lower()) and "plotting" not in existing_markers:
             item.add_marker(pytest.mark.plotting)
 
         # Mark I/O tests
-        if "test_io" in item.nodeid or "io_utils" in item.nodeid:
+        if ("test_io" in item.nodeid or "io_utils" in item.nodeid) and "io" not in existing_markers:
             item.add_marker(pytest.mark.io)
 
         # Mark slow tests (integration, large data handling, etc.)
-        if any(
-            keyword in item.name.lower()
-            for keyword in ["integration", "large", "concurrent", "memory"]
+        if not has_slow and (
+            any(
+                keyword in item.name.lower()
+                for keyword in ["integration", "large", "concurrent", "memory"]
+            ) or has_integration or has_mcmc
         ):
             item.add_marker(pytest.mark.slow)
+            has_slow = True
+            
+        # IMPORTANT: Explicitly mark tests as fast if they are NOT slow/integration/mcmc
+        # This ensures the marker filter "not slow and not integration and not mcmc" works
+        if not has_slow and not has_integration and not has_mcmc and "fast" not in existing_markers:
+            item.add_marker(pytest.mark.fast)
+            
+        # Mark unit tests explicitly if not already marked
+        if "/unit/" in item.nodeid and "unit" not in existing_markers:
+            item.add_marker(pytest.mark.unit)
 
 
 @pytest.fixture(autouse=True)

@@ -127,7 +127,9 @@ class TestResultDataclass:
 
     def test_test_result_minimal(self):
         """Test ValidationResult with minimal parameters."""
-        result = ValidationResult(name="minimal_test", success=False, message="Test failed")
+        result = ValidationResult(
+            name="minimal_test", success=False, message="Test failed"
+        )
 
         assert result.name == "minimal_test"
         assert result.success is False
@@ -440,7 +442,9 @@ class TestValidationReporting:
 
         validator.results = [
             ValidationResult("gpu_test", False, "No GPU detected"),
-            ValidationResult("completion_test", False, "Shell completion not installed"),
+            ValidationResult(
+                "completion_test", False, "Shell completion not installed"
+            ),
         ]
 
         # Test recommendations if method exists

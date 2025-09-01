@@ -30,30 +30,6 @@ from .core.io_utils import ensure_dir, save_fig
 logger = logging.getLogger(__name__)
 
 
-# Lazy import functions for optional plotting dependencies
-def _lazy_import_plotting_deps():
-    """Lazy import plotting dependencies to improve module loading time."""
-    imports = {}
-
-    try:
-        import arviz as arviz_module
-
-        imports["arviz"] = arviz_module
-        logger.debug("ArviZ imported for MCMC corner plots")
-    except ImportError:
-        imports["arviz"] = None
-        logger.debug("ArviZ not available")
-
-    try:
-        import corner as corner_module
-
-        imports["corner"] = corner_module
-        logger.debug("corner package imported for enhanced corner plots")
-    except ImportError:
-        imports["corner"] = None
-        logger.debug("corner package not available")
-
-    return imports
 
 
 # Check availability without importing - performance optimization
@@ -66,8 +42,6 @@ except ImportError:
     ARVIZ_AVAILABLE = False
     CORNER_AVAILABLE = False
 
-# Global variables for lazy-loaded modules
-_plotting_deps = None
 
 
 def get_plot_config(config: dict | None = None) -> dict[str, Any]:
@@ -443,82 +417,8 @@ def plot_c2_heatmaps(
     return success_count == len(phi_angles)
 
 
-def _get_active_parameters(config: dict | None) -> list[str] | None:
-    """Extract active parameter names from config."""
-    if (
-        config
-        and "initial_parameters" in config
-        and "active_parameters" in config["initial_parameters"]
-    ):
-        active_params = config["initial_parameters"]["active_parameters"]
-        logger.debug(f"Active parameters for corner plot: {active_params}")
-        return active_params
-    return None
 
 
-def _convert_trace_to_samples(
-    trace_data: Any, active_param_names: list[str] | None
-) -> Any:
-    """Convert various trace data formats to samples suitable for plotting."""
-    # Validate trace data format first
-    if callable(trace_data):
-        logger.error(
-            "Trace data is a function, not actual data - cannot create corner plot"
-        )
-        return None
-
-    # Handle different trace data formats
-    if hasattr(trace_data, "posterior"):
-        # ArviZ InferenceData
-        samples = trace_data.posterior
-
-        # Filter to only active parameters if specified
-        if active_param_names and hasattr(samples, "data_vars"):
-            filtered_vars = {
-                var: samples[var]
-                for var in active_param_names
-                if var in samples.data_vars
-            }
-            if filtered_vars:
-                import xarray as xr
-
-                samples = xr.Dataset(filtered_vars)
-                logger.debug(
-                    f"Filtered to active parameters: {list(samples.data_vars)}"
-                )
-        return samples
-
-    elif isinstance(trace_data, dict):
-        # Dictionary of samples
-        samples = trace_data
-        # Filter to only active parameters if specified
-        if active_param_names:
-            samples = {
-                var: samples[var] for var in active_param_names if var in samples
-            }
-        return samples
-
-    elif isinstance(trace_data, np.ndarray):
-        # NumPy array - convert to ArviZ InferenceData
-        try:
-            if not ARVIZ_AVAILABLE:
-                logger.error("ArviZ required for numpy array conversion")
-                return None
-
-            import arviz as az
-
-            samples = az.convert_to_inference_data(trace_data).posterior
-        except Exception as conversion_error:
-            logger.error(
-                f"Failed to convert numpy trace to ArviZ format: {conversion_error}"
-            )
-            return None
-
-    else:
-        logger.error(f"Unsupported trace data type: {type(trace_data)}")
-        return None
-
-    return samples
 
 
 def plot_mcmc_corner(
@@ -1486,17 +1386,16 @@ def plot_diagnostic_summary(
     method_name: str | None = None,
 ) -> bool:
     """
-    Create a comprehensive diagnostic summary plot combining multiple visualizations.
+    Create comprehensive diagnostic summary plots per phi angle.
 
-    Generates a 2×3 grid layout containing:
+    Generates a 2×3 grid layout for each phi angle containing:
     - Method comparison with chi-squared values
-    - Parameter uncertainties visualization
+    - Parameter uncertainties visualization  
     - MCMC convergence diagnostics (R-hat values)
     - Residuals distribution analysis with normal distribution overlay
 
-    Features adaptive content with appropriate placeholders when data is unavailable,
-    professional formatting with consistent styling, and cross-method comparison
-    capabilities for quality assessment.
+    Creates separate diagnostic_summary_phi_{angle}deg.png files for each angle,
+    allowing detailed per-angle analysis and comparison.
 
     Args:
         results (Dict[str, Any]): Complete analysis results dictionary
@@ -1505,9 +1404,9 @@ def plot_diagnostic_summary(
         method_name (Optional[str]): Optimization method name for filename prefix
 
     Returns:
-        bool: True if diagnostic plots were created successfully
+        bool: True if all diagnostic plots were created successfully
     """
-    logger.info("Creating diagnostic summary plots")
+    logger.info("Creating diagnostic summary plots per phi angle")
 
     # Get plotting configuration
     plot_config = get_plot_config(config)
@@ -1515,358 +1414,389 @@ def plot_diagnostic_summary(
 
     # Ensure output directory exists
     outdir = ensure_dir(outdir)
+    
+    # Extract phi angles from results
+    phi_angles = results.get("phi_angles")
+    if phi_angles is None:
+        logger.warning("No phi_angles found in results, creating single diagnostic plot")
+        phi_angles = [0.0]  # Default single angle
+    
+    success_count = 0
+    total_angles = len(phi_angles)
+    logger.info(f"Creating diagnostic plots for {total_angles} phi angle(s)")
 
-    try:
-        # Create a summary figure with multiple subplots
-        fig = plt.figure(
-            figsize=(
-                plot_config["figure_size"][0] * 1.5,
-                plot_config["figure_size"][1] * 1.2,
+    # Create diagnostic plot for each phi angle
+    for angle_idx, phi_angle in enumerate(phi_angles):
+        try:
+            logger.debug(f"Creating diagnostic plot for phi = {phi_angle:.1f}°")
+            
+            # Create a summary figure with multiple subplots
+            fig = plt.figure(
+                figsize=(
+                    plot_config["figure_size"][0] * 1.5,
+                    plot_config["figure_size"][1] * 1.2,
+                )
             )
-        )
-        gs = gridspec.GridSpec(2, 3, hspace=0.3, wspace=0.3)
+            gs = gridspec.GridSpec(2, 3, hspace=0.3, wspace=0.3)
 
-        # Plot 1: Chi-squared comparison (if multiple methods available)
-        ax1 = fig.add_subplot(gs[0, 0])
-        methods = []
-        chi2_values = []
+            # Plot 1: Chi-squared comparison (if multiple methods available)
+            ax1 = fig.add_subplot(gs[0, 0])
+            methods = []
+            chi2_values = []
 
-        for key, value in results.items():
-            if "chi_squared" in key or "chi2" in key:
-                chi2_method_name = key.replace("_chi_squared", "").replace("_chi2", "")
-                methods.append(chi2_method_name.replace("_", " ").title())
-                chi2_values.append(value)
+            for key, value in results.items():
+                if "chi_squared" in key or "chi2" in key:
+                    chi2_method_name = key.replace("_chi_squared", "").replace("_chi2", "")
+                    methods.append(chi2_method_name.replace("_", " ").title())
+                    chi2_values.append(value)
 
-        if chi2_values:
-            bars = ax1.bar(
-                methods,
-                chi2_values,
-                alpha=0.7,
-                color=["C0", "C1", "C2", "C3"][: len(methods)],
-            )
-            ax1.set_ylabel("χ² Value")
-            ax1.set_title("Method Comparison")
-            ax1.set_yscale("log")
+            if chi2_values:
+                bars = ax1.bar(
+                    methods,
+                    chi2_values,
+                    alpha=0.7,
+                    color=["C0", "C1", "C2", "C3"][: len(methods)],
+                )
+                ax1.set_ylabel("χ² Value")
+                ax1.set_title(f"Method Comparison (φ = {phi_angle:.1f}°)")
+                ax1.set_yscale("log")
 
-            # Add value labels
-            for bar, value in zip(bars, chi2_values, strict=False):
-                bar_width = bar.get_width()
-                if bar_width > 0:  # Avoid division by zero
-                    ax1.text(
-                        bar.get_x() + bar_width / 2,
-                        bar.get_height() * 1.1,
-                        f"{value:.2e}",
-                        ha="center",
-                        va="bottom",
-                        fontsize=10,
-                    )
-
-        # Plot 2: Parameter uncertainty (if available)
-        ax2 = fig.add_subplot(gs[0, 1])
-        uncertainties = results.get("parameter_uncertainties", {})
-
-        # Try to compute uncertainties from MCMC trace if not available
-        if not uncertainties and "mcmc_trace" in results and ARVIZ_AVAILABLE:
-            try:
-                import arviz as az
-
-                trace_data = results["mcmc_trace"]
-                if hasattr(trace_data, "posterior"):
-                    # Get parameter names from config or trace data
-                    param_names = None
-                    if (
-                        config
-                        and "initial_parameters" in config
-                        and "parameter_names" in config["initial_parameters"]
-                    ):
-                        param_names = config["initial_parameters"]["parameter_names"]
-                    elif hasattr(trace_data.posterior, "data_vars"):
-                        param_names = list(trace_data.posterior.data_vars.keys())
-
-                    if param_names:
-                        uncertainties = {}
-                        for param in param_names:
-                            if param in trace_data.posterior:
-                                samples = trace_data.posterior[param].values.flatten()
-                                uncertainties[param] = float(np.std(samples))
-                        logger.debug(
-                            f"Computed parameter uncertainties: {uncertainties}"
+                # Add value labels
+                for bar, value in zip(bars, chi2_values, strict=False):
+                    bar_width = bar.get_width()
+                    if bar_width > 0:  # Avoid division by zero
+                        ax1.text(
+                            bar.get_x() + bar_width / 2,
+                            bar.get_height() * 1.1,
+                            f"{value:.2e}",
+                            ha="center",
+                            va="bottom",
+                            fontsize=10,
                         )
-            except Exception as e:
-                logger.warning(f"Could not compute parameter uncertainties: {e}")
+            else:
+                # Show placeholder when no chi-squared values are available
+                ax1.text(
+                    0.5, 0.5,
+                    "No χ² comparison data\navailable",
+                    horizontalalignment='center',
+                    verticalalignment='center',
+                    transform=ax1.transAxes,
+                    fontsize=12,
+                    color='gray',
+                    style='italic'
+                )
+                ax1.set_title(f"Method Comparison (φ = {phi_angle:.1f}°)")
+                ax1.set_xticks([])
+                ax1.set_yticks([])
 
-        if uncertainties:
-            param_names = list(uncertainties.keys())
-            uncertainty_values = list(uncertainties.values())
+            # Plot 2: Parameter uncertainty (if available)
+            ax2 = fig.add_subplot(gs[0, 1])
+            uncertainties = results.get("parameter_uncertainties", {})
 
-            # Filter for active parameters if available
-            if (
-                config
-                and "initial_parameters" in config
-                and "active_parameters" in config["initial_parameters"]
-            ):
-                active_param_names = config["initial_parameters"]["active_parameters"]
-                param_names = [
-                    name for name in active_param_names if name in uncertainties
-                ]
-                uncertainty_values = [uncertainties[name] for name in param_names]
-
-            if param_names and uncertainty_values:  # Check if we have data
-                ax2.barh(param_names, uncertainty_values, alpha=0.7)
-                # Set appropriate axis limits
-                if max(uncertainty_values) > 0:
-                    ax2.set_xlim(0, max(uncertainty_values) * 1.1)
-                ax2.set_xlabel("Parameter Uncertainty (σ)")
-                ax2.set_title("Parameter Uncertainties")
-                ax2.grid(True, alpha=0.3)
-        else:
-            # Show placeholder message if no uncertainties available
-            ax2.text(
-                0.5,
-                0.5,
-                "No uncertainty data\navailable",
-                ha="center",
-                va="center",
-                transform=ax2.transAxes,
-                fontsize=12,
-                color="gray",
-            )
-            ax2.set_title("Parameter Uncertainties")
-            ax2.set_xticks([])
-            ax2.set_yticks([])
-
-        # Plot 3: Convergence diagnostics (if MCMC results available)
-        ax3 = fig.add_subplot(gs[0, 2])
-        if "mcmc_diagnostics" in results and ARVIZ_AVAILABLE:
-            # Plot R-hat values
-            diagnostics = results["mcmc_diagnostics"]
-
-            # Check for diagnostics with various key names (r_hat, rhat)
-            r_hat_data = diagnostics.get("r_hat") or diagnostics.get("rhat")
-            logger.debug(f"R-hat data for summary plot: {r_hat_data}")
-
-            # Convert ArviZ Dataset to dict if needed
-            r_hat_dict = {}
-            if r_hat_data is not None:
-                try:
-                    if hasattr(r_hat_data, "items"):
-                        # ArviZ Dataset object
-                        r_hat_dict = {str(k): float(v) for k, v in r_hat_data.items()}
-                    elif isinstance(r_hat_data, dict):
-                        # Already a dictionary
-                        r_hat_dict = r_hat_data
-                    logger.debug(f"Converted R-hat dict for summary: {r_hat_dict}")
-                except Exception as e:
-                    logger.warning(f"Could not convert R-hat data for summary: {e}")
-
-            # Try to compute R-hat from trace data if missing
-            if not r_hat_dict and "mcmc_trace" in results:
+            # Try to compute uncertainties from MCMC trace if not available
+            if not uncertainties and "mcmc_trace" in results and ARVIZ_AVAILABLE:
                 try:
                     import arviz as az
 
                     trace_data = results["mcmc_trace"]
                     if hasattr(trace_data, "posterior"):
-                        r_hat_summary = az.rhat(trace_data)
-                        if hasattr(r_hat_summary, "to_dict"):
-                            r_hat_dict = r_hat_summary.to_dict()  # type: ignore
-                        else:
-                            r_hat_dict = {
-                                str(k): float(v) for k, v in r_hat_summary.items()
-                            }  # type: ignore
-                        logger.debug(f"Computed R-hat dict for summary: {r_hat_dict}")
-                except Exception as e:
-                    logger.warning(f"Could not compute R-hat for summary plot: {e}")
+                        # Get parameter names from config or trace data
+                        param_names = None
+                        if (
+                            config
+                            and "initial_parameters" in config
+                            and "parameter_names" in config["initial_parameters"]
+                        ):
+                            param_names = config["initial_parameters"]["parameter_names"]
+                        elif hasattr(trace_data.posterior, "data_vars"):
+                            param_names = list(trace_data.posterior.data_vars.keys())
 
-            if r_hat_dict:
-                # Get active parameters from config to filter out inactive ones
-                active_param_names = None
+                        if param_names:
+                            uncertainties = {}
+                            for param in param_names:
+                                if param in trace_data.posterior:
+                                    samples = trace_data.posterior[param].values.flatten()
+                                    uncertainties[param] = float(np.std(samples))
+                            logger.debug(
+                                f"Computed parameter uncertainties: {uncertainties}"
+                            )
+                except Exception as e:
+                    logger.warning(f"Could not compute parameter uncertainties: {e}")
+
+            if uncertainties:
+                param_names = list(uncertainties.keys())
+                uncertainty_values = list(uncertainties.values())
+
+                # Filter for active parameters if available
                 if (
                     config
                     and "initial_parameters" in config
                     and "active_parameters" in config["initial_parameters"]
                 ):
-                    active_param_names = config["initial_parameters"][
-                        "active_parameters"
-                    ]
-                    logger.debug(
-                        f"Using active parameters for summary: {active_param_names}"
-                    )
-
-                # Filter for active parameters if available
-                if active_param_names:
+                    active_param_names = config["initial_parameters"]["active_parameters"]
                     param_names = [
-                        name for name in active_param_names if name in r_hat_dict
+                        name for name in active_param_names if name in uncertainties
                     ]
-                else:
-                    param_names = list(r_hat_dict.keys())
+                    uncertainty_values = [uncertainties[name] for name in param_names]
 
-                r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names]
-                logger.debug(
-                    f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values, strict=False))}"
-                )
-
-                if param_names and r_hat_values:  # Check if we have data
-                    colors = [
-                        "green" if r < 1.1 else "orange" if r < 1.2 else "red"
-                        for r in r_hat_values
-                    ]
-                    ax3.barh(param_names, r_hat_values, color=colors, alpha=0.7)
+                if param_names and uncertainty_values:  # Check if we have data
+                    ax2.barh(param_names, uncertainty_values, alpha=0.7)
                     # Set appropriate axis limits
-                    if max(r_hat_values) > 0:
-                        ax3.set_xlim(0.9, max(max(r_hat_values) * 1.1, 1.3))
-                    ax3.axvline(
-                        x=1.1,
-                        color="red",
-                        linestyle="--",
-                        alpha=0.7,
-                        label="R̂ = 1.1",
-                    )
-                    ax3.set_xlabel("R̂ (Convergence)")
-                    ax3.set_title("MCMC Convergence")
-                    ax3.legend()
-                    ax3.grid(True, alpha=0.3)
-        else:
-            # Show placeholder message if no MCMC diagnostics available
-            ax3.text(
-                0.5,
-                0.5,
-                "No MCMC convergence\ndiagnostics available",
-                ha="center",
-                va="center",
-                transform=ax3.transAxes,
-                fontsize=12,
-                color="gray",
-            )
-            ax3.set_title("MCMC Convergence")
-            ax3.set_xticks([])
-            ax3.set_yticks([])
-
-        # Plot 4: Residuals analysis (if available)
-        ax4 = fig.add_subplot(gs[1, :])
-        residuals = results.get("residuals")
-
-        # Try to compute residuals from experimental and theoretical data if
-        # not available
-        if residuals is None:
-            exp_data = results.get("experimental_data")
-            theory_data = results.get("theoretical_data")
-
-            if exp_data is not None and theory_data is not None:
-                try:
-                    if isinstance(exp_data, np.ndarray) and isinstance(
-                        theory_data, np.ndarray
-                    ):
-                        if exp_data.shape == theory_data.shape:
-                            residuals = exp_data - theory_data
-                            logger.debug(
-                                f"Computed residuals from exp - theory data, shape: {
-                                    residuals.shape
-                                }"
-                            )
-                        else:
-                            logger.warning(
-                                f"Shape mismatch: exp_data {
-                                    exp_data.shape
-                                } vs theory_data {theory_data.shape}"
-                            )
-                except Exception as e:
-                    logger.warning(f"Could not compute residuals from data: {e}")
-
-        if (
-            residuals is not None
-            and isinstance(residuals, np.ndarray)
-            and residuals.size > 0
-        ):
-            # Flatten residuals for histogram
-            flat_residuals = residuals.flatten()
-
-            # Only plot if we have data
-            if len(flat_residuals) > 0:
-                # Create histogram
-                ax4.hist(
-                    flat_residuals,
-                    bins=50,
-                    alpha=0.7,
-                    density=True,
-                    color="skyblue",
+                    if max(uncertainty_values) > 0:
+                        ax2.set_xlim(0, max(uncertainty_values) * 1.1)
+                    ax2.set_xlabel("Parameter Uncertainty (σ)")
+                    ax2.set_title("Parameter Uncertainties")
+                    ax2.grid(True, alpha=0.3)
+            else:
+                # Show placeholder message if no uncertainties available
+                ax2.text(
+                    0.5,
+                    0.5,
+                    "No uncertainty data\navailable",
+                    ha="center",
+                    va="center",
+                    transform=ax2.transAxes,
+                    fontsize=12,
+                    color="gray",
                 )
+                ax2.set_title("Parameter Uncertainties")
+                ax2.set_xticks([])
+                ax2.set_yticks([])
 
-                # Overlay normal distribution for comparison
-                mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
+            # Plot 3: Convergence diagnostics (if MCMC results available)
+            ax3 = fig.add_subplot(gs[0, 2])
+            if "mcmc_diagnostics" in results and ARVIZ_AVAILABLE:
+                # Plot R-hat values
+                diagnostics = results["mcmc_diagnostics"]
 
-                # Avoid division by zero if sigma is too small
-                if sigma > 1e-10:
-                    x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
-                    ax4.plot(
-                        x,
-                        (1 / (sigma * np.sqrt(2 * np.pi)))
-                        * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
-                        "r-",
-                        linewidth=2,
-                        label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
-                    )
-                else:
-                    # If sigma is effectively zero, just show the mean as a
-                    # vertical line
-                    ax4.axvline(
-                        float(mu),
-                        color="red",
-                        linestyle="--",
-                        linewidth=2,
-                        label=f"Mean={mu:.3e} (σ≈0)",
-                    )
-                    logger.warning(
-                        "Standard deviation is very small, showing mean line instead of normal distribution"
+                # Check for diagnostics with various key names (r_hat, rhat)
+                r_hat_data = diagnostics.get("r_hat") or diagnostics.get("rhat")
+                logger.debug(f"R-hat data for summary plot: {r_hat_data}")
+
+                # Convert ArviZ Dataset to dict if needed
+                r_hat_dict = {}
+                if r_hat_data is not None:
+                    try:
+                        if hasattr(r_hat_data, "items"):
+                            # ArviZ Dataset object
+                            r_hat_dict = {str(k): float(v) for k, v in r_hat_data.items()}
+                        elif isinstance(r_hat_data, dict):
+                            # Already a dictionary
+                            r_hat_dict = r_hat_data
+                        logger.debug(f"Converted R-hat dict for summary: {r_hat_dict}")
+                    except Exception as e:
+                        logger.warning(f"Could not convert R-hat data for summary: {e}")
+
+                # Try to compute R-hat from trace data if missing
+                if not r_hat_dict and "mcmc_trace" in results:
+                    try:
+                        import arviz as az
+
+                        trace_data = results["mcmc_trace"]
+                        if hasattr(trace_data, "posterior"):
+                            r_hat_summary = az.rhat(trace_data)
+                            if hasattr(r_hat_summary, "to_dict"):
+                                r_hat_dict = r_hat_summary.to_dict()  # type: ignore
+                            else:
+                                r_hat_dict = {
+                                    str(k): float(v) for k, v in r_hat_summary.items()
+                                }  # type: ignore
+                            logger.debug(f"Computed R-hat dict for summary: {r_hat_dict}")
+                    except Exception as e:
+                        logger.warning(f"Could not compute R-hat for summary plot: {e}")
+
+                if r_hat_dict:
+                    # Get active parameters from config to filter out inactive ones
+                    active_param_names = None
+                    if (
+                        config
+                        and "initial_parameters" in config
+                        and "active_parameters" in config["initial_parameters"]
+                    ):
+                        active_param_names = config["initial_parameters"][
+                            "active_parameters"
+                        ]
+                        logger.debug(
+                            f"Using active parameters for summary: {active_param_names}"
+                        )
+
+                    # Filter for active parameters if available
+                    if active_param_names:
+                        param_names = [
+                            name for name in active_param_names if name in r_hat_dict
+                        ]
+                    else:
+                        param_names = list(r_hat_dict.keys())
+
+                    r_hat_values = [r_hat_dict.get(name, 1.0) for name in param_names]
+                    logger.debug(
+                        f"Summary plot R-hat values: {dict(zip(param_names, r_hat_values, strict=False))}"
                     )
 
-                ax4.set_xlabel("Residual Value")
-                ax4.set_ylabel("Density")
+                    if param_names and r_hat_values:  # Check if we have data
+                        colors = [
+                            "green" if r < 1.1 else "orange" if r < 1.2 else "red"
+                            for r in r_hat_values
+                        ]
+                        ax3.barh(param_names, r_hat_values, color=colors, alpha=0.7)
+                        # Set appropriate axis limits
+                        if max(r_hat_values) > 0:
+                            ax3.set_xlim(0.9, max(max(r_hat_values) * 1.1, 1.3))
+                        ax3.axvline(
+                            x=1.1,
+                            color="red",
+                            linestyle="--",
+                            alpha=0.7,
+                            label="R̂ = 1.1",
+                        )
+                        ax3.set_xlabel("R̂ (Convergence)")
+                        ax3.set_title("MCMC Convergence")
+                        ax3.legend()
+                        ax3.grid(True, alpha=0.3)
+            else:
+                # Show placeholder message if no MCMC diagnostics available
+                ax3.text(
+                    0.5,
+                    0.5,
+                    "No MCMC convergence\ndiagnostics available",
+                    ha="center",
+                    va="center",
+                    transform=ax3.transAxes,
+                    fontsize=12,
+                    color="gray",
+                )
+                ax3.set_title("MCMC Convergence")
+                ax3.set_xticks([])
+                ax3.set_yticks([])
+
+            # Plot 4: Residuals analysis (if available)
+            ax4 = fig.add_subplot(gs[1, :])
+            residuals = results.get("residuals")
+
+            # Try to compute residuals from experimental and theoretical data if
+            # not available
+            if residuals is None:
+                exp_data = results.get("experimental_data")
+                theory_data = results.get("theoretical_data")
+
+                if exp_data is not None and theory_data is not None:
+                    try:
+                        if isinstance(exp_data, np.ndarray) and isinstance(
+                            theory_data, np.ndarray
+                        ):
+                            if exp_data.shape == theory_data.shape:
+                                residuals = exp_data - theory_data
+                                logger.debug(
+                                    f"Computed residuals from exp - theory data, shape: {
+                                        residuals.shape
+                                    }"
+                                )
+                            else:
+                                logger.warning(
+                                    f"Shape mismatch: exp_data {
+                                        exp_data.shape
+                                    } vs theory_data {theory_data.shape}"
+                                )
+                    except Exception as e:
+                        logger.warning(f"Could not compute residuals from data: {e}")
+
+            if (
+                residuals is not None
+                and isinstance(residuals, np.ndarray)
+                and residuals.size > 0
+            ):
+                # Flatten residuals for histogram
+                flat_residuals = residuals.flatten()
+
+                # Only plot if we have data
+                if len(flat_residuals) > 0:
+                    # Create histogram
+                    ax4.hist(
+                        flat_residuals,
+                        bins=50,
+                        alpha=0.7,
+                        density=True,
+                        color="skyblue",
+                    )
+
+                    # Overlay normal distribution for comparison
+                    mu, sigma = np.mean(flat_residuals), np.std(flat_residuals)
+
+                    # Avoid division by zero if sigma is too small
+                    if sigma > 1e-10:
+                        x = np.linspace(flat_residuals.min(), flat_residuals.max(), 100)
+                        ax4.plot(
+                            x,
+                            (1 / (sigma * np.sqrt(2 * np.pi)))
+                            * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
+                            "r-",
+                            linewidth=2,
+                            label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
+                        )
+                    else:
+                        # If sigma is effectively zero, just show the mean as a
+                        # vertical line
+                        ax4.axvline(
+                            float(mu),
+                            color="red",
+                            linestyle="--",
+                            linewidth=2,
+                            label=f"Mean={mu:.3e} (σ≈0)",
+                        )
+                        logger.warning(
+                            "Standard deviation is very small, showing mean line instead of normal distribution"
+                        )
+
+                    ax4.set_xlabel("Residual Value")
+                    ax4.set_ylabel("Density")
+                    ax4.set_title("Residuals Distribution Analysis")
+                    ax4.legend()
+                    ax4.grid(True, alpha=0.3)
+            else:
+                # Show placeholder message if no residuals available
+                ax4.text(
+                    0.5,
+                    0.5,
+                    "No residuals data available\n(requires experimental and theoretical data)",
+                    ha="center",
+                    va="center",
+                    transform=ax4.transAxes,
+                    fontsize=12,
+                    color="gray",
+                )
                 ax4.set_title("Residuals Distribution Analysis")
-                ax4.legend()
-                ax4.grid(True, alpha=0.3)
-        else:
-            # Show placeholder message if no residuals available
-            ax4.text(
-                0.5,
-                0.5,
-                "No residuals data available\n(requires experimental and theoretical data)",
-                ha="center",
-                va="center",
-                transform=ax4.transAxes,
-                fontsize=12,
-                color="gray",
+                ax4.set_xticks([])
+                ax4.set_yticks([])
+
+            # Add overall title
+            fig.suptitle(f"Analysis Diagnostic Summary (φ = {phi_angle:.1f}°)", fontsize=18, y=0.98)
+
+            # Save the plot with phi angle in filename
+            method_prefix = f"{method_name.lower()}_" if method_name else ""
+            filename = f"{method_prefix}diagnostic_summary_phi_{phi_angle:.1f}deg.{plot_config['plot_format']}"
+            filepath = outdir / filename
+
+            plot_success = save_fig(
+                fig,
+                filepath,
+                dpi=plot_config["dpi"],
+                format=plot_config["plot_format"],
             )
-            ax4.set_title("Residuals Distribution Analysis")
-            ax4.set_xticks([])
-            ax4.set_yticks([])
+            plt.close(fig)
 
-        # Add overall title
-        fig.suptitle("Analysis Diagnostic Summary", fontsize=18, y=0.98)
+            if plot_success:
+                logger.info(f"Successfully created diagnostic summary plot for φ = {phi_angle:.1f}°")
+                success_count += 1
+            else:
+                logger.error(f"Failed to save diagnostic summary plot for φ = {phi_angle:.1f}°")
 
-        # Save the plot
-        method_prefix = f"{method_name.lower()}_" if method_name else ""
-        filename = f"{method_prefix}diagnostic_summary.{plot_config['plot_format']}"
-        filepath = outdir / filename
-
-        success = save_fig(
-            fig,
-            filepath,
-            dpi=plot_config["dpi"],
-            format=plot_config["plot_format"],
-        )
-        plt.close(fig)
-
-        if success:
-            logger.info("Successfully created diagnostic summary plot")
-        else:
-            logger.error("Failed to save diagnostic summary plot")
-
-        return success
-
-    except Exception as e:
-        logger.error(f"Error creating diagnostic summary plot: {e}")
-        plt.close("all")
-        return False
+        except Exception as e:
+            logger.error(f"Error creating diagnostic summary plot for φ = {phi_angle:.1f}°: {e}")
+            plt.close("all")
+    
+    # Return True if all plots were created successfully
+    logger.info(f"Created {success_count}/{total_angles} diagnostic summary plots successfully")
+    return success_count == total_angles
 
 
 # Utility function to create all plots at once
@@ -1970,8 +1900,16 @@ def create_all_plots(
                     param_names=results.get("parameter_names"),
                 )
 
-        # Diagnostic summary (if not method-specific)
-        if not method_results:
+        # Diagnostic summary (only for --method all, not for single methods like --method mcmc)
+        # Check if this is a multi-method run by looking for methods_used or multiple method results
+        methods_used = results.get("methods_used", [])
+        is_multi_method_run = (
+            len(methods_used) > 1 or 
+            "methods_comparison" in results or
+            (not method_results and results.get("method") not in ["MCMC", "Classical", "Robust"])
+        )
+        
+        if not method_results and is_multi_method_run:
             plot_status["diagnostic_summary"] = plot_diagnostic_summary(
                 results, outdir, config
             )

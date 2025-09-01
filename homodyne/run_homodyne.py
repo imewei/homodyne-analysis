@@ -1363,6 +1363,23 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
             "recommendation": "Use Classical for fast estimates; use Robust for noise-resistant estimates; use MCMC for uncertainty quantification",
         }
 
+        # Generate diagnostic summary plot for --method all in root directory
+        try:
+            from .plotting import plot_diagnostic_summary
+            from pathlib import Path
+            
+            logger.info("Creating overall diagnostic summary plot for --method all")
+            output_path = Path(output_dir) if output_dir else Path("./homodyne_results")
+            success = plot_diagnostic_summary(all_results, output_path, analyzer.config)
+            
+            if success:
+                logger.info(f"✓ Diagnostic summary plot created: {output_path}/diagnostic_summary.png")
+            else:
+                logger.warning("⚠ Failed to create diagnostic summary plot")
+                
+        except Exception as e:
+            logger.warning(f"⚠ Error creating diagnostic summary plot: {e}")
+
         return all_results
 
     logger.error("❌ All optimization methods failed")
@@ -1581,10 +1598,6 @@ def _generate_classical_plots(
         import traceback
 
         logger.debug(f"Full traceback: {traceback.format_exc()}")
-
-
-# Note: _save_classical_fitted_data function removed - old format saving replaced
-# by method-specific saving in _save_individual_method_results
 
 
 def _save_individual_method_results(
@@ -2304,15 +2317,6 @@ def _generate_robust_plots(
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
-# Note: _save_robust_fitted_data function removed - old format saving replaced
-# by method-specific saving in _save_individual_robust_method_results
-
-
-# Note: _save_mcmc_fitted_data function removed - MCMC now saves data through
-# _generate_mcmc_plots function which has the proper consolidated
-# fitted_data.npz format
-
-
 def _generate_mcmc_plots(
     analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results
 ):
@@ -2629,6 +2633,10 @@ def _generate_mcmc_plots(
                 "mcmc_diagnostics": mcmc_results.get("diagnostics", {}),
                 "method": "MCMC",
             }
+            
+            # Add chi-squared value for diagnostic plotting if available
+            if "chi_squared" in mcmc_results:
+                plot_data["mcmc_chi_squared"] = mcmc_results["chi_squared"]
 
             logger.info("Generating MCMC-specific plots (trace, corner, etc.)...")
             plot_status = create_all_plots(plot_data, mcmc_dir, config)

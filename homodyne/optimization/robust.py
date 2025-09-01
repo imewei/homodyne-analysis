@@ -37,12 +37,14 @@ from sklearn.utils import resample
 try:
     import cvxpy as cp
     import warnings
-    
+
     # Suppress CVXPY reshape order FutureWarning
-    warnings.filterwarnings("ignore", 
-                          message=".*reshape expression.*order.*", 
-                          category=FutureWarning,
-                          module="cvxpy")
+    warnings.filterwarnings(
+        "ignore",
+        message=".*reshape expression.*order.*",
+        category=FutureWarning,
+        module="cvxpy",
+    )
 
     CVXPY_AVAILABLE = True
 except ImportError:

@@ -319,10 +319,13 @@ class TestDiagnosticPlots:
 
         assert success is True
 
-        # Check that plot file was created
-        plot_files = list(tmp_path.glob("diagnostic_summary.png"))
-        assert len(plot_files) == 1
-        assert plot_files[0].stat().st_size > 1000
+        # Check that plot files were created (one per phi angle)
+        plot_files = list(tmp_path.glob("diagnostic_summary_phi_*.png"))
+        assert len(plot_files) == 3  # Should match number of phi angles (0, 45, 90 degrees)
+        
+        # Check that all files have reasonable size
+        for plot_file in plot_files:
+            assert plot_file.stat().st_size > 1000
 
     def test_plot_diagnostic_summary_with_chi2_comparison(self, tmp_path, dummy_config):
         """Test diagnostic plot with multiple chi-squared values."""
@@ -330,14 +333,15 @@ class TestDiagnosticPlots:
             "classical_chi_squared": 1.234,
             "mcmc_chi_squared": 1.050,
             "residuals": np.random.normal(0, 0.1, (50, 50)),
+            "phi_angles": np.array([0.0, 45.0]),  # Add phi angles for per-angle plots
         }
 
         success = plot_diagnostic_summary(results, tmp_path, dummy_config)
 
         assert success is True
 
-        plot_files = list(tmp_path.glob("diagnostic_summary.png"))
-        assert len(plot_files) == 1
+        plot_files = list(tmp_path.glob("diagnostic_summary_phi_*.png"))
+        assert len(plot_files) == 2  # Should match number of phi angles
 
     def test_plot_diagnostic_summary_with_uncertainties(self, tmp_path, dummy_config):
         """Test diagnostic plot with parameter uncertainties."""
@@ -451,6 +455,7 @@ class TestDiagnosticPlots:
                 "method": "Comprehensive Test",
                 "parameter_names": param_names,
                 "parameter_units": ["Å²/s", "dimensionless", "Å²/s"],
+                "phi_angles": np.array([0.0, 45.0, 90.0]),  # For per-angle plots
             }
 
             # Configuration with active parameters
@@ -464,17 +469,16 @@ class TestDiagnosticPlots:
             success = plot_diagnostic_summary(results, tmp_path, config)
             assert success is True
 
-            # Check that the plot file exists and has substantial size
-            plot_files = list(tmp_path.glob("diagnostic_summary.png"))
-            assert len(plot_files) == 1
+            # Check that per-angle plot files exist and have substantial size
+            plot_files = list(tmp_path.glob("diagnostic_summary_phi_*.png"))
+            assert len(plot_files) == 3  # Should match number of phi angles
 
-            plot_file = plot_files[0]
-            file_size = plot_file.stat().st_size
-
-            # Should be substantial for a 4-subplot figure with real data
-            assert (
-                file_size > 50000
-            ), f"Plot file size {file_size} is too small - may have empty subplots"
+            # Each file should be substantial for a 4-subplot figure with real data
+            for plot_file in plot_files:
+                file_size = plot_file.stat().st_size
+                assert (
+                    file_size > 50000
+                ), f"Plot file size {file_size} is too small - may have empty subplots"
 
         except ImportError:
             # Skip test if ArviZ is not available
@@ -486,14 +490,14 @@ class TestDiagnosticPlots:
         self, tmp_path, dummy_config
     ):
         """Test diagnostic summary plot with minimal data shows appropriate placeholders."""
-        # Minimal results with only basic chi-squared data
+        # Minimal results with only basic chi-squared data - no phi_angles provided
         minimal_results = {"best_chi_squared": 5.0, "method": "Minimal Test"}
 
         success = plot_diagnostic_summary(minimal_results, tmp_path, dummy_config)
         assert success is True
 
-        # Check that plot file exists (should show placeholder messages)
-        plot_files = list(tmp_path.glob("diagnostic_summary.png"))
+        # When no phi_angles provided, should create single plot with default angle
+        plot_files = list(tmp_path.glob("diagnostic_summary_phi_*.png"))
         assert len(plot_files) == 1
 
         # File should still be reasonably sized even with placeholders
