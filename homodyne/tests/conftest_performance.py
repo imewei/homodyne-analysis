@@ -166,9 +166,9 @@ def assert_performance_stability(times, cv_threshold=0.3, max_cv=None, **kwargs)
     variance = sum((t - mean_time) ** 2 for t in times) / len(times)
     std_dev = variance**0.5
     cv = std_dev / mean_time if mean_time > 0 else 0
-    assert (
-        cv <= cv_threshold
-    ), f"Coefficient of variation {cv:.3f} exceeds threshold {cv_threshold}"
+    assert cv <= cv_threshold, (
+        f"Coefficient of variation {cv:.3f} exceeds threshold {cv_threshold}"
+    )
 
 
 # Performance test data storage
@@ -201,7 +201,7 @@ class PerformanceRecorder:
         except OSError:
             pass
 
-    def record_metric(self, test_name: str, metric_name: str, value: float):
+    def record_metric(self, test_name: str, metric_name: str, value: float) -> None:
         """Record a performance metric."""
         if test_name not in self.current_results:
             self.current_results[test_name] = {}
@@ -224,9 +224,9 @@ class PerformanceRecorder:
             return False
 
         # Check for regression (value significantly worse than baseline)
-        return value > baseline * threshold
+        return bool(value > baseline * threshold)
 
-    def update_baseline(self, test_name: str, metric_name: str, value: float):
+    def update_baseline(self, test_name: str, metric_name: str, value: float) -> None:
         """Update baseline if current performance is better."""
         baseline = self.baselines.get(test_name, {}).get(metric_name, float("inf"))
         if value < baseline * 0.9:  # 10% improvement
@@ -491,7 +491,7 @@ def assert_performance_regression(
     recorder: PerformanceRecorder,
     threshold: float = 1.5,
     update_baseline: bool = False,
-):
+) -> None:
     """Assert that performance hasn't regressed beyond threshold."""
 
     is_regression = recorder.check_regression(test_name, metric_name, value, threshold)
@@ -518,7 +518,7 @@ def assert_memory_usage(
     memory_mb: float,
     recorder: PerformanceRecorder,
     max_memory_mb: float = 100.0,
-):
+) -> None:
     """Assert memory usage is within acceptable limits."""
     # Check absolute memory limit
     assert memory_mb <= max_memory_mb, (
@@ -666,9 +666,10 @@ OPTIMIZATION_PERFORMANCE_CONFIG = {
         "large": {"n_angles": 35, "n_times": 120},
     },
     "sample_counts": {
-        "quick_test": {"draws": 40, "tune": 20, "chains": 2},
-        "standard_test": {"draws": 80, "tune": 40, "chains": 2},
-        "thorough_test": {"draws": 200, "tune": 100, "chains": 4},
+        "quick_test": {"draws": 10, "tune": 5, "chains": 1},
+        "standard_test": {"draws": 20, "tune": 10, "chains": 1},
+        "thorough_test": {"draws": 50, "tune": 25, "chains": 2},
+        "benchmark_test": {"draws": 200, "tune": 100, "chains": 4},
     },
     "ci_adjustments": {
         "timeout_multiplier": 2.0,
@@ -680,13 +681,13 @@ OPTIMIZATION_PERFORMANCE_CONFIG = {
 
 def get_optimization_timeout(method: str) -> float:
     """Get timeout for optimization method with CI adjustments."""
-    base_timeout = OPTIMIZATION_PERFORMANCE_CONFIG["timeouts"].get(method, 60.0)
+    timeouts = OPTIMIZATION_PERFORMANCE_CONFIG["timeouts"]
+    base_timeout: float = timeouts.get(method, 60.0)  # type: ignore[attr-defined]
     is_ci = any(os.getenv(var) for var in ["CI", "GITHUB_ACTIONS", "TRAVIS"])
 
     if is_ci:
-        multiplier = OPTIMIZATION_PERFORMANCE_CONFIG["ci_adjustments"][
-            "timeout_multiplier"
-        ]
+        ci_adjustments = OPTIMIZATION_PERFORMANCE_CONFIG["ci_adjustments"]
+        multiplier: float = ci_adjustments["timeout_multiplier"]  # type: ignore[index]
         return base_timeout * multiplier
 
     return base_timeout
@@ -694,7 +695,8 @@ def get_optimization_timeout(method: str) -> float:
 
 def get_performance_threshold_for_metric(metric: str) -> float:
     """Get performance threshold for specific metric."""
-    base_threshold = OPTIMIZATION_PERFORMANCE_CONFIG["thresholds"].get(metric, 1.0)
+    thresholds = OPTIMIZATION_PERFORMANCE_CONFIG["thresholds"]
+    base_threshold: float = thresholds.get(metric, 1.0)  # type: ignore[attr-defined]
     is_ci = any(os.getenv(var) for var in ["CI", "GITHUB_ACTIONS", "TRAVIS"])
 
     if is_ci:
@@ -705,7 +707,7 @@ def get_performance_threshold_for_metric(metric: str) -> float:
 
 def assert_optimization_performance(
     elapsed_time: float, method: str, custom_threshold: float | None = None
-):
+) -> None:
     """Assert optimization performance is within bounds."""
     threshold = custom_threshold or get_optimization_timeout(method)
 
@@ -725,7 +727,7 @@ class OptimizationBenchmarkContext:
         self.end_time = 0.0
         self.memory_start = 0.0
         self.memory_peak = 0.0
-        self.results = {}
+        self.results: dict[str, float] = {}
 
     def __enter__(self):
         # Optimize environment for consistent benchmarking
@@ -760,7 +762,7 @@ class OptimizationBenchmarkContext:
             import psutil
 
             process = psutil.Process(os.getpid())
-            return process.memory_info().rss / 1024 / 1024
+            return float(process.memory_info().rss / 1024 / 1024)
         except ImportError:
             return 0.0
 
@@ -774,7 +776,9 @@ class OptimizationBenchmarkContext:
 def optimization_benchmark_context():
     """Provide optimization benchmark context manager."""
 
-    def _create_context(method_name: str, test_name: str = ""):
+    def _create_context(
+        method_name: str, test_name: str = ""
+    ) -> OptimizationBenchmarkContext:
         return OptimizationBenchmarkContext(method_name, test_name)
 
     return _create_context
@@ -911,7 +915,7 @@ def universal_mock_core_large():
     )
 
 
-def log_optimization_performance(method: str, results: dict[str, Any]):
+def log_optimization_performance(method: str, results: dict[str, Any]) -> None:
     """Log optimization performance results."""
     import logging
 

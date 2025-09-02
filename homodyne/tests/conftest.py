@@ -512,3 +512,72 @@ def pytest_addoption(parser):
         default=False,
         help="Skip slow performance tests",
     )
+
+
+# ================================
+# Performance Optimization Fixtures
+# ================================
+
+
+@pytest.fixture(scope="session")
+def cached_test_data():
+    """Session-scoped fixture that caches expensive test data generation.
+
+    This prevents regenerating the same data across multiple tests,
+    significantly improving test suite performance.
+    """
+    cache = {}
+
+    # Pre-generate common test data sizes
+    cache["tiny_data"] = np.random.RandomState(42).rand(1, 5, 5) + 1.0
+    cache["small_data"] = np.random.RandomState(42).rand(1, 10, 10) + 1.0
+    cache["medium_data"] = np.random.RandomState(42).rand(1, 20, 20) + 1.0
+    cache["large_data"] = np.random.RandomState(42).rand(1, 50, 50) + 1.0
+
+    # Common angle arrays
+    cache["single_angle"] = np.array([0])
+    cache["few_angles"] = np.array([0, 30, 60, 90])
+    cache["many_angles"] = np.linspace(0, 180, 15)
+
+    # Common parameter arrays
+    cache["minimal_params"] = np.array([100.0, -0.1, 1.0])
+    cache["full_params"] = np.array([100.0, -0.1, 1.0, 0.1, 0.1, 0.01, 30.0])
+
+    return cache
+
+
+@pytest.fixture(scope="session")
+def fast_mcmc_config():
+    """Session-scoped fixture for fast MCMC configurations.
+
+    Uses minimal sampling parameters optimized for test speed.
+    """
+    return {
+        "draws": 5,  # Minimal for fastest tests
+        "tune": 3,  # Minimal tuning
+        "chains": 1,  # Single chain for speed
+        "target_accept": 0.8,
+        "max_treedepth": 5,  # Reduce computation
+    }
+
+
+@pytest.fixture(scope="session")
+def memory_efficient_cache():
+    """Memory-efficient caching that clears between test modules."""
+    cache = {}
+
+    def get_or_create(key, factory_func):
+        """Get cached item or create it with the factory function."""
+        if key not in cache:
+            cache[key] = factory_func()
+        return cache[key]
+
+    def clear():
+        """Clear the cache to free memory."""
+        cache.clear()
+
+    # Attach methods to the cache dict
+    cache["get_or_create"] = get_or_create
+    cache["clear"] = clear
+
+    return cache

@@ -68,7 +68,9 @@ def mock_config():
             "tight_layout": True,
         },
         "analysis": {"mode": "laminar_flow", "phi_angles": [0, 45, 90]},
-        "output_settings": {"results_directory": "/tmp/test_plots"},
+        "output_settings": {
+            "results_directory": Path(tempfile.gettempdir()) / "test_plots"
+        },
     }
 
 
@@ -412,9 +414,7 @@ class TestConvergenceDiagnostics:
         with patch("homodyne.plotting.plot_mcmc_convergence_diagnostics") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            mock_plot(
-                mock_diagnostics, plot_type="energy", outdir=temp_output_dir
-            )
+            mock_plot(mock_diagnostics, plot_type="energy", outdir=temp_output_dir)
 
             mock_plot.assert_called_once()
 

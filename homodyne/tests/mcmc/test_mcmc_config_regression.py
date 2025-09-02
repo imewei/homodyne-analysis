@@ -144,15 +144,15 @@ class TestMCMCConfigurationRegression:
         mcmc_config = sampler.mcmc_config
 
         # These assertions would have failed before the fix
-        assert (
-            mcmc_config.get("draws", 1000) == 10000
-        ), "Should use Simon's configured draws=10000, not default 1000"
-        assert (
-            mcmc_config.get("chains", 2) == 8
-        ), "Should use Simon's configured chains=8, not default 2"
-        assert (
-            mcmc_config.get("tune", 500) == 1000
-        ), "Should use Simon's configured tune=1000, not default 500"
+        assert mcmc_config.get("draws", 1000) == 10000, (
+            "Should use Simon's configured draws=10000, not default 1000"
+        )
+        assert mcmc_config.get("chains", 2) == 8, (
+            "Should use Simon's configured chains=8, not default 2"
+        )
+        assert mcmc_config.get("tune", 500) == 1000, (
+            "Should use Simon's configured tune=1000, not default 500"
+        )
 
     @pytest.mark.skipif(
         not _check_pymc_available(),
@@ -386,10 +386,10 @@ class TestMCMCTraceFileRegression:
     def test_trace_file_validation_utility(self):
         """Test the utility function for validating trace dimensions."""
         # Create traces with different dimensions
-        correct_trace = create_mock_trace(chains=8, draws=10000)  # type: ignore
-        wrong_trace = create_mock_trace(chains=2, draws=1000)  # type: ignore
+        correct_trace = create_mock_trace(chains=8, draws=10000)
+        wrong_trace = create_mock_trace(chains=2, draws=1000)
 
         # Validation should work correctly
-        assert validate_trace_dimensions(correct_trace, 8, 10000)  # type: ignore
-        assert not validate_trace_dimensions(wrong_trace, 8, 10000)  # type: ignore
-        assert validate_trace_dimensions(wrong_trace, 2, 1000)  # type: ignore
+        assert validate_trace_dimensions(correct_trace, 8, 10000)
+        assert not validate_trace_dimensions(wrong_trace, 8, 10000)
+        assert validate_trace_dimensions(wrong_trace, 2, 1000)

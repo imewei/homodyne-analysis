@@ -29,17 +29,17 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def create_minimal_mcmc_config(draws=1000, chains=2, tune=500, **kwargs):
+def create_minimal_mcmc_config(draws=20, chains=1, tune=10, **kwargs):
     """Create a minimal MCMC configuration for testing.
 
     Parameters
     ----------
     draws : int, optional
-        Number of MCMC draws (default: 1000)
+        Number of MCMC draws (default: 20 for fast tests)
     chains : int, optional
-        Number of MCMC chains (default: 2)
+        Number of MCMC chains (default: 1 for fast tests)
     tune : int, optional
-        Number of tuning steps (default: 500)
+        Number of tuning steps (default: 10 for fast tests)
     **kwargs : dict
         Additional MCMC configuration parameters
 
@@ -170,32 +170,32 @@ def assert_mcmc_config_values(
     """
     if expected_draws is not None:
         actual_draws = sampler.mcmc_config.get("draws", 1000)
-        assert (
-            actual_draws == expected_draws
-        ), f"Expected draws={expected_draws}, got {actual_draws}"
+        assert actual_draws == expected_draws, (
+            f"Expected draws={expected_draws}, got {actual_draws}"
+        )
 
     if expected_chains is not None:
         actual_chains = sampler.mcmc_config.get("chains", 2)
-        assert (
-            actual_chains == expected_chains
-        ), f"Expected chains={expected_chains}, got {actual_chains}"
+        assert actual_chains == expected_chains, (
+            f"Expected chains={expected_chains}, got {actual_chains}"
+        )
 
     if expected_tune is not None:
         actual_tune = sampler.mcmc_config.get("tune", 500)
-        assert (
-            actual_tune == expected_tune
-        ), f"Expected tune={expected_tune}, got {actual_tune}"
+        assert actual_tune == expected_tune, (
+            f"Expected tune={expected_tune}, got {actual_tune}"
+        )
 
 
-def create_mock_trace(chains=2, draws=1000, parameters=None):
+def create_mock_trace(chains=1, draws=20, parameters=None):
     """Create a mock MCMC trace object for testing.
 
     Parameters
     ----------
     chains : int, optional
-        Number of chains in the trace (default: 2)
+        Number of chains in the trace (default: 1 for fast tests)
     draws : int, optional
-        Number of draws per chain (default: 1000)
+        Number of draws per chain (default: 20 for fast tests)
     parameters : list, optional
         List of parameter names (default: ["D0", "alpha", "D_offset"])
 

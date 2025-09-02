@@ -141,6 +141,7 @@ class TestGPUBenchmarking:
         """Test matrix operation benchmarking."""
         try:
             import importlib.util
+
             if importlib.util.find_spec("jax") is None:
                 pytest.skip("JAX not available for benchmarking test")
         except ImportError:
@@ -325,6 +326,7 @@ class TestIntegrationWithJAX:
         """Test JAX GPU configuration setup."""
         try:
             import importlib.util
+
             if importlib.util.find_spec("jax") is None:
                 pytest.skip("JAX not available for integration test")
         except ImportError:
@@ -341,6 +343,7 @@ class TestIntegrationWithJAX:
         """Test application of memory fraction settings."""
         try:
             import importlib.util
+
             if importlib.util.find_spec("jax") is None:
                 pytest.skip("JAX not available for memory fraction test")
         except ImportError:

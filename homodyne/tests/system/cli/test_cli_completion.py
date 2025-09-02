@@ -16,7 +16,7 @@ except ImportError:
     COMPLETION_AVAILABLE = False
 
     # Define dummy functions to avoid errors
-    def install_shell_completion(shell_type=None, force=False) -> bool:  # type: ignore[misc]
+    def install_shell_completion(shell_type=None, force=False) -> bool:  # type: ignore[misc,no-untyped-def]
         return True
 
     def is_virtual_environment() -> bool:  # type: ignore[misc]

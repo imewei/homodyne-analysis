@@ -248,9 +248,9 @@ class TestRobustHomodyneOptimizer:
 
     def test_optimizer_initialization(self, mock_analysis_core, test_config):
         """Test RobustHomodyneOptimizer initialization."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         assert optimizer.core == mock_analysis_core
@@ -261,12 +261,12 @@ class TestRobustHomodyneOptimizer:
 
     def test_create_robust_optimizer_factory(self, mock_analysis_core, test_config):
         """Test create_robust_optimizer factory function."""
-        assert (
-            create_robust_optimizer is not None
-        ), "create_robust_optimizer not available"
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert create_robust_optimizer is not None, (
+            "create_robust_optimizer not available"
+        )
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = create_robust_optimizer(mock_analysis_core, test_config)
 
         assert isinstance(optimizer, RobustHomodyneOptimizer)
@@ -275,9 +275,9 @@ class TestRobustHomodyneOptimizer:
 
     def test_check_dependencies(self, mock_analysis_core, test_config):
         """Test dependency checking."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         if CVXPY_AVAILABLE:
@@ -288,9 +288,9 @@ class TestRobustHomodyneOptimizer:
 
     def test_parameter_bounds_extraction(self, mock_analysis_core, test_config):
         """Test parameter bounds extraction from configuration."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
         bounds = optimizer._get_parameter_bounds()
 
@@ -304,9 +304,9 @@ class TestRobustHomodyneOptimizer:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test chi-squared computation."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         chi_squared = optimizer._compute_chi_squared(
@@ -323,9 +323,9 @@ class TestRobustHomodyneOptimizer:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test theoretical correlation function computation."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         c2_theory = optimizer._compute_theoretical_correlation(
@@ -342,9 +342,9 @@ class TestRobustHomodyneOptimizer:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test linearized correlation function and Jacobian computation."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         c2_theory, jacobian = optimizer._compute_linearized_correlation(
@@ -371,9 +371,9 @@ class TestDistributionallyRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test basic Wasserstein DRO functionality."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -403,9 +403,9 @@ class TestDistributionallyRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test effect of different uncertainty radius values."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -442,9 +442,9 @@ class TestScenarioBasedRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test bootstrap scenario generation."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -465,9 +465,9 @@ class TestScenarioBasedRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test basic scenario-based robust optimization."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -494,9 +494,9 @@ class TestScenarioBasedRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test effect of different scenario counts."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -529,9 +529,9 @@ class TestEllipsoidalRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test basic ellipsoidal robust optimization."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -558,9 +558,9 @@ class TestEllipsoidalRobustOptimization:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test effect of different uncertainty bounds (gamma)."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -596,9 +596,9 @@ class TestRobustOptimizationInterface:
         self, mock_analysis_core, test_config, synthetic_data
     ):
         """Test main robust optimization interface with Wasserstein method."""
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         if not CVXPY_AVAILABLE:
@@ -637,9 +637,9 @@ class TestRobustOptimizationInterface:
         if not CVXPY_AVAILABLE:
             pytest.skip("CVXPY not available")
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -671,9 +671,9 @@ class TestRobustOptimizationInterface:
         if not CVXPY_AVAILABLE:
             pytest.skip("CVXPY not available")
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         assert CVXPY_AVAILABLE, "CVXPY not available"
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
@@ -864,9 +864,9 @@ class TestRobustOptimizationPerformance:
         mock_analysis_core.is_static_mode = lambda: False
         mock_analysis_core.get_effective_parameter_count = lambda: 7
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         # Test parameter bounds extraction for 7 parameters
@@ -884,9 +884,9 @@ class TestRobustOptimizationPerformance:
         small_core.phi_angles = np.array([0.0, 30.0])  # Only 2 angles
         small_core.c2_experimental = np.random.randn(2, 5).astype(np.float64)  # type: ignore
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(small_core, test_config)
 
         # Should handle small datasets gracefully
@@ -902,9 +902,9 @@ class TestRobustOptimizationPerformance:
         if not ROBUST_OPTIMIZATION_AVAILABLE or not CVXPY_AVAILABLE:
             pytest.skip("CVXPY not available")
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         # Test with parameters at bounds
@@ -924,9 +924,9 @@ class TestRobustOptimizationPerformance:
         if not ROBUST_OPTIMIZATION_AVAILABLE or not CVXPY_AVAILABLE:
             pytest.skip("CVXPY not available")
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         # Test with very large parameter values
@@ -963,9 +963,9 @@ class TestRobustOptimizationIntegration:
             # Test creating optimizer with loaded config
             if ROBUST_OPTIMIZATION_AVAILABLE:
                 mock_core = MockAnalysisCore(loaded_config)
-                assert (
-                    RobustHomodyneOptimizer is not None
-                ), "RobustHomodyneOptimizer not available"
+                assert RobustHomodyneOptimizer is not None, (
+                    "RobustHomodyneOptimizer not available"
+                )
                 optimizer = RobustHomodyneOptimizer(mock_core, loaded_config)
                 assert optimizer.settings["uncertainty_model"] == "wasserstein"
 
@@ -979,9 +979,9 @@ class TestRobustOptimizationIntegration:
         if not ROBUST_OPTIMIZATION_AVAILABLE or not CVXPY_AVAILABLE:
             pytest.skip("CVXPY not available")
 
-        assert (
-            RobustHomodyneOptimizer is not None
-        ), "RobustHomodyneOptimizer not available"
+        assert RobustHomodyneOptimizer is not None, (
+            "RobustHomodyneOptimizer not available"
+        )
         optimizer = RobustHomodyneOptimizer(mock_analysis_core, test_config)
 
         with caplog.at_level(logging.INFO):

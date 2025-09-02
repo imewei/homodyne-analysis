@@ -89,9 +89,9 @@ class TestPackageImports:
 
         # Check that __all__ contains valid exports
         for name in homodyne.__all__:
-            assert hasattr(
-                homodyne, name
-            ), f"Exported name '{name}' not found in module"
+            assert hasattr(homodyne, name), (
+                f"Exported name '{name}' not found in module"
+            )
 
             # Allow None for optional dependencies
             attr = getattr(homodyne, name)

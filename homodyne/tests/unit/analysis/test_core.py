@@ -10,6 +10,7 @@ This module tests the core analysis functionality including:
 """
 
 import json
+import tempfile
 from unittest.mock import Mock, patch
 
 import numpy as np
@@ -29,9 +30,9 @@ class TestHomodyneAnalysisCoreInit:
                 "geometry": {"stator_rotor_gap": 100},
             },
             "experimental_data": {
-                "data_folder_path": "/tmp",
+                "data_folder_path": tempfile.gettempdir(),
                 "data_file_name": "test.h5",
-                "phi_angles_path": "/tmp",
+                "phi_angles_path": tempfile.gettempdir(),
                 "phi_angles_file": "angles.txt",
             },
             "optimization_config": {
@@ -74,9 +75,9 @@ class TestHomodyneAnalysisCoreInit:
                 "geometry": {"stator_rotor_gap": 100},
             },
             "experimental_data": {
-                "data_folder_path": "/tmp",
+                "data_folder_path": tempfile.gettempdir(),
                 "data_file_name": "test.h5",
-                "phi_angles_path": "/tmp",
+                "phi_angles_path": tempfile.gettempdir(),
                 "phi_angles_file": "angles.txt",
             },
             "optimization_config": {

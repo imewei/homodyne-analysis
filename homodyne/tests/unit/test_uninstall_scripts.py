@@ -579,7 +579,7 @@ class TestFileSystemOperations:
 
     def test_safe_file_removal_nonexistent_file(self):
         """Test safe file removal of non-existent files."""
-        nonexistent_path = Path("/tmp/nonexistent_file_12345")
+        nonexistent_path = Path(tempfile.gettempdir()) / "nonexistent_file_12345"
 
         # Should not raise exception when trying to remove non-existent file
         try:
