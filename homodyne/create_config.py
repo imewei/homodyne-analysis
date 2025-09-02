@@ -35,6 +35,7 @@ Generated Configuration Includes:
 
 import argparse
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -228,6 +229,9 @@ def create_config_from_template(
 def main():
     """Command-line interface for config creation."""
     # Check Python version requirement
+    if sys.version_info < (3, 12):
+        print("Error: Python 3.12 or higher is required", file=sys.stderr)
+        sys.exit(1)
 
     parser = argparse.ArgumentParser(
         description="Create homodyne analysis configuration from mode-specific templates",
