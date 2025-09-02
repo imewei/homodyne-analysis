@@ -229,9 +229,16 @@ def main():
     """Command-line interface for config creation."""
     # Check Python version requirement
     import sys
+
     if sys.version_info < (3, 12):  # noqa: UP036
-        print("Error: Python 3.12 or higher is required for homodyne-analysis.", file=sys.stderr)
-        print(f"Current Python version: {sys.version_info[0]}.{sys.version_info[1]}", file=sys.stderr)
+        print(
+            "Error: Python 3.12 or higher is required for homodyne-analysis.",
+            file=sys.stderr,
+        )
+        print(
+            f"Current Python version: {sys.version_info[0]}.{sys.version_info[1]}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     parser = argparse.ArgumentParser(

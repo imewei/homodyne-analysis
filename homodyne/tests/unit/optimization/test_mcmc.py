@@ -134,8 +134,13 @@ class TestMCMCSamplerInitialization:
     @pytest.mark.skipif(not MCMC_MODULE_AVAILABLE, reason="MCMC module not available")
     def test_mcmc_sampler_init_basic(self, mock_analysis_core, mcmc_config):
         """Test basic MCMC sampler initialization."""
-        with patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True), \
-             patch("homodyne.optimization.mcmc._lazy_import_pymc", return_value=(Mock(), Mock(), Mock(), Mock())):
+        with (
+            patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True),
+            patch(
+                "homodyne.optimization.mcmc._lazy_import_pymc",
+                return_value=(Mock(), Mock(), Mock(), Mock()),
+            ),
+        ):
             sampler = MCMCSampler(mock_analysis_core, mcmc_config)
 
             assert sampler.core == mock_analysis_core
@@ -150,9 +155,14 @@ class TestMCMCSamplerInitialization:
         """Test MCMC sampler initialization with JAX backend."""
         mcmc_config["optimization_config"]["mcmc_sampling"]["use_jax"] = True
 
-        with patch("homodyne.optimization.mcmc.JAX_AVAILABLE", True), \
-             patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True), \
-             patch("homodyne.optimization.mcmc._lazy_import_pymc", return_value=(Mock(), Mock(), Mock(), Mock())):
+        with (
+            patch("homodyne.optimization.mcmc.JAX_AVAILABLE", True),
+            patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True),
+            patch(
+                "homodyne.optimization.mcmc._lazy_import_pymc",
+                return_value=(Mock(), Mock(), Mock(), Mock()),
+            ),
+        ):
             sampler = MCMCSampler(mock_analysis_core, mcmc_config)
 
             assert (
@@ -200,7 +210,12 @@ class TestLazyImports:
     def test_lazy_import_jax_success(self):
         """Test successful lazy import of JAX."""
         try:
-            import jax  # Test if jax is actually available
+            import importlib.util
+
+            # Test if jax is actually available
+            if importlib.util.find_spec("jax") is None:
+                pytest.skip("JAX not available for testing")
+
             with patch("homodyne.optimization.mcmc.pmjax", None):  # Force re-import
                 with patch("jax.devices", return_value=["gpu:0"]):
                     pmjax = _lazy_import_jax()

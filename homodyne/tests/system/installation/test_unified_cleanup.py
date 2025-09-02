@@ -262,9 +262,9 @@ class TestDryRunFunctionality:
 
                 # CRITICAL: Files should still exist (not actually removed)
                 for file_path in test_files:
-                    assert (
-                        file_path.exists()
-                    ), f"File {file_path} was incorrectly removed in dry-run!"
+                    assert file_path.exists(), (
+                        f"File {file_path} was incorrectly removed in dry-run!"
+                    )
 
                 # Should have printed dry-run information
                 print_calls = [str(call) for call in mock_print.call_args_list]

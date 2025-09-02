@@ -144,15 +144,15 @@ class TestMCMCConfigurationRegression:
         mcmc_config = sampler.mcmc_config
 
         # These assertions would have failed before the fix
-        assert (
-            mcmc_config.get("draws", 1000) == 10000
-        ), "Should use Simon's configured draws=10000, not default 1000"
-        assert (
-            mcmc_config.get("chains", 2) == 8
-        ), "Should use Simon's configured chains=8, not default 2"
-        assert (
-            mcmc_config.get("tune", 500) == 1000
-        ), "Should use Simon's configured tune=1000, not default 500"
+        assert mcmc_config.get("draws", 1000) == 10000, (
+            "Should use Simon's configured draws=10000, not default 1000"
+        )
+        assert mcmc_config.get("chains", 2) == 8, (
+            "Should use Simon's configured chains=8, not default 2"
+        )
+        assert mcmc_config.get("tune", 500) == 1000, (
+            "Should use Simon's configured tune=1000, not default 500"
+        )
 
     @pytest.mark.skipif(
         not _check_pymc_available(),

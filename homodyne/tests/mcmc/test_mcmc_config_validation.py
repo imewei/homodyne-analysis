@@ -313,9 +313,9 @@ class TestMCMCConfigurationUsage:
         assert draws == 10000, f"Expected draws=10000, got {draws}"
         assert tune == 1000, f"Expected tune=1000, got {tune}"
         assert chains == 8, f"Expected chains=8, got {chains}"
-        assert (
-            target_accept == 0.95
-        ), f"Expected target_accept=0.95, got {target_accept}"
+        assert target_accept == 0.95, (
+            f"Expected target_accept=0.95, got {target_accept}"
+        )
 
     def test_trace_dimension_validation(self):
         """Test validation of trace dimensions against configuration."""
@@ -408,15 +408,15 @@ class TestMCMCConfigurationUsage:
 
         # These are the values that should be used, not the defaults (2, 1000)
         mcmc_config = sampler.mcmc_config
-        assert (
-            mcmc_config.get("draws", 1000) == 10000
-        ), "Should use configured draws=10000, not default 1000"
-        assert (
-            mcmc_config.get("chains", 2) == 8
-        ), "Should use configured chains=8, not default 2"
-        assert (
-            mcmc_config.get("tune", 500) == 1000
-        ), "Should use configured tune=1000, not default 500"
+        assert mcmc_config.get("draws", 1000) == 10000, (
+            "Should use configured draws=10000, not default 1000"
+        )
+        assert mcmc_config.get("chains", 2) == 8, (
+            "Should use configured chains=8, not default 2"
+        )
+        assert mcmc_config.get("tune", 500) == 1000, (
+            "Should use configured tune=1000, not default 500"
+        )
 
     @pytest.mark.skipif(
         not _check_pymc_available(),
@@ -454,26 +454,26 @@ class TestMCMCConfigurationUsage:
 
         # The MCMCSampler should use the correct path and ignore the wrong
         # values
-        assert (
-            sampler.mcmc_config["draws"] == 10000
-        ), "Should read from optimization_config.mcmc_sampling.draws"
-        assert (
-            sampler.mcmc_config["chains"] == 8
-        ), "Should read from optimization_config.mcmc_sampling.chains"
-        assert (
-            sampler.mcmc_config["tune"] == 1000
-        ), "Should read from optimization_config.mcmc_sampling.tune"
+        assert sampler.mcmc_config["draws"] == 10000, (
+            "Should read from optimization_config.mcmc_sampling.draws"
+        )
+        assert sampler.mcmc_config["chains"] == 8, (
+            "Should read from optimization_config.mcmc_sampling.chains"
+        )
+        assert sampler.mcmc_config["tune"] == 1000, (
+            "Should read from optimization_config.mcmc_sampling.tune"
+        )
 
         # Verify it does NOT read from the old (wrong) locations
-        assert (
-            sampler.mcmc_config["draws"] != 999
-        ), "Should NOT read from root-level mcmc_draws"
-        assert (
-            sampler.mcmc_config["chains"] != 99
-        ), "Should NOT read from root-level mcmc_chains"
-        assert (
-            sampler.mcmc_config["tune"] != 999
-        ), "Should NOT read from root-level mcmc_tune"
+        assert sampler.mcmc_config["draws"] != 999, (
+            "Should NOT read from root-level mcmc_draws"
+        )
+        assert sampler.mcmc_config["chains"] != 99, (
+            "Should NOT read from root-level mcmc_chains"
+        )
+        assert sampler.mcmc_config["tune"] != 999, (
+            "Should NOT read from root-level mcmc_tune"
+        )
 
 
 class TestMCMCTraceFileValidation:
@@ -507,12 +507,12 @@ class TestMCMCTraceFileValidation:
         }
 
         # This should detect the mismatch
-        assert (
-            trace_draws != config_draws
-        ), f"Trace draws {trace_draws} don't match config {config_draws}"
-        assert (
-            trace_chains != config_chains
-        ), f"Trace chains {trace_chains} don't match config {config_chains}"
+        assert trace_draws != config_draws, (
+            f"Trace draws {trace_draws} don't match config {config_draws}"
+        )
+        assert trace_chains != config_chains, (
+            f"Trace chains {trace_chains} don't match config {config_chains}"
+        )
 
         # This is what was causing the plot to show wrong values
         plot_chain_text = f"Chains: {trace_chains}"
@@ -823,9 +823,9 @@ class TestMCMCThinningConfiguration:
         low_sample_warning = any(
             "reduces effective draws to 400" in warning for warning in warnings
         )
-        assert (
-            low_sample_warning
-        ), f"Expected low effective samples warning, got warnings: {warnings}"
+        assert low_sample_warning, (
+            f"Expected low effective samples warning, got warnings: {warnings}"
+        )
 
     @pytest.mark.skipif(
         not _check_pymc_available(),
@@ -846,9 +846,9 @@ class TestMCMCThinningConfiguration:
         thinning_recommendation = any(
             "Consider using thinning" in rec for rec in recommendations
         )
-        assert (
-            thinning_recommendation
-        ), f"Expected thinning recommendation, got: {recommendations}"
+        assert thinning_recommendation, (
+            f"Expected thinning recommendation, got: {recommendations}"
+        )
 
     @pytest.mark.skipif(
         not _check_pymc_available(),

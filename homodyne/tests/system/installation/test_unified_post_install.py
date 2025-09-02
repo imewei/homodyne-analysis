@@ -268,9 +268,9 @@ class TestAdvancedFeaturesIntegration:
                 ]
                 write_calls = [str(call) for call in mock_write.call_args_list]
                 for pattern in expected_content_patterns:
-                    assert any(
-                        pattern in call for call in write_calls
-                    ), f"Missing content pattern: {pattern}"
+                    assert any(pattern in call for call in write_calls), (
+                        f"Missing content pattern: {pattern}"
+                    )
 
     def test_install_advanced_features_interactive_mode(self):
         """Test interactive installation of advanced features."""

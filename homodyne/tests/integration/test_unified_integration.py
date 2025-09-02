@@ -79,9 +79,9 @@ class TestUnifiedSystemWorkflow:
 
                     file_calls = [str(call) for call in mock_write.call_args_list]
                     for expected in expected_calls:
-                        assert any(
-                            expected in call for call in file_calls
-                        ), f"Missing: {expected}"
+                        assert any(expected in call for call in file_calls), (
+                            f"Missing: {expected}"
+                        )
 
     def test_system_validation_after_installation(self):
         """Test system validation after complete installation."""

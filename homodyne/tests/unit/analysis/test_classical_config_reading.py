@@ -728,12 +728,12 @@ class TestGurobiIntegration:
         assert len(bounds) == 7
         for i, (expected_min, expected_max) in enumerate(expected_bounds):
             actual_min, actual_max = bounds[i]
-            assert (
-                actual_min == expected_min
-            ), f"Parameter {i} min bound mismatch: {actual_min} != {expected_min}"
-            assert (
-                actual_max == expected_max
-            ), f"Parameter {i} max bound mismatch: {actual_max} != {expected_max}"
+            assert actual_min == expected_min, (
+                f"Parameter {i} min bound mismatch: {actual_min} != {expected_min}"
+            )
+            assert actual_max == expected_max, (
+                f"Parameter {i} max bound mismatch: {actual_max} != {expected_max}"
+            )
 
         print("✓ Gurobi correctly uses MCMC bounds")
 
@@ -784,9 +784,9 @@ class TestGurobiIntegration:
         assert len(bounds) == 3
         for i, (expected_min, expected_max) in enumerate(expected_bounds):
             actual_min, actual_max = bounds[i]
-            assert (
-                actual_min == expected_min
-            ), f"Static parameter {i} min bound mismatch"
-            assert (
-                actual_max == expected_max
-            ), f"Static parameter {i} max bound mismatch"
+            assert actual_min == expected_min, (
+                f"Static parameter {i} min bound mismatch"
+            )
+            assert actual_max == expected_max, (
+                f"Static parameter {i} max bound mismatch"
+            )

@@ -177,9 +177,9 @@ class TestMethodResultsSaving:
 
             # Check for parameters.json
             params_file = method_dir / "parameters.json"
-            assert (
-                params_file.exists()
-            ), f"parameters.json not created for {method_name}"
+            assert params_file.exists(), (
+                f"parameters.json not created for {method_name}"
+            )
 
             # Load and validate JSON content
             with open(params_file) as f:
@@ -329,9 +329,9 @@ class TestMethodResultsSaving:
         # Check that uncertainties were calculated
         assert len(uncertainties) == len(params)
         assert all(u > 0 for u in uncertainties), "All uncertainties should be positive"
-        assert all(
-            u < abs(p) for u, p in zip(uncertainties, params, strict=False)
-        ), "Uncertainties should be reasonable relative to parameter values"
+        assert all(u < abs(p) for u, p in zip(uncertainties, params, strict=False)), (
+            "Uncertainties should be reasonable relative to parameter values"
+        )
 
     def test_handles_missing_method_results(
         self, mock_analyzer, experimental_data, time_arrays, tmp_path

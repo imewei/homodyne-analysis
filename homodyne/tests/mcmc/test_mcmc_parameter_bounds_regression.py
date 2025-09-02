@@ -409,9 +409,7 @@ class TestMCMCParameterBoundsRegression:
 
             # Check if value is within bounds (inclusive)
             within_bounds = bound["min"] <= value <= bound["max"]
-            assert (
-                within_bounds
-            ), f"Value {value} should be within bounds [{
+            assert within_bounds, f"Value {value} should be within bounds [{
                 bound['min']
             }, {bound['max']}] for case {case_name}"
 
@@ -423,9 +421,9 @@ class TestMCMCParameterBoundsRegression:
             if case_name == "centered":
                 assert min_dist == 0.5, "Centered case should be 0.5 from each boundary"
             else:
-                assert (
-                    min_dist == 0.0
-                ), "Boundary cases should be at distance 0 from a boundary"
+                assert min_dist == 0.0, (
+                    "Boundary cases should be at distance 0 from a boundary"
+                )
 
         print("✓ Parameter bounds validation logic verified for edge cases")
 
@@ -644,9 +642,9 @@ class TestMCMCBoundsIntegration:
         noise_model = loaded_config["performance_settings"]["noise_model"]
         use_simple_model = noise_model["use_simple_forward_model"]
 
-        assert (
-            use_simple_model is False
-        ), "MCMC must use full forward model (use_simple_forward_model=False)"
+        assert use_simple_model is False, (
+            "MCMC must use full forward model (use_simple_forward_model=False)"
+        )
 
         # Verify MCMC is enabled
         mcmc_enabled = loaded_config["optimization_config"]["mcmc_sampling"]["enabled"]
@@ -657,9 +655,9 @@ class TestMCMCBoundsIntegration:
         chi_sq_method = loaded_config["advanced_settings"]["chi_squared_calculation"][
             "method"
         ]
-        assert (
-            chi_sq_method == "standard"
-        ), "Standard chi-squared method supports scaling optimization"
+        assert chi_sq_method == "standard", (
+            "Standard chi-squared method supports scaling optimization"
+        )
 
         print("✓ MCMC configuration uses full forward model with scaling optimization")
         print(f"  use_simple_forward_model: {use_simple_model}")
