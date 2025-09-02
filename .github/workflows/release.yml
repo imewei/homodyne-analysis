@@ -29,6 +29,8 @@ jobs:
     name: Quick Validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +41,8 @@ jobs:
           python-version: "3.12"
           cache: "pip"
 
-      - name: Validate version and quick test
+      - name: Extract and validate version
+        id: version
         run: |
           # Extract version from tag or input
           if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -56,8 +59,11 @@ jobs:
             exit 1
           fi
           
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Quick test
+        run: |
           # Quick install and test
           python -m pip install --upgrade pip build twine
           pip install -e ".[test]"
@@ -75,7 +81,6 @@ jobs:
     name: Build and Publish Release
     runs-on: ubuntu-latest
     needs: validate
-    environment: release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,9 +114,10 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
+          VERSION="${{ needs.validate.outputs.version }}"
           # Simple changelog generation (you can enhance this)
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-          echo "## Changes in ${{ env.VERSION }}" >> $GITHUB_OUTPUT
+          echo "## Changes in $VERSION" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           
           # Get commits since last tag
@@ -129,17 +135,17 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.VERSION }}
-          name: Release ${{ env.VERSION }}
+          tag_name: ${{ needs.validate.outputs.version }}
+          name: Release ${{ needs.validate.outputs.version }}
           body: |
-            # Homodyne ${{ env.VERSION }}
+            # Homodyne ${{ needs.validate.outputs.version }}
             
             ${{ steps.changelog.outputs.CHANGELOG }}
             
             ## 📦 Installation
             
             ```bash
-            pip install homodyne==${{ env.VERSION }}
+            pip install homodyne-analysis
             ```
             
             ## 📊 Assets
@@ -171,10 +177,11 @@ jobs:
           sleep 30
           
           # Extract version number without 'v' prefix
-          PYPI_VERSION="${{ env.VERSION#v }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+          PYPI_VERSION="${VERSION#v}"
           
           # Try to install from PyPI to verify
-          pip install homodyne==$PYPI_VERSION --no-cache-dir
+          pip install homodyne-analysis==$PYPI_VERSION --no-cache-dir
           python -c "import homodyne; print(f'✅ Successfully installed homodyne v{homodyne.__version__} from PyPI')"
 
   post-release:
@@ -190,7 +197,10 @@ jobs:
 
       - name: Create release summary
         run: |
-          echo "## 🚀 Release ${{ env.VERSION }} Published Successfully!" >> $GITHUB_STEP_SUMMARY
+          VERSION="${{ needs.validate.outputs.version }}"
+          PYPI_VERSION="${VERSION#v}"
+          
+          echo "## 🚀 Release $VERSION Published Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ✅ Completed Actions" >> $GITHUB_STEP_SUMMARY
           echo "- Pre-release validation (tests, metadata)" >> $GITHUB_STEP_SUMMARY
@@ -202,16 +212,17 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Available Now" >> $GITHUB_STEP_SUMMARY
           echo "```bash" >> $GITHUB_STEP_SUMMARY
-          echo "pip install homodyne==${{ env.VERSION#v }}" >> $GITHUB_STEP_SUMMARY
+          echo "pip install homodyne-analysis==$PYPI_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "```" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ env.VERSION }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [PyPI Package](https://pypi.org/project/homodyne/${{ env.VERSION#v }}/)" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/$VERSION)" >> $GITHUB_STEP_SUMMARY
+          echo "- [PyPI Package](https://pypi.org/project/homodyne-analysis/$PYPI_VERSION/)" >> $GITHUB_STEP_SUMMARY
 
       - name: Notify on failure
         if: needs.build-and-publish.result == 'failure'
         run: |
-          echo "## ❌ Release ${{ env.VERSION }} Failed" >> $GITHUB_STEP_SUMMARY
+          VERSION="${{ needs.validate.outputs.version }}"
+          echo "## ❌ Release $VERSION Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Please check the workflow logs for details and retry if necessary." >> $GITHUB_STEP_SUMMARY
