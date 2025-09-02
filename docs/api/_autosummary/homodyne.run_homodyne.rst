@@ -1,4 +1,4 @@
-homodyne.run\_homodyne
+﻿homodyne.run\_homodyne
 ======================
 
 .. automodule:: homodyne.run_homodyne
@@ -8,6 +8,12 @@ homodyne.run\_homodyne
 
    .. autosummary::
    
+      _estimate_parameter_uncertainties
+      _generate_classical_plots
+      _generate_mcmc_plots
+      _generate_robust_plots
+      _save_individual_method_results
+      _save_individual_robust_method_results
       main
       plot_simulated_data
       print_banner

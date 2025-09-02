@@ -10,8 +10,12 @@
    :toctree:
    :recursive:
 
+   analysis
+   core
    create_config
    gpu_wrapper
+   optimization
+   plotting
    post_install
    run_homodyne
    tests

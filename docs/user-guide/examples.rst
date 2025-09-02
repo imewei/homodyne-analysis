@@ -760,12 +760,16 @@ Example 7: Performance Monitoring and Optimization
 .. code-block:: python
 
    from homodyne.core.config import performance_monitor
-   from homodyne.tests.conftest_performance import (
-       stable_benchmark,
-       assert_performance_within_bounds
-   )
    import time
    import numpy as np
+   
+   # Example performance monitoring utilities
+   def simple_benchmark(func, *args, **kwargs):
+       """Simple benchmark utility for timing functions."""
+       start_time = time.time()
+       result = func(*args, **kwargs)
+       end_time = time.time()
+       return result, end_time - start_time
 
    # Performance-monitored analysis function
    def analyze_sample_with_monitoring(config_file, output_dir):
@@ -810,32 +814,28 @@ Example 7: Performance Monitoring and Optimization
 
        print("=== Performance Benchmarking ===")
 
-       # Standard stable benchmarking
-       print("Running stable benchmark...")
-       stable_results = stable_benchmark(
-           sample_computation,
-           warmup_runs=5,
-           measurement_runs=15,
-           outlier_threshold=2.0
-       )
+       # Simple benchmarking
+       print("Running performance benchmark...")
+       result, execution_time = simple_benchmark(sample_computation)
+       
+       print(f"Benchmark result: {execution_time:.4f}s execution time")
+       print(f"Analysis completed successfully: {result is not None}")
 
-       cv_stable = stable_results['std'] / stable_results['mean']
-       print(f"Stable benchmark: {stable_results['mean']:.4f}s ± {cv_stable:.3f} CV")
-       print(f"Outliers removed: {stable_results['outlier_count']}/{len(stable_results['times'])}")
+       # Multiple run performance testing
+       print("Running multiple iterations...")
+       times = []
+       for i in range(5):
+           _, exec_time = simple_benchmark(sample_computation)
+           times.append(exec_time)
+       
+       mean_time = np.mean(times)
+       std_time = np.std(times)
+       cv = std_time / mean_time
+       
+       print(f"Average time: {mean_time:.4f}s ± {std_time:.4f}s")
+       print(f"Coefficient of variation: {cv:.3f}")
 
-       # Adaptive benchmarking
-       print("Running adaptive benchmark...")
-       adaptive_results = adaptive_stable_benchmark(
-           sample_computation,
-           target_cv=0.10,  # Target 10% coefficient of variation
-           max_runs=30,
-           min_runs=10
-       )
-
-       print(f"Adaptive benchmark: {adaptive_results['cv']:.3f} CV in {adaptive_results['total_runs']} runs")
-       print(f"Target achieved: {adaptive_results['achieved_target']}")
-
-       return stable_results, adaptive_results
+       return {"mean": mean_time, "std": std_time, "cv": cv, "times": times}
 
    # Memory and cache monitoring
    def monitor_cache_performance():

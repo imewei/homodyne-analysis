@@ -86,6 +86,9 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# Exclude test modules from autodoc to prevent import errors during doc build
+autodoc_mock_imports = ["pytest", "pytest_benchmark", "pytest_mock"]
+
 # The default language to highlight source code in.
 highlight_language = "python3"
 
@@ -152,6 +155,26 @@ myst_dmath_double_inline = True
 # AutoSummary configuration
 autosummary_generate = True
 autosummary_generate_overwrite = True
+
+# Configure autosummary to skip test modules that require pytest
+def skip_test_modules(app, what, name, obj, skip, options):
+    """Skip test modules and conftest files during documentation generation."""
+    if skip:
+        return skip
+    
+    # Skip modules that contain 'test' or 'conftest' in the name
+    if 'test' in name.lower() or 'conftest' in name.lower():
+        return True
+        
+    # Skip modules in tests directories
+    if '.tests.' in name:
+        return True
+    
+    return skip
+
+def setup(app):
+    """Sphinx setup function."""
+    app.connect("autodoc-skip-member", skip_test_modules)
 
 # Copy button configuration
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
