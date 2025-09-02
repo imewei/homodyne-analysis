@@ -65,8 +65,8 @@ coverage.xml
 .pytest_cache/
 cover/
 test_report.html
-bandit_report.json
-bandit-report.json
+bandit_re*.json
+bandit-re*.json
 pip_audit_report.json
 
 # Translations

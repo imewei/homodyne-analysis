@@ -25,8 +25,15 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    # "sphinx.ext.autosummary",  # Disabled due to import issues with mocked modules
+    "sphinx.ext.autosummary",
+    "sphinx.ext.doctest", 
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.githubpages",
+    "sphinx_autodoc_typehints",
+    "sphinx_copybutton",
     "myst_parser",
+    "numpydoc",
 ]
 
 # Suppress specific warnings to reduce noise
@@ -140,6 +147,32 @@ myst_heading_anchors = 2
 myst_footnote_transition = True
 myst_dmath_double_inline = True
 
+# -- Extension configurations ------------------------------------------------
+
+# AutoSummary configuration
+autosummary_generate = True
+autosummary_generate_overwrite = True
+
+# Copy button configuration
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
+copybutton_only_copy_prompt_lines = True
+copybutton_remove_prompts = True
+
+# NumPy docstring configuration
+numpydoc_show_class_members = False
+numpydoc_class_members_toctree = True
+numpydoc_attributes_as_param_list = True
+numpydoc_xref_param_type = True
+
+# Todo configuration
+todo_include_todos = False
+
+# Type hints configuration  
+typehints_fully_qualified = False
+always_document_param_types = True
+typehints_document_rtype = True
+
 # Add substitutions for common mathematical symbols
 myst_substitutions = {
     "g1": r"$g_1$",
@@ -151,18 +184,44 @@ myst_substitutions = {
 }
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
+html_title = f"{project} v{version}"
 html_theme_options = {
-    "analytics_id": "",
-    "logo_only": False,
-    "prev_next_buttons_location": "bottom",
-    "style_external_links": False,
-    "style_nav_header_background": "#2980b9",
-    "collapse_navigation": True,
-    "sticky_navigation": True,
-    "navigation_depth": 3,
-    "includehidden": True,
-    "titles_only": False,
+    "sidebar_hide_name": False,
+    "light_logo": "logo-light.png",
+    "dark_logo": "logo-dark.png",
+    "light_css_variables": {
+        "color-brand-primary": "#2980b9",
+        "color-brand-content": "#2c5282",
+        "color-admonition-background": "transparent",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#4fc3f7",
+        "color-brand-content": "#81d4fa",
+        "color-admonition-background": "transparent",
+    },
+    "footer_icons": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/imewei/homodyne",
+            "html": """
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            """,
+            "class": "",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/homodyne-analysis/",
+            "html": """
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24">
+                    <path d="M12.357 12.617l-1.037 5.732L8.7 10.617h-1.38l2.85 12.05h1.18l.9-5.01h.01l.9 5.01h1.18l2.85-12.05h-1.38l-2.62 7.732-.9-5.732h-1.01zm8.72-9.58V1.617c0-.55-.45-1-1-1H4.017c-.55 0-1 .45-1 1v14.52c0 .55.45 1 1 1h15.06c.55 0 1-.45 1-1V3.037zm-1 .42v13.1H5.017V2.037h14.06V3.037z"></path>
+                </svg>
+            """,
+            "class": "",
+        }
+    ],
 }
 
 # Optimize HTML output

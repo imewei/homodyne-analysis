@@ -3,6 +3,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
 [![PyPI version](https://badge.fury.io/py/homodyne-analysis.svg)](https://badge.fury.io/py/homodyne-analysis)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/homodyne-analysis)](https://pypi.org/project/homodyne-analysis/)
+[![Documentation Status](https://readthedocs.org/projects/homodyne/badge/?version=latest)](https://homodyne.readthedocs.io/en/latest/?badge=latest)
+[![CI Status](https://github.com/imewei/homodyne/workflows/CI/badge.svg)](https://github.com/imewei/homodyne/actions)
+[![Code Quality](https://github.com/imewei/homodyne/workflows/Quality/badge.svg)](https://github.com/imewei/homodyne/actions)
+[![codecov](https://codecov.io/gh/imewei/homodyne/branch/main/graph/badge.svg)](https://codecov.io/gh/imewei/homodyne)
+[![DOI](https://zenodo.org/badge/DOI/10.1073/pnas.2401162121.svg)](https://doi.org/10.1073/pnas.2401162121)
 
 A high-performance Python package for analyzing homodyne scattering in X-ray Photon
 Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the

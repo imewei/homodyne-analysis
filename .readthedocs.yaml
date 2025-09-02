@@ -35,7 +35,7 @@ python:
       path: .
       extra_requirements:
         - docs
-    - requirements: requirements.txt
+    - requirements: docs/requirements.txt
 
 # Specify which files/directories to include in the build
 # This helps reduce build time by excluding unnecessary files

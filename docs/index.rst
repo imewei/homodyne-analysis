@@ -155,9 +155,7 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
-   api-reference/core
-   api-reference/mcmc
-   api-reference/utilities
+   api/index
 
 Developer Guide
 ---------------

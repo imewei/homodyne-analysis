@@ -1,172 +1,55 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=8.0"]
+requires = [ "setuptools>=68.0", "wheel", "setuptools-scm>=8.0",]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "homodyne-analysis"
-dynamic = ["version"]
+dynamic = [ "version",]
 description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with JAX backend GPU acceleration, comprehensive testing framework with resolved dependency availability tests, robust optimization methods, automated code quality checks, unified shell completion system, and streamlined post-installation setup with advanced GPU optimization tools"
 readme = "README.md"
-license = "MIT"
-authors = [
-    {name = "Wei Chen", email = "wchen@anl.gov"},
-    {name = "Hongrui He"},
-]
-maintainers = [
-    {name = "Wei Chen", email = "wchen@anl.gov"},
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering :: Physics",
-    "Topic :: Scientific/Engineering :: Chemistry",
-    "Topic :: Scientific/Engineering :: Information Analysis",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Operating System :: OS Independent",
-    "Environment :: Console",
-    "Natural Language :: English",
-]
-keywords = [
-    "xpcs",
-    "homodyne",
-    "scattering",
-    "correlation-spectroscopy",
-    "soft-matter",
-    "nonequilibrium-dynamics",
-    "transport-coefficients",
-    "optimization",
-    "bayesian-analysis",
-    "mcmc",
-    "robust-optimization",
-    "trust-region-optimization",
-    "gurobi",
-    "jax",
-    "jax-backend",
-    "pytensor",
-    "pytensor-config",
-    "environment-variables",
-    "system-cuda",
-    "gpu-acceleration",
-    "cuda-12",
-    "cudnn",
-    "high-performance-computing",
-    "jit-compilation",
-    "performance-optimization",
-    "code-quality",
-    "pre-commit-hooks",
-    "shell-completion",
-    "conda-environment",
-    "mamba-environment",
-    "virtual-environment",
-    "cross-platform",
-    "windows-compatibility",
-    "security-scanning",
-    "comprehensive-testing-framework",
-    "pytest-markers",
-    "test-isolation",
-    "dependency-availability-tests",
-    "type-checking",
-    "automated-quality-assurance",
-]
+license-expression = "MIT"
+classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Science/Research", "Topic :: Scientific/Engineering :: Physics", "Topic :: Scientific/Engineering :: Chemistry", "Topic :: Scientific/Engineering :: Information Analysis", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Operating System :: OS Independent", "Environment :: Console", "Natural Language :: English",]
+keywords = [ "xpcs", "homodyne", "scattering", "correlation-spectroscopy", "soft-matter", "nonequilibrium-dynamics", "transport-coefficients", "optimization", "bayesian-analysis", "mcmc", "robust-optimization", "trust-region-optimization", "gurobi", "jax", "jax-backend", "pytensor", "pytensor-config", "environment-variables", "system-cuda", "gpu-acceleration", "cuda-12", "cudnn", "high-performance-computing", "jit-compilation", "performance-optimization", "code-quality", "pre-commit-hooks", "shell-completion", "conda-environment", "mamba-environment", "virtual-environment", "cross-platform", "windows-compatibility", "security-scanning", "comprehensive-testing-framework", "pytest-markers", "test-isolation", "dependency-availability-tests", "type-checking", "automated-quality-assurance",]
 requires-python = ">=3.12"
-dependencies = [
-    "numpy>=1.24.0,<2.3.0",
-    "scipy>=1.9.0",
-    "matplotlib>=3.5.0",
-]
+dependencies = [ "numpy>=1.24.0,<2.3.0", "scipy>=1.9.0", "matplotlib>=3.5.0",]
+[[project.authors]]
+name = "Wei Chen"
+email = "wchen@anl.gov"
+
+[[project.authors]]
+name = "Hongrui He"
+
+[[project.maintainers]]
+name = "Wei Chen"
+email = "wchen@anl.gov"
+
+[project.license]
+text = "MIT"
 
 [project.optional-dependencies]
-data = [
-    "xpcs-viewer>=1.0.4",  # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
-]
-performance = [
-    "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
-    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ support for Linux GPU acceleration
-    "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
-    "jaxlib>=0.4.35",  # JAX backend library
-    "psutil>=5.8.0",  # For memory profiling and system monitoring
-]
-jax = [
-    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ and cuDNN 9.12+ support for Linux GPU acceleration
-    "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
-    "jaxlib>=0.4.35",  # JAX backend library for CPU/GPU acceleration
-    # Note: GPU requires system CUDA 12.6+ and cuDNN 9.12+
-    # PyTensor environment variables automatically configured during pip install
-    # JAX backend handles GPU operations while PyTensor uses CPU (no C compilation issues)
-]
-mcmc = [
-    "pymc>=5.0.0",
-    "arviz>=0.12.0",
-    "pytensor>=2.8.0",
-    "corner>=2.2.0",  # For enhanced MCMC corner plots
-    "numpyro>=0.13.0",  # NumPyro for GPU-accelerated MCMC sampling with JAX
-    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",  # JAX with system CUDA 12.6+ support for Linux GPU acceleration
-    "jax>=0.7.0 ; sys_platform != 'linux'",  # Standard JAX for non-Linux platforms
-    "jaxlib>=0.4.35",  # JAX backend library for NumPyro
-    # PyTensor configured for CPU mode (device=cpu,cxx=) to avoid C compilation issues
-    # JAX backend handles all GPU operations for optimal MCMC performance
-]
-robust = [
-    "cvxpy>=1.4.0",  # Convex optimization for robust methods
-]
-gurobi = [
-    "gurobipy>=11.0.0",  # Gurobi optimization solver (requires license)
-]
-completion = [
-    "argcomplete>=3.0.0",  # Shell tab completion
-]
-docs = [
-    "sphinx>=4.0.0",
-    "sphinx-rtd-theme>=1.0.0",
-    "myst-parser>=0.17.0",
-    "sphinx-autodoc-typehints>=1.12.0",
-    "numpydoc>=1.2.0",
-    "linkify-it-py>=2.0.0",
-]
-test = [
-    "pytest>=6.2.0",
-    "pytest-cov>=2.12.0",
-    "pytest-xdist>=2.3.0",
-    "pytest-benchmark>=4.0.0",
-    "pytest-mock>=3.6.0",  # For mocking utilities in tests
-    "pytest-html>=4.1.1",  # For HTML test reports
-    "pytest-metadata>=3.1.1",  # For test metadata
-    "hypothesis>=6.0.0",  # For property-based testing
-    "coverage>=6.2.0",  # Coverage measurement
-]
-quality = [
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.5.0",
-    "ruff>=0.1.0",  # Modern linter and formatter
-    "bandit>=1.8.0",  # Security linter for Python code
-    "pip-audit>=2.6.0",  # Security vulnerability scanner for dependencies
-]
-typing = [
-    "types-psutil>=5.9.0",
-    "types-Pillow>=10.0.0",
-    "types-six>=1.16.0",
-    "types-requests>=2.28.0",
-]
-dev = [
-    "homodyne-analysis[test,docs,quality,typing]",
-    "pre-commit>=3.0.0",
-    "tox>=4.0.0",
-    "build>=0.10.0",
-    "twine>=4.0.0",
-]
-all = [
-    "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,completion,dev]",
-]
+data = [ "xpcs-viewer>=1.0.4",]
+performance = [ "numba>=0.61.0,<0.62.0", "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'", "jax>=0.7.0 ; sys_platform != 'linux'", "jaxlib>=0.4.35", "psutil>=5.8.0",]
+jax = [ "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'", "jax>=0.7.0 ; sys_platform != 'linux'", "jaxlib>=0.4.35",]
+mcmc = [ "pymc>=5.0.0", "arviz>=0.12.0", "pytensor>=2.8.0", "corner>=2.2.0", "numpyro>=0.13.0", "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'", "jax>=0.7.0 ; sys_platform != 'linux'", "jaxlib>=0.4.35",]
+robust = [ "cvxpy>=1.4.0",]
+gurobi = [ "gurobipy>=11.0.0",]
+completion = [ "argcomplete>=3.0.0",]
+docs = [ "sphinx>=4.0.0", "sphinx-rtd-theme>=1.0.0", "myst-parser>=0.17.0", "sphinx-autodoc-typehints>=1.12.0", "numpydoc>=1.2.0", "linkify-it-py>=2.0.0",]
+test = [ "pytest>=6.2.0", "pytest-cov>=2.12.0", "pytest-xdist>=2.3.0", "pytest-benchmark>=4.0.0", "pytest-mock>=3.6.0", "pytest-html>=4.1.1", "pytest-metadata>=3.1.1", "hypothesis>=6.0.0", "coverage>=6.2.0",]
+quality = [ "black>=23.0.0", "isort>=5.12.0", "flake8>=6.0.0", "mypy>=1.5.0", "ruff>=0.1.0", "bandit>=1.8.0", "pip-audit>=2.6.0",]
+typing = [ "types-psutil>=5.9.0", "types-Pillow>=10.0.0", "types-six>=1.16.0", "types-requests>=2.28.0",]
+dev = [ "homodyne-analysis[test,docs,quality,typing]", "pre-commit>=3.0.0", "tox>=4.0.0", "build>=0.10.0", "twine>=4.0.0",]
+all = [ "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,completion,dev]",]
 
 [project.urls]
 Homepage = "https://github.com/imewei/homodyne"
 Documentation = "https://homodyne.readthedocs.io/"
 Repository = "https://github.com/imewei/homodyne"
 Issues = "https://github.com/imewei/homodyne/issues"
+Changelog = "https://github.com/imewei/homodyne/blob/main/CHANGELOG.md"
+"Source Code" = "https://github.com/imewei/homodyne"
+"Bug Tracker" = "https://github.com/imewei/homodyne/issues"
+Download = "https://pypi.org/project/homodyne-analysis/"
 
 [project.scripts]
 homodyne = "homodyne.run_homodyne:main"
@@ -178,131 +61,30 @@ homodyne-gpu-optimize = "homodyne.gpu_optimizer:main"
 homodyne-validate = "homodyne.system_validator:main"
 
 [tool.setuptools]
-packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
 include-package-data = true
 
-[tool.setuptools.package-data]
-homodyne = [
-    "config_*.json",
-    "templates/*.json",
-    "typings/**/*.pyi",
-    "post_install.py",
-    "uninstall_scripts.py",
-    "gpu_wrapper.py",
-    "gpu_optimizer.py",
-    "system_validator.py",
-    "completion_advanced.sh",
-    "gpu_activation_smart.sh",
-    "runtime/**/*.py",
-    "runtime/**/*.sh",
-    "scripts/*.py",
-    "scripts/*.md",
-]
-
-[tool.setuptools.dynamic]
-version = {attr = "homodyne.__version__"}
+[tool.setuptools_scm]
+write_to = "homodyne/_version.py"
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
 
 [tool.black]
 line-length = 88
-target-version = ['py312', 'py313']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | \.ruff_cache
-  | build
-  | dist
-  | __pycache__
-)/
-'''
+target-version = [ "py312", "py313",]
+include = "\\.pyi?$"
+extend-exclude = "/(\n  # directories\n  \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | \\.ruff_cache\n  | build\n  | dist\n  | __pycache__\n)/\n"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["homodyne"]
-skip_glob = ["build/*", "dist/*", "*.egg-info/*"]
+known_first_party = [ "homodyne",]
+skip_glob = [ "build/*", "dist/*", "*.egg-info/*",]
 
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-exclude = [
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".tox",
-    ".venv",
-    "__pycache__",
-    "build",
-    "dist",
-]
-
-[tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
-    "RUF", # ruff-specific rules
-]
-ignore = [
-    "E501",  # line too long (handled by black)
-    "B008",  # do not perform function calls in argument defaults
-    "RUF001", # String contains ambiguous characters (mathematical notation is intentional)
-    "RUF002", # Docstring contains ambiguous characters (mathematical notation is intentional)
-    "RUF003", # Comment contains ambiguous characters (mathematical notation is intentional)
-]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]  # unused imports in __init__.py
-"tests/**/*.py" = ["F401", "F811"]  # allow unused imports in tests
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = [
-    "--strict-config",
-    "--strict-markers",
-    "--color=yes",
-    "-v",
-    "-rs",  # Show reasons for skipped tests in summary
-    "--tb=short",  # Shorter tracebacks for better CI output
-    "--maxfail=5",  # Stop after 5 failures to save time
-]
-testpaths = ["homodyne/tests"]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "mcmc: marks tests requiring MCMC dependencies",
-    "performance: marks performance-related tests",
-    "benchmark: marks tests for benchmarking (requires pytest-benchmark)",
-    "memory: marks tests that monitor memory usage",
-    "regression: marks tests for performance regression detection",
-    "import_time: marks tests that measure import performance",
-    "optimization: marks tests for Phase 3 batch optimization features",
-    "jax: marks tests requiring JAX dependencies",
-    "gpu: marks tests that can utilize GPU acceleration (requires appropriate JAX installation)",
-    "fast: marks tests that run quickly (< 1s)",
-    "unit: marks unit tests (isolated, no external dependencies)",
-    "system: marks system-level tests (require environment setup)",
-    "ci_skip: marks tests to skip in CI environments",
-    "ci: marks tests suitable for CI execution (unit and regression tests)",
-]
-filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-]
+exclude = [ ".eggs", ".git", ".mypy_cache", ".ruff_cache", ".tox", ".venv", "__pycache__", "build", "dist",]
 
 [tool.mypy]
 python_version = "3.12"
@@ -310,10 +92,10 @@ mypy_path = "homodyne/typings"
 explicit_package_bases = true
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false  # Too strict for scientific code
+disallow_untyped_defs = false
 disallow_incomplete_defs = true
 check_untyped_defs = true
-disallow_untyped_decorators = false  # Too strict for decorators like @pytest.fixture
+disallow_untyped_decorators = false
 no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -322,61 +104,47 @@ warn_unreachable = true
 strict_equality = true
 show_error_codes = true
 pretty = true
-exclude = [
-    "homodyne_complete",  # Standalone script causes __main__ conflicts
-]
-
+exclude = [ "homodyne_complete",]
 [[tool.mypy.overrides]]
-module = [
-    "numba.*",
-    "jax.*",
-    "jaxlib.*",
-    "pymc.*",
-    "arviz.*",
-    "pytensor.*",
-    "corner.*",
-    "cvxpy.*",
-    "gurobipy.*",
-    "xpcs_viewer.*",
-]
+module = [ "numba.*", "jax.*", "jaxlib.*", "pymc.*", "arviz.*", "pytensor.*", "corner.*", "cvxpy.*", "gurobipy.*", "xpcs_viewer.*",]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["homodyne.tests.*"]
+module = [ "homodyne.tests.*",]
 disallow_untyped_defs = false
 check_untyped_defs = false
 
+[tool.bandit]
+exclude_dirs = [ "homodyne/tests", "tests", "build", "dist",]
+skips = [ "B101", "B110", "B403", "B404", "B603",]
+severity_level = "medium"
+format = "json"
+output = "bandit-report.json"
+
+[tool.setuptools.package-data]
+homodyne = [ "config_*.json", "templates/*.json", "typings/**/*.pyi", "post_install.py", "uninstall_scripts.py", "gpu_wrapper.py", "gpu_optimizer.py", "system_validator.py", "completion_advanced.sh", "gpu_activation_smart.sh", "runtime/**/*.py", "runtime/**/*.sh", "scripts/*.py", "scripts/*.md",]
+
+[tool.ruff.lint]
+select = [ "E", "W", "F", "I", "B", "C4", "UP", "RUF",]
+ignore = [ "E501", "B008", "RUF001", "RUF002", "RUF003",]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [ "--strict-config", "--strict-markers", "--color=yes", "-v", "-rA", "--tb=short", "--maxfail=5", "--show-capture=no",]
+testpaths = [ "homodyne/tests",]
+markers = [ "slow: marks tests as slow (deselect with '-m \"not slow\"')", "integration: marks tests as integration tests", "mcmc: marks tests requiring MCMC dependencies", "performance: marks performance-related tests", "benchmark: marks tests for benchmarking (requires pytest-benchmark)", "memory: marks tests that monitor memory usage", "regression: marks tests for performance regression detection", "import_time: marks tests that measure import performance", "optimization: marks tests for Phase 3 batch optimization features", "jax: marks tests requiring JAX dependencies", "gpu: marks tests that can utilize GPU acceleration (requires appropriate JAX installation)", "fast: marks tests that run quickly (< 1s)", "unit: marks unit tests (isolated, no external dependencies)", "system: marks system-level tests (require environment setup)", "ci_skip: marks tests to skip in CI environments", "ci: marks tests suitable for CI execution (unit and regression tests)",]
+filterwarnings = [ "error", "ignore::UserWarning", "ignore::DeprecationWarning", "ignore::PendingDeprecationWarning",]
+
 [tool.coverage.run]
-source = ["homodyne"]
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "setup.py",
-]
+source = [ "homodyne",]
+omit = [ "*/tests/*", "*/test_*.py", "setup.py",]
 
 [tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-]
+exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
 
-[tool.bandit]
-exclude_dirs = ["homodyne/tests", "tests", "build", "dist"]
-skips = [
-    "B101",  # Skip assert_used test (common in scientific code)
-    "B110",  # Skip try_except_pass (used for graceful degradation)
-    "B403",  # Skip pickle import (required for data serialization)
-    "B404",  # Skip subprocess import (required for CLI completion and test runner)
-    "B603",  # Skip subprocess without shell (we control the input)
-]
-severity_level = "medium"  # Only report medium and high severity issues
-format = "json"  # JSON output for CI integration
-output = "bandit-report.json"  # Save results for analysis
+[tool.setuptools.packages.find]
+exclude = [ "tests*", "docs*", "examples*", "homodyne.tests*",]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [ "F401",]
+"tests/**/*.py" = [ "F401", "F811",]
