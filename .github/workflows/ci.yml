@@ -16,7 +16,6 @@ env:
   PYTHONUNBUFFERED: 1
   # Optimize pip installation speed
   PIP_DISABLE_PIP_VERSION_CHECK: 1
-  PIP_NO_CACHE_DIR: 1
 
 jobs:
   # Fast single-job CI for most cases
