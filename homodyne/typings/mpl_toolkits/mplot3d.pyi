@@ -43,11 +43,11 @@ class Axes3D(Axes):
         self,
         xs: Any,
         ys: Any,
-        zs: Any = ...,
-        zdir: str = ...,
-        s: Any = ...,
-        c: Any = ...,
-        depthshade: bool = ...,
+        zs: Any = None,
+        zdir: str = "z",
+        s: Any = 20,
+        c: Any = None,
+        depthshade: bool = True,
         **kwargs: Any,
     ) -> Any: ...
     def set_xlabel(

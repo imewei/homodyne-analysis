@@ -133,7 +133,7 @@ class MCMCSampler:
     - Mode-aware sampling (static vs laminar flow)
     """
 
-    def __init__(self, analysis_core, config: dict[str, Any]):
+    def __init__(self, analysis_core: Any, config: dict[str, Any]) -> None:
         """
         Initialize MCMC sampler.
 
@@ -173,9 +173,9 @@ class MCMCSampler:
 
         self.core = analysis_core
         self.config = config
-        self.bayesian_model = None
-        self.mcmc_trace = None
-        self.mcmc_result = None
+        self.bayesian_model: Any = None
+        self.mcmc_trace: Any = None
+        self.mcmc_result: dict[str, Any] | None = None
 
         # Extract MCMC configuration
         self.mcmc_config = config.get("optimization_config", {}).get(
@@ -655,7 +655,7 @@ class MCMCSampler:
                     # Pylance doesn't fully understand
                     mu = pm.Deterministic(
                         "mu",
-                        pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001,  # type: ignore
+                        pt.abs(D0) * 0.001 + pt.abs(D_offset) * 0.001,
                     )
                 else:
                     raise ImportError("PyMC/PyTensor not available")
@@ -664,7 +664,7 @@ class MCMCSampler:
                 # Remove any NaN values before computing mean
                 if pt is not None:
                     # PyTensor operations on SharedVariable
-                    c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]  # type: ignore
+                    c2_data_valid = c2_data_shared[~pt.isnan(c2_data_shared)]
                 else:
                     raise ImportError("PyTensor not available")
                 if pt is not None:
@@ -1773,7 +1773,7 @@ class MCMCSampler:
             logger.error(f"Failed to generate posterior samples: {e}")
             return None
 
-    def assess_chain_mixing(self, trace) -> dict[str, Any]:
+    def assess_chain_mixing(self, trace: Any) -> dict[str, Any]:
         """
         Assess MCMC chain mixing and identify potential issues.
 
@@ -2071,7 +2071,7 @@ class MCMCSampler:
         Dict[str, Any]
             Validation results and recommendations
         """
-        validation_results = {
+        validation_results: dict[str, Any] = {
             "valid": True,
             "warnings": [],
             "errors": [],
