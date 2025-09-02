@@ -39,9 +39,9 @@ class SystemValidator:
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.results: list[ValidationResult] = []
-        self.environment_info = {}
+        self.environment_info: dict[str, Any] = {}
 
-    def log(self, message: str, level: str = "info"):
+    def log(self, message: str, level: str = "info") -> None:
         """Log message if verbose."""
         if self.verbose:
             timestamp = time.strftime("%H:%M:%S")
@@ -378,7 +378,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
             cleanup_works = success
 
             # Test import of main modules
-            import_tests = {}
+            import_tests: dict[str, bool | str] = {}
             modules = [
                 "homodyne.run_homodyne",
                 "homodyne.create_config",

@@ -309,7 +309,7 @@ def install_advanced_features():
         gpu_cmd = bin_dir / "homodyne-gpu-optimize"
         gpu_content = f"""#!/usr/bin/env python3
 import sys
-sys.path.insert(0, "{homodyne_src_dir / 'homodyne' / 'runtime' / 'gpu'}")
+sys.path.insert(0, "{homodyne_src_dir / "homodyne" / "runtime" / "gpu"}")
 from optimizer import main
 if __name__ == "__main__":
     main()
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         validator_cmd = bin_dir / "homodyne-validate"
         validator_content = f"""#!/usr/bin/env python3
 import sys
-sys.path.insert(0, "{homodyne_src_dir / 'homodyne' / 'runtime' / 'utils'}")
+sys.path.insert(0, "{homodyne_src_dir / "homodyne" / "runtime" / "utils"}")
 from system_validator import main
 if __name__ == "__main__":
     main()
@@ -337,8 +337,8 @@ if __name__ == "__main__":
             completion_script = activate_dir / "homodyne-advanced-completion.sh"
             completion_content = f"""#!/bin/bash
 # Advanced homodyne completion
-if [[ -f "{homodyne_src_dir / 'homodyne' / 'runtime' / 'shell' / 'completion.sh'}" ]]; then
-    source "{homodyne_src_dir / 'homodyne' / 'runtime' / 'shell' / 'completion.sh'}"
+if [[ -f "{homodyne_src_dir / "homodyne" / "runtime" / "shell" / "completion.sh"}" ]]; then
+    source "{homodyne_src_dir / "homodyne" / "runtime" / "shell" / "completion.sh"}"
 fi
 """
             completion_script.write_text(completion_content)

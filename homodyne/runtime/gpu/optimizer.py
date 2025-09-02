@@ -28,7 +28,7 @@ class GPUOptimizer:
 
     def detect_gpu_hardware(self) -> dict:
         """Detect GPU hardware and capabilities."""
-        info = {
+        info: dict = {
             "available": False,
             "cuda_available": False,
             "devices": [],
@@ -113,7 +113,7 @@ class GPUOptimizer:
         if matrix_sizes is None:
             matrix_sizes = [100, 500, 1000, 2000]
 
-        benchmarks = {
+        benchmarks: dict[str, dict] = {
             "matrix_multiply": {},
             "fft": {},
             "eigenvalue": {},
@@ -208,7 +208,7 @@ class GPUOptimizer:
 
     def determine_optimal_settings(self) -> dict:
         """Determine optimal settings based on hardware and benchmarks."""
-        settings = {
+        settings: dict = {
             "use_gpu": False,
             "xla_flags": [],
             "jax_settings": {},
@@ -260,9 +260,9 @@ class GPUOptimizer:
                 settings["xla_flags"].append("--xla_gpu_enable_triton_gemm=true")
                 settings["jax_settings"]["jax_enable_x64"] = True
             elif float(compute_cap) >= 7.0:  # Volta/Turing
-                settings["jax_settings"][
-                    "jax_enable_x64"
-                ] = False  # Use float32 for better performance
+                settings["jax_settings"]["jax_enable_x64"] = (
+                    False  # Use float32 for better performance
+                )
 
         self.optimal_settings = settings
         return settings

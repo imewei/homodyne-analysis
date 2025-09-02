@@ -59,7 +59,7 @@ from .core.kernels import (
 try:
     from .optimization.classical import ClassicalOptimizer
 except ImportError as e:
-    ClassicalOptimizer = None  # type: ignore[assignment]
+    ClassicalOptimizer = None  # type: ignore[assignment,misc]
     import logging
 
     logging.getLogger(__name__).warning(
@@ -69,7 +69,7 @@ except ImportError as e:
 try:
     from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
 except ImportError as e:
-    RobustHomodyneOptimizer = None  # type: ignore[assignment]
+    RobustHomodyneOptimizer = None  # type: ignore[assignment,misc]
     create_robust_optimizer = None  # type: ignore[assignment]
     import logging
 
@@ -80,7 +80,7 @@ except ImportError as e:
 try:
     from .optimization.mcmc import MCMCSampler, create_mcmc_sampler
 except ImportError as e:
-    MCMCSampler = None  # type: ignore[assignment]
+    MCMCSampler = None  # type: ignore[assignment,misc]
     create_mcmc_sampler = None  # type: ignore[assignment]
     import logging
 
@@ -109,8 +109,19 @@ __all__ = [
     "performance_monitor",
 ]
 
-# Version information
-__version__ = "0.7.2"
+# Version information - dynamically set by setuptools-scm
+try:
+    from importlib.metadata import version
+
+    __version__ = version("homodyne-analysis")
+except ImportError:
+    # Fallback for older Python versions
+    import pkg_resources
+
+    __version__ = pkg_resources.get_distribution("homodyne-analysis").version
+except Exception:
+    # Fallback version if package not installed
+    __version__ = "0.7.2+dev"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"

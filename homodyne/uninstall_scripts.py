@@ -152,60 +152,65 @@ def cleanup_old_system_files():
 
 def interactive_cleanup():
     """Interactive cleanup allowing user to choose what to remove."""
-    print("\n🧹 Homodyne Interactive Cleanup")
-    print("Choose what to remove:")
-    print()
+    try:
+        print("\n🧹 Homodyne Interactive Cleanup")
+        print("Choose what to remove:")
+        print()
 
-    # Shell completion
-    print("1. Shell Completion")
-    print("   - Removes bash/zsh/fish completion scripts")
-    print("   - Removes completion activation scripts")
+        # Shell completion
+        print("1. Shell Completion")
+        print("   - Removes bash/zsh/fish completion scripts")
+        print("   - Removes completion activation scripts")
 
-    remove_completion = (
-        input("   Remove shell completion? [y/N]: ").lower().startswith("y")
-    )
+        remove_completion = (
+            input("   Remove shell completion? [y/N]: ").lower().startswith("y")
+        )
 
-    # GPU setup (Linux only)
-    remove_gpu = False
-    if platform.system() == "Linux":
-        print("\n2. GPU Acceleration Setup")
-        print("   - Removes GPU environment configuration")
-        print("   - Removes CUDA activation scripts")
+        # GPU setup (Linux only)
+        remove_gpu = False
+        if platform.system() == "Linux":
+            print("\n2. GPU Acceleration Setup")
+            print("   - Removes GPU environment configuration")
+            print("   - Removes CUDA activation scripts")
 
-        remove_gpu = input("   Remove GPU setup? [y/N]: ").lower().startswith("y")
+            remove_gpu = input("   Remove GPU setup? [y/N]: ").lower().startswith("y")
 
-    # Advanced features
-    print("\n3. Advanced Features")
-    print("   - Removes homodyne-gpu-optimize CLI command")
-    print("   - Removes homodyne-validate CLI command")
+        # Advanced features
+        print("\n3. Advanced Features")
+        print("   - Removes homodyne-gpu-optimize CLI command")
+        print("   - Removes homodyne-validate CLI command")
 
-    remove_advanced = (
-        input("   Remove advanced features? [y/N]: ").lower().startswith("y")
-    )
+        remove_advanced = (
+            input("   Remove advanced features? [y/N]: ").lower().startswith("y")
+        )
 
-    # Old system files
-    print("\n4. Old System Files")
-    print("   - Removes legacy completion system files")
-    print("   - Recommended for clean upgrade")
+        # Old system files
+        print("\n4. Old System Files")
+        print("   - Removes legacy completion system files")
+        print("   - Recommended for clean upgrade")
 
-    remove_old = input("   Remove old system files? [Y/n]: ").lower() != "n"
+        remove_old = input("   Remove old system files? [Y/n]: ").lower() != "n"
 
-    # Perform cleanup
-    all_removed = []
+        # Perform cleanup
+        all_removed = []
 
-    if remove_completion:
-        all_removed.extend(cleanup_completion_files())
+        if remove_completion:
+            all_removed.extend(cleanup_completion_files())
 
-    if remove_gpu:
-        all_removed.extend(cleanup_gpu_files())
+        if remove_gpu:
+            all_removed.extend(cleanup_gpu_files())
 
-    if remove_advanced:
-        all_removed.extend(cleanup_advanced_features())
+        if remove_advanced:
+            all_removed.extend(cleanup_advanced_features())
 
-    if remove_old:
-        all_removed.extend(cleanup_old_system_files())
+        if remove_old:
+            all_removed.extend(cleanup_old_system_files())
 
-    return all_removed
+        return all_removed
+
+    except (KeyboardInterrupt, EOFError):
+        print("\n⚠️  Interactive cleanup cancelled by user")
+        return []
 
 
 def cleanup_all_files():

@@ -41,15 +41,19 @@ class Axes3D(Axes):
     ) -> Any: ...
     def scatter(
         self,
-        xs: np.ndarray | list[float],
-        ys: np.ndarray | list[float],
-        zs: np.ndarray | list[float],
+        xs: Any,
+        ys: Any,
+        zs: Any = ...,
         zdir: str = ...,
-        s: float | np.ndarray = ...,
-        c: str | np.ndarray = ...,
+        s: Any = ...,
+        c: Any = ...,
         depthshade: bool = ...,
         **kwargs: Any,
     ) -> Any: ...
-    def set_xlabel(self, xlabel: str, **kwargs: Any) -> None: ...
-    def set_ylabel(self, ylabel: str, **kwargs: Any) -> None: ...
+    def set_xlabel(
+        self, xlabel: str, fontdict: Any = ..., labelpad: Any = ..., **kwargs: Any
+    ) -> Any: ...
+    def set_ylabel(
+        self, ylabel: str, fontdict: Any = ..., labelpad: Any = ..., **kwargs: Any
+    ) -> Any: ...
     def set_zlabel(self, zlabel: str, **kwargs: Any) -> None: ...

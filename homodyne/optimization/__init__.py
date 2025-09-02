@@ -28,7 +28,7 @@ try:
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:
-    ClassicalOptimizer = None  # type: ignore[assignment]
+    ClassicalOptimizer = None  # type: ignore[assignment,misc]
     import warnings
 
     warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning, stacklevel=2)
@@ -39,7 +39,7 @@ try:
 
     _available_exports.extend(["MCMCSampler", "create_mcmc_sampler"])
 except ImportError as e:
-    MCMCSampler = None  # type: ignore[assignment]
+    MCMCSampler = None  # type: ignore[assignment,misc]
     create_mcmc_sampler = None  # type: ignore[assignment]
     import warnings
 

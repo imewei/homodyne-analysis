@@ -501,10 +501,7 @@ def plot_mcmc_corner(
         else:
             # Try to convert to DataFrame
             try:
-                if not ARVIZ_AVAILABLE:
-                    logger.error("Pandas not available for DataFrame conversion")
-                    return False
-                import pandas as pd  # type: ignore[import]
+                import pandas as pd
 
                 samples = pd.DataFrame(trace_data)
             except Exception as conversion_error:
@@ -518,7 +515,7 @@ def plot_mcmc_corner(
         # Create corner plot using ArviZ
         if hasattr(samples, "stack"):
             # ArviZ format - stack chains
-            stacked_samples = samples.stack(sample=("chain", "draw"))  # type: ignore
+            stacked_samples = samples.stack(sample=("chain", "draw"))
             logger.debug(f"Stacked ArviZ samples: {type(stacked_samples)}")
             if hasattr(stacked_samples, "data_vars"):
                 logger.debug(f"Available variables: {list(stacked_samples.data_vars)}")
