@@ -69,7 +69,7 @@ jobs:
           pip install -e ".[test]"
           
           # Run only fast tests
-          pytest homodyne/tests/ -x --tb=line -q -m "not slow" --maxfail=2
+          python -m pytest homodyne/tests/ -x --tb=line -q -m "not slow" --maxfail=2
           
           # Quick package build test
           python -m build --wheel

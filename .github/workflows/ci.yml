@@ -48,7 +48,7 @@ jobs:
 
       - name: Quick tests
         run: |
-          pytest homodyne/tests/unit/ -x --tb=line -q \
+          python -m pytest homodyne/tests/unit/ -x --tb=line -q \
             --maxfail=3 --disable-warnings
 
       - name: Build check
@@ -99,7 +99,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[test]"
-          pytest homodyne/tests/unit/ -x --tb=line -q --maxfail=2
+          python -m pytest homodyne/tests/unit/ -x --tb=line -q --maxfail=2
 
   # Documentation (only when docs change or on main)
   docs:
