@@ -134,7 +134,8 @@ class TestMCMCSamplerInitialization:
     @pytest.mark.skipif(not MCMC_MODULE_AVAILABLE, reason="MCMC module not available")
     def test_mcmc_sampler_init_basic(self, mock_analysis_core, mcmc_config):
         """Test basic MCMC sampler initialization."""
-        with patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True):
+        with patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True), \
+             patch("homodyne.optimization.mcmc._lazy_import_pymc", return_value=(Mock(), Mock(), Mock(), Mock())):
             sampler = MCMCSampler(mock_analysis_core, mcmc_config)
 
             assert sampler.core == mock_analysis_core
@@ -149,7 +150,9 @@ class TestMCMCSamplerInitialization:
         """Test MCMC sampler initialization with JAX backend."""
         mcmc_config["optimization_config"]["mcmc_sampling"]["use_jax"] = True
 
-        with patch("homodyne.optimization.mcmc.JAX_AVAILABLE", True):
+        with patch("homodyne.optimization.mcmc.JAX_AVAILABLE", True), \
+             patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True), \
+             patch("homodyne.optimization.mcmc._lazy_import_pymc", return_value=(Mock(), Mock(), Mock(), Mock())):
             sampler = MCMCSampler(mock_analysis_core, mcmc_config)
 
             assert (
