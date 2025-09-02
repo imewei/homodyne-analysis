@@ -8,5 +8,5 @@ def resample(
     replace: bool = True,
     n_samples: int | None = None,
     random_state: int | None = None,
-    stratify: NDArray[Any] | None = None
+    stratify: NDArray[Any] | None = None,
 ) -> tuple[NDArray[Any], ...]: ...

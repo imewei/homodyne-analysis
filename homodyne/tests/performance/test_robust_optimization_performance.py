@@ -35,6 +35,7 @@ else:
             RobustHomodyneOptimizer,
             create_robust_optimizer,
         )
+
         ROBUST_OPTIMIZATION_AVAILABLE = True
     except ImportError:
         RobustHomodyneOptimizer = cast(Any, Mock())  # type: ignore[misc]
@@ -43,7 +44,9 @@ else:
         CVXPY_AVAILABLE = False
         GUROBI_AVAILABLE = False
         ROBUST_OPTIMIZATION_AVAILABLE = False
-        logging.warning("Robust optimization not available for performance testing: Import failed")
+        logging.warning(
+            "Robust optimization not available for performance testing: Import failed"
+        )
 
 # Test configuration
 PERFORMANCE_CONFIG = {
