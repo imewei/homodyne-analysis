@@ -68,6 +68,9 @@ jobs:
           python -m pip install --upgrade pip build twine
           pip install -e ".[test]"
           
+          # Verify pytest installation
+          python -m pytest --version
+          
           # Run only fast tests
           python -m pytest homodyne/tests/ -x --tb=line -q -m "not slow" --maxfail=2
           
