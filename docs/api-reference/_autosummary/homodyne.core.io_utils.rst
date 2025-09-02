@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.core
 
-.. autodata:: io_utils
+.. automodule:: io_utils
