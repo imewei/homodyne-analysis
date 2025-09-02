@@ -23,13 +23,13 @@ Sets up shell completion for zsh, bash, and fish shells. Provides tab completion
 .. code-block:: python
 
    from homodyne.post_install import install_shell_completion
-   
+
    # Install completion for zsh
    success = install_shell_completion(shell_type="zsh", force=True)
    if success:
        print("Shell completion installed successfully")
 
-install_gpu_acceleration  
+install_gpu_acceleration
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: homodyne.post_install.install_gpu_acceleration
@@ -41,7 +41,7 @@ Configures GPU acceleration on Linux systems with NVIDIA hardware. Sets up envir
 .. code-block:: python
 
    from homodyne.post_install import install_gpu_acceleration
-   
+
    # Install GPU acceleration (Linux only)
    success = install_gpu_acceleration(force=True)
    if success:
@@ -59,7 +59,7 @@ Installs advanced CLI tools including homodyne-gpu-optimize and homodyne-validat
 .. code-block:: python
 
    from homodyne.post_install import install_advanced_features
-   
+
    # Install advanced CLI tools
    success = install_advanced_features()
    if success:
@@ -91,13 +91,13 @@ The post-install system can be used from the command line:
 
    # Interactive setup
    homodyne-post-install
-   
+
    # Non-interactive with all features
    homodyne-post-install --shell zsh --gpu --advanced
-   
+
    # Shell completion only
    homodyne-post-install --shell bash
-   
+
    # GPU and advanced features
    homodyne-post-install --gpu --advanced
 
@@ -119,7 +119,7 @@ The post-install system integrates seamlessly with pip installation:
 
    # Install package
    pip install homodyne-analysis[all]
-   
+
    # Run unified setup
    homodyne-post-install --shell zsh --gpu --advanced
 
@@ -134,10 +134,10 @@ The system works with the homodyne-cleanup tool for easy removal:
 
    # Interactive cleanup
    homodyne-cleanup
-   
+
    # Remove all features
    homodyne-cleanup --all
-   
+
    # Dry run to see what would be removed
    homodyne-cleanup --dry-run
 

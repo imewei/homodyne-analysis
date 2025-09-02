@@ -1,6 +1,6 @@
-# Optional dependencies for Homodyne Scattering Analysis Package with JAX backend GPU acceleration
+# Optional dependencies for Homodyne Scattering Analysis Package with enhanced testing framework
 # Generated from pyproject.toml [project.optional-dependencies]
-# Latest update: JAX backend GPU acceleration and PyTensor environment variable auto-configuration
+# Latest update: Enhanced testing framework and improved virtual environment support (v0.7.2)
 
 # Include core dependencies
 -r requirements.txt
@@ -30,15 +30,15 @@ cvxpy>=1.4.0
 # Gurobi optimization solver (requires license)
 gurobipy>=11.0.0
 
-# Shell completion and conda/mamba environment integration
+# Shell completion and enhanced virtual environment integration
 argcomplete>=3.0.0
 
 # Note: JAX backend GPU acceleration with PyTensor environment variable auto-configuration:
 # - JAX backend: Handles all GPU operations (MCMC sampling, numerical computations)
 # - PyTensor: CPU mode with environment variables auto-configured during pip install
 # - Environment variables: PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
-# - Virtual environments: conda/mamba activation scripts automatically created
-# - Shell completion: Ultra-fast preloaded completion with aliases and tab completion  
+# - Virtual environments: Enhanced support for conda/mamba/venv with activation scripts
+# - Shell completion: Ultra-fast preloaded completion with aliases and tab completion
 # - Command shortcuts: hm, hc, hr, ha, hgm, hga always available
 # - Status functions: homodyne_gpu_status (conda/mamba environments)
 # - Cross-platform: Linux (full GPU), macOS/Windows (CPU with JAX optimizations)

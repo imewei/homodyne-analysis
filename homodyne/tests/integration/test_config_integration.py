@@ -299,7 +299,7 @@ class TestConfigurationIntegration:
 
         # Test MCMC integration
         try:
-            from homodyne.optimization.mcmc import MCMCSampler
+            from homodyne.optimization.mcmc import MCMCSampler  # noqa: F401
 
             # Create mock MCMC sampler with ConfigManager
             mock_analyzer = Mock()

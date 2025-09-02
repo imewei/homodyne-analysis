@@ -19,8 +19,6 @@ Features:
 import argparse
 import os
 import platform
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -49,6 +47,8 @@ def is_virtual_environment():
         hasattr(sys, "real_prefix")
         or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix)
         or os.environ.get("CONDA_DEFAULT_ENV") is not None
+        or os.environ.get("MAMBA_ROOT_PREFIX") is not None
+        or os.environ.get("VIRTUAL_ENV") is not None
     )
 
 
@@ -79,7 +79,7 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
     # Define aliases
     alias hm='homodyne --method mcmc'
     alias hc='homodyne --method classical'
-    alias hr='homodyne --method robust'  
+    alias hr='homodyne --method robust'
     alias ha='homodyne --method all'
     alias hconfig='homodyne-config'
 
@@ -115,7 +115,7 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
         echo "  hr  = homodyne --method robust"
         echo "  ha  = homodyne --method all"
         echo "  hconfig = homodyne-config"
-        
+
         if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
             echo ""
             echo "GPU shortcuts (Linux only):"
@@ -231,43 +231,44 @@ def install_macos_shell_completion():
     config_dir = venv_path / "etc" / "homodyne"
     config_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create aliases script that works on macOS
-    aliases_script = config_dir / "homodyne_aliases.sh"
-    script_content = """#!/bin/bash
-# Homodyne Shell Aliases for macOS
+    # TODO: Create aliases script that works on macOS (not yet implemented)
+    # script_content = '''#!/bin/bash
 
-# CPU-only aliases  
-alias hm='homodyne --method mcmc'
-alias hc='homodyne --method classical'
-alias hr='homodyne --method robust'
-alias ha='homodyne --method all'
 
-# Configuration shortcuts
-alias hconfig='homodyne --config'
-
-# Plotting shortcuts
-alias hexp='homodyne --plot-experimental-data'
-alias hsim='homodyne --plot-simulated-data'
-
-# homodyne-config shortcuts
-alias hc-iso='homodyne-config --mode static_isotropic'
-alias hc-aniso='homodyne-config --mode static_anisotropic'
-alias hc-flow='homodyne-config --mode laminar_flow'
-
-# Helper function
-homodyne_help() {
-    echo "Homodyne command shortcuts:"
-    echo "  hc = homodyne --method classical"
-    echo "  hm = homodyne --method mcmc"
-    echo "  hr = homodyne --method robust"
-    echo "  ha = homodyne --method all"
-    echo ""
-    echo "Config shortcuts:"
-    echo "  hc-iso   = homodyne-config --mode static_isotropic"
-    echo "  hc-aniso = homodyne-config --mode static_anisotropic"
-    echo "  hc-flow  = homodyne-config --mode laminar_flow"
-}
-"""
+# # Homodyne Shell Aliases for macOS
+#
+# # CPU-only aliases
+# alias hm='homodyne --method mcmc'
+# alias hc='homodyne --method classical'
+# alias hr='homodyne --method robust'
+# alias ha='homodyne --method all'
+#
+# # Configuration shortcuts
+# alias hconfig='homodyne --config'
+#
+# # Plotting shortcuts
+# alias hexp='homodyne --plot-experimental-data'
+# alias hsim='homodyne --plot-simulated-data'
+#
+# # homodyne-config shortcuts
+# alias hc-iso='homodyne-config --mode static_isotropic'
+# alias hc-aniso='homodyne-config --mode static_anisotropic'
+# alias hc-flow='homodyne-config --mode laminar_flow'
+#
+# # Helper function
+# homodyne_help() {
+#     echo "Homodyne command shortcuts:"
+#     echo "  hc = homodyne --method classical"
+#     echo "  hm = homodyne --method mcmc"
+#     echo "  hr = homodyne --method robust"
+#     echo "  ha = homodyne --method all"
+#     echo ""
+#     echo "Config shortcuts:"
+#     echo "  hc-iso   = homodyne-config --mode static_isotropic"
+#     echo "  hc-aniso = homodyne-config --mode static_anisotropic"
+#     echo "  hc-flow  = homodyne-config --mode laminar_flow"
+# }
+# '''
 
 
 def install_advanced_features():
@@ -568,9 +569,9 @@ Examples:
   homodyne-post-install --interactive    # Interactive setup (recommended)
   homodyne-post-install                  # Install shell completion only
   homodyne-post-install --force          # Force install outside venv
-  
+
 The script provides optional installation of:
-- Shell completion (bash/zsh/fish) with safe aliases 
+- Shell completion (bash/zsh/fish) with safe aliases
 - GPU acceleration setup (Linux only)
 - Advanced features (Phases 4-6): completion caching, GPU optimization, system validation
 - Virtual environment integration

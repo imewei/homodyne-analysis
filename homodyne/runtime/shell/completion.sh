@@ -15,9 +15,9 @@ _homodyne_init_cache() {
 _homodyne_get_recent_configs() {
     local cache_age=300  # 5 minutes
     local current_time=$(date +%s)
-    
+
     _homodyne_init_cache
-    
+
     # Check if cache exists and is fresh
     if [[ -f "$HOMODYNE_COMPLETION_CACHE_FILE" ]]; then
         local cache_time=$(stat -c %Y "$HOMODYNE_COMPLETION_CACHE_FILE" 2>/dev/null || stat -f %m "$HOMODYNE_COMPLETION_CACHE_FILE" 2>/dev/null)
@@ -26,7 +26,7 @@ _homodyne_get_recent_configs() {
             return
         fi
     fi
-    
+
     # Rebuild cache
     {
         # Find JSON files in current and parent directories
@@ -36,7 +36,7 @@ _homodyne_get_recent_configs() {
         echo "config.json"
         echo "analysis_config.json"
     } | sort -u > "$HOMODYNE_COMPLETION_CACHE_FILE"
-    
+
     cat "$HOMODYNE_COMPLETION_CACHE_FILE"
 }
 
@@ -44,7 +44,7 @@ _homodyne_get_recent_configs() {
 _homodyne_smart_method_completion() {
     local config_file="$1"
     local methods="classical mcmc robust all"
-    
+
     # If config file exists, try to detect mode and suggest appropriate methods
     if [[ -f "$config_file" ]] && command -v python3 >/dev/null 2>&1; then
         local mode=$(python3 -c "
@@ -74,13 +74,13 @@ _homodyne_advanced_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    
+
     # Main options
     local main_opts="--help --method --config --output-dir --verbose --quiet"
     local mode_opts="--static-isotropic --static-anisotropic --laminar-flow"
     local plot_opts="--plot-experimental-data --plot-simulated-data"
     local param_opts="--contrast --offset --phi-angles"
-    
+
     case $prev in
         --method)
             # Smart method completion based on config
@@ -91,7 +91,7 @@ _homodyne_advanced_completion() {
                     break
                 fi
             done
-            
+
             local methods=$(_homodyne_smart_method_completion "$config_file")
             COMPREPLY=($(compgen -W "$methods" -- "$cur"))
             return 0
@@ -124,7 +124,7 @@ _homodyne_advanced_completion() {
             return 0
             ;;
     esac
-    
+
     # Check for incompatible options
     local has_mode=false
     for word in "${COMP_WORDS[@]}"; do
@@ -133,7 +133,7 @@ _homodyne_advanced_completion() {
             break
         fi
     done
-    
+
     if [[ $cur == -* ]]; then
         local all_opts="$main_opts $plot_opts $param_opts"
         [[ "$has_mode" == false ]] && all_opts="$all_opts $mode_opts"
@@ -165,9 +165,9 @@ if [[ -n "$ZSH_VERSION" ]]; then
             '--phi-angles[Phi angles (comma-separated)]:angles:'
             '*:config:_files -g "*.json"'
         )
-        
+
         _arguments -C $args
-        
+
         case $state in
             methods)
                 local methods="classical mcmc robust all"
@@ -182,7 +182,7 @@ if [[ -n "$ZSH_VERSION" ]]; then
                 ;;
         esac
     }
-    
+
     # Register advanced completion
     compdef _homodyne_advanced_zsh homodyne 2>/dev/null || true
     compdef _homodyne_advanced_zsh homodyne-gpu 2>/dev/null || true
@@ -200,17 +200,17 @@ homodyne_build() {
     local method=""
     local config=""
     local output=""
-    
+
     echo "🔧 Homodyne Command Builder"
     echo ""
-    
+
     # Select method
     PS3="Select analysis method: "
     select m in "classical" "mcmc" "robust" "all" "skip"; do
         [[ -n "$m" ]] && [[ "$m" != "skip" ]] && method="--method $m"
         break
     done
-    
+
     # Select config
     echo ""
     echo "Available config files:"
@@ -230,21 +230,21 @@ homodyne_build() {
         read -p "Enter config file path (or press Enter to skip): " c
         [[ -n "$c" ]] && config="--config $c"
     fi
-    
+
     # GPU acceleration?
     if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
         echo ""
         read -p "Use GPU acceleration? (y/N): " use_gpu
         [[ "$use_gpu" =~ ^[Yy] ]] && cmd="homodyne-gpu"
     fi
-    
+
     # Build and show command
     echo ""
     echo "📋 Generated command:"
     echo "  $cmd $method $config"
     echo ""
     read -p "Run this command? (y/N): " run_it
-    
+
     if [[ "$run_it" =~ ^[Yy] ]]; then
         echo "🚀 Running..."
         eval "$cmd $method $config"

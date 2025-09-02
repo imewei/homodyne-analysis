@@ -53,7 +53,7 @@ Ensure your experimental data is in the correct format:
 
    # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
    homodyne --config my_sample_config.json --plot-experimental-data
-   
+
    # Basic analysis (fastest, saves results to ./homodyne_results/)
    homodyne --config my_sample_config.json --method classical
    # Or with unified shortcuts: hc my_sample_config.json
@@ -64,10 +64,10 @@ Ensure your experimental data is in the correct format:
 
    # Quick analysis using unified shortcuts:
    # hc        # homodyne --method classical
-   # hm        # homodyne --method mcmc  
+   # hm        # homodyne --method mcmc
    # hr        # homodyne --method robust
    # ha        # homodyne --method all
-   
+
    # GPU optimization and system monitoring:
    # gpu-status                        # Check GPU status
    # homodyne-gpu-optimize --benchmark # GPU benchmarking

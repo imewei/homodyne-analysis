@@ -16,3 +16,6 @@ def pytest_collection_modifyitems(items):
         # Regression tests are usually fast
         if not any(m.name == "slow" for m in item.iter_markers()):
             item.add_marker(pytest.mark.fast)
+
+        # Add ci marker for tests that should run in CI
+        item.add_marker(pytest.mark.ci)

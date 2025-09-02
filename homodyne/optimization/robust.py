@@ -35,8 +35,9 @@ from sklearn.utils import resample
 
 # CVXPY import with graceful degradation
 try:
-    import cvxpy as cp
     import warnings
+
+    import cvxpy as cp
 
     # Suppress CVXPY reshape order FutureWarning
     warnings.filterwarnings(

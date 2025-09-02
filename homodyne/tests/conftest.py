@@ -403,7 +403,7 @@ def track_test_performance_auto(request):
             request.node.add_marker(pytest.mark.fast)
 
     # Store performance data for potential CI optimization
-    setattr(request.node, "_test_duration", duration)
+    request.node._test_duration = duration
 
 
 @pytest.fixture(scope="session")
@@ -419,17 +419,7 @@ def sample_config_path():
 
 
 # Import all fixtures from fixtures module to make them available
-from homodyne.tests.fixtures.data import (
-    dummy_analysis_results,
-    dummy_config,
-    dummy_correlation_data,
-    dummy_hdf5_data,
-    dummy_phi_angles,
-    dummy_theoretical_data,
-    dummy_time_arrays,
-    mock_optimization_result,
-    test_output_directory,
-)
+from homodyne.tests.fixtures import *  # noqa: F403,E402,F401
 
 
 def pytest_report_header(config):

@@ -176,11 +176,13 @@ clean-test:
 	rm -rf htmlcov/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
-	rm -rf .benchmarks/
+	find . -name '.benchmarks' -type d -exec rm -rf {} +
 	rm -f test_report.html
 	rm -f bandit-report.json
+	rm -f bandit_report.json
 	rm -f code_quality_report.md
 	rm -f pip_audit_report.json
+	rm -f coverage.xml
 
 clean-venv:
 	rm -rf venv/

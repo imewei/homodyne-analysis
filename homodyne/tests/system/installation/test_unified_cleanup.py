@@ -9,10 +9,9 @@ This module tests the enhanced cleanup system that handles:
 - Legacy system files cleanup
 """
 
-import os
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -25,11 +24,9 @@ try:
         cleanup_old_system_files,
         interactive_cleanup,
         is_virtual_environment,
-    )
-    from homodyne.uninstall_scripts import main as cleanup_main
-    from homodyne.uninstall_scripts import (
         show_dry_run,
     )
+    from homodyne.uninstall_scripts import main as cleanup_main
 
     CLEANUP_AVAILABLE = True
 except ImportError:

@@ -3,7 +3,8 @@
 This project uses [pre-commit](https://pre-commit.com/) hooks to ensure consistent code
 quality, formatting, and security standards across all contributions.
 
-*Updated: 2024-08-31 - Compatible with unified post-install system*
+*Updated: 2025-09-01 - Enhanced testing framework integration and improved code quality
+standards*
 
 ## Quick Setup (Unified System)
 
@@ -11,7 +12,7 @@ quality, formatting, and security standards across all contributions.
 
    ```bash
    pip install homodyne-analysis[dev]
-   
+
    # Setup unified development environment
    homodyne-post-install --shell zsh --advanced
    ```
@@ -30,7 +31,8 @@ quality, formatting, and security standards across all contributions.
    pre-commit run --all-files
    ```
 
-**That's it!** Hooks will now run automatically on every commit, and you have the full unified development environment.
+**That's it!** Hooks will now run automatically on every commit, and you have the full
+unified development environment.
 
 ## Manual Usage
 
@@ -65,9 +67,9 @@ pre-commit run flake8
 
 ### Code Quality & Linting
 
-- **Flake8**: Style guide enforcement
-- **Ruff**: Extremely fast Python linter with auto-fixes
-- **MyPy**: Static type checking (excluding tests)
+- **Ruff**: Extremely fast Python linter with auto-fixes (✅ Active)
+- **MyPy**: Static type checking (excluding tests) (⚠️ Improved stubs)
+- ~~**Flake8**: Style guide enforcement~~ (Replaced by Ruff for better performance)
 
 ### Security
 
@@ -170,7 +172,17 @@ pre-commit install
 1. **Setup environment**: `homodyne-post-install --shell zsh --advanced`
 1. **Validate system**: `homodyne-validate`
 1. **Make your changes**
-1. **Run tests**: `pytest homodyne/tests/` (or use unified aliases)
+1. **Run tests**:
+   ```bash
+   # Fast tests only (recommended for development)
+   pytest homodyne/tests/ -m "fast" -x --tb=line -q
+
+   # Unit tests with coverage
+   pytest homodyne/tests/unit/ -v --cov=homodyne --cov-report=term-missing
+
+   # All tests excluding slow/integration/mcmc
+   pytest homodyne/tests/ -m "not slow and not integration and not mcmc" -x --tb=line -q
+   ```
 1. **Stage files**: `git add .`
 1. **Commit**: `git commit -m "Your message"`
    - Pre-commit hooks run automatically and may modify files
@@ -178,11 +190,19 @@ pre-commit install
 1. **Push**: `git push`
 
 **Advanced development commands**:
+
 ```bash
 # Use unified system commands for development
 homodyne-validate --test completion     # Test shell completion
 homodyne-validate --test gpu            # Test GPU setup
 homodyne-gpu-optimize --benchmark       # Optimize development environment
+
+# Testing framework with markers (v0.7.2)
+pytest homodyne/tests/ -m "ci"          # Run CI-suitable tests
+pytest homodyne/tests/ -m "unit"        # Run unit tests only
+pytest homodyne/tests/ -m "system"      # Run system tests only
+pytest homodyne/tests/ -m "fast"        # Run fast tests only
+pytest homodyne/tests/ -m "regression"  # Run regression tests
 ```
 
 ### CI/CD Integration

@@ -1,6 +1,6 @@
-# JAX dependencies for GPU acceleration with PyTensor environment variable auto-configuration
+# JAX dependencies for GPU acceleration with enhanced virtual environment support
 # Generated from pyproject.toml [project.optional-dependencies.jax]
-# Latest update: JAX backend GPU acceleration and PyTensor environment variable auto-configuration
+# Latest update: Enhanced testing framework and improved virtual environment support (v0.7.2)
 
 # Include core dependencies
 -r requirements.txt
@@ -22,7 +22,7 @@ jaxlib>=0.4.35
 # - PyTensor: Configured for CPU mode, C++ compiler disabled (avoids linking issues)
 # - Environment variables: Auto-configured during pip install homodyne-analysis
 # - System CUDA: 12.6+ and cuDNN 9.12+ required for optimal performance
-# - Virtual environments: conda/mamba activation scripts automatically created
+# - Virtual environments: Enhanced support for conda/mamba/venv with activation scripts
 #
 # For manual environment variable verification:
 # echo $PYTENSOR_FLAGS

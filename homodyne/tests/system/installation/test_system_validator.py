@@ -16,14 +16,13 @@ Institution: Argonne National Laboratory
 
 import gc
 import json
-import os
 import shutil
 import subprocess
 import tempfile
 import time
 from dataclasses import asdict
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 

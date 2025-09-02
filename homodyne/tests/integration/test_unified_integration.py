@@ -9,13 +9,10 @@ This module tests end-to-end functionality of the unified system including:
 - Cross-component interaction and compatibility
 """
 
-import os
 import platform
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
-
-import pytest
+from unittest.mock import patch
 
 
 class TestUnifiedSystemWorkflow:
@@ -34,9 +31,9 @@ class TestUnifiedSystemWorkflow:
                 ),
                 patch("homodyne.post_install.detect_shell_type", return_value="zsh"),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
-                patch("pathlib.Path.mkdir") as mock_mkdir,
+                patch("pathlib.Path.mkdir"),
                 patch("pathlib.Path.write_text") as mock_write,
-                patch("pathlib.Path.chmod") as mock_chmod,
+                patch("pathlib.Path.chmod"),
             ):
                 # Simulate post-install with all features
                 # Simulate post-install with all features
@@ -48,18 +45,18 @@ class TestUnifiedSystemWorkflow:
 
                 # Step 1: Install shell completion
                 shell_result = install_shell_completion(shell_type="zsh", force=False)
-                assert shell_result == True
+                assert shell_result is True
 
                 # Step 2: Setup GPU acceleration (Linux only)
                 if platform.system() == "Linux":
                     gpu_result = install_gpu_acceleration(force=False)
-                    assert gpu_result == True
+                    assert gpu_result is True
 
                 # Step 3: Install advanced features
                 # The runtime files exist, so this should work
                 advanced_result = install_advanced_features()
                 # Since the runtime files exist, this should succeed
-                assert advanced_result == True
+                assert advanced_result is True
 
                 # Verify expected files were created (only if advanced features succeeded)
                 if advanced_result:
@@ -131,7 +128,7 @@ class TestUnifiedSystemWorkflow:
                 from homodyne.uninstall_scripts import cleanup_all_files
 
                 result = cleanup_all_files()
-                assert result == True
+                assert result is True
 
                 # Files should be removed
                 for file_path in installed_files:
@@ -225,14 +222,14 @@ class TestUnifiedSystemErrorScenarios:
                 patch(
                     "homodyne.post_install.is_virtual_environment", return_value=True
                 ),
-                patch("builtins.print") as mock_print,
+                patch("builtins.print"),
             ):
                 # Re-running installation should handle existing files gracefully
                 from homodyne.post_install import install_shell_completion
 
                 result = install_shell_completion(shell_type="zsh", force=False)
                 # Should complete successfully even with existing files
-                assert result == True
+                assert result is True
 
     def test_cleanup_with_missing_files(self):
         """Test cleanup behavior when expected files are missing."""
@@ -250,7 +247,7 @@ class TestUnifiedSystemErrorScenarios:
 
                 # Should handle missing files gracefully
                 result = cleanup_all_files()
-                assert result == True
+                assert result is True
 
     def test_permission_error_handling(self):
         """Test handling of permission errors."""
@@ -270,7 +267,7 @@ class TestUnifiedSystemErrorScenarios:
                 # Should handle permission errors gracefully
                 result = install_shell_completion(shell_type="zsh", force=False)
                 # Should return False but not crash
-                assert result == False
+                assert result is False
 
                 # Should print helpful error message
                 print_calls = [str(call) for call in mock_print.call_args_list]

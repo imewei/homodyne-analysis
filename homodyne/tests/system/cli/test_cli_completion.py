@@ -2,23 +2,13 @@
 Tests for CLI completion and interactive features.
 """
 
-import argparse
-import os
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 try:
-    from homodyne.post_install import (
-        install_shell_completion,
-        is_virtual_environment,
-    )
-    from homodyne.uninstall_scripts import (
-        cleanup_all_files,
-        cleanup_completion_files,
-    )
+    from homodyne.post_install import install_shell_completion, is_virtual_environment
+    from homodyne.uninstall_scripts import cleanup_all_files, cleanup_completion_files
     from homodyne.uninstall_scripts import main as cleanup_main
 
     COMPLETION_AVAILABLE = True

@@ -16,7 +16,7 @@ import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,9 @@ class ValidationResult:
     name: str
     success: bool
     message: str
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
     execution_time: float = 0.0
-    warnings: Optional[List[str]] = None
+    warnings: list[str] | None = None
 
 
 class SystemValidator:
@@ -38,7 +38,7 @@ class SystemValidator:
 
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
-        self.results: List[ValidationResult] = []
+        self.results: list[ValidationResult] = []
         self.environment_info = {}
 
     def log(self, message: str, level: str = "info"):
@@ -47,7 +47,7 @@ class SystemValidator:
             timestamp = time.strftime("%H:%M:%S")
             print(f"[{timestamp}] {level.upper()}: {message}")
 
-    def run_command(self, cmd: List[str], timeout: int = 30) -> Tuple[bool, str, str]:
+    def run_command(self, cmd: list[str], timeout: int = 30) -> tuple[bool, str, str]:
         """Run shell command and return success, stdout, stderr."""
         try:
             result = subprocess.run(
@@ -433,7 +433,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
                 execution_time=execution_time,
             )
 
-    def run_all_tests(self) -> Dict[str, ValidationResult]:
+    def run_all_tests(self) -> dict[str, ValidationResult]:
         """Run all system tests."""
         tests = [
             self.test_environment_detection,
@@ -484,12 +484,12 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
 
         # Environment info
         if self.environment_info:
-            report.append(f"\n🖥️  Environment:")
+            report.append("\n🖥️  Environment:")
             for key, value in self.environment_info.items():
                 report.append(f"   {key}: {value}")
 
         # Test results
-        report.append(f"\n📋 Test Results:")
+        report.append("\n📋 Test Results:")
         report.append("-" * 40)
 
         for result in self.results:
@@ -514,7 +514,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
                         report.append(f"     {key}: {value}")
 
         # Recommendations
-        report.append(f"\n💡 Recommendations:")
+        report.append("\n💡 Recommendations:")
 
         failed_tests = [r for r in self.results if not r.success]
         if failed_tests:

@@ -26,20 +26,20 @@ diffusion and advective shear flow.
   and outlier resistance
 - **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations,
   and optimized memory usage
-- **Smart GPU acceleration**: Automatic CUDA detection with hardware-specific optimization
-  and intelligent CPU/GPU selection
+- **Smart GPU acceleration**: Automatic CUDA detection with hardware-specific
+  optimization and intelligent CPU/GPU selection
 - **Unified system integration**: Streamlined shell completion, GPU setup, and advanced
   features with one-command installation
 - **Advanced tools**: GPU optimization (`homodyne-gpu-optimize`), system validation
   (`homodyne-validate`), and performance monitoring
 - **Scientific accuracy**: Automatic $g_2 = \\text{offset} + \\text{contrast} \\times
   g_1$ fitting for proper $\\chi^2$ calculations
-- **Robust testing infrastructure**: 500+ tests with comprehensive coverage, automated
+- **Enhanced testing framework**: 500+ tests with comprehensive marker system, automated
   CI/CD, and performance regression detection
 - **Code quality assurance**: Automated formatting, linting, type checking, and security
   scanning with pre-commit hooks
-- **Cross-platform shell completion**: Unified completion system with smart caching
-  and environment integration
+- **Cross-platform shell completion**: Unified completion system with smart caching and
+  environment integration
 
 ## Table of Contents
 
@@ -63,6 +63,7 @@ version.
 ### Quick Installation (Unified System)
 
 **Complete setup with unified system:**
+
 ```bash
 # Install with all features
 pip install homodyne-analysis[all]
@@ -75,6 +76,7 @@ homodyne-validate
 ```
 
 **Alternative installation approaches:**
+
 ```bash
 # Standard installation
 pip install homodyne-analysis[all]
@@ -268,12 +270,14 @@ pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
 **Automatic GPU detection with intelligent CPU/GPU selection:**
 
 **Features:**
+
 - **Smart CUDA detection**: Finds CUDA in system, conda, or pip installations
 - **Hardware optimization**: Automatic GPU memory and performance tuning
 - **Intelligent fallback**: Seamless CPU fallback on unsupported platforms
 - **Platform-aware**: Linux GPU acceleration, Windows/macOS CPU-optimized
 
 **Setup:**
+
 ```bash
 # Install with GPU support
 pip install homodyne-analysis[jax]
@@ -287,6 +291,7 @@ gpu-status                        # Check GPU activation status
 ```
 
 **Advanced GPU features:**
+
 ```bash
 # Hardware-specific optimization
 homodyne-gpu-optimize --benchmark --apply
@@ -299,6 +304,7 @@ homodyne-validate --verbose       # Complete system report
 ```
 
 **Smart usage (automatic GPU/CPU selection):**
+
 ```bash
 hm config.json                    # MCMC with smart GPU detection
 ha config.json                    # All methods with intelligent selection
@@ -326,11 +332,13 @@ from homodyne.optimization.mcmc import MCMCSampler
 # GPU acceleration is automatic when available and activated
 ```
 
-**Note:** Use `homodyne-post-install --gpu` for automated CUDA setup and `homodyne-validate` for troubleshooting.
+**Note:** Use `homodyne-post-install --gpu` for automated CUDA setup and
+`homodyne-validate` for troubleshooting.
 
 ## Uninstallation
 
-To completely remove homodyne-analysis including all environment scripts, follow this **two-step process**:
+To completely remove homodyne-analysis including all environment scripts, follow this
+**two-step process**:
 
 ```bash
 # Step 1: Clean up environment scripts FIRST (while package is still installed)
@@ -340,10 +348,12 @@ homodyne-cleanup
 pip uninstall homodyne-analysis
 ```
 
-**⚠️ Important**: The order matters! The `homodyne-cleanup` command is part of the package and removes conda environment scripts that `pip uninstall` cannot track:
+**⚠️ Important**: The order matters! The `homodyne-cleanup` command is part of the
+package and removes conda environment scripts that `pip uninstall` cannot track:
 
 - `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh` (conda activation hook)
-- `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh` (conda deactivation hook)
+- `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh` (conda deactivation
+  hook)
 - `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh` (GPU activation script)
 - `$CONDA_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh` (shell completion script)
 - `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh` (main configuration script)
@@ -387,7 +397,7 @@ homodyne-config --mode laminar_flow --sample my_sample
 
 # Run analysis with unified commands (smart GPU/CPU selection)
 hm my_config.json                   # homodyne --method mcmc (with smart GPU)
-ha my_config.json                   # homodyne --method all 
+ha my_config.json                   # homodyne --method all
 hc my_config.json                   # homodyne --method classical
 hr my_config.json                   # homodyne --method robust
 
@@ -398,7 +408,8 @@ homodyne-gpu-optimize --benchmark   # Optimize GPU performance
 
 ## CLI Commands (Unified System)
 
-The homodyne package provides comprehensive command-line tools with unified system integration:
+The homodyne package provides comprehensive command-line tools with unified system
+integration:
 
 ### Unified Command Aliases (Smart GPU/CPU Selection)
 
@@ -461,8 +472,8 @@ homodyne-config --mode laminar_flow --output custom_config.json --sample microge
 
 ## Unified Shell Integration
 
-The homodyne unified system provides comprehensive shell integration with smart completion, 
-GPU activation, and advanced features:
+The homodyne unified system provides comprehensive shell integration with smart
+completion, GPU activation, and advanced features:
 
 ### One-Command Setup
 
@@ -480,19 +491,22 @@ homodyne-post-install --shell zsh
 ### Unified System Features
 
 **🚀 Smart Completion System:**
+
 - Cross-shell compatibility (bash, zsh, fish)
 - Context-aware suggestions
 - Config file discovery with caching
 - Method completion based on config type
 
 **⚡ GPU Integration:**
+
 - Automatic GPU detection and activation
 - Hardware-specific optimization
 - Smart CPU/GPU selection
 - Performance monitoring tools
 
 **🛠️ Advanced Tools:**
-- System validation (`homodyne-validate`)  
+
+- System validation (`homodyne-validate`)
 - GPU optimization (`homodyne-gpu-optimize`)
 - Performance benchmarking (`gpu-bench`)
 - Clean removal (`homodyne-cleanup`)
@@ -895,6 +909,43 @@ The package includes comprehensive performance optimizations:
 - **Lazy loading**: Heavy dependencies loaded only when needed
 - **Fast startup**: >99% reduction in import time for optional components
 - **Modular imports**: Core functionality available without heavy dependencies
+
+### Enhanced Testing Framework (v0.7.2)
+
+The package includes a comprehensive testing framework with intelligent test
+organization:
+
+**🧪 Test Marker System:**
+
+```bash
+# Fast development testing
+pytest homodyne/tests/ -m "fast" -x --tb=line -q
+
+# Comprehensive test categories
+pytest homodyne/tests/ -m "unit"        # Unit tests only
+pytest homodyne/tests/ -m "system"      # System integration tests
+pytest homodyne/tests/ -m "ci"          # CI-suitable tests
+pytest homodyne/tests/ -m "regression"  # Regression tests
+
+# Performance and specialized testing
+pytest homodyne/tests/ -m "performance" # Performance benchmarks
+pytest homodyne/tests/ -m "slow"        # Comprehensive slow tests
+pytest homodyne/tests/ -m "integration" # Integration tests
+pytest homodyne/tests/ -m "mcmc"        # MCMC-specific tests
+```
+
+**🔧 Test Framework Features:**
+
+- **Intelligent test categorization**: Automatic marker assignment based on test
+  location and characteristics
+- **Flexible execution strategies**: Run tests by category, speed, or integration level
+- **CI/CD optimized**: Separate test suites for development vs. production pipelines
+- **Comprehensive coverage**: 500+ tests covering all functionality with detailed
+  reporting
+- **Performance regression detection**: Automated benchmarking to detect performance
+  changes
+- **Virtual environment detection**: Enhanced support for mamba, conda, venv, and
+  virtualenv
 
 ## Physical Constraints and Parameter Ranges
 

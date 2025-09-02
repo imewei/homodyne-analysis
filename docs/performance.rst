@@ -333,10 +333,10 @@ The package now includes a unified post-installation system for GPU acceleration
 
    # Install with GPU support
    pip install homodyne-analysis[all]
-   
+
    # Run unified post-install setup
    homodyne-post-install --shell zsh --gpu --advanced
-   
+
    # Validate GPU setup
    homodyne-validate --test gpu
    gpu-status  # Check GPU status
@@ -370,7 +370,7 @@ The unified system automatically configures:
    # Unified system validation
    homodyne-validate --quick           # Quick system check
    homodyne-validate --test gpu        # GPU-specific tests
-   
+
    # GPU status and benchmarking
    gpu-status                          # Check GPU hardware status
    homodyne-gpu-optimize --benchmark   # GPU performance testing

@@ -19,7 +19,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -198,7 +198,7 @@ class TestGPUSetupCleanup:
 
             with patch("sys.prefix", str(venv_path)):
                 # Test GPU cleanup if function exists
-                if hasattr(cleanup_all_files, "__call__"):
+                if callable(cleanup_all_files):
                     cleanup_all_files()
 
     def test_cleanup_gpu_aliases(self):

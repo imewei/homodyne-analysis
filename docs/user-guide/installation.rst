@@ -93,10 +93,10 @@ You can install specific feature sets using pip extras:
 .. code-block:: bash
 
    pip install homodyne-analysis[all]
-   
+
    # Run the unified post-install setup (recommended)
    homodyne-post-install --shell zsh --gpu --advanced
-   
+
    # Or interactive setup
    homodyne-post-install
 
@@ -184,14 +184,14 @@ If shell features don't work after installation:
 
    # Re-run the unified post-install setup
    homodyne-post-install --shell zsh --gpu --advanced
-   
+
    # Restart your shell
    source ~/.zshrc    # or ~/.bashrc for bash
-   
+
    # For cleanup and fresh start:
    homodyne-cleanup                     # Interactive cleanup
    homodyne-cleanup --all              # Remove all installed features
-   
+
    # Validate system after setup
    homodyne-validate --quick
 
@@ -304,11 +304,11 @@ After installation, verify the setup:
    import os
    print(f"PyTensor flags: {os.environ.get('PYTENSOR_FLAGS')}")
    # Should show: device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx=
-   
+
    import jax
    print(f"JAX devices: {jax.devices()}")
    # Output should show: [CudaDevice(id=0), ...] for GPU
-   
+
    # Verify PyTensor CPU configuration
    try:
        import pytensor

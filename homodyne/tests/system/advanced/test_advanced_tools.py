@@ -8,9 +8,7 @@ This module tests the advanced CLI tools introduced in the unified system:
 
 import json
 import platform
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -46,10 +44,10 @@ class TestHomodyneGPUOptimize:
         # Simulate help output
         help_text = """
         Hardware-specific GPU optimization and benchmarking
-        
+
         Options:
         --benchmark         Run GPU benchmarks
-        --apply            Apply optimization settings  
+        --apply            Apply optimization settings
         --report           Generate hardware report
         --profile NAME     Use optimization profile
         """

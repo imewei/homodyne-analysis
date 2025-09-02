@@ -10,7 +10,7 @@ This test file validates the unified post-install system functionality:
 import platform
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
 

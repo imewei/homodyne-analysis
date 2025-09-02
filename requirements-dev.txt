@@ -1,6 +1,6 @@
 # Development dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies.dev]
-# Latest update: JAX backend GPU acceleration and PyTensor environment variable auto-configuration
+# Latest update: Enhanced testing framework and improved virtual environment support (v0.7.2)
 
 # Include core dependencies
 -r requirements.txt
@@ -53,5 +53,5 @@ tox>=4.0.0
 build>=0.10.0
 twine>=4.0.0
 
-# Shell completion and conda/mamba integration dependencies with JAX backend support
-argcomplete>=3.0.0  # Shell completion setup with JAX backend GPU acceleration and PyTensor environment variable auto-configuration
+# Shell completion and enhanced virtual environment integration
+argcomplete>=3.0.0  # Shell completion setup with enhanced testing framework and mamba/venv support

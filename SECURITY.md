@@ -1,17 +1,15 @@
 # Security Policy
 
-*Updated: 2024-08-31 - Security considerations for unified post-install system*
+*Updated: 2025-09-01 - Enhanced testing framework security and code quality
+improvements*
 
 ## Supported Versions
 
 We actively maintain security updates for the following versions:
 
-| Version | Supported | 
-| ------- | ------------------ | 
-| 0.7.2+ | ✅ Yes (Unified System) | 
-| 0.7.x | ✅ Yes | 
-| 0.6.x | ❌ Legacy Support Only |
-| < 0.6.0 | ❌ No |
+| Version | Supported | | ------- | ------------------ | | 0.7.2+ | ✅ Yes (Enhanced
+Testing & Security) | | 0.7.2+ | ✅ Yes (Unified System) | | 0.7.x | ✅ Yes | | 0.6.x | ❌
+Legacy Support Only | | < 0.6.0 | ❌ No |
 
 ## Security Features
 
@@ -24,13 +22,17 @@ We actively maintain security updates for the following versions:
 
 ### Security Configuration
 
-- **Zero medium/high severity issues** as of v0.7.2 (Unified System)
+- **Zero medium/high severity issues** as of v0.7.2 (Enhanced Testing Framework)
 - **Safe coding practices**: No hardcoded secrets, secure file operations
 - **Dependency management**: Regular updates and vulnerability monitoring
 - **Unified system security**: Safe shell integration and GPU environment setup
-- **Shell completion security**: Sandboxed command completion without shell injection risks
-- **Environment isolation**: Virtual environment integration without system contamination
+- **Shell completion security**: Sandboxed command completion without shell injection
+  risks
+- **Environment isolation**: Virtual environment integration without system
+  contamination
 - **GPU security**: Safe CUDA library path configuration without privilege escalation
+- **Testing framework security**: Comprehensive test isolation and marker-based
+  execution control
 
 ### Security Best Practices
 
@@ -39,11 +41,12 @@ We actively maintain security updates for the following versions:
 1. **Input validation**: All user inputs are validated and sanitized
 1. **Dependency isolation**: Optional dependencies are properly compartmentalized
 1. **Cross-platform security**: Consistent security across Windows, macOS, and Linux
-1. **Unified system security**: 
-   - Safe virtual environment integration
+1. **Unified system security**:
+   - Safe virtual environment integration (mamba, conda, venv support)
    - Secure shell completion without injection risks
    - GPU environment setup with proper privilege separation
    - System validation with controlled environment access
+   - Enhanced testing framework with isolation controls
 
 ## Reporting a Vulnerability
 
@@ -104,6 +107,7 @@ homodyne-validate --verbose
 ```
 
 **Security features in unified system:**
+
 - Safe shell completion with input sanitization
 - Secure environment variable management
 - GPU setup with proper privilege controls
@@ -153,4 +157,4 @@ Our GitHub Actions include:
 ______________________________________________________________________
 
 **Note**: This security policy is reviewed and updated regularly. Last updated:
-2024-08-31 (v0.7.2 - Unified System Security)
+2025-09-01 (v0.7.2 - Enhanced Testing Framework Security)

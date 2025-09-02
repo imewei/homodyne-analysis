@@ -1,8 +1,11 @@
 # Homodyne API Reference
 
-**Python 3.12+ Required** | **JAX Backend GPU Acceleration ✅** | **Unified Shell Completion ✅** | **Code Quality: Black ✅ Ruff ✅** | **Smart GPU Optimization ✅** | **Trust Region Gurobi ✅**
+**Python 3.12+ Required** | **JAX Backend GPU Acceleration ✅** | **Unified Shell
+Completion ✅** | **Code Quality: Black ✅ Ruff ✅** | **Smart GPU Optimization ✅** |
+**Trust Region Gurobi ✅** | **Enhanced Testing Framework ✅**
 
-*Updated: 2024-08-31 - Reflects unified completion system and streamlined tooling*
+*Updated: 2025-09-01 - Enhanced virtual environment detection, improved GPU hardware
+testing, and comprehensive test marker system*
 
 ## Core Modules
 
@@ -200,7 +203,8 @@ ______________________________________________________________________
 
 #### `MCMCSampler`
 
-Bayesian MCMC sampling using PyMC with NUTS and JAX backend GPU acceleration. PyTensor environment variables automatically configured to avoid C compilation issues.
+Bayesian MCMC sampling using PyMC with NUTS and JAX backend GPU acceleration. PyTensor
+environment variables automatically configured to avoid C compilation issues.
 
 ```python
 class MCMCSampler:
@@ -533,7 +537,8 @@ ______________________________________________________________________
 
 ### Unified Shell Completion System
 
-The package provides a streamlined shell completion system with cross-shell compatibility:
+The package provides a streamlined shell completion system with cross-shell
+compatibility:
 
 **Installation:**
 
@@ -557,8 +562,10 @@ homodyne-cleanup                      # Complete removal (run before uninstallin
 - **GPU aliases**: `hgm`, `hgc`, `hgr`, `hga` (Linux with GPU support)
 - **Smart activation**: Automatic activation in conda/mamba environments
 - **Shell functions**: `homodyne_help`, `homodyne_gpu_status`, `homodyne_gpu_benchmark`
-- **Advanced tools**: `homodyne-gpu-optimize`, `homodyne-validate` (with --advanced flag)
-- **Makefile integration**: `make setup-shell`, `make setup-all`, `make cleanup-homodyne`
+- **Advanced tools**: `homodyne-gpu-optimize`, `homodyne-validate` (with --advanced
+  flag)
+- **Makefile integration**: `make setup-shell`, `make setup-all`,
+  `make cleanup-homodyne`
 
 **Advanced Completion:**
 
@@ -569,7 +576,7 @@ homodyne --method <TAB>     # Suggests based on config mode
 homodyne --phi-angles <TAB> # Common angle sets
 ```
 
-### Code Quality Standards (v0.6.5+)
+### Code Quality Standards (v0.7.2)
 
 The homodyne package maintains high code quality with comprehensive tooling:
 
@@ -581,13 +588,17 @@ The homodyne package maintains high code quality with comprehensive tooling:
 - ⚠️ **mypy**: Type checking with improved stubs
 - ✅ **Bandit**: Security scanning for vulnerabilities
 
-**Recent Improvements:**
+**Recent Improvements (v0.7.2):**
 
-- **Code reduction**: Removed 308 lines of unused fallback implementations from
-  kernels.py
-- **Import optimization**: Cleaned up import patterns and resolved redefinition warnings
-- **Critical fixes**: Fixed comparison operators (`== False` → `is False`) and missing
-  function definitions
+- **Enhanced virtual environment detection**: Support for conda, mamba, venv, and
+  virtualenv
+- **Improved test framework**: Comprehensive marker system with `fast`, `slow`,
+  `integration`, `mcmc`, `ci` markers
+- **Fixed GPU hardware testing**: Proper mocking of filesystem operations for reliable
+  CI testing
+- **Streamlined pytest configuration**: Resolved conflicts between multiple conftest.py
+  files
+- **Code reduction**: Removed 308 lines of unused fallback implementations
 - **Enhanced algorithms**: Improved Gurobi optimization with trust region methods
 
 ______________________________________________________________________
@@ -596,7 +607,8 @@ ______________________________________________________________________
 
 ### JAX Backend GPU Acceleration with PyTensor Environment Variable Auto-Configuration
 
-JAX backend provides GPU acceleration while PyTensor environment variables are automatically configured to avoid C compilation issues:
+JAX backend provides GPU acceleration while PyTensor environment variables are
+automatically configured to avoid C compilation issues:
 
 ```python
 # JAX backend handles GPU operations, PyTensor uses CPU mode
@@ -620,7 +632,8 @@ print(f"PyTensor flags: {os.environ.get('PYTENSOR_FLAGS')}")
 **JAX Integration Features:**
 
 - **Automatic detection**: JAX used when available, graceful NumPy fallback
-- **System CUDA GPU acceleration**: Utilizes system CUDA 12.6+ and cuDNN 9.12+ when present
+- **System CUDA GPU acceleration**: Utilizes system CUDA 12.6+ and cuDNN 9.12+ when
+  present
 - **JIT compilation**: Additional performance boost beyond Numba
 - **Lazy loading**: JAX imported only when needed
 
@@ -717,4 +730,81 @@ result = optimizer.run_optimization()
         "chains": 4
     }
 }
+```
+
+______________________________________________________________________
+
+## Enhanced System Integration (v0.7.2)
+
+### Virtual Environment Detection
+
+Enhanced support for multiple virtual environment types:
+
+```python
+from homodyne.post_install import is_virtual_environment
+
+# Detects: conda, mamba, venv, virtualenv, pyenv
+if is_virtual_environment():
+    print("Running in virtual environment")
+    # Automatically enables environment-specific features
+```
+
+**Supported Environment Variables:**
+
+- `CONDA_DEFAULT_ENV` (conda environments)
+- `MAMBA_ROOT_PREFIX` (mamba environments)
+- `VIRTUAL_ENV` (venv/virtualenv)
+- `sys.real_prefix` and `sys.base_prefix` (legacy detection)
+
+### GPU Hardware Detection
+
+Improved GPU detection with comprehensive testing:
+
+```python
+from homodyne.runtime.gpu.optimizer import GPUOptimizer
+
+optimizer = GPUOptimizer()
+gpu_info = optimizer.detect_gpu_hardware()
+
+# Returns comprehensive GPU information:
+{
+    "available": True,           # NVIDIA GPU detected
+    "cuda_available": True,      # CUDA installation found
+    "devices": [                 # Device details
+        {
+            "name": "GeForce RTX 3080",
+            "memory_mb": 10240,
+            "compute_capability": "8.6"
+        }
+    ],
+    "cuda_version": "11.8",      # CUDA version if available
+    "driver_version": "470.57.02" # Driver version
+}
+```
+
+### Testing Framework Enhancements
+
+Comprehensive test marker system for CI/CD optimization:
+
+**Test Markers:**
+
+- `fast`: Quick tests (< 1s) for rapid development feedback
+- `slow`: Long-running tests (> 5s) for comprehensive validation
+- `integration`: Multi-component integration tests
+- `mcmc`: MCMC-specific tests requiring PyMC dependencies
+- `ci`: Tests suitable for CI environments (unit + regression)
+- `system`: System-level tests requiring environment setup
+- `gpu`: GPU-specific tests
+
+**Usage:**
+
+```bash
+# Run only fast tests for development
+pytest -m "fast"
+
+# Run CI-suitable tests (equivalent to "not slow and not integration and not mcmc")  
+pytest -m "ci"
+
+# Run comprehensive test suite
+pytest  # No marker filter - runs all tests
 ```

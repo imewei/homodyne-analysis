@@ -33,6 +33,8 @@ def is_virtual_environment():
         hasattr(sys, "real_prefix")
         or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix)
         or os.environ.get("CONDA_DEFAULT_ENV") is not None
+        or os.environ.get("MAMBA_ROOT_PREFIX") is not None
+        or os.environ.get("VIRTUAL_ENV") is not None
     )
 
 
@@ -253,15 +255,15 @@ def cleanup_all_files():
                 except Exception:
                     pass  # Directory not empty or permission issue
 
-        print(f"\n📊 Cleanup Summary:")
+        print("\n📊 Cleanup Summary:")
         if all_removed:
             print(f"   ✅ Successfully removed {len(all_removed)} items:")
             for file_type, name in all_removed:
                 print(f"      • {file_type}: {name}")
-            print(f"   🔄 Restart shell or reactivate environment to complete cleanup")
+            print("   🔄 Restart shell or reactivate environment to complete cleanup")
         else:
-            print(f"   ✨ No homodyne files found to remove")
-            print(f"   📝 Environment is already clean")
+            print("   ✨ No homodyne files found to remove")
+            print("   📝 Environment is already clean")
 
         return True
 
@@ -360,16 +362,16 @@ def show_dry_run():
         if file_path.exists():
             files_to_remove.append((file_type, name))
 
-    print(f"\n📊 Dry Run Results:")
+    print("\n📊 Dry Run Results:")
     if files_to_remove:
         print(f"   📋 Would remove {len(files_to_remove)} items:")
         for file_type, name in files_to_remove:
             print(f"      • {file_type}: {name}")
-        print(f"   🔄 Would clean up empty directories")
-        print(f"\n💡 To actually remove these files, run without --dry-run")
+        print("   🔄 Would clean up empty directories")
+        print("\n💡 To actually remove these files, run without --dry-run")
     else:
-        print(f"   ✨ No homodyne files found to remove")
-        print(f"   📝 Environment is already clean")
+        print("   ✨ No homodyne files found to remove")
+        print("   📝 Environment is already clean")
 
     return True
 
@@ -392,7 +394,7 @@ def main():
 
             removed_files = interactive_cleanup()
 
-            print(f"\n📊 Cleanup Results:")
+            print("\n📊 Cleanup Results:")
             if removed_files:
                 print(f"   ✅ Removed {len(removed_files)} items:")
                 for file_type, name in removed_files:

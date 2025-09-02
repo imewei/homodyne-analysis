@@ -65,7 +65,7 @@ autodoc_mock_imports = [
     # Runtime modules
     "homodyne.runtime",
     "homodyne.runtime.gpu",
-    "homodyne.runtime.gpu.optimizer", 
+    "homodyne.runtime.gpu.optimizer",
     "homodyne.runtime.utils",
     "homodyne.runtime.utils.system_validator",
     "homodyne.runtime.shell",

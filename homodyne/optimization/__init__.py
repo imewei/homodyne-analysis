@@ -13,11 +13,11 @@ for reliable and comparable results across different optimization approaches.
 """
 
 # Import with error handling for optional dependencies
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .classical import ClassicalOptimizer
-    from .mcmc import MCMCSampler
+    from .classical import ClassicalOptimizer as _ClassicalOptimizer  # noqa: F401
+    from .mcmc import MCMCSampler as _MCMCSampler  # noqa: F401
 
 # Track available exports
 _available_exports: list[str] = []
@@ -28,7 +28,7 @@ try:
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:
-    ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc]
+    ClassicalOptimizer = None  # type: ignore[misc]
     import warnings
 
     warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning, stacklevel=2)
@@ -39,8 +39,8 @@ try:
 
     _available_exports.extend(["MCMCSampler", "create_mcmc_sampler"])
 except ImportError as e:
-    MCMCSampler: type[Any] | None = None  # type: ignore[misc]
-    create_mcmc_sampler: Any | None = None  # type: ignore[misc]
+    MCMCSampler = None  # type: ignore[misc]
+    create_mcmc_sampler = None  # type: ignore[misc]
     import warnings
 
     warnings.warn(

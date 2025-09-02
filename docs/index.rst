@@ -65,7 +65,7 @@ Quick Start
    hm config.json                              # homodyne --method mcmc
    hc config.json                              # homodyne --method classical
    ha config.json                              # homodyne --method all
-   
+
    # Advanced tools
    homodyne-validate --quick                   # System health check
    homodyne-gpu-optimize --benchmark          # GPU performance testing

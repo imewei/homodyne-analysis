@@ -1401,6 +1401,14 @@ def plot_diagnostic_summary(
     """
     logger.info("Creating diagnostic summary plots per phi angle")
 
+    # Import arviz once at function level to avoid redefinition
+    az = None
+    if ARVIZ_AVAILABLE:
+        try:
+            import arviz as az
+        except ImportError:
+            pass
+
     # Get plotting configuration
     plot_config = get_plot_config(config)
     setup_matplotlib_style(plot_config)
@@ -1492,9 +1500,8 @@ def plot_diagnostic_summary(
             uncertainties = results.get("parameter_uncertainties", {})
 
             # Try to compute uncertainties from MCMC trace if not available
-            if not uncertainties and "mcmc_trace" in results and ARVIZ_AVAILABLE:
+            if not uncertainties and "mcmc_trace" in results and az is not None:
                 try:
-                    import arviz as az
 
                     trace_data = results["mcmc_trace"]
                     if hasattr(trace_data, "posterior"):
@@ -1594,9 +1601,8 @@ def plot_diagnostic_summary(
                         logger.warning(f"Could not convert R-hat data for summary: {e}")
 
                 # Try to compute R-hat from trace data if missing
-                if not r_hat_dict and "mcmc_trace" in results:
+                if not r_hat_dict and "mcmc_trace" in results and az is not None:
                     try:
-                        import arviz as az
 
                         trace_data = results["mcmc_trace"]
                         if hasattr(trace_data, "posterior"):

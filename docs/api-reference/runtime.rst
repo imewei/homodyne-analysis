@@ -16,7 +16,7 @@ GPU optimization and benchmarking utilities.
    :undoc-members:
    :show-inheritance:
 
-System Validation  
+System Validation
 ------------------
 
 System validation and health check utilities.
@@ -43,7 +43,7 @@ Usage Examples
 
    # Run GPU optimization
    homodyne-gpu-optimize --benchmark --profile
-   
+
    # Run system validation
    homodyne-validate --verbose --comprehensive
 
@@ -53,11 +53,11 @@ Usage Examples
 
    from homodyne.runtime.gpu.optimizer import GPUOptimizer
    from homodyne.runtime.utils.system_validator import SystemValidator
-   
+
    # GPU optimization
    optimizer = GPUOptimizer()
    results = optimizer.run_optimization()
-   
+
    # System validation
    validator = SystemValidator(verbose=True)
    validation_results = validator.run_all_tests()

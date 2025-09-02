@@ -8,11 +8,10 @@ This module tests the unified post-install system that consolidates:
 - Virtual environment integration (conda, mamba, venv, virtualenv)
 """
 
-import os
 import platform
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
 

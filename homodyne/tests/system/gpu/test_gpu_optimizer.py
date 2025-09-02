@@ -14,12 +14,10 @@ Institution: Argonne National Laboratory
 """
 
 import json
-import os
 import subprocess
 import tempfile
-import time
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -55,7 +53,10 @@ class TestGPUOptimizerCore:
         )
 
     @patch("subprocess.run")
-    def test_detect_gpu_hardware_with_nvidia_gpu(self, mock_subprocess, optimizer):
+    @patch("pathlib.Path.exists")
+    def test_detect_gpu_hardware_with_nvidia_gpu(
+        self, mock_exists, mock_subprocess, optimizer
+    ):
         """Test GPU detection with NVIDIA GPU present."""
         # Mock nvidia-smi output
         mock_subprocess.return_value = Mock(
@@ -63,6 +64,8 @@ class TestGPUOptimizerCore:
             stdout="GeForce RTX 3080, 10240 MiB, 8.6\nGeForce RTX 3090, 24576 MiB, 8.6\n",
             stderr="",
         )
+        # Mock CUDA paths existing
+        mock_exists.return_value = True
 
         gpu_info = optimizer.detect_gpu_hardware()
 

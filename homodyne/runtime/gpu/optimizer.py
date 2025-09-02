@@ -11,10 +11,8 @@ import json
 import logging
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ class GPUOptimizer:
         self.cache_file = Path.home() / ".cache" / "homodyne" / "gpu_optimization.json"
         self.cache_file.parent.mkdir(parents=True, exist_ok=True)
 
-    def detect_gpu_hardware(self) -> Dict:
+    def detect_gpu_hardware(self) -> dict:
         """Detect GPU hardware and capabilities."""
         info = {
             "available": False,
@@ -110,7 +108,7 @@ class GPUOptimizer:
         self.gpu_info = info
         return info
 
-    def benchmark_gpu(self, matrix_sizes: List[int] = None) -> Dict:
+    def benchmark_gpu(self, matrix_sizes: list[int] = None) -> dict:
         """Benchmark GPU performance for typical homodyne operations."""
         if matrix_sizes is None:
             matrix_sizes = [100, 500, 1000, 2000]
@@ -208,7 +206,7 @@ class GPUOptimizer:
 
         return benchmarks
 
-    def determine_optimal_settings(self) -> Dict:
+    def determine_optimal_settings(self) -> dict:
         """Determine optimal settings based on hardware and benchmarks."""
         settings = {
             "use_gpu": False,
@@ -319,7 +317,7 @@ class GPUOptimizer:
             self.optimal_settings["memory_fraction"]
         )
 
-        print(f"✅ GPU optimization applied:")
+        print("✅ GPU optimization applied:")
         print(f"   Memory fraction: {self.optimal_settings['memory_fraction']}")
         print(
             f"   Recommended batch size: {self.optimal_settings['recommended_batch_size']}"

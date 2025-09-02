@@ -1,6 +1,6 @@
 # Homodyne Analysis Package - Distribution Manifest
 # ================================================
-# Updated: 2024-08-31 - Cleaned up for unified shell completion system
+# Updated: 2025-09-01 - Enhanced testing framework and improved virtual environment support
 
 # Core documentation
 include README.md
@@ -11,9 +11,10 @@ include CLI_REFERENCE.md
 include API_REFERENCE.md
 include PRE_COMMIT_SETUP.md
 include SECURITY.md
-# GPU_SETUP.md - removed in reorganization
-# INSTALL_UNINSTALL.md - removed in reorganization
-# ADVANCED_FEATURES.md - removed in reorganization
+# Additional documentation files (v0.7.2)
+include GPU_SETUP.md
+include INSTALL_UNINSTALL.md
+include ADVANCED_FEATURES.md
 
 # Build configuration
 include pyproject.toml
@@ -31,12 +32,18 @@ recursive-include homodyne/templates *.json
 include homodyne/post_install.py
 include homodyne/uninstall_scripts.py
 
-# GPU wrapper (still in homodyne root)
+# GPU and system optimization modules (v0.7.2)
 include homodyne/gpu_wrapper.py
+include homodyne/gpu_optimizer.py
+include homodyne/system_validator.py
 
-# Runtime module (new organization)
+# Runtime module with enhanced GPU support
 recursive-include homodyne/runtime *.py
 recursive-include homodyne/runtime *.sh
+
+# Advanced completion system (v0.7.2)
+include homodyne/completion_advanced.sh
+include homodyne/gpu_activation_smart.sh
 
 # Legacy scripts directory (if exists)
 recursive-include scripts *.py

@@ -23,6 +23,7 @@ Author: Claude Code Assistant
 """
 
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -154,13 +155,16 @@ def activate_gpu():
         return
 
     try:
-        # Source the activation script and capture environment changes
+        # Validate script path to prevent shell injection
+        script_path = Path(script_path).resolve()
+        if not script_path.exists() or not script_path.is_file():
+            return
+
+        # Source the activation script and capture environment changes safely
         result = subprocess.run(
-            f"source {script_path} && env",
-            shell=True,
+            ["/bin/bash", "-c", f"source {shlex.quote(str(script_path))} && env"],
             capture_output=True,
             text=True,
-            executable="/bin/bash",
         )
 
         if result.returncode == 0:

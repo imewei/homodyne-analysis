@@ -1365,8 +1365,9 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
 
         # Generate diagnostic summary plot for --method all in root directory
         try:
-            from .plotting import plot_diagnostic_summary
             from pathlib import Path
+
+            from .plotting import plot_diagnostic_summary
 
             logger.info("Creating overall diagnostic summary plot for --method all")
             output_path = Path(output_dir) if output_dir else Path("./homodyne_results")
