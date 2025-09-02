@@ -21,13 +21,13 @@ include pytest-*.ini
 include tox.ini
 
 # Include source code and data
-recursive-include homodyne_analysis *.py
-recursive-include homodyne_analysis *.pyi
-recursive-include homodyne_analysis *.json
-recursive-include homodyne_analysis *.yaml
-recursive-include homodyne_analysis *.yml
-recursive-include homodyne_analysis *.txt
-recursive-include homodyne_analysis *.md
+recursive-include homodyne *.py
+recursive-include homodyne *.pyi
+recursive-include homodyne *.json
+recursive-include homodyne *.yaml
+recursive-include homodyne *.yml
+recursive-include homodyne *.txt
+recursive-include homodyne *.md
 
 # Include documentation
 recursive-include docs *.md
@@ -39,7 +39,7 @@ include docs/make.bat
 
 # Include tests (optional - comment out if you don't want tests in distribution)
 # recursive-include tests *.py
-# recursive-include homodyne_analysis/tests *.py
+# recursive-include homodyne/tests *.py
 
 # Exclude development and build files
 recursive-exclude * __pycache__
