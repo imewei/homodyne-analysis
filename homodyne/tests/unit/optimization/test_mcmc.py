@@ -199,14 +199,15 @@ class TestLazyImports:
     @pytest.mark.skipif(not MCMC_MODULE_AVAILABLE, reason="MCMC module not available")
     def test_lazy_import_jax_success(self):
         """Test successful lazy import of JAX."""
-        with patch("homodyne.optimization.mcmc.pmjax", None):  # Force re-import
-            with patch("jax.devices", return_value=["gpu:0"]):
-                try:
+        try:
+            import jax  # Test if jax is actually available
+            with patch("homodyne.optimization.mcmc.pmjax", None):  # Force re-import
+                with patch("jax.devices", return_value=["gpu:0"]):
                     pmjax = _lazy_import_jax()
                     assert pmjax is not None
-                except ImportError:
-                    # Expected if JAX not actually available
-                    pytest.skip("JAX not available for testing")
+        except (ImportError, ModuleNotFoundError):
+            # Expected if JAX not actually available
+            pytest.skip("JAX not available for testing")
 
     @pytest.mark.skipif(not MCMC_MODULE_AVAILABLE, reason="MCMC module not available")
     def test_lazy_import_jax_failure(self):
