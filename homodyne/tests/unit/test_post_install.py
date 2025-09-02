@@ -392,7 +392,7 @@ class TestInteractiveSetup:
                 # actually handle KeyboardInterrupt, so we expect it to propagate
                 try:
                     interactive_setup()
-                    assert False, "Expected KeyboardInterrupt to be raised"
+                    raise AssertionError("Expected KeyboardInterrupt to be raised")
                 except KeyboardInterrupt:
                     # This is expected behavior since the function doesn't handle it
                     pass

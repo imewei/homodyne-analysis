@@ -332,7 +332,7 @@ class TestCLIInterface:
     def test_main_function_help(self):
         """Test main function help output."""
         with patch("sys.argv", ["homodyne-cleanup", "--help"]):
-            with patch("sys.exit") as mock_exit:
+            with patch("sys.exit"):
                 try:
                     main()
                 except SystemExit:
@@ -484,7 +484,7 @@ class TestLoggingAndReporting:
                 cleanup_completion_files()
 
                 # Check for any output
-                captured = capsys.readouterr()
+                capsys.readouterr()
                 # Output may or may not be present depending on implementation
 
     def test_verbose_cleanup_output(self):

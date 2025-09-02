@@ -2861,7 +2861,7 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
         except ValueError as e:
             logger.error(f"❌ Invalid phi angles format: {args.phi_angles}")
             logger.error("Expected comma-separated numbers (e.g., '0,45,90,135')")
-            raise ValueError(f"Failed to parse phi angles: {e}")
+            raise ValueError(f"Failed to parse phi angles: {e}") from e
     else:
         # Use reasonable default range covering typical XPCS measurements
         n_angles = 5  # Default number of angles

@@ -135,7 +135,7 @@ class TestUninstallScripts:
     def test_cleanup_main_function(self):
         """Test main cleanup function."""
         with (
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
             patch("sys.argv", ["homodyne-cleanup", "--help"]),
         ):
             with pytest.raises(SystemExit) as exc_info:

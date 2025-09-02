@@ -271,7 +271,7 @@ class TestGurobiOptimization:
             exp_data = np.random.rand(1, 25, 25) + 1.0
             initial_params = np.array([100.0, -0.1, 1.0, 0.1, 0.1, 0.01, 30.0])
 
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 mock_method(initial_params, phi_angles, exp_data)
 
 
@@ -478,9 +478,9 @@ class TestErrorHandling:
     def test_optimization_timeout(self, mock_analysis_core, basic_config):
         """Test handling of optimization timeout."""
         # Add timeout configuration
-        basic_config["optimization_config"]["classical_optimization"]["timeout"] = (
-            10  # 10 seconds
-        )
+        basic_config["optimization_config"]["classical_optimization"][
+            "timeout"
+        ] = 10  # 10 seconds
 
         optimizer = ClassicalOptimizer(mock_analysis_core, basic_config)
 
@@ -527,7 +527,7 @@ class TestPerformanceMonitoring:
             exp_data = np.random.rand(1, 25, 25) + 1.0
 
             result = mock_method(initial_params, phi_angles, exp_data)
-            runtime = time.time() - start_time
+            time.time() - start_time
 
             assert "runtime" in result
             assert result["runtime"] > 0

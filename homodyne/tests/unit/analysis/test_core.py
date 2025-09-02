@@ -455,7 +455,7 @@ class TestChiSquaredCalculation:
 
             result = mock_method(params, phi_angles, exp_data)
 
-            assert isinstance(result, (int, float))
+            assert isinstance(result, int | float)
             assert result > 0  # Chi-squared should be positive
             mock_method.assert_called_once()
 
@@ -529,7 +529,7 @@ class TestErrorHandling:
         """Test handling of invalid parameters."""
         from homodyne.analysis.core import HomodyneAnalysisCore
 
-        mock = Mock(spec=HomodyneAnalysisCore)
+        Mock(spec=HomodyneAnalysisCore)
 
         # Test with invalid parameter array (wrong shape)
         invalid_params = np.array([1.0, 2.0])  # Too few parameters

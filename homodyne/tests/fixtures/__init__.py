@@ -21,6 +21,8 @@ from homodyne.tests.fixtures.data import (
 )
 
 __all__ = [
+    "create_invalid_config_file",
+    "create_minimal_config_file",
     "dummy_analysis_results",
     "dummy_config",
     "dummy_correlation_data",
@@ -30,6 +32,4 @@ __all__ = [
     "dummy_time_arrays",
     "mock_optimization_result",
     "test_output_directory",
-    "create_minimal_config_file",
-    "create_invalid_config_file",
 ]

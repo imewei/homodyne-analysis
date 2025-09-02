@@ -157,7 +157,7 @@ class TestPlotConfiguration:
     )
     def test_matplotlib_backend_configuration(self):
         """Test matplotlib backend configuration for different environments."""
-        with patch("matplotlib.use") as mock_use:
+        with patch("matplotlib.use"):
             with patch("homodyne.plotting.setup_matplotlib_style") as mock_setup:
                 plot_config = {"backend": "Agg"}
                 mock_setup(plot_config)
@@ -204,7 +204,7 @@ class TestCorrelationFunctionPlotting:
             # Test with 3 angles
             assert len(mock_analysis_results["phi_angles"]) == 3
 
-            fig = mock_plot(
+            mock_plot(
                 mock_analysis_results["correlation_data"],
                 mock_analysis_results["theoretical_data"],
                 mock_analysis_results["phi_angles"],
@@ -230,7 +230,7 @@ class TestCorrelationFunctionPlotting:
                 - mock_analysis_results["theoretical_data"]
             )
 
-            fig = mock_plot(
+            mock_plot(
                 mock_analysis_results["correlation_data"],
                 mock_analysis_results["theoretical_data"],
                 mock_analysis_results["phi_angles"],
@@ -251,7 +251,7 @@ class TestCorrelationFunctionPlotting:
         with patch("homodyne.plotting.plot_c2_heatmaps") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            fig = mock_plot(
+            mock_plot(
                 mock_analysis_results["correlation_data"],
                 mock_analysis_results["theoretical_data"],
                 mock_analysis_results["phi_angles"],
@@ -303,7 +303,7 @@ class TestParameterPosteriorPlotting:
         with patch("homodyne.plotting.plot_mcmc_corner") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            fig = mock_plot(mock_mcmc_trace, plot_type="corner", outdir=temp_output_dir)
+            mock_plot(mock_mcmc_trace, plot_type="corner", outdir=temp_output_dir)
 
             mock_plot.assert_called_once()
 
@@ -317,7 +317,7 @@ class TestParameterPosteriorPlotting:
         with patch("homodyne.plotting.plot_mcmc_corner") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            fig = mock_plot(mock_mcmc_trace, plot_type="trace", outdir=temp_output_dir)
+            mock_plot(mock_mcmc_trace, plot_type="trace", outdir=temp_output_dir)
 
             mock_plot.assert_called_once()
 
@@ -388,7 +388,7 @@ class TestConvergenceDiagnostics:
         with patch("homodyne.plotting.plot_mcmc_convergence_diagnostics") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            fig = mock_plot(mock_diagnostics, plot_type="rhat", outdir=temp_output_dir)
+            mock_plot(mock_diagnostics, plot_type="rhat", outdir=temp_output_dir)
 
             mock_plot.assert_called_once()
 
@@ -400,7 +400,7 @@ class TestConvergenceDiagnostics:
         with patch("homodyne.plotting.plot_mcmc_convergence_diagnostics") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            fig = mock_plot(mock_diagnostics, plot_type="ess", outdir=temp_output_dir)
+            mock_plot(mock_diagnostics, plot_type="ess", outdir=temp_output_dir)
 
             mock_plot.assert_called_once()
 
@@ -412,7 +412,7 @@ class TestConvergenceDiagnostics:
         with patch("homodyne.plotting.plot_mcmc_convergence_diagnostics") as mock_plot:
             mock_plot.return_value = Mock(spec=matplotlib.figure.Figure)
 
-            fig = mock_plot(
+            mock_plot(
                 mock_diagnostics, plot_type="energy", outdir=temp_output_dir
             )
 

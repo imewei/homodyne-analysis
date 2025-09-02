@@ -91,7 +91,7 @@ def ensure_dir(path: str | Path, permissions: int = 0o755) -> Path:
             raise
         elif not path_obj.is_dir():
             logger.error(f"Path exists but is not a directory: {path_obj}")
-            raise OSError(f"Path exists but is not a directory: {path_obj}")
+            raise OSError(f"Path exists but is not a directory: {path_obj}") from None
 
     return path_obj
 

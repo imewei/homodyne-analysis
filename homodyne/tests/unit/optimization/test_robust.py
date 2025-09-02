@@ -19,7 +19,6 @@ import pytest
 # Test imports with graceful handling for missing dependencies
 try:
     from homodyne.optimization.robust import (
-        CVXPY_AVAILABLE,
         GUROBI_AVAILABLE,
         RobustHomodyneOptimizer,
         create_robust_optimizer,
@@ -394,7 +393,7 @@ class TestParameterBoundsHandling:
         self, mock_analysis_core, robust_config
     ):
         """Test that robust optimization uses consistent parameter bounds."""
-        optimizer = RobustHomodyneOptimizer(mock_analysis_core, robust_config)
+        RobustHomodyneOptimizer(mock_analysis_core, robust_config)
 
         # Test parameter bounds functionality
         test_params = np.array([100.0, -0.1, 1.0, 0.1, 0.1, 0.01, 30.0])
@@ -405,7 +404,7 @@ class TestParameterBoundsHandling:
     )
     def test_bounds_violation_handling(self, mock_analysis_core, robust_config):
         """Test handling of parameter bounds violations."""
-        optimizer = RobustHomodyneOptimizer(mock_analysis_core, robust_config)
+        RobustHomodyneOptimizer(mock_analysis_core, robust_config)
 
         # Test parameter bounds functionality
         # Parameters violating bounds
@@ -417,11 +416,11 @@ class TestParameterBoundsHandling:
     )
     def test_bounds_projection(self, mock_analysis_core, robust_config):
         """Test projection of parameters onto feasible bounds."""
-        optimizer = RobustHomodyneOptimizer(mock_analysis_core, robust_config)
+        RobustHomodyneOptimizer(mock_analysis_core, robust_config)
 
         # Test bounds projection functionality
         # Parameters outside bounds
-        unbounded_params = np.array([1e4, -5.0, 1.0, 0.1, 0.1, 0.01, 400.0])
+        np.array([1e4, -5.0, 1.0, 0.1, 0.1, 0.01, 400.0])
         projected_params = np.array([1e3, -2.0, 1.0, 0.1, 0.1, 0.01, 360.0])
 
         # Check projection worked
@@ -557,7 +556,7 @@ class TestPerformanceOptimizations:
             initial_params = np.array([100.0, -0.1, 1.0, 0.1, 0.1, 0.01, 30.0])
 
             result = mock_opt(initial_params, phi_angles, exp_data)
-            runtime = time.time() - start_time
+            time.time() - start_time
 
             assert "solver_time" in result
             assert result["solver_time"] > 0
@@ -571,7 +570,7 @@ class TestPerformanceOptimizations:
         robust_config["robust_optimization"]["scenario_reduction"] = True
         robust_config["robust_optimization"]["reduced_scenarios"] = 100
 
-        optimizer = RobustHomodyneOptimizer(mock_analysis_core, robust_config)
+        RobustHomodyneOptimizer(mock_analysis_core, robust_config)
 
         # Test scenario reduction functionality
         reduction_result = {

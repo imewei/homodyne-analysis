@@ -108,7 +108,7 @@ class GPUOptimizer:
         self.gpu_info = info
         return info
 
-    def benchmark_gpu(self, matrix_sizes: list[int] = None) -> dict:
+    def benchmark_gpu(self, matrix_sizes: list[int] | None = None) -> dict:
         """Benchmark GPU performance for typical homodyne operations."""
         if matrix_sizes is None:
             matrix_sizes = [100, 500, 1000, 2000]
@@ -260,9 +260,9 @@ class GPUOptimizer:
                 settings["xla_flags"].append("--xla_gpu_enable_triton_gemm=true")
                 settings["jax_settings"]["jax_enable_x64"] = True
             elif float(compute_cap) >= 7.0:  # Volta/Turing
-                settings["jax_settings"]["jax_enable_x64"] = (
-                    False  # Use float32 for better performance
-                )
+                settings["jax_settings"][
+                    "jax_enable_x64"
+                ] = False  # Use float32 for better performance
 
         self.optimal_settings = settings
         return settings

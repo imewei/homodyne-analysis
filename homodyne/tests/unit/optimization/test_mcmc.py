@@ -18,8 +18,6 @@ import pytest
 # Test imports with graceful handling for missing dependencies
 try:
     from homodyne.optimization.mcmc import (
-        JAX_AVAILABLE,
-        PYMC_AVAILABLE,
         MCMCSampler,
         _lazy_import_jax,
         _lazy_import_pymc,

@@ -472,9 +472,9 @@ class TestOptimizationBenchmarks:
             try:
                 config = BENCHMARK_CONFIG.copy()
                 config["optimization_config"]["mcmc_sampling"]["use_jax"] = use_jax
-                config["optimization_config"]["mcmc_sampling"]["draws"] = (
-                    60  # Reduced for benchmarking
-                )
+                config["optimization_config"]["mcmc_sampling"][
+                    "draws"
+                ] = 60  # Reduced for benchmarking
                 config["optimization_config"]["mcmc_sampling"]["tune"] = 30
 
                 sampler = MCMCSampler(mock_core, config)
@@ -648,9 +648,9 @@ class TestOptimizationBenchmarks:
         if MCMC_AVAILABLE and PYMC_AVAILABLE:
             assert MCMCSampler is not None
             config = BENCHMARK_CONFIG.copy()
-            config["optimization_config"]["mcmc_sampling"]["draws"] = (
-                40  # Reduced for large dataset
-            )
+            config["optimization_config"]["mcmc_sampling"][
+                "draws"
+            ] = 40  # Reduced for large dataset
             config["optimization_config"]["mcmc_sampling"]["tune"] = 20
 
             sampler = MCMCSampler(large_benchmark_mock_core, config)

@@ -140,7 +140,9 @@ class TestGPUBenchmarking:
     def test_benchmark_matrix_operations(self, optimizer):
         """Test matrix operation benchmarking."""
         try:
-            import jax.numpy as jnp
+            import importlib.util
+            if importlib.util.find_spec("jax") is None:
+                pytest.skip("JAX not available for benchmarking test")
         except ImportError:
             pytest.skip("JAX not available for benchmarking test")
 
@@ -322,7 +324,9 @@ class TestIntegrationWithJAX:
     def test_jax_gpu_configuration(self):
         """Test JAX GPU configuration setup."""
         try:
-            import jax
+            import importlib.util
+            if importlib.util.find_spec("jax") is None:
+                pytest.skip("JAX not available for integration test")
         except ImportError:
             pytest.skip("JAX not available for integration test")
 
@@ -336,7 +340,9 @@ class TestIntegrationWithJAX:
     def test_memory_fraction_application(self):
         """Test application of memory fraction settings."""
         try:
-            import jax
+            import importlib.util
+            if importlib.util.find_spec("jax") is None:
+                pytest.skip("JAX not available for memory fraction test")
         except ImportError:
             pytest.skip("JAX not available for memory fraction test")
 
@@ -345,7 +351,7 @@ class TestIntegrationWithJAX:
 
     def test_xla_flags_configuration(self):
         """Test XLA flags configuration for optimization."""
-        optimizer = GPUOptimizer()
+        GPUOptimizer()
 
         # Test XLA flags setup if implemented
         # This would verify proper XLA flag configuration
@@ -379,7 +385,7 @@ class TestErrorHandlingAndEdgeCases:
 
             # Should handle corrupted cache gracefully
             if hasattr(optimizer, "load_cache"):
-                result = optimizer.load_cache()
+                optimizer.load_cache()
                 # Should not crash, may return False or empty dict
 
     def test_handle_permission_errors(self):
@@ -409,14 +415,14 @@ class TestPerformanceBenchmarks:
     def test_benchmark_performance_realistic(self):
         """Test realistic performance benchmarking."""
         # This would be a slow test for actual benchmarking
-        optimizer = GPUOptimizer()
+        GPUOptimizer()
 
         # Test realistic benchmark scenarios
         # Implementation depends on actual benchmark methods
 
     def test_benchmark_result_consistency(self):
         """Test that benchmark results are consistent."""
-        optimizer = GPUOptimizer()
+        GPUOptimizer()
 
         # Test benchmark consistency if methods are available
         # Implementation depends on actual benchmark implementation

@@ -1429,7 +1429,7 @@ def plot_diagnostic_summary(
     logger.info(f"Creating diagnostic plots for {total_angles} phi angle(s)")
 
     # Create diagnostic plot for each phi angle
-    for angle_idx, phi_angle in enumerate(phi_angles):
+    for _angle_idx, phi_angle in enumerate(phi_angles):
         try:
             logger.debug(f"Creating diagnostic plot for phi = {phi_angle:.1f}°")
 

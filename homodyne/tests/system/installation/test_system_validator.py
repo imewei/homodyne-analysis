@@ -176,7 +176,7 @@ class TestEnvironmentDetection:
         # Test virtual environment detection
         if hasattr(validator, "detect_virtual_environment"):
             venv_info = validator.detect_virtual_environment()
-            assert isinstance(venv_info, (dict, bool))
+            assert isinstance(venv_info, dict | bool)
 
     @patch("shutil.which")
     def test_shell_detection(self, mock_which):
@@ -188,7 +188,7 @@ class TestEnvironmentDetection:
         # Test shell detection if available
         if hasattr(validator, "detect_shell"):
             shell_info = validator.detect_shell()
-            assert isinstance(shell_info, (str, dict))
+            assert isinstance(shell_info, str | dict)
 
 
 class TestHomodyneInstallationValidation:
@@ -201,7 +201,7 @@ class TestHomodyneInstallationValidation:
             f"/usr/bin/{cmd}" if "homodyne" in cmd else None
         )
 
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test command availability check
         commands_to_test = [
@@ -215,7 +215,7 @@ class TestHomodyneInstallationValidation:
         ]
 
         for cmd in commands_to_test:
-            available = shutil.which(cmd) is not None
+            _ = shutil.which(cmd) is not None
             # Command may or may not be available in test environment
 
     @patch("subprocess.run")
@@ -238,7 +238,7 @@ class TestHomodyneInstallationValidation:
         """Test homodyne module import validation."""
         mock_import.return_value = Mock()
 
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test module imports if validation method exists
         modules_to_test = [
@@ -253,9 +253,8 @@ class TestHomodyneInstallationValidation:
                 import importlib
 
                 importlib.import_module(module)
-                import_success = True
             except ImportError:
-                import_success = False
+                pass
             # Module may or may not be available
 
 
@@ -267,12 +266,12 @@ class TestShellCompletionValidation:
         """Test completion files presence."""
         mock_exists.return_value = True
 
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test completion file detection
         completion_files = ["homodyne-completion.sh", "runtime/shell/completion.sh"]
 
-        for filename in completion_files:
+        for _filename in completion_files:
             # File existence would be tested if method exists
             pass
 
@@ -290,12 +289,12 @@ class TestShellCompletionValidation:
 
     def test_completion_alias_functionality(self):
         """Test completion alias functionality."""
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test alias functionality if available
         aliases_to_test = ["gpu-status", "gpu-bench", "gpu-on", "gpu-off"]
 
-        for alias in aliases_to_test:
+        for _alias in aliases_to_test:
             # Alias testing would depend on actual implementation
             pass
 
@@ -334,30 +333,29 @@ class TestGPUSetupValidation:
 
     def test_jax_gpu_support_validation(self):
         """Test JAX GPU support validation."""
-        validator = SystemValidator()
+        SystemValidator()
 
         try:
             import jax
 
             jax_available = True
             devices = jax.devices()
-            gpu_devices = [d for d in devices if d.device_kind == "gpu"]
+            [d for d in devices if d.device_kind == "gpu"]
         except ImportError:
             jax_available = False
-            gpu_devices = []
 
         # JAX and GPU availability testing
         assert jax_available in [True, False]  # Either way is valid
 
     def test_cuda_installation_validation(self):
         """Test CUDA installation validation."""
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test CUDA validation if method exists
         cuda_paths = ["/usr/local/cuda", "/opt/cuda", "/usr/cuda"]
 
         for cuda_path in cuda_paths:
-            cuda_exists = Path(cuda_path).exists()
+            Path(cuda_path).exists()
             # CUDA may or may not be installed
 
 
@@ -380,14 +378,14 @@ class TestIntegrationValidation:
             returncode=0, stdout="Analysis complete\n", stderr=""
         )
 
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test end-to-end functionality if available
         # This would test actual command execution chains
 
     def test_configuration_integration(self):
         """Test configuration system integration."""
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test config integration if method exists
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -417,7 +415,7 @@ class TestValidationReporting:
         # Test report generation if method exists
         if hasattr(validator, "generate_report"):
             report = validator.generate_report()
-            assert isinstance(report, (str, dict))
+            assert isinstance(report, str | dict)
 
     def test_json_output_format(self):
         """Test JSON output format."""
@@ -497,7 +495,7 @@ class TestErrorHandlingAndEdgeCases:
 
     def test_handle_permission_errors(self):
         """Test handling of permission errors."""
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test permission error handling
         with patch("pathlib.Path.exists", side_effect=PermissionError("Access denied")):
@@ -556,13 +554,13 @@ class TestPerformanceAndScaling:
 
     def test_memory_usage_during_validation(self):
         """Test memory usage during validation."""
-        validator = SystemValidator()
+        SystemValidator()
 
         # Test memory usage
         # Should not consume excessive memory
         import sys
 
-        initial_objects = len(gc.get_objects()) if "gc" in sys.modules else 0
+        len(gc.get_objects()) if "gc" in sys.modules else 0
 
         # Run validations
         # Memory testing would depend on actual implementation

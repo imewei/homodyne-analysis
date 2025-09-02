@@ -23,7 +23,6 @@ try:
         cleanup_gpu_files,
         cleanup_old_system_files,
         interactive_cleanup,
-        is_virtual_environment,
         show_dry_run,
     )
     from homodyne.uninstall_scripts import main as cleanup_main
@@ -175,7 +174,7 @@ class TestInteractiveCleanup:
                 "homodyne.uninstall_scripts.cleanup_old_system_files",
                 return_value=[("Old system file", "old.sh")],
             ) as mock_old,
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             removed_files = interactive_cleanup()
 
@@ -313,7 +312,7 @@ class TestCleanupMainFunction:
             patch(
                 "homodyne.uninstall_scripts.cleanup_all_files", return_value=True
             ) as mock_cleanup,
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             result = cleanup_main()
 
@@ -331,7 +330,7 @@ class TestCleanupMainFunction:
                 "homodyne.uninstall_scripts.interactive_cleanup",
                 return_value=[("Shell completion", "test.zsh")],
             ) as mock_interactive,
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             result = cleanup_main()
 
@@ -345,7 +344,7 @@ class TestCleanupMainFunction:
             patch(
                 "homodyne.uninstall_scripts.show_dry_run", return_value=True
             ) as mock_dry_run,
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             result = cleanup_main()
 
@@ -392,7 +391,7 @@ class TestCleanupErrorHandling:
             ),
             patch("builtins.print") as mock_print,
         ):
-            removed_files = cleanup_completion_files()
+            cleanup_completion_files()
 
             # Should handle permission errors gracefully
             print_calls = [str(call) for call in mock_print.call_args_list]
@@ -517,7 +516,7 @@ class TestCleanupDocumentationCompliance:
         }
 
         # All documented file types should be valid
-        for category, files in documented_file_types.items():
+        for _category, files in documented_file_types.items():
             assert isinstance(files, list)
             for file in files:
                 assert isinstance(file, str)

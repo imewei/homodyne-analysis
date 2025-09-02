@@ -144,7 +144,7 @@ class TestUnifiedShellCompletion:
                 patch(
                     "homodyne.post_install.create_unified_zsh_completion"
                 ) as mock_create,
-                patch("builtins.print") as mock_print,
+                patch("builtins.print"),
                 patch(
                     "homodyne.post_install.is_virtual_environment", return_value=True
                 ),
@@ -200,11 +200,11 @@ class TestSmartGPUSetup:
                 ),
                 patch("pathlib.Path.mkdir") as mock_mkdir,
                 patch("pathlib.Path.write_text") as mock_write,
-                patch("pathlib.Path.chmod") as mock_chmod,
+                patch("pathlib.Path.chmod"),
                 patch("pathlib.Path.exists", return_value=True),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
                 patch("sys.prefix", str(venv_path)),
-                patch("builtins.print") as mock_print,
+                patch("builtins.print"),
             ):
                 result = install_gpu_acceleration(force=False)
 
@@ -222,7 +222,7 @@ class TestSmartGPUSetup:
             tempfile.TemporaryDirectory() as temp_dir,
             patch("platform.system", return_value="Windows"),
         ):
-            venv_path = Path(temp_dir)
+            Path(temp_dir)
 
             with patch("builtins.print") as mock_print:
                 result = install_gpu_acceleration(force=False)
@@ -250,12 +250,12 @@ class TestAdvancedFeaturesIntegration:
             with (
                 patch.dict("os.environ", {"CONDA_PREFIX": str(venv_path)}),
                 patch("pathlib.Path.write_text") as mock_write,
-                patch("pathlib.Path.chmod") as mock_chmod,
+                patch("pathlib.Path.chmod"),
                 patch("pathlib.Path.exists", return_value=True),
-                patch("pathlib.Path.mkdir") as mock_mkdir,
+                patch("pathlib.Path.mkdir"),
                 patch("homodyne.post_install.is_conda_environment", return_value=True),
                 patch("sys.prefix", str(venv_path)),
-                patch("builtins.print") as mock_print,
+                patch("builtins.print"),
             ):
                 result = install_advanced_features()
 
@@ -282,9 +282,9 @@ class TestAdvancedFeaturesIntegration:
             with (
                 patch("builtins.input", return_value="y"),
                 patch("pathlib.Path.write_text") as mock_write,
-                patch("pathlib.Path.chmod") as mock_chmod,
+                patch("pathlib.Path.chmod"),
                 patch("pathlib.Path.exists", return_value=True),
-                patch("pathlib.Path.mkdir") as mock_mkdir,
+                patch("pathlib.Path.mkdir"),
                 patch("sys.prefix", str(venv_path)),
             ):
                 result = install_advanced_features()
@@ -318,7 +318,7 @@ class TestPostInstallMainFunction:
             patch(
                 "homodyne.post_install.install_advanced_features", return_value=True
             ) as mock_advanced,
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             result = post_install_main()
 
@@ -444,7 +444,7 @@ class TestPostInstallErrorHandling:
             patch("sys.argv", test_args),
             patch("homodyne.post_install.is_virtual_environment", return_value=True),
             patch("homodyne.post_install.install_gpu_acceleration", return_value=False),
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             result = post_install_main()
 
@@ -461,7 +461,7 @@ class TestPostInstallErrorHandling:
                 "homodyne.post_install.is_virtual_environment",
                 side_effect=Exception("Test error"),
             ),
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             # Exception should propagate (not caught in main())
             with pytest.raises(Exception, match="Test error"):

@@ -400,7 +400,7 @@ class TestRunAnalysis:
             ("laminar_flow", False, False, True),
         ]
 
-        for mode_name, static_iso, static_aniso, laminar in modes:
+        for _mode_name, static_iso, static_aniso, laminar in modes:
             args = argparse.Namespace(
                 config=config_path,
                 output_dir=tmp_path,

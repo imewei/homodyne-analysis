@@ -166,7 +166,7 @@ class TestHomodyneConfigCLI:
             pass
         except Exception as e:
             # Any other exception is a problem with our test setup
-            raise AssertionError(f"Unexpected exception: {e}")
+            raise AssertionError(f"Unexpected exception: {e}") from e
 
     def test_create_config_invalid_mode(self):
         """Test that invalid mode raises ValueError."""
@@ -305,7 +305,7 @@ class TestConfigModeSpecificBehavior:
                 pass
             except ValueError as e:
                 if "Invalid mode" in str(e):
-                    raise AssertionError(f"Mode {mode} should be valid")
+                    raise AssertionError(f"Mode {mode} should be valid") from e
 
 
 if __name__ == "__main__":

@@ -65,6 +65,9 @@ coverage.xml
 .pytest_cache/
 cover/
 test_report.html
+bandit_report.json
+bandit-report.json
+pip_audit_report.json
 
 # Translations
 *.mo
@@ -236,3 +239,6 @@ Thumbs.db
 *.tmp
 *.bak
 *.orig
+
+CLAUDE.md
+WARP.md

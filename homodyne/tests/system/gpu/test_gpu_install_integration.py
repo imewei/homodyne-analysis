@@ -51,7 +51,7 @@ class TestUnifiedGPUInstallation:
                 patch("pathlib.Path.exists", return_value=True),
                 patch("pathlib.Path.mkdir") as mock_mkdir,
                 patch("pathlib.Path.write_text") as mock_write,
-                patch("pathlib.Path.chmod") as mock_chmod,
+                patch("pathlib.Path.chmod"),
             ):
                 result = install_gpu_acceleration(force=False)
 
@@ -136,8 +136,8 @@ class TestUnifiedGPUInstallation:
                 patch("pathlib.Path.exists", return_value=True),
                 patch("pathlib.Path.mkdir") as mock_mkdir,
                 patch("pathlib.Path.write_text") as mock_write,
-                patch("pathlib.Path.chmod") as mock_chmod,
-                patch("builtins.print") as mock_print,
+                patch("pathlib.Path.chmod"),
+                patch("builtins.print"),
             ):
                 # Test complete setup
                 shell_result = install_gpu_acceleration(force=False)
@@ -171,7 +171,7 @@ class TestUnifiedGPUInstallation:
                 assert gpu_result is False
 
                 # Should inform user about platform limitations
-                print_calls = [str(call) for call in mock_print.call_args_list]
+                [str(call) for call in mock_print.call_args_list]
                 # In unified system, non-Linux is handled gracefully
 
     def test_unified_post_install_no_virtual_env(self):
@@ -179,7 +179,7 @@ class TestUnifiedGPUInstallation:
         with (
             patch.dict("os.environ", {}, clear=True),  # No virtual env variables
             patch("homodyne.post_install.is_virtual_environment", return_value=False),
-            patch("builtins.print") as mock_print,
+            patch("builtins.print"),
         ):
             with tempfile.TemporaryDirectory() as temp_dir:
                 venv_path = Path(temp_dir)  # noqa: F841

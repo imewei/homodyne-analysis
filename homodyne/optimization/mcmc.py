@@ -49,7 +49,7 @@ def _lazy_import_pymc():
         except ImportError as e:
             PYMC_AVAILABLE = False
             pm = az = pt = shared = None
-            raise ImportError(f"PyMC dependencies not available: {e}")
+            raise ImportError(f"PyMC dependencies not available: {e}") from e
 
     return pm, az, pt, shared
 
@@ -163,7 +163,7 @@ class MCMCSampler:
             global pm, az, pt, shared
             pm, az, pt, shared = _lazy_import_pymc()
         except ImportError as e:
-            raise ImportError(f"Failed to import PyMC dependencies: {e}")
+            raise ImportError(f"Failed to import PyMC dependencies: {e}") from e
 
         # Validate inputs
         if analysis_core is None:

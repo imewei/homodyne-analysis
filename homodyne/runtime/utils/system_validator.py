@@ -506,7 +506,7 @@ alias hm >/dev/null 2>&1 && echo "alias_works" || echo "alias_missing"
             if result.details and self.verbose:
                 report.append("   Details:")
                 for key, value in result.details.items():
-                    if isinstance(value, (list, dict)):
+                    if isinstance(value, list | dict):
                         report.append(
                             f"     {key}: {len(value) if isinstance(value, list) else 'dict'} items"
                         )

@@ -751,7 +751,9 @@ class TestStableBenchmarking:
                 is_ci = os.getenv("CI", "").lower() in (
                     "true",
                     "1",
-                ) or os.getenv("GITHUB_ACTIONS", "").lower() in ("true", "1")
+                ) or os.getenv(
+                    "GITHUB_ACTIONS", ""
+                ).lower() in ("true", "1")
 
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
@@ -1804,7 +1806,9 @@ class TestPerformanceRegression:
         # Memory regression threshold: should use less than 50MB for medium
         # dataset
         max_acceptable_memory = 50.0  # MB
-        assert memory_increase < max_acceptable_memory, f"Memory usage too high: {
+        assert (
+            memory_increase < max_acceptable_memory
+        ), f"Memory usage too high: {
             memory_increase:.1f}MB > {max_acceptable_memory:.0f}MB threshold"
 
         print(
@@ -1906,9 +1910,9 @@ class TestMCMCThinningPerformance:
 
         config_with_thin = copy.deepcopy(config_no_thin)
         config_with_thin["optimization_config"]["mcmc_sampling"]["thin"] = 2
-        config_with_thin["optimization_config"]["mcmc_sampling"]["draws"] = (
-            400  # More draws to compensate
-        )
+        config_with_thin["optimization_config"]["mcmc_sampling"][
+            "draws"
+        ] = 400  # More draws to compensate
 
         # Test thinning parameter extraction and validation
         from homodyne.optimization.mcmc import MCMCSampler
@@ -2387,7 +2391,9 @@ class TestNumbaCompilationDiagnostics:
         print(f"Performance factor: {performance_factor:.2f}x (1.0 = baseline)")
 
         # Allow up to 5x slower than baseline for CI environment variability
-        assert performance_factor < 5.0, f"Performance regression: {
+        assert (
+            performance_factor < 5.0
+        ), f"Performance regression: {
             performance_factor:.2f}x slower than baseline"
 
 

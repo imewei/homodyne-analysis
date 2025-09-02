@@ -160,7 +160,7 @@ class TestHomodyneValidate:
         }
 
         # Verify test structure
-        for category, details in test_categories.items():
+        for _category, details in test_categories.items():
             assert "checks" in details
             assert "critical" in details
             assert isinstance(details["checks"], list)
