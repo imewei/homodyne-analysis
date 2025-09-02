@@ -1552,9 +1552,9 @@ class MCMCSampler:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertions after loading data
-        assert c2_experimental is not None and phi_angles is not None, (
-            "Failed to load experimental data"
-        )
+        assert (
+            c2_experimental is not None and phi_angles is not None
+        ), "Failed to load experimental data"
 
         # Use provided config or default
         if mcmc_config is None:
@@ -1575,9 +1575,9 @@ class MCMCSampler:
                 filter_angles_for_optimization = True
 
         # Ensure filter_angles_for_optimization is a boolean
-        assert isinstance(filter_angles_for_optimization, bool), (
-            "filter_angles_for_optimization must be a boolean"
-        )
+        assert isinstance(
+            filter_angles_for_optimization, bool
+        ), "filter_angles_for_optimization must be a boolean"
 
         # Run MCMC sampling with angle filtering
         results = self._run_mcmc_nuts_optimized(

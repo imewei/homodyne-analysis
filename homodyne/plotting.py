@@ -532,15 +532,15 @@ def plot_mcmc_corner(
         if hasattr(stacked_samples, "to_numpy"):
             # xarray Dataset - use to_numpy() method
             try:
-                sample_data = stacked_samples.to_numpy()  # type: ignore
-                ranges = []
+                sample_data = stacked_samples.to_numpy()
+                ranges: list[tuple[Any, Any] | None] = []
                 for i in range(sample_data.shape[-1]):
                     param_data = sample_data[..., i].flatten()
                     param_range = np.max(param_data) - np.min(param_data)
                     if param_range == 0 or param_range < 1e-10:
                         # Constant parameter - add small range around the value
                         center = np.mean(param_data)
-                        delta = max(abs(center) * 0.01, 1e-6)  # type: ignore
+                        delta = max(abs(center) * 0.01, 1e-6)
                         ranges.append((center - delta, center + delta))
                     else:
                         # Let corner determine automatically
@@ -550,9 +550,8 @@ def plot_mcmc_corner(
                 # Fallback: try to use individual parameter ranges
                 try:
                     if hasattr(stacked_samples, "data_vars"):
-                        ranges = []
-                        for var_name in list(stacked_samples.data_vars):  # type: ignore
-                            # type: ignore
+                        ranges: list[tuple[Any, Any] | None] = []
+                        for var_name in list(stacked_samples.data_vars):
                             var_data = stacked_samples[var_name].values.flatten()
                             param_range = np.max(var_data) - np.min(var_data)
                             if param_range == 0 or param_range < 1e-10:
@@ -562,10 +561,10 @@ def plot_mcmc_corner(
                             else:
                                 ranges.append(None)
                     else:
-                        ranges = None
+                        ranges = None  # type: ignore[assignment]
                 except Exception as e2:
                     logger.debug(f"Could not determine parameter ranges: {e2}")
-                    ranges = None
+                    ranges = None  # type: ignore[assignment]
         else:
             # For other data types, try basic conversion
             try:
@@ -577,13 +576,13 @@ def plot_mcmc_corner(
                     sample_data = np.array(stacked_samples)
 
                 ranges = []
-                for i in range(sample_data.shape[-1]):  # type: ignore
-                    param_data = sample_data[..., i].flatten()  # type: ignore
+                for i in range(sample_data.shape[-1]):
+                    param_data = sample_data[..., i].flatten()
                     param_range = np.max(param_data) - np.min(param_data)
                     if param_range == 0 or param_range < 1e-10:
                         # Constant parameter - add small range around the value
                         center = np.mean(param_data)
-                        delta = max(abs(center) * 0.01, 1e-6)  # type: ignore
+                        delta = max(abs(center) * 0.01, 1e-6)
                         ranges.append((center - delta, center + delta))
                     else:
                         # Let corner determine automatically

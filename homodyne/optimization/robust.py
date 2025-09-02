@@ -50,7 +50,7 @@ try:
     CVXPY_AVAILABLE = True
 except ImportError:
     CVXPY_AVAILABLE = False
-    cp: Any = None
+    cp = None
 
 # Check if Gurobi is available as a CVXPY solver
 try:
