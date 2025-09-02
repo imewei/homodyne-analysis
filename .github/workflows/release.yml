@@ -187,7 +187,7 @@ jobs:
   post-release:
     name: Post-release Actions
     runs-on: ubuntu-latest
-    needs: build-and-publish
+    needs: [validate, build-and-publish]
     if: always() && needs.build-and-publish.result == 'success'
     steps:
       - name: Checkout
