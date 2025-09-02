@@ -83,7 +83,7 @@ skip_glob = [ "build/*", "dist/*", "*.egg-info/*",]
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-exclude = [ ".eggs", ".git", ".mypy_cache", ".ruff_cache", ".tox", ".venv", "__pycache__", "build", "dist",]
+exclude = [ ".eggs", ".git", ".mypy_cache", ".ruff_cache", ".tox", ".venv", "__pycache__", "build", "dist", "homodyne/_version.py",]
 
 [tool.mypy]
 python_version = "3.12"
@@ -103,7 +103,7 @@ warn_unreachable = true
 strict_equality = true
 show_error_codes = true
 pretty = true
-exclude = [ "homodyne_complete",]
+exclude = [ "homodyne_complete", "homodyne/_version.py",]
 [[tool.mypy.overrides]]
 module = [ "numba.*", "jax.*", "jaxlib.*", "pymc.*", "arviz.*", "pytensor.*", "corner.*", "cvxpy.*", "gurobipy.*", "xpcs_viewer.*", "sklearn.*",]
 ignore_missing_imports = true
