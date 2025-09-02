@@ -27,6 +27,7 @@ try:
     ROBUST_MODULE_AVAILABLE = True
 except ImportError:
     ROBUST_MODULE_AVAILABLE = False
+    GUROBI_AVAILABLE = False
     RobustHomodyneOptimizer = None
     create_robust_optimizer = None
 
