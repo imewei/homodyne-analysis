@@ -50,7 +50,7 @@ try:
     CVXPY_AVAILABLE = True
 except ImportError:
     CVXPY_AVAILABLE = False
-    cp = None
+    cp: Any = None
 
 # Check if Gurobi is available as a CVXPY solver
 try:
@@ -83,7 +83,7 @@ class RobustHomodyneOptimizer:
     constraints defined in the configuration system.
     """
 
-    def __init__(self, analysis_core, config: dict[str, Any]):
+    def __init__(self, analysis_core: Any, config: dict[str, Any]) -> None:
         """
         Initialize robust optimizer.
 
@@ -96,12 +96,12 @@ class RobustHomodyneOptimizer:
         """
         self.core = analysis_core
         self.config = config
-        self.best_params_robust = None
+        self.best_params_robust: np.ndarray | None = None
 
         # Performance optimization caches
-        self._jacobian_cache = {}
-        self._correlation_cache = {}
-        self._bounds_cache = None
+        self._jacobian_cache: dict[str, Any] = {}
+        self._correlation_cache: dict[str, Any] = {}
+        self._bounds_cache: list[tuple[float | None, float | None]] | None = None
 
         # Extract robust optimization configuration
         self.robust_config = config.get("optimization_config", {}).get(
