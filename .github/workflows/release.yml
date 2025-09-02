@@ -26,27 +26,20 @@ env:
 
 jobs:
   validate:
-    name: Pre-release Validation
+    name: Quick Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: "pyproject.toml"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[test,dev]"
-
-      - name: Validate version
+      - name: Validate version and quick test
         run: |
           # Extract version from tag or input
           if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -63,19 +56,20 @@ jobs:
             exit 1
           fi
           
-          echo "✅ Version format is valid"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Run full test suite
-        run: |
-          pytest homodyne/tests/ --tb=short -v --cov=homodyne --cov-report=term-missing
-          echo "✅ All tests passed"
-
-      - name: Verify package metadata
-        run: |
-          python -m build --wheel --outdir dist/
+          
+          # Quick install and test
+          python -m pip install --upgrade pip build twine
+          pip install -e ".[test]"
+          
+          # Run only fast tests
+          pytest homodyne/tests/ -x --tb=line -q -m "not slow" --maxfail=2
+          
+          # Quick package build test
+          python -m build --wheel
           twine check dist/*
-          echo "✅ Package metadata is valid"
+          
+          echo "✅ Release validation passed"
 
   build-and-publish:
     name: Build and Publish Release

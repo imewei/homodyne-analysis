@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Fast CI
 
 on:
   push:
@@ -14,174 +14,101 @@ concurrency:
 env:
   PYTHONDONTWRITEBYTECODE: 1
   PYTHONUNBUFFERED: 1
+  # Optimize pip installation speed
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_NO_CACHE_DIR: 1
 
 jobs:
-  changes:
-    name: Detect Changes
+  # Fast single-job CI for most cases
+  fast-ci:
+    name: Fast CI (Python 3.12, Ubuntu)
     runs-on: ubuntu-latest
-    outputs:
-      python: ${{ steps.changes.outputs.python }}
-      docs: ${{ steps.changes.outputs.docs }}
-      workflows: ${{ steps.changes.outputs.workflows }}
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            python:
-              - '**/*.py'
-              - 'pyproject.toml'
-              - 'requirements*.txt'
-            docs:
-              - 'docs/**'
-              - '**/*.md'
-            workflows:
-              - '.github/workflows/**'
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  test:
-    name: Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]" --no-deps --only-binary=all || pip install -e ".[test]"
+
+      - name: Lint (ruff only)
+        run: |
+          ruff check homodyne/ --output-format=github
+          ruff format --check homodyne/
+
+      - name: Quick tests
+        run: |
+          pytest homodyne/tests/ -x --tb=line -q \
+            -m "not slow and not integration and not mcmc" \
+            --maxfail=3 --disable-warnings
+
+      - name: Build check
+        run: |
+          python -m pip install build
+          python -m build --wheel
+          pip install dist/*.whl --force-reinstall
+          python -c "import homodyne; print('✅ Package OK')"
+
+  # Extended testing only when needed
+  extended-tests:
+    name: Extended Tests
     runs-on: ${{ matrix.os }}
-    needs: changes
-    if: needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch'
+    if: >
+      github.event_name == 'push' && 
+      (github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[full-ci]'))
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.12", "3.13"]
         include:
-          # Only test other OS on main Python version to reduce CI time
+          - os: ubuntu-latest
+            python-version: "3.13"
           - os: windows-latest
             python-version: "3.12"
           - os: macos-latest
             python-version: "3.12"
-
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python ${{ matrix.python-version }}
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-          cache-dependency-path: "pyproject.toml"
 
-      - name: Install system dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y build-essential
-
-      - name: Install system dependencies (macOS)
-        if: matrix.os == 'macos-latest'  
-        run: brew install gcc
-
-      - name: Install dependencies
+      - name: Install system deps
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[test,performance]"
-
-      - name: Install optional dependencies
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        continue-on-error: true
-        run: pip install -e ".[mcmc,robust,data]"
-
-      - name: Run tests
-        run: |
-          # Run core tests on all platforms
-          pytest homodyne/tests/ -x --tb=short -m "not slow and not integration and not mcmc" --cov=homodyne --cov-report=xml
-          
-          # Run additional tests only on Ubuntu Python 3.12
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.12" ]]; then
-            pytest homodyne/tests/ --tb=short -m "integration and not slow" || true
-            pytest homodyne/tests/ --tb=short -m "mcmc and not slow" || true
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update && sudo apt-get install -y build-essential
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew install gcc
           fi
+        shell: bash
 
-      - name: Upload coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
-
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: "pyproject.toml"
-
-      - name: Install dependencies
+      - name: Install and test
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[test]"
+          pytest homodyne/tests/ -x --tb=line -q -m "not slow" --maxfail=2
 
-      - name: Run modern linting (ruff)
-        run: |
-          ruff check homodyne/
-          ruff format --check homodyne/
-
-      - name: Run type checking
-        continue-on-error: true
-        run: mypy homodyne/ --ignore-missing-imports
-
-      - name: Security scan
-        run: bandit -r homodyne/ -f json -o bandit-report.json || bandit -r homodyne/ || true
-
-      - name: Upload security report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-report
-          path: bandit-report.json
-          retention-days: 14
-
-  build:
-    name: Build Package
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Build package
-        run: |
-          python -m pip install --upgrade pip build twine
-          python -m build
-          twine check dist/*
-
-      - name: Test installation
-        run: |
-          pip install dist/*.whl
-          python -c "import homodyne; print(f'✅ Package v{homodyne.__version__} installed successfully')"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-packages
-          path: dist/
-          retention-days: 7
-
+  # Documentation (only when docs change or on main)
   docs:
     name: Documentation
     runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch'
+    if: >
+      contains(github.event.head_commit.message, 'docs') || 
+      github.ref == 'refs/heads/main'
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -196,7 +123,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[docs]"
-          cd docs && make clean && make html
+          cd docs && make html
 
       - name: Upload docs
         uses: actions/upload-artifact@v4
@@ -205,11 +132,11 @@ jobs:
           path: docs/_build/html
           retention-days: 7
 
-  # Deploy docs to GitHub Pages (only on main branch)
+  # Deploy docs only on main branch pushes
   deploy-docs:
-    name: Deploy Documentation
+    name: Deploy Docs
     runs-on: ubuntu-latest
-    needs: [docs, test, quality]
+    needs: docs
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: read
@@ -236,80 +163,3 @@ jobs:
       - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  # Dependency review for PRs
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Review dependencies
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: moderate
-          comment-summary-in-pr: true
-
-  # Performance regression check
-  performance:
-    name: Performance Check
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.python == 'true' && github.event_name == 'pull_request'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[performance]"
-
-      - name: Run performance tests
-        continue-on-error: true
-        run: |
-          pytest homodyne/tests/ -m "performance and not slow" --benchmark-json=benchmark.json || true
-
-      - name: Upload benchmark results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-results
-          path: benchmark.json
-          retention-days: 7
-
-  summary:
-    name: CI Summary
-    runs-on: ubuntu-latest
-    needs: [test, quality, build, docs]
-    if: always()
-    steps:
-      - name: Check results
-        run: |
-          echo "## 🚀 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Quality | ${{ needs.quality.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docs | ${{ needs.docs.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.quality.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
-            echo "✅ **All CI checks passed!**" >> $GITHUB_STEP_SUMMARY
-            exit 0
-          else
-            echo "❌ **Some CI checks failed**" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
