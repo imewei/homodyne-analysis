@@ -525,9 +525,9 @@ class TestAngleFilteringOptimizationIntegration:
             for method_name in methods_to_check:
                 if hasattr(sampler, method_name):
                     method_sig = inspect.signature(getattr(sampler, method_name))
-                    assert "filter_angles_for_optimization" in method_sig.parameters, (
-                        f"Missing parameter in {method_name}"
-                    )
+                    assert (
+                        "filter_angles_for_optimization" in method_sig.parameters
+                    ), f"Missing parameter in {method_name}"
 
             print("✓ MCMC sampler uses angle filtering by default")
 
@@ -655,7 +655,9 @@ class TestAngleFilteringEdgeCases:
                     is_included = True
                     break
 
-            assert is_included == should_include, f"Angle {angle}° should be {
+            assert (
+                is_included == should_include
+            ), f"Angle {angle}° should be {
                 'included' if should_include else 'excluded'
             }"
 

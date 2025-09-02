@@ -478,9 +478,9 @@ class TestDiagnosticPlots:
             # Each file should be substantial for a 4-subplot figure with real data
             for plot_file in plot_files:
                 file_size = plot_file.stat().st_size
-                assert file_size > 50000, (
-                    f"Plot file size {file_size} is too small - may have empty subplots"
-                )
+                assert (
+                    file_size > 50000
+                ), f"Plot file size {file_size} is too small - may have empty subplots"
 
         except ImportError:
             # Skip test if ArviZ is not available
@@ -606,9 +606,9 @@ class TestMCMCPlots:
                     }"
                 )
 
-            assert success is True, (
-                f"plot_mcmc_trace failed to create plots in {tmp_path}"
-            )
+            assert (
+                success is True
+            ), f"plot_mcmc_trace failed to create plots in {tmp_path}"
 
             plot_files = list(tmp_path.glob("mcmc_trace_plots.png"))
             all_files = list(tmp_path.glob("*"))
@@ -621,16 +621,18 @@ class TestMCMCPlots:
                 )
                 print(f"All files in directory: {all_files}")
 
-            assert len(plot_files) == 1, f"Expected 1 trace plot file, found {
+            assert (
+                len(plot_files) == 1
+            ), f"Expected 1 trace plot file, found {
                 len(plot_files)
             }. All files: {all_files}"
 
             file_size = plot_files[0].stat().st_size
             # Reduce the size requirement as matplotlib in test environments
             # may create smaller files
-            assert file_size > 5000, (
-                f"Trace plot file too small: {file_size} bytes (expected > 5000)"
-            )
+            assert (
+                file_size > 5000
+            ), f"Trace plot file too small: {file_size} bytes (expected > 5000)"
 
         except ImportError:
             pytest.skip("ArviZ not available")
@@ -953,9 +955,9 @@ class TestCompleteWorkflow:
         # Optional plots should not fail if attempted
         for plot_type in optional_plots:
             if plot_type in plot_status:
-                assert isinstance(plot_status[plot_type], bool), (
-                    f"{plot_type} should return boolean"
-                )
+                assert isinstance(
+                    plot_status[plot_type], bool
+                ), f"{plot_type} should return boolean"
 
         # Check that actual files were created
         all_plot_files = list(tmp_path.glob("*.png"))
@@ -1057,9 +1059,9 @@ class TestCompleteWorkflow:
             ]
 
             # At least some MCMC plots should be successful
-            assert len(mcmc_plots_created) >= 2, (
-                f"Expected at least 2 MCMC plots, got: {mcmc_plots_created}"
-            )
+            assert (
+                len(mcmc_plots_created) >= 2
+            ), f"Expected at least 2 MCMC plots, got: {mcmc_plots_created}"
 
             # Check for actual MCMC plot files
             mcmc_files = [
@@ -1069,9 +1071,9 @@ class TestCompleteWorkflow:
             ]
 
             total_mcmc_files = sum(len(files) for files in mcmc_files)
-            assert total_mcmc_files >= 2, (
-                "Expected at least 2 MCMC plot files to be created"
-            )
+            assert (
+                total_mcmc_files >= 2
+            ), "Expected at least 2 MCMC plot files to be created"
 
         except ImportError:
             pytest.skip("ArviZ not available for MCMC plotting test")

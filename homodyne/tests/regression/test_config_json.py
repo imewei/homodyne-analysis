@@ -172,7 +172,9 @@ class TestParameterValidation:
             assert "name" in bound
             assert "min" in bound
             assert "max" in bound
-            assert bound["min"] < bound["max"], f"Invalid bound for {bound['name']}: {
+            assert (
+                bound["min"] < bound["max"]
+            ), f"Invalid bound for {bound['name']}: {
                 bound['min']
             } >= {bound['max']}"
 
@@ -180,14 +182,14 @@ class TestParameterValidation:
             if bound["name"] == "D0":
                 assert bound["min"] > 0, "Diffusion coefficient D0 must be positive"
             elif bound["name"] == "gamma_dot_t0":
-                assert bound["min"] > 0, (
-                    "Reference shear rate gamma_dot_t0 must be positive"
-                )
+                assert (
+                    bound["min"] > 0
+                ), "Reference shear rate gamma_dot_t0 must be positive"
             elif bound["name"] in ["alpha", "beta"]:
                 # Power-law exponents should be reasonable
-                assert bound["min"] >= -5.0 and bound["max"] <= 5.0, (
-                    f"Power-law exponent {bound['name']} has unreasonable bounds"
-                )
+                assert (
+                    bound["min"] >= -5.0 and bound["max"] <= 5.0
+                ), f"Power-law exponent {bound['name']} has unreasonable bounds"
 
     def test_initial_parameters_within_bounds(self, dummy_config):
         """Test that initial parameter values are within specified bounds."""
@@ -200,9 +202,9 @@ class TestParameterValidation:
         for param_name, value in zip(parameter_names, initial_values, strict=False):
             if param_name in bounds:
                 bound = bounds[param_name]
-                assert bound["min"] <= value <= bound["max"], (
-                    f"Initial value {value} for {param_name} outside bounds [{bound['min']}, {bound['max']}]"
-                )
+                assert (
+                    bound["min"] <= value <= bound["max"]
+                ), f"Initial value {value} for {param_name} outside bounds [{bound['min']}, {bound['max']}]"
 
     def test_parameter_units_consistency(self, dummy_config):
         """Test that parameter units are correctly specified."""
@@ -210,9 +212,9 @@ class TestParameterValidation:
             parameter_names = dummy_config["initial_parameters"]["parameter_names"]
             units = dummy_config["initial_parameters"]["units"]
 
-            assert len(units) == len(parameter_names), (
-                "Number of units must match number of parameters"
-            )
+            assert len(units) == len(
+                parameter_names
+            ), "Number of units must match number of parameters"
 
             # Check expected units for specific parameters
             unit_dict = dict(zip(parameter_names, units, strict=False))
@@ -242,9 +244,9 @@ class TestConfigurationSections:
         ]
 
         for section in required_sections:
-            assert section in dummy_config, (
-                f"Required section '{section}' missing from configuration"
-            )
+            assert (
+                section in dummy_config
+            ), f"Required section '{section}' missing from configuration"
 
     def test_analyzer_parameters_structure(self, dummy_config):
         """Test structure of analyzer_parameters section."""
@@ -284,12 +286,12 @@ class TestConfigurationSections:
         ]
 
         for field in required_fields:
-            assert field in exp_data, (
-                f"Required field '{field}' missing from experimental_data"
-            )
-            assert isinstance(exp_data[field], str), (
-                f"Field '{field}' should be a string"
-            )
+            assert (
+                field in exp_data
+            ), f"Required field '{field}' missing from experimental_data"
+            assert isinstance(
+                exp_data[field], str
+            ), f"Field '{field}' should be a string"
 
     def test_optimization_config_structure(self, dummy_config):
         """Test structure of optimization_config section."""
@@ -306,9 +308,9 @@ class TestConfigurationSections:
         # optimization)
         valid_methods = ["Nelder-Mead"]
         for method in classical["methods"]:
-            assert method in valid_methods, (
-                f"Unsupported optimization method: {method}. Only Nelder-Mead is supported."
-            )
+            assert (
+                method in valid_methods
+            ), f"Unsupported optimization method: {method}. Only Nelder-Mead is supported."
 
 
 class TestParameterTypes:
@@ -326,16 +328,20 @@ class TestParameterTypes:
                     "Uniform",
                     "LogUniform",
                 ]
-                assert bound["type"] in valid_types, (
-                    f"Invalid parameter type: {bound['type']}"
-                )
+                assert (
+                    bound["type"] in valid_types
+                ), f"Invalid parameter type: {bound['type']}"
 
                 # LogNormal parameters should have positive bounds
                 if bound["type"] == "LogNormal":
-                    assert bound["min"] > 0, f"LogNormal parameter {
+                    assert (
+                        bound["min"] > 0
+                    ), f"LogNormal parameter {
                         bound['name']
                     } must have positive min bound"
-                    assert bound["max"] > 0, f"LogNormal parameter {
+                    assert (
+                        bound["max"] > 0
+                    ), f"LogNormal parameter {
                         bound['name']
                     } must have positive max bound"
 
@@ -389,9 +395,9 @@ class TestConfigurationValidation:
             .get("minimum_frames", 5)
         )
         frame_count = end_frame - start_frame
-        assert frame_count >= min_frames, (
-            f"Frame count {frame_count} below minimum {min_frames}"
-        )
+        assert (
+            frame_count >= min_frames
+        ), f"Frame count {frame_count} below minimum {min_frames}"
 
     def test_computational_parameters_validation(self, dummy_config):
         """Test validation of computational parameters."""
@@ -400,19 +406,19 @@ class TestConfigurationValidation:
 
             if "num_threads" in comp:
                 assert comp["num_threads"] > 0, "Number of threads must be positive"
-                assert comp["num_threads"] <= 1024, (
-                    "Number of threads seems unreasonably large"
-                )
+                assert (
+                    comp["num_threads"] <= 1024
+                ), "Number of threads seems unreasonably large"
 
             if "max_threads_limit" in comp:
-                assert comp["max_threads_limit"] > 0, (
-                    "Max threads limit must be positive"
-                )
+                assert (
+                    comp["max_threads_limit"] > 0
+                ), "Max threads limit must be positive"
                 if "num_threads" in comp:
                     # Max limit should be at least as large as num_threads
-                    assert comp["max_threads_limit"] >= comp["num_threads"], (
-                        "Max threads limit should be >= num_threads"
-                    )
+                    assert (
+                        comp["max_threads_limit"] >= comp["num_threads"]
+                    ), "Max threads limit should be >= num_threads"
 
     def test_output_settings_validation(self, dummy_config):
         """Test validation of output settings."""
@@ -429,12 +435,12 @@ class TestConfigurationValidation:
                 if "figure_size" in plotting:
                     fig_size = plotting["figure_size"]
                     assert isinstance(fig_size, list), "Figure size should be a list"
-                    assert len(fig_size) == 2, (
-                        "Figure size should have exactly 2 elements"
-                    )
-                    assert all(s > 0 for s in fig_size), (
-                        "Figure size dimensions must be positive"
-                    )
+                    assert (
+                        len(fig_size) == 2
+                    ), "Figure size should have exactly 2 elements"
+                    assert all(
+                        s > 0 for s in fig_size
+                    ), "Figure size dimensions must be positive"
 
 
 class TestJSONSchemaCompliance:
@@ -455,18 +461,18 @@ class TestJSONSchemaCompliance:
         # Check initial parameter values
         initial_values = dummy_config["initial_parameters"]["values"]
         for value in initial_values:
-            assert isinstance(value, int | float), (
-                f"Parameter value {value} is not numeric"
-            )
+            assert isinstance(
+                value, int | float
+            ), f"Parameter value {value} is not numeric"
 
         # Check bounds
         for bound in dummy_config["parameter_space"]["bounds"]:
-            assert isinstance(bound["min"], int | float), (
-                f"Bound min {bound['min']} is not numeric"
-            )
-            assert isinstance(bound["max"], int | float), (
-                f"Bound max {bound['max']} is not numeric"
-            )
+            assert isinstance(
+                bound["min"], int | float
+            ), f"Bound min {bound['min']} is not numeric"
+            assert isinstance(
+                bound["max"], int | float
+            ), f"Bound max {bound['max']} is not numeric"
 
         # Check temporal parameters
         temporal = dummy_config["analyzer_parameters"]["temporal"]
@@ -507,7 +513,9 @@ class TestJSONSchemaCompliance:
                         or key.lower().startswith("use_")
                     ):
                         # These should probably be booleans
-                        assert isinstance(value, bool), f"{
+                        assert isinstance(
+                            value, bool
+                        ), f"{
                             current_path
                         } should be boolean but is {type(value)}"
                     else:

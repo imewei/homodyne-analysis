@@ -353,9 +353,9 @@ class TestMCMCAngleFilteringIntegration:
                     is_included = True
                     break
 
-            assert is_included == should_include, (
-                f"MCMC filtering inconsistent for {angle}°"
-            )
+            assert (
+                is_included == should_include
+            ), f"MCMC filtering inconsistent for {angle}°"
 
     def test_mcmc_runner_integration(self):
         """Test that main runner uses MCMC angle filtering."""

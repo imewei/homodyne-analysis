@@ -481,9 +481,9 @@ class TestErrorHandling:
     def test_optimization_timeout(self, mock_analysis_core, basic_config):
         """Test handling of optimization timeout."""
         # Add timeout configuration
-        basic_config["optimization_config"]["classical_optimization"]["timeout"] = (
-            10  # 10 seconds
-        )
+        basic_config["optimization_config"]["classical_optimization"][
+            "timeout"
+        ] = 10  # 10 seconds
 
         optimizer = ClassicalOptimizer(mock_analysis_core, basic_config)
 

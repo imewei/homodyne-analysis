@@ -388,9 +388,9 @@ class TestOptimizationBenchmarks:
         """Benchmark robust optimization methods."""
         results = []
 
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(mock_core, BENCHMARK_CONFIG)
 
         robust_methods = [
@@ -472,9 +472,9 @@ class TestOptimizationBenchmarks:
             try:
                 config = BENCHMARK_CONFIG.copy()
                 config["optimization_config"]["mcmc_sampling"]["use_jax"] = use_jax
-                config["optimization_config"]["mcmc_sampling"]["draws"] = (
-                    60  # Reduced for benchmarking
-                )
+                config["optimization_config"]["mcmc_sampling"][
+                    "draws"
+                ] = 60  # Reduced for benchmarking
                 config["optimization_config"]["mcmc_sampling"]["tune"] = 30
 
                 sampler = MCMCSampler(mock_core, config)
@@ -648,9 +648,9 @@ class TestOptimizationBenchmarks:
         if MCMC_AVAILABLE and PYMC_AVAILABLE:
             assert MCMCSampler is not None
             config = BENCHMARK_CONFIG.copy()
-            config["optimization_config"]["mcmc_sampling"]["draws"] = (
-                40  # Reduced for large dataset
-            )
+            config["optimization_config"]["mcmc_sampling"][
+                "draws"
+            ] = 40  # Reduced for large dataset
             config["optimization_config"]["mcmc_sampling"]["tune"] = 20
 
             sampler = MCMCSampler(large_benchmark_mock_core, config)
@@ -798,13 +798,13 @@ class TestOptimizationBenchmarks:
             any_results = [
                 r for r in convergence_results if r["parameter_error"] is not None
             ]
-            assert len(any_results) > 0, (
-                "No method produced valid results from challenging start"
-            )
+            assert (
+                len(any_results) > 0
+            ), "No method produced valid results from challenging start"
         else:
-            assert len(good_convergence) > 0, (
-                "No method achieved good convergence from challenging start"
-            )
+            assert (
+                len(good_convergence) > 0
+            ), "No method achieved good convergence from challenging start"
 
 
 if __name__ == "__main__":

@@ -194,12 +194,12 @@ class TestMCMCGPUIntegration:
                     pytest.skip("PyMC dependencies not available in test environment")
 
                 # Should force CPU-only mode
-                assert not sampler.use_jax_backend, (
-                    "Should disable JAX backend for CPU mode"
-                )
-                assert os.environ.get("JAX_PLATFORMS") == "cpu", (
-                    "Should set JAX_PLATFORMS=cpu"
-                )
+                assert (
+                    not sampler.use_jax_backend
+                ), "Should disable JAX backend for CPU mode"
+                assert (
+                    os.environ.get("JAX_PLATFORMS") == "cpu"
+                ), "Should set JAX_PLATFORMS=cpu"
 
                 # Check logging messages
                 info_calls = [call.args[0] for call in mock_info.call_args_list]
@@ -320,13 +320,13 @@ class TestGPUSetupScriptLogic:
             )
 
             if "/usr/local/cuda" in test_path:
-                assert "/usr/local/cuda" not in clean_path, (
-                    f"Should remove CUDA paths from: {test_path}"
-                )
+                assert (
+                    "/usr/local/cuda" not in clean_path
+                ), f"Should remove CUDA paths from: {test_path}"
             else:
-                assert clean_path == test_path, (
-                    f"Should preserve non-CUDA paths: {test_path}"
-                )
+                assert (
+                    clean_path == test_path
+                ), f"Should preserve non-CUDA paths: {test_path}"
 
             logger.info(f"Path cleaning: {test_path} -> {clean_path}")
 
@@ -350,9 +350,9 @@ def test_integration_gpu_files_exist():
 
         if file_path.endswith(".sh"):
             # Check if shell script is executable
-            assert os.access(full_path, os.X_OK), (
-                f"Shell script not executable: {file_path}"
-            )
+            assert os.access(
+                full_path, os.X_OK
+            ), f"Shell script not executable: {file_path}"
 
     logger.info("All required GPU files are present and accessible")
 

@@ -279,9 +279,9 @@ class TestMCMCScalingConsistency:
         for key_path in required_keys:
             current = test_config
             for key in key_path:
-                assert key in current, (
-                    f"Missing key: {'.'.join(key_path[: key_path.index(key) + 1])}"
-                )
+                assert (
+                    key in current
+                ), f"Missing key: {'.'.join(key_path[: key_path.index(key) + 1])}"
                 current = current[key]
 
 

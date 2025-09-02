@@ -442,9 +442,9 @@ class TestPerAngleChiSquaredCalculation:
         # Test the logic directly
         for overall_qual, per_angle_qual, expected_combined in test_scenarios:
             result = combine_quality(overall_qual, per_angle_qual)
-            assert result == expected_combined, (
-                f"Failed for {overall_qual}, {per_angle_qual}: expected {expected_combined}, got {result}"
-            )
+            assert (
+                result == expected_combined
+            ), f"Failed for {overall_qual}, {per_angle_qual}: expected {expected_combined}, got {result}"
 
     def test_missing_validation_config_defaults(self, mock_analyzer):
         """Test that default thresholds are used when validation config is missing."""
