@@ -223,6 +223,68 @@ Use specific exception types:
 
        return config
 
+Code Quality and Pre-commit Hooks
+----------------------------------
+
+We maintain high standards for code quality using automated tools and pre-commit hooks.
+
+**Pre-commit Hooks Setup**
+
+.. code-block:: bash
+
+   # Install with development dependencies
+   pip install homodyne-analysis[dev]
+
+   # Setup unified development environment
+   homodyne-post-install --shell zsh --advanced
+
+   # Install pre-commit hooks
+   pre-commit install
+
+   # Validate installation
+   homodyne-validate
+   pre-commit run --all-files
+
+**Available Hooks**
+
+Our pre-commit configuration includes:
+
+1. **Code Formatting**
+   
+   - ``black``: Code formatting with 88-character line length
+   - ``isort``: Import statement organization
+   - ``ruff format``: Fast Python formatter
+
+2. **Code Quality**
+   
+   - ``ruff``: Fast Python linting with auto-fixes
+   - ``mypy``: Type checking (excluding tests)
+
+3. **Security**
+   
+   - ``bandit``: Security vulnerability scanning
+   - ``pip-audit``: Dependency vulnerability checking
+
+4. **File Quality**
+   
+   - ``trailing-whitespace``: Remove trailing whitespace
+   - ``end-of-file-fixer``: Ensure files end with newline
+   - ``check-yaml``: YAML file validation
+
+**Manual Code Quality Checks**
+
+.. code-block:: bash
+
+   # Run all hooks on all files
+   pre-commit run --all-files
+
+   # Run specific tools manually
+   black homodyne/
+   isort homodyne/
+   ruff check homodyne/
+   mypy homodyne/
+   bandit -r homodyne/
+
 Testing Guidelines
 ------------------
 

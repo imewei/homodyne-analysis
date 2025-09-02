@@ -62,12 +62,11 @@ environment detection, and improved GPU hardware testing.
   - Simplified pytest configuration with working marker filters
   - Enhanced test isolation and reliability
 
-## [0.7.2] - 2024-08-31
+## [0.7.2] - 2025-09-01
 
-### Major: Unified Post-Install System
+### Major: Unified System Integration & Enhanced Testing
 
-**Complete architectural redesign** of shell completion, GPU acceleration, and advanced
-features into a unified, streamlined system.
+**Complete architectural redesign** combining unified post-install system, enhanced testing framework, and streamlined user experience.
 
 ### Added
 
@@ -82,8 +81,23 @@ features into a unified, streamlined system.
 
   - `homodyne-gpu-optimize` - Hardware-specific GPU optimization and benchmarking
   - `homodyne-validate` - Comprehensive system validation and testing framework
-  - `homodyne-cleanup` - Intelligent cleanup with dry-run support and component
-    selection
+  - `homodyne-cleanup` - Intelligent cleanup with dry-run support and component selection
+
+- **Enhanced Virtual Environment Detection**: Comprehensive support for multiple environment types
+
+  - Support for conda (`CONDA_DEFAULT_ENV`), mamba (`MAMBA_ROOT_PREFIX`), venv (`VIRTUAL_ENV`)
+  - Backward compatibility with legacy detection methods (`sys.real_prefix`, `sys.base_prefix`)
+  - Unified detection logic across post-install and uninstall scripts
+
+- **Comprehensive Test Marker System**: Organized testing framework for CI/CD optimization
+
+  - `fast`: Quick tests (< 1s) for rapid development feedback
+  - `slow`: Long-running tests (> 5s) for comprehensive validation
+  - `integration`: Multi-component integration tests
+  - `mcmc`: MCMC-specific tests requiring PyMC dependencies
+  - `ci`: Tests suitable for CI environments (unit + regression)
+  - `system`: System-level tests requiring environment setup
+  - `gpu`: GPU-specific tests
 
 - **Smart GPU System**: Automatic GPU detection and intelligent CPU/GPU selection
 
@@ -99,6 +113,25 @@ features into a unified, streamlined system.
   - Advanced shortcuts: `gpu-status`, `gpu-bench`, `gpu-on`, `gpu-off`
   - Context-aware completion with cached file discovery
 
+### Fixed
+
+- **GPU Hardware Detection Testing**: Proper mocking of filesystem operations for reliable CI testing
+
+  - Added missing `@patch("pathlib.Path.exists")` decorator for CUDA path checking
+  - Enhanced test coverage for GPU detection scenarios
+
+- **Pytest Configuration Conflicts**: Resolved marker evaluation issues
+
+  - Fixed conflicts between multiple conftest.py hooks
+  - Streamlined test collection and marker application
+  - Improved CI test selection reliability
+
+- **Code Quality**: Black formatting compliance and improved test reliability
+
+  - All 92 files now pass Black formatting checks
+  - Fixed diagnostic plotting tests for per-angle plot generation
+  - Enhanced error handling in test frameworks
+
 ### Changed
 
 - **Streamlined Architecture**: Consolidated and simplified codebase
@@ -112,101 +145,23 @@ features into a unified, streamlined system.
 
   - One-command setup replaces multi-step manual configuration
   - Interactive mode allows selective feature installation
-  - Comprehensive validation system ensures proper installation
-  - Smart error handling and troubleshooting guidance
+  - Automatic shell completion installation during package setup
+  - Seamless out-of-the-box functionality across platforms
 
-### Improved
+- **Simplified Shell Completion System**: Removed manual CLI completion options
 
-- **Documentation Overhaul**: Complete documentation updates for unified system
-
-  - Updated `README.md` with unified system quick start and features
-  - Updated `CLI_REFERENCE.md` with new advanced tools and unified commands
-  - Integrated setup instructions directly into main documentation
-  - Streamlined documentation structure with consolidated installation workflows
-
-- **Code Quality and Maintainability**: Significant codebase consolidation
-
-  - Removed 500+ lines of redundant completion code
-  - Unified GPU activation logic with smart detection
-  - Consolidated packaging files and dependencies
-  - Enhanced testing framework with unified system validation
-
-### Technical Details
-
-- **GPU System Enhancements**: `runtime/gpu/activation.sh` with intelligent CUDA
-  configuration
-
-  - Dynamic library path detection across installation types
-  - Hardware-specific XLA flag optimization
-  - Safe environment variable management with conflict resolution
-  - Automatic JAX backend configuration with fallback handling
-
-- **Shell Integration**: Unified completion system with cross-shell compatibility
-
-  - Single completion script supporting bash, zsh, and fish
-  - Consistent alias behavior across all shell environments
-  - Smart environment activation with conda/mamba integration
-  - Cached completion with performance optimization
-
-- **Advanced Tools Integration**: Professional-grade system management
-
-  - `homodyne-gpu-optimize`: Hardware detection, benchmarking, and profile application
-  - `homodyne-validate`: 5-category system validation with JSON output for CI/CD
-  - `homodyne-cleanup`: Smart cleanup with dry-run and interactive modes
-
-## [0.7.2] - 2025-08-30
-
-### Changed
-
-- **Simplified Shell Completion System**: Removed manual `--install-completion` and
-  `--uninstall-completion` CLI options for streamlined user experience
   - Shell completion is now automatically installed during package installation
-  - Cross-platform support: Linux (full completion), macOS (aliases), Windows (batch
-    shortcuts)
+  - Cross-platform support: Linux (full completion), macOS (aliases), Windows (batch shortcuts)
   - Conda/mamba environments: Automatic integration with environment activation scripts
-  - Removed 600+ lines of unused shell completion code for cleaner, more maintainable
-    codebase
-
-### Improved
-
-- **Documentation Updates**: Comprehensive documentation updates to reflect simplified
-  completion system
-  - Updated installation guide (`docs/user-guide/installation.rst`)
-  - Updated quickstart guide (`docs/user-guide/quickstart.rst`)
-  - Updated README.md with automatic installation instructions
-  - Removed references to manual completion commands throughout documentation
-- **Post-Installation Process**: Enhanced automatic setup with cross-platform shell
-  completion
-  - Streamlined post-installation hook with automatic environment detection
-  - Improved error handling and user feedback during setup
-- **Test Suite Cleanup**: Removed obsolete shell completion tests that referenced
-  deleted functions
-  - Cleaned up `test_cli_completion.py` to remove tests for deleted manual installation
-    functions
-  - Maintained tests for core completion functionality that remains
 
 ### Removed
 
-- **Manual Shell Completion Commands**: Deprecated manual CLI options for better user
-  experience
-  - Removed `homodyne --install-completion {bash,zsh,fish,powershell}` command
-  - Removed `homodyne --uninstall-completion {bash,zsh,fish,powershell}` command
-  - Removed `install_shell_completion()` and `uninstall_shell_completion()` functions
-    from `cli_completion.py`
-  - Shell completion cleanup still available via `homodyne-cleanup` command
+- **Legacy Shell Completion Code**: Cleaned up 600+ lines of unused completion logic
 
-### Technical Details
-
-- **Code Quality**: Major cleanup of shell completion implementation
-  - Removed unused completion bypass mechanisms
-  - Simplified completion cache and file system operations
-  - Enhanced cross-platform compatibility in post-installation setup
-- **User Experience**: Seamless out-of-the-box shell completion
-  - No manual setup required - works immediately after installation
-  - Consistent behavior across different operating systems and shell environments
-  - Maintains full backward compatibility with existing shell aliases and shortcuts
-
-## [0.7.1] - 2025-08-28
+  - Removed manual completion installation functions
+  - Eliminated completion bypass mechanisms
+  - Removed `homodyne --install-completion` and `--uninstall-completion` CLI options
+  - Streamlined post-installation process
 
 ### Fixed
 

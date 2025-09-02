@@ -26,7 +26,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.autosummary",
-    "sphinx.ext.doctest", 
+    "sphinx.ext.doctest",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.githubpages",
@@ -168,7 +168,7 @@ numpydoc_xref_param_type = True
 # Todo configuration
 todo_include_todos = False
 
-# Type hints configuration  
+# Type hints configuration
 typehints_fully_qualified = False
 always_document_param_types = True
 typehints_document_rtype = True
@@ -220,7 +220,7 @@ html_theme_options = {
                 </svg>
             """,
             "class": "",
-        }
+        },
     ],
 }
 

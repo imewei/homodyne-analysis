@@ -15,5 +15,6 @@
    post_install
    run_homodyne
    tests
+   types
    typings
    uninstall_scripts

@@ -17,3 +17,4 @@ homodyne.tests
    mcmc
    performance
    regression
+   typing_helpers

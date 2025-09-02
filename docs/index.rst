@@ -144,10 +144,13 @@ User Guide
 
    user-guide/installation
    user-guide/quickstart
+   user-guide/complete-workflow-tutorial
+   user-guide/cli-reference
    user-guide/analysis-modes
    user-guide/configuration
    user-guide/plotting
    user-guide/examples
+   user-guide/faq
 
 API Reference
 -------------

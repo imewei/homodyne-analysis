@@ -68,7 +68,88 @@ Running Tests
    # JAX/GPU acceleration tests
    pytest homodyne/tests/ -m jax -v
 
-**Available Test Markers**:
+**Test Execution Configurations**
+
+The project provides multiple pytest configurations optimized for different scenarios:
+
+**Quick Development Tests (< 30 seconds)**
+
+.. code-block:: bash
+
+   # Fast development tests
+   pytest -c pytest-quick.ini
+   
+   # Includes: Unit tests marked as "fast"
+   # Excludes: Integration, MCMC, performance, slow tests
+   # Use case: TDD development cycle
+
+**CI Tests (< 3 minutes)**
+
+.. code-block:: bash
+
+   # Continuous Integration tests
+   pytest -c pytest-ci.ini
+   
+   # Includes: Unit and regression tests
+   # Excludes: Performance, system, integration, MCMC tests
+   # Features: Parallel execution, coverage reporting
+
+**Full Test Suite (< 5 minutes)**
+
+.. code-block:: bash
+
+   # Complete functional testing
+   pytest -c pytest-full.ini
+   
+   # Includes: All tests except benchmarks
+   # Features: Full coverage, parallel execution
+
+**Performance Benchmarks (5-15 minutes)**
+
+.. code-block:: bash
+
+   # Performance benchmarking only
+   pytest -c pytest-benchmarks.ini
+   
+   # Includes: Only benchmark and performance tests
+   # Features: pytest-benchmark integration, performance tracking
+
+**Performance Optimizations Applied**
+
+Recent optimizations have significantly improved test execution times:
+
+- **Reduced Computation**: MCMC draws reduced by 99% (10000+ → 20), chains reduced by 75%, tuning reduced by 98%
+- **Caching & Parallelization**: Session-scoped test data caching, parallel execution with pytest-xdist
+- **Smart Test Selection**: Automatic test marking based on execution time, separate benchmark execution
+
+**Expected Performance Improvements**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 20 20 35
+
+   * - Configuration
+     - Before
+     - After  
+     - Improvement
+   * - Quick tests
+     - 2-3 min
+     - 20-30s
+     - 75-80%
+   * - CI tests
+     - 5-7 min
+     - 2-3 min
+     - 50-60%
+   * - Full tests
+     - 7+ min
+     - 3-5 min
+     - 40-50%
+   * - Benchmarks
+     - Mixed in
+     - Separate
+     - Isolated
+
+**Available Test Markers**
 
 The following test markers are defined in ``pyproject.toml``:
 
