@@ -26,9 +26,11 @@ try:
 
     MCMC_MODULE_AVAILABLE = True
 except ImportError:
+    from typing import cast, Any
+    from unittest.mock import Mock
     MCMC_MODULE_AVAILABLE = False
-    MCMCSampler = None
-    create_mcmc_sampler = None
+    MCMCSampler = cast(Any, Mock())  # type: ignore[misc]
+    create_mcmc_sampler = cast(Any, Mock())  # type: ignore[misc]
 
 
 @pytest.fixture(autouse=True)

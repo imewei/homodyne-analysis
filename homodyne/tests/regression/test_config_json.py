@@ -22,16 +22,19 @@ from homodyne.tests.fixtures.data import (
 # Import the modules to test
 
 
-try:
-    from homodyne import ConfigManager as _HomodyneConfigManager
+from typing import TYPE_CHECKING, Any
 
-    ConfigManager = _HomodyneConfigManager  # type: ignore
-except ImportError:
-    # Create a minimal mock if homodyne import fails
-    class ConfigManager:
-        def __init__(self, config_file: str = "test_config.json") -> None:
-            self.config_file = config_file
-            self.config: dict[str, Any] = {}
+if TYPE_CHECKING:
+    from homodyne.core.config import ConfigManager
+else:
+    try:
+        from homodyne import ConfigManager
+    except ImportError:
+        # Create a minimal mock if homodyne import fails
+        class ConfigManager:
+            def __init__(self, config_file: str = "test_config.json") -> None:
+                self.config_file = config_file
+                self.config: dict[str, Any] = {}
 
 
 class TestJSONParsing:

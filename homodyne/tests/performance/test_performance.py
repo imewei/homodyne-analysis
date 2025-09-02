@@ -47,15 +47,21 @@ logger = logging.getLogger(__name__)
 # Add the project root to the path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-try:
+from typing import TYPE_CHECKING, Any, cast
+from unittest.mock import Mock
+
+if TYPE_CHECKING:
     from homodyne.analysis.core import HomodyneAnalysisCore
-except ImportError:
-    # Fallback for when running from test directory
+else:
     try:
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from analysis.core import HomodyneAnalysisCore
+        from homodyne.analysis.core import HomodyneAnalysisCore
     except ImportError:
-        HomodyneAnalysisCore = None  # type: ignore
+        # Fallback for when running from test directory
+        try:
+            sys.path.insert(0, str(Path(__file__).parent.parent))
+            from analysis.core import HomodyneAnalysisCore
+        except ImportError:
+            HomodyneAnalysisCore = cast(Any, Mock())  # type: ignore[misc]
 # Import performance monitoring utilities
 
 
