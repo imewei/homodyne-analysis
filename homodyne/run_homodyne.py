@@ -3100,6 +3100,10 @@ def main():
     with classical and Bayesian optimization approaches.
     """
     # Check Python version requirement
+    if sys.version_info < (3, 12):  # noqa: UP036
+        print("Error: Python 3.12 or higher is required for homodyne-analysis.", file=sys.stderr)
+        print(f"Current Python version: {sys.version_info[0]}.{sys.version_info[1]}", file=sys.stderr)
+        sys.exit(1)
 
     parser = argparse.ArgumentParser(
         description="Run homodyne scattering analysis for XPCS under nonequilibrium conditions",
