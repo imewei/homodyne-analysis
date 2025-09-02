@@ -6,9 +6,10 @@ This module defines common types used throughout the homodyne package
 for scientific computing applications, improving type safety and IDE support.
 """
 
-from typing import TypedDict, Protocol, Any
-from numpy.typing import NDArray
+from typing import Any, Protocol, TypedDict
+
 import numpy as np
+from numpy.typing import NDArray
 
 # Scientific computing array types
 FloatArray = NDArray[np.floating[Any]]
@@ -46,7 +47,7 @@ class PyMCModelProtocol(Protocol):
 class OptimizationProtocol(Protocol):
     """Protocol for optimization interfaces."""
     def optimize_parameters(
-        self, 
+        self,
         initial: FloatArray,
         bounds: list[tuple[float | None, float | None]]
     ) -> OptimizationResult: ...
@@ -55,6 +56,6 @@ class AnalysisProtocol(Protocol):
     """Protocol for analysis core interfaces."""
     def calculate_chi_squared(
         self,
-        experimental: FloatArray, 
+        experimental: FloatArray,
         theoretical: FloatArray
     ) -> float: ...

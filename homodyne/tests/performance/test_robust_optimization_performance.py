@@ -13,17 +13,19 @@ import logging
 import os
 import time
 
-import numpy as np
-import pytest
-
 # Import homodyne modules
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import Mock
 
+import numpy as np
+import pytest
+
 if TYPE_CHECKING:
     from homodyne.optimization.classical import ClassicalOptimizer
-    from homodyne.optimization.robust import RobustHomodyneOptimizer
-    from homodyne.optimization.robust import create_robust_optimizer
+    from homodyne.optimization.robust import (
+        RobustHomodyneOptimizer,
+        create_robust_optimizer,
+    )
 else:
     try:
         from homodyne.optimization.classical import ClassicalOptimizer
@@ -34,14 +36,14 @@ else:
             create_robust_optimizer,
         )
         ROBUST_OPTIMIZATION_AVAILABLE = True
-    except ImportError as e:
+    except ImportError:
         RobustHomodyneOptimizer = cast(Any, Mock())  # type: ignore[misc]
         create_robust_optimizer = cast(Any, Mock())  # type: ignore[misc]
         ClassicalOptimizer = cast(Any, Mock())  # type: ignore[misc]
         CVXPY_AVAILABLE = False
         GUROBI_AVAILABLE = False
         ROBUST_OPTIMIZATION_AVAILABLE = False
-    logging.warning(f"Robust optimization not available for performance testing: {e}")
+        logging.warning("Robust optimization not available for performance testing: Import failed")
 
 # Test configuration
 PERFORMANCE_CONFIG = {

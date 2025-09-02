@@ -8,7 +8,9 @@ Tests JSON parsing, configuration validation, and parameter correctness.
 import json
 
 # Import config management from homodyne module
-from typing import Any
+# tmp_path is built-in pytest fixture
+# Import the modules to test
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -16,13 +18,6 @@ from homodyne.tests.fixtures.data import (
     create_invalid_config_file,
     create_minimal_config_file,
 )
-
-# tmp_path is built-in pytest fixture
-
-# Import the modules to test
-
-
-from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from homodyne.core.config import ConfigManager

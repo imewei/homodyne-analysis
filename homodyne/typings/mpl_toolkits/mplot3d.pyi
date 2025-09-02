@@ -39,7 +39,7 @@ class Axes3D(Axes):
         color: str | None = ...,
         **kwargs: Any,
     ) -> Any: ...
-    def scatter(
+    def scatter(  # type: ignore[override]
         self,
         xs: Any,
         ys: Any,

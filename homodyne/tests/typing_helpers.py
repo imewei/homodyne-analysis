@@ -7,15 +7,16 @@ and mock objects in tests, improving type safety while maintaining compatibility
 with missing scientific computing dependencies.
 """
 
-from typing import Any, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import Mock
+
 
 def mock_analysis_core() -> Any:
     """Create properly typed mock analysis core."""
     return cast(Any, Mock())
 
 def mock_mcmc_sampler() -> Any:
-    """Create properly typed mock MCMC sampler.""" 
+    """Create properly typed mock MCMC sampler."""
     return cast(Any, Mock())
 
 def mock_classical_optimizer() -> Any:
@@ -29,18 +30,18 @@ def mock_robust_optimizer() -> Any:
 def check_dependencies_available() -> bool:
     """Check if optional dependencies are available for testing."""
     try:
-        import pymc
-        import arviz
-        return True
+        import importlib.util
+        return (importlib.util.find_spec("pymc") is not None and
+                importlib.util.find_spec("arviz") is not None)
     except ImportError:
         return False
 
 def check_performance_deps_available() -> bool:
     """Check if performance testing dependencies are available."""
     try:
-        import numba
-        import scipy.optimize
-        return True
+        import importlib.util
+        return (importlib.util.find_spec("numba") is not None and
+                importlib.util.find_spec("scipy.optimize") is not None)
     except ImportError:
         return False
 
@@ -48,12 +49,12 @@ def check_performance_deps_available() -> bool:
 if TYPE_CHECKING:
     try:
         from homodyne.analysis.core import HomodyneAnalysisCore
-        from homodyne.optimization.mcmc import MCMCSampler
         from homodyne.optimization.classical import ClassicalOptimizer
+        from homodyne.optimization.mcmc import MCMCSampler
         from homodyne.optimization.robust import RobustHomodyneOptimizer
     except ImportError:
         # Fallback types for type checking when imports fail
         HomodyneAnalysisCore = Any  # type: ignore
-        MCMCSampler = Any  # type: ignore  
+        MCMCSampler = Any  # type: ignore
         ClassicalOptimizer = Any  # type: ignore
         RobustHomodyneOptimizer = Any  # type: ignore

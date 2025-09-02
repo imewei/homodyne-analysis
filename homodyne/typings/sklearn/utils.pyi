@@ -1,5 +1,6 @@
 # sklearn.utils type stubs
 from typing import Any
+
 from numpy.typing import NDArray
 
 def resample(

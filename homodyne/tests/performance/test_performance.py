@@ -28,6 +28,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -46,9 +47,6 @@ logger = logging.getLogger(__name__)
 
 # Add the project root to the path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import Mock
 
 if TYPE_CHECKING:
     from homodyne.analysis.core import HomodyneAnalysisCore

@@ -26,7 +26,7 @@ try:
 
     MCMC_MODULE_AVAILABLE = True
 except ImportError:
-    from typing import cast, Any
+    from typing import Any, cast
     from unittest.mock import Mock
     MCMC_MODULE_AVAILABLE = False
     MCMCSampler = cast(Any, Mock())  # type: ignore[misc]
