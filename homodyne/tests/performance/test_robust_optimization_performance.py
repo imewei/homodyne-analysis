@@ -372,9 +372,7 @@ class TestRobustOptimizationPerformance:
                 0.01 if os.getenv("CI") else 0.005
             )  # 10ms or 5ms per scenario
             max_time = base_time_per_scenario * n_scenarios
-            assert (
-                scenario_time < max_time
-            ), f"Scenario generation too slow: {
+            assert scenario_time < max_time, f"Scenario generation too slow: {
                 scenario_time:.4f}s for {n_scenarios} scenarios (max: {max_time:.4f}s)"
             assert len(scenarios) == n_scenarios
 

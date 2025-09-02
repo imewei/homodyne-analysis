@@ -621,9 +621,7 @@ class TestMCMCPlots:
                 )
                 print(f"All files in directory: {all_files}")
 
-            assert (
-                len(plot_files) == 1
-            ), f"Expected 1 trace plot file, found {
+            assert len(plot_files) == 1, f"Expected 1 trace plot file, found {
                 len(plot_files)
             }. All files: {all_files}"
 

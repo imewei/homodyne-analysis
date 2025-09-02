@@ -655,9 +655,7 @@ class TestAngleFilteringEdgeCases:
                     is_included = True
                     break
 
-            assert (
-                is_included == should_include
-            ), f"Angle {angle}° should be {
+            assert is_included == should_include, f"Angle {angle}° should be {
                 'included' if should_include else 'excluded'
             }"
 

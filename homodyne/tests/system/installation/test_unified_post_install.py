@@ -71,7 +71,7 @@ class TestUnifiedPostInstall:
         """Test virtual environment detection across different types."""
         # Test conda environment detection
         with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": "test_env"}):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
         # Test venv detection via sys.prefix difference
         with (
@@ -79,7 +79,7 @@ class TestUnifiedPostInstall:
             patch("sys.prefix", "/home/user/venv"),
             patch("sys.base_prefix", "/usr/local"),
         ):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
         # Test virtualenv detection via real_prefix
         with (
@@ -88,7 +88,7 @@ class TestUnifiedPostInstall:
             patch("sys.base_prefix", "/home/user/virtualenv"),
             patch("builtins.hasattr", lambda obj, name: name == "real_prefix"),
         ):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
         # Test no virtual environment
         with (
@@ -97,7 +97,7 @@ class TestUnifiedPostInstall:
             patch("sys.base_prefix", "/usr/local"),
             patch("builtins.hasattr", return_value=False),
         ):
-            assert is_virtual_environment() == False
+            assert is_virtual_environment() is False
 
 
 @pytest.mark.skipif(
@@ -156,7 +156,7 @@ class TestUnifiedShellCompletion:
                         force=True
                     )  # Don't pass shell_type for interactive test
 
-                assert result == True
+                assert result is True
                 mock_create.assert_called_once_with(venv_path)
 
     def test_install_shell_completion_non_interactive(self):
@@ -177,7 +177,7 @@ class TestUnifiedShellCompletion:
                 with patch("sys.prefix", str(venv_path)):
                     result = install_shell_completion(shell_type="zsh", force=True)
 
-                assert result == True
+                assert result is True
                 mock_create.assert_called_once_with(venv_path)
 
 
@@ -208,7 +208,7 @@ class TestSmartGPUSetup:
             ):
                 result = install_gpu_acceleration(force=False)
 
-                assert result == True
+                assert result is True
                 # Should create activation directories if conda environment
                 if mock_mkdir.call_args_list:
                     # Check that directories were created
@@ -228,7 +228,7 @@ class TestSmartGPUSetup:
                 result = install_gpu_acceleration(force=False)
 
                 # Should return False on non-Linux platforms and print info message
-                assert result == False
+                assert result is False
                 # Should inform user about platform limitation
                 print_calls = [str(call) for call in mock_print.call_args_list]
                 assert any("Linux" in call for call in print_calls)
@@ -260,7 +260,7 @@ class TestAdvancedFeaturesIntegration:
                 result = install_advanced_features()
 
                 # Since we have the actual runtime files, this should succeed
-                assert result == True
+                assert result is True
                 # CLI tools should be created - check for characteristic content patterns
                 expected_content_patterns = [
                     "from optimizer import main",  # This should be in gpu-optimize script

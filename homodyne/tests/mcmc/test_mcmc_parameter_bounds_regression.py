@@ -409,9 +409,7 @@ class TestMCMCParameterBoundsRegression:
 
             # Check if value is within bounds (inclusive)
             within_bounds = bound["min"] <= value <= bound["max"]
-            assert (
-                within_bounds
-            ), f"Value {value} should be within bounds [{
+            assert within_bounds, f"Value {value} should be within bounds [{
                 bound['min']
             }, {bound['max']}] for case {case_name}"
 

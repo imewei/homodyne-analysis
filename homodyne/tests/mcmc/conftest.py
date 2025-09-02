@@ -55,6 +55,6 @@ def mcmc_config():
 def skip_if_no_pymc(request):
     """Skip test if PyMC is not available."""
     try:
-        import pymc
+        import pymc  # noqa: F401
     except ImportError:
         pytest.skip("PyMC not available")

@@ -53,7 +53,7 @@ class TestUnifiedShellCompletion:
         with patch("homodyne.post_install.is_virtual_environment", return_value=False):
             result = install_shell_completion(shell_type="zsh", force=False)
             # Should return False when not in virtual environment
-            assert result == False
+            assert result is False
 
     def test_install_shell_completion_force_override(self):
         """Test that force parameter overrides virtual environment check."""
@@ -82,7 +82,7 @@ class TestUninstallScripts:
         """Test virtual environment detection."""
         # Test conda environment
         with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": "test_env"}):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
         # Test virtual environment
         with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": ""}, clear=True):
@@ -90,7 +90,7 @@ class TestUninstallScripts:
                 patch("sys.prefix", "/home/user/venv"),
                 patch("sys.base_prefix", "/usr"),
             ):
-                assert is_virtual_environment() == True
+                assert is_virtual_environment() is True
 
         # Test no virtual environment - need to patch sys attributes and clear env
         with (
@@ -100,11 +100,11 @@ class TestUninstallScripts:
         ):
             # Also patch hasattr to ensure no 'real_prefix'
             with patch("builtins.hasattr", return_value=False):
-                assert is_virtual_environment() == False
+                assert is_virtual_environment() is False
 
     def test_cleanup_completion_files_success(self):
         """Test successful cleanup of completion files."""
-        mock_files = [
+        mock_files = [  # noqa: F841  # noqa: F841
             "/venv/etc/zsh/homodyne-completion.zsh",
             "/venv/etc/bash/homodyne-completion.sh",
         ]
@@ -139,7 +139,7 @@ class TestUninstallScripts:
             patch("sys.argv", ["homodyne-cleanup", "--help"]),
         ):
             with pytest.raises(SystemExit) as exc_info:
-                result = cleanup_main()
+                result = cleanup_main()  # noqa: F841
             # Help should exit with code 0
             assert exc_info.value.code == 0
 
@@ -289,7 +289,7 @@ class TestUnifiedSystemCleanupUpdated:
         # Dry-run should show files but not remove them
         # This is critical functionality that was previously broken
         dry_run_should_not_remove = True
-        assert dry_run_should_not_remove == True
+        assert dry_run_should_not_remove is True
 
 
 class TestPostInstallIntegration:

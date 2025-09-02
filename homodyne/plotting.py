@@ -1502,7 +1502,6 @@ def plot_diagnostic_summary(
             # Try to compute uncertainties from MCMC trace if not available
             if not uncertainties and "mcmc_trace" in results and az is not None:
                 try:
-
                     trace_data = results["mcmc_trace"]
                     if hasattr(trace_data, "posterior"):
                         # Get parameter names from config or trace data
@@ -1603,7 +1602,6 @@ def plot_diagnostic_summary(
                 # Try to compute R-hat from trace data if missing
                 if not r_hat_dict and "mcmc_trace" in results and az is not None:
                     try:
-
                         trace_data = results["mcmc_trace"]
                         if hasattr(trace_data, "posterior"):
                             r_hat_summary = az.rhat(trace_data)

@@ -1,6 +1,6 @@
 # Development dependencies for Homodyne Scattering Analysis Package
 # Generated from pyproject.toml [project.optional-dependencies.dev]
-# Latest update: Enhanced testing framework and improved virtual environment support (v0.7.2)
+# Latest update: Comprehensive testing framework with resolved dependency availability tests (v0.7.2)
 
 # Include core dependencies
 -r requirements.txt
@@ -54,4 +54,4 @@ build>=0.10.0
 twine>=4.0.0
 
 # Shell completion and enhanced virtual environment integration
-argcomplete>=3.0.0  # Shell completion setup with enhanced testing framework and mamba/venv support
+argcomplete>=3.0.0  # Shell completion setup with comprehensive testing framework and mamba/venv support

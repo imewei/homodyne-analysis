@@ -16,8 +16,8 @@ for reliable and comparable results across different optimization approaches.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .classical import ClassicalOptimizer as _ClassicalOptimizer  # noqa: F401
-    from .mcmc import MCMCSampler as _MCMCSampler  # noqa: F401
+    from .classical import ClassicalOptimizer as _ClassicalOptimizer
+    from .mcmc import MCMCSampler as _MCMCSampler
 
 # Track available exports
 _available_exports: list[str] = []
@@ -28,7 +28,7 @@ try:
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:
-    ClassicalOptimizer = None  # type: ignore[misc]
+    ClassicalOptimizer = None  # type: ignore[assignment]
     import warnings
 
     warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning, stacklevel=2)
@@ -39,8 +39,8 @@ try:
 
     _available_exports.extend(["MCMCSampler", "create_mcmc_sampler"])
 except ImportError as e:
-    MCMCSampler = None  # type: ignore[misc]
-    create_mcmc_sampler = None  # type: ignore[misc]
+    MCMCSampler = None  # type: ignore[assignment]
+    create_mcmc_sampler = None  # type: ignore[assignment]
     import warnings
 
     warnings.warn(
@@ -50,4 +50,4 @@ except ImportError as e:
     )
 
 # Dynamic __all__ - suppress Pylance warning as this is intentional
-__all__ = _available_exports  # type: ignore[misc]
+__all__ = _available_exports

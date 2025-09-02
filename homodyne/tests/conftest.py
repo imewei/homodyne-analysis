@@ -419,7 +419,7 @@ def sample_config_path():
 
 
 # Import all fixtures from fixtures module to make them available
-from homodyne.tests.fixtures import *  # noqa: F403,E402,F401
+from homodyne.tests.fixtures import *  # noqa: F403, E402
 
 
 def pytest_report_header(config):

@@ -1,6 +1,6 @@
-# Optional dependencies for Homodyne Scattering Analysis Package with enhanced testing framework
+# Optional dependencies for Homodyne Scattering Analysis Package with comprehensive testing framework
 # Generated from pyproject.toml [project.optional-dependencies]
-# Latest update: Enhanced testing framework and improved virtual environment support (v0.7.2)
+# Latest update: Comprehensive testing framework with resolved dependency availability tests (v0.7.2)
 
 # Include core dependencies
 -r requirements.txt

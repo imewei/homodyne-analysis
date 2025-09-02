@@ -259,7 +259,7 @@ class TestDryRunFunctionality:
                 result = show_dry_run()
 
                 # Should show what would be removed
-                assert result == True
+                assert result is True
 
                 # CRITICAL: Files should still exist (not actually removed)
                 for file_path in test_files:
@@ -460,7 +460,7 @@ class TestCleanupDirectoryManagement:
                 result = cleanup_all_files()
 
                 # Should attempt to clean up empty directories
-                assert result == True
+                assert result is True
 
     def test_cleanup_preserves_non_empty_directories(self):
         """Test that non-empty directories are preserved."""

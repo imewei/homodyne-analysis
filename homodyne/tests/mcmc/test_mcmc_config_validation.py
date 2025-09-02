@@ -32,7 +32,7 @@ import pytest
 # Test PyMC availability - dynamic check
 def _check_pymc_available():
     try:
-        import pymc
+        import pymc  # noqa: F401
 
         return True
     except ImportError:

@@ -419,9 +419,9 @@ class TestMCMCPerformance:
         for sample_config in sample_counts:
             config = MCMC_PERFORMANCE_CONFIG.copy()
             config["optimization_config"]["mcmc_sampling"].update(sample_config)
-            config["optimization_config"]["mcmc_sampling"][
-                "use_jax"
-            ] = False  # Consistent backend
+            config["optimization_config"]["mcmc_sampling"]["use_jax"] = (
+                False  # Consistent backend
+            )
 
             sampler = MCMCSampler(mcmc_mock_core, config)
 

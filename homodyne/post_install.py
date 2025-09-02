@@ -413,7 +413,7 @@ def interactive_setup():
     # Perform installations
     results = []
 
-    if install_completion:
+    if install_completion and shell_type:
         if install_shell_completion(shell_type):
             results.append(f"✅ {shell_type.title()} completion")
         else:

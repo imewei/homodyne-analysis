@@ -55,7 +55,7 @@ class TestUnifiedGPUInstallation:
             ):
                 result = install_gpu_acceleration(force=False)
 
-                assert result == True
+                assert result is True
                 # Should create GPU directories and files
                 mock_mkdir.assert_called()
                 mock_write.assert_called()
@@ -92,7 +92,7 @@ class TestUnifiedGPUInstallation:
             ):
                 result = install_advanced_features()
 
-                assert result == True
+                assert result is True
                 # Should create advanced CLI tools
                 mock_write.assert_called()
                 mock_chmod.assert_called()
@@ -143,8 +143,8 @@ class TestUnifiedGPUInstallation:
                 shell_result = install_gpu_acceleration(force=False)
                 advanced_result = install_advanced_features()
 
-                assert shell_result == True
-                assert advanced_result == True
+                assert shell_result is True
+                assert advanced_result is True
 
                 # Should create directories and files
                 mock_mkdir.assert_called()
@@ -156,7 +156,7 @@ class TestUnifiedGPUInstallation:
         mock_platform.return_value = "Windows"
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            venv_path = Path(temp_dir)
+            venv_path = Path(temp_dir)  # noqa: F841
 
             with (
                 patch(
@@ -168,7 +168,7 @@ class TestUnifiedGPUInstallation:
                 gpu_result = install_gpu_acceleration(force=False)
 
                 # Should return False but handle gracefully (no crash)
-                assert gpu_result == False
+                assert gpu_result is False
 
                 # Should inform user about platform limitations
                 print_calls = [str(call) for call in mock_print.call_args_list]
@@ -182,7 +182,7 @@ class TestUnifiedGPUInstallation:
             patch("builtins.print") as mock_print,
         ):
             with tempfile.TemporaryDirectory() as temp_dir:
-                venv_path = Path(temp_dir)
+                venv_path = Path(temp_dir)  # noqa: F841
 
                 # Should handle non-virtual environment gracefully
                 result = install_gpu_acceleration(force=False)
@@ -215,15 +215,15 @@ class TestUnifiedIntegrationHelpers:
 
         # Test conda environment
         with patch.dict("os.environ", {"CONDA_DEFAULT_ENV": "test"}):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
         # Test mamba environment
         with patch.dict("os.environ", {"MAMBA_ROOT_PREFIX": "/path/to/mamba"}):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
         # Test venv environment
         with patch.dict("os.environ", {"VIRTUAL_ENV": "/path/to/venv"}):
-            assert is_virtual_environment() == True
+            assert is_virtual_environment() is True
 
     def test_unified_system_path_resolution(self):
         """Test unified system path resolution."""
@@ -263,7 +263,7 @@ class TestUnifiedScriptGeneration:
                 patch.object(Path, "exists", return_value=True),
             ):
                 result = install_gpu_acceleration(force=False)
-                assert result == True
+                assert result is True
 
                 # Verify activation script was created
                 activate_script = (

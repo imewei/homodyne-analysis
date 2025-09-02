@@ -174,9 +174,7 @@ class TestParameterValidation:
             assert "name" in bound
             assert "min" in bound
             assert "max" in bound
-            assert (
-                bound["min"] < bound["max"]
-            ), f"Invalid bound for {bound['name']}: {
+            assert bound["min"] < bound["max"], f"Invalid bound for {bound['name']}: {
                 bound['min']
             } >= {bound['max']}"
 
@@ -336,14 +334,10 @@ class TestParameterTypes:
 
                 # LogNormal parameters should have positive bounds
                 if bound["type"] == "LogNormal":
-                    assert (
-                        bound["min"] > 0
-                    ), f"LogNormal parameter {
+                    assert bound["min"] > 0, f"LogNormal parameter {
                         bound['name']
                     } must have positive min bound"
-                    assert (
-                        bound["max"] > 0
-                    ), f"LogNormal parameter {
+                    assert bound["max"] > 0, f"LogNormal parameter {
                         bound['name']
                     } must have positive max bound"
 
@@ -515,9 +509,7 @@ class TestJSONSchemaCompliance:
                         or key.lower().startswith("use_")
                     ):
                         # These should probably be booleans
-                        assert isinstance(
-                            value, bool
-                        ), f"{
+                        assert isinstance(value, bool), f"{
                             current_path
                         } should be boolean but is {type(value)}"
                     else:
