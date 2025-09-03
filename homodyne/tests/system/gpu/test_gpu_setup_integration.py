@@ -160,72 +160,54 @@ class TestMCMCGPUIntegration:
     """Test MCMC GPU integration functionality."""
 
     def test_mcmc_sampler_gpu_intent_detection(self):
-        """Test MCMC sampler detects GPU intent correctly."""
+        """Test isolated MCMC backend selection based on GPU intent."""
         try:
-            from homodyne.optimization.mcmc import MCMCSampler
+            from homodyne.run_homodyne import get_mcmc_backend
         except ImportError:
             pytest.skip("MCMC module not available")
 
-        # Create minimal config for testing
-        config = {
-            "initial_parameters": {"parameter_names": ["D0", "alpha", "D_offset"]},
-            "optimization_config": {"mcmc_sampling": {}},
-        }
-
-        class MockCore:
-            def __init__(self):
-                self.config = config
-
         original_intent = os.environ.get("HOMODYNE_GPU_INTENT")
-        original_jax_platforms = os.environ.get("JAX_PLATFORMS")
 
         try:
-            # Test CPU-only mode (no GPU intent)
+            # Test CPU backend selection (no GPU intent)
             os.environ.pop("HOMODYNE_GPU_INTENT", None)
-
-            # Mock PYMC_AVAILABLE to bypass the dependency check
-            with (
-                patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True),
-                patch("logging.Logger.info") as mock_info,
-            ):
-                try:
-                    sampler = MCMCSampler(MockCore(), config)
-                except ImportError:
-                    pytest.skip("PyMC dependencies not available in test environment")
-
-                # Should initialize successfully (CPU-only PyMC implementation)
-                assert sampler.core is not None, "Core should be initialized"
-                assert sampler.config is not None, "Config should be initialized"
-                # Check that it's using CPU-only mode (no JAX backend attribute in PyMC implementation)
-                assert not hasattr(sampler, "use_jax_backend") or not getattr(
-                    sampler, "use_jax_backend", True
-                ), "Should not have JAX backend enabled in CPU mode"
-                assert os.environ.get("JAX_PLATFORMS") == "cpu", (
-                    "Should set JAX_PLATFORMS=cpu"
+            
+            try:
+                mcmc_func, backend_name, has_gpu = get_mcmc_backend()
+                
+                # Should select CPU backend (PyMC)
+                assert "cpu" in backend_name.lower() or "pymc" in backend_name.lower(), (
+                    f"Should select CPU backend, got {backend_name}"
                 )
+                assert not has_gpu, "CPU backend should not report GPU capabilities"
+                
+                # Check that it's the CPU backend function
+                assert "cpu" in mcmc_func.__module__, (
+                    f"Should import from CPU backend module, got {mcmc_func.__module__}"
+                )
+                
+            except ImportError:
+                pytest.skip("PyMC CPU backend not available in test environment")
 
-                # Check logging messages
-                info_calls = [call.args[0] for call in mock_info.call_args_list]
-                cpu_message_found = any("CPU-only" in msg for msg in info_calls)
-                assert cpu_message_found, "Should log CPU-only mode message"
-
-            # Test GPU mode (with GPU intent)
+            # Test GPU backend selection (with GPU intent)
             os.environ["HOMODYNE_GPU_INTENT"] = "true"
-            os.environ.pop("JAX_PLATFORMS", None)  # Reset JAX_PLATFORMS
-
-            with (
-                patch("homodyne.optimization.mcmc.PYMC_AVAILABLE", True),
-                patch("logging.Logger.info") as mock_info,
-            ):
-                try:
-                    sampler = MCMCSampler(MockCore(), config)
-                except ImportError:
-                    pytest.skip("PyMC dependencies not available in test environment")
-
-                # Should allow GPU backend (if JAX available)
-                info_calls = [call.args[0] for call in mock_info.call_args_list]
-                gpu_message_found = any("homodyne-gpu" in msg for msg in info_calls)
-                assert gpu_message_found, "Should log GPU intent detection"
+            
+            try:
+                mcmc_func, backend_name, has_gpu = get_mcmc_backend()
+                
+                # Should select GPU backend (NumPyro) or fallback to CPU
+                assert ("gpu" in backend_name.lower() or "numpyro" in backend_name.lower() or 
+                        "cpu" in backend_name.lower()), (
+                    f"Should select GPU backend or fallback, got {backend_name}"
+                )
+                
+                # Check that it's from the appropriate backend module
+                assert ("gpu" in mcmc_func.__module__ or "cpu" in mcmc_func.__module__), (
+                    f"Should import from backend module, got {mcmc_func.__module__}"
+                )
+                
+            except ImportError:
+                pytest.skip("GPU backend dependencies not available in test environment")
 
         finally:
             # Restore original environment
@@ -234,32 +216,27 @@ class TestMCMCGPUIntegration:
             else:
                 os.environ.pop("HOMODYNE_GPU_INTENT", None)
 
-            if original_jax_platforms is not None:
-                os.environ["JAX_PLATFORMS"] = original_jax_platforms
-            else:
-                os.environ.pop("JAX_PLATFORMS", None)
-
     def test_jax_availability_check(self):
-        """Test JAX availability detection."""
+        """Test JAX availability detection in isolated backends."""
         try:
-            from homodyne.optimization.mcmc import JAX_AVAILABLE
+            from homodyne.optimization.mcmc_gpu_backend import is_gpu_mcmc_available
 
-            logger.info(f"JAX_AVAILABLE: {JAX_AVAILABLE}")
+            gpu_available = is_gpu_mcmc_available()
+            logger.info(f"GPU MCMC backend available: {gpu_available}")
 
-            # JAX_AVAILABLE should be boolean
-            assert isinstance(JAX_AVAILABLE, bool)
+            # GPU availability should be boolean
+            assert isinstance(gpu_available, bool)
 
-            # If JAX is available, should be able to import it
-            if JAX_AVAILABLE:
+            # If GPU backend is available, should be able to import JAX
+            if gpu_available:
                 import jax
-
                 logger.info(f"JAX version: {jax.__version__}")
                 logger.info(f"JAX devices: {jax.devices()}")
             else:
-                logger.info("JAX not available - this is normal on some systems")
+                logger.info("JAX/GPU backend not available - this is normal on some systems")
 
         except ImportError:
-            pytest.skip("MCMC module not available")
+            pytest.skip("GPU MCMC backend module not available")
 
 
 class TestGPUSetupScriptLogic:
