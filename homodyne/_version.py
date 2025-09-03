@@ -2,19 +2,21 @@
 # don't change, don't track in version control
 
 __all__ = [
-    "__commit_id__",
     "__version__",
     "__version_tuple__",
-    "commit_id",
     "version",
     "version_tuple",
+    "__commit_id__",
+    "commit_id",
 ]
 
-from typing import TYPE_CHECKING
-
+TYPE_CHECKING = False
 if TYPE_CHECKING:
-    VERSION_TUPLE = tuple[int | str, ...]
-    COMMIT_ID = str | None
+    from typing import Tuple
+    from typing import Union
+
+    VERSION_TUPLE = Tuple[Union[int, str], ...]
+    COMMIT_ID = Union[str, None]
 else:
     VERSION_TUPLE = object
     COMMIT_ID = object
@@ -26,7 +28,7 @@ version_tuple: VERSION_TUPLE
 commit_id: COMMIT_ID
 __commit_id__: COMMIT_ID
 
-__version__ = version = '0.7.1.post67+dirty'
-__version_tuple__ = version_tuple = (0, 7, 1, 'post67', 'dirty')
+__version__ = version = '0.7.1.post74+dirty'
+__version_tuple__ = version_tuple = (0, 7, 1, 'post74', 'dirty')
 
-__commit_id__ = commit_id = 'g27d73996f'
+__commit_id__ = commit_id = 'ga41c25261'

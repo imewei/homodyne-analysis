@@ -169,9 +169,9 @@ def interactive_cleanup():
         # GPU setup (Linux only)
         remove_gpu = False
         if platform.system() == "Linux":
-            print("\n2. GPU Acceleration Setup")
-            print("   - Removes GPU environment configuration")
-            print("   - Removes CUDA activation scripts")
+            print("\n2. GPU Acceleration Setup (NumPyro + JAX)")
+            print("   - Removes NumPyro GPU environment configuration")
+            print("   - Removes CUDA activation scripts and HOMODYNE_GPU_INTENT setup")
 
             remove_gpu = input("   Remove GPU setup? [y/N]: ").lower().startswith("y")
 
@@ -417,7 +417,7 @@ def main():
             if not args.interactive:
                 print("\n💡 What was cleaned:")
                 print("   ├─ Shell completion scripts (bash/zsh/fish)")
-                print("   ├─ GPU acceleration setup")
+                print("   ├─ GPU acceleration setup (NumPyro + JAX)")
                 print("   ├─ Conda activation scripts")
                 print("   └─ Legacy system files")
             print("\n🔄 Next steps:")

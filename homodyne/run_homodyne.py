@@ -125,21 +125,56 @@ except ImportError:
         ClassicalOptimizer = None
         create_robust_optimizer = None
 
-# Import MCMC components - these require additional dependencies (PyMC, ArviZ)
+# Import MCMC components with GPU/CPU routing
+
+
+def get_mcmc_sampler():
+    """Get appropriate MCMC sampler based on environment."""
+    gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
+
+    if gpu_intent:
+        # Try GPU implementation first
+        try:
+            from .optimization.mcmc_gpu import create_gpu_mcmc_sampler
+
+            return create_gpu_mcmc_sampler, "NumPyro_GPU"
+        except ImportError:
+            try:
+                from homodyne.optimization.mcmc_gpu import create_gpu_mcmc_sampler
+
+                return create_gpu_mcmc_sampler, "NumPyro_GPU"
+            except ImportError:
+                logging.getLogger(__name__).warning(
+                    "GPU MCMC not available, falling back to CPU"
+                )
+                gpu_intent = False
+
+    if not gpu_intent:
+        # CPU implementation
+        try:
+            from .optimization.mcmc import create_mcmc_sampler
+
+            return create_mcmc_sampler, "PyMC_CPU"
+        except ImportError:
+            try:
+                from homodyne.optimization.mcmc import create_mcmc_sampler
+
+                return create_mcmc_sampler, "PyMC_CPU"
+            except ImportError:
+                return None, None
+
+
+# Initialize MCMC availability
 try:
-    # Try relative import first
-    from .optimization.mcmc import create_mcmc_sampler
-
-    MCMC_AVAILABLE = True
-except ImportError:
-    try:
-        # Try absolute import as fallback
-        from homodyne.optimization.mcmc import create_mcmc_sampler
-
-        MCMC_AVAILABLE = True
-    except ImportError:
-        create_mcmc_sampler = None
-        MCMC_AVAILABLE = False
+    create_mcmc_sampler, mcmc_backend = get_mcmc_sampler()
+    MCMC_AVAILABLE = create_mcmc_sampler is not None
+    if MCMC_AVAILABLE:
+        logging.getLogger(__name__).info(f"MCMC backend available: {mcmc_backend}")
+except Exception as e:
+    create_mcmc_sampler = None
+    mcmc_backend = None
+    MCMC_AVAILABLE = False
+    logging.getLogger(__name__).warning(f"MCMC initialization failed: {e}")
 
 
 class MockResult:
@@ -222,19 +257,22 @@ def print_banner(args: argparse.Namespace) -> None:
     args : argparse.Namespace
         Parsed command-line arguments containing analysis configuration
     """
-    print("=" * 60)
-    print("            HOMODYNE ANALYSIS RUNNER")
-    print("=" * 60)
-    print()
-    print(f"Method:           {args.method}")
-    print(f"Config file:      {args.config}")
-    print(f"Output directory: {args.output_dir}")
+    logger = logging.getLogger(__name__)
+
+    # Use logger.info for banner - respects --quiet setting
+    logger.info("=" * 60)
+    logger.info("            HOMODYNE ANALYSIS RUNNER")
+    logger.info("=" * 60)
+    logger.info("")
+    logger.info(f"Method:           {args.method}")
+    logger.info(f"Config file:      {args.config}")
+    logger.info(f"Output directory: {args.output_dir}")
     if args.quiet:
-        print(
+        logger.info(
             f"Logging:          File only ({'DEBUG' if args.verbose else 'INFO'} level)"
         )
     else:
-        print(
+        logger.info(
             f"Verbose logging:  {
                 'Enabled (DEBUG)' if args.verbose else 'Disabled (INFO)'
             }"
@@ -242,19 +280,21 @@ def print_banner(args: argparse.Namespace) -> None:
 
     # Show analysis mode
     if args.static_isotropic:
-        print("Analysis mode:    Static isotropic (3 parameters, no angle selection)")
+        logger.info(
+            "Analysis mode:    Static isotropic (3 parameters, no angle selection)"
+        )
     elif args.static_anisotropic:
-        print(
+        logger.info(
             "Analysis mode:    Static anisotropic (3 parameters, with angle selection)"
         )
     elif args.laminar_flow:
-        print("Analysis mode:    Laminar flow (7 parameters)")
+        logger.info("Analysis mode:    Laminar flow (7 parameters)")
     else:
-        print("Analysis mode:    From configuration file")
+        logger.info("Analysis mode:    From configuration file")
 
-    print()
-    print("Starting analysis...")
-    print("-" * 60)
+    logger.info("")
+    logger.info("Starting analysis...")
+    logger.info("-" * 60)
 
 
 def run_analysis(args: argparse.Namespace) -> None:
@@ -2381,6 +2421,28 @@ def _generate_mcmc_plots(
             best_params, phi_angles
         )
 
+        # Apply least squares scaling to create fitted data (matching classical/robust methods)
+        c2_fitted = c2_theory.copy()
+        for j in range(c2_exp.shape[0]):  # For each angle
+            exp_data = c2_exp[j].flatten()
+            theory_data = c2_theory[j].flatten()
+
+            # Least squares scaling: fitted = contrast * theory + offset
+            A = np.vstack([theory_data, np.ones(len(theory_data))]).T
+            try:
+                scaling, residuals_ls, rank, s = np.linalg.lstsq(
+                    A, exp_data, rcond=None
+                )
+                contrast, offset = scaling
+
+                # Apply scaling to this angle slice
+                c2_fitted[j] = theory_data.reshape(c2_exp[j].shape) * contrast + offset
+            except np.linalg.LinAlgError:
+                logger.warning(
+                    f"Could not apply scaling for angle {j}, using unscaled theory"
+                )
+                c2_fitted[j] = c2_theory[j]
+
         # Generate C2 heatmaps in mcmc directory
         try:
             from homodyne.plotting import plot_c2_heatmaps
@@ -2390,7 +2452,7 @@ def _generate_mcmc_plots(
             logger.info("Generating C2 correlation heatmaps for MCMC results...")
             success = plot_c2_heatmaps(
                 c2_exp,
-                c2_theory,
+                c2_fitted,
                 phi_angles,
                 mcmc_dir,
                 config,
@@ -2522,7 +2584,7 @@ def _generate_mcmc_plots(
                                 # Extract data for this angle
                                 # Shape: (n_t2, n_t1)
                                 c2_exp_angle = c2_exp[angle_idx]
-                                c2_fitted_angle = c2_theory[
+                                c2_fitted_angle = c2_fitted[
                                     angle_idx
                                 ]  # Shape: (n_t2, n_t1)
                                 c2_samples_angle = c2_posterior_samples[
@@ -2590,7 +2652,7 @@ def _generate_mcmc_plots(
 
                     success = plot_3d_surface(
                         c2_experimental=c2_exp[angle_idx],
-                        c2_fitted=c2_theory[angle_idx],
+                        c2_fitted=c2_fitted[angle_idx],
                         posterior_samples=None,  # No confidence intervals
                         phi_angle=angle_deg,
                         outdir=mcmc_dir,
@@ -2610,6 +2672,119 @@ def _generate_mcmc_plots(
         except Exception as e:
             logger.error(f"Failed to generate 3D surface plots: {e}")
 
+        # Save standardized MCMC data files (matching classical/robust methods)
+        try:
+            import json
+
+            # Calculate residuals for data saving (using fitted data)
+            residuals = c2_exp - c2_fitted
+
+            # Get parameter names and create parameter dictionary
+            param_names = config.get("initial_parameters", {}).get(
+                "parameter_names", []
+            )
+            param_dict = dict(zip(param_names, best_params, strict=False))
+
+            # Get diagnostics for quality assessment
+            diagnostics = mcmc_results.get("diagnostics", {})
+            convergence_quality = "unknown"
+            if diagnostics:
+                max_rhat = diagnostics.get("max_rhat", float("inf"))
+                min_ess = diagnostics.get("min_ess", 0)
+                if max_rhat < 1.01 and min_ess > 400:
+                    convergence_quality = "excellent"
+                elif max_rhat < 1.05 and min_ess > 200:
+                    convergence_quality = "good"
+                elif max_rhat < 1.1 and min_ess > 100:
+                    convergence_quality = "acceptable"
+                else:
+                    convergence_quality = "poor"
+
+            # Create standardized parameter info (matching classical/robust format)
+            method_info = {
+                "method": "MCMC_NUTS",
+                "parameters": param_dict,
+                "parameter_names": param_names,
+                "convergence_quality": convergence_quality,
+                "execution_time": mcmc_results.get("time", 0.0),
+                "mcmc_diagnostics": {
+                    "max_rhat": diagnostics.get("max_rhat", None),
+                    "min_ess": diagnostics.get("min_ess", None),
+                    "converged": diagnostics.get("converged", False),
+                    "assessment": diagnostics.get("assessment", "Unknown"),
+                },
+                "posterior_means": mcmc_results.get("posterior_means", {}),
+                "backend_info": {
+                    "backend": mcmc_results.get("performance_metrics", {}).get(
+                        "backend_used", "Unknown"
+                    ),
+                    "implementation": "PyMC"
+                    if "PyMC" in str(type(mcmc_results.get("trace")))
+                    else "NumPyro",
+                },
+            }
+
+            # Save standardized parameters.json file
+            params_file = mcmc_dir / "parameters.json"
+            with open(params_file, "w") as f:
+                json.dump(method_info, f, indent=2, default=str)
+            logger.info(f"✓ MCMC parameters saved to: {params_file}")
+
+            # Calculate parameter uncertainties from MCMC posterior
+            uncertainties = np.array([])
+            try:
+                if "trace" in mcmc_results:
+                    trace = mcmc_results["trace"]
+                    if hasattr(trace, "posterior"):
+                        # Extract standard deviations as uncertainties
+                        uncertainties_list = []
+                        for param_name in param_names:
+                            if param_name in trace.posterior:
+                                param_data = trace.posterior[param_name].values.reshape(
+                                    -1
+                                )
+                                uncertainties_list.append(np.std(param_data))
+                            else:
+                                uncertainties_list.append(np.nan)
+                        uncertainties = np.array(uncertainties_list)
+            except Exception as e:
+                logger.warning(f"Could not calculate MCMC parameter uncertainties: {e}")
+                uncertainties = np.full(len(best_params), np.nan)
+
+            # Calculate chi-squared goodness of fit
+            chi_squared = np.nan
+            try:
+                # Calculate chi-squared using flattened residuals
+                residuals_flat = residuals.flatten()
+                # Remove any NaN values for chi-squared calculation
+                valid_residuals = residuals_flat[~np.isnan(residuals_flat)]
+                if len(valid_residuals) > 0:
+                    chi_squared = np.sum(valid_residuals**2)
+            except Exception as e:
+                logger.warning(f"Could not calculate chi-squared for MCMC: {e}")
+
+            # Save standardized fitted_data.npz file
+            data_file = mcmc_dir / "fitted_data.npz"
+            np.savez_compressed(
+                data_file,
+                c2_fitted=c2_fitted,
+                c2_experimental=c2_exp,
+                residuals=residuals,
+                phi_angles=phi_angles,
+                parameters=np.array(best_params),
+                uncertainties=uncertainties,
+                parameter_names=param_names,
+                chi_squared=chi_squared,
+                t1=t1,
+                t2=t2,
+                method="MCMC_NUTS",
+                convergence_quality=convergence_quality,
+            )
+            logger.info(f"✓ MCMC fitted data saved to: {data_file}")
+
+        except Exception as e:
+            logger.error(f"Failed to save standardized MCMC data files: {e}")
+
         # Generate MCMC-specific plots (trace plots, corner plots, etc.)
         try:
             from homodyne.plotting import create_all_plots
@@ -2617,7 +2792,7 @@ def _generate_mcmc_plots(
             # Prepare results data for plotting
             plot_data = {
                 "experimental_data": c2_exp,
-                "theoretical_data": c2_theory,
+                "theoretical_data": c2_fitted,
                 "phi_angles": phi_angles,
                 "best_parameters": dict(
                     zip(
@@ -3067,28 +3242,28 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
         logger.warning("Continuing without saving data arrays...")
 
     # Print summary
-    print()
-    print("=" * 60)
-    print("            SIMULATED DATA PLOTTING SUMMARY")
-    print("=" * 60)
-    print(f"Analysis mode:        {analysis_mode}")
-    print(f"Static mode:          {is_static}")
-    print(f"Parameters used:      {param_count} effective parameters")
-    print(
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info("            SIMULATED DATA PLOTTING SUMMARY")
+    logger.info("=" * 60)
+    logger.info(f"Analysis mode:        {analysis_mode}")
+    logger.info(f"Static mode:          {is_static}")
+    logger.info(f"Parameters used:      {param_count} effective parameters")
+    logger.info(
         f"Phi angles:           {n_angles} angles from {phi_angles[0]:.1f}° to {phi_angles[-1]:.1f}°"
     )
-    print(f"Time points:          {n_time} frames (dt = {dt})")
-    print(f"Output directory:     {simulated_dir}")
+    logger.info(f"Time points:          {n_time} frames (dt = {dt})")
+    logger.info(f"Output directory:     {simulated_dir}")
     if data_type == "fitted":
-        print("Plots generated:      Fitted C2 heatmaps for each phi angle")
-        print(
+        logger.info("Plots generated:      Fitted C2 heatmaps for each phi angle")
+        logger.info(
             f"Scaling applied:      fitted = {args.contrast} × theory + {args.offset}"
         )
     else:
-        print("Plots generated:      Theoretical C2 heatmaps for each phi angle")
+        logger.info("Plots generated:      Theoretical C2 heatmaps for each phi angle")
 
-    print(f"Data saved:           {data_file.name}")
-    print("=" * 60)
+    logger.info(f"Data saved:           {data_file.name}")
+    logger.info("=" * 60)
 
 
 def main():
@@ -3276,9 +3451,9 @@ Method Quality Assessment:
     if args.plot_simulated_data:
         try:
             plot_simulated_data(args)
-            print()
-            print("✓ Simulated data plotting completed successfully!")
-            print(f"Results saved to: {args.output_dir}")
+            logger.info("")
+            logger.info("✓ Simulated data plotting completed successfully!")
+            logger.info(f"Results saved to: {args.output_dir}")
             # Exit with code 0 - success
             sys.exit(0)
         except Exception as e:
@@ -3288,9 +3463,9 @@ Method Quality Assessment:
     # Run the analysis
     try:
         run_analysis(args)
-        print()
-        print("✓ Analysis completed successfully!")
-        print(f"Results saved to: {args.output_dir}")
+        logger.info("")
+        logger.info("✓ Analysis completed successfully!")
+        logger.info(f"Results saved to: {args.output_dir}")
         # Exit with code 0 - success
         sys.exit(0)
     except SystemExit:

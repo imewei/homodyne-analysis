@@ -83,25 +83,41 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
     alias ha='homodyne --method all'
     alias hconfig='homodyne-config'
 
-    # Linux GPU aliases
+    # Linux GPU aliases (only for GPU-compatible methods)
     if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
-        alias hgm='homodyne-gpu --method mcmc'
-        alias hgc='homodyne-gpu --method classical'
-        alias hgr='homodyne-gpu --method robust'
-        alias hga='homodyne-gpu --method all'
+        alias hgm='homodyne-gpu --method mcmc'    # GPU-accelerated MCMC with NumPyro
+        alias hga='homodyne-gpu --method all'     # GPU-accelerated full analysis
+        # Note: classical and robust methods run CPU-only, use hc/hr instead
     fi
 
     # GPU status function
     homodyne_gpu_status() {
         if [[ "$(uname -s)" == "Linux" ]]; then
-            echo "GPU Status for Homodyne:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🚀 Homodyne GPU Status (NumPyro + JAX)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            # Hardware detection
             if command -v nvidia-smi >/dev/null 2>&1; then
-                echo "NVIDIA GPU detected:"
-                nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits
+                echo "✅ NVIDIA GPU detected:"
+                nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits | sed 's/^/   /'
             else
-                echo "No NVIDIA GPU detected"
+                echo "❌ No NVIDIA GPU detected"
             fi
-            echo "JAX_PLATFORMS: ${JAX_PLATFORMS:-cpu}"
+
+            # Environment status
+            echo ""
+            echo "🔧 Environment Configuration:"
+            echo "   HOMODYNE_GPU_INTENT: ${HOMODYNE_GPU_INTENT:-false}"
+            echo "   JAX_PLATFORMS: ${JAX_PLATFORMS:-auto-detect}"
+            echo "   JAX_ENABLE_X64: ${JAX_ENABLE_X64:-not set}"
+
+            # Backend routing info
+            echo ""
+            echo "📊 MCMC Backend Routing:"
+            echo "   homodyne        → PyMC (CPU-only)"
+            echo "   homodyne-gpu    → NumPyro (GPU + CPU fallback)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         else
             echo "GPU status only available on Linux"
         fi
@@ -118,11 +134,11 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
 
         if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
             echo ""
-            echo "GPU shortcuts (Linux only):"
-            echo "  hgm = homodyne-gpu --method mcmc"
-            echo "  hgc = homodyne-gpu --method classical"
-            echo "  hgr = homodyne-gpu --method robust"
-            echo "  hga = homodyne-gpu --method all"
+            echo "GPU shortcuts (NumPyro + JAX, Linux only):"
+            echo "  hgm = homodyne-gpu --method mcmc  # GPU-accelerated MCMC"
+            echo "  hga = homodyne-gpu --method all   # GPU-accelerated full analysis"
+            echo ""
+            echo "Note: classical/robust methods run CPU-only (use hc/hr)"
         fi
     }
 fi"""
@@ -161,8 +177,8 @@ fi
             completion_script.chmod(0o755)
 
         print("✅ Shell completion installed")
-        print("   • Zsh aliases: hm, hc, hr, ha, hconfig")
-        print("   • GPU aliases: hgm, hgc, hgr, hga (Linux only)")
+        print("   • CPU aliases: hm, hc, hr, ha, hconfig")
+        print("   • GPU aliases: hgm, hga (NumPyro GPU, Linux only)")
         return True
 
     except Exception as e:
@@ -390,10 +406,10 @@ def interactive_setup():
     # GPU acceleration (Linux only)
     install_gpu = False
     if platform.system() == "Linux":
-        print("\n2. GPU Acceleration (Linux only)")
-        print("   - Configures CUDA environment variables")
-        print("   - Enables homodyne-gpu command")
-        print("   - Requires CUDA toolkit installation")
+        print("\n2. GPU Acceleration (NumPyro + JAX, Linux only)")
+        print("   - Configures CUDA environment for NumPyro GPU backend")
+        print("   - Enables homodyne-gpu command with automatic CPU fallback")
+        print("   - Requires CUDA toolkit 12.x+ and JAX[cuda12-local] installation")
 
         install_gpu = (
             input("   Install GPU acceleration? [y/N]: ").lower().startswith("y")
@@ -450,8 +466,8 @@ def show_installation_summary(interactive_results=None):
     print("   ha  = homodyne --method all")
 
     if is_linux():
-        print("   hgm = homodyne-gpu --method mcmc  # GPU shortcuts")
-        print("   hga = homodyne-gpu --method all")
+        print("   hgm = homodyne-gpu --method mcmc  # NumPyro GPU-accelerated")
+        print("   hga = homodyne-gpu --method all   # NumPyro GPU-accelerated")
 
     print("\n📖 Help:")
     print("   homodyne --help")

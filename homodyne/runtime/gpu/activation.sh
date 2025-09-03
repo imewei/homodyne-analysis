@@ -90,9 +90,18 @@ homodyne_gpu_activate_smart() {
 
     export XLA_FLAGS="$xla_flags"
 
-    # JAX settings
+    # JAX settings for NumPyro GPU compatibility
     unset JAX_PLATFORMS  # Let JAX auto-detect platforms
     export JAX_ENABLE_X64="0"  # Use float32 for better GPU performance
+    export XLA_PYTHON_CLIENT_PREALLOCATE="false"  # Dynamic memory allocation
+
+    # Set memory fraction if not already configured by smart detection above
+    if [[ -z "$XLA_PYTHON_CLIENT_MEM_FRACTION" ]]; then
+        export XLA_PYTHON_CLIENT_MEM_FRACTION="0.8"  # Default 80% allocation
+    fi
+
+    # NumPyro GPU routing (critical for mcmc_gpu.py)
+    export HOMODYNE_GPU_INTENT="true"
 
     # PyTensor settings (CPU mode to avoid conflicts)
     export PYTENSOR_FLAGS="device=cpu,floatX=float64,on_opt_error=ignore"
@@ -185,6 +194,7 @@ else:
     [[ -n "$XLA_FLAGS" ]] && echo "   XLA_FLAGS: $(echo $XLA_FLAGS | cut -c1-50)..."
     [[ -n "$XLA_PYTHON_CLIENT_MEM_FRACTION" ]] && echo "   Memory Fraction: $XLA_PYTHON_CLIENT_MEM_FRACTION"
     [[ -n "$JAX_PLATFORMS" ]] && echo "   JAX_PLATFORMS: $JAX_PLATFORMS" || echo "   JAX_PLATFORMS: (auto-detect)"
+    [[ -n "$HOMODYNE_GPU_INTENT" ]] && echo "   GPU Intent: $HOMODYNE_GPU_INTENT" || echo "   GPU Intent: (not set)"
 
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
