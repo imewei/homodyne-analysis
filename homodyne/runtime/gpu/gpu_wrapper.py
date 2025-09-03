@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 GPU Wrapper for Homodyne Analysis
-===============================
+==================================
 
 Command-line wrapper that automatically activates GPU support before running homodyne.
 This provides a seamless way to use homodyne with GPU acceleration without manual

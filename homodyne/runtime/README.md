@@ -293,7 +293,7 @@ homodyne --config config.json --verbose
 ```bash
 # Real-time GPU utilization
 nvidia-smi dmon -i 0 -s pucvmet -d 1 &
-hm config.json
+hm --config config.json
 
 # Memory tracking
 nvidia-smi --query-gpu=memory.used,memory.total --format=csv -l 1
