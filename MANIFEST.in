@@ -1,5 +1,6 @@
 # homodyne-analysis - Distribution Manifest
 # Updated: 2025-09-03
+# Includes isolated MCMC backend architecture
 
 # Core documentation
 include README.md
@@ -29,6 +30,10 @@ recursive-include homodyne *.yml
 recursive-include homodyne *.txt
 recursive-include homodyne *.md
 recursive-include homodyne *.sh
+
+# Explicitly include isolated MCMC backend files
+include homodyne/optimization/mcmc_cpu_backend.py
+include homodyne/optimization/mcmc_gpu_backend.py
 
 # Include documentation
 recursive-include docs *.md

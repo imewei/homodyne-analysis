@@ -16,10 +16,10 @@ python -m venv homodyne-dev
 source homodyne-dev/bin/activate  # Linux/macOS
 # or: homodyne-dev\Scripts\activate  # Windows
 
-# 3. Install in development mode with all dependencies
+# 3. Install in development mode with all dependencies (includes isolated MCMC backends)
 pip install -e ".[dev]"
 
-# 4. Set up unified development environment
+# 4. Set up unified development environment with isolated backend architecture
 homodyne-post-install --shell zsh --gpu --advanced
 
 # 5. Install pre-commit hooks

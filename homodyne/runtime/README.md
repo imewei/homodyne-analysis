@@ -37,8 +37,8 @@ homodyne-post-install --shell zsh
 ### Installed Components
 
 1. **🔧 Smart Shell Completion** - Context-aware completion with caching
-2. **⚡ GPU Acceleration** - NumPyro GPU backend with automatic detection
-3. **📝 Unified Aliases** - CPU shortcuts (`hm`, `hc`, `hr`, `ha`) + GPU shortcuts (`hgm`, `hga`)
+2. **⚡ Isolated GPU Backend** - Pure NumPyro/JAX backend completely separated from PyMC
+3. **📝 Unified Aliases** - Isolated CPU shortcuts (`hm`, `hc`, `hr`, `ha`) + isolated GPU shortcuts (`hgm`, `hga`)
 4. **🛠️ Advanced Tools** - GPU optimization, system validation, benchmarking
 5. **📋 Environment Integration** - Auto-activation in conda/mamba/venv
 
@@ -74,16 +74,16 @@ homodyne_build
 | `static_anisotropic` | `classical robust` | CPU-optimized methods |
 | `laminar_flow` | `mcmc robust all` | Benefits from GPU acceleration |
 
-## ⚡ GPU Acceleration System
+## ⚡ Isolated MCMC Backend System
 
-### Dual MCMC Backend Architecture
+### Completely Isolated Backend Architecture
 
-The homodyne package features **separated MCMC implementations** for optimal performance:
+The homodyne package features **completely separated MCMC implementations** to prevent PyTensor/JAX conflicts:
 
-| Command | Backend | Implementation | Use Case |
-|---------|---------|----------------|----------|
-| `homodyne` | **PyMC CPU** | `mcmc.py` | Cross-platform, reliable |
-| `homodyne-gpu` | **NumPyro GPU** | `mcmc_gpu.py` | High-performance, Linux + CUDA |
+| Command | Backend | Implementation | Isolation | Use Case |
+|---------|---------|----------------|-----------|----------|
+| `homodyne` | **Pure PyMC CPU** | `mcmc_cpu_backend.py` | No JAX imports | Cross-platform, reliable |
+| `homodyne-gpu` | **Pure NumPyro GPU** | `mcmc_gpu_backend.py` | No PyMC imports | High-performance, Linux + CUDA |
 
 ### Smart GPU Detection
 
@@ -119,17 +119,21 @@ gpu-bench                # Matrix multiplication benchmarks
 homodyne-gpu-optimize    # Detect hardware, apply optimal settings
 ```
 
-### Backend Selection Logic
+### Isolated Backend Selection Logic
 
-**`homodyne` Command (PyMC CPU):**
+**`homodyne` Command (Isolated PyMC CPU Backend):**
+- Backend Wrapper: `mcmc_cpu_backend.py` - completely isolated from JAX
 - Environment: `HOMODYNE_GPU_INTENT` not set or `false`
-- Platform: Linux, Windows, macOS
-- Use Cases: Development, testing, cross-platform compatibility
+- Platform: Linux, Windows, macOS (identical behavior)
+- PyTensor Configuration: CPU-only mode with dedicated compilation directory
+- Use Cases: Development, testing, cross-platform compatibility, CPU-only systems
 
-**`homodyne-gpu` Command (NumPyro GPU):**
+**`homodyne-gpu` Command (Isolated NumPyro GPU Backend):**
+- Backend Wrapper: `mcmc_gpu_backend.py` - completely isolated from PyMC
 - Environment: `HOMODYNE_GPU_INTENT=true` (auto-set by wrapper)
-- Platform: Linux with CUDA (CPU fallback if no GPU)
-- Use Cases: Production, large datasets, high-performance computing
+- Platform: Linux with CUDA (JAX CPU fallback if no GPU), macOS/Windows (JAX CPU mode)
+- JAX Configuration: GPU detection with automatic CPU fallback within JAX ecosystem
+- Use Cases: Production, large datasets, high-performance computing, GPU acceleration
 
 ## 🚀 GPU Optimization System
 

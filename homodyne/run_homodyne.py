@@ -73,6 +73,9 @@ import time
 from pathlib import Path
 from typing import Any
 
+# Environment configuration is now handled by isolated backends
+# to avoid conflicts between PyMC CPU and NumPyro GPU/JAX
+
 import numpy as np
 
 # Fast completion handler removed - argcomplete provides better functionality
@@ -127,56 +130,67 @@ except ImportError:
         ClassicalOptimizer = None
         create_robust_optimizer = None
 
-# Import MCMC components with GPU/CPU routing
+# Import MCMC components with isolated backend routing
 
 
-def get_mcmc_sampler():
-    """Get appropriate MCMC sampler based on environment."""
+def get_mcmc_backend():
+    """Get appropriate MCMC backend based on environment and intent."""
     gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
-
+    logger = logging.getLogger(__name__)
+    
     if gpu_intent:
-        # Try GPU implementation first
+        # GPU mode requested - use isolated NumPyro backend
         try:
-            from .optimization.mcmc_gpu import create_gpu_mcmc_sampler
-
-            return create_gpu_mcmc_sampler, "NumPyro_GPU"
-        except ImportError:
-            try:
-                from homodyne.optimization.mcmc_gpu import create_gpu_mcmc_sampler
-
-                return create_gpu_mcmc_sampler, "NumPyro_GPU"
-            except ImportError:
-                logging.getLogger(__name__).warning(
-                    "GPU MCMC not available, falling back to CPU"
-                )
+            from .optimization.mcmc_gpu_backend import (
+                run_gpu_mcmc_analysis, 
+                is_gpu_mcmc_available,
+                is_gpu_hardware_available
+            )
+            
+            if is_gpu_mcmc_available():
+                has_gpu = is_gpu_hardware_available()
+                backend_name = "NumPyro_GPU_JAX" if has_gpu else "NumPyro_CPU_JAX"
+                logger.info(f"🚀 {backend_name} backend loaded (isolated from PyMC)")
+                return run_gpu_mcmc_analysis, backend_name, has_gpu
+            else:
+                logger.warning("NumPyro/JAX not available, falling back to CPU PyMC")
                 gpu_intent = False
-
+        except ImportError as e:
+            logger.warning(f"GPU MCMC backend not available ({e}), falling back to CPU PyMC")
+            gpu_intent = False
+    
     if not gpu_intent:
-        # CPU implementation
+        # CPU mode - use isolated PyMC backend
         try:
-            from .optimization.mcmc import create_mcmc_sampler
+            from .optimization.mcmc_cpu_backend import (
+                run_cpu_mcmc_analysis,
+                is_cpu_mcmc_available
+            )
+            
+            if is_cpu_mcmc_available():
+                logger.info("🖥️  PyMC_CPU backend loaded (isolated from JAX)")
+                return run_cpu_mcmc_analysis, "PyMC_CPU", False
+            else:
+                return None, None, False
+        except ImportError as e:
+            logger.error(f"CPU MCMC backend not available: {e}")
+            return None, None, False
 
-            return create_mcmc_sampler, "PyMC_CPU"
-        except ImportError:
-            try:
-                from homodyne.optimization.mcmc import create_mcmc_sampler
 
-                return create_mcmc_sampler, "PyMC_CPU"
-            except ImportError:
-                return None, None
-
-
-# Initialize MCMC availability
+# Initialize MCMC availability with isolated backends
 try:
-    create_mcmc_sampler, mcmc_backend = get_mcmc_sampler()
-    MCMC_AVAILABLE = create_mcmc_sampler is not None
+    mcmc_function, mcmc_backend, has_gpu_hardware = get_mcmc_backend()
+    MCMC_AVAILABLE = mcmc_function is not None
     if MCMC_AVAILABLE:
         logging.getLogger(__name__).info(f"MCMC backend available: {mcmc_backend}")
+        if mcmc_backend.startswith("NumPyro") and not has_gpu_hardware:
+            logging.getLogger(__name__).info("No GPU hardware detected - JAX will use CPU mode")
 except Exception as e:
-    create_mcmc_sampler = None
+    mcmc_function = None
     mcmc_backend = None
+    has_gpu_hardware = False
     MCMC_AVAILABLE = False
-    logging.getLogger(__name__).warning(f"MCMC initialization failed: {e}")
+    logging.getLogger(__name__).warning(f"MCMC backend initialization failed: {e}")
 
 
 class MockResult:
@@ -984,11 +998,10 @@ def run_mcmc_optimization(
     analyzer, initial_params, phi_angles, c2_exp, output_dir=None
 ):
     """
-    Execute Bayesian MCMC sampling using NUTS (No-U-Turn Sampler).
-
-    Provides full posterior distributions with uncertainty quantification.
-    Uses PyMC for robust sampling with convergence diagnostics (R-hat, ESS).
-    Results include parameter uncertainties and correlation analysis.
+    Execute Bayesian MCMC sampling using isolated backends.
+    
+    Uses either PyMC CPU backend (isolated from JAX) or NumPyro GPU/JAX backend 
+    (isolated from PyMC) based on the homodyne-gpu vs homodyne command used.
 
     Parameters
     ----------
@@ -1010,22 +1023,19 @@ def run_mcmc_optimization(
         or None if sampling fails
     """
     logger = logging.getLogger(__name__)
-    logger.info("Running MCMC sampling...")
-
-    # Step 1: Check if create_mcmc_sampler is available (imported at module
-    # level)
-    if create_mcmc_sampler is None:
-        logger.error("❌ MCMC sampling not available - missing dependencies")
-        logger.error(
-            "❌ Install required dependencies: pip install pymc arviz pytensor"
-        )
+    
+    # Check if isolated MCMC backend is available
+    if mcmc_function is None:
+        logger.error("❌ MCMC sampling not available - no backends found")
+        logger.error("SOLUTIONS:")
+        logger.error("• Install PyMC for CPU: pip install pymc arviz pytensor")
+        logger.error("• Install NumPyro for GPU: pip install numpyro jax")
         return None
 
-    logger.info("✓ MCMC sampler available")
+    logger.info(f"🚀 Running MCMC with {mcmc_backend} backend (isolated)")
 
     try:
-        # Step 2.5: Set initial parameters for MCMC if not already set by
-        # classical optimization
+        # Set initial parameters for MCMC if not already set
         if (
             not hasattr(analyzer, "best_params_classical")
             or analyzer.best_params_classical is None
@@ -1035,206 +1045,153 @@ def run_mcmc_optimization(
         else:
             logger.info("✓ Using stored classical results for MCMC initialization")
 
-        # Step 3: Create MCMC sampler (this already validates)
-        logger.info("Creating MCMC sampler...")
-        sampler = create_mcmc_sampler(analyzer, analyzer.config)
-        logger.info("✓ MCMC sampler created successfully")
-
-        # Step 4: Run MCMC analysis and time execution
-        logger.info("Starting MCMC sampling...")
+        # Prepare common parameters for isolated backend
         mcmc_start_time = time.time()
-
-        # Run the MCMC analysis with angle filtering by default
-        mcmc_results = sampler.run_mcmc_analysis(
-            c2_experimental=c2_exp,
-            phi_angles=phi_angles,
-            filter_angles_for_optimization=True,  # Use angle filtering by default
-        )
-
+        
+        # Get configuration from analyzer
+        config = analyzer.config_manager.config if hasattr(analyzer, 'config_manager') else analyzer.config
+        
+        # Prepare backend-specific parameters
+        mcmc_kwargs = {
+            'analysis_core': analyzer,
+            'config': config,
+            'c2_experimental': c2_exp,
+            'phi_angles': phi_angles,
+            'filter_angles_for_optimization': True,
+        }
+        
+        # Add GPU-specific parameters if using NumPyro backend
+        if mcmc_backend.startswith("NumPyro"):
+            mcmc_kwargs.update({
+                'is_static_mode': analyzer.is_static_mode(),
+                'effective_param_count': analyzer.get_effective_parameter_count(),
+            })
+        
+        logger.info(f"Starting {mcmc_backend} MCMC analysis...")
+        
+        # Run MCMC with isolated backend
+        mcmc_results = mcmc_function(**mcmc_kwargs)
+        
         mcmc_execution_time = time.time() - mcmc_start_time
-        logger.info(f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
+        logger.info(f"✅ MCMC sampling completed in {mcmc_execution_time:.2f}s with {mcmc_backend}")
 
-        # Step 5 & 6: Save inference data and write convergence diagnostics
-        if output_dir is None:
-            output_dir = Path("./homodyne_results")
-        else:
-            output_dir = Path(output_dir)
+        # Save results if requested
+        if mcmc_results and output_dir:
+            save_mcmc_results(mcmc_results, analyzer, output_dir, mcmc_execution_time)
 
-        # Create mcmc subdirectory
-        mcmc_output_dir = output_dir / "mcmc"
-        mcmc_output_dir.mkdir(parents=True, exist_ok=True)
-
-        # Save inference data (NetCDF via arviz.to_netcdf) if trace is
-        # available
-        if "trace" in mcmc_results and mcmc_results["trace"] is not None:
-            try:
-                import arviz as az
-
-                netcdf_path = mcmc_output_dir / "mcmc_trace.nc"
-                az.to_netcdf(mcmc_results["trace"], str(netcdf_path))
-                logger.info(f"✓ MCMC trace saved to NetCDF: {netcdf_path}")
-            except ImportError as import_err:
-                logger.error(f"❌ ArviZ not available for saving trace: {import_err}")
-                logger.error("❌ Install ArviZ: pip install arviz")
-            except Exception as e:
-                logger.error(f"❌ Failed to save NetCDF trace: {e}")
-
-        # Prepare summary results for JSON
-        summary_results = {
-            "method": "MCMC_NUTS",
-            "execution_time_seconds": mcmc_execution_time,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "posterior_means": mcmc_results.get("posterior_means", {}),
-            "mcmc_config": mcmc_results.get("config", {}),
-        }
-
-        # Add convergence diagnostics to summary
-        if "diagnostics" in mcmc_results:
-            diagnostics = mcmc_results["diagnostics"]
-            summary_results["convergence_diagnostics"] = {
-                "max_rhat": diagnostics.get("max_rhat"),
-                "min_ess": diagnostics.get("min_ess"),
-                "converged": diagnostics.get("converged", False),
-                "assessment": diagnostics.get("assessment", "Unknown"),
-            }
-
-            # Write convergence diagnostics to log (Step 6)
-            logger.info("Convergence Diagnostics:")
-            logger.info(f"  Max R-hat: {diagnostics.get('max_rhat', 'N/A')}")
-            logger.info(f"  Min ESS: {diagnostics.get('min_ess', 'N/A')}")
-            logger.info(f"  Converged: {diagnostics.get('converged', False)}")
-            logger.info(f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
-
-            if not diagnostics.get("converged", False):
-                logger.warning(
-                    "⚠ MCMC chains may not have converged - check diagnostics!"
-                )
-
-        # Add posterior statistics if available
-        if hasattr(sampler, "extract_posterior_statistics"):
-            try:
-                posterior_stats = sampler.extract_posterior_statistics(
-                    mcmc_results.get("trace")
-                )
-                if posterior_stats and "parameter_statistics" in posterior_stats:
-                    summary_results["parameter_statistics"] = posterior_stats[
-                        "parameter_statistics"
-                    ]
-            except Exception as e:
-                logger.warning(f"Failed to extract posterior statistics: {e}")
-
-        # Save summary JSON to output_dir/mcmc
-        summary_json_path = mcmc_output_dir / "mcmc_summary.json"
-        try:
-            with open(summary_json_path, "w") as f:
-                json.dump(summary_results, f, indent=2, default=str)
-            logger.info(f"✓ MCMC summary saved to: {summary_json_path}")
-        except Exception as e:
-            logger.error(f"❌ Failed to save MCMC summary JSON: {e}")
-
-        # Extract best parameters from posterior means for compatibility with
-        # other methods
-        best_params = None
-        if "posterior_means" in mcmc_results:
-            param_names = analyzer.config.get("initial_parameters", {}).get(
-                "parameter_names", []
-            )
-            posterior_means = mcmc_results["posterior_means"]
-            best_params = [posterior_means.get(name, 0.0) for name in param_names]
-
-        # Generate mcmc-specific plots and save data
-        if output_dir is not None and best_params is not None:
-            _generate_mcmc_plots(
-                analyzer,
-                best_params,
-                phi_angles,
-                c2_exp,
-                output_dir,
-                mcmc_results,
-            )
-
-        # Extract convergence quality for MCMC summary (no chi-squared
-        # calculation)
-        convergence_quality = "unknown"
-        if "diagnostics" in mcmc_results:
-            diag = mcmc_results["diagnostics"]
-            max_rhat = diag.get("max_rhat", float("inf"))
-            min_ess = diag.get("min_ess", 0)
-
-            # Use same thresholds as in per-angle analysis
-            if max_rhat < 1.01 and min_ess > 400:
-                convergence_quality = "excellent"
-            elif max_rhat < 1.05 and min_ess > 200:
-                convergence_quality = "good"
-            elif max_rhat < 1.1 and min_ess > 100:
-                convergence_quality = "acceptable"
-            else:
-                convergence_quality = "poor"
-
-            logger.info(f"MCMC convergence quality: {convergence_quality.upper()}")
-            logger.info(f"MCMC posterior mean parameters: {best_params}")
-        else:
-            logger.warning("No convergence diagnostics available for MCMC results")
-
-        # Format results for compatibility with main analysis framework
-        return {
-            "mcmc_optimization": {
-                "parameters": best_params,
-                "convergence_quality": convergence_quality,
-                "optimization_time": mcmc_execution_time,
-                "total_time": mcmc_execution_time,
-                "success": mcmc_results.get("diagnostics", {}).get("converged", True),
-                "method": "MCMC_NUTS",
-                "posterior_means": mcmc_results.get("posterior_means", {}),
-                "convergence_diagnostics": mcmc_results.get("diagnostics", {}),
-                # Include trace data for plotting
-                "trace": mcmc_results.get("trace"),
-                # Include chi_squared for plotting method selection
-                "chi_squared": mcmc_results.get("chi_squared", np.inf),
-            },
-            "mcmc_summary": {
-                "parameters": best_params,
-                "convergence_quality": convergence_quality,
-                "max_rhat": mcmc_results.get("diagnostics", {}).get("max_rhat", None),
-                "min_ess": mcmc_results.get("diagnostics", {}).get("min_ess", None),
-                "method": "MCMC",
-                "evaluation_metric": "convergence_diagnostics",
-                "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment",
-            },
-            "methods_used": ["MCMC"],
-            # Include trace and diagnostics at top level for plotting functions
-            "trace": mcmc_results.get("trace"),
-            "diagnostics": mcmc_results.get("diagnostics"),
-        }
+        return mcmc_results
 
     except ImportError as e:
-        error_msg = f"MCMC optimization failed - missing dependencies: {e}"
+        error_msg = f"❌ MCMC backend failed - import error: {e}"
         logger.error(error_msg)
-        if "pymc" in str(e).lower():
-            logger.error("❌ Install PyMC: pip install pymc")
-        elif "arviz" in str(e).lower():
-            logger.error("❌ Install ArviZ: pip install arviz")
-        elif "pytensor" in str(e).lower():
-            logger.error("❌ Install PyTensor: pip install pytensor")
-        else:
-            logger.error(
-                "❌ Install required dependencies: pip install pymc arviz pytensor"
-            )
+        
+        # Backend-specific error messages
+        if mcmc_backend == "PyMC_CPU":
+            logger.error("SOLUTIONS:")
+            logger.error("• Install PyMC: pip install pymc>=5.0") 
+            logger.error("• Install PyTensor: pip install pytensor")
+            logger.error("• Install ArviZ: pip install arviz")
+            logger.error("• Try GPU backend: 'homodyne-gpu --method mcmc'")
+        elif mcmc_backend.startswith("NumPyro"):
+            logger.error("SOLUTIONS:")
+            logger.error("• Install NumPyro: pip install numpyro")
+            logger.error("• Install JAX: pip install jax jaxlib")
+            logger.error("• For GPU: pip install jax[cuda] (Linux only)")
+            logger.error("• Try CPU backend: 'homodyne --method mcmc'")
+            
         return None
-    except (ValueError, KeyError) as e:
-        error_msg = f"MCMC optimization failed - configuration error: {e}"
-        logger.error(error_msg)
-        logger.error("❌ Please check your MCMC configuration and parameter priors")
-        return None
+        
     except Exception as e:
-        error_msg = f"MCMC optimization failed - unexpected error: {e}"
+        error_msg = f"❌ {mcmc_backend} MCMC failed: {e}"
         logger.error(error_msg)
-        logger.error("❌ Please check your data files and MCMC configuration")
+        
+        # Suggest alternatives based on backend
+        if mcmc_backend == "PyMC_CPU":
+            logger.error("ALTERNATIVES:")
+            logger.error("• Try GPU MCMC: 'homodyne-gpu --method mcmc'")
+            logger.error("• Use classical: 'homodyne --method classical'") 
+            logger.error("• Use robust: 'homodyne --method robust'")
+        elif mcmc_backend.startswith("NumPyro"):
+            logger.error("ALTERNATIVES:")
+            logger.error("• Try CPU MCMC: 'homodyne --method mcmc'")
+            logger.error("• Use classical: 'homodyne --method classical'")
+            logger.error("• Check GPU setup: python -c 'import jax; print(jax.devices())'")
+            
         import traceback
-
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         return None
 
+
+def save_mcmc_results(mcmc_results, analyzer, output_dir, execution_time):
+    """Save MCMC results to files with backend information."""
+    logger = logging.getLogger(__name__)
+    
+    if output_dir is None:
+        output_dir = Path("./homodyne_results")
+    else:
+        output_dir = Path(output_dir)
+
+    # Create mcmc subdirectory
+    mcmc_output_dir = output_dir / "mcmc"
+    mcmc_output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save trace data if available
+    if "trace" in mcmc_results and mcmc_results["trace"] is not None:
+        try:
+            import arviz as az
+            netcdf_path = mcmc_output_dir / "mcmc_trace.nc"
+            az.to_netcdf(mcmc_results["trace"], str(netcdf_path))
+            logger.info(f"✓ MCMC trace saved: {netcdf_path}")
+        except ImportError:
+            logger.warning("ArviZ not available for saving trace data")
+        except Exception as e:
+            logger.error(f"Failed to save trace: {e}")
+
+    # Prepare summary results
+    backend_info = mcmc_results.get("backend_info", {})
+    summary_results = {
+        "method": "MCMC_NUTS",
+        "backend": backend_info.get("backend", "Unknown"),
+        "isolation_mode": backend_info.get("isolation_mode", "isolated"),
+        "execution_time_seconds": execution_time,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "posterior_means": mcmc_results.get("posterior_means", {}),
+        "mcmc_config": mcmc_results.get("config", {}),
+    }
+    
+    # Add GPU information if available
+    if "gpu_used" in backend_info:
+        summary_results["gpu_acceleration"] = backend_info["gpu_used"]
+        summary_results["gpu_count"] = backend_info.get("gpu_count", 0)
+    
+    # Add convergence diagnostics
+    if "diagnostics" in mcmc_results:
+        diagnostics = mcmc_results["diagnostics"] 
+        summary_results["convergence_diagnostics"] = {
+            "all_converged": diagnostics.get("converged", False),
+            "rhat_max": diagnostics.get("rhat_max", "N/A"),
+            "ess_min": diagnostics.get("ess_min", "N/A"),
+        }
+
+    # Save JSON summary
+    json_path = mcmc_output_dir / "mcmc_results.json"
+    try:
+        with open(json_path, "w") as f:
+            json.dump(summary_results, f, indent=2, default=str)
+        logger.info(f"✓ Results saved: {json_path}")
+    except Exception as e:
+        logger.error(f"Failed to save results: {e}")
+
+    # Add metadata to results for compatibility
+    mcmc_results.update({
+        "execution_time": execution_time,
+        "method_type": "MCMC", 
+        "output_directory": str(mcmc_output_dir),
+        "params": mcmc_results.get("posterior_means", {}),
+    })
+    
+    if "chi_squared" in mcmc_results:
+        mcmc_results["chi_squared_red"] = mcmc_results["chi_squared"]
 
 def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
     """

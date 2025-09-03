@@ -251,11 +251,19 @@
       }
     },
     "mcmc_sampling": {
-      "_comment": "Dual MCMC Backend - PyMC (CPU) and NumPyro (GPU)",
+      "_comment": "Isolated MCMC Backend Architecture - Laminar Flow Mode (7 parameters: D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0)",
+      "_backend_architecture": {
+        "isolation": "Complete separation of PyMC CPU and NumPyro GPU implementations",
+        "cpu_implementation": "homodyne.optimization.mcmc_cpu_backend.py",
+        "gpu_implementation": "homodyne.optimization.mcmc_gpu_backend.py",
+        "conflict_prevention": "Eliminates PyTensor/JAX namespace conflicts through isolated execution",
+        "backend_selection": "HOMODYNE_GPU_INTENT environment variable or command-based selection",
+        "complexity_note": "7-parameter flow model benefits significantly from GPU acceleration"
+      },
       "enabled": true,
       "sampler": "NUTS",
       "draws": 6000,
-      "_draws_note": "Balanced draws for 7-parameter convergence",
+      "_draws_note": "Balanced draws for 7-parameter convergence across both backends",
       "tune": 1500,
       "_tune_note": "Extended tuning for complex 7-parameter space",
       "thin": 1,
@@ -268,22 +276,30 @@
       "_max_treedepth_note": "Increased depth for complex 7-parameter model",
       "return_inferencedata": true,
       "backend_specific": {
-        "pymc_cpu": {
-          "_description": "CPU backend using PyMC + PyTensor",
-          "_command": "homodyne --method mcmc",
+        "cpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_cpu_backend.py",
+          "_description": "Isolated PyMC implementation - optimized for 7-parameter flow model",
+          "_command": "homodyne --method mcmc (or HOMODYNE_GPU_INTENT=false)",
+          "_isolation": "Pure PyMC environment, complete separation from NumPyro/JAX",
+          "_performance_note": "CPU backend handles complex parameter spaces reliably",
           "init_strategy": "adapt_diag",
           "compute_convergence_checks": true,
-          "progressbar": true
+          "progressbar": true,
+          "pytensor_config": "Automatically configured for CPU-only operation"
         },
-        "numpyro_gpu": {
-          "_description": "GPU backend using NumPyro + JAX",
-          "_command": "homodyne-gpu --method mcmc",
-          "_platform_support": "Linux with CUDA (auto-fallback to CPU if no GPU)",
+        "gpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_gpu_backend.py",
+          "_description": "Isolated NumPyro/JAX implementation - GPU-accelerated 7-parameter sampling",
+          "_command": "homodyne-gpu --method mcmc (or HOMODYNE_GPU_INTENT=true)",
+          "_platform_support": "Linux with CUDA preferred for optimal 7-parameter performance",
+          "_isolation": "Pure NumPyro/JAX environment, complete separation from PyMC/PyTensor",
+          "_performance_note": "GPU acceleration provides significant speedup for complex flow models",
           "init_strategy": "init_to_value",
           "chain_method": "vectorized",
           "progress_bar": true,
           "jit_compile": true,
-          "device_memory_fraction": 0.8
+          "device_memory_fraction": 0.8,
+          "jax_config": "Automatically optimized for complex parameter sampling"
         }
       },
       "performance_features": {

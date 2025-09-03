@@ -1,14 +1,19 @@
 """
-Comprehensive unit tests for GPU-accelerated MCMC optimization module.
+Comprehensive unit tests for GPU-accelerated MCMC optimization module (Isolated GPU Backend).
 
-This module tests the MCMC/NUTS GPU sampling functionality including:
-- MCMCSampler initialization and JAX configuration
+This module tests the pure NumPyro/JAX GPU backend functionality including:
+- MCMCSampler initialization and JAX configuration (GPU-only)
 - NumPyro model construction and validation
 - GPU detection and environment setup
 - NUTS sampling with convergence diagnostics
 - Posterior analysis and uncertainty quantification
-- JAX/NumPyro backend integration and fallback mechanisms
+- Isolated GPU backend (no PyMC contamination)
+- CPU fallback within JAX ecosystem
 - Compatibility with mcmc.py interface and outputs
+
+Note: This tests the isolated GPU backend (mcmc_gpu.py) which is completely
+separate from the CPU backend (mcmc.py) to avoid PyTensor/JAX conflicts.
+The GPU backend uses pure NumPyro/JAX with CPU fallback within JAX ecosystem.
 """
 
 from unittest.mock import Mock, patch
@@ -385,14 +390,29 @@ class TestMCMCGPUSampling:
                 assert sampler.mcmc_config["thinning"] == 5
 
 
-class TestMCMCGPUCompatibility:
-    """Test compatibility with mcmc.py interface and outputs."""
+class TestMCMCGPUIsolatedBackend:
+    """Test isolated GPU backend functionality."""
+
+    @pytest.mark.skipif(
+        not MCMC_GPU_MODULE_AVAILABLE, reason="MCMC GPU module not available"
+    )
+    def test_isolated_backend_separation(self, mock_analysis_core, mcmc_gpu_config):
+        """Test that GPU backend is completely isolated from PyMC."""
+        with patch("homodyne.optimization.mcmc_gpu.JAX_AVAILABLE", True):
+            with patch("homodyne.optimization.mcmc_gpu.jax"):
+                sampler = MCMCSampler(mock_analysis_core, mcmc_gpu_config)
+
+                # Verify that this is an isolated backend
+                assert sampler is not None
+                # Should not have PyMC imports in isolated backend
+                assert hasattr(sampler, "core")
+                assert hasattr(sampler, "config")
 
     @pytest.mark.skipif(
         not MCMC_GPU_MODULE_AVAILABLE, reason="MCMC GPU module not available"
     )
     def test_api_compatibility(self, mock_analysis_core, mcmc_gpu_config):
-        """Test that mcmc_gpu.py has identical interface to mcmc.py."""
+        """Test that mcmc_gpu.py has interface compatible with isolated CPU backend."""
         with patch("homodyne.optimization.mcmc_gpu.JAX_AVAILABLE", True):
             with patch("homodyne.optimization.mcmc_gpu.jax"):
                 sampler = MCMCSampler(mock_analysis_core, mcmc_gpu_config)
@@ -409,7 +429,7 @@ class TestMCMCGPUCompatibility:
         not MCMC_GPU_MODULE_AVAILABLE, reason="MCMC GPU module not available"
     )
     def test_output_structure_compatibility(self, mock_analysis_core, mcmc_gpu_config):
-        """Test that output structure matches mcmc.py exactly."""
+        """Test that output structure is compatible with isolated CPU backend."""
         with patch("homodyne.optimization.mcmc_gpu.JAX_AVAILABLE", True):
             with patch("homodyne.optimization.mcmc_gpu.jax"):
                 sampler = MCMCSampler(mock_analysis_core, mcmc_gpu_config)
@@ -423,13 +443,51 @@ class TestMCMCGPUCompatibility:
     @pytest.mark.skipif(
         not MCMC_GPU_MODULE_AVAILABLE, reason="MCMC GPU module not available"
     )
-    def test_error_handling_parity(self, mock_analysis_core):
-        """Test that error handling matches mcmc.py behavior."""
+    def test_error_handling_isolation(self, mock_analysis_core):
+        """Test that error handling is consistent with isolated backend architecture."""
         # Test with missing configuration
         with patch("homodyne.optimization.mcmc_gpu.JAX_AVAILABLE", True):
             with patch("homodyne.optimization.mcmc_gpu.jax"):
                 with pytest.raises((KeyError, ValueError)):
                     MCMCSampler(mock_analysis_core, {})  # Empty config should fail
+
+
+class TestMCMCGPUBackendIsolation:
+    """Test complete isolation of GPU backend from PyMC."""
+
+    @pytest.mark.skipif(
+        not MCMC_GPU_MODULE_AVAILABLE, reason="MCMC GPU module not available"
+    )
+    def test_no_pymc_imports(self):
+        """Test that GPU backend doesn't import PyMC components."""
+        # This test verifies that the isolated GPU backend doesn't contaminate
+        # with PyMC imports that could cause PyTensor/JAX conflicts
+        try:
+            import homodyne.optimization.mcmc_gpu as mcmc_gpu_module
+            
+            # Check that PyMC-specific attributes aren't present
+            assert not hasattr(mcmc_gpu_module, 'pm')
+            assert not hasattr(mcmc_gpu_module, 'az') 
+            assert not hasattr(mcmc_gpu_module, 'pt')
+            
+            # Module should only have JAX/NumPyro imports
+            assert hasattr(mcmc_gpu_module, 'JAX_AVAILABLE')
+            
+        except ImportError:
+            pytest.skip("MCMC GPU module not available for testing")
+
+    @pytest.mark.skipif(
+        not MCMC_GPU_MODULE_AVAILABLE, reason="MCMC GPU module not available"
+    )
+    def test_jax_only_environment(self, mock_analysis_core, mcmc_gpu_config):
+        """Test that GPU backend operates in pure JAX environment."""
+        with patch("homodyne.optimization.mcmc_gpu.JAX_AVAILABLE", True):
+            with patch("homodyne.optimization.mcmc_gpu.jax"):
+                sampler = MCMCSampler(mock_analysis_core, mcmc_gpu_config)
+                
+                # Should initialize successfully with pure JAX environment
+                assert sampler is not None
+                assert sampler.core == mock_analysis_core
 
 
 class TestMCMCGPUPerformance:

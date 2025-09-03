@@ -22,7 +22,9 @@ The package follows a layered architecture:
    Optimization Layer
    ├── Classical Optimization (Nelder-Mead, Iterative Gurobi Trust Region)
    ├── Robust Optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
-   └── MCMC Sampling (NUTS)
+   └── Isolated MCMC Backends
+       ├── CPU Backend (Pure PyMC - mcmc_cpu_backend.py)
+       └── GPU Backend (Pure NumPyro/JAX - mcmc_gpu_backend.py)
            │
    Model Layer
    ├── Physical Models
@@ -79,10 +81,58 @@ Key Components
    class RobustHomodyneOptimizer:
        """CVXPY-based robust optimization"""
 
-   class MCMCSampler:
-       """PyMC-based Bayesian sampling"""
+   # Isolated MCMC Backend Architecture
+   def get_mcmc_backend():
+       """Backend selection based on environment"""
+   
+   def run_cpu_mcmc_analysis():
+       """Pure PyMC CPU backend - isolated from JAX"""
+   
+   def run_gpu_mcmc_analysis():
+       """Pure NumPyro/JAX GPU backend - isolated from PyMC"""
 
-**5. Gurobi Trust Region Implementation**
+   class MCMCSampler:
+       """Legacy unified interface - uses isolated backends"""
+
+**5. Isolated MCMC Backend Architecture**
+
+The package features a revolutionary isolated backend architecture that completely separates PyMC CPU and NumPyro/JAX GPU implementations:
+
+.. code-block:: python
+
+   def get_mcmc_backend():
+       """
+       Automatic backend selection based on environment and user intent.
+       
+       Environment Variable: HOMODYNE_GPU_INTENT
+       - "true": Use NumPyro/JAX GPU backend (Linux with CPU fallback)
+       - "false": Use PyMC CPU backend (cross-platform)
+       
+       Returns:
+           mcmc_function: Backend-specific MCMC function
+           backend_name: "PyMC_CPU" or "NumPyro_GPU_JAX" 
+           has_gpu: Boolean indicating GPU availability
+       """
+       gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
+       
+       if gpu_intent:
+           # GPU Backend: Pure NumPyro/JAX (isolated from PyMC)
+           from .optimization.mcmc_gpu_backend import run_gpu_mcmc_analysis
+           return run_gpu_mcmc_analysis, "NumPyro_GPU_JAX", has_gpu_hardware
+       else:
+           # CPU Backend: Pure PyMC (isolated from JAX) 
+           from .optimization.mcmc_cpu_backend import run_cpu_mcmc_analysis
+           return run_cpu_mcmc_analysis, "PyMC_CPU", False
+
+**Backend Isolation Benefits:**
+
+- **Complete Separation**: No PyTensor/JAX namespace conflicts
+- **Platform Optimization**: Linux GPU acceleration with cross-platform CPU fallback
+- **Dependency Management**: Install only needed backend dependencies
+- **Development Flexibility**: Independent backend evolution
+- **Performance Optimization**: Backend-specific optimizations
+
+**6. Gurobi Trust Region Implementation**
 
 The Gurobi optimization uses an iterative trust region approach for enhanced convergence:
 

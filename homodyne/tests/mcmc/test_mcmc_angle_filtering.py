@@ -368,9 +368,9 @@ class TestMCMCAngleFilteringIntegration:
             with open(runner_path) as f:
                 content = f.read()
 
-            # Check that MCMC call includes angle filtering
-            assert "filter_angles_for_optimization=True" in content
-            assert "run_mcmc_analysis" in content
+            # Check that MCMC call includes angle filtering (now in dictionary format)
+            assert "'filter_angles_for_optimization': True" in content
+            assert "mcmc_function(" in content
 
 
 class TestMCMCAngleFilteringPerformance:

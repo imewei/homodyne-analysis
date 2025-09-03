@@ -8,6 +8,7 @@ This guide is for developers who want to contribute to the homodyne package or e
    :caption: Developer Topics
 
    architecture
+   packaging
    contributing
    security
    performance
@@ -62,14 +63,17 @@ Package Structure
 .. code-block:: text
 
    homodyne/
-   ├── core/                  # Core analysis classes
-   ├── optimization/          # Optimization algorithms
-   │   ├── classical.py      # Classical optimization
-   │   └── mcmc.py           # MCMC sampling
-   ├── models/               # Physical models
-   ├── utils/                # Utility functions
-   ├── config/               # Configuration management
-   └── tests/                # Test suite
+   ├── core/                     # Core analysis classes
+   ├── optimization/             # Optimization algorithms
+   │   ├── classical.py         # Classical optimization
+   │   ├── mcmc_cpu_backend.py  # Pure PyMC CPU backend (isolated)
+   │   ├── mcmc_gpu_backend.py  # Pure NumPyro/JAX GPU backend (isolated)
+   │   └── mcmc.py              # Legacy unified interface
+   ├── runtime/                 # Runtime system (shell completion, GPU tools)
+   ├── models/                  # Physical models
+   ├── utils/                   # Utility functions
+   ├── config/                  # Configuration management
+   └── tests/                   # Test suite
 
 Key Design Principles
 ---------------------

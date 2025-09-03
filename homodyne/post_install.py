@@ -8,6 +8,11 @@ This script provides optional setup for:
 2. GPU acceleration configuration (Linux only) - user choice
 3. Virtual environment integration (conda, mamba, venv, virtualenv)
 
+MCMC Backend Architecture:
+- CPU Backend: Pure PyMC implementation (isolated from JAX)
+- GPU Backend: Pure NumPyro+JAX implementation (isolated from PyMC)
+- Complete separation prevents backend conflicts and namespace pollution
+
 Features:
 - Safe completion scripts that don't interfere with system commands
 - Cross-platform support: bash, zsh, fish
@@ -93,9 +98,9 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
     # GPU status function
     homodyne_gpu_status() {
         if [[ "$(uname -s)" == "Linux" ]]; then
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🚀 Homodyne GPU Status (NumPyro + JAX)"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🚀 Homodyne GPU Status (Isolated Backend Architecture)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             # Hardware detection
             if command -v nvidia-smi >/dev/null 2>&1; then
@@ -108,15 +113,20 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
             # Environment status
             echo ""
             echo "🔧 Environment Configuration:"
-            echo "   HOMODYNE_GPU_INTENT: ${HOMODYNE_GPU_INTENT:-false}"
-            echo "   JAX_PLATFORMS: ${JAX_PLATFORMS:-auto-detect}"
-            echo "   JAX_ENABLE_X64: ${JAX_ENABLE_X64:-not set}"
+            echo "   HOMODYNE_GPU_INTENT: ${HOMODYNE_GPU_INTENT:-false} (backend selection)"
+            echo "   JAX_PLATFORMS: ${JAX_PLATFORMS:-auto-detect} (NumPyro backend only)"
+            echo "   JAX_ENABLE_X64: ${JAX_ENABLE_X64:-not set} (NumPyro backend only)"
 
             # Backend routing info
             echo ""
-            echo "📊 MCMC Backend Routing:"
-            echo "   homodyne        → PyMC (CPU-only)"
-            echo "   homodyne-gpu    → NumPyro (GPU + CPU fallback)"
+            echo "📊 Isolated MCMC Backends:"
+            echo "   homodyne        → Pure PyMC CPU (isolated from JAX)"
+            echo "   homodyne-gpu    → Pure NumPyro GPU/JAX (isolated from PyMC)"
+            echo ""
+            echo "🔒 Backend Isolation:"
+            echo "   • CPU backend: No JAX imports, pure PyTensor CPU mode"
+            echo "   • GPU backend: No PyMC imports, pure NumPyro+JAX implementation"  
+            echo "   • Complete namespace separation prevents conflicts"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         else
             echo "GPU status only available on Linux"

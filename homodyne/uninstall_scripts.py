@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Homodyne Cleanup - Remove Shell Completion and GPU Setup
-========================================================
+Homodyne Cleanup - Remove Shell Completion and Isolated Backend System
+======================================================================
 
 This script removes homodyne-related files from virtual environments
 that were installed by homodyne-post-install but are not automatically
@@ -9,11 +9,13 @@ tracked by pip uninstall.
 
 Removes:
 - Shell completion scripts (bash, zsh, fish)
-- GPU acceleration setup files
+- Isolated GPU backend setup files (NumPyro + JAX)
+- Isolated CPU backend configuration (PyMC)
 - Conda activation scripts
 - Environment aliases and shortcuts
 
 Supports: conda, mamba, venv, virtualenv
+Architecture: Isolated CPU (PyMC) and GPU (NumPyro) backends
 
 Usage:
     homodyne-cleanup
@@ -169,11 +171,12 @@ def interactive_cleanup():
         # GPU setup (Linux only)
         remove_gpu = False
         if platform.system() == "Linux":
-            print("\n2. GPU Acceleration Setup (NumPyro + JAX)")
-            print("   - Removes NumPyro GPU environment configuration")
+            print("\n2. Isolated GPU Backend Setup (NumPyro + JAX)")
+            print("   - Removes isolated NumPyro GPU backend configuration")
             print("   - Removes CUDA activation scripts and HOMODYNE_GPU_INTENT setup")
+            print("   - Cleans JAX GPU environment isolation")
 
-            remove_gpu = input("   Remove GPU setup? [y/N]: ").lower().startswith("y")
+            remove_gpu = input("   Remove isolated GPU backend setup? [y/N]: ").lower().startswith("y")
 
         # Advanced features
         print("\n3. Advanced Features")
@@ -219,7 +222,7 @@ def cleanup_all_files():
     is_venv = is_virtual_environment()
 
     print("═" * 70)
-    print("🧹 Homodyne Cleanup - Shell Completion & GPU Setup")
+    print("🧹 Homodyne Cleanup - Shell Completion & Isolated Backend System")
     print("═" * 70)
     print(f"🖥️  Platform: {system}")
     print(f"📦 Environment: {'Virtual Environment' if is_venv else 'System Python'}")
@@ -417,7 +420,8 @@ def main():
             if not args.interactive:
                 print("\n💡 What was cleaned:")
                 print("   ├─ Shell completion scripts (bash/zsh/fish)")
-                print("   ├─ GPU acceleration setup (NumPyro + JAX)")
+                print("   ├─ Isolated GPU backend setup (NumPyro + JAX)")
+                print("   ├─ Isolated CPU backend configuration (PyMC)")
                 print("   ├─ Conda activation scripts")
                 print("   └─ Legacy system files")
             print("\n🔄 Next steps:")
@@ -447,7 +451,7 @@ def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         prog="homodyne-cleanup",
-        description="Remove Homodyne shell completion and GPU setup",
+        description="Remove Homodyne shell completion and isolated backend system",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -460,7 +464,8 @@ homodyne-post-install. Run this BEFORE 'pip uninstall'.
 
 Files removed:
   • Shell completion scripts (bash/zsh/fish)
-  • GPU acceleration setup
+  • Isolated GPU backend setup (NumPyro + JAX)
+  • Isolated CPU backend configuration (PyMC)
   • Conda activation scripts
   • Legacy system files
         """,

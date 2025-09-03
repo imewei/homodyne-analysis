@@ -1,4 +1,5 @@
 # Complete dependencies for homodyne-analysis with all optional features
+# Includes isolated MCMC backend architecture
 # Install with: pip install -r requirements-all.txt
 # Or: pip install homodyne-analysis[all]
 #
@@ -16,5 +17,10 @@
 # JAX/GPU acceleration (Linux only)
 -r requirements-jax.txt
 
+# MCMC isolated backends (complete functionality)
+-r requirements-mcmc-all.txt
+
 # Note: Some dependencies may have platform-specific requirements
-# On non-Linux systems, JAX GPU features will be automatically skipped
+# - Linux: Full GPU support for homodyne-gpu backend  
+# - macOS/Windows: CPU-only for both homodyne and homodyne-gpu backends
+# - Isolated backends prevent PyTensor/JAX conflicts across all platforms

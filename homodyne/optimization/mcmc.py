@@ -22,6 +22,8 @@ from typing import Any
 
 import numpy as np
 
+# PyTensor configuration is handled by the isolated CPU backend wrapper
+
 # Import homodyne modules using relative import - keep for potential future use
 try:
     from ..analysis.core import HomodyneAnalysisCore
@@ -54,8 +56,7 @@ def _lazy_import_pymc():
     return pm, az, pt, shared
 
 
-# CPU-only PyMC implementation - JAX/GPU code removed
-# For GPU acceleration, use mcmc_gpu.py with pure NumPyro implementation
+# CPU-only PyMC implementation
 
 
 # Check availability without importing
@@ -811,14 +812,7 @@ class MCMCSampler:
 
         # CPU-only configuration
 
-        os.environ.update(
-            {
-                "JAX_PLATFORMS": "cpu",
-                "PYTENSOR_FLAGS": "device=cpu,floatX=float64,optimizer=fast_compile,mode=FAST_COMPILE",
-                "HOMODYNE_GPU_INTENT": "false",
-            }
-        )
-
+        # Environment configuration is now handled by the isolated backend wrapper
         logger.info("MCMC configured for CPU-only operation")
 
         # Auto-tuning settings
@@ -885,7 +879,6 @@ class MCMCSampler:
             "init": self._get_optimized_mass_matrix_strategy(n_params, data_size),
         }
 
-    # JAX sampling method removed - use mcmc_gpu.py for GPU acceleration
 
     def _progressive_mcmc_sampling(
         self, model, full_draws: int, full_tune: int, chains: int, initvals
@@ -997,6 +990,8 @@ class MCMCSampler:
     ) -> dict[str, Any]:
         """
         Run MCMC NUTS sampling for parameter uncertainty quantification.
+        
+        This method uses pure PyMC backend (isolated from JAX) for CPU-only Bayesian sampling.
 
         This method provides advanced Bayesian sampling using PyMC's
         No-U-Turn Sampler for uncertainty quantification. Supports
@@ -1042,11 +1037,14 @@ class MCMCSampler:
         if not PYMC_AVAILABLE:
             raise ImportError("PyMC not available for MCMC")
 
+        
         # Type assertions for type checker - these are guaranteed after the
         # availability check
         assert pm is not None
         assert az is not None
 
+        print("🔵 DEBUG: ENTERED CPU _run_mcmc_nuts_optimized method in mcmc.py!")
+        
         # Get adaptive MCMC settings based on problem characteristics
         data_size = c2_experimental.size
 
@@ -1258,32 +1256,33 @@ class MCMCSampler:
                     f"    Thinning: keeping every {thin} samples (effective samples: {effective_draws})"
                 )
 
-                # CPU-only PyMC sampling
-                print("    Using CPU-based sampling with performance enhancements...")
+            # CPU-only PyMC sampling
+            print("    Using CPU-based sampling with performance enhancements...")
 
-                if self.use_progressive_sampling and (
-                    draws > 500 or effective_param_count > 5
-                ):
-                    # Use progressive sampling for complex problems
-                    trace = self._progressive_mcmc_sampling(
-                        model, draws, tune, chains, initvals
-                    )
-                else:
-                    # Standard enhanced sampling
-                    trace = pm.sample(
-                        draws=draws,
-                        tune=tune,
-                        chains=chains,
-                        cores=cores,
-                        initvals=initvals,
-                        target_accept=target_accept,
-                        init=init_strategy,
-                        max_treedepth=max_treedepth,
-                        thin=thin,  # Apply thinning during sampling
-                        return_inferencedata=True,
-                        compute_convergence_checks=True,
-                        progressbar=True,
-                    )
+            if self.use_progressive_sampling and (
+                draws > 500 or effective_param_count > 5
+            ):
+                # Use progressive sampling for complex problems
+                trace = self._progressive_mcmc_sampling(
+                    model, draws, tune, chains, initvals
+                )
+            else:
+                # Standard enhanced sampling
+                # Standard PyMC sampling (isolated from JAX conflicts)
+                trace = pm.sample(
+                    draws=draws,
+                    tune=tune,
+                    chains=chains,
+                    cores=cores,  # Use available cores for multiprocessing
+                    initvals=initvals,
+                    target_accept=target_accept,
+                    init=init_strategy,
+                    max_treedepth=max_treedepth,
+                    thin=thin,  # Apply thinning during sampling
+                    return_inferencedata=True,
+                    compute_convergence_checks=True,
+                    progressbar=True,
+                )
 
         mcmc_time = time.time() - mcmc_start
 
@@ -1368,6 +1367,8 @@ class MCMCSampler:
     ) -> dict[str, Any]:
         """
         Run complete MCMC analysis including model building and sampling.
+
+        **DEBUG: This is the CPU MCMC run_mcmc_analysis method from mcmc.py**
 
         Parameters
         ----------
@@ -2037,7 +2038,6 @@ class MCMCSampler:
         """Estimate expected performance improvements from enhancements."""
         speedup_factors = {"baseline": 1.0}
 
-        # JAX backend removed - use mcmc_gpu.py for GPU acceleration
 
         if self.auto_tune_enabled:
             speedup_factors["auto_tuning"] = 1.5  # Better convergence

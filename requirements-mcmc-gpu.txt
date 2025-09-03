@@ -1,0 +1,25 @@
+# MCMC GPU Backend Dependencies (Isolated)
+# Pure NumPyro/JAX implementation - completely isolated from PyMC
+# For GPU-accelerated Bayesian MCMC sampling with NumPyro
+
+# Include core dependencies
+-r requirements.txt
+
+# JAX backend for GPU/CPU operations
+jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'
+jax>=0.7.0 ; sys_platform != 'linux'
+jaxlib>=0.4.35
+
+# NumPyro GPU Backend (isolated from PyMC)
+numpyro>=0.13.0
+
+# Usage:
+# pip install -r requirements-mcmc-gpu.txt
+# homodyne-gpu --method mcmc  # Uses pure NumPyro/JAX backend with GPU/CPU fallback
+
+# Architecture Notes:
+# - This backend is completely isolated from PyMC/PyTensor
+# - JAX handles both GPU and CPU operations with automatic fallback
+# - No PyMC imports to avoid namespace conflicts
+# - Linux: Full GPU acceleration with CUDA 12.6+
+# - macOS/Windows: Automatic CPU fallback within JAX ecosystem

@@ -1,7 +1,21 @@
 MCMC Module
 ===========
 
-The MCMC module provides Bayesian analysis capabilities using PyMC for uncertainty quantification, with automatic JAX backend GPU acceleration (Linux only) and PyTensor environment variable auto-configuration via JAX/NumPyro backend.
+.. index:: MCMC, Bayesian analysis, PyMC, NumPyro, JAX, GPU acceleration, backend isolation
+
+The MCMC module provides Bayesian analysis capabilities through **isolated backend architecture** that completely separates PyMC CPU and NumPyro/JAX GPU implementations to prevent PyTensor/JAX conflicts while maintaining optimal performance.
+
+Isolated Backend Architecture
+-----------------------------
+
+.. index:: backend separation, PyTensor conflicts, namespace isolation
+
+**Revolutionary Backend Separation**
+
+- **CPU Backend** (``mcmc_cpu_backend.py``): Pure PyMC implementation, completely isolated from JAX
+- **GPU Backend** (``mcmc_gpu_backend.py``): Pure NumPyro/JAX implementation, completely isolated from PyMC  
+- **Unified Interface**: Seamless backend selection based on environment and user intent
+- **Complete Isolation**: Eliminates PyTensor/JAX namespace conflicts
 
 MCMCSampler
 -----------
@@ -36,21 +50,67 @@ Main class for MCMC-based parameter estimation with Bayesian inference using PyM
 Utility Functions
 -----------------
 
-**create_mcmc_sampler(analysis_core, config)**
+**get_mcmc_backend()**
 
-Helper function to create a properly configured MCMC sampler instance.
-
-**Parameters:**
-* ``analysis_core`` - HomodyneAnalysisCore instance
-* ``config`` - Configuration dictionary
+New unified backend selection function that automatically chooses the appropriate isolated backend.
 
 **Returns:**
-* ``MCMCSampler`` - Configured sampler instance
+* ``mcmc_function`` - Backend-specific MCMC function
+* ``backend_name`` - Backend identifier ("PyMC_CPU" or "NumPyro_GPU_JAX")  
+* ``has_gpu`` - Boolean indicating GPU availability
+
+**Backend Functions:**
+
+**CPU Backend** (``run_cpu_mcmc_analysis``):
+* Pure PyMC implementation
+* Cross-platform compatibility
+* No JAX dependencies
+* Consistent CPU performance
+
+**GPU Backend** (``run_gpu_mcmc_analysis``):
+* Pure NumPyro/JAX implementation  
+* Linux GPU acceleration with CPU fallback
+* No PyMC dependencies
+* High-performance computing optimized
 
 Usage Examples
 --------------
 
-**Basic MCMC Sampling**:
+**Isolated Backend Usage**:
+
+.. code-block:: python
+
+   import os
+   from homodyne.run_homodyne import get_mcmc_backend
+   from homodyne import ConfigManager, HomodyneAnalysisCore
+
+   # Method 1: Automatic backend selection
+   mcmc_function, backend_name, has_gpu = get_mcmc_backend()
+   print(f"Using backend: {backend_name}")
+
+   # Method 2: Force specific backend
+   os.environ["HOMODYNE_GPU_INTENT"] = "false"  # Force CPU backend
+   # os.environ["HOMODYNE_GPU_INTENT"] = "true"   # Force GPU backend
+
+   mcmc_function, backend_name, has_gpu = get_mcmc_backend()
+
+   # Setup analysis
+   config = ConfigManager("mcmc_config.json") 
+   analyzer = HomodyneAnalysisCore(config)
+
+   # Run isolated backend MCMC
+   results = mcmc_function(
+       analysis_core=analyzer,
+       config=config.config,
+       c2_experimental=experimental_data,
+       phi_angles=angles,
+       filter_angles_for_optimization=True
+   )
+
+   print(f"MCMC completed with {backend_name} backend")
+   print(f"Converged: {results.get('diagnostics', {}).get('converged', 'Unknown')}")
+
+**Legacy MCMCSampler (Still Supported)**:
 
 .. code-block:: python
 
@@ -60,6 +120,7 @@ Usage Examples
    config = ConfigManager("mcmc_config.json")
    sampler = MCMCSampler(config)
 
+   # This automatically uses the appropriate isolated backend
    # Setup the Bayesian model
    sampler.setup_model(experimental_data, angles)
 

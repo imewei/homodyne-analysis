@@ -1,6 +1,6 @@
-# Optional dependencies for Homodyne Scattering Analysis Package with comprehensive testing framework
+# Optional dependencies for Homodyne Scattering Analysis Package with isolated MCMC backends
 # Generated from pyproject.toml [project.optional-dependencies]
-# Latest update: Comprehensive testing framework with resolved dependency availability tests (v0.7.2)
+# Latest update: Isolated MCMC backend architecture (CPU/GPU separation)
 
 # Include core dependencies
 -r requirements.txt
@@ -15,14 +15,16 @@ jax>=0.7.0 ; sys_platform != 'linux'
 jaxlib>=0.4.35
 psutil>=5.8.0
 
-# MCMC and Bayesian analysis (JAX backend GPU + PyTensor CPU auto-configured)
+# MCMC Isolated Backends (CPU and GPU completely separated)
+# CPU Backend (Pure PyMC - no JAX contamination)
 pymc>=5.0.0
 arviz>=0.12.0
 pytensor>=2.8.0
 corner>=2.2.0
+
+# GPU Backend (Pure NumPyro/JAX - no PyMC contamination)  
 numpyro>=0.13.0
-# JAX backend handles GPU operations, PyTensor environment variables auto-configured
-# PYTENSOR_FLAGS="device=cpu,cxx=" automatically set during pip install
+# Note: JAX dependencies already included in performance section above
 
 # Robust optimization
 cvxpy>=1.4.0
@@ -33,12 +35,15 @@ gurobipy>=11.0.0
 # Shell completion and enhanced virtual environment integration
 argcomplete>=3.0.0
 
-# Note: JAX backend GPU acceleration with PyTensor environment variable auto-configuration:
-# - JAX backend: Handles all GPU operations (MCMC sampling, numerical computations)
-# - PyTensor: CPU mode with environment variables auto-configured during pip install
-# - Environment variables: PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
-# - Virtual environments: Enhanced support for conda/mamba/venv with activation scripts
-# - Shell completion: Ultra-fast preloaded completion with aliases and tab completion
-# - Command shortcuts: hm, hc, hr, ha, hgm, hga always available
-# - Status functions: homodyne_gpu_status (conda/mamba environments)
-# - Cross-platform: Linux (full GPU), macOS/Windows (CPU with JAX optimizations)
+# Architecture Notes: Isolated Backend System
+# - CPU Backend (mcmc.py): Pure PyMC implementation, completely isolated from JAX
+# - GPU Backend (mcmc_gpu.py): Pure NumPyro/JAX implementation, completely isolated from PyMC
+# - Backend Wrappers: mcmc_cpu_backend.py and mcmc_gpu_backend.py handle isolation
+# - Environment Configuration: Each backend configures its own environment independently
+# - Cross-platform: 
+#   * Linux: Full GPU support with CUDA 12.6+ for GPU backend
+#   * macOS/Windows: CPU-only for both backends (JAX CPU fallback for GPU backend)
+# - Shell completion: Enhanced support with backend-specific commands
+# - Command shortcuts: 
+#   * homodyne: Uses CPU backend (pure PyMC)
+#   * homodyne-gpu: Uses GPU backend (pure NumPyro/JAX with CPU fallback)

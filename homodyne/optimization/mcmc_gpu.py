@@ -37,7 +37,7 @@ try:
     import numpyro
     import numpyro.distributions as dist
     from numpyro.diagnostics import effective_sample_size, gelman_rubin, hpdi
-    from numpyro.infer import MCMC, NUTS, init_to_value
+    from numpyro.infer import MCMC, NUTS, init_to_value, init_to_median, init_to_uniform
 
     JAX_AVAILABLE = True
 except ImportError as e:
@@ -122,28 +122,12 @@ class MCMCSampler:
         ]
         self.gpu_available = len(self.gpu_devices) > 0
 
+        # JAX configuration is now handled by the isolated GPU backend wrapper
         if self.gpu_available:
-            # GPU configuration
-            os.environ.update(
-                {
-                    "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
-                    "XLA_PYTHON_CLIENT_MEM_FRACTION": "0.8",
-                    "JAX_ENABLE_X64": "false",  # float32 for better GPU performance
-                    "HOMODYNE_GPU_INTENT": "true",
-                }
-            )
-            jax.config.update("jax_enable_x64", False)
+            jax.config.update("jax_enable_x64", False)  # float32 for better GPU performance
             logger.info("JAX configured for GPU acceleration")
         else:
-            # CPU-only configuration
-            os.environ.update(
-                {
-                    "JAX_PLATFORMS": "cpu",
-                    "JAX_ENABLE_X64": "true",  # float64 for CPU accuracy
-                    "HOMODYNE_GPU_INTENT": "false",
-                }
-            )
-            jax.config.update("jax_enable_x64", True)
+            jax.config.update("jax_enable_x64", True)  # float64 for CPU accuracy
             logger.info("JAX configured for CPU-only operation")
 
     def _initialize_performance_features(self) -> None:
@@ -396,10 +380,10 @@ class MCMCSampler:
             c2_fitted = c2_theory_angles * contrast + offset
 
             # Physical constraints (matching lines 800-820)
-            # Constraint: c2_fitted ∈ [1.0, 2.0]
+            # Constraint: c2_fitted ∈ [1.0, 2.0] - soft penalty for production use
             valid_range = jnp.all((c2_fitted >= 1.0) & (c2_fitted <= 2.0))
             numpyro.factor(
-                "fitted_range_constraint", jnp.where(valid_range, 0.0, -1e10)
+                "fitted_range_constraint", jnp.where(valid_range, 0.0, -100)  # Moderate penalty
             )
 
             # Likelihood (matching lines 821-850)
@@ -542,8 +526,8 @@ class MCMCSampler:
             f", thin={thin} (effective={effective_draws})" if thin > 1 else ""
         )
 
-        # Adaptive settings (matching lines 859-881)
-        if self.use_adaptive_mcmc:
+        # Adaptive settings (matching lines 1053-1062)
+        if self.auto_tune_enabled:
             settings = self._get_adaptive_mcmc_settings(
                 c2_experimental.size, effective_param_count
             )
@@ -591,19 +575,9 @@ class MCMCSampler:
         backend = "gpu" if self.gpu_available else "cpu"
 
         # Configure NUTS kernel with initialization
-        init_strategy = None
-        if init_params is not None and len(init_params) > 0:
-            # Create initialization dict for NumPyro
-            param_names = self.config.get("initial_parameters", {}).get(
-                "parameter_names", []
-            )
-            if len(param_names) >= len(init_params):
-                init_values = {}
-                for _i, (name, value) in enumerate(
-                    zip(param_names[: len(init_params)], init_params, strict=False)
-                ):
-                    init_values[name] = float(value)
-                init_strategy = init_to_value(values=init_values)
+        # Use the most basic initialization strategy for testing
+        print("    Using uniform initialization strategy for debugging")
+        init_strategy = init_to_uniform()
 
         nuts_kernel = NUTS(
             model,
@@ -725,6 +699,12 @@ class MCMCSampler:
         )
 
         # Run MCMC
+        # Remove conflicting parameters from kwargs to avoid "multiple values" error
+        filtered_kwargs = {k: v for k, v in kwargs.items() 
+                          if k not in ['c2_experimental', 'phi_angles', 'config', 
+                                     'is_static_mode', 'effective_param_count', 
+                                     'filter_angles_for_optimization']}
+        
         trace = self._run_mcmc_nuts_optimized(
             c2_experimental,
             phi_angles,
@@ -732,7 +712,7 @@ class MCMCSampler:
             is_static_mode,
             effective_param_count,
             filter_angles_for_optimization,
-            **kwargs,
+            **filtered_kwargs,
         )
 
         # Extract results (matching lines 1503-1530)

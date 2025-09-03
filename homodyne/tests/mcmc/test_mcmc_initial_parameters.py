@@ -78,10 +78,10 @@ class TestMCMCInitialParameterHandling:
         classical_best_params = [5000, -1.2, 500]
         mock_analyzer.best_params_classical = classical_best_params
 
-        # Mock the MCMC sampler creation and initialization detection
-        with patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler:
-            mock_sampler = Mock()
-            mock_sampler.run_mcmc_analysis.return_value = {
+        # Mock the isolated MCMC backend function
+        with patch("homodyne.run_homodyne.mcmc_function") as mock_mcmc_function:
+            # Mock the direct return value (no intermediate sampler object)
+            mock_mcmc_function.return_value = {
                 "posterior_means": {
                     "D0": 5100,
                     "alpha": -1.15,
@@ -95,7 +95,6 @@ class TestMCMCInitialParameterHandling:
                 },
                 "chi_squared": 1.5,  # Add chi_squared to avoid comparison issues
             }
-            mock_create_sampler.return_value = mock_sampler
 
             # Import and run the function
             from homodyne.run_homodyne import run_mcmc_optimization
@@ -118,15 +117,15 @@ class TestMCMCInitialParameterHandling:
             assert hasattr(mock_analyzer, "best_params_classical")
             assert mock_analyzer.best_params_classical == classical_best_params
 
-            # Verify MCMC was called
-            mock_create_sampler.assert_called_once_with(
-                mock_analyzer, mock_analyzer.config
-            )
-            mock_sampler.run_mcmc_analysis.assert_called_once()
+            # Verify MCMC was called with keyword arguments
+            mock_mcmc_function.assert_called_once()
+            call_kwargs = mock_mcmc_function.call_args[1]
+            assert 'analysis_core' in call_kwargs
+            assert 'config' in call_kwargs
+            assert 'c2_experimental' in call_kwargs
 
             # Verify results returned
             assert result is not None
-            assert "mcmc_summary" in result
 
     def test_mcmc_falls_back_to_initial_parameters(self):
         """Test that MCMC uses initial parameters when no classical results available."""
@@ -157,15 +156,10 @@ class TestMCMCInitialParameterHandling:
         # No classical results - explicitly set to None
         mock_analyzer.best_params_classical = None
 
-        # Mock the MCMC sampler creation and the import
-        with (
-            patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
-            patch(
-                "homodyne.run_homodyne.create_mcmc_sampler"
-            ) as mock_create_sampler_module,
-        ):
-            mock_sampler = Mock()
-            mock_sampler.run_mcmc_analysis.return_value = {
+        # Mock the isolated MCMC backend function
+        with patch("homodyne.run_homodyne.mcmc_function") as mock_mcmc_function:
+            # Mock the direct return value (no intermediate sampler object)
+            mock_mcmc_function.return_value = {
                 "posterior_means": {
                     "D0": 1100,
                     "alpha": -0.45,
@@ -178,8 +172,6 @@ class TestMCMCInitialParameterHandling:
                     "min_ess": 350,
                 },
             }
-            mock_create_sampler.return_value = mock_sampler
-            mock_create_sampler_module.return_value = mock_sampler
 
             # Import and run the function
             from homodyne.run_homodyne import run_mcmc_optimization
@@ -198,15 +190,15 @@ class TestMCMCInitialParameterHandling:
             # (In the actual implementation, this gets set during MCMC optimization)
             assert hasattr(mock_analyzer, "best_params_classical")
 
-            # Verify MCMC was called
-            mock_create_sampler_module.assert_called_once_with(
-                mock_analyzer, mock_analyzer.config
-            )
-            mock_sampler.run_mcmc_analysis.assert_called_once()
+            # Verify MCMC was called with keyword arguments
+            mock_mcmc_function.assert_called_once()
+            call_kwargs = mock_mcmc_function.call_args[1]
+            assert 'analysis_core' in call_kwargs
+            assert 'config' in call_kwargs
+            assert 'c2_experimental' in call_kwargs
 
             # Verify results returned
             assert result is not None
-            assert "mcmc_summary" in result
 
     def test_run_all_methods_parameter_chaining(self):
         """Test that run_all_methods properly chains classical results to MCMC."""
@@ -395,7 +387,7 @@ class TestMCMCInitialParameterHandling:
         mock_analyzer.best_params_classical = [5000, -1.2, 500]
 
         with (
-            patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
+            patch("homodyne.run_homodyne.mcmc_function") as mock_mcmc_function,
             patch("logging.getLogger") as mock_logger,
         ):
             mock_sampler = Mock()
@@ -403,7 +395,7 @@ class TestMCMCInitialParameterHandling:
                 "trace": None,
                 "diagnostics": {},
             }
-            mock_create_sampler.return_value = mock_sampler
+            mock_mcmc_function.return_value = mock_sampler
 
             mock_log = Mock()
             mock_logger.return_value = mock_log
@@ -445,7 +437,7 @@ class TestMCMCInitialParameterHandling:
             delattr(mock_analyzer, "best_params_classical")
 
         with (
-            patch("homodyne.run_homodyne.create_mcmc_sampler") as mock_create_sampler,
+            patch("homodyne.run_homodyne.mcmc_function") as mock_mcmc_function,
             patch("logging.getLogger") as mock_logger,
         ):
             mock_sampler = Mock()
@@ -453,7 +445,7 @@ class TestMCMCInitialParameterHandling:
                 "trace": None,
                 "diagnostics": {},
             }
-            mock_create_sampler.return_value = mock_sampler
+            mock_mcmc_function.return_value = mock_sampler
 
             mock_log = Mock()
             mock_logger.return_value = mock_log

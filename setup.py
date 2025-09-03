@@ -19,31 +19,31 @@ from setuptools.command.install import install
 
 
 class PostInstallCommand(install):
-    """Post-installation command for pip install with unified shell completion
-    and smart GPU acceleration setup."""
+    """Post-installation command for pip install with isolated MCMC backend
+    architecture, unified shell completion and smart GPU acceleration setup."""
 
     def run(self):
         install.run(self)
         self._run_post_install()
 
     def _run_post_install(self):
-        """Run post-installation setup with unified shell completion
-        and smart GPU acceleration."""
+        """Run post-installation setup with isolated MCMC backends,
+        unified shell completion and smart GPU acceleration."""
         try:
             # Only run post-install in virtual environments
             if self._is_virtual_environment():
                 print("\n" + "=" * 70)
                 print(
-                    "🚀 Setting up Homodyne with unified shell completion and GPU acceleration..."
+                    "🚀 Setting up Homodyne with isolated MCMC backends, shell completion and GPU acceleration..."
                 )
                 # Import and run the post-install module
                 from homodyne.post_install import main
 
                 main()
                 print("\n🎆 Installation complete! Available commands:")
-                print("  homodyne                 - Main analysis command")
+                print("  homodyne                 - Main analysis command (CPU backend)")
                 print(
-                    "  homodyne-gpu             - GPU-accelerated analysis (JAX backend)"
+                    "  homodyne-gpu             - GPU analysis (isolated NumPyro/JAX backend)"
                 )
                 print("  homodyne-config          - Configuration generator")
                 print("  homodyne-post-install    - Setup shell completion & GPU")
@@ -76,30 +76,30 @@ class PostInstallCommand(install):
 
 class PostDevelopCommand(develop):
     """Post-installation command for pip install -e (development mode) with
-    unified shell completion and smart GPU acceleration setup."""
+    isolated MCMC backend architecture, unified shell completion and smart GPU acceleration setup."""
 
     def run(self):
         develop.run(self)
         self._run_post_install()
 
     def _run_post_install(self):
-        """Run post-installation setup with unified shell completion
-        and smart GPU acceleration for development mode."""
+        """Run post-installation setup with isolated MCMC backends,
+        unified shell completion and smart GPU acceleration for development mode."""
         try:
             # Only run post-install in virtual environments
             if self._is_virtual_environment():
                 print("\n" + "=" * 70)
                 print(
-                    "🚀 Setting up Homodyne development mode with unified completion and GPU..."
+                    "🚀 Setting up Homodyne development mode with isolated backends, completion and GPU..."
                 )
                 # Import and run the post-install module
                 from homodyne.post_install import main
 
                 main()
                 print("\n🎆 Development installation complete! Available commands:")
-                print("  homodyne                 - Main analysis command")
+                print("  homodyne                 - Main analysis command (CPU backend)")
                 print(
-                    "  homodyne-gpu             - GPU-accelerated analysis (JAX backend)"
+                    "  homodyne-gpu             - GPU analysis (isolated NumPyro/JAX backend)"
                 )
                 print("  homodyne-config          - Configuration generator")
                 print("  homodyne-post-install    - Setup shell completion & GPU")
@@ -134,7 +134,7 @@ class PostDevelopCommand(develop):
 
 
 # Configuration is in pyproject.toml, but add custom install commands for
-# unified shell completion and smart GPU acceleration setup
+# isolated MCMC backend architecture, unified shell completion and smart GPU acceleration setup
 setup(
     cmdclass={
         "install": PostInstallCommand,

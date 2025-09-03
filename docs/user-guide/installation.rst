@@ -1,6 +1,8 @@
 Installation Guide
 ==================
 
+.. index:: installation, pip install, isolated backends, GPU acceleration, system requirements
+
 System Requirements
 -------------------
 
@@ -29,7 +31,7 @@ This installs the core dependencies (numpy, scipy, matplotlib) along with the ma
 
    pip install homodyne-analysis[all]
 
-This includes all optional dependencies: performance acceleration (numba, jax), robust optimization (cvxpy), MCMC analysis (pymc, arviz, pytensor), documentation tools, and development utilities.
+This includes all optional dependencies: performance acceleration (numba, jax), robust optimization (cvxpy), **both isolated MCMC backends** (PyMC CPU + NumPyro/JAX GPU), documentation tools, and development utilities.
 
 Optional Installation Extras
 -----------------------------
@@ -49,12 +51,28 @@ You can install specific feature sets using pip extras:
 
 **For MCMC Bayesian Analysis:**
 
+The package now features **isolated MCMC backends** that completely separate PyMC CPU and NumPyro/JAX GPU implementations to prevent PyTensor/JAX conflicts:
+
+**CPU-only MCMC (Pure PyMC - Recommended for most users):**
+
 .. code-block:: bash
 
    pip install homodyne-analysis[mcmc]
 
+**GPU MCMC (Pure NumPyro/JAX - Linux with NVIDIA GPU):**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[mcmc-gpu]
+
+**Both Backends (Maximum flexibility):**
+
+.. code-block:: bash
+
+   pip install homodyne-analysis[mcmc-all]
+
 .. note::
-   This now includes NumPyro for JAX backend GPU-accelerated MCMC sampling. On Linux systems with NVIDIA GPUs, JAX with system CUDA 12.6+ support is automatically installed, and PyTensor environment variables are auto-configured for optimal performance (JAX handles GPU operations, PyTensor uses CPU mode).
+   **Isolated Backend Architecture**: The MCMC backends are completely separated to prevent conflicts. The CPU backend uses pure PyMC (cross-platform), while the GPU backend uses pure NumPyro/JAX (Linux with CPU fallback). This eliminates PyTensor/JAX namespace issues while providing optimal performance.
 
 **For Robust Optimization (Noise-Resistant Methods):**
 
@@ -208,14 +226,24 @@ If you encounter import errors, try reinstalling the package:
 
 **MCMC Issues:**
 
-For MCMC functionality, ensure the mcmc extras are installed:
+For MCMC functionality, ensure the appropriate MCMC backend is installed:
 
 .. code-block:: bash
 
+   # CPU backend (recommended for most users)
    pip install homodyne-analysis[mcmc]
 
-   # Test MCMC availability
-   python -c "import pymc; print('PyMC available')"
+   # GPU backend (Linux with NVIDIA GPU)
+   pip install homodyne-analysis[mcmc-gpu]
+
+   # Both backends
+   pip install homodyne-analysis[mcmc-all]
+
+   # Test CPU backend availability
+   python -c "from homodyne.optimization.mcmc_cpu_backend import is_cpu_mcmc_available; print(f'CPU MCMC: {is_cpu_mcmc_available()}')"
+
+   # Test GPU backend availability
+   python -c "from homodyne.optimization.mcmc_gpu_backend import is_gpu_mcmc_available; print(f'GPU MCMC: {is_gpu_mcmc_available()}')"
 
 **Performance Issues:**
 
@@ -334,15 +362,19 @@ The MCMC module automatically uses JAX backend for GPU operations while PyTensor
    # The module will log:
    # "Using JAX backend with NumPyro NUTS for system CUDA GPU acceleration"
 
-**Command Usage**
+**Command Usage with Isolated Backends**
 
 .. code-block:: bash
 
-   # CPU-only analysis (reliable, all platforms)
+   # CPU Backend (Pure PyMC - cross-platform)
    homodyne --config config.json --method mcmc
 
-   # System CUDA GPU-accelerated analysis (Linux only)
+   # GPU Backend (Pure NumPyro/JAX - Linux with CPU fallback)
    homodyne-gpu --config config.json --method mcmc
+
+   # Force specific backend via environment variable
+   HOMODYNE_GPU_INTENT=false homodyne --method mcmc  # Force CPU backend
+   HOMODYNE_GPU_INTENT=true homodyne --method mcmc   # Force GPU backend
 
 **System CUDA Requirements**
 

@@ -34,9 +34,9 @@ tests/
 │   ├── optimization/ (6 files) - Optimization algorithm tests
 │   │   ├── test_classical.py - Classical optimization methods
 │   │   ├── test_robust.py - Robust optimization methods  
-│   │   ├── test_mcmc.py - CPU MCMC implementation (updated)
-│   │   ├── test_mcmc_gpu.py - GPU MCMC implementation (new)
-│   │   ├── test_mcmc_cross_validation.py - Cross-module validation (new)
+│   │   ├── test_mcmc.py - Isolated CPU MCMC backend tests (updated)
+│   │   ├── test_mcmc_gpu.py - Isolated GPU MCMC backend tests (updated)
+│   │   ├── test_mcmc_cross_validation.py - Backend isolation validation (new)
 │   │   └── __init__.py
 │   └── utils/        (7 files) - Utility function tests
 ├── integration/       (8 files) - Component integration tests
@@ -88,36 +88,42 @@ pytest -m "unit and fast"        # Fast unit tests
 pytest -m "not mcmc"             # Non-MCMC tests
 ```
 
-## 🔬 MCMC Testing Framework
+## 🔬 Isolated MCMC Backend Testing Framework
 
 ### Core Test Files
 
-#### **GPU MCMC Tests** (`test_mcmc_gpu.py` - 50+ tests)
-- **Environment Setup**: JAX/NumPyro availability, GPU detection, CPU fallback
+#### **Isolated GPU MCMC Tests** (`test_mcmc_gpu.py` - 50+ tests)
+- **Backend Isolation**: Verifies complete separation from PyMC/PyTensor
+- **Environment Setup**: JAX/NumPyro availability, GPU detection, CPU fallback within JAX ecosystem
 - **Sampler Initialization**: Configuration validation, performance features
 - **Model Creation**: NumPyro model construction, prior distributions
-- **API Compatibility**: Interface consistency with CPU implementation
+- **API Compatibility**: Interface consistency with isolated CPU backend
 
-#### **Updated CPU MCMC Tests** (`test_mcmc.py` - 15 new classes)
-- **Data Saving Updates**: New fitted data scaling, uncertainty extraction
-- **Format Standardization**: Consistency with classical/robust methods
-- **Multi-angle Preservation**: Verification all phi angles saved correctly
+#### **Isolated CPU MCMC Tests** (`test_mcmc.py` - 25+ tests)
+- **Backend Isolation**: Verifies complete separation from JAX/NumPyro
+- **Pure PyMC Implementation**: CPU-only PyTensor configuration
+- **Data Saving Updates**: Updated for isolated backend architecture
+- **Cross-Platform Compatibility**: Linux, macOS, Windows validation
 
-#### **Cross-Module Validation** (`test_mcmc_cross_validation.py` - 12 classes)
+#### **Backend Isolation Validation** (`test_mcmc_cross_validation.py` - 15+ classes)
+- **Import Isolation**: Verifies no cross-contamination between backends
+- **Environment Configuration**: Tests isolated environment variable setup
 - **API Compatibility**: Constructor signatures, attributes, method interfaces
-- **Output Consistency**: Result structures, configuration handling
-- **Error Handling Parity**: Consistent error behavior between implementations
+- **Error Handling Consistency**: Consistent behavior across isolated backends
 
 ### Running MCMC Tests
 
 ```bash
-# All MCMC-related tests
+# All isolated MCMC backend tests
 pytest homodyne/tests/unit/optimization/ -v
 
-# GPU MCMC tests only
+# Isolated GPU backend tests only
 pytest homodyne/tests/unit/optimization/test_mcmc_gpu.py -v
 
-# Cross-module validation
+# Isolated CPU backend tests only
+pytest homodyne/tests/unit/optimization/test_mcmc.py -v
+
+# Backend isolation validation
 pytest homodyne/tests/unit/optimization/test_mcmc_cross_validation.py -v
 
 # Skip slow benchmarks
@@ -148,11 +154,11 @@ SKIPPED [1] test_mcmc.py:592: MCMC module not available
 
 ### Recent Coverage Additions
 
-#### **MCMC Testing Framework (Phase 5)**
-- Added comprehensive GPU MCMC testing (50+ tests)
-- Updated CPU MCMC tests for data format changes
-- Cross-module validation between CPU/GPU implementations
-- Dependency-aware test skipping for JAX/PyMC
+#### **Isolated MCMC Backend Testing Framework (Phase 5)**
+- Added comprehensive isolated GPU MCMC backend testing (50+ tests)
+- Updated isolated CPU MCMC backend tests for architecture changes  
+- Backend isolation validation between completely separated CPU/GPU implementations
+- Dependency-aware test skipping for isolated PyMC and JAX/NumPyro backends
 
 #### **System Components (Phase 3)**
 - **GPU Optimizer Tests** (25 tests): Hardware detection, optimization
@@ -320,11 +326,11 @@ pytest --collect-only       # Show test collection
 - Implemented automatic categorization
 - Enhanced CI/CD integration (31% performance improvement)
 
-### Phase 5: MCMC Framework ✅
-- Added comprehensive GPU MCMC testing (50+ tests)
-- Updated CPU MCMC tests for recent changes
-- Cross-module validation between implementations
-- Dependency-aware test skipping
+### Phase 5: Isolated MCMC Backend Testing ✅
+- Added comprehensive isolated GPU MCMC backend testing (50+ tests)
+- Updated isolated CPU MCMC backend tests for architecture separation
+- Backend isolation validation between completely separated implementations
+- Enhanced dependency-aware test skipping for isolated backends
 
 ## 🎯 Best Practices
 
@@ -346,4 +352,4 @@ pytest --collect-only       # Show test collection
 
 ---
 
-*This test suite provides a solid foundation for reliable, fast, and maintainable testing of the Homodyne analysis framework. The comprehensive MCMC testing framework ensures robust validation of both CPU and GPU Bayesian analysis implementations.*
+*This test suite provides a solid foundation for reliable, fast, and maintainable testing of the Homodyne analysis framework. The comprehensive isolated MCMC backend testing framework ensures robust validation of completely separated CPU and GPU Bayesian analysis implementations, preventing PyTensor/JAX conflicts while maintaining full functionality.*

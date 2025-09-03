@@ -1,0 +1,27 @@
+# MCMC All Backends Dependencies (Isolated Architecture)
+# Includes both CPU and GPU backends for complete MCMC functionality
+# Isolated backend architecture prevents PyTensor/JAX conflicts
+
+# Include core dependencies
+-r requirements.txt
+
+# CPU Backend (Pure PyMC - isolated from JAX)
+-r requirements-mcmc-cpu.txt
+
+# GPU Backend (Pure NumPyro/JAX - isolated from PyMC)  
+-r requirements-mcmc-gpu.txt
+
+# Usage:
+# pip install -r requirements-mcmc-all.txt
+# homodyne --method mcmc      # Pure PyMC CPU backend
+# homodyne-gpu --method mcmc  # Pure NumPyro/JAX GPU backend with CPU fallback
+
+# Alternative installation:
+# pip install homodyne-analysis[mcmc-all]
+
+# Architecture Benefits:
+# - Complete backend isolation prevents conflicts
+# - CPU backend: Pure PyMC, no JAX contamination
+# - GPU backend: Pure NumPyro/JAX, no PyMC contamination
+# - Cross-platform compatibility
+# - Automatic environment configuration per backend

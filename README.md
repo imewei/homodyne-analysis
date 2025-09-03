@@ -25,7 +25,8 @@ Implements the theoretical framework from [He et al. PNAS 2024](https://doi.org/
 
 ### ⚡ **High Performance**
 - **Numba JIT compilation**: 3-5x speedup with comprehensive warmup
-- **Smart GPU acceleration**: Dual MCMC backends (PyMC CPU, NumPyro GPU) with automatic detection
+- **Isolated MCMC backends**: Completely separated PyMC CPU and NumPyro GPU implementations prevent conflicts
+- **Smart GPU acceleration**: Automatic backend selection with CPU fallback
 - **Vectorized operations**: Optimized memory usage and batch processing
 - **Performance monitoring**: Built-in benchmarking and optimization tools
 
@@ -111,7 +112,9 @@ pip install homodyne-analysis[jax]
 | Feature | Command | Includes |
 |---------|---------|----------|
 | **Performance** | `[performance]` | Numba JIT, JAX acceleration, profiling tools |
-| **MCMC Analysis** | `[mcmc]` | PyMC, ArviZ, NumPyro, corner plots |
+| **MCMC CPU Backend** | `[mcmc]` | Pure PyMC CPU backend (isolated from JAX) |
+| **MCMC GPU Backend** | `[mcmc-gpu]` | Pure NumPyro/JAX GPU backend (isolated from PyMC) |
+| **MCMC All Backends** | `[mcmc-all]` | Both isolated CPU and GPU backends |
 | **Robust Optimization** | `[robust]` | CVXPY for noise-resistant methods |
 | **Commercial Solvers** | `[gurobi]` | Gurobi optimization (requires license) |
 | **Development** | `[dev]` | Testing, docs, quality tools, pre-commit |
@@ -183,18 +186,20 @@ homodyne --config config.json --verbose    # Debug information
 homodyne --config config.json --quiet      # File logging only
 ```
 
-### Smart GPU Commands
+### Isolated MCMC Backend Commands
 
 ```bash
-# CPU analysis (cross-platform)
+# CPU Backend (Pure PyMC - isolated from JAX)
 homodyne --config config.json --method mcmc
 
-# GPU analysis (Linux + NVIDIA)
+# GPU Backend (Pure NumPyro/JAX - isolated from PyMC)
 homodyne-gpu --config config.json --method mcmc
 
 # Smart aliases (automatic backend selection)
-hm config.json          # Smart MCMC
+hm config.json          # Smart MCMC with backend isolation
 ha config.json          # All methods with optimization
+hc config.json          # Classical methods only
+hr config.json          # Robust methods only
 ```
 
 ---
@@ -245,12 +250,14 @@ Each method directory contains:
 |--------|-----------|-------|----------|
 | **Classical** | Nelder-Mead, Gurobi | Minutes | Exploratory analysis |
 | **Robust** | Wasserstein DRO, Scenario, Ellipsoidal | 2-5x slower | Noisy data |
-| **MCMC** | NUTS (PyMC/NumPyro) | Hours | Uncertainty quantification |
+| **MCMC CPU** | NUTS (Pure PyMC) | Hours | CPU-only uncertainty quantification |
+| **MCMC GPU** | NUTS (Pure NumPyro/JAX) | 2-10x faster | GPU-accelerated uncertainty quantification |
 
 ### Performance Features
 
 - **JIT Compilation**: 3-5x speedup with Numba
-- **GPU Acceleration**: NumPyro backend for MCMC
+- **Isolated Backend Architecture**: Prevents PyTensor/JAX conflicts, enables optimal performance
+- **GPU Acceleration**: Pure NumPyro/JAX backend for MCMC with automatic CPU fallback
 - **Vectorized Operations**: Optimized batch processing
 - **Memory Management**: Efficient caching and cleanup
 - **Parallel Testing**: Multi-core test execution
@@ -291,8 +298,9 @@ pytest homodyne/tests/unit       # Unit tests only
 - **Unit Tests** (20 files): Core component testing
 - **Integration Tests** (8 files): Component interactions
 - **System Tests** (16 files): CLI and GPU functionality
-- **MCMC Tests**: CPU/GPU backend validation
+- **MCMC Tests**: Isolated CPU/GPU backend validation
 - **Performance Tests**: Regression detection
+- **Backend Isolation Tests**: Verify complete separation of PyMC and NumPyro
 
 ### Code Quality
 

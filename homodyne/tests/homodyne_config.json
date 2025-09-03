@@ -221,7 +221,14 @@
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
     },
     "mcmc_sampling": {
-      "_comment": "Dual MCMC Backend Configuration for Testing",
+      "_comment": "Isolated MCMC Backend Configuration for Testing - Lightweight settings for test suite",
+      "_backend_architecture": {
+        "isolation": "Complete separation of PyMC CPU and NumPyro GPU implementations",
+        "cpu_implementation": "homodyne.optimization.mcmc_cpu_backend.py",
+        "gpu_implementation": "homodyne.optimization.mcmc_gpu_backend.py",
+        "conflict_prevention": "Eliminates PyTensor/JAX namespace conflicts through isolated execution",
+        "testing_focus": "Reduced sampling for fast test execution"
+      },
       "enabled": true,
       "sampler": "NUTS",
       "draws": 2000,
@@ -233,17 +240,22 @@
       "max_treedepth": 10,
       "return_inferencedata": true,
       "backend_specific": {
-        "pymc_cpu": {
-          "_description": "CPU backend using PyMC + PyTensor",
-          "_command": "homodyne --method mcmc",
+        "cpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_cpu_backend.py",
+          "_description": "Isolated PyMC implementation for testing - no JAX dependencies",
+          "_command": "homodyne --method mcmc (or HOMODYNE_GPU_INTENT=false)",
+          "_isolation": "Pure PyMC environment, complete separation from NumPyro/JAX",
           "init_strategy": "adapt_diag",
           "compute_convergence_checks": true,
-          "progressbar": true
+          "progressbar": true,
+          "pytensor_config": "Automatically configured for test environment"
         },
-        "numpyro_gpu": {
-          "_description": "GPU backend using NumPyro + JAX",
-          "_command": "homodyne-gpu --method mcmc",
-          "_platform_support": "Linux with CUDA (auto-fallback to CPU if no GPU)",
+        "gpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_gpu_backend.py",
+          "_description": "Isolated NumPyro/JAX implementation for testing - no PyMC dependencies",
+          "_command": "homodyne-gpu --method mcmc (or HOMODYNE_GPU_INTENT=true)",
+          "_platform_support": "Linux with CUDA preferred, intelligent fallback for testing",
+          "_isolation": "Pure NumPyro/JAX environment, complete separation from PyMC/PyTensor",
           "init_strategy": "init_to_value",
           "chain_method": "vectorized",
           "progress_bar": true,

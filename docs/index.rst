@@ -29,8 +29,8 @@ Overview
 This package analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow. The implementation provides:
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- **Multiple optimization methods**: Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
-- **High performance**: Numba JIT compilation with 3-5x speedup, JAX backend GPU acceleration with PyTensor environment variable auto-configuration (Linux only), comprehensive performance monitoring
+- **Multiple optimization methods**: Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), **Isolated MCMC Backends** (Pure PyMC CPU + Pure NumPyro/JAX GPU)
+- **High performance**: Numba JIT compilation with 3-5x speedup, **isolated MCMC backend architecture** preventing PyTensor/JAX conflicts, comprehensive performance monitoring
 - **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
 
 Quick Start
@@ -40,7 +40,16 @@ Quick Start
 
 .. code-block:: bash
 
-   pip install homodyne-analysis[all]
+   # Basic installation
+   pip install homodyne-analysis
+
+   # Isolated MCMC backends
+   pip install homodyne-analysis[mcmc]      # CPU backend (PyMC)
+   pip install homodyne-analysis[mcmc-gpu]  # GPU backend (NumPyro/JAX)
+   pip install homodyne-analysis[mcmc-all]  # Both backends
+
+   # Full installation with all features
+   pip install homodyne-analysis[all]      # Includes both isolated backends
    homodyne-post-install --shell zsh --gpu --advanced  # Unified setup
 
 **Python API:**
@@ -63,14 +72,19 @@ Quick Start
    homodyne-config --mode static_isotropic --sample protein_01
    homodyne-config --mode laminar_flow --sample microgel
 
-   # Main analysis command
-   homodyne                                    # Default classical method
-   homodyne --method robust                    # Robust optimization only
-   homodyne --method mcmc                      # MCMC sampling only
+   # Main analysis commands with isolated backends
+   homodyne                                    # CPU backend (PyMC) - default
+   homodyne --method mcmc                      # CPU backend MCMC
+   homodyne-gpu --method mcmc                  # GPU backend (NumPyro/JAX) with CPU fallback
    homodyne --method all --verbose             # All methods with debug logging
 
+   # Force specific backend via environment variable
+   HOMODYNE_GPU_INTENT=false homodyne --method mcmc  # Force CPU backend
+   HOMODYNE_GPU_INTENT=true homodyne --method mcmc   # Force GPU backend
+
    # Unified system shortcuts (after homodyne-post-install)
-   hm config.json                              # homodyne --method mcmc
+   hm config.json                              # homodyne --method mcmc (CPU)
+   hgm config.json                             # homodyne-gpu --method mcmc (GPU)
    hc config.json                              # homodyne --method classical
    ha config.json                              # homodyne --method all
 
@@ -129,8 +143,11 @@ Key Features
 **Scientific Accuracy**
    Automatic g₂ = offset + contrast × g₁ fitting for accurate chi-squared calculations
 
+**Isolated MCMC Backend Architecture**
+   Complete separation of PyMC CPU and NumPyro/JAX GPU backends preventing PyTensor/JAX conflicts
+
 **Multiple Optimization Methods**
-   Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+   Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Isolated MCMC Backends (Pure PyMC CPU + Pure NumPyro/JAX GPU)
 
 **Smart Environment Support**
    Cross-platform virtual environment detection (conda, mamba, venv, virtualenv) with automatic configuration
@@ -151,10 +168,10 @@ Documentation Contents
    :maxdepth: 2
    :caption: Getting Started
 
+   user-guide/getting-started
    user-guide/installation
    user-guide/quickstart
    user-guide/complete-workflow-tutorial
-   user-guide/examples
 
 .. toctree::
    :maxdepth: 2
@@ -164,7 +181,15 @@ Documentation Contents
    user-guide/configuration
    user-guide/cli-reference
    user-guide/plotting
+   user-guide/examples
    user-guide/faq
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Quick Reference
+
+   user-guide/quick-reference
+   user-guide/troubleshooting-flowchart
 
 .. toctree::
    :maxdepth: 2
@@ -182,6 +207,7 @@ Documentation Contents
    :maxdepth: 1
    :caption: Additional Resources
 
+   glossary
    CHANGELOG
    AUTHORS
    LICENSE

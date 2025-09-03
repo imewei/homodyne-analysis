@@ -3,6 +3,10 @@ API Reference
 
 Complete API documentation for the homodyne analysis package.
 
+.. contents:: Quick Navigation
+   :local:
+   :depth: 2
+
 .. toctree::
    :maxdepth: 2
    :caption: Core Modules
@@ -57,6 +61,29 @@ Quick Reference
    # Or run all methods
    all_results = analysis.optimize_all()
 
+**Isolated MCMC Backend Usage**:
+
+.. code-block:: python
+
+   from homodyne.run_homodyne import get_mcmc_backend
+   import os
+   
+   # Automatic backend selection
+   mcmc_function, backend_name, has_gpu = get_mcmc_backend()
+   print(f"Using backend: {backend_name}")
+   
+   # Force specific backend
+   os.environ["HOMODYNE_GPU_INTENT"] = "false"  # CPU (PyMC)
+   os.environ["HOMODYNE_GPU_INTENT"] = "true"   # GPU (NumPyro/JAX)
+   
+   # Run with isolated backend
+   results = mcmc_function(
+       analysis_core=analyzer,
+       config=config.config,
+       c2_experimental=data,
+       phi_angles=angles
+   )
+
 Module Index
 ------------
 
@@ -76,6 +103,32 @@ The package includes the following key modules:
 
 .. note::
    For detailed API documentation, see the individual module pages in the navigation.
+
+Cross-References
+----------------
+
+**User Guides:**
+
+* :doc:`../user-guide/getting-started` - Choose your path based on experience
+* :doc:`../user-guide/quickstart` - 5-minute tutorial
+* :doc:`../user-guide/quick-reference` - Essential commands and code snippets
+* :doc:`../user-guide/configuration` - Complete configuration reference
+
+**Isolated MCMC Backend Documentation:**
+
+* :doc:`mcmc` - Complete MCMC API with isolated backend details
+* :doc:`../developer-guide/packaging` - Backend architecture and installation
+* :doc:`../user-guide/installation` - Backend installation options
+
+**Troubleshooting:**
+
+* :doc:`../user-guide/troubleshooting-flowchart` - Step-by-step problem solving
+* :doc:`../developer-guide/troubleshooting` - Technical diagnostics
+
+**Advanced Topics:**
+
+* :doc:`../developer-guide/architecture` - System design and patterns
+* :doc:`../developer-guide/performance` - Optimization and benchmarking
 
 ..
    Temporarily disabled autosummary due to import issues

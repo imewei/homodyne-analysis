@@ -242,12 +242,13 @@
       }
     },
     "mcmc_sampling": {
-      "_comment": "Dual MCMC Backend Configuration - CPU (PyMC) and GPU (NumPyro) implementations",
+      "_comment": "Isolated MCMC Backend Architecture - Complete separation of PyMC CPU and NumPyro GPU implementations",
       "_backend_info": {
-        "cpu_backend": "PyMC with PyTensor (homodyne --method mcmc)",
-        "gpu_backend": "NumPyro with JAX (homodyne-gpu --method mcmc)",
-        "backend_selection": "Automatic based on command used and hardware availability",
-        "compatibility": "Identical API and configuration for both backends"
+        "architecture": "Completely isolated backends prevent PyTensor/JAX namespace conflicts",
+        "cpu_backend": "Pure PyMC implementation (homodyne/optimization/mcmc_cpu_backend.py)",
+        "gpu_backend": "Pure NumPyro/JAX implementation (homodyne/optimization/mcmc_gpu_backend.py)",
+        "backend_selection": "Environment variable HOMODYNE_GPU_INTENT or command-based selection",
+        "compatibility": "Identical API and configuration, separate execution environments"
       },
       "enabled": true,
       "sampler": "NUTS",
@@ -265,26 +266,32 @@
       "_max_treedepth_note": "Deeper trees needed for complex models",
       "return_inferencedata": true,
       "backend_specific": {
-        "pymc_cpu": {
-          "_description": "CPU backend using PyMC + PyTensor",
-          "_command": "homodyne --method mcmc",
-          "_performance": "Cross-platform compatibility, reliable convergence",
+        "cpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_cpu_backend.py",
+          "_description": "Isolated PyMC implementation with complete PyTensor isolation",
+          "_command": "homodyne --method mcmc (or HOMODYNE_GPU_INTENT=false)",
+          "_performance": "Cross-platform compatibility, reliable convergence, no JAX conflicts",
+          "_isolation": "Complete separation from JAX/NumPyro dependencies",
           "init_strategy": "adapt_diag",
           "compute_convergence_checks": true,
-          "progressbar": true
+          "progressbar": true,
+          "pytensor_config": "Automatically configured for CPU-only mode"
         },
-        "numpyro_gpu": {
-          "_description": "GPU backend using NumPyro + JAX",
-          "_command": "homodyne-gpu --method mcmc",
-          "_performance": "GPU acceleration with intelligent CPU fallback",
-          "_platform_support": "Linux with CUDA (auto-fallback to CPU if no GPU)",
+        "gpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_gpu_backend.py", 
+          "_description": "Isolated NumPyro/JAX implementation with complete PyMC separation",
+          "_command": "homodyne-gpu --method mcmc (or HOMODYNE_GPU_INTENT=true)",
+          "_performance": "GPU acceleration with intelligent CPU fallback, no PyTensor conflicts",
+          "_platform_support": "Linux with CUDA preferred, auto-fallback to CPU on other platforms",
+          "_isolation": "Complete separation from PyMC/PyTensor dependencies",
           "init_strategy": "init_to_value",
           "num_warmup": "Uses 'tune' parameter value",
-          "num_samples": "Uses 'draws' parameter value",
+          "num_samples": "Uses 'draws' parameter value", 
           "chain_method": "vectorized",
           "progress_bar": true,
           "jit_compile": true,
-          "device_memory_fraction": 0.8
+          "device_memory_fraction": 0.8,
+          "jax_config": "Automatically configured for optimal GPU usage"
         }
       },
       "performance_features": {

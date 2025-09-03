@@ -311,10 +311,25 @@ Enable advanced performance features in your config:
 Next Steps
 ----------
 
-- Learn about :doc:`analysis-modes` in detail
-- Explore :doc:`configuration` options
-- See :doc:`examples` for real-world use cases
-- Review the :doc:`../api-reference/core` for advanced usage
+**Choose your path:**
+
+- **New to homodyne analysis?** → :doc:`analysis-modes` for detailed mode explanations
+- **Ready for advanced features?** → :doc:`../api-reference/mcmc` for isolated MCMC backends  
+- **Need comprehensive reference?** → :doc:`quick-reference` for commands and troubleshooting
+- **Want real examples?** → :doc:`examples` with datasets and complete workflows
+- **Developing/integrating?** → :doc:`../api-reference/core` for Python API details
+
+**Troubleshooting:**
+
+- **Having issues?** → :doc:`troubleshooting-flowchart` for step-by-step diagnosis
+- **Performance problems?** → :doc:`../developer-guide/performance` for optimization
+- **Configuration errors?** → :doc:`configuration` for complete reference
+
+**Advanced features:**
+
+- **GPU acceleration:** :doc:`../developer-guide/packaging` for backend architecture
+- **System integration:** :doc:`../api-reference/post-install` for runtime features
+- **Development:** :doc:`../developer-guide/architecture` for system design
 
 Common First-Time Issues
 -------------------------
