@@ -262,9 +262,10 @@ def create_config_from_template(
         print("  • Isolated architecture eliminates GPU/CPU backend conflicts")
 
     print("\n📚 Documentation:")
-    print("  • Configuration modes: CONFIGURATION_MODES.md")
+    print("  • Configuration guide: https://homodyne.readthedocs.io/en/latest/user-guide/configuration.html")
+    print("  • Analysis modes: https://homodyne.readthedocs.io/en/latest/user-guide/analysis-modes.html")
     print("  • Isolated MCMC backends: homodyne/runtime/README.md")
-    print("  • Backend architecture: homodyne/optimization/README.md")
+    print("  • Runtime system: https://homodyne.readthedocs.io/en/latest/api/runtime.html")
     print("  • GPU setup: homodyne-post-install --gpu --help")
     print(f"  • Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
 

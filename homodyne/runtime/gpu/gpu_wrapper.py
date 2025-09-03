@@ -17,7 +17,7 @@ Usage:
     homodyne-gpu --config my_config.json --method mcmc
     homodyne-gpu --method all --output results/
 
-For troubleshooting GPU setup issues, see GPU_SETUP.md.
+For troubleshooting GPU setup issues, see homodyne/runtime/README.md or run homodyne-validate --test gpu.
 
 Author: Claude Code Assistant
 """
