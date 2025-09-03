@@ -65,13 +65,13 @@ homodyne-validate
 # Create configuration
 homodyne-config --mode laminar_flow --sample my_sample
 
-# Run analysis with smart aliases
-hm config.json          # MCMC with smart GPU detection
-ha config.json          # All methods with intelligent selection
-hc config.json          # Classical optimization
-hr config.json          # Robust optimization
+# Run analysis with smart aliases (Linux only - see Setup section)
+hm --config config.json          # MCMC with smart GPU detection
+ha --config config.json          # All methods with intelligent selection
+hc --config config.json          # Classical optimization
+hr --config config.json          # Robust optimization
 
-# System tools
+# System tools (Linux/GPU)
 gpu-status               # Check GPU status
 homodyne-validate        # System validation
 ```
@@ -195,11 +195,11 @@ homodyne --config config.json --method mcmc
 # GPU Backend (Pure NumPyro/JAX - isolated from PyMC)
 homodyne-gpu --config config.json --method mcmc
 
-# Smart aliases (automatic backend selection)
-hm config.json          # Smart MCMC with backend isolation
-ha config.json          # All methods with optimization
-hc config.json          # Classical methods only
-hr config.json          # Robust methods only
+# Smart aliases (automatic backend selection - Linux only)
+hm --config config.json          # Smart MCMC with backend isolation
+ha --config config.json          # All methods with optimization
+hc --config config.json          # Classical methods only
+hr --config config.json          # Robust methods only
 ```
 
 ---
@@ -350,6 +350,9 @@ homodyne-post-install --interactive
 # Smart completion
 homodyne --config <TAB>             # File completion
 homodyne --method <TAB>             # Method completion
+
+# Smart aliases (created on Linux, manual setup required on macOS/Windows)
+# hm, ha, hc, hr - see post-install output for details
 ```
 
 ---

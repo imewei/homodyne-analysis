@@ -83,10 +83,10 @@ Quick Start
    HOMODYNE_GPU_INTENT=true homodyne --method mcmc   # Force GPU backend
 
    # Unified system shortcuts (after homodyne-post-install)
-   hm config.json                              # homodyne --method mcmc (CPU)
-   hgm config.json                             # homodyne-gpu --method mcmc (GPU)
-   hc config.json                              # homodyne --method classical
-   ha config.json                              # homodyne --method all
+   hm --config config.json                              # homodyne --method mcmc (CPU)
+   hgm --config config.json                             # homodyne-gpu --method mcmc (GPU)
+   hc --config config.json                              # homodyne --method classical
+   ha --config config.json                              # homodyne --method all
 
    # Advanced tools
    homodyne-validate --quick                   # System health check

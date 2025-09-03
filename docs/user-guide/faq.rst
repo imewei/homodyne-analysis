@@ -237,7 +237,7 @@ A: Additional resources:
 * **Troubleshooting Guide**: :doc:`../developer-guide/troubleshooting`
 
 Still Have Questions?
---------------------
+---------------------
 
 If your question isn't answered here, please:
 

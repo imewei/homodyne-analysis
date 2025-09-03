@@ -1,10 +1,17 @@
 Core API
 ========
 
+.. currentmodule:: homodyne
+
 The core API provides the main classes and functions for homodyne analysis.
 
 HomodyneAnalysisCore
 --------------------
+
+.. autoclass:: HomodyneAnalysisCore
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 The main analysis class that orchestrates the entire homodyne analysis workflow.
 
@@ -24,6 +31,11 @@ The main analysis class that orchestrates the entire homodyne analysis workflow.
 
 ConfigManager
 -------------
+
+.. autoclass:: ConfigManager
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Manages configuration loading, validation, and access.
 

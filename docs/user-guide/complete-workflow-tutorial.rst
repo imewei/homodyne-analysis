@@ -178,7 +178,7 @@ For **laminar flow mode** (7 parameters):
 * **Parameter uncertainties**: Smaller uncertainties indicate more reliable estimates
 
 Step 5: Visualization and Publication
-------------------------------------
+-------------------------------------
 
 **Generate Correlation Heatmaps**
 

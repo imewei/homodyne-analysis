@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.core.kernels
 
-.. autofunction:: compute_g1_correlation_numba
+.. autoattribute:: compute_g1_correlation_numba

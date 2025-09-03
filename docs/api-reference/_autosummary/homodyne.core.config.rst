@@ -1,6 +1,6 @@
 ﻿homodyne.core.config
 ====================
 
-.. currentmodule:: homodyne.core
+.. currentmodule:: homodyne.core.config
 
-.. automodule:: config
+.. autodata:: homodyne.core.config

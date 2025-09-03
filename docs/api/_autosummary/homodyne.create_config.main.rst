@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.create_config
 
-.. autofunction:: main
+.. autoattribute:: main

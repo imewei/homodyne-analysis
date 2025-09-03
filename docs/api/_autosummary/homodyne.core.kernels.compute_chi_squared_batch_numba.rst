@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.core.kernels
 
-.. autofunction:: compute_chi_squared_batch_numba
+.. autoattribute:: compute_chi_squared_batch_numba

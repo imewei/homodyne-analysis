@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.core.io_utils
 
-.. autofunction:: save_analysis_results
+.. autoattribute:: save_analysis_results

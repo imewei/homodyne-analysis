@@ -1,6 +1,6 @@
 ﻿homodyne.optimization.classical
 ===============================
 
-.. currentmodule:: homodyne.optimization
+.. currentmodule:: homodyne.optimization.classical
 
-.. automodule:: classical
+.. autodata:: homodyne.optimization.classical

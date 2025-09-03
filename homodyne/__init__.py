@@ -17,8 +17,7 @@ dynamics in soft matter", Proc. Natl. Acad. Sci. U.S.A. 121 (31) e2401162121 (20
 
 Key Features:
 - Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- Multiple optimization methods: Classical (Nelder-Mead, Gurobi), Robust
-  (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+- Multiple optimization methods: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 - Noise-resistant analysis: Robust optimization for measurement uncertainty and outliers
 - High performance: Numba JIT compilation with 3-5x speedup and smart angle filtering
 - Scientific accuracy: Automatic g₂ = offset + contrast × g₁ fitting
@@ -30,8 +29,7 @@ Core Modules:
 - core.io_utils: Data I/O with experimental data loading and result saving
 - analysis.core: Main analysis engine and chi-squared fitting
 - optimization.classical: Multiple methods (Nelder-Mead, Gurobi QP) with angle filtering
-- optimization.robust: Robust optimization (Wasserstein DRO, Scenario-based,
-  Ellipsoidal)
+- optimization.robust: Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
 - optimization.mcmc: PyMC-based Bayesian parameter estimation
 - plotting: Comprehensive visualization for data validation and diagnostics
 
@@ -108,19 +106,8 @@ __all__ = [
     "performance_monitor",
 ]
 
-# Version information - dynamically set by setuptools-scm
-try:
-    from importlib.metadata import version
-
-    __version__ = version("homodyne-analysis")
-except ImportError:
-    # Fallback for older Python versions
-    import pkg_resources
-
-    __version__ = pkg_resources.get_distribution("homodyne-analysis").version
-except Exception:
-    # Fallback version if package not installed
-    __version__ = "0.7.2+dev"
+# Version information - static for documentation stability
+__version__ = "0.7.2"
 __author__ = "Wei Chen, Hongrui He"
 __email__ = "wchen@anl.gov"
 __institution__ = "Argonne National Laboratory"

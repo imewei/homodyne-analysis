@@ -1,6 +1,6 @@
 ﻿homodyne.analysis.core
 ======================
 
-.. currentmodule:: homodyne.analysis
+.. currentmodule:: homodyne.analysis.core
 
-.. automodule:: core
+.. autodata:: homodyne.analysis.core

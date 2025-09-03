@@ -1,12 +1,6 @@
 ﻿homodyne.optimization.classical
 ===============================
 
-.. automodule:: homodyne.optimization.classical
+.. currentmodule:: homodyne.optimization.classical
 
-   
-   .. rubric:: Classes
-
-   .. autosummary::
-   
-      ClassicalOptimizer
-   
+.. autodata:: homodyne.optimization.classical

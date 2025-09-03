@@ -1,6 +1,6 @@
 ﻿homodyne.core.kernels
 =====================
 
-.. currentmodule:: homodyne.core
+.. currentmodule:: homodyne.core.kernels
 
-.. automodule:: kernels
+.. autodata:: homodyne.core.kernels

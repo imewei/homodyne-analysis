@@ -144,7 +144,7 @@ After running ``homodyne-post-install``, the system provides:
    source ~/.zshrc  # or ~/.bashrc for bash
 
    # Use convenient aliases and tools
-   hm config.json           # homodyne --method mcmc config.json
+   hm --config config.json           # homodyne --method mcmc --config config.json
    gpu-status              # Check GPU status
    homodyne-validate       # Comprehensive system validation
 

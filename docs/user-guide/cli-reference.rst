@@ -295,10 +295,10 @@ After running ``homodyne-post-install --advanced``, these convenient aliases are
 
 .. code-block:: bash
 
-   hm config.json         # homodyne --method mcmc
-   hc config.json         # homodyne --method classical  
-   hr config.json         # homodyne --method robust
-   ha config.json         # homodyne --method all
+   hm --config config.json         # homodyne --method mcmc
+   hc --config config.json         # homodyne --method classical  
+   hr --config config.json         # homodyne --method robust
+   ha --config config.json         # homodyne --method all
    hconfig                # homodyne-config
 
 **System Tools:**
@@ -369,7 +369,7 @@ Common Usage Patterns
    hconfig --mode laminar_flow --sample my_sample
    
    # 3. Run analysis
-   ha config.json  # All methods with smart GPU/CPU selection
+   ha --config config.json  # All methods with smart GPU/CPU selection
 
 **Data Quality Check:**
 

@@ -1,6 +1,6 @@
 ﻿homodyne.core.io\_utils
 =======================
 
-.. currentmodule:: homodyne.core
+.. currentmodule:: homodyne.core.io_utils
 
-.. automodule:: io_utils
+.. autodata:: homodyne.core.io_utils

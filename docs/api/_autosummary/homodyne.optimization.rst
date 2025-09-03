@@ -1,16 +1,7 @@
-﻿homodyne.optimization
+homodyne.optimization
 =====================
 
 .. automodule:: homodyne.optimization
-
-   
-.. rubric:: Modules
-
-.. autosummary::
-   :toctree:
-   :recursive:
-
-   classical
-   mcmc
-   mcmc_gpu
-   robust
+   :members:
+   :undoc-members:
+   :show-inheritance:
