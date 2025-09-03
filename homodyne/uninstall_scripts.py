@@ -176,7 +176,11 @@ def interactive_cleanup():
             print("   - Removes CUDA activation scripts and HOMODYNE_GPU_INTENT setup")
             print("   - Cleans JAX GPU environment isolation")
 
-            remove_gpu = input("   Remove isolated GPU backend setup? [y/N]: ").lower().startswith("y")
+            remove_gpu = (
+                input("   Remove isolated GPU backend setup? [y/N]: ")
+                .lower()
+                .startswith("y")
+            )
 
         # Advanced features
         print("\n3. Advanced Features")

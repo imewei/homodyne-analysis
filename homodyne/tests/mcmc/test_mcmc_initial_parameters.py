@@ -120,9 +120,9 @@ class TestMCMCInitialParameterHandling:
             # Verify MCMC was called with keyword arguments
             mock_mcmc_function.assert_called_once()
             call_kwargs = mock_mcmc_function.call_args[1]
-            assert 'analysis_core' in call_kwargs
-            assert 'config' in call_kwargs
-            assert 'c2_experimental' in call_kwargs
+            assert "analysis_core" in call_kwargs
+            assert "config" in call_kwargs
+            assert "c2_experimental" in call_kwargs
 
             # Verify results returned
             assert result is not None
@@ -193,9 +193,9 @@ class TestMCMCInitialParameterHandling:
             # Verify MCMC was called with keyword arguments
             mock_mcmc_function.assert_called_once()
             call_kwargs = mock_mcmc_function.call_args[1]
-            assert 'analysis_core' in call_kwargs
-            assert 'config' in call_kwargs
-            assert 'c2_experimental' in call_kwargs
+            assert "analysis_core" in call_kwargs
+            assert "config" in call_kwargs
+            assert "c2_experimental" in call_kwargs
 
             # Verify results returned
             assert result is not None

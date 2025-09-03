@@ -125,7 +125,7 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
             echo ""
             echo "🔒 Backend Isolation:"
             echo "   • CPU backend: No JAX imports, pure PyTensor CPU mode"
-            echo "   • GPU backend: No PyMC imports, pure NumPyro+JAX implementation"  
+            echo "   • GPU backend: No PyMC imports, pure NumPyro+JAX implementation"
             echo "   • Complete namespace separation prevents conflicts"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         else

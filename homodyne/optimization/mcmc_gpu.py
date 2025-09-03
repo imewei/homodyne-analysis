@@ -37,7 +37,7 @@ try:
     import numpyro
     import numpyro.distributions as dist
     from numpyro.diagnostics import effective_sample_size, gelman_rubin, hpdi
-    from numpyro.infer import MCMC, NUTS, init_to_value, init_to_median, init_to_uniform
+    from numpyro.infer import MCMC, NUTS, init_to_median, init_to_uniform, init_to_value
 
     JAX_AVAILABLE = True
 except ImportError as e:
@@ -111,7 +111,6 @@ class MCMCSampler:
 
     def _configure_jax_environment(self):
         """Configure JAX environment for optimal GPU/CPU performance."""
-        import os
 
         # Detect available devices
         self.devices = jax.devices()
@@ -124,7 +123,9 @@ class MCMCSampler:
 
         # JAX configuration is now handled by the isolated GPU backend wrapper
         if self.gpu_available:
-            jax.config.update("jax_enable_x64", False)  # float32 for better GPU performance
+            jax.config.update(
+                "jax_enable_x64", False
+            )  # float32 for better GPU performance
             logger.info("JAX configured for GPU acceleration")
         else:
             jax.config.update("jax_enable_x64", True)  # float64 for CPU accuracy
@@ -383,7 +384,8 @@ class MCMCSampler:
             # Constraint: c2_fitted ∈ [1.0, 2.0] - soft penalty for production use
             valid_range = jnp.all((c2_fitted >= 1.0) & (c2_fitted <= 2.0))
             numpyro.factor(
-                "fitted_range_constraint", jnp.where(valid_range, 0.0, -100)  # Moderate penalty
+                "fitted_range_constraint",
+                jnp.where(valid_range, 0.0, -100),  # Moderate penalty
             )
 
             # Likelihood (matching lines 821-850)
@@ -700,11 +702,20 @@ class MCMCSampler:
 
         # Run MCMC
         # Remove conflicting parameters from kwargs to avoid "multiple values" error
-        filtered_kwargs = {k: v for k, v in kwargs.items() 
-                          if k not in ['c2_experimental', 'phi_angles', 'config', 
-                                     'is_static_mode', 'effective_param_count', 
-                                     'filter_angles_for_optimization']}
-        
+        filtered_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k
+            not in [
+                "c2_experimental",
+                "phi_angles",
+                "config",
+                "is_static_mode",
+                "effective_param_count",
+                "filter_angles_for_optimization",
+            ]
+        }
+
         trace = self._run_mcmc_nuts_optimized(
             c2_experimental,
             phi_angles,

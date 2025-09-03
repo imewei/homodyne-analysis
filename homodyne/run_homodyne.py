@@ -75,7 +75,6 @@ from typing import Any
 
 # Environment configuration is now handled by isolated backends
 # to avoid conflicts between PyMC CPU and NumPyro GPU/JAX
-
 import numpy as np
 
 # Fast completion handler removed - argcomplete provides better functionality
@@ -137,16 +136,16 @@ def get_mcmc_backend():
     """Get appropriate MCMC backend based on environment and intent."""
     gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
     logger = logging.getLogger(__name__)
-    
+
     if gpu_intent:
         # GPU mode requested - use isolated NumPyro backend
         try:
             from .optimization.mcmc_gpu_backend import (
-                run_gpu_mcmc_analysis, 
+                is_gpu_hardware_available,
                 is_gpu_mcmc_available,
-                is_gpu_hardware_available
+                run_gpu_mcmc_analysis,
             )
-            
+
             if is_gpu_mcmc_available():
                 has_gpu = is_gpu_hardware_available()
                 backend_name = "NumPyro_GPU_JAX" if has_gpu else "NumPyro_CPU_JAX"
@@ -156,17 +155,19 @@ def get_mcmc_backend():
                 logger.warning("NumPyro/JAX not available, falling back to CPU PyMC")
                 gpu_intent = False
         except ImportError as e:
-            logger.warning(f"GPU MCMC backend not available ({e}), falling back to CPU PyMC")
+            logger.warning(
+                f"GPU MCMC backend not available ({e}), falling back to CPU PyMC"
+            )
             gpu_intent = False
-    
+
     if not gpu_intent:
         # CPU mode - use isolated PyMC backend
         try:
             from .optimization.mcmc_cpu_backend import (
+                is_cpu_mcmc_available,
                 run_cpu_mcmc_analysis,
-                is_cpu_mcmc_available
             )
-            
+
             if is_cpu_mcmc_available():
                 logger.info("🖥️  PyMC_CPU backend loaded (isolated from JAX)")
                 return run_cpu_mcmc_analysis, "PyMC_CPU", False
@@ -184,7 +185,9 @@ try:
     if MCMC_AVAILABLE:
         logging.getLogger(__name__).info(f"MCMC backend available: {mcmc_backend}")
         if mcmc_backend.startswith("NumPyro") and not has_gpu_hardware:
-            logging.getLogger(__name__).info("No GPU hardware detected - JAX will use CPU mode")
+            logging.getLogger(__name__).info(
+                "No GPU hardware detected - JAX will use CPU mode"
+            )
 except Exception as e:
     mcmc_function = None
     mcmc_backend = None
@@ -999,8 +1002,8 @@ def run_mcmc_optimization(
 ):
     """
     Execute Bayesian MCMC sampling using isolated backends.
-    
-    Uses either PyMC CPU backend (isolated from JAX) or NumPyro GPU/JAX backend 
+
+    Uses either PyMC CPU backend (isolated from JAX) or NumPyro GPU/JAX backend
     (isolated from PyMC) based on the homodyne-gpu vs homodyne command used.
 
     Parameters
@@ -1023,7 +1026,7 @@ def run_mcmc_optimization(
         or None if sampling fails
     """
     logger = logging.getLogger(__name__)
-    
+
     # Check if isolated MCMC backend is available
     if mcmc_function is None:
         logger.error("❌ MCMC sampling not available - no backends found")
@@ -1047,33 +1050,41 @@ def run_mcmc_optimization(
 
         # Prepare common parameters for isolated backend
         mcmc_start_time = time.time()
-        
+
         # Get configuration from analyzer
-        config = analyzer.config_manager.config if hasattr(analyzer, 'config_manager') else analyzer.config
-        
+        config = (
+            analyzer.config_manager.config
+            if hasattr(analyzer, "config_manager")
+            else analyzer.config
+        )
+
         # Prepare backend-specific parameters
         mcmc_kwargs = {
-            'analysis_core': analyzer,
-            'config': config,
-            'c2_experimental': c2_exp,
-            'phi_angles': phi_angles,
-            'filter_angles_for_optimization': True,
+            "analysis_core": analyzer,
+            "config": config,
+            "c2_experimental": c2_exp,
+            "phi_angles": phi_angles,
+            "filter_angles_for_optimization": True,
         }
-        
+
         # Add GPU-specific parameters if using NumPyro backend
         if mcmc_backend.startswith("NumPyro"):
-            mcmc_kwargs.update({
-                'is_static_mode': analyzer.is_static_mode(),
-                'effective_param_count': analyzer.get_effective_parameter_count(),
-            })
-        
+            mcmc_kwargs.update(
+                {
+                    "is_static_mode": analyzer.is_static_mode(),
+                    "effective_param_count": analyzer.get_effective_parameter_count(),
+                }
+            )
+
         logger.info(f"Starting {mcmc_backend} MCMC analysis...")
-        
+
         # Run MCMC with isolated backend
         mcmc_results = mcmc_function(**mcmc_kwargs)
-        
+
         mcmc_execution_time = time.time() - mcmc_start_time
-        logger.info(f"✅ MCMC sampling completed in {mcmc_execution_time:.2f}s with {mcmc_backend}")
+        logger.info(
+            f"✅ MCMC sampling completed in {mcmc_execution_time:.2f}s with {mcmc_backend}"
+        )
 
         # Save results if requested
         if mcmc_results and output_dir:
@@ -1084,11 +1095,11 @@ def run_mcmc_optimization(
     except ImportError as e:
         error_msg = f"❌ MCMC backend failed - import error: {e}"
         logger.error(error_msg)
-        
+
         # Backend-specific error messages
         if mcmc_backend == "PyMC_CPU":
             logger.error("SOLUTIONS:")
-            logger.error("• Install PyMC: pip install pymc>=5.0") 
+            logger.error("• Install PyMC: pip install pymc>=5.0")
             logger.error("• Install PyTensor: pip install pytensor")
             logger.error("• Install ArviZ: pip install arviz")
             logger.error("• Try GPU backend: 'homodyne-gpu --method mcmc'")
@@ -1098,26 +1109,29 @@ def run_mcmc_optimization(
             logger.error("• Install JAX: pip install jax jaxlib")
             logger.error("• For GPU: pip install jax[cuda] (Linux only)")
             logger.error("• Try CPU backend: 'homodyne --method mcmc'")
-            
+
         return None
-        
+
     except Exception as e:
         error_msg = f"❌ {mcmc_backend} MCMC failed: {e}"
         logger.error(error_msg)
-        
+
         # Suggest alternatives based on backend
         if mcmc_backend == "PyMC_CPU":
             logger.error("ALTERNATIVES:")
             logger.error("• Try GPU MCMC: 'homodyne-gpu --method mcmc'")
-            logger.error("• Use classical: 'homodyne --method classical'") 
+            logger.error("• Use classical: 'homodyne --method classical'")
             logger.error("• Use robust: 'homodyne --method robust'")
         elif mcmc_backend.startswith("NumPyro"):
             logger.error("ALTERNATIVES:")
             logger.error("• Try CPU MCMC: 'homodyne --method mcmc'")
             logger.error("• Use classical: 'homodyne --method classical'")
-            logger.error("• Check GPU setup: python -c 'import jax; print(jax.devices())'")
-            
+            logger.error(
+                "• Check GPU setup: python -c 'import jax; print(jax.devices())'"
+            )
+
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         return None
 
@@ -1125,7 +1139,7 @@ def run_mcmc_optimization(
 def save_mcmc_results(mcmc_results, analyzer, output_dir, execution_time):
     """Save MCMC results to files with backend information."""
     logger = logging.getLogger(__name__)
-    
+
     if output_dir is None:
         output_dir = Path("./homodyne_results")
     else:
@@ -1139,6 +1153,7 @@ def save_mcmc_results(mcmc_results, analyzer, output_dir, execution_time):
     if "trace" in mcmc_results and mcmc_results["trace"] is not None:
         try:
             import arviz as az
+
             netcdf_path = mcmc_output_dir / "mcmc_trace.nc"
             az.to_netcdf(mcmc_results["trace"], str(netcdf_path))
             logger.info(f"✓ MCMC trace saved: {netcdf_path}")
@@ -1158,15 +1173,15 @@ def save_mcmc_results(mcmc_results, analyzer, output_dir, execution_time):
         "posterior_means": mcmc_results.get("posterior_means", {}),
         "mcmc_config": mcmc_results.get("config", {}),
     }
-    
+
     # Add GPU information if available
     if "gpu_used" in backend_info:
         summary_results["gpu_acceleration"] = backend_info["gpu_used"]
         summary_results["gpu_count"] = backend_info.get("gpu_count", 0)
-    
+
     # Add convergence diagnostics
     if "diagnostics" in mcmc_results:
-        diagnostics = mcmc_results["diagnostics"] 
+        diagnostics = mcmc_results["diagnostics"]
         summary_results["convergence_diagnostics"] = {
             "all_converged": diagnostics.get("converged", False),
             "rhat_max": diagnostics.get("rhat_max", "N/A"),
@@ -1183,15 +1198,18 @@ def save_mcmc_results(mcmc_results, analyzer, output_dir, execution_time):
         logger.error(f"Failed to save results: {e}")
 
     # Add metadata to results for compatibility
-    mcmc_results.update({
-        "execution_time": execution_time,
-        "method_type": "MCMC", 
-        "output_directory": str(mcmc_output_dir),
-        "params": mcmc_results.get("posterior_means", {}),
-    })
-    
+    mcmc_results.update(
+        {
+            "execution_time": execution_time,
+            "method_type": "MCMC",
+            "output_directory": str(mcmc_output_dir),
+            "params": mcmc_results.get("posterior_means", {}),
+        }
+    )
+
     if "chi_squared" in mcmc_results:
         mcmc_results["chi_squared_red"] = mcmc_results["chi_squared"]
+
 
 def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
     """

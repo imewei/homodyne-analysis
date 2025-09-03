@@ -464,15 +464,15 @@ class TestMCMCGPUBackendIsolation:
         # with PyMC imports that could cause PyTensor/JAX conflicts
         try:
             import homodyne.optimization.mcmc_gpu as mcmc_gpu_module
-            
+
             # Check that PyMC-specific attributes aren't present
-            assert not hasattr(mcmc_gpu_module, 'pm')
-            assert not hasattr(mcmc_gpu_module, 'az') 
-            assert not hasattr(mcmc_gpu_module, 'pt')
-            
+            assert not hasattr(mcmc_gpu_module, "pm")
+            assert not hasattr(mcmc_gpu_module, "az")
+            assert not hasattr(mcmc_gpu_module, "pt")
+
             # Module should only have JAX/NumPyro imports
-            assert hasattr(mcmc_gpu_module, 'JAX_AVAILABLE')
-            
+            assert hasattr(mcmc_gpu_module, "JAX_AVAILABLE")
+
         except ImportError:
             pytest.skip("MCMC GPU module not available for testing")
 
@@ -484,7 +484,7 @@ class TestMCMCGPUBackendIsolation:
         with patch("homodyne.optimization.mcmc_gpu.JAX_AVAILABLE", True):
             with patch("homodyne.optimization.mcmc_gpu.jax"):
                 sampler = MCMCSampler(mock_analysis_core, mcmc_gpu_config)
-                
+
                 # Should initialize successfully with pure JAX environment
                 assert sampler is not None
                 assert sampler.core == mock_analysis_core

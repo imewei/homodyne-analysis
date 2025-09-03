@@ -805,7 +805,6 @@ class MCMCSampler:
 
     def _initialize_performance_features(self) -> None:
         """Initialize performance enhancement features."""
-        import os
 
         # Performance configuration
         self.performance_config = self.config.get("performance_settings", {})
@@ -878,7 +877,6 @@ class MCMCSampler:
             "max_treedepth": max_treedepth,
             "init": self._get_optimized_mass_matrix_strategy(n_params, data_size),
         }
-
 
     def _progressive_mcmc_sampling(
         self, model, full_draws: int, full_tune: int, chains: int, initvals
@@ -990,7 +988,7 @@ class MCMCSampler:
     ) -> dict[str, Any]:
         """
         Run MCMC NUTS sampling for parameter uncertainty quantification.
-        
+
         This method uses pure PyMC backend (isolated from JAX) for CPU-only Bayesian sampling.
 
         This method provides advanced Bayesian sampling using PyMC's
@@ -1037,14 +1035,13 @@ class MCMCSampler:
         if not PYMC_AVAILABLE:
             raise ImportError("PyMC not available for MCMC")
 
-        
         # Type assertions for type checker - these are guaranteed after the
         # availability check
         assert pm is not None
         assert az is not None
 
         print("🔵 DEBUG: ENTERED CPU _run_mcmc_nuts_optimized method in mcmc.py!")
-        
+
         # Get adaptive MCMC settings based on problem characteristics
         data_size = c2_experimental.size
 
@@ -2037,7 +2034,6 @@ class MCMCSampler:
     def _estimate_performance_improvement(self) -> dict[str, float]:
         """Estimate expected performance improvements from enhancements."""
         speedup_factors = {"baseline": 1.0}
-
 
         if self.auto_tune_enabled:
             speedup_factors["auto_tuning"] = 1.5  # Better convergence

@@ -434,16 +434,12 @@ class TestPerformanceComparison:
                 with patch("homodyne.optimization.mcmc_gpu.jax"):
                     # Time CPU initialization
                     start_time = time.time()
-                    MCMCSamplerCPU(
-                        mock_analysis_core, standardized_mcmc_config
-                    )
+                    MCMCSamplerCPU(mock_analysis_core, standardized_mcmc_config)
                     cpu_init_time = time.time() - start_time
 
                     # Time GPU initialization
                     start_time = time.time()
-                    MCMCSamplerGPU(
-                        mock_analysis_core, standardized_mcmc_config
-                    )
+                    MCMCSamplerGPU(mock_analysis_core, standardized_mcmc_config)
                     gpu_init_time = time.time() - start_time
 
                     # Both should initialize within reasonable time (< 5 seconds)

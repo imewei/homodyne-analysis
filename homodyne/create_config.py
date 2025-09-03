@@ -185,7 +185,9 @@ def create_config_from_template(
 
     print(f"✓ Configuration created: {output_path.absolute()}")
     print(f"✓ Analysis mode: {mode}")
-    print("✓ Isolated MCMC backends: PyMC (CPU) + NumPyro (GPU) with complete separation configured")
+    print(
+        "✓ Isolated MCMC backends: PyMC (CPU) + NumPyro (GPU) with complete separation configured"
+    )
 
     # Print mode-specific information
     mode_info = {
@@ -236,17 +238,27 @@ def create_config_from_template(
     print("    └─ Pure PyMC implementation, no JAX dependencies")
     print("  • GPU Backend (NumPyro):  homodyne-gpu --config [config] --method mcmc")
     print("    └─ Pure NumPyro/JAX implementation, no PyMC dependencies")
-    print("  • Conflict Prevention:   Complete separation eliminates PyTensor/JAX conflicts")
-    print("  • Environment Control:   HOMODYNE_GPU_INTENT=true/false for explicit backend selection")
+    print(
+        "  • Conflict Prevention:   Complete separation eliminates PyTensor/JAX conflicts"
+    )
+    print(
+        "  • Environment Control:   HOMODYNE_GPU_INTENT=true/false for explicit backend selection"
+    )
 
     print("\n⚡ Performance Recommendations:")
     if mode in ["static_isotropic", "static_anisotropic"]:
         print("  • 3-parameter analysis: Both isolated backends work well")
         print("  • CPU backend recommended for cross-platform compatibility")
-        print("  • Isolated architecture ensures reliable execution without dependency conflicts")
+        print(
+            "  • Isolated architecture ensures reliable execution without dependency conflicts"
+        )
     else:  # laminar_flow
-        print("  • 7-parameter analysis: GPU backend recommended for optimal performance")
-        print("  • GPU acceleration provides significant speedup for complex flow models")
+        print(
+            "  • 7-parameter analysis: GPU backend recommended for optimal performance"
+        )
+        print(
+            "  • GPU acceleration provides significant speedup for complex flow models"
+        )
         print("  • Isolated architecture eliminates GPU/CPU backend conflicts")
 
     print("\n📚 Documentation:")
@@ -305,10 +317,9 @@ Examples:
 Isolated MCMC Backend Usage:
   # CPU backend (isolated PyMC implementation)
   homodyne --config my_config.json --method mcmc
-  
+
   # GPU backend (isolated NumPyro/JAX implementation)
   homodyne-gpu --config my_config.json --method mcmc
-  
   # Environment variable control
   HOMODYNE_GPU_INTENT=false homodyne --method mcmc  # Force CPU backend
   HOMODYNE_GPU_INTENT=true homodyne --method mcmc   # Force GPU backend

@@ -726,7 +726,8 @@ class TestMCMCDataSavingUpdates:
                             "gamma_dot_t_offset",
                             "phi0",
                         ],
-                        best_params, strict=False,
+                        best_params,
+                        strict=False,
                     )
                 ),
                 "parameter_names": [
