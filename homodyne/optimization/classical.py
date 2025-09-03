@@ -645,16 +645,21 @@ class ClassicalOptimizer:
 
             n_params = len(initial_parameters)
 
-            # Default Gurobi options with iterative settings
+            # Default Gurobi options with iterative settings (matches config template defaults)
+            # Mode-dependent defaults: higher iterations for complex parameter spaces
+            is_static = self.core.is_static_mode() if hasattr(self.core, 'is_static_mode') else True
+            default_max_iter = 500 if is_static else 1500  # Static: 500, Laminar: 1500
+            default_time_limit = 120 if is_static else 600  # Static: 2min, Laminar: 10min
+            
             gurobi_options = {
-                "max_iterations": 50,  # Outer iterations for SQP
+                "max_iterations": default_max_iter,  # MODE_DEPENDENT: matches config template
                 "tolerance": 1e-6,
                 "output_flag": 0,  # Suppress output by default
                 "method": 2,  # Use barrier method for QP
-                "time_limit": 300,  # 5 minute time limit
-                "trust_region_initial": 0.1,  # Initial trust region radius
+                "time_limit": default_time_limit,  # MODE_DEPENDENT: matches config template
+                "trust_region_initial": 1.0,  # Initial trust region radius (config template)
                 "trust_region_min": 1e-8,  # Minimum trust region radius
-                "trust_region_max": 1.0,  # Maximum trust region radius
+                "trust_region_max": 10.0,  # Maximum trust region radius (config template)
             }
 
             # Update with user options

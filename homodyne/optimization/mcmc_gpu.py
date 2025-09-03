@@ -927,8 +927,8 @@ class MCMCSampler:
             # Check alpha bounds (matching mcmc.py lines 1875-1879)
             if len(init_params) > 1:
                 alpha = init_params[1]
-                if not (-5.0 <= alpha <= 5.0):
-                    logger.warning(f"alpha should be in [-5, 5], got {alpha}")
+                if not (-3.0 <= alpha <= 3.0):
+                    logger.warning(f"alpha should be in [-3, 3], got {alpha} (adjust config bounds if needed)")
                     return False
 
             # Additional constraint checks for laminar flow parameters

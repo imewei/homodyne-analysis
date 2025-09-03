@@ -1059,10 +1059,10 @@ class RobustHomodyneOptimizer:
                     "D0",
                     "alpha",
                     "D_offset",
-                    "gamma_dot_0",
+                    "gamma_dot_t0",
                     "beta",
-                    "gamma_dot_offset",
-                    "phi_0",
+                    "gamma_dot_t_offset",
+                    "phi0",
                 ]
 
             bounds = []
