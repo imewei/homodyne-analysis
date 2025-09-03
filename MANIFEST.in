@@ -1,5 +1,5 @@
 # homodyne-analysis - Distribution Manifest
-# Updated: 2025-09-02
+# Updated: 2025-09-03
 
 # Core documentation
 include README.md
@@ -28,6 +28,7 @@ recursive-include homodyne *.yaml
 recursive-include homodyne *.yml
 recursive-include homodyne *.txt
 recursive-include homodyne *.md
+recursive-include homodyne *.sh
 
 # Include documentation
 recursive-include docs *.md
@@ -40,6 +41,8 @@ include docs/make.bat
 # Include tests (optional - comment out if you don't want tests in distribution)
 # recursive-include tests *.py
 # recursive-include homodyne/tests *.py
+# recursive-include homodyne/tests *.json
+# recursive-include homodyne/tests *.npz
 
 # Exclude development and build files
 recursive-exclude * __pycache__

@@ -1,0 +1,20 @@
+# Complete dependencies for homodyne-analysis with all optional features
+# Install with: pip install -r requirements-all.txt
+# Or: pip install homodyne-analysis[all]
+#
+# Last updated: 2025-09-03
+
+# Core dependencies
+-r requirements.txt
+
+# Development dependencies
+-r requirements-dev.txt
+
+# Optional scientific computing features
+-r requirements-optional.txt
+
+# JAX/GPU acceleration (Linux only)
+-r requirements-jax.txt
+
+# Note: Some dependencies may have platform-specific requirements
+# On non-Linux systems, JAX GPU features will be automatically skipped

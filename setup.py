@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """
-Setup script for the Homodyne Scattering Analysis Package with JAX Backend
-GPU Acceleration and Unified Shell Completion System.
+Minimal setup.py for backward compatibility.
 
-Most configuration is in pyproject.toml following modern Python packaging standards.
-This file adds post-installation functionality for:
-- JAX backend GPU acceleration setup with smart CUDA detection
-- Unified shell completion system with cross-shell compatibility
-- Conda/mamba environment integration with activation scripts
-- Advanced GPU optimization and system validation tools
-- Environment cleanup utilities not supported by pyproject.toml
+All package configuration is in pyproject.toml following PEP 517/518 standards.
+This file exists only for:
+1. Legacy pip installations that don't support PEP 517
+2. Optional post-installation setup hooks
+3. Development mode installations with custom commands
 
-Updated: 2025-09-02 - Enhanced test fixes and pytest configuration
+For modern installations, use: pip install .
 """
 
 import os

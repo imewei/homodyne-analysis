@@ -1,13 +1,16 @@
-# Development dependencies for Homodyne Scattering Analysis Package
-# Generated from pyproject.toml [project.optional-dependencies.dev]
-# Latest update: Comprehensive testing framework with resolved dependency availability tests (v0.7.2)
+# Development dependencies for homodyne-analysis
+# Install with: pip install -r requirements-dev.txt
+# Or: pip install homodyne-analysis[dev]
+#
+# Generated from pyproject.toml [project.optional-dependencies]
+# Last updated: 2025-09-03
 
 # Include core dependencies
 -r requirements.txt
 
-# For high-performance development and testing, also install:
-# -r requirements-jax.txt
-# -r requirements-optional.txt
+# For additional features, also consider:
+# -r requirements-docs.txt  # Documentation building
+# -r requirements-test.txt  # Testing only
 
 # Testing framework and utilities
 pytest>=6.2.0
@@ -42,16 +45,17 @@ types-requests>=2.28.0
 
 # Documentation tools
 sphinx>=4.0.0
-sphinx-rtd-theme>=1.0.0
+furo>=2024.1.29  # Modern theme
 myst-parser>=0.17.0
 sphinx-autodoc-typehints>=1.12.0
 numpydoc>=1.2.0
 linkify-it-py>=2.0.0
+sphinx-copybutton>=0.5.0
 
 # Development tools
 tox>=4.0.0
 build>=0.10.0
 twine>=4.0.0
 
-# Shell completion and enhanced virtual environment integration
-argcomplete>=3.0.0  # Shell completion setup with comprehensive testing framework and mamba/venv support
+# Shell completion
+argcomplete>=3.0.0

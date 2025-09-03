@@ -1,14 +1,50 @@
 [build-system]
-requires = [ "setuptools>=68.0", "wheel", "setuptools-scm>=8.0",]
+requires = [
+    "setuptools>=68.0",
+    "wheel>=0.40.0",
+    "setuptools-scm[toml]>=8.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "homodyne-analysis"
 dynamic = [ "version",]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with JAX backend GPU acceleration, comprehensive testing framework with resolved dependency availability tests, robust optimization methods, automated code quality checks, unified shell completion system, and streamlined post-installation setup with advanced GPU optimization tools"
+description = "High-performance analysis of homodyne X-ray Photon Correlation Spectroscopy (XPCS) for soft matter dynamics"
 readme = "README.md"
-classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Science/Research", "Topic :: Scientific/Engineering :: Physics", "Topic :: Scientific/Engineering :: Chemistry", "Topic :: Scientific/Engineering :: Information Analysis", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Operating System :: OS Independent", "Environment :: Console", "Natural Language :: English",]
-keywords = [ "xpcs", "homodyne", "scattering", "correlation-spectroscopy", "soft-matter", "nonequilibrium-dynamics", "transport-coefficients", "optimization", "bayesian-analysis", "mcmc", "robust-optimization", "trust-region-optimization", "gurobi", "jax", "jax-backend", "pytensor", "pytensor-config", "environment-variables", "system-cuda", "gpu-acceleration", "cuda-12", "cudnn", "high-performance-computing", "jit-compilation", "performance-optimization", "code-quality", "pre-commit-hooks", "shell-completion", "conda-environment", "mamba-environment", "virtual-environment", "cross-platform", "windows-compatibility", "security-scanning", "comprehensive-testing-framework", "pytest-markers", "test-isolation", "dependency-availability-tests", "type-checking", "automated-quality-assurance",]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Environment :: GPU :: NVIDIA CUDA :: 12",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Typing :: Typed",
+]
+keywords = [
+    "xpcs",
+    "x-ray-scattering", 
+    "homodyne",
+    "correlation-spectroscopy",
+    "soft-matter",
+    "nonequilibrium-dynamics",
+    "transport-coefficients",
+    "bayesian-analysis",
+    "mcmc",
+    "optimization",
+    "gpu-acceleration",
+    "scientific-computing",
+    "data-analysis",
+    "physics",
+]
 requires-python = ">=3.12"
 dependencies = [ "numpy>=1.24.0,<2.3.0", "scipy>=1.9.0", "matplotlib>=3.5.0",]
 [[project.authors]]
@@ -44,19 +80,20 @@ all = [ "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,completion,de
 Homepage = "https://github.com/imewei/homodyne"
 Documentation = "https://homodyne.readthedocs.io/"
 Repository = "https://github.com/imewei/homodyne"
-Issues = "https://github.com/imewei/homodyne/issues"
+"Bug Tracker" = "https://github.com/imewei/homodyne/issues"
 Changelog = "https://github.com/imewei/homodyne/blob/main/CHANGELOG.md"
 "Source Code" = "https://github.com/imewei/homodyne"
-"Bug Tracker" = "https://github.com/imewei/homodyne/issues"
 Download = "https://pypi.org/project/homodyne-analysis/"
+Funding = "https://www.anl.gov/"
+Paper = "https://doi.org/10.1073/pnas.2401162121"
 
 [project.scripts]
 homodyne = "homodyne.run_homodyne:main"
 homodyne-config = "homodyne.create_config:main"
-homodyne-gpu = "homodyne.gpu_wrapper:main"
+homodyne-gpu = "homodyne.runtime.gpu.gpu_wrapper:main"
 homodyne-post-install = "homodyne.post_install:main"
 homodyne-cleanup = "homodyne.uninstall_scripts:main"
-homodyne-gpu-optimize = "homodyne.gpu_optimizer:main"
+homodyne-gpu-optimize = "homodyne.runtime.gpu.optimizer:main"
 homodyne-validate = "homodyne.system_validator:main"
 
 [tool.setuptools]

@@ -1,31 +1,32 @@
-# JAX dependencies for GPU acceleration with comprehensive testing framework support
+# GPU-Accelerated MCMC Dependencies - Pure JAX/NumPyro Implementation
 # Generated from pyproject.toml [project.optional-dependencies.jax]
-# Latest update: Comprehensive testing framework with resolved dependency availability tests (v0.7.2)
+# Latest update: Separated PyMC (CPU) and NumPyro (GPU) implementations
 
-# Include core dependencies
+# Include core dependencies (PyMC for CPU-only MCMC)
 -r requirements.txt
 
-# JAX for GPU-accelerated numerical computations (backend handles GPU operations)
+# Pure JAX/NumPyro stack for GPU-accelerated MCMC
 # Linux systems with NVIDIA GPU will automatically get system CUDA 12.6+ support
-jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'
-jax>=0.7.0 ; sys_platform != 'linux'
-jaxlib>=0.4.35
+jax[cuda12-local]>=0.4.20 ; sys_platform == 'linux'
+jax>=0.4.20 ; sys_platform != 'linux'
+jaxlib>=0.4.20
 
-# PyTensor environment variables automatically configured during pip install:
-# PYTENSOR_FLAGS="device=cpu,floatX=float64,mode=FAST_COMPILE,optimizer=fast_compile,cxx="
-# - JAX handles GPU operations for optimal performance
-# - PyTensor uses CPU mode to avoid C compilation issues
-# - No manual environment variable setup required
+# NumPyro for pure JAX MCMC (no PyTensor dependencies)
+numpyro>=0.13.2
 
-# Note: JAX backend GPU acceleration with PyTensor auto-configuration
-# - JAX backend: Handles all GPU operations (MCMC sampling, numerical computations)
-# - PyTensor: Configured for CPU mode, C++ compiler disabled (avoids linking issues)
-# - Environment variables: Auto-configured during pip install homodyne-analysis
-# - System CUDA: 12.6+ and cuDNN 9.12+ required for optimal performance
-# - Virtual environments: Enhanced support for conda/mamba/venv with activation scripts
+# Architecture Notes:
+# - 'homodyne --method mcmc': Uses CPU-only PyMC implementation (reliable, cross-platform)
+# - 'homodyne-gpu --method mcmc': Uses GPU-accelerated NumPyro implementation (high-performance)
+# - Both implementations provide identical likelihood: fitted = contrast * theory + offset
+# - PyTensor compilation issues completely eliminated in GPU implementation
+# - Automatic GPU→CPU fallback in NumPyro implementation
 #
-# For manual environment variable verification:
-# echo $PYTENSOR_FLAGS
-# homodyne_gpu_status  # (conda/mamba environments only)
+# Environment Configuration:
+# - CPU command: PYTENSOR_FLAGS="device=cpu,floatX=float64,optimizer=fast_compile"
+# - GPU command: JAX handles all operations, PyTensor disabled
+# - HOMODYNE_GPU_INTENT environment variable controls routing
 #
-# Run 'homodyne-post-install --gpu' for automated GPU setup
+# System Requirements for GPU:
+# - Linux with NVIDIA GPU
+# - CUDA 12.6+ and cuDNN 9.12+
+# - Run 'homodyne-post-install --gpu' for setup verification
