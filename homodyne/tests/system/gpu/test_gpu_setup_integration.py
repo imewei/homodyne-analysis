@@ -193,10 +193,13 @@ class TestMCMCGPUIntegration:
                 except ImportError:
                     pytest.skip("PyMC dependencies not available in test environment")
 
-                # Should force CPU-only mode
-                assert not sampler.use_jax_backend, (
-                    "Should disable JAX backend for CPU mode"
-                )
+                # Should initialize successfully (CPU-only PyMC implementation)
+                assert sampler.core is not None, "Core should be initialized"
+                assert sampler.config is not None, "Config should be initialized"
+                # Check that it's using CPU-only mode (no JAX backend attribute in PyMC implementation)
+                assert not hasattr(sampler, "use_jax_backend") or not getattr(
+                    sampler, "use_jax_backend", True
+                ), "Should not have JAX backend enabled in CPU mode"
                 assert os.environ.get("JAX_PLATFORMS") == "cpu", (
                     "Should set JAX_PLATFORMS=cpu"
                 )
@@ -340,7 +343,7 @@ def test_integration_gpu_files_exist():
     required_files = [
         "homodyne/runtime/gpu/activation.sh",
         "homodyne/runtime/README.md",
-        "homodyne/gpu_wrapper.py",
+        "homodyne/runtime/gpu/gpu_wrapper.py",
     ]
 
     for file_path in required_files:

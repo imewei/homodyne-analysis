@@ -8,6 +8,7 @@ and error handling.
 
 import argparse
 import json
+import logging
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -237,7 +238,7 @@ class TestArgumentParsing:
 class TestPrintBanner:
     """Test the print_banner function."""
 
-    def test_print_banner_basic(self, capsys):
+    def test_print_banner_basic(self, caplog):
         """Test that print_banner outputs expected content."""
         args = argparse.Namespace(
             method="classical",
@@ -250,14 +251,16 @@ class TestPrintBanner:
             laminar_flow=False,
         )
 
-        print_banner(args)
+        with caplog.at_level(logging.INFO):
+            print_banner(args)
 
-        captured = capsys.readouterr()
-        assert "HOMODYNE ANALYSIS RUNNER" in captured.out
-        assert "classical" in captured.out
-        assert "test_config.json" in captured.out
+        # Banner output goes to logging system
+        log_text = caplog.text
+        assert "HOMODYNE ANALYSIS RUNNER" in log_text
+        assert "classical" in log_text
+        assert "test_config.json" in log_text
 
-    def test_print_banner_different_methods(self, capsys):
+    def test_print_banner_different_methods(self, caplog):
         """Test print_banner with different methods."""
         methods = ["classical", "mcmc", "robust", "all"]
 
@@ -272,10 +275,12 @@ class TestPrintBanner:
                 static_anisotropic=False,
                 laminar_flow=False,
             )
-            print_banner(args)
+            with caplog.at_level(logging.INFO):
+                print_banner(args)
 
-            captured = capsys.readouterr()
-            assert method in captured.out
+            log_text = caplog.text
+            assert method in log_text
+            caplog.clear()  # Clear logs for next iteration
 
 
 class TestRunAnalysis:
