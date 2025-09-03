@@ -2,13 +2,12 @@
 requires = [
     "setuptools>=77.0.0",
     "wheel>=0.40.0",
-    "setuptools-scm[toml]>=8.0",
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "homodyne-analysis"
-dynamic = [ "version",]
+version = "0.7.2"
 description = "High-performance analysis of homodyne X-ray Photon Correlation Spectroscopy (XPCS) for soft matter dynamics"
 readme = "README.md"
 classifiers = [
@@ -99,11 +98,6 @@ homodyne-validate = "homodyne.system_validator:main"
 [tool.setuptools]
 include-package-data = true
 
-[tool.setuptools_scm]
-write_to = "homodyne/_version.py"
-version_scheme = "post-release"
-local_scheme = "dirty-tag"
-fallback_version = "0.7.2"
 
 [tool.black]
 line-length = 88
