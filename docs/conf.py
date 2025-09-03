@@ -11,6 +11,9 @@ homodyne_path = os.path.join(os.path.abspath(".."), "homodyne")
 if os.path.exists(homodyne_path):
     sys.path.insert(0, homodyne_path)
 
+# Set up import error handling for documentation builds
+os.environ['SPHINX_BUILD'] = '1'
+
 # -- Project information -----------------------------------------------------
 project = "Homodyne Analysis"
 copyright = "2024-2025, Wei Chen, Hongrui He (Argonne National Laboratory)"
@@ -47,42 +50,45 @@ extensions = [
 suppress_warnings = [
     "misc.highlighting_failure",
     "autosummary",
+    "autosummary.import_by_name",
+    "autosummary.failed_import",
+    "autosummary.failed_to_import",
+    "autosummary.mock",
     "autodoc.import_object",
+    "autodoc.mock",
     "toc.not_included",
+    "ref.any",
+    "ref.python",
+    "toc.secnum",
+    "image.not_readable",
+    "download.not_readable",
 ]
 
 # Performance optimizations - mock heavy dependencies
 autodoc_mock_imports = [
+    # Heavy scientific computing dependencies
     "numba",
     "pymc",
     "arviz",
     "pytensor",
+    "jax",
+    "jax.numpy",
+    "numpyro",
+    "numpyro.distributions",
+    "numpyro.infer",
+    "numpyro.diagnostics",
     "xpcs_viewer",
     "h5py",
-    # Mock modules that don't exist but are referenced in docs
-    "mcmc",  # This appears to be incorrectly referenced
-    "io_utils",  # Missing module referenced in autosummary
-    "kernels",  # Missing module referenced in autosummary
-    "classical",  # Missing module referenced in autosummary
-    "config",  # Missing module referenced in autosummary
-    # Mock problematic homodyne submodules temporarily
-    "homodyne.analysis",
-    "homodyne.analysis.core",
-    "homodyne.core",
-    "homodyne.core.config",
-    "homodyne.core.kernels",
-    "homodyne.core.io_utils",
-    "homodyne.optimization",
-    "homodyne.optimization.mcmc",
-    "homodyne.optimization.classical",
-    "homodyne.plotting",
-    # Runtime modules
-    "homodyne.runtime",
-    "homodyne.runtime.gpu",
-    "homodyne.runtime.gpu.optimizer",
-    "homodyne.runtime.utils",
-    "homodyne.runtime.utils.system_validator",
-    "homodyne.runtime.shell",
+    "matplotlib",
+    "scipy",
+    "numpy",
+    # Mock problematic import dependencies that may not be available
+    "gurobipy",
+    "cvxpy",
+    # Test modules that may cause import errors during doc build
+    "pytest",
+    "pytest_benchmark", 
+    "pytest_mock",
 ]
 autodoc_preserve_defaults = True
 
@@ -92,9 +98,6 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-
-# Exclude test modules from autodoc to prevent import errors during doc build
-autodoc_mock_imports = ["pytest", "pytest_benchmark", "pytest_mock"]
 
 # The default language to highlight source code in.
 highlight_language = "python3"
@@ -162,6 +165,9 @@ myst_dmath_double_inline = True
 # AutoSummary configuration
 autosummary_generate = True
 autosummary_generate_overwrite = True
+autosummary_imported_members = False  # Don't document imported members
+autosummary_ignore_module_all = False  # Respect __all__ if defined
+autosummary_mock_imports = True  # Allow mocking of imports in autosummary
 
 
 # Configure autosummary to skip test modules that require pytest
