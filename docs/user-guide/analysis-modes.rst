@@ -131,22 +131,63 @@ The full expression combines diffusive and shear contributions:
 
    g_{1,\text{total}}(t_1,t_2) = g_{1,\text{diffusion}}(t_1,t_2) \times g_{1,\text{shear}}(t_1,t_2)
 
+where the diffusion contribution follows:
+
 .. math::
 
-   g_{1,\text{shear}}(t_1,t_2) = \text{sinc}^2(\Phi)
+   g_{1,\text{diffusion}}(t_1,t_2) = \exp\left(-q^2 \int_{t_1}^{t_2} D(t) dt\right)
+
+and the shear contribution is:
+
+.. math::
+
+   g_{1,\text{shear}}(t_1,t_2) = \text{sinc}^2\left(\frac{qh}{2\pi} \cos(\phi) \int_{t_1}^{t_2} \dot{\gamma}(t) dt\right)
+
+with the time-dependent transport coefficients:
+
+.. math::
+
+   D(t) &= D_0 t^\alpha + D_{\text{offset}} \\
+   \dot{\gamma}(t) &= \dot{\gamma}_0 t^\beta + \dot{\gamma}_{\text{offset}}
 
 **Parameters (7 total)**:
 
-**Diffusion Parameters**:
-- **D₀**: Effective diffusion coefficient
-- **α**: Time exponent for diffusion scaling
-- **D_offset**: Baseline diffusion component
+.. list-table::
+   :widths: 20 30 15 35
+   :header-rows: 1
 
-**Shear Parameters**:
-- **γ̇₀**: Shear rate amplitude
-- **β**: Shear rate time exponent
-- **γ̇_offset**: Baseline shear rate
-- **φ₀**: Phase angle for shear/flow direction
+   * - Parameter
+     - Symbol
+     - Units
+     - Physical Meaning
+   * - **D₀**
+     - :math:`D_0`
+     - Å\ :sup:`2`\ /s\ :sup:`1+α`
+     - Effective diffusion coefficient
+   * - **α**
+     - :math:`\alpha`
+     - dimensionless
+     - Time exponent for diffusion scaling
+   * - **D_offset**
+     - :math:`D_{\text{offset}}`
+     - Å\ :sup:`2`\ /s
+     - Baseline diffusion component
+   * - **γ̇₀**
+     - :math:`\dot{\gamma}_0`
+     - s\ :sup:`-1-β`
+     - Shear rate amplitude
+   * - **β**
+     - :math:`\beta`
+     - dimensionless
+     - Shear rate time exponent
+   * - **γ̇_offset**
+     - :math:`\dot{\gamma}_{\text{offset}}`
+     - s\ :sup:`-1`
+     - Baseline shear rate
+   * - **φ₀**
+     - :math:`\phi_0`
+     - degrees
+     - Phase angle for shear/flow direction
 
 **Physical Interpretation**:
 

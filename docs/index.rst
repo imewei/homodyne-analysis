@@ -218,22 +218,57 @@ Theoretical Background
 The package implements three key equations describing correlation functions in nonequilibrium laminar flow systems:
 
 **Equation 13 - Full Nonequilibrium Laminar Flow:**
-   c₂(q⃗, t₁, t₂) = 1 + β[e^(-q²∫J(t)dt)] × sinc²[1/(2π) qh ∫γ̇(t)cos(φ(t))dt]
+
+.. math::
+
+   c_2(\vec{q}, t_1, t_2) = 1 + \beta \left[ e^{-q^2 \int J(t) dt} \right] \times \text{sinc}^2 \left[ \frac{1}{2\pi} qh \int \dot{\gamma}(t) \cos(\phi(t)) dt \right]
 
 **Equation S-75 - Equilibrium Under Constant Shear:**
-   c₂(q⃗, t₁, t₂) = 1 + β[e^(-6q²D(t₂-t₁))] sinc²[1/(2π) qh cos(φ)γ̇(t₂-t₁)]
+
+.. math::
+
+   c_2(\vec{q}, t_1, t_2) = 1 + \beta \left[ e^{-6q^2 D(t_2-t_1)} \right] \text{sinc}^2 \left[ \frac{1}{2\pi} qh \cos(\phi) \dot{\gamma}(t_2-t_1) \right]
 
 **Equation S-76 - One-time Correlation (Siegert Relation):**
-   g₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
+
+.. math::
+
+   g_2(\vec{q}, \tau) = 1 + \beta \left[ e^{-6q^2 D\tau} \right] \text{sinc}^2 \left[ \frac{1}{2\pi} qh \cos(\phi) \dot{\gamma}\tau \right]
 
 **Key Parameters:**
 
-- q⃗: scattering wavevector [Å⁻¹]
-- h: gap between stator and rotor [Å]
-- φ(t): angle between shear/flow direction and q⃗ [degrees]
-- γ̇(t): time-dependent shear rate [s⁻¹]
-- D(t): time-dependent diffusion coefficient [Å²/s]
-- β: contrast parameter [dimensionless]
+.. list-table::
+   :widths: 15 45 15 25
+   :header-rows: 1
+
+   * - Symbol
+     - Description
+     - Units
+     - Physical Meaning
+   * - :math:`\vec{q}`
+     - Scattering wavevector
+     - Å\ :sup:`-1`
+     - Momentum transfer vector
+   * - :math:`h`
+     - Gap between stator and rotor
+     - Å
+     - Shear cell geometry
+   * - :math:`\phi(t)`
+     - Angle between shear/flow direction and :math:`\vec{q}`
+     - degrees
+     - Orientation dependence
+   * - :math:`\dot{\gamma}(t)`
+     - Time-dependent shear rate
+     - s\ :sup:`-1`
+     - Flow velocity gradient
+   * - :math:`D(t)`
+     - Time-dependent diffusion coefficient
+     - Å\ :sup:`2`\ /s
+     - Brownian motion strength
+   * - :math:`\beta`
+     - Contrast parameter
+     - dimensionless
+     - Scattering contrast factor
 
 Citation
 --------
