@@ -183,7 +183,7 @@ def create_config_from_template(
 
     print(f"✓ Configuration created: {output_path.absolute()}")
     print(f"✓ Analysis mode: {mode}")
-    print(f"✓ Dual MCMC backends: PyMC (CPU) + NumPyro (GPU) configured")
+    print("✓ Dual MCMC backends: PyMC (CPU) + NumPyro (GPU) configured")
 
     # Print mode-specific information
     mode_info = {
@@ -233,7 +233,7 @@ def create_config_from_template(
     print("  • CPU Backend (PyMC):    homodyne --config [config] --method mcmc")
     print("  • GPU Backend (NumPyro):  homodyne-gpu --config [config] --method mcmc")
     print("    └─ Requires Linux + CUDA (auto-fallback to CPU if no GPU)")
-    
+
     print("\n⚡ Performance Recommendations:")
     if mode in ["static_isotropic", "static_anisotropic"]:
         print("  • 3-parameter analysis: Both CPU and GPU backends work well")
