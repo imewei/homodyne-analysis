@@ -160,7 +160,7 @@ jobs:
         id: setup-pages
 
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         if: steps.setup-pages.outcome == 'success'
         with:
           path: ./docs
