@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=68.0",
+    "setuptools>=77.0.0",
     "wheel>=0.40.0",
     "setuptools-scm[toml]>=8.0",
 ]
@@ -26,7 +26,6 @@ classifiers = [
     "Environment :: Console",
     "Environment :: GPU :: NVIDIA CUDA :: 12",
     "Natural Language :: English",
-    "License :: OSI Approved :: MIT License",
     "Typing :: Typed",
 ]
 keywords = [
@@ -46,6 +45,7 @@ keywords = [
     "physics",
 ]
 requires-python = ">=3.12"
+license = "MIT"
 dependencies = [ "numpy>=1.24.0,<2.3.0", "scipy>=1.9.0", "matplotlib>=3.5.0",]
 [[project.authors]]
 name = "Wei Chen"
@@ -57,9 +57,6 @@ name = "Hongrui He"
 [[project.maintainers]]
 name = "Wei Chen"
 email = "wchen@anl.gov"
-
-[project.license]
-text = "MIT"
 
 [project.optional-dependencies]
 data = [ "xpcs-viewer>=1.0.4",]
@@ -103,6 +100,7 @@ include-package-data = true
 write_to = "homodyne/_version.py"
 version_scheme = "post-release"
 local_scheme = "dirty-tag"
+fallback_version = "0.7.3.dev0"
 
 [tool.black]
 line-length = 88
