@@ -6,1480 +6,402 @@
 [![PyPI Downloads](https://img.shields.io/pypi/dm/homodyne-analysis)](https://pypi.org/project/homodyne-analysis/)
 [![Documentation Status](https://readthedocs.org/projects/homodyne/badge/?version=latest)](https://homodyne.readthedocs.io/en/latest/?badge=latest)
 [![CI Status](https://github.com/imewei/homodyne/workflows/CI/badge.svg)](https://github.com/imewei/homodyne/actions)
-[![Code Quality](https://github.com/imewei/homodyne/workflows/Quality/badge.svg)](https://github.com/imewei/homodyne/actions)
 [![codecov](https://codecov.io/gh/imewei/homodyne/branch/main/graph/badge.svg)](https://codecov.io/gh/imewei/homodyne)
 [![DOI](https://zenodo.org/badge/DOI/10.1073/pnas.2401162121.svg)](https://doi.org/10.1073/pnas.2401162121)
 
-A high-performance Python package for analyzing homodyne scattering in X-ray Photon
-Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the
-theoretical framework from
-[He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121) for characterizing
-transport properties in flowing soft matter systems.
+**High-performance Python package for X-ray Photon Correlation Spectroscopy (XPCS) analysis under nonequilibrium conditions.**
 
-## Overview
+Implements the theoretical framework from [He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121) for characterizing transport properties in flowing soft matter systems through time-dependent intensity correlation functions.
 
-Analyzes time-dependent intensity correlation functions $c_2(\\phi,t_1,t_2)$ in complex
-fluids under nonequilibrium conditions, capturing the interplay between Brownian
-diffusion and advective shear flow.
+---
 
-**Key Features:**
+## ✨ Key Features
 
-- **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params),
-  Laminar Flow (7 params)
-- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust
-  (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
-- **Noise-resistant analysis**: Robust optimization methods for measurement uncertainty
-  and outlier resistance
-- **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations,
-  and optimized memory usage
-- **Smart GPU acceleration**: Automatic CUDA detection with hardware-specific
-  optimization and intelligent CPU/GPU selection
-- **Unified system integration**: Streamlined shell completion, GPU setup, and advanced
-  features with one-command installation
-- **Advanced tools**: GPU optimization (`homodyne-gpu-optimize`), system validation
-  (`homodyne-validate`), and performance monitoring
-- **Scientific accuracy**: Automatic $g_2 = \\text{offset} + \\text{contrast} \\times
-  g_1$ fitting for proper $\\chi^2$ calculations
-- **Enhanced testing framework**: 500+ tests with comprehensive marker system, automated
-  CI/CD, and performance regression detection
-- **Code quality assurance**: Automated formatting, linting, type checking, and security
-  scanning with pre-commit hooks
-- **Cross-platform shell completion**: Unified completion system with smart caching and
-  environment integration
+### 🔬 **Advanced Analysis Capabilities**
+- **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
+- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+- **Noise-resistant analysis**: Robust optimization for measurement uncertainty and outlier resistance
+- **Scientific accuracy**: Automatic $g_2 = \\text{offset} + \\text{contrast} \\times g_1$ fitting
 
-## Table of Contents
+### ⚡ **High Performance**
+- **Numba JIT compilation**: 3-5x speedup with comprehensive warmup
+- **Smart GPU acceleration**: Dual MCMC backends (PyMC CPU, NumPyro GPU) with automatic detection
+- **Vectorized operations**: Optimized memory usage and batch processing
+- **Performance monitoring**: Built-in benchmarking and optimization tools
 
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Analysis Modes](#analysis-modes)
-- [Usage Examples](#usage-examples)
-- [Robust Optimization](#robust-optimization)
-- [Configuration](#configuration)
-- [Performance & Testing](#performance--testing)
-- [Theoretical Background](#theoretical-background)
-- [Citation](#citation)
-- [Documentation](#documentation)
+### 🛠️ **Unified System Integration**
+- **One-command setup**: `homodyne-post-install --shell zsh --gpu --advanced`
+- **Cross-platform shell completion**: Smart caching and environment integration
+- **Advanced tools**: GPU optimization, system validation, performance monitoring
+- **Comprehensive testing**: 65+ test files with 500+ tests and automated CI/CD
 
-## Installation
+### 📊 **Enhanced User Experience**
+- **Interactive configuration**: `homodyne-config` with guided setup
+- **Flexible logging**: Verbose, quiet, and file-only logging modes
+- **Rich visualizations**: Correlation heatmaps, 3D surfaces, diagnostic plots
+- **Extensive documentation**: Complete user guides, API reference, and examples
 
-**Requirements:** Python 3.12 or higher is required. The package will automatically
-check your Python version and provide helpful error messages if you're using an older
-version.
+---
 
-### Quick Installation (Unified System)
+## 🚀 Quick Start
 
-**Complete setup with unified system:**
+### Installation & Setup
 
 ```bash
-# Install with all features
+# Complete installation with all features
 pip install homodyne-analysis[all]
 
-# Unified post-install setup
-homodyne-post-install --shell zsh --gpu --advanced
-
-# Test installation
-homodyne-validate
-```
-
-**Alternative installation approaches:**
-
-```bash
-# Standard installation
-pip install homodyne-analysis[all]
-
-# Interactive setup (choose features)
-homodyne-post-install --interactive
-```
-
-### Development Installation
-
-```bash
-git clone https://github.com/imewei/homodyne.git
-cd homodyne
-pip install -e .[all]
-
-# Development setup with unified system
-homodyne-post-install --shell zsh --advanced --gpu
-```
-
-### Dependencies
-
-#### Core Dependencies (always installed)
-
-```bash
-# Core scientific computing stack
-numpy>=1.24.0,<2.3.0              # Array operations and linear algebra
-scipy>=1.9.0                       # Scientific computing functions
-matplotlib>=3.5.0                  # Plotting and visualization
-```
-
-#### Optional Dependencies by Feature
-
-**Data Handling:**
-
-```bash
-pip install homodyne-analysis[data]
-# Includes:
-# - xpcs-viewer>=1.0.4             # XPCS data loading and visualization
-```
-
-**Performance Optimization:**
-
-```bash
-pip install homodyne-analysis[performance]
-# Includes:
-# - numba>=0.61.0,<0.62.0          # JIT compilation (3-5x speedup)
-# - jax[cuda12-local]>=0.7.0 (Linux) # JAX with system CUDA 12.6+ support on Linux
-# - jax>=0.7.0 (non-Linux)         # Standard JAX on other platforms
-# - jaxlib>=0.4.35                 # JAX backend library
-# - psutil>=5.8.0                  # Memory profiling and monitoring
-```
-
-**JAX Acceleration with System CUDA (GPU support):**
-
-```bash
-pip install homodyne-analysis[jax]
-# Includes:
-# - jax[cuda12-local]>=0.7.0       # JAX with system CUDA 12.6+ support (Linux with NVIDIA GPU)
-# - jax>=0.7.0                     # Standard JAX (non-Linux platforms)
-# - jaxlib>=0.4.35                 # JAX backend library
-
-# Note: Requires system CUDA 12.6+ and cuDNN 9.12+ installed on Linux
-# For automated setup: run 'homodyne-post-install --gpu'
-```
-
-**Bayesian MCMC Analysis:**
-
-```bash
-pip install homodyne-analysis[mcmc]
-# Includes:
-# - pymc>=5.0.0                    # Probabilistic programming
-# - arviz>=0.12.0                  # Bayesian data analysis
-# - pytensor>=2.8.0                # Tensor operations for PyMC
-# - corner>=2.2.0                  # Corner plots for MCMC results
-# - numpyro>=0.13.0                # GPU-accelerated MCMC with JAX
-# - jax[cuda12-local]>=0.7.0 (Linux) # System CUDA 12.6+ support on Linux
-# - jaxlib>=0.4.35                 # JAX backend for NumPyro
-```
-
-**Robust Optimization:**
-
-```bash
-pip install homodyne-analysis[robust]
-# Includes:
-# - cvxpy>=1.4.0                   # Convex optimization framework
-```
-
-**Gurobi Solver (requires license):**
-
-```bash
-pip install homodyne-analysis[gurobi]
-# Includes:
-# - gurobipy>=11.0.0               # Commercial optimization solver
-```
-
-**Documentation:**
-
-```bash
-pip install homodyne-analysis[docs]
-# Includes:
-# - sphinx>=4.0.0                  # Documentation generator
-# - sphinx-rtd-theme>=1.0.0        # Read the Docs theme
-# - myst-parser>=0.17.0            # Markdown support
-# - sphinx-autodoc-typehints>=1.12.0  # Type hints in docs
-# - numpydoc>=1.2.0                # NumPy-style docstrings
-# - linkify-it-py>=2.0.0           # Link detection
-```
-
-**Testing Framework:**
-
-```bash
-pip install homodyne-analysis[test]
-# Includes:
-# - pytest>=6.2.0                  # Testing framework
-# - pytest-cov>=2.12.0             # Coverage reporting
-# - pytest-xdist>=2.3.0            # Parallel testing
-# - pytest-benchmark>=4.0.0        # Performance benchmarking
-# - pytest-mock>=3.6.0             # Mocking utilities
-# - pytest-html>=4.1.1             # HTML test reports
-# - pytest-metadata>=3.1.1         # Test metadata
-# - hypothesis>=6.0.0               # Property-based testing
-# - coverage>=6.2.0                 # Coverage measurement
-```
-
-**Code Quality and Security Tools:**
-
-```bash
-pip install homodyne-analysis[quality]
-# Includes:
-# - black>=23.0.0                  # Code formatter
-# - isort>=5.12.0                  # Import sorter
-# - flake8>=6.0.0                  # Style guide enforcement
-# - mypy>=1.5.0                    # Type checker
-# - ruff>=0.1.0                    # Modern linter and formatter
-# - bandit>=1.8.0                  # Security linter
-# - pip-audit>=2.6.0               # Dependency vulnerability scanner
-```
-
-**Type Checking Stubs:**
-
-```bash
-pip install homodyne-analysis[typing]
-# Includes:
-# - types-psutil>=5.9.0            # Type stubs for psutil
-# - types-Pillow>=10.0.0           # Type stubs for Pillow
-# - types-six>=1.16.0              # Type stubs for six
-# - types-requests>=2.28.0         # Type stubs for requests
-```
-
-**Development Environment:**
-
-```bash
-pip install homodyne-analysis[dev]
-# Includes all test, docs, quality, and typing dependencies plus:
-# - pre-commit>=3.0.0              # Pre-commit hooks
-# - tox>=4.0.0                     # Testing across environments
-# - build>=0.10.0                  # Build tools
-# - twine>=4.0.0                   # Package uploading
-```
-
-**All Features:**
-
-```bash
-pip install homodyne-analysis[all]
-# Includes: data, performance, jax, mcmc, robust, gurobi, dev
-# Complete installation with all optional dependencies
-```
-
-#### Quick Installation Commands
-
-**For most users:**
-
-```bash
-pip install homodyne-analysis[performance,mcmc,robust]  # Core analysis features
-```
-
-**For developers:**
-
-```bash
-pip install homodyne-analysis[all]  # Everything included
-```
-
-**For high-performance computing:**
-
-```bash
-pip install homodyne-analysis[performance,jax,gurobi]  # Maximum performance
-```
-
-### Smart GPU Acceleration (Unified System)
-
-**Automatic GPU detection with intelligent CPU/GPU selection:**
-
-**Features:**
-
-- **Smart CUDA detection**: Finds CUDA in system, conda, or pip installations
-- **Hardware optimization**: Automatic GPU memory and performance tuning
-- **Intelligent fallback**: Seamless CPU fallback on unsupported platforms
-- **Platform-aware**: Linux GPU acceleration, Windows/macOS CPU-optimized
-
-**Setup:**
-
-```bash
-# Install with GPU support
-pip install homodyne-analysis[jax]
-
-# Smart GPU setup (unified system)
-homodyne-post-install --shell zsh --gpu --advanced
-
-# Test GPU system
-homodyne-validate --test gpu
-gpu-status                        # Check GPU activation status
-```
-
-**Advanced GPU features:**
-
-```bash
-# Hardware-specific optimization
-homodyne-gpu-optimize --benchmark --apply
-
-# Performance monitoring
-gpu-bench                         # Built-in GPU benchmarking
-
-# System validation
-homodyne-validate --verbose       # Complete system report
-```
-
-**Smart usage (automatic GPU/CPU selection):**
-
-```bash
-hm config.json                    # MCMC with smart GPU detection
-ha config.json                    # All methods with intelligent selection
-```
-
-**Command Usage:**
-
-```bash
-# CPU-only analysis (reliable, all platforms)
-homodyne --config config.json --method mcmc
-
-# System CUDA GPU-accelerated analysis (Linux only)  
-homodyne-gpu --config config.json --method mcmc
-```
-
-**Using GPU in Python:**
-
-```python
-# After activating system CUDA GPU support with the script above
-import jax
-print(f"JAX devices: {jax.devices()}")  # Should show GPU device(s)
-
-# For MCMC GPU acceleration
-from homodyne.optimization.mcmc import MCMCSampler
-# GPU acceleration is automatic when available and activated
-```
-
-**Note:** Use `homodyne-post-install --gpu` for automated CUDA setup and
-`homodyne-validate` for troubleshooting.
-
-## Uninstallation
-
-To completely remove homodyne-analysis including all environment scripts, follow this
-**two-step process**:
-
-```bash
-# Step 1: Clean up environment scripts FIRST (while package is still installed)
-homodyne-cleanup
-
-# Step 2: Uninstall the package
-pip uninstall homodyne-analysis
-```
-
-**⚠️ Important**: The order matters! The `homodyne-cleanup` command is part of the
-package and removes conda environment scripts that `pip uninstall` cannot track:
-
-- `$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh` (conda activation hook)
-- `$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh` (conda deactivation
-  hook)
-- `$CONDA_PREFIX/etc/homodyne/gpu_activation.sh` (GPU activation script)
-- `$CONDA_PREFIX/etc/homodyne/homodyne_completion_bypass.zsh` (shell completion script)
-- `$CONDA_PREFIX/etc/homodyne/homodyne_config.sh` (main configuration script)
-- `$CONDA_PREFIX/etc/homodyne/` (entire directory if empty after cleanup)
-
-### Alternative Cleanup Methods
-
-**Option 1: Standalone Cleanup Script** (if you forgot to run `homodyne-cleanup` first)
-
-```bash
-# Download and run the standalone cleanup script
-curl -sSL https://raw.githubusercontent.com/imewei/homodyne/main/standalone_cleanup.sh | bash
-
-# Or if you have the source code:
-bash /path/to/homodyne/standalone_cleanup.sh
-```
-
-**Option 2: Manual Cleanup**
-
-```bash
-# Remove conda activation scripts
-rm -f "$CONDA_PREFIX/etc/conda/activate.d/homodyne-gpu-activate.sh"
-rm -f "$CONDA_PREFIX/etc/conda/deactivate.d/homodyne-gpu-deactivate.sh"
-
-# Remove homodyne configuration directory
-rm -rf "$CONDA_PREFIX/etc/homodyne"
-```
-
-## Quick Start (Unified System)
-
-```bash
-# Complete installation with unified system
-pip install homodyne-analysis[all]
+# Unified system setup
 homodyne-post-install --shell zsh --gpu --advanced
 
 # Validate installation
 homodyne-validate
+```
 
+### Basic Usage
+
+```bash
 # Create configuration
 homodyne-config --mode laminar_flow --sample my_sample
 
-# Run analysis with unified commands (smart GPU/CPU selection)
-hm my_config.json                   # homodyne --method mcmc (with smart GPU)
-ha my_config.json                   # homodyne --method all
-hc my_config.json                   # homodyne --method classical
-hr my_config.json                   # homodyne --method robust
+# Run analysis with smart aliases
+hm config.json          # MCMC with smart GPU detection
+ha config.json          # All methods with intelligent selection
+hc config.json          # Classical optimization
+hr config.json          # Robust optimization
 
-# Advanced features
-gpu-status                          # Check GPU activation
-homodyne-gpu-optimize --benchmark   # Optimize GPU performance
+# System tools
+gpu-status               # Check GPU status
+homodyne-validate        # System validation
 ```
 
-## CLI Commands (Unified System)
-
-The homodyne package provides comprehensive command-line tools with unified system
-integration:
-
-### Unified Command Aliases (Smart GPU/CPU Selection)
-
-```bash
-# Smart analysis commands (post-install setup provides these)
-hm config.json                      # homodyne --method mcmc (smart GPU detection)
-hc config.json                      # homodyne --method classical  
-hr config.json                      # homodyne --method robust
-ha config.json                      # homodyne --method all
-
-# Advanced system tools
-gpu-status                          # homodyne_gpu_status  
-gpu-bench                           # homodyne_gpu_benchmark
-homodyne-validate                   # System validation
-homodyne-gpu-optimize              # GPU optimization
-```
-
-### 1. `homodyne` - Main Analysis Command
-
-```bash
-# Usage: homodyne [OPTIONS]
-
-# Basic examples
-homodyne                                    # Default classical method
-homodyne --method robust                    # Robust optimization only  
-homodyne --method mcmc                      # MCMC sampling only
-homodyne --method all --verbose             # All methods with debug logging
-
-# Analysis mode control
-homodyne --static-isotropic                 # Force 3-parameter isotropic mode
-homodyne --static-anisotropic               # Force 3-parameter anisotropic mode  
-homodyne --laminar-flow                     # Force 7-parameter flow mode
-
-# Data visualization  
-homodyne --plot-experimental-data           # Validate experimental data
-homodyne --plot-simulated-data              # Plot theoretical correlations
-homodyne --plot-simulated-data --contrast 1.5 --offset 0.1 --phi-angles "0,45,90,135"
-
-# Configuration and output
-homodyne --config my_config.json --output-dir ./results --verbose
-homodyne --quiet                            # File logging only, no console output
-```
-
-### 2. `homodyne-config` - Configuration Generator
-
-```bash
-# Usage: homodyne-config [OPTIONS]
-
-# Basic examples
-homodyne-config                             # Default laminar_flow config
-homodyne-config --mode static_isotropic     # Fastest analysis mode
-homodyne-config --mode static_anisotropic   # Static with angle filtering
-
-# With metadata
-homodyne-config --sample protein_sample --author "Your Name" --experiment "Protein dynamics"
-homodyne-config --mode laminar_flow --output custom_config.json --sample microgel
-```
-
-**See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete command-line documentation.**
-
-## Unified Shell Integration
-
-The homodyne unified system provides comprehensive shell integration with smart
-completion, GPU activation, and advanced features:
-
-### One-Command Setup
-
-```bash
-# Complete unified setup
-homodyne-post-install --shell zsh --gpu --advanced
-
-# Interactive setup (choose features)
-homodyne-post-install --interactive
-
-# Basic shell completion only
-homodyne-post-install --shell zsh
-```
-
-### Unified System Features
-
-**🚀 Smart Completion System:**
-
-- Cross-shell compatibility (bash, zsh, fish)
-- Context-aware suggestions
-- Config file discovery with caching
-- Method completion based on config type
-
-**⚡ GPU Integration:**
-
-- Automatic GPU detection and activation
-- Hardware-specific optimization
-- Smart CPU/GPU selection
-- Performance monitoring tools
-
-**🛠️ Advanced Tools:**
-
-- System validation (`homodyne-validate`)
-- GPU optimization (`homodyne-gpu-optimize`)
-- Performance benchmarking (`gpu-bench`)
-- Clean removal (`homodyne-cleanup`)
-
-### Unified Command Aliases
-
-**🚀 Smart Analysis Shortcuts (Unified System):**
-
-```bash
-# Smart GPU/CPU analysis (automatically optimized)
-hm config.json      # homodyne --method mcmc (smart GPU detection)
-hc config.json      # homodyne --method classical  
-hr config.json      # homodyne --method robust
-ha config.json      # homodyne --method all (smart selection)
-hconfig             # homodyne-config
-
-# Advanced system tools
-gpu-status          # homodyne_gpu_status
-gpu-bench           # homodyne_gpu_benchmark  
-gpu-on              # Manual GPU activation
-gpu-off             # Manual GPU deactivation
-```
-
-**⚡ Smart Completion System:**
-
-```bash
-homodyne --method <TAB>     # Context-aware method suggestions
-homodyne --config <TAB>     # Cached config file discovery
-hm <TAB>                    # Smart config file completion
-```
-
-**🛠️ Advanced System Commands:**
-
-```bash
-homodyne-validate           # Complete system validation
-homodyne-validate --verbose # Detailed system report
-homodyne-gpu-optimize       # GPU hardware optimization
-homodyne-post-install       # Unified setup system
-homodyne-cleanup           # Smart system cleanup
-```
-
-**📋 System Validation:**
-
-```bash
-homodyne-validate --test completion    # Test completion system
-homodyne-validate --test gpu           # Test GPU setup
-homodyne-validate --json               # JSON output for CI/CD
-```
-
-### Usage Examples
-
-```bash
-# Using shortcuts for quick analysis
-hc --verbose               # homodyne --method classical --verbose
-hr --config my_data.json   # homodyne --method robust --config my_data.json
-ha                         # homodyne --method all
-
-# Check what's available
-homodyne_help             # Shows methods, config files, flags
-```
-
-**Python API:**
+### Python API
 
 ```python
 from homodyne import HomodyneAnalysisCore, ConfigManager
 
 config = ConfigManager("config.json")
 analysis = HomodyneAnalysisCore(config)
-results = analysis.optimize_classical()  # Fast (includes robust methods)
-results = analysis.optimize_robust()     # Robust methods only
-results = analysis.optimize_all()        # Classical + Robust + MCMC
+
+# Run different optimization methods
+results = analysis.optimize_classical()  # Fast classical methods
+results = analysis.optimize_robust()     # Noise-resistant methods
+results = analysis.optimize_all()        # Comprehensive analysis
 ```
 
-## Analysis Modes
+---
 
-The homodyne analysis package supports three distinct analysis modes, each optimized for
-different experimental scenarios:
+## 📦 Installation Options
 
-| Mode | Parameters | Angle Handling | Use Case | Speed | Command |
-|------|------------|----------------|----------|-------|---------| | **Static
-Isotropic** | 3 | Single dummy | Fastest, isotropic systems | ⭐⭐⭐ | `--static-isotropic`
-| | **Static Anisotropic** | 3 | Filtering enabled | Static with angular deps | ⭐⭐ |
-`--static-anisotropic` | | **Laminar Flow** | 7 | Full coverage | Flow & shear analysis
-| ⭐ | `--laminar-flow` |
+### Core Installation
 
-### Static Isotropic Mode (3 parameters)
+```bash
+# Standard installation with essential features
+pip install homodyne-analysis[performance,mcmc,robust]
 
-- **Physical Context**: Analysis of systems at equilibrium with isotropic scattering
-  where results don't depend on scattering angle
-- **Parameters**:
-  - $D_0$: Effective diffusion coefficient
-  - $\\alpha$: Time exponent characterizing dynamic scaling
-  - $D\_{\\text{offset}}$: Baseline diffusion component
-- **Key Features**:
-  - No angle filtering (automatically disabled)
-  - No phi_angles_file loading (uses single dummy angle)
-  - Fastest analysis mode
-- **When to Use**: Isotropic samples, quick validation runs, preliminary analysis
-- **Model**: $g_1(t_1,t_2) = \\exp(-q^2 \\int\_{t_1}^{t_2} D(t)dt)$ with no angular
-  dependence
+# Development installation
+pip install homodyne-analysis[all]
 
-### Static Anisotropic Mode (3 parameters)
+# GPU acceleration (Linux + NVIDIA)
+pip install homodyne-analysis[jax]
+```
 
-- **Physical Context**: Analysis of systems at equilibrium with angular dependence but
-  no flow effects
-- **Parameters**: $D_0$, $\\alpha$, $D\_{\\text{offset}}$ (same as isotropic mode)
-- **Key Features**:
-  - Angle filtering enabled for optimization efficiency
-  - phi_angles_file loaded for angle information
-  - Per-angle scaling optimization
-- **When to Use**: Static samples with measurable angular variations, moderate
-  computational resources
-- **Model**: Same as isotropic mode but with angle filtering to focus optimization on
-  specific angular ranges
+### Optional Dependencies
 
-### Laminar Flow Mode (7 parameters)
+| Feature | Command | Includes |
+|---------|---------|----------|
+| **Performance** | `[performance]` | Numba JIT, JAX acceleration, profiling tools |
+| **MCMC Analysis** | `[mcmc]` | PyMC, ArviZ, NumPyro, corner plots |
+| **Robust Optimization** | `[robust]` | CVXPY for noise-resistant methods |
+| **Commercial Solvers** | `[gurobi]` | Gurobi optimization (requires license) |
+| **Development** | `[dev]` | Testing, docs, quality tools, pre-commit |
+| **All Features** | `[all]` | Complete installation |
 
-- **Physical Context**: Analysis of systems under controlled shear flow conditions with
-  full physics model
-- **Parameters**:
-  - $D_0$, $\\alpha$, $D\_{\\text{offset}}$: Same as static modes
-  - $\\dot{\\gamma}\_0$: Characteristic shear rate
-  - $\\beta$: Shear rate exponent for flow scaling
-  - $\\dot{\\gamma}\_{\\text{offset}}$: Baseline shear component
-  - $\\phi_0$: Angular offset parameter for flow geometry
-- **Key Features**:
-  - All flow and diffusion effects included
-  - phi_angles_file required for angle-dependent flow effects
-  - Complex parameter space with potential correlations
-- **When to Use**: Systems under shear, nonequilibrium conditions, transport coefficient
-  analysis
-- **Model**: $g_1(t_1,t_2) = g\_{1,\\text{diff}}(t_1,t_2) \\times
-  g\_{1,\\text{shear}}(t_1,t_2)$ where shear effects are $\\text{sinc}^2(\\Phi)$
+### GPU Acceleration Setup
 
-## Usage Examples
+```bash
+# Install with GPU support
+pip install homodyne-analysis[jax]
 
-### Command Line Interface
+# Smart GPU setup (Linux + NVIDIA)
+homodyne-post-install --shell zsh --gpu --advanced
+
+# Test GPU configuration
+homodyne-validate --test gpu
+gpu-bench                    # Performance benchmark
+homodyne-gpu-optimize        # Hardware optimization
+```
+
+---
+
+## 🔬 Analysis Modes
+
+| Mode | Parameters | Use Case | Speed | Command |
+|------|------------|----------|-------|---------|
+| **Static Isotropic** | 3 | Isotropic systems, fastest analysis | ⭐⭐⭐ | `--static-isotropic` |
+| **Static Anisotropic** | 3 | Static with angular dependencies | ⭐⭐ | `--static-anisotropic` |
+| **Laminar Flow** | 7 | Flow & shear analysis, full physics | ⭐ | `--laminar-flow` |
+
+### Physical Models
+
+**Static Modes**: $g_1(t_1,t_2) = \\exp(-q^2 \\int\_{t_1}^{t_2} D(t)dt)$
+- Parameters: $D_0$ (diffusion), $\\alpha$ (time exponent), $D\_{\\text{offset}}$ (baseline)
+
+**Laminar Flow Mode**: $g_1(t_1,t_2) = g\_{1,\\text{diff}}(t_1,t_2) \\times g\_{1,\\text{shear}}(t_1,t_2)$
+- Additional: $\\dot{\\gamma}\_0$, $\\beta$, $\\dot{\\gamma}\_{\\text{offset}}$ (shear), $\\phi_0$ (angular offset)
+
+---
+
+## 🛠️ Configuration & Usage
+
+### Configuration Generation
+
+```bash
+# Interactive configuration
+homodyne-config --mode static_isotropic --sample protein_01
+
+# Template with metadata
+homodyne-config --mode laminar_flow --sample microgel \
+  --author "Your Name" --experiment "Shear dynamics"
+```
+
+### Analysis Commands
 
 ```bash
 # Basic analysis
-homodyne --static-isotropic --method classical
-homodyne --static-anisotropic --method robust    # NEW: Robust optimization only
-homodyne --laminar-flow --method all
+homodyne --config config.json --method classical
+homodyne --config config.json --method robust      # Noise-resistant
+homodyne --config config.json --method mcmc        # Bayesian analysis
+homodyne --config config.json --method all         # Comprehensive
 
-# Robust optimization examples (noise-resistant)
-homodyne --method robust                         # Run all robust methods
-homodyne --method robust --static-isotropic      # Robust in static mode
-homodyne --method robust --config noisy_data.json # Robust for noisy data
+# Data visualization
+homodyne --plot-experimental-data --config config.json
+homodyne --plot-simulated-data --config config.json
 
-# Data validation only
-homodyne --plot-experimental-data --config my_config.json
-
-# Custom configuration and output
-homodyne --config my_experiment.json --output-dir ./results
-
-# Logging control options
-homodyne --verbose                              # Debug logging to console and file
-homodyne --quiet                               # File logging only, no console output
-homodyne --config my_config.json --quiet       # Quiet mode with custom config
-
-# Generate C2 heatmaps
-homodyne --method classical --plot-c2-heatmaps
+# Logging control
+homodyne --config config.json --verbose    # Debug information
+homodyne --config config.json --quiet      # File logging only
 ```
 
-### Data Validation and Plotting
-
-#### Experimental Data Visualization
-
-Generate validation plots without fitting:
+### Smart GPU Commands
 
 ```bash
-homodyne --plot-experimental-data --config my_config.json --verbose
-homodyne --plot-experimental-data --config my_config.json --quiet  # Quiet mode
+# CPU analysis (cross-platform)
+homodyne --config config.json --method mcmc
+
+# GPU analysis (Linux + NVIDIA)
+homodyne-gpu --config config.json --method mcmc
+
+# Smart aliases (automatic backend selection)
+hm config.json          # Smart MCMC
+ha config.json          # All methods with optimization
 ```
 
-**Output**: Creates plots in `./homodyne_results/exp_data/`:
+---
 
-- 2D correlation function heatmaps $c_2(t_1,t_2)$ for each phi angle
-- Statistical summaries and quality metrics
-- Simplified 2-column layout (heatmap + statistics)
+## 📊 Results & Output
 
-**Supported Data Formats:**
+### Directory Structure
 
-- **HDF5 files**: Uses PyXPCS viewer library with exchange key
-- **NPZ files**: Pre-processed correlation data with structure `(n_phi, n_t1, n_t2)`
-- **Multiple phi angles**: Each angle plotted individually for comprehensive analysis
-
-#### Simulated Data Visualization
-
-Visualize theoretical and fitted correlation functions with scaling transformations:
-
-```bash
-# Basic simulated data plotting
-homodyne --plot-simulated-data --config my_config.json
-
-# With custom scaling parameters
-homodyne --plot-simulated-data --config my_config.json --contrast 0.3 --offset 1.2
-
-# Override phi angles from command line
-homodyne --plot-simulated-data --config my_config.json --phi-angles 0,45,90,135
+```
+./homodyne_results/
+├── homodyne_analysis_results.json     # Main results summary
+├── run.log                            # Execution log
+├── classical/                         # Classical methods
+│   ├── nelder_mead/
+│   │   ├── parameters.json
+│   │   ├── fitted_data.npz
+│   │   └── c2_heatmaps_*.png
+│   └── gurobi/                        # If available
+├── robust/                            # Robust methods
+│   ├── wasserstein/
+│   ├── scenario/
+│   └── ellipsoidal/
+├── mcmc/                              # MCMC results
+│   ├── mcmc_summary.json
+│   ├── mcmc_trace.nc
+│   ├── fitted_data.npz
+│   ├── c2_heatmaps_*.png
+│   ├── mcmc_corner_plot.png
+│   ├── mcmc_trace_plots.png
+│   └── mcmc_convergence_diagnostics.png
+└── diagnostic_summary.png             # Cross-method comparison
 ```
 
-**Key Features:**
+### Data Files
 
-- **Scaling transformation**: `c2_fitted = contrast × c2_theoretical + offset`
-- **Default scaling**: `contrast=1.0`, `offset=0.0` (no scaling)
-- **Phi angles override**: Command-line `--phi-angles` overrides config file angles
-- **Individual angle scaling**: `vmin = min(c2_data)` calculated per angle
-- **Clean visualization**: No grid lines on heatmaps
+Each method directory contains:
+- **`parameters.json`**: Human-readable results with uncertainties
+- **`fitted_data.npz`**: Complete numerical data (experimental, fitted, residuals)
+- **Visualization plots**: Correlation heatmaps, 3D surfaces, diagnostics
 
-**Data File Structure:**
+---
 
-- **Theoretical data**: `theoretical_c2_data.npz`
-- **Fitted data**: `fitted_c2_data.npz`
-- **Array format**: `c2_data(n_phi, n_t1, n_t2)`, `t1`, `t2`, `phi_angles`
-
-**Usage Examples:**
-
-```bash
-# Validate experimental data quality
-homodyne --plot-experimental-data --config experiment.json
-
-# Compare theoretical predictions with scaling
-homodyne --plot-simulated-data --config theory.json --contrast 0.25 --offset 1.1
-
-# Multi-angle analysis with custom angles
-homodyne --plot-simulated-data --config multi_angle.json --phi-angles 0,30,60,90,120,150
-```
-
-## Robust Optimization
-
-**NEW**: Dedicated robust optimization methods for noise-resistant parameter estimation.
-
-### Overview
-
-The `--method robust` flag runs only robust optimization methods, designed to handle:
-
-- **Measurement noise** and experimental uncertainties
-- **Outliers** in correlation function data
-- **Model misspecification** and systematic errors
-
-### Available Robust Methods
-
-| Method | Description | Best For | |--------|-------------|----------| |
-**Robust-Wasserstein** | Distributionally Robust Optimization with Wasserstein
-uncertainty sets | Noisy experimental data with theoretical guarantees | |
-**Robust-Scenario** | Bootstrap scenario-based robust optimization | Data with outliers
-and non-Gaussian noise | | **Robust-Ellipsoidal** | Ellipsoidal uncertainty sets
-optimization | Well-characterized noise levels |
-
-### Usage
-
-```bash
-# Run only robust methods (recommended for noisy data)
-homodyne --method robust
-
-# Robust optimization in different modes
-homodyne --method robust --static-isotropic     # 3-parameter static
-homodyne --method robust --laminar-flow         # 7-parameter flow
-
-# Custom configuration for robust analysis
-homodyne --method robust --config robust_config.json
-```
-
-### Key Features
-
-- **Dedicated output**: Results saved to `/robust/` directory
-- **Method comparison**: All three robust methods run, best chi-squared selected
-- **Noise resistance**: 3-8% uncertainty tolerance (configurable)
-- **Performance**: ~2-5x slower than classical, but uncertainty-resistant
-
-### When to Use Robust Optimization
-
-✅ **Use `--method robust` when:**
-
-- Data has significant measurement noise (>2%)
-- Outliers are present in correlation functions
-- Systematic errors suspected in experimental setup
-- Need uncertainty-resistant parameter estimates
-
-❌ **Use `--method classical` when:**
-
-- Clean, low-noise data (\<1% uncertainty)
-- Fast parameter estimation needed
-- Comparing with previous classical results
-
-## Configuration
-
-### Creating Configurations
-
-```bash
-# Generate configuration templates
-homodyne-config --mode static_isotropic --sample protein_01
-homodyne-config --mode laminar_flow --sample microgel
-```
-
-### Mode Selection
-
-Configuration files specify analysis mode:
-
-```json
-{
-  "analysis_settings": {
-    "static_mode": true/false,
-    "static_submode": "isotropic" | "anisotropic" | null
-  }
-}
-```
-
-**Rules**:
-
-- `static_mode: false` → Laminar Flow Mode (7 params)
-- `static_mode: true, static_submode: "isotropic"` → Static Isotropic (3 params)
-- `static_mode: true, static_submode: "anisotropic"` → Static Anisotropic (3 params)
-
-### Quality Control
-
-Check data quality before fitting:
-
-```bash
-homodyne --plot-experimental-data --verbose
-```
-
-**Look for**:
-
-- Mean values around 1.0 ($g_2$ correlation functions)
-- Enhanced diagonal values
-- Sufficient contrast (> 0.001)
-
-### Logging Control
-
-The package provides flexible logging control for different use cases:
-
-| Option | Console Output | File Output | Use Case |
-|--------|---------------|-------------|----------| | **Default** | INFO level | INFO
-level | Normal interactive analysis | | **`--verbose`** | DEBUG level | DEBUG level |
-Detailed troubleshooting and debugging | | **`--quiet`** | None | INFO level | Batch
-processing, scripting, clean output |
-
-```bash
-# Detailed debugging information
-homodyne --verbose --method all
-
-# Quiet execution (logs only to file)
-homodyne --quiet --method classical --output-dir ./batch_results
-
-# Cannot combine conflicting options
-homodyne --verbose --quiet  # ERROR: conflicting options
-```
-
-**File Logging**: All modes save detailed logs to `output_dir/run.log` for analysis
-tracking and debugging, regardless of console settings.
-
-## Performance & Testing
+## ⚡ Performance & Optimization
 
 ### Optimization Methods
 
-**Classical Optimization (Fast)**
+| Method | Algorithm | Speed | Use Case |
+|--------|-----------|-------|----------|
+| **Classical** | Nelder-Mead, Gurobi | Minutes | Exploratory analysis |
+| **Robust** | Wasserstein DRO, Scenario, Ellipsoidal | 2-5x slower | Noisy data |
+| **MCMC** | NUTS (PyMC/NumPyro) | Hours | Uncertainty quantification |
 
-- **Nelder-Mead**: Derivative-free simplex algorithm, robust for noisy functions
-- **Gurobi**: Iterative quadratic programming with trust region optimization (requires
-  license), excellent for smooth functions with parameter bounds
-- Speed: ~minutes (optimized with lazy imports and memory-efficient operations)
-- Use: Exploratory analysis, parameter screening
-- Command: `--method classical`
+### Performance Features
 
-**Bayesian MCMC (Comprehensive)**
-
-- Algorithm: NUTS sampler via PyMC (lazy-loaded for fast startup)
-- Speed: ~hours (with Numba JIT acceleration and optional thinning)
-- Features: Uncertainty quantification, thinning support, convergence diagnostics
-- Use: Uncertainty quantification, publication results
-- Command: `--method mcmc`
-
-**Combined**
-
-- Workflow: Classical → MCMC refinement
-- Command: `--method all`
-
-**Note**: Gurobi is automatically detected if installed and licensed. Both classical
-methods are attempted if available, with the best result selected based on chi-squared
-value. All optimization methods (Nelder-Mead, Gurobi, MCMC) use the same parameter
-bounds defined in the configuration for consistency.
-
-### Performance Optimizations
-
-The package includes comprehensive performance optimizations:
-
-**🚀 Computational Optimizations:**
-
-- **Numba JIT compilation**: 3-5x speedup for core kernels with comprehensive warmup
-- **Vectorized operations**: NumPy-optimized angle filtering and array operations
-- **Memory-efficient processing**: Lazy allocation and memory-mapped file loading
-- **Enhanced caching**: Fast cache key generation for NumPy arrays
-- **Stable benchmarking**: Outlier filtering and variance reduction for reliable
-  performance testing
-
-**⚡ Import Optimizations:**
-
-- **Lazy loading**: Heavy dependencies loaded only when needed
-- **Fast startup**: >99% reduction in import time for optional components
-- **Modular imports**: Core functionality available without heavy dependencies
-
-### Enhanced Testing Framework (v0.7.2)
-
-The package includes a comprehensive testing framework with intelligent test
-organization:
-
-**🧪 Test Marker System:**
-
-```bash
-# Fast development testing
-pytest homodyne/tests/ -m "fast" -x --tb=line -q
-
-# Comprehensive test categories
-pytest homodyne/tests/ -m "unit"        # Unit tests only
-pytest homodyne/tests/ -m "system"      # System integration tests
-pytest homodyne/tests/ -m "ci"          # CI-suitable tests
-pytest homodyne/tests/ -m "regression"  # Regression tests
-
-# Performance and specialized testing
-pytest homodyne/tests/ -m "performance" # Performance benchmarks
-pytest homodyne/tests/ -m "slow"        # Comprehensive slow tests
-pytest homodyne/tests/ -m "integration" # Integration tests
-pytest homodyne/tests/ -m "mcmc"        # MCMC-specific tests
-```
-
-**🔧 Test Framework Features:**
-
-- **Intelligent test categorization**: Automatic marker assignment based on test
-  location and characteristics
-- **Flexible execution strategies**: Run tests by category, speed, or integration level
-- **CI/CD optimized**: Separate test suites for development vs. production pipelines
-- **Comprehensive coverage**: 500+ tests covering all functionality with detailed
-  reporting
-- **Performance regression detection**: Automated benchmarking to detect performance
-  changes
-- **Virtual environment detection**: Enhanced support for mamba, conda, venv, and
-  virtualenv
-
-## Physical Constraints and Parameter Ranges
-
-### Parameter Distributions and Constraints
-
-The homodyne package implements comprehensive physical constraints to ensure
-scientifically meaningful results:
-
-#### **Core Model Parameters**
-
-| Parameter | Range | Distribution | Physical Constraint |
-|-----------|-------|--------------|-------------------| | `D0` | [1.0, 1000000.0] Å²/s
-| TruncatedNormal(μ=10000.0, σ=1000.0) | positive | | `alpha` | [-2.0, 2.0]
-dimensionless | Normal(μ=-1.5, σ=0.1) | none | | `D_offset` | [-100, 100] Å²/s |
-Normal(μ=0.0, σ=10.0) | none | | `gamma_dot_t0` | [1e-06, 1.0] s⁻¹ |
-TruncatedNormal(μ=0.001, σ=0.01) | positive | | `beta` | [-2.0, 2.0] dimensionless |
-Normal(μ=0.0, σ=0.1) | none | | `gamma_dot_t_offset` | [-0.01, 0.01] s⁻¹ | Normal(μ=0.0,
-σ=0.001) | none | | `phi0` | [-10, 10] degrees | Normal(μ=0.0, σ=5.0) | angular |
-
-#### **Physical Function Constraints**
-
-The package **automatically enforces positivity** for time-dependent functions:
-
-- **D(t) = D₀(t)^α + D_offset** → **max(D(t), 1×10⁻¹⁰)**
-
-  - Prevents negative diffusion coefficients
-  - Maintains numerical stability with minimal threshold
-
-- **γ̇(t) = γ̇₀(t)^β + γ̇_offset** → **max(γ̇(t), 1×10⁻¹⁰)**
-
-  - Prevents negative shear rates
-  - Ensures physical validity in all optimization scenarios
-
-#### **Scaling Parameters for Correlation Functions**
-
-The relationship **c2_fitted = c2_theory × contrast + offset** uses bounded parameters:
-
-| Parameter | Range | Distribution | Physical Meaning |
-|-----------|-------|--------------|------------------| | `contrast` | (0.05, 0.5\] |
-TruncatedNormal(μ=0.3, σ=0.1) | Correlation strength scaling | | `offset` | (0.05,
-1.95\] | TruncatedNormal(μ=1.0, σ=0.2) | Baseline correlation level | | `c2_fitted` |
-[1.0, 2.0] | *derived* | Final correlation function range | | `c2_theory` | [0.0, 1.0] |
-*derived* | Theoretical correlation bounds |
-
-### Scaling Optimization
-
-Always enabled for scientific accuracy:
-
-$$g_2 = \\text{offset} + \\text{contrast} \\times g_1$$
-
-Accounts for instrumental effects, background, and normalization differences.
+- **JIT Compilation**: 3-5x speedup with Numba
+- **GPU Acceleration**: NumPyro backend for MCMC
+- **Vectorized Operations**: Optimized batch processing
+- **Memory Management**: Efficient caching and cleanup
+- **Parallel Testing**: Multi-core test execution
 
 ### Environment Optimization
 
 ```bash
-# Threading optimization for reproducible performance
+# Threading optimization
 export OMP_NUM_THREADS=8
-export OPENBLAS_NUM_THREADS=8
-export MKL_NUM_THREADS=8
 export NUMBA_DISABLE_INTEL_SVML=1
 
-# Memory optimization
-export NUMBA_CACHE_DIR=/tmp/numba_cache
-
-# Performance monitoring mode
-export HOMODYNE_PERFORMANCE_MODE=1
+# GPU optimization (Linux)
+export JAX_ENABLE_X64=0
+export XLA_PYTHON_CLIENT_MEM_FRACTION=0.8
 ```
 
-### Output Organization
+---
 
-```
-./homodyne_results/
-├── homodyne_analysis_results.json    # Main results with config and metadata
-├── run.log                          # Execution log file
-├── classical/                      # Classical optimization results (if run)
-│   ├── all_classical_methods_summary.json
-│   ├── nelder_mead/                # Method-specific directory
-│   │   ├── analysis_results_nelder_mead.json
-│   │   ├── parameters.json
-│   │   ├── fitted_data.npz         # Experimental, fitted, residuals data
-│   │   ├── c2_heatmaps_nelder_mead_phi_*.png
-│   │   └── nelder_mead_diagnostic_summary.png
-│   ├── gurobi/                     # Gurobi method directory (if available)
-│   │   ├── analysis_results_gurobi.json
-│   │   ├── parameters.json
-│   │   ├── fitted_data.npz
-│   │   └── c2_heatmaps_gurobi_phi_*.png
-│   └── ...                         # Other classical methods
-├── robust/                         # Robust optimization results (if run)
-│   ├── all_robust_methods_summary.json
-│   ├── wasserstein/               # Robust method directories
-│   │   ├── analysis_results_wasserstein.json
-│   │   ├── parameters.json
-│   │   ├── fitted_data.npz
-│   │   └── c2_heatmaps_wasserstein_phi_*.png
-│   ├── scenario/
-│   ├── ellipsoidal/
-│   └── ...
-├── mcmc/                          # MCMC results (if run)
-│   ├── mcmc_summary.json          # MCMC summary statistics
-│   ├── mcmc_trace.nc              # NetCDF trace file
-│   ├── experimental_data.npz      # Original experimental data
-│   ├── fitted_data.npz            # MCMC fitted data
-│   ├── residuals_data.npz         # Residuals
-│   ├── c2_heatmaps_phi_*.png      # Heatmap plots per angle
-│   ├── 3d_surface_phi_*.png       # 3D surface plots
-│   ├── 3d_surface_residuals_phi_*.png
-│   ├── trace_plot.png             # MCMC trace plots
-│   └── corner_plot.png            # Parameter posterior distributions
-├── exp_data/                      # Experimental data plots (if --plot-experimental-data)
-│   ├── data_validation_phi_*.png  # Per-angle validation plots
-│   └── summary_statistics.txt     # Data summary
-└── simulated_data/               # Simulated data plots (if --plot-simulated-data)
-    ├── simulated_c2_fitted_phi_*.png    # Simulated fitted data plots
-    ├── theoretical_c2_phi_*.png         # Theoretical correlation plots
-    ├── fitted_c2_data.npz              # Fitted data arrays
-    └── theoretical_c2_data.npz         # Theoretical data arrays
+## 🧪 Testing & Quality
+
+### Testing Framework
+
+```bash
+# Quick development tests
+pytest -c pytest-quick.ini
+
+# Full test suite with coverage
+pytest -c pytest-full.ini
+
+# Specific test categories
+pytest -m "fast"                # Quick tests
+pytest -m "not slow"            # Skip slow tests
+pytest homodyne/tests/unit       # Unit tests only
 ```
 
-**File Organization:**
+### Test Categories
 
-- `homodyne_analysis_results.json`: Summary of all analysis methods (stays in root
-  directory)
-- `all_classical_methods_summary.json`: Summary of all classical methods in classical
-  directory
-- `all_robust_methods_summary.json`: Summary of all robust methods in robust directory
-- **Method-specific directories**: Each optimization method has its own complete
-  directory containing:
-  - `analysis_results_[method_name].json`: Complete analysis results for the method
-  - `parameters.json`: Fitted parameters with uncertainties, chi-squared values, and
-    convergence information
-  - `fitted_data.npz`: Complete numerical data (experimental, fitted, residuals,
-    parameters, time arrays)
-  - `c2_heatmaps_[method_name].png`: Method-specific correlation heatmaps
-- **Standardized robust method names**: `wasserstein`, `scenario`, `ellipsoidal` for
-  clean organization
-- **No redundant files**: All data is organized within method-specific directories
+- **Unit Tests** (20 files): Core component testing
+- **Integration Tests** (8 files): Component interactions
+- **System Tests** (16 files): CLI and GPU functionality
+- **MCMC Tests**: CPU/GPU backend validation
+- **Performance Tests**: Regression detection
 
-## Common Output Structure for All Optimization Methods
+### Code Quality
 
-### Classical Methods Directory Structure
+- ✅ **Black**: 100% formatted (88-char line length)
+- ✅ **isort**: Import organization
+- ✅ **Ruff**: Fast linting with auto-fixes
+- ✅ **Bandit**: 0 security issues
+- ✅ **Pre-commit hooks**: Automated quality checks
 
-```
-./homodyne_results/classical/
-├── nelder_mead/
-└── gurobi/
-```
+---
 
-### Robust Methods Directory Structure
+## 🔧 Advanced Features
 
-```
-./homodyne_results/robust/
-├── wasserstein/      # Robust-Wasserstein method
-├── scenario/         # Robust-Scenario method  
-└── ellipsoidal/      # Robust-Ellipsoidal method
+### System Validation
+
+```bash
+# Complete system check
+homodyne-validate
+
+# Component-specific testing
+homodyne-validate --test gpu
+homodyne-validate --test completion
+homodyne-validate --json            # CI/CD output
 ```
 
-### Per-Method Files
+### GPU Optimization
 
-Each method directory contains:
+```bash
+# Hardware analysis & optimization
+homodyne-gpu-optimize --report
+homodyne-gpu-optimize --benchmark --apply
 
-#### `parameters.json` - Human-readable parameter results
-
-```json
-{
-  "method_name": "Nelder-Mead",
-  "method_type": "Classical Optimization",
-  "parameters": {
-    "amplitude": {
-      "value": 1.234,
-      "uncertainty": 0.056,
-      "unit": "arb"
-    },
-    "frequency": {
-      "value": 2.678,
-      "uncertainty": 0.123,
-      "unit": "Hz"
-    },
-    "phase": {
-      "value": 0.789,
-      "uncertainty": 0.034,
-      "unit": "rad"
-    }
-  },
-  "goodness_of_fit": {
-    "chi_squared": 0.523,
-    "degrees_of_freedom": 397,
-    "reduced_chi_squared": 0.00132
-  },
-  "convergence_info": {
-    "success": true,
-    "iterations": 150,
-    "function_evaluations": 280,
-    "message": "Optimization terminated successfully"
-  },
-  "data_info": {
-    "n_data_points": 400,
-    "n_angles": 4,
-    "n_time_points": 100
-  }
-}
+# Performance monitoring
+gpu-bench                           # Quick benchmark
+nvidia-smi dmon -i 0 -s pucvmet -d 1  # Real-time monitoring
 ```
 
-#### `fitted_data.npz` - Consolidated Numerical Data Archive
+### Shell Integration
 
-**Complete data structure for each method:**
+```bash
+# One-command setup
+homodyne-post-install --shell zsh --gpu --advanced
 
-```python
-import numpy as np
+# Interactive setup
+homodyne-post-install --interactive
 
-# Load method-specific data
-data = np.load("fitted_data.npz")
-
-# Primary correlation function data
-c2_fitted = data["c2_fitted"]           # Method-specific fitted data (n_angles, n_t2, n_t1)
-c2_experimental = data["c2_experimental"] # Original experimental data (n_angles, n_t2, n_t1)
-residuals = data["residuals"]           # Method-specific residuals (n_angles, n_t2, n_t1)
-
-# Parameter and fit results
-parameters = data["parameters"]         # Fitted parameter values (n_params,)
-uncertainties = data["uncertainties"]   # Parameter uncertainties (n_params,)
-chi_squared = data["chi_squared"]       # Chi-squared goodness-of-fit (scalar)
-
-# Coordinate arrays
-phi_angles = data["phi_angles"]         # Angular coordinates (n_angles,) [degrees]
-t1 = data["t1"]                        # First correlation time array (n_t1,) [seconds]
-t2 = data["t2"]                        # Second correlation time array (n_t2,) [seconds]
+# Smart completion
+homodyne --config <TAB>             # File completion
+homodyne --method <TAB>             # Method completion
 ```
 
-**Key Features:**
+---
 
-- **Consolidated structure**: All method-specific data in a single NPZ file per method
-- **Complete data access**: Experimental, fitted, and residual data together
-- **Coordinate information**: Full time and angular coordinate arrays included
-- **Statistical metadata**: Parameter uncertainties and goodness-of-fit metrics
-- **Consistent format**: Same structure across all optimization methods (classical,
-  robust, MCMC)
+## 🧹 Uninstallation
 
-**Array Dimensions:**
+```bash
+# Step 1: Clean up environment scripts (important!)
+homodyne-cleanup --interactive
 
-- **Correlation functions**: `(n_angles, n_t2, n_t1)` - typically `(4, 60-100, 60-100)`
-- **Parameters**: `(n_params,)` - 3 for static modes, 7 for laminar flow
-- **Time arrays**: `(n_t1,)`, `(n_t2,)` - discretized with `dt` spacing
-- **Angles**: `(n_angles,)` - typically `[0°, 45°, 90°, 135°]`
+# Step 2: Remove package
+pip uninstall homodyne-analysis
 
-**Usage Examples:**
-
-```python
-# Calculate residual statistics
-residual_rms = np.sqrt(np.mean(residuals**2))
-residual_max = np.max(np.abs(residuals))
-
-# Extract parameter with uncertainty
-D0_value = parameters[0]
-D0_error = uncertainties[0]
-print(f"D0 = {D0_value:.2e} ± {D0_error:.2e}")
-
-# Access time-resolved data at specific angle
-angle_idx = 0  # First angle (typically 0°)
-c2_at_angle = c2_fitted[angle_idx, :, :]  # Shape: (n_t2, n_t1)
+# Step 3: Verify cleanup
+homodyne-validate 2>/dev/null || echo "✅ Successfully uninstalled"
 ```
 
-### Method-Specific Characteristics
+**⚠️ Always run cleanup first** - the `homodyne-cleanup` command removes environment scripts that `pip uninstall` cannot track.
 
-#### **Nelder-Mead**
+---
 
-```json
-{
-  "method_name": "Nelder-Mead",
-  "method_type": "Classical Optimization",
-  "convergence_info": {
-    "success": true,
-    "iterations": 150,
-    "function_evaluations": 280,
-    "message": "Optimization terminated successfully",
-    "termination_reason": "ftol achieved"
-  }
-}
-```
+## 📚 Documentation
 
-#### **Gurobi**
+### Quick Access
 
-```json
-{
-  "method_name": "Gurobi",
-  "method_type": "Classical Optimization",
-  "convergence_info": {
-    "success": true,
-    "iterations": 50,
-    "function_evaluations": 100,
-    "message": "Optimal solution found",
-    "solve_time": 1.23,
-    "solver_status": "OPTIMAL"
-  }
-}
-```
+| Topic | Link | Description |
+|-------|------|-------------|
+| **Getting Started** | [Quickstart](docs/user-guide/quickstart.rst) | 5-minute tutorial |
+| **CLI Commands** | [CLI_REFERENCE.md](CLI_REFERENCE.md) | Complete command reference |
+| **Configuration** | [Configuration Guide](docs/user-guide/configuration.rst) | Setup and templates |
+| **API Usage** | [API_REFERENCE.md](API_REFERENCE.md) | Python API documentation |
+| **Testing** | [Testing Guide](homodyne/tests/README.md) | Test framework documentation |
+| **Runtime System** | [Runtime Guide](homodyne/runtime/README.md) | Shell completion & GPU setup |
 
-#### **Robust-Wasserstein**
+### Complete Documentation
 
-```json
-{
-  "method_name": "Robust-Wasserstein",
-  "method_type": "Robust Optimization",
-  "robust_specific": {
-    "uncertainty_radius": 0.03,
-    "regularization_alpha": 0.01,
-    "wasserstein_distance": 0.025
-  },
-  "convergence_info": {
-    "success": true,
-    "solve_time": 2.5,
-    "status": "optimal"
-  }
-}
-```
+- **Primary Site**: https://homodyne.readthedocs.io/
+- **User Guides**: Installation, quickstart, configuration, examples
+- **Developer Resources**: Architecture, contributing, performance, troubleshooting
+- **API Reference**: Core analysis, optimization methods, utilities
 
-#### **Robust-Scenario**
+---
 
-```json
-{
-  "method_name": "Robust-Scenario",
-  "method_type": "Robust Optimization",
-  "robust_specific": {
-    "n_scenarios": 50,
-    "worst_case_value": 0.65,
-    "scenario_weights": "uniform"
-  },
-  "convergence_info": {
-    "success": true,
-    "solve_time": 3.2,
-    "status": "optimal"
-  }
-}
-```
+## 🔬 Theoretical Background
 
-#### **Robust-Ellipsoidal**
+The package implements three key equations for correlation functions in nonequilibrium systems:
 
-```json
-{
-  "method_name": "Robust-Ellipsoidal",
-  "method_type": "Robust Optimization",
-  "robust_specific": {
-    "uncertainty_set": "ellipsoidal",
-    "ellipsoid_radius": 0.04,
-    "confidence_level": 0.95
-  },
-  "convergence_info": {
-    "success": true,
-    "solve_time": 1.8,
-    "status": "optimal"
-  }
-}
-```
+**Full Nonequilibrium Laminar Flow (Eq. 13)**:
+$$c_2(\\vec{q}, t_1, t_2) = 1 + \\beta\\left[e^{-q^2\\int J(t)dt}\\right] \\times \\text{sinc}^2\\left[\\frac{1}{2\\pi} qh \\int\\dot{\\gamma}(t)\\cos(\\phi(t))dt\\right]$$
 
-### Summary Files
-
-#### `all_methods_summary.json` - Cross-method comparison
-
-```json
-{
-  "analysis_type": "Classical Optimization",
-  "timestamp": "2025-01-15T10:30:45Z",
-  "methods_analyzed": ["Nelder-Mead", "Gurobi", "Robust-Wasserstein", "Robust-Scenario", "Robust-Ellipsoidal"],
-  "best_method": "Gurobi",
-  "results": {
-    "Nelder-Mead": {
-      "chi_squared": 0.523,
-      "parameters": [1.234, 2.678, 0.789],
-      "success": true
-    },
-    "Gurobi": {
-      "chi_squared": 0.501,
-      "parameters": [1.245, 2.689, 0.785],
-      "success": true
-    },
-    "Robust-Wasserstein": {
-      "chi_squared": 0.534,
-      "parameters": [1.228, 2.665, 0.792],
-      "success": true
-    }
-  }
-}
-```
-
-### Key Differences Between Methods
-
-**Classical Methods (Nelder-Mead, Gurobi)**
-
-- Point estimates only with deterministic convergence metrics
-- Faster execution with iterations and function evaluations tracking
-- No built-in uncertainty quantification from optimization method
-
-**Robust Methods (Wasserstein, Scenario, Ellipsoidal)**
-
-- Robust optimization against data uncertainty with worst-case guarantees
-- Additional robust-specific parameters (uncertainty radius, scenarios, confidence
-  levels)
-- Convex optimization solver status codes and solve times
-- Enhanced reliability under data perturbations
-
-## Diagnostic Summary Images Structure
-
-The diagnostic summary images are comprehensive visualizations that combine multiple
-analysis components into a single figure. Here's what they typically contain:
-
-### 1. Main Diagnostic Summary Plot (`diagnostic_summary.png`)
-
-**Location**: `./homodyne_results/diagnostic_summary.png` (root directory)
-
-**Generated for**: Only `--method all` (comparison across multiple methods)
-
-A **2×3 grid layout** containing:
-
-#### Subplot 1: Method Comparison (Top Left)
-
-- **Bar chart** comparing chi-squared values across different optimization methods
-- **Y-axis**: Chi-squared values (log scale)
-- **X-axis**: Method names (Nelder-Mead, Gurobi, Robust-Wasserstein, etc.)
-- **Value labels** showing exact chi-squared values in scientific notation
-- **Color coding** for different methods (C0, C1, C2, C3)
-
-#### Subplot 2: Parameter Uncertainties (Top Middle)
-
-- **Horizontal bar chart** showing parameter uncertainties
-- **Y-axis**: Parameter names (amplitude, frequency, phase, etc.)
-- **X-axis**: Uncertainty values (σ)
-- **Includes grid lines** for better readability
-- Shows **"No uncertainty data available"** if uncertainties aren't computed
-
-#### Subplot 3: MCMC Convergence Diagnostics (Top Right)
-
-- **Horizontal bar chart** of R̂ (R-hat) values for convergence assessment
-- **Y-axis**: Parameter names
-- **X-axis**: R̂ values (convergence metric)
-- **Color coding**: Green (R̂ < 1.1), Orange (1.1 ≤ R̂ < 1.2), Red (R̂ ≥ 1.2)
-- **Red dashed line** at R̂ = 1.1 (convergence threshold)
-- Shows **"No MCMC convergence diagnostics available"** for classical-only methods
-
-#### Subplot 4: Residuals Distribution Analysis (Bottom, Full Width)
-
-- **Histogram** of residuals (experimental - theoretical data)
-- **Overlay** of fitted normal distribution curve
-- **Statistics**: Mean (μ) and standard deviation (σ) displayed
-- **X-axis**: Residual values
-- **Y-axis**: Probability density
-- Shows **"No residuals data available"** if data is missing
-
-### 2. Method-Specific Diagnostic Summaries (Removed)
-
-**Note:** Method-specific diagnostic summary plots have been removed to reduce redundant
-output. Only the main `diagnostic_summary.png` is generated for `--method all` to
-provide meaningful cross-method comparisons.
-
-### Diagnostic Plot Generation Summary
-
-| Command | Main `diagnostic_summary.png` | Method-Specific Diagnostic Plots |
-|---------|-------------------------------|-----------------------------------| |
-`--method classical` | ❌ Not generated (single method) | ❌ Not generated | |
-`--method robust` | ❌ Not generated (single method) | ❌ Not generated | |
-`--method mcmc` | ❌ Not generated (single method) | ❌ Not generated | | `--method all` |
-✅ Root directory | ❌ Not generated |
-
-### 3. Additional Diagnostic/Visualization Outputs
-
-#### C2 Correlation Heatmaps (`c2_heatmaps_*.png`)
-
-- **2D heatmaps** showing experimental vs theoretical correlation functions
-- **Individual plots** for each scattering angle (φ = 0°, 45°, 90°, 135°)
-- **Method-specific** versions for each optimization approach
-- **Time axes**: t₁ and t₂ (correlation delay times)
-- **Color mapping**: Viridis colormap showing correlation intensity
-
-#### MCMC-Specific Plots (when applicable)
-
-- **`trace_plot.png`**: MCMC chain traces for each parameter
-- **`corner_plot.png`**: Parameter posterior distributions and correlations
-
-#### Data Validation Plots (`data_validation_*.png`)
-
-- **Experimental data validation** plots
-- **Individual plots** for each scattering angle
-- **Full 2D heatmaps** and **cross-sections** of experimental data
-- **Statistical summaries** and **quality metrics**
-
-### Key Features of Diagnostic Summaries:
-
-1. **Adaptive Content**: Shows appropriate placeholders when data is unavailable
-1. **Cross-Method Comparison**: Allows comparison of different optimization approaches
-1. **Quality Assessment**: Provides convergence and fitting quality metrics
-1. **Statistical Analysis**: Includes residuals analysis and uncertainty quantification
-1. **Professional Formatting**: Consistent styling with grid lines, proper labels, and
-   legends
-
-These diagnostic summaries provide researchers with a comprehensive overview of their
-analysis quality, method performance, and parameter uncertainties all in a single
-visualization.
-
-## Theoretical Background
-
-The package implements three key equations describing correlation functions in
-nonequilibrium laminar flow systems:
-
-**Equation 13 - Full Nonequilibrium Laminar Flow:**
-
-$$c_2(\\vec{q}, t_1, t_2) = 1 + \\beta\\left[e^{-q^2\\int J(t)dt}\\right] \\times
-\\text{sinc}^2\\left\[\\frac{1}{2\\pi} qh
-\\int\\dot{\\gamma}(t)\\cos(\\phi(t))dt\\right\]$$
-
-**Equation S-75 - Equilibrium Under Constant Shear:**
-
-$$c_2(\\vec{q}, t_1, t_2) = 1 + \\beta\\left[e^{-6q^2D(t_2-t_1)}\\right]
-\\text{sinc}^2\\left[\\frac{1}{2\\pi} qh \\cos(\\phi)\\dot{\\gamma}(t_2-t_1)\\right]$$
-
-**Equation S-76 - One-time Correlation (Siegert Relation):**
-
-$$g_2(\\vec{q}, \\tau) = 1 + \\beta\\left[e^{-6q^2D\\tau}\\right]
-\\text{sinc}^2\\left[\\frac{1}{2\\pi} qh \\cos(\\phi)\\dot{\\gamma}\\tau\\right]$$
-
-**Key Parameters:**
-
+**Key Parameters**:
 - $\\vec{q}$: scattering wavevector [Å⁻¹]
 - $h$: gap between stator and rotor [Å]
 - $\\phi(t)$: angle between shear/flow direction and $\\vec{q}$ [degrees]
 - $\\dot{\\gamma}(t)$: time-dependent shear rate [s⁻¹]
 - $D(t)$: time-dependent diffusion coefficient [Å²/s]
-- $\\beta$: contrast parameter [dimensionless]
 
-## Citation
+---
+
+## 📖 Citation
 
 If you use this package in your research, please cite:
 
@@ -1497,190 +419,44 @@ If you use this package in your research, please cite:
 }
 ```
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for
-details.
+## 🤝 Contributing
 
-## Documentation
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for development workflow and standards.
 
-### 📚 Complete Documentation Portal
-
-**Primary Site**: https://homodyne.readthedocs.io/
-
-### 📖 Available Documentation Resources
-
-#### **User Documentation**
-
-- **[Installation Guide](docs/user-guide/installation.rst)**: Complete installation
-  instructions with dependency options
-- **[Quickstart Tutorial](docs/user-guide/quickstart.rst)**: Get started with analysis
-  in 5 minutes
-- **[Configuration Guide](docs/user-guide/configuration.rst)**: Detailed configuration
-  options and templates
-- **[Analysis Modes](docs/user-guide/analysis-modes.rst)**: Static vs. laminar flow
-  analysis modes
-- **[Plotting & Visualization](docs/user-guide/plotting.rst)**: Data visualization and
-  validation tools
-- **[Examples & Use Cases](docs/user-guide/examples.rst)**: Real-world analysis examples
-
-#### **Command Line Interface**
-
-- **[CLI_REFERENCE.md](CLI_REFERENCE.md)**: Complete command-line documentation
-- **Shell completion support** for bash, zsh, fish, and PowerShell
-- **Interactive help system** with `homodyne_help` command
-
-#### **Developer Resources**
-
-- **[Architecture Overview](docs/developer-guide/architecture.rst)**: Package structure
-  and design
-- **[Contributing Guide](docs/developer-guide/contributing.rst)**: Development workflow
-  and standards
-- **[Performance Guide](docs/developer-guide/performance.rst)**: Optimization techniques
-  and benchmarking
-- **[Testing Framework](docs/developer-guide/testing.rst)**: Test organization and best
-  practices
-- **[Troubleshooting](docs/developer-guide/troubleshooting.rst)**: Common issues and
-  solutions
-
-#### **API Reference**
-
-- **[Core Analysis](docs/api-reference/core.rst)**: Main analysis classes and functions
-- **[Optimization Methods](docs/api-reference/mcmc.rst)**: MCMC, classical, and robust
-  optimization
-- **[Robust Methods](docs/api-reference/robust.rst)**: Noise-resistant optimization
-  techniques
-- **[Utilities](docs/api-reference/utilities.rst)**: Helper functions and data handling
-
-#### **Reference Documentation**
-
-- **[API_REFERENCE.md](API_REFERENCE.md)**: Comprehensive API documentation
-- **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
-- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Development guidelines and standards
-
-### 🚀 Recent Improvements (v0.7.1)
-
-- **Windows Compatibility**: Fixed path separator issues in shell completion system for
-  full cross-platform support
-- **Pre-commit Hooks**: Comprehensive code quality framework with automatic formatting,
-  linting, and security scanning
-- **Shell Completion**: Enhanced tab completion with Windows path separator support and
-  robust fallback mechanisms
-- **Code Quality**: 100% Black and isort compliance, integrated Bandit security scanning
-- **Test Reliability**: All CI tests pass consistently across Windows, macOS, and Linux
-- **Type Safety**: Enhanced type annotations and MyPy configuration for scientific code
-  patterns
-- **Performance**: Optimized completion system with fast caching and memory efficiency
-- **Security**: Zero medium/high severity security issues with comprehensive
-  vulnerability scanning
-
-### 📋 Quick Access
-
-| Topic | Link | Description | |-------|------|-------------| | **Getting Started** |
-[Quickstart](docs/user-guide/quickstart.rst) | 5-minute tutorial | | **CLI Commands** |
-[CLI_REFERENCE.md](CLI_REFERENCE.md) | Complete command reference | | **Configuration**
-| [Configuration Guide](docs/user-guide/configuration.rst) | Setup and templates | |
-**API Usage** | [API_REFERENCE.md](API_REFERENCE.md) | Python API documentation | |
-**Troubleshooting** | [Troubleshooting](docs/developer-guide/troubleshooting.rst) |
-Common issues & solutions | | **Contributing** | [CONTRIBUTING.md](CONTRIBUTING.md) |
-Development workflow |
-
-### 💡 Documentation Features
-
-- **Comprehensive coverage**: User guides, API reference, and developer documentation
-- **Cross-platform compatibility**: Windows, macOS, and Linux instructions
-- **Multiple analysis modes**: Static isotropic, anisotropic, and laminar flow
-- **Security-focused**: Bandit integration for continuous security scanning
-- **Performance-oriented**: Detailed optimization guides and benchmarking tools
-
-## Development Status & Code Quality
-
-**Code Formatting & Quality:**
-
-- ✅ **Black**: 100% compliant (all files formatted with 88-character line length)
-- ✅ **isort**: 100% compliant (imports sorted and optimized)
-- ✅ **Ruff**: Fast linting and formatting with auto-fixes enabled
-- ✅ **Bandit**: 0 medium/high severity security issues (comprehensive security scanning)
-- ✅ **Pre-commit Hooks**: Automated code quality checks on every commit
-- ⚠️ **flake8**: ~350 remaining style issues (primarily line length E501 in data
-  scripts)
-- ⚠️ **mypy**: ~250 type annotation issues (mainly missing library stubs for scientific
-  packages)
-
-**Security & Best Practices:**
-
-- ✅ **Security scanning**: Integrated Bandit for continuous vulnerability detection (0
-  medium/high severity issues)
-- ✅ **Dependency vulnerability checking**: pip-audit integration for automated
-  dependency security scanning
-- ✅ **Cross-platform compatibility**: Windows, macOS, and Linux support with proper path
-  handling
-- ✅ **Dependency management**: Clean dependency tree with optional feature groups
-- ✅ **Safe coding practices**: No hardcoded paths, secure file operations, proper error
-  handling
-- ✅ **Security configuration**: Properly configured security tools with scientific code
-  patterns
-- ✅ **Pre-commit security**: Automatic security checks on every commit
-- ✅ **Shell completion security**: Safe command completion without shell injection risks
-
-**Python Version Support:**
-
-- **Required**: Python 3.12+ (enforced at package and CLI level)
-- **Tested**: Python 3.12, 3.13
-- **CI/CD**: Multi-platform testing (Ubuntu, Windows, macOS)
-- **Compatibility**: Full Python 3.13 support with typing improvements
-
-**Performance:**
-
-- **JIT Compilation**: Numba warmup eliminates compilation overhead
-- **JAX Integration**: Optional system CUDA GPU acceleration for MCMC
-- **Memory Management**: Automatic cleanup and smart caching
-- **Benchmarking**: Comprehensive performance regression testing
-- **Shell Completion**: Multi-tier fallback system for enhanced UX
-
-## Contributing
-
-We welcome contributions! Please submit issues and pull requests.
-
-**Development setup:**
+### Development Setup
 
 ```bash
 git clone https://github.com/imewei/homodyne.git
 cd homodyne
 pip install -e .[all]
 
+# Setup development environment
+homodyne-post-install --shell zsh --gpu --advanced
+
 # Run tests
-# Quick development tests (< 10 seconds)
-pytest -c pytest-quick.ini
+pytest -c pytest-quick.ini        # Quick tests
+pytest -c pytest-full.ini         # Full suite
 
-# Full test suite with coverage
-pytest -c pytest-full.ini
-
-# Specific test categories
-pytest homodyne/tests/unit        # Unit tests only
-pytest homodyne/tests/integration # Integration tests
-pytest -m "not slow"              # Skip slow tests
-
-# Code quality and security checks
+# Code quality checks
 black homodyne/                    # Format code
-isort homodyne/                    # Sort imports  
-flake8 homodyne/                   # Linting
-mypy homodyne/                     # Type checking
-bandit -r homodyne/                # Security scanning
-pip-audit                          # Dependency vulnerability scanning
+ruff check homodyne/              # Linting
+bandit -r homodyne/               # Security scan
 ```
 
-**Pre-commit hooks available for automated code quality checks.**
+### Pre-commit Hooks
 
 ```bash
-# Install pre-commit hooks
 pip install pre-commit
 pre-commit install
-
-# Run hooks manually
 pre-commit run --all-files
 ```
 
-**Authors:** Wei Chen, Hongrui He (Argonne National Laboratory)
+---
 
-**License:** MIT
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Authors**: Wei Chen, Hongrui He (Argonne National Laboratory)

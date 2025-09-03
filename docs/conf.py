@@ -13,10 +13,17 @@ if os.path.exists(homodyne_path):
 
 # -- Project information -----------------------------------------------------
 project = "Homodyne Analysis"
-copyright = "2025, Wei Chen, Hongrui He"
+copyright = "2024-2025, Wei Chen, Hongrui He (Argonne National Laboratory)"
 author = "Wei Chen, Hongrui He"
-release = "0.6.6"
-version = "0.6.6"
+
+# Get version dynamically
+try:
+    from importlib.metadata import version as get_version
+
+    release = get_version("homodyne-analysis")
+except Exception:
+    release = "0.7.2"
+version = ".".join(release.split(".")[:2])  # X.Y version
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -156,25 +163,28 @@ myst_dmath_double_inline = True
 autosummary_generate = True
 autosummary_generate_overwrite = True
 
+
 # Configure autosummary to skip test modules that require pytest
 def skip_test_modules(app, what, name, obj, skip, options):
     """Skip test modules and conftest files during documentation generation."""
     if skip:
         return skip
-    
+
     # Skip modules that contain 'test' or 'conftest' in the name
-    if 'test' in name.lower() or 'conftest' in name.lower():
+    if "test" in name.lower() or "conftest" in name.lower():
         return True
-        
+
     # Skip modules in tests directories
-    if '.tests.' in name:
+    if ".tests." in name:
         return True
-    
+
     return skip
+
 
 def setup(app):
     """Sphinx setup function."""
     app.connect("autodoc-skip-member", skip_test_modules)
+
 
 # Copy button configuration
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "

@@ -1,17 +1,25 @@
-Homodyne Scattering Analysis Package
-====================================
+Homodyne Analysis Documentation
+================================
+
+.. image:: https://img.shields.io/pypi/v/homodyne-analysis.svg
+   :target: https://pypi.org/project/homodyne-analysis/
+   :alt: PyPI Version
+
+.. image:: https://img.shields.io/pypi/pyversions/homodyne-analysis.svg
+   :target: https://pypi.org/project/homodyne-analysis/
+   :alt: Python Versions
 
 .. image:: https://img.shields.io/badge/License-MIT-yellow.svg
    :target: https://opensource.org/licenses/MIT
    :alt: License: MIT
 
-.. image:: https://img.shields.io/badge/Python-3.12%2B-blue
-   :target: https://www.python.org/
-   :alt: Python
+.. image:: https://readthedocs.org/projects/homodyne/badge/?version=latest
+   :target: https://homodyne.readthedocs.io/
+   :alt: Documentation Status
 
-.. image:: https://img.shields.io/badge/Numba-JIT%20Accelerated-green
-   :target: https://numba.pydata.org/
-   :alt: Numba
+.. image:: https://img.shields.io/badge/DOI-10.1073%2Fpnas.2401162121-blue
+   :target: https://doi.org/10.1073/pnas.2401162121
+   :alt: Publication DOI
 
 A high-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements the theoretical framework from `He et al. PNAS 2024 <https://doi.org/10.1073/pnas.2401162121>`_ for characterizing transport properties in flowing soft matter systems.
 
@@ -136,41 +144,58 @@ Key Features
 **Performance Monitoring**
    Comprehensive performance testing, regression detection, and automated benchmarking
 
-User Guide
-----------
+Documentation Contents
+----------------------
 
 .. toctree::
    :maxdepth: 2
+   :caption: Getting Started
 
    user-guide/installation
    user-guide/quickstart
    user-guide/complete-workflow-tutorial
-   user-guide/cli-reference
+   user-guide/examples
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+
    user-guide/analysis-modes
    user-guide/configuration
+   user-guide/cli-reference
    user-guide/plotting
-   user-guide/examples
    user-guide/faq
 
-API Reference
--------------
-
 .. toctree::
    :maxdepth: 2
+   :caption: API Reference
 
    api/index
-
-Developer Guide
----------------
+   api/core
+   api/analysis
+   api/optimization
+   api/plotting
+   api/cli
+   api/runtime
 
 .. toctree::
    :maxdepth: 2
+   :caption: Developer Guide
 
    developer-guide/contributing
+   developer-guide/architecture
    developer-guide/testing
    developer-guide/performance
-   developer-guide/architecture
+   developer-guide/security
    developer-guide/troubleshooting
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Additional Resources
+
+   CHANGELOG
+   AUTHORS
+   LICENSE
 
 Theoretical Background
 ----------------------

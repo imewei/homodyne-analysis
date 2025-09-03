@@ -2,9 +2,7 @@
 
 ## 📚 Overview
 
-The Homodyne test suite provides comprehensive validation of XPCS analysis components
-through a well-organized, hierarchical structure optimized for maintainability,
-performance, and developer experience.
+The Homodyne test suite provides comprehensive validation of XPCS analysis components through a well-organized, hierarchical structure optimized for maintainability, performance, and developer experience.
 
 ## 🚀 Quick Start
 
@@ -23,21 +21,24 @@ pytest -c pytest-ci.ini
 # Specific test categories
 pytest homodyne/tests/unit        # Unit tests only
 pytest homodyne/tests/integration # Integration tests
-pytest homodyne/tests/performance # Performance tests
 pytest -m "not slow"              # Skip slow tests
 ```
 
 ## 📁 Directory Structure
 
-The test suite is organized into logical categories for better maintainability and
-performance:
-
 ```
 tests/
-├── unit/              (17 test files)
+├── unit/              (20 files) - Isolated component testing
 │   ├── core/         (4 files) - Core functionality tests
 │   ├── analysis/     (3 files) - Analysis algorithm tests
-│   └── utils/        (10 files) - Utility function tests
+│   ├── optimization/ (6 files) - Optimization algorithm tests
+│   │   ├── test_classical.py - Classical optimization methods
+│   │   ├── test_robust.py - Robust optimization methods  
+│   │   ├── test_mcmc.py - CPU MCMC implementation (updated)
+│   │   ├── test_mcmc_gpu.py - GPU MCMC implementation (new)
+│   │   ├── test_mcmc_cross_validation.py - Cross-module validation (new)
+│   │   └── __init__.py
+│   └── utils/        (7 files) - Utility function tests
 ├── integration/       (8 files) - Component integration tests
 ├── system/           (16 files) - System-level tests
 │   ├── cli/         (3 files) - Command-line interface tests
@@ -50,134 +51,118 @@ tests/
 └── fixtures/        - Shared test fixtures and utilities
 ```
 
-**Total**: 62 test files organized by purpose and scope
+**Total**: 65 test files organized by purpose and scope
 
 ## 🎯 Test Execution Profiles
 
-### 1. Quick Development (`pytest-quick.ini`)
-
-- **Scope**: Unit tests only
-- **Markers**: Skip slow tests
+### Quick Development (`pytest-quick.ini`)
+- **Scope**: Unit tests only, skip slow tests
 - **Target**: < 10 seconds
 - **Use Case**: Rapid development feedback
 
-```bash
-pytest -c pytest-quick.ini
-```
-
-### 2. Full Suite (`pytest-full.ini`)
-
-- **Scope**: All tests with coverage
-- **Coverage**: HTML and terminal reports
+### Full Suite (`pytest-full.ini`)  
+- **Scope**: All tests with coverage reports
 - **Target**: < 5 minutes
 - **Use Case**: Pre-commit verification
 
-```bash
-pytest -c pytest-full.ini
-```
-
-### 3. CI Optimized (`pytest-ci.ini`)
-
+### CI Optimized (`pytest-ci.ini`)
 - **Scope**: Unit + Integration tests
-- **Features**: Parallel execution with `-n auto`
-- **Exclusions**: Skip slow, GPU, and MCMC tests
+- **Features**: Parallel execution, skip slow/GPU/MCMC
 - **Target**: < 2 minutes
 - **Use Case**: CI/CD pipelines
 
-```bash
-pytest -c pytest-ci.ini
-```
-
 ## 🏷️ Test Markers
 
-Tests are automatically marked based on their directory and characteristics:
-
-### Automatic Directory Markers
-
+### Automatic Markers
 - `@pytest.mark.unit` - All tests in `unit/`
 - `@pytest.mark.integration` - All tests in `integration/`
-- `@pytest.mark.system` - All tests in `system/`
-- `@pytest.mark.performance` - All tests in `performance/`
 - `@pytest.mark.mcmc` - All tests in `mcmc/`
-
-### Performance Markers
-
-- `@pytest.mark.fast` - Tests that run in < 1 second
-- `@pytest.mark.slow` - Tests that take > 5 seconds
-- `@pytest.mark.benchmark` - Performance benchmarking tests
-- `@pytest.mark.regression` - Performance regression detection
-
-### Dependency Markers
-
+- `@pytest.mark.slow` - Tests taking > 5 seconds
 - `@pytest.mark.gpu` - Tests requiring GPU acceleration
-- `@pytest.mark.jax` - Tests requiring JAX dependencies
-- `@pytest.mark.ci_skip` - Tests to skip in CI environments
 
-### Running Tests by Marker
+### Usage Examples
+```bash
+pytest -m "fast"                 # Fast tests only
+pytest -m "not slow"             # Exclude slow tests  
+pytest -m "unit and fast"        # Fast unit tests
+pytest -m "not mcmc"             # Non-MCMC tests
+```
+
+## 🔬 MCMC Testing Framework
+
+### Core Test Files
+
+#### **GPU MCMC Tests** (`test_mcmc_gpu.py` - 50+ tests)
+- **Environment Setup**: JAX/NumPyro availability, GPU detection, CPU fallback
+- **Sampler Initialization**: Configuration validation, performance features
+- **Model Creation**: NumPyro model construction, prior distributions
+- **API Compatibility**: Interface consistency with CPU implementation
+
+#### **Updated CPU MCMC Tests** (`test_mcmc.py` - 15 new classes)
+- **Data Saving Updates**: New fitted data scaling, uncertainty extraction
+- **Format Standardization**: Consistency with classical/robust methods
+- **Multi-angle Preservation**: Verification all phi angles saved correctly
+
+#### **Cross-Module Validation** (`test_mcmc_cross_validation.py` - 12 classes)
+- **API Compatibility**: Constructor signatures, attributes, method interfaces
+- **Output Consistency**: Result structures, configuration handling
+- **Error Handling Parity**: Consistent error behavior between implementations
+
+### Running MCMC Tests
 
 ```bash
-# Fast tests only
-pytest -m "fast"
+# All MCMC-related tests
+pytest homodyne/tests/unit/optimization/ -v
 
-# Exclude slow tests
-pytest -m "not slow"
+# GPU MCMC tests only
+pytest homodyne/tests/unit/optimization/test_mcmc_gpu.py -v
 
-# Unit tests that are fast
-pytest -m "unit and fast"
+# Cross-module validation
+pytest homodyne/tests/unit/optimization/test_mcmc_cross_validation.py -v
 
-# Non-MCMC tests
-pytest -m "not mcmc"
-
-# GPU tests only (if GPU available)
-pytest -m "gpu"
+# Skip slow benchmarks
+pytest homodyne/tests/unit/optimization/ -k "not slow" -q
 ```
+
+### MCMC Test Dependencies
+
+Tests automatically skip when dependencies are unavailable:
+
+```bash
+SKIPPED [1] test_mcmc_gpu.py:152: MCMC GPU module not available
+SKIPPED [1] test_mcmc.py:592: MCMC module not available
+```
+
+### MCMC Testing Best Practices
+
+1. **Dependency Mocking**: Use proper JAX/PyMC mocking
+2. **Performance Marking**: Mark slow tests with `@pytest.mark.slow`
+3. **Cross-Platform Testing**: Ensure tests work with/without GPU hardware
 
 ## 📊 Test Coverage
 
-### Coverage by Category
-
-#### Core Functionality
-
-- **Unit Tests**: Core algorithms with mocked dependencies
+### Core Functionality
+- **Unit Tests**: Isolated algorithms with mocked dependencies
 - **Integration Tests**: Component interactions and workflows
-- **System Tests**: Full system behavior including CLI and installation
+- **System Tests**: Full system behavior including CLI
 
-#### Specialized Testing
+### Recent Coverage Additions
 
-- **Performance Tests**: Speed and memory benchmarks
-- **MCMC Tests**: Bayesian analysis functionality
-- **Regression Tests**: Prevent feature and performance regressions
+#### **MCMC Testing Framework (Phase 5)**
+- Added comprehensive GPU MCMC testing (50+ tests)
+- Updated CPU MCMC tests for data format changes
+- Cross-module validation between CPU/GPU implementations
+- Dependency-aware test skipping for JAX/PyMC
 
-### Recently Added Coverage (Phase 3)
+#### **System Components (Phase 3)**
+- **GPU Optimizer Tests** (25 tests): Hardware detection, optimization
+- **System Validator Tests** (40 tests): Environment validation
+- **Uninstall Scripts Tests** (32 tests): Safe cleanup procedures
 
-1. **GPU Optimizer Tests** (`test_gpu_optimizer.py` - 25 tests)
-
-   - GPU hardware detection and benchmarking
-   - Optimal settings determination
-   - Caching and persistence
-   - JAX integration
-
-1. **System Validator Tests** (`test_system_validator.py` - 40 tests)
-
-   - Environment detection and validation
-   - Installation verification
-   - Shell completion testing
-   - GPU setup validation
-
-1. **Uninstall Scripts Tests** (`test_uninstall_scripts.py` - 32 tests)
-
-   - Virtual environment detection
-   - Safe file cleanup
-   - Cross-platform compatibility
-   - Interactive/non-interactive modes
-
-### Viewing Coverage Reports
-
+### Coverage Reports
 ```bash
 # Generate HTML coverage report
 pytest --cov=homodyne --cov-report=html
-
-# View in browser
 open htmlcov/index.html
 
 # Terminal coverage with missing lines
@@ -188,20 +173,12 @@ pytest --cov=homodyne --cov-report=term-missing
 
 ### Adding New Tests
 
-#### 1. Determine Test Category
-
-- **Unit Test**: Single function/class in isolation → `unit/`
-- **Integration Test**: Component interactions → `integration/`
-- **System Test**: CLI, installation, or GPU → `system/`
-- **Performance Test**: Speed or memory benchmarks → `performance/`
-- **MCMC Test**: Bayesian functionality → `mcmc/`
-
-#### 2. Create Test File
-
-Place in appropriate subdirectory:
+1. **Determine Category**: Unit → `unit/`, Integration → `integration/`, MCMC → `mcmc/`
+2. **Use Shared Fixtures**: Leverage fixtures from `conftest.py`
+3. **Mark Appropriately**: Use markers for categorization
 
 ```python
-# homodyne/tests/unit/core/test_new_feature.py
+# Example test file
 import pytest
 from homodyne.core import new_feature
 
@@ -212,156 +189,37 @@ def test_new_feature_basic():
 @pytest.mark.slow
 def test_new_feature_large_data():
     """Test with large dataset."""
-    # Test implementation
+    # Implementation
 ```
 
-#### 3. Use Shared Fixtures
-
-```python
-def test_with_fixtures(sample_data_2d, temp_config_file):
-    """Test using shared fixtures from conftest.py."""
-    # Use fixtures provided by conftest.py
-```
-
-### Writing Performance-Conscious Tests
+### Performance-Conscious Testing
 
 ```python
 @pytest.mark.fast
-@pytest.mark.unit
 def test_simple_function():
-    """Fast, isolated unit test."""
-    # Should complete in < 1 second
+    """Fast unit test - should complete < 1 second."""
+    pass
 
-def test_performance_critical(performance_checker):
-    """Test with performance constraints."""
+def test_with_performance_constraint(performance_checker):
+    """Test with performance requirements."""
     with performance_checker(max_time=0.5):
         # Must complete within 0.5 seconds
+        pass
 ```
 
 ## ⚡ Performance Optimizations
 
-### Automatic Performance Tracking
-
-- Tests are automatically timed and categorized
-- Performance data stored for regression analysis
-- Slow tests identified and can be excluded
-
 ### Parallel Execution
-
 ```bash
-# Auto-detect CPU cores
-pytest -n auto
-
-# Specific number of workers
-pytest -n 4
-
-# By test scope
-pytest --dist=loadscope
+pytest -n auto              # Auto-detect CPU cores
+pytest -n 4                 # Specific worker count
+pytest --dist=loadscope     # By test scope
 ```
 
 ### Memory Management
-
 - Automatic cleanup of test artifacts
 - Memory usage monitoring (when psutil available)
 - Garbage collection between tests
-- matplotlib figure cleanup
-
-## 📈 Optimization History
-
-### Phase 1: Remove Obsolete Tests ✅
-
-- Removed tests for deleted functionality
-- Fixed 21+ failing tests
-- Cleaned up broken imports
-
-### Phase 2: Remove Redundant Tests ✅
-
-- Consolidated duplicate test logic
-- Streamlined coverage without gaps
-- Reduced maintenance burden
-
-### Phase 3: Fill Coverage Gaps ✅
-
-- Added 97 new comprehensive tests
-- Covered 3 previously untested modules
-- Enhanced GPU and system testing
-
-### Phase 4: Optimize and Standardize ✅
-
-- Created test execution profiles
-- Implemented automatic categorization
-- Enhanced CI/CD integration
-- Improved performance by 31%
-
-## 🎯 Metrics and Benefits
-
-### Performance Improvements
-
-- **Unit tests only**: ~30 seconds (vs ~2 minutes for all)
-- **CI optimization**: 50% faster with targeted selection
-- **Parallel execution**: Enabled with proper scoping
-- **Development cycle**: 50%+ faster feedback
-
-### Maintainability
-
-- **Logical grouping**: Related tests together
-- **Shared fixtures**: Centralized in `fixtures/`
-- **Consistent patterns**: Directory-specific configs
-- **Clear organization**: Easy test discovery
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### Import Errors After Reorganization
-
-```bash
-# Update Python path if needed
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-```
-
-#### Slow Test Execution
-
-```bash
-# Identify slow tests
-pytest --durations=10
-
-# Skip slow tests
-pytest -m "not slow"
-```
-
-#### MCMC Tests Failing
-
-```bash
-# Check PyMC installation
-pip install pymc arviz
-
-# Skip if not needed
-pytest -m "not mcmc"
-```
-
-#### GPU Tests on CPU-only Systems
-
-```bash
-# Skip GPU tests
-pytest -m "not gpu"
-```
-
-### Debug Commands
-
-```bash
-# Show test durations
-pytest --durations=10
-
-# Verbose output for debugging
-pytest -v --tb=long
-
-# Show test collection without running
-pytest --collect-only
-
-# Profile test performance
-pytest --profile --benchmark-json=performance.json
-```
 
 ## 🔄 CI/CD Integration
 
@@ -369,7 +227,6 @@ pytest --profile --benchmark-json=performance.json
 
 ```yaml
 name: Tests
-
 on: [push, pull_request]
 
 jobs:
@@ -378,77 +235,115 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8, 3.9, '3.10', 3.11]
-
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install -e .[test]
+      - name: Run tests
+        run: pytest -c pytest-ci.ini
 
+  mcmc-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        deps: 
+          - name: "PyMC only"
+            install: "pymc arviz"
+          - name: "JAX only" 
+            install: "jax numpyro"
+          - name: "Full MCMC"
+            install: "pymc arviz jax numpyro"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - name: Install dependencies
         run: |
           pip install -e .[test]
-
-      - name: Run unit tests
-        run: pytest homodyne/tests/unit -n auto
-
-      - name: Run integration tests
-        run: pytest homodyne/tests/integration
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
+          pip install ${{ matrix.deps.install }}
+      - name: Run MCMC tests
+        run: pytest homodyne/tests/unit/optimization/ -k "not slow" -v
 ```
 
-### Local CI Simulation
+## 🐛 Troubleshooting
 
+### Common Issues
+
+#### Import Errors
 ```bash
-# Simulate CI environment locally
-pytest -c pytest-ci.ini
-
-# With coverage upload simulation
-pytest -c pytest-ci.ini --cov-report=xml
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 ```
+
+#### Slow Test Execution
+```bash
+pytest --durations=10       # Identify slow tests
+pytest -m "not slow"        # Skip slow tests
+```
+
+#### MCMC Tests Failing
+```bash
+pip install pymc arviz      # Install PyMC dependencies
+pytest -m "not mcmc"        # Skip if not needed
+```
+
+#### GPU Tests on CPU Systems
+```bash
+pytest -m "not gpu"         # Skip GPU tests
+```
+
+### Debug Commands
+```bash
+pytest --durations=10       # Show test durations
+pytest -v --tb=long         # Verbose with full tracebacks
+pytest --collect-only       # Show test collection
+```
+
+## 📈 Optimization History
+
+### Phase 1-2: Foundation ✅
+- Removed obsolete tests, fixed failing tests
+- Consolidated duplicate logic, streamlined coverage
+
+### Phase 3: Coverage Expansion ✅  
+- Added 97 new comprehensive tests
+- Covered 3 previously untested modules
+- Enhanced GPU and system testing
+
+### Phase 4: Performance & Standards ✅
+- Created test execution profiles
+- Implemented automatic categorization
+- Enhanced CI/CD integration (31% performance improvement)
+
+### Phase 5: MCMC Framework ✅
+- Added comprehensive GPU MCMC testing (50+ tests)
+- Updated CPU MCMC tests for recent changes
+- Cross-module validation between implementations
+- Dependency-aware test skipping
 
 ## 🎯 Best Practices
 
 1. **Keep Tests Fast**: Aim for < 1 second per unit test
-1. **Mock External Dependencies**: Use fixtures and mocks for I/O
-1. **Test One Thing**: Each test should verify a single behavior
-1. **Use Descriptive Names**: `test_feature_behavior_when_condition`
-1. **Leverage Fixtures**: Reuse common setup via conftest.py
-1. **Mark Appropriately**: Use markers for test categorization
-1. **Clean Up**: Ensure tests don't leave artifacts
-1. **Document Complex Tests**: Add docstrings for non-obvious test logic
+2. **Mock External Dependencies**: Use fixtures and mocks for I/O
+3. **Test One Thing**: Each test should verify a single behavior
+4. **Use Descriptive Names**: `test_feature_behavior_when_condition`
+5. **Leverage Fixtures**: Reuse common setup via conftest.py
+6. **Mark Appropriately**: Use markers for test categorization
+7. **Clean Up**: Ensure tests don't leave artifacts
+8. **Document Complex Tests**: Add docstrings for non-obvious logic
 
-## 🔮 Future Enhancements
-
-### Near-term Goals
-
-- Distributed testing across multiple machines
-- Automated performance baseline management
-- Enhanced coverage analysis by module
-- Integration with external benchmarking services
-
-### Long-term Vision
-
-- Test execution time trend analysis
-- Coverage drift detection and alerts
-- Automated test generation for new features
-- Machine learning-based test prioritization
-
-## 📚 Additional Resources
+## 📚 Resources
 
 - [Pytest Documentation](https://docs.pytest.org/)
 - [Coverage.py Documentation](https://coverage.readthedocs.io/)
 - [Pytest-xdist for Parallel Testing](https://github.com/pytest-dev/pytest-xdist)
 - [Pytest Best Practices](https://docs.pytest.org/en/stable/explanation/goodpractices.html)
 
-______________________________________________________________________
+---
 
-*This test suite provides a solid foundation for reliable, fast, and maintainable
-testing of the Homodyne analysis framework. The reorganized structure ensures
-scalability while maintaining high code quality and fast feedback cycles.*
+*This test suite provides a solid foundation for reliable, fast, and maintainable testing of the Homodyne analysis framework. The comprehensive MCMC testing framework ensures robust validation of both CPU and GPU Bayesian analysis implementations.*
