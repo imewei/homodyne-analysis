@@ -358,7 +358,7 @@ class TestMCMCAngleFilteringIntegration:
             )
 
     def test_mcmc_runner_integration(self):
-        """Test that main runner uses MCMC angle filtering."""
+        """Test that main runner uses MCMC angle filtering in isolated backend architecture."""
         # This is a structural test - we can't easily run the full pipeline
         # So we test that the runner script has the expected call structure
 
@@ -368,9 +368,12 @@ class TestMCMCAngleFilteringIntegration:
             with open(runner_path) as f:
                 content = f.read()
 
-            # Check that MCMC call includes angle filtering (now in dictionary format)
-            assert "'filter_angles_for_optimization': True" in content
-            assert "mcmc_function(" in content
+            # Check that MCMC call includes angle filtering (isolated backend architecture)
+            assert '"filter_angles_for_optimization": True' in content
+            # Check that isolated backend selection is used
+            assert "mcmc_function" in content
+            # Verify isolated backend architecture
+            assert "get_mcmc_backend()" in content
 
 
 class TestMCMCAngleFilteringPerformance:
