@@ -100,8 +100,8 @@ homodyne_gpu_activate_smart() {
         export XLA_PYTHON_CLIENT_MEM_FRACTION="0.8"  # Default 80% allocation
     fi
 
-    # NumPyro GPU routing (critical for mcmc_gpu.py)
-    export HOMODYNE_GPU_INTENT="true"
+    # NumPyro GPU routing (NOTE: HOMODYNE_GPU_INTENT should only be set by homodyne-gpu wrapper, not permanently)
+    # Do not export HOMODYNE_GPU_INTENT here - it's set by homodyne-gpu command wrapper only
 
     # PyTensor settings (CPU mode to avoid conflicts)
     export PYTENSOR_FLAGS="device=cpu,floatX=float64,on_opt_error=ignore"
