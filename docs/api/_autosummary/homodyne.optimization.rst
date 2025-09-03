@@ -12,4 +12,5 @@
 
    classical
    mcmc
+   mcmc_gpu
    robust

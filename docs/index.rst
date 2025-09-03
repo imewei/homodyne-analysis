@@ -171,23 +171,12 @@ Documentation Contents
    :caption: API Reference
 
    api/index
-   api/core
-   api/analysis
-   api/optimization
-   api/plotting
-   api/cli
-   api/runtime
 
 .. toctree::
    :maxdepth: 2
    :caption: Developer Guide
 
-   developer-guide/contributing
-   developer-guide/architecture
-   developer-guide/testing
-   developer-guide/performance
-   developer-guide/security
-   developer-guide/troubleshooting
+   developer-guide/index
 
 .. toctree::
    :maxdepth: 1

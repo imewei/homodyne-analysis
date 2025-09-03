@@ -1,7 +1,7 @@
-homodyne.gpu\_wrapper
-=====================
+homodyne.runtime.gpu.gpu\_wrapper
+==================================
 
-.. automodule:: homodyne.gpu_wrapper
+.. automodule:: homodyne.runtime.gpu.gpu_wrapper
 
    
    .. rubric:: Functions

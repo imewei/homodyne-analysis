@@ -90,10 +90,9 @@ Optimization Functions
 .. autosummary::
    :toctree: _autosummary
 
-   homodyne.optimization.classical.optimize_nelder_mead
-   homodyne.optimization.classical.optimize_gurobi
-   homodyne.optimization.robust.optimize_wasserstein
-   homodyne.optimization.mcmc.run_mcmc_sampling
+   homodyne.optimization.classical.ClassicalOptimizer
+   homodyne.optimization.robust.RobustHomodyneOptimizer
+   homodyne.optimization.mcmc.MCMCSampler
 
 Core Computational Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,9 +100,9 @@ Core Computational Functions
 .. autosummary::
    :toctree: _autosummary
 
-   homodyne.core.kernels.compute_correlation_function
-   homodyne.core.kernels.compute_chi_squared
-   homodyne.core.io_utils.load_experimental_data
+   homodyne.core.kernels.compute_g1_correlation_numba
+   homodyne.core.kernels.compute_chi_squared_batch_numba
+   homodyne.core.io_utils.save_analysis_results
 
 Command Line Interfaces
 ~~~~~~~~~~~~~~~~~~~~~~~~

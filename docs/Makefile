@@ -16,7 +16,7 @@ ALLSPHINXOPTS = -d $(BUILDDIR)/doctrees $(SPHINXOPTS)
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+.PHONY: help Makefile html docs clean
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
@@ -27,6 +27,13 @@ help:
 clean:
 	@echo "Cleaning build directory..."
 	rm -rf $(BUILDDIR)
+
+html:
+	@echo "Building HTML documentation..."
+	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS)
+
+docs: html
+	@echo "Documentation built successfully"
 
 html-strict:
 	@echo "Building HTML documentation with strict warnings..."

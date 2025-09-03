@@ -14,6 +14,7 @@
       _generate_robust_plots
       _save_individual_method_results
       _save_individual_robust_method_results
+      get_mcmc_sampler
       main
       plot_simulated_data
       print_banner
