@@ -80,7 +80,13 @@ autodoc_mock_imports = [
     "xpcs_viewer",
     "h5py",
     "matplotlib",
+    "matplotlib.pyplot",
+    "matplotlib.patches",
+    "matplotlib.colors",
     "scipy",
+    "scipy.optimize",
+    "scipy.interpolate",
+    "scipy.stats",
     "numpy",
     # Mock problematic import dependencies that may not be available
     "gurobipy",
@@ -89,6 +95,14 @@ autodoc_mock_imports = [
     "pytest",
     "pytest_benchmark", 
     "pytest_mock",
+    # Mock all internal homodyne modules that have import issues
+    # "homodyne",  # Don't mock top-level package
+    # "homodyne.core",
+    # "homodyne.analysis", 
+    # "homodyne.optimization",
+    # "homodyne.runtime",
+    # "homodyne.plotting",
+    # "homodyne.typings",
 ]
 autodoc_preserve_defaults = True
 
@@ -167,7 +181,46 @@ autosummary_generate = True
 autosummary_generate_overwrite = True
 autosummary_imported_members = False  # Don't document imported members
 autosummary_ignore_module_all = False  # Respect __all__ if defined
-autosummary_mock_imports = True  # Allow mocking of imports in autosummary
+# Use the same mock list as autodoc
+autosummary_mock_imports = [
+    # Heavy scientific computing dependencies
+    "numba",
+    "pymc",
+    "arviz",
+    "pytensor",
+    "jax",
+    "jax.numpy",
+    "numpyro",
+    "numpyro.distributions",
+    "numpyro.infer",
+    "numpyro.diagnostics",
+    "xpcs_viewer",
+    "h5py",
+    "matplotlib",
+    "matplotlib.pyplot",
+    "matplotlib.patches",
+    "matplotlib.colors",
+    "scipy",
+    "scipy.optimize",
+    "scipy.interpolate",
+    "scipy.stats",
+    "numpy",
+    # Mock problematic import dependencies that may not be available
+    "gurobipy",
+    "cvxpy",
+    # Test modules that may cause import errors during doc build
+    "pytest",
+    "pytest_benchmark", 
+    "pytest_mock",
+    # Mock all internal homodyne modules that have import issues
+    # "homodyne",  # Don't mock top-level package
+    # "homodyne.core",
+    # "homodyne.analysis", 
+    # "homodyne.optimization",
+    # "homodyne.runtime",
+    # "homodyne.plotting",
+    # "homodyne.typings",
+]
 
 
 # Configure autosummary to skip test modules that require pytest
@@ -189,7 +242,9 @@ def skip_test_modules(app, what, name, obj, skip, options):
 
 def setup(app):
     """Sphinx setup function."""
-    app.connect("autodoc-skip-member", skip_test_modules)
+    # Only connect autodoc events if autodoc extension is enabled
+    if "sphinx.ext.autodoc" in extensions:
+        app.connect("autodoc-skip-member", skip_test_modules)
 
 
 # Copy button configuration
