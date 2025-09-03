@@ -87,6 +87,15 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
     alias hr='homodyne --method robust'
     alias ha='homodyne --method all'
     alias hconfig='homodyne-config'
+    
+    # Plotting shortcuts
+    alias hexp='homodyne --plot-experimental-data'
+    alias hsim='homodyne --plot-simulated-data'
+    
+    # homodyne-config shortcuts
+    alias hc-iso='homodyne-config --mode static_isotropic'
+    alias hc-aniso='homodyne-config --mode static_anisotropic'
+    alias hc-flow='homodyne-config --mode laminar_flow'
 
     # Linux GPU aliases (only for GPU-compatible methods)
     if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
@@ -188,6 +197,8 @@ fi
 
         print("✅ Shell completion installed")
         print("   • CPU aliases: hm, hc, hr, ha, hconfig")
+        print("   • Plotting: hexp, hsim")
+        print("   • Config: hc-iso, hc-aniso, hc-flow")
         print("   • GPU aliases: hgm, hga (NumPyro GPU, Linux only)")
         return True
 

@@ -144,6 +144,50 @@ _homodyne_advanced_completion() {
     fi
 }
 
+# Bash completion for homodyne-config
+_homodyne_config_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # homodyne-config options
+    local main_opts="--help -h --mode -m --output -o --sample -s --experiment -e --author -a"
+    
+    case $prev in
+        --mode|-m)
+            local modes="static_isotropic static_anisotropic laminar_flow"
+            COMPREPLY=($(compgen -W "$modes" -- "$cur"))
+            return 0
+            ;;
+        --output|-o)
+            # Suggest common config file names
+            local suggestions="config.json my_config.json homodyne_config.json analysis_config.json"
+            COMPREPLY=($(compgen -W "$suggestions" -- "$cur"))
+            # Also add general file completion
+            COMPREPLY+=($(compgen -f -X '!*.json' -- "$cur"))
+            return 0
+            ;;
+        --sample|-s)
+            # Common sample naming patterns
+            local samples="sample_01 protein_sample collagen_gel microgel_sample"
+            COMPREPLY=($(compgen -W "$samples" -- "$cur"))
+            return 0
+            ;;
+        --experiment|-e|--author|-a)
+            # No specific completion, just return
+            return 0
+            ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        COMPREPLY=($(compgen -W "$main_opts" -- "$cur"))
+    else
+        # Default to JSON file completion for output
+        COMPREPLY=($(compgen -f -X '!*.json' -- "$cur"))
+    fi
+}
+
 # Advanced zsh completion
 if [[ -n "$ZSH_VERSION" ]]; then
     _homodyne_advanced_zsh() {
@@ -183,15 +227,70 @@ if [[ -n "$ZSH_VERSION" ]]; then
         esac
     }
 
-    # Register advanced completion
+    # Zsh completion for homodyne-config
+    _homodyne_config_zsh() {
+        local -a args
+        args=(
+            '(--help -h)'{--help,-h}'[Show help message]'
+            '(--mode -m)'{--mode,-m}'[Analysis mode]:mode:(static_isotropic static_anisotropic laminar_flow)'
+            '(--output -o)'{--output,-o}'[Output configuration file]:file:_files -g "*.json"'
+            '(--sample -s)'{--sample,-s}'[Sample name]:sample:'
+            '(--experiment -e)'{--experiment,-e}'[Experiment description]:experiment:'
+            '(--author -a)'{--author,-a}'[Author name]:author:'
+            '*:output:_files -g "*.json"'
+        )
+        
+        _arguments -C $args
+    }
+
+    # Register completion for all homodyne commands
     compdef _homodyne_advanced_zsh homodyne 2>/dev/null || true
     compdef _homodyne_advanced_zsh homodyne-gpu 2>/dev/null || true
+    compdef _homodyne_config_zsh homodyne-config 2>/dev/null || true
+    compdef _homodyne_advanced_zsh homodyne-post-install 2>/dev/null || true
+    compdef _homodyne_advanced_zsh homodyne-cleanup 2>/dev/null || true
+    compdef _homodyne_advanced_zsh homodyne-gpu-optimize 2>/dev/null || true
+    compdef _homodyne_advanced_zsh homodyne-validate 2>/dev/null || true
+    
+    # Register completion for aliases (if they exist)
+    compdef _homodyne_advanced_zsh hm 2>/dev/null || true
+    compdef _homodyne_advanced_zsh hc 2>/dev/null || true
+    compdef _homodyne_advanced_zsh hr 2>/dev/null || true
+    compdef _homodyne_advanced_zsh ha 2>/dev/null || true
+    compdef _homodyne_config_zsh hconfig 2>/dev/null || true
+    compdef _homodyne_advanced_zsh hgm 2>/dev/null || true
+    compdef _homodyne_advanced_zsh hga 2>/dev/null || true
+    compdef _homodyne_advanced_zsh hexp 2>/dev/null || true
+    compdef _homodyne_advanced_zsh hsim 2>/dev/null || true
+    compdef _homodyne_config_zsh hc-iso 2>/dev/null || true
+    compdef _homodyne_config_zsh hc-aniso 2>/dev/null || true
+    compdef _homodyne_config_zsh hc-flow 2>/dev/null || true
 fi
 
 # Register bash completion
 if [[ -n "$BASH_VERSION" ]]; then
+    # Register completion for all homodyne commands
     complete -F _homodyne_advanced_completion homodyne 2>/dev/null || true
     complete -F _homodyne_advanced_completion homodyne-gpu 2>/dev/null || true
+    complete -F _homodyne_config_completion homodyne-config 2>/dev/null || true
+    complete -F _homodyne_advanced_completion homodyne-post-install 2>/dev/null || true
+    complete -F _homodyne_advanced_completion homodyne-cleanup 2>/dev/null || true
+    complete -F _homodyne_advanced_completion homodyne-gpu-optimize 2>/dev/null || true
+    complete -F _homodyne_advanced_completion homodyne-validate 2>/dev/null || true
+    
+    # Register completion for aliases (if they exist)
+    complete -F _homodyne_advanced_completion hm 2>/dev/null || true
+    complete -F _homodyne_advanced_completion hc 2>/dev/null || true
+    complete -F _homodyne_advanced_completion hr 2>/dev/null || true
+    complete -F _homodyne_advanced_completion ha 2>/dev/null || true
+    complete -F _homodyne_config_completion hconfig 2>/dev/null || true
+    complete -F _homodyne_advanced_completion hgm 2>/dev/null || true
+    complete -F _homodyne_advanced_completion hga 2>/dev/null || true
+    complete -F _homodyne_advanced_completion hexp 2>/dev/null || true
+    complete -F _homodyne_advanced_completion hsim 2>/dev/null || true
+    complete -F _homodyne_config_completion hc-iso 2>/dev/null || true
+    complete -F _homodyne_config_completion hc-aniso 2>/dev/null || true
+    complete -F _homodyne_config_completion hc-flow 2>/dev/null || true
 fi
 
 # Quick command builder function
