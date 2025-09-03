@@ -273,6 +273,7 @@
       }
     },
     "mcmc_sampling": {
+      "_comment": "Dual MCMC Backend - PyMC (CPU) and NumPyro (GPU)",
       "enabled": true,
       "sampler": "NUTS",
       "draws": 6000,
@@ -287,7 +288,33 @@
       "_target_accept_note": "Slightly lower for complex parameter space",
       "max_treedepth": 12,
       "_max_treedepth_note": "Increased depth for complex 7-parameter model",
-      "return_inferencedata": true
+      "return_inferencedata": true,
+      "backend_specific": {
+        "pymc_cpu": {
+          "_description": "CPU backend using PyMC + PyTensor",
+          "_command": "homodyne --method mcmc",
+          "init_strategy": "adapt_diag",
+          "compute_convergence_checks": true,
+          "progressbar": true
+        },
+        "numpyro_gpu": {
+          "_description": "GPU backend using NumPyro + JAX",
+          "_command": "homodyne-gpu --method mcmc",
+          "_platform_support": "Linux with CUDA (auto-fallback to CPU if no GPU)",
+          "init_strategy": "init_to_value",
+          "chain_method": "vectorized",
+          "progress_bar": true,
+          "jit_compile": true,
+          "device_memory_fraction": 0.8
+        }
+      },
+      "performance_features": {
+        "auto_tune_performance": true,
+        "use_progressive_sampling": true,
+        "use_intelligent_subsampling": true,
+        "enable_jit_compilation": true,
+        "memory_optimization": true
+      }
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",

@@ -8,6 +8,7 @@ enabling quick setup of analysis parameters for different experimental scenarios
 
 Key Features:
 - Three-mode template system (static_isotropic, static_anisotropic, laminar_flow)
+- Dual MCMC backend support (PyMC CPU + NumPyro GPU)
 - Mode-specific optimized configurations
 - Customizable sample and experiment metadata
 - Automatic path structure generation
@@ -27,10 +28,15 @@ Usage Scenarios:
 
 Generated Configuration Includes:
 - Mode-specific physics parameters and optimizations
+- Dual MCMC backend configuration (CPU and GPU)
 - Data loading paths and file specifications
 - Optimization method settings and hyperparameters
 - Analysis mode selection with automatic behavior
 - Output formatting and result organization
+
+MCMC Backend Options:
+- CPU Backend (PyMC): Cross-platform, reliable convergence (homodyne --method mcmc)
+- GPU Backend (NumPyro): Linux + CUDA acceleration (homodyne-gpu --method mcmc)
 """
 
 import argparse
@@ -177,6 +183,7 @@ def create_config_from_template(
 
     print(f"✓ Configuration created: {output_path.absolute()}")
     print(f"✓ Analysis mode: {mode}")
+    print(f"✓ Dual MCMC backends: PyMC (CPU) + NumPyro (GPU) configured")
 
     # Print mode-specific information
     mode_info = {
@@ -221,8 +228,25 @@ def create_config_from_template(
         print("5. Verify initial parameter estimates for all 7 parameters")
         print(f"6. Run analysis with: homodyne --config {output_path}")
 
-    print("\nDocumentation: CONFIGURATION_MODES.md")
-    print(f"Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
+    # Provide MCMC backend guidance
+    print("\n📊 MCMC Backend Options:")
+    print("  • CPU Backend (PyMC):    homodyne --config [config] --method mcmc")
+    print("  • GPU Backend (NumPyro):  homodyne-gpu --config [config] --method mcmc")
+    print("    └─ Requires Linux + CUDA (auto-fallback to CPU if no GPU)")
+    
+    print("\n⚡ Performance Recommendations:")
+    if mode in ["static_isotropic", "static_anisotropic"]:
+        print("  • 3-parameter analysis: Both CPU and GPU backends work well")
+        print("  • CPU backend recommended for cross-platform compatibility")
+    else:  # laminar_flow
+        print("  • 7-parameter analysis: GPU backend recommended for performance")
+        print("  • GPU acceleration provides significant speedup for complex models")
+
+    print("\n📚 Documentation:")
+    print("  • Configuration modes: CONFIGURATION_MODES.md")
+    print("  • MCMC backends: homodyne/runtime/README.md")
+    print("  • GPU setup: homodyne-post-install --gpu --help")
+    print(f"  • Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
 
 
 def main():
@@ -250,6 +274,10 @@ Analysis Modes:
   static_anisotropic - Static with angle filtering optimization, 3 parameters
   laminar_flow       - Full flow analysis with 7 parameters (default)
 
+MCMC Backends (configured automatically in all modes):
+  PyMC CPU Backend   - Cross-platform, reliable (homodyne --method mcmc)
+  NumPyro GPU Backend- Linux + CUDA acceleration (homodyne-gpu --method mcmc)
+
 Examples:
   # Create laminar flow configuration (default)
   homodyne-config --output my_flow_config.json
@@ -261,9 +289,16 @@ Examples:
   homodyne-config --mode static_anisotropic --sample collagen \
                           --author "Your Name" --experiment "Collagen static analysis"
 
-  # Create flow analysis configuration
+  # Create flow analysis configuration for GPU acceleration
   homodyne-config --mode laminar_flow --sample microgel \
                           --experiment "Microgel dynamics under shear"
+
+MCMC Backend Usage:
+  # CPU backend (cross-platform)
+  homodyne --config my_config.json --method mcmc
+  
+  # GPU backend (Linux + CUDA)
+  homodyne-gpu --config my_config.json --method mcmc
         """,
     )
 

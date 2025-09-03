@@ -242,11 +242,17 @@
       }
     },
     "mcmc_sampling": {
-      "_comment": "Bayesian MCMC sampling for uncertainty quantification",
+      "_comment": "Dual MCMC Backend Configuration - CPU (PyMC) and GPU (NumPyro) implementations",
+      "_backend_info": {
+        "cpu_backend": "PyMC with PyTensor (homodyne --method mcmc)",
+        "gpu_backend": "NumPyro with JAX (homodyne-gpu --method mcmc)",
+        "backend_selection": "Automatic based on command used and hardware availability",
+        "compatibility": "Identical API and configuration for both backends"
+      },
       "enabled": true,
       "sampler": "NUTS",
       "draws": 6000,
-      "_draws_note": "Standardized across all modes for consistency",
+      "_draws_note": "Standardized across all modes and backends for consistency",
       "tune": 1500,
       "_tune_note": "Extended tuning for complex parameter spaces",
       "thin": "MODE_DEPENDENT: 2 for static, 1 for laminar_flow",
@@ -257,7 +263,37 @@
       "_target_accept_note": "Lower acceptance for complex parameter spaces",
       "max_treedepth": "MODE_DEPENDENT: 10 for static, 12 for laminar_flow",
       "_max_treedepth_note": "Deeper trees needed for complex models",
-      "return_inferencedata": true
+      "return_inferencedata": true,
+      "backend_specific": {
+        "pymc_cpu": {
+          "_description": "CPU backend using PyMC + PyTensor",
+          "_command": "homodyne --method mcmc",
+          "_performance": "Cross-platform compatibility, reliable convergence",
+          "init_strategy": "adapt_diag",
+          "compute_convergence_checks": true,
+          "progressbar": true
+        },
+        "numpyro_gpu": {
+          "_description": "GPU backend using NumPyro + JAX",
+          "_command": "homodyne-gpu --method mcmc",
+          "_performance": "GPU acceleration with intelligent CPU fallback",
+          "_platform_support": "Linux with CUDA (auto-fallback to CPU if no GPU)",
+          "init_strategy": "init_to_value",
+          "num_warmup": "Uses 'tune' parameter value",
+          "num_samples": "Uses 'draws' parameter value",
+          "chain_method": "vectorized",
+          "progress_bar": true,
+          "jit_compile": true,
+          "device_memory_fraction": 0.8
+        }
+      },
+      "performance_features": {
+        "auto_tune_performance": true,
+        "use_progressive_sampling": true,
+        "use_intelligent_subsampling": true,
+        "enable_jit_compilation": true,
+        "memory_optimization": true
+      }
     },
     "scaling_parameters": {
       "_comment": "Physical scaling: c2_fitted = c2_theory * contrast + offset",
