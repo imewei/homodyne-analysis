@@ -1,4 +1,8 @@
-## Core Developers
+Authors
+=======
+
+Core Developers
+----------------
 
 **Wei Chen** - *Project Lead & Principal Developer*
 - Email: wchen@anl.gov
