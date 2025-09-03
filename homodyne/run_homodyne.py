@@ -16,13 +16,15 @@ This script provides a unified interface for:
 Method Flags Documentation
 ==========================
 
-| Flag               | Methods Run                                               | Description                       |
-|--------------------|-----------------------------------------------------------|-----------------------------------|
-| --method classical | Nelder-Mead + Gurobi                                     | Traditional classical methods     |
-|                    |                                                           | only (2 methods)                 |
-| --method robust    | Robust-Wasserstein + Robust-Scenario + Robust-Ellipsoidal| Robust methods only (3 methods)  |
-| --method mcmc      | MCMC sampling                                             | Bayesian sampling only (1 method)|
-| --method all       | Classical + Robust + MCMC                                 | All methods (5+ methods total)   |
+=================== =========================================================== =================================
+Flag                Methods Run                                                 Description
+=================== =========================================================== =================================
+--method classical  Nelder-Mead + Gurobi                                       Traditional classical methods
+                                                                                only (2 methods)
+--method robust     Robust-Wasserstein + Robust-Scenario + Robust-Ellipsoidal  Robust methods only (3 methods)
+--method mcmc       MCMC sampling                                               Bayesian sampling only (1 method)
+--method all        Classical + Robust + MCMC                                   All methods (5+ methods total)
+=================== =========================================================== =================================
 
 MCMC Initialization Logic for --method all
 ==========================================

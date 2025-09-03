@@ -67,6 +67,7 @@ Performance Optimizations (v0.6.1+)
 This version includes significant performance improvements:
 
 Core Optimizations:
+
 - **Chi-squared calculation**: 38% performance improvement (1.33ms → 0.82ms)
 - **Memory access patterns**: Vectorized operations using reshape() instead of list comprehensions
 - **Configuration caching**: Cached validation and chi-squared configs to avoid repeated dict lookups
@@ -74,12 +75,14 @@ Core Optimizations:
 - **Memory pooling**: Pre-allocated result arrays to avoid repeated allocations
 
 Algorithm Improvements:
+
 - **Static case vectorization**: Enhanced broadcasting for identical correlation functions
 - **Precomputed integrals**: Cached shear integrals to eliminate redundant computation
 - **Vectorized angle filtering**: Optimized range checking with np.flatnonzero()
 - **Early parameter validation**: Short-circuit returns for invalid parameters
 
 Performance Metrics:
+
 - Chi-squared to correlation ratio: Improved from 6.0x to 1.7x
 - Memory efficiency: Reduced allocation overhead through pooling
 - JIT compatibility: Maintained Numba acceleration while improving pure Python paths

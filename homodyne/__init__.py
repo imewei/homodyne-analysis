@@ -16,8 +16,7 @@ H. He, H. Liang, M. Chu, Z. Jiang, J.J. de Pablo, M.V. Tirrell, S. Narayanan,
 dynamics in soft matter", Proc. Natl. Acad. Sci. U.S.A. 121 (31) e2401162121 (2024).
 
 Key Features:
-- Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params),
-  Laminar Flow (7 params)
+- Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - Multiple optimization methods: Classical (Nelder-Mead, Gurobi), Robust
   (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 - Noise-resistant analysis: Robust optimization for measurement uncertainty and outliers
