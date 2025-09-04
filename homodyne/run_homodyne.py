@@ -132,62 +132,65 @@ except ImportError:
 # Import MCMC components with isolated backend routing
 
 
-def get_mcmc_backend():
-    """Get appropriate MCMC backend based on environment and intent."""
-    gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
+def get_cpu_mcmc_backend():
+    """Get isolated PyMC CPU backend (for homodyne command)."""
     logger = logging.getLogger(__name__)
+    try:
+        from .optimization.mcmc_cpu_backend import (
+            is_cpu_mcmc_available,
+            run_cpu_mcmc_analysis,
+        )
+
+        if is_cpu_mcmc_available():
+            logger.info("🖥️  PyMC_CPU backend loaded (isolated from JAX)")
+            return run_cpu_mcmc_analysis, "PyMC_CPU", False
+        else:
+            logger.error("PyMC CPU backend not available")
+            return None, None, False
+    except ImportError as e:
+        logger.error(f"CPU MCMC backend not available: {e}")
+        return None, None, False
+
+
+def get_gpu_mcmc_backend():
+    """Get isolated NumPyro GPU backend (for homodyne-gpu command)."""
+    logger = logging.getLogger(__name__)
+    try:
+        from .optimization.mcmc_gpu_backend import (
+            is_gpu_hardware_available,
+            is_gpu_mcmc_available,
+            run_gpu_mcmc_analysis,
+        )
+
+        if is_gpu_mcmc_available():
+            has_gpu = is_gpu_hardware_available()
+            backend_name = "NumPyro_GPU_JAX" if has_gpu else "NumPyro_CPU_JAX"
+            logger.info(f"🚀 {backend_name} backend loaded (isolated from PyMC)")
+            return run_gpu_mcmc_analysis, backend_name, has_gpu
+        else:
+            logger.error("NumPyro/JAX GPU backend not available")
+            return None, None, False
+    except ImportError as e:
+        logger.error(f"GPU MCMC backend not available: {e}")
+        return None, None, False
+
+
+def get_mcmc_backend():
+    """Get appropriate MCMC backend based on environment and intent (deprecated - use specific functions)."""
+    gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
 
     if gpu_intent:
-        # GPU mode requested - use isolated NumPyro backend
-        try:
-            from .optimization.mcmc_gpu_backend import (
-                is_gpu_hardware_available,
-                is_gpu_mcmc_available,
-                run_gpu_mcmc_analysis,
-            )
-
-            if is_gpu_mcmc_available():
-                has_gpu = is_gpu_hardware_available()
-                backend_name = "NumPyro_GPU_JAX" if has_gpu else "NumPyro_CPU_JAX"
-                logger.info(f"🚀 {backend_name} backend loaded (isolated from PyMC)")
-                return run_gpu_mcmc_analysis, backend_name, has_gpu
-            else:
-                logger.warning("NumPyro/JAX not available, falling back to CPU PyMC")
-                gpu_intent = False
-        except ImportError as e:
-            logger.warning(
-                f"GPU MCMC backend not available ({e}), falling back to CPU PyMC"
-            )
-            gpu_intent = False
-
-    if not gpu_intent:
-        # CPU mode - use isolated PyMC backend
-        try:
-            from .optimization.mcmc_cpu_backend import (
-                is_cpu_mcmc_available,
-                run_cpu_mcmc_analysis,
-            )
-
-            if is_cpu_mcmc_available():
-                logger.info("🖥️  PyMC_CPU backend loaded (isolated from JAX)")
-                return run_cpu_mcmc_analysis, "PyMC_CPU", False
-            else:
-                return None, None, False
-        except ImportError as e:
-            logger.error(f"CPU MCMC backend not available: {e}")
-            return None, None, False
+        return get_gpu_mcmc_backend()
+    else:
+        return get_cpu_mcmc_backend()
 
 
-# Initialize MCMC availability with isolated backends
+# Initialize MCMC availability with isolated backends (check CPU backend as default)
 try:
-    mcmc_function, mcmc_backend, has_gpu_hardware = get_mcmc_backend()
+    mcmc_function, mcmc_backend, has_gpu_hardware = get_cpu_mcmc_backend()
     MCMC_AVAILABLE = mcmc_function is not None
     if MCMC_AVAILABLE:
-        logging.getLogger(__name__).info(f"MCMC backend available: {mcmc_backend}")
-        if mcmc_backend.startswith("NumPyro") and not has_gpu_hardware:
-            logging.getLogger(__name__).info(
-                "No GPU hardware detected - JAX will use CPU mode"
-            )
+        logging.getLogger(__name__).info(f"MCMC CPU backend available: {mcmc_backend}")
 except Exception as e:
     mcmc_function = None
     mcmc_backend = None
@@ -485,8 +488,17 @@ def run_analysis(args: argparse.Namespace) -> None:
             )
         elif args.method == "mcmc":
             methods_attempted = ["MCMC"]
+            # Determine backend based on homodyne-gpu command wrapper
+            gpu_intent = (
+                os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
+            )
             results = run_mcmc_optimization(
-                analyzer, initial_params, phi_angles, c2_exp, args.output_dir
+                analyzer,
+                initial_params,
+                phi_angles,
+                c2_exp,
+                args.output_dir,
+                use_gpu_backend=gpu_intent,
             )
         elif args.method == "robust":
             methods_attempted = ["Robust"]
@@ -998,7 +1010,7 @@ def run_robust_optimization(
 
 
 def run_mcmc_optimization(
-    analyzer, initial_params, phi_angles, c2_exp, output_dir=None
+    analyzer, initial_params, phi_angles, c2_exp, output_dir=None, use_gpu_backend=False
 ):
     """
     Execute Bayesian MCMC sampling using isolated backends.
@@ -1027,13 +1039,21 @@ def run_mcmc_optimization(
     """
     logger = logging.getLogger(__name__)
 
-    # Check if isolated MCMC backend is available
-    if mcmc_function is None:
-        logger.error("❌ MCMC sampling not available - no backends found")
-        logger.error("SOLUTIONS:")
-        logger.error("• Install PyMC for CPU: pip install pymc arviz pytensor")
-        logger.error("• Install NumPyro for GPU: pip install numpyro jax")
-        return None
+    # Choose appropriate backend based on command used
+    if use_gpu_backend:
+        mcmc_function, mcmc_backend, has_gpu_hardware = get_gpu_mcmc_backend()
+        if mcmc_function is None:
+            logger.error("❌ GPU MCMC backend not available")
+            logger.error(
+                "• Install NumPyro for GPU: pip install numpyro jax[cuda12-local]"
+            )
+            return None
+    else:
+        mcmc_function, mcmc_backend, has_gpu_hardware = get_cpu_mcmc_backend()
+        if mcmc_function is None:
+            logger.error("❌ CPU MCMC backend not available")
+            logger.error("• Install PyMC for CPU: pip install pymc arviz pytensor")
+            return None
 
     logger.info(f"🚀 Running MCMC with {mcmc_backend} backend (isolated)")
 
@@ -1324,8 +1344,15 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
             "⚠ No optimization results available, using initial parameters for MCMC"
         )
 
+    # Determine backend based on homodyne-gpu command wrapper
+    gpu_intent = os.environ.get("HOMODYNE_GPU_INTENT", "false").lower() == "true"
     mcmc_results = run_mcmc_optimization(
-        analyzer, mcmc_initial_params, phi_angles, c2_exp, output_dir
+        analyzer,
+        mcmc_initial_params,
+        phi_angles,
+        c2_exp,
+        output_dir,
+        use_gpu_backend=gpu_intent,
     )
     if mcmc_results:
         all_results.update(mcmc_results)
@@ -1384,7 +1411,7 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
         try:
             from pathlib import Path
 
-            from .plotting import plot_diagnostic_summary
+            from homodyne.plotting import plot_diagnostic_summary
 
             logger.info("Creating overall diagnostic summary plot for --method all")
             output_path = Path(output_dir) if output_dir else Path("./homodyne_results")
@@ -1494,7 +1521,7 @@ def _generate_classical_plots(
 
         # Generate plots for each successful optimization method
         try:
-            from .plotting import plot_c2_heatmaps
+            from homodyne.plotting import plot_c2_heatmaps
 
             # Check if method_results are available
             method_results = getattr(result, "method_results", {})

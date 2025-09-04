@@ -198,17 +198,28 @@ class SystemValidator:
                 # Simple completion mode
                 venv_path / "etc" / "conda" / "activate.d" / "homodyne-completion.sh",
                 venv_path / "etc" / "zsh" / "homodyne-completion.zsh",
-                # Advanced completion mode  
-                venv_path / "etc" / "conda" / "activate.d" / "homodyne-advanced-completion.sh",
+                # Advanced completion mode
+                venv_path
+                / "etc"
+                / "conda"
+                / "activate.d"
+                / "homodyne-advanced-completion.sh",
                 # Future fish support
                 venv_path / "share" / "fish" / "vendor_completions.d" / "homodyne.fish",
             ]
-            
+
             # Also check for the main completion source file
             try:
                 import homodyne
+
                 homodyne_src_dir = Path(homodyne.__file__).parent.parent
-                main_completion_file = homodyne_src_dir / "homodyne" / "runtime" / "shell" / "completion.sh"
+                main_completion_file = (
+                    homodyne_src_dir
+                    / "homodyne"
+                    / "runtime"
+                    / "shell"
+                    / "completion.sh"
+                )
                 if main_completion_file.exists():
                     potential_files.append(main_completion_file)
             except ImportError:
@@ -229,9 +240,11 @@ class SystemValidator:
                     # Determine which shell and completion file to use
                     # Prioritize matching current shell environment
                     current_shell = self.environment_info.get("shell", "bash")
-                    use_zsh = current_shell == "zsh" and any("zsh" in str(f) for f in completion_files)
+                    use_zsh = current_shell == "zsh" and any(
+                        "zsh" in str(f) for f in completion_files
+                    )
                     shell_cmd = "zsh" if use_zsh else "bash"
-                    
+
                     # Find the appropriate completion file
                     target_completion_file = completion_files[0]  # default
                     if use_zsh:
@@ -240,14 +253,14 @@ class SystemValidator:
                             if "zsh" in str(f):
                                 target_completion_file = f
                                 break
-                    
+
                     # Create a test script to source completion (force reload for zsh)
                     if use_zsh:
                         test_script = f"""#!/usr/bin/env zsh
 # Force reload by unsetting the loaded flag
 unset _HOMODYNE_ZSH_COMPLETION_LOADED
 source {target_completion_file} 2>/dev/null || exit 1
-# Test if core aliases were created  
+# Test if core aliases were created
 alias hm >/dev/null 2>&1 && echo "core_alias_works" || echo "core_alias_missing"
 alias hconfig >/dev/null 2>&1 && echo "config_alias_works" || echo "config_alias_missing"
 alias hexp >/dev/null 2>&1 && echo "plot_alias_works" || echo "plot_alias_missing"
@@ -256,25 +269,27 @@ alias hc-iso >/dev/null 2>&1 && echo "shortcut_alias_works" || echo "shortcut_al
                     else:
                         test_script = f"""#!/bin/bash
 source {target_completion_file} 2>/dev/null || exit 1
-# Test if core aliases were created  
+# Test if core aliases were created
 alias hm >/dev/null 2>&1 && echo "core_alias_works" || echo "core_alias_missing"
 alias hconfig >/dev/null 2>&1 && echo "config_alias_works" || echo "config_alias_missing"
 alias hexp >/dev/null 2>&1 && echo "plot_alias_works" || echo "plot_alias_missing"
 alias hc-iso >/dev/null 2>&1 && echo "shortcut_alias_works" || echo "shortcut_alias_missing"
 """
-                    
+
                     success, stdout, stderr = self.run_command(
                         [shell_cmd, "-c", test_script.strip()]
                     )
                     # Count how many alias categories work
                     alias_counts = {
-                        'core': "core_alias_works" in stdout,
-                        'config': "config_alias_works" in stdout, 
-                        'plot': "plot_alias_works" in stdout,
-                        'shortcut': "shortcut_alias_works" in stdout
+                        "core": "core_alias_works" in stdout,
+                        "config": "config_alias_works" in stdout,
+                        "plot": "plot_alias_works" in stdout,
+                        "shortcut": "shortcut_alias_works" in stdout,
                     }
                     working_aliases = sum(alias_counts.values())
-                    alias_test_passed = working_aliases >= 2  # At least core and config should work
+                    alias_test_passed = (
+                        working_aliases >= 2
+                    )  # At least core and config should work
                 except Exception:
                     pass
 
@@ -285,25 +300,35 @@ alias hc-iso >/dev/null 2>&1 && echo "shortcut_alias_works" || echo "shortcut_al
             for file_path in potential_files:
                 if not file_path.exists():
                     # Only warn about files that should definitely exist
-                    if "homodyne-completion.sh" in str(file_path) or "homodyne-advanced-completion.sh" in str(file_path):
+                    if "homodyne-completion.sh" in str(
+                        file_path
+                    ) or "homodyne-advanced-completion.sh" in str(file_path):
                         critical_missing.append(file_path)
                     elif "completion.sh" in str(file_path):  # Main completion source
                         critical_missing.append(file_path)
-                        
+
             if critical_missing:
-                warnings.append(f"Run 'homodyne-post-install --shell <your_shell>' to install completion")
+                warnings.append(
+                    "Run 'homodyne-post-install --shell <your_shell>' to install completion"
+                )
             if not alias_test_passed and completion_files:
                 if working_aliases == 0:
-                    warnings.append("No aliases working - try 'homodyne-post-install --shell zsh' to reinstall")
+                    warnings.append(
+                        "No aliases working - try 'homodyne-post-install --shell zsh' to reinstall"
+                    )
                 elif working_aliases < 4:
-                    warnings.append(f"Only {working_aliases}/4 alias categories working - may need shell restart")
+                    warnings.append(
+                        f"Only {working_aliases}/4 alias categories working - may need shell restart"
+                    )
 
             success = len(completion_files) > 0
             message = f"Found {len(completion_files)} completion files"
             if alias_test_passed:
                 message += f" ({working_aliases}/4 alias categories working)"
             elif working_aliases > 0:
-                message += f" ({working_aliases}/4 alias categories working, some issues)"
+                message += (
+                    f" ({working_aliases}/4 alias categories working, some issues)"
+                )
             elif completion_files:
                 message += " (aliases not working)"
 
@@ -352,12 +377,15 @@ alias hc-iso >/dev/null 2>&1 && echo "shortcut_alias_works" || echo "shortcut_al
             potential_gpu_files = [
                 venv_path / "etc" / "conda" / "activate.d" / "homodyne-gpu.sh",
             ]
-            
+
             # Also check for the main GPU activation source file
             try:
                 import homodyne
+
                 homodyne_src_dir = Path(homodyne.__file__).parent.parent
-                main_gpu_file = homodyne_src_dir / "homodyne" / "runtime" / "gpu" / "activation.sh"
+                main_gpu_file = (
+                    homodyne_src_dir / "homodyne" / "runtime" / "gpu" / "activation.sh"
+                )
                 if main_gpu_file.exists():
                     potential_gpu_files.append(main_gpu_file)
             except ImportError:
@@ -403,9 +431,11 @@ alias hc-iso >/dev/null 2>&1 && echo "shortcut_alias_works" || echo "shortcut_al
                         critical_gpu_missing.append(file_path)
                     elif "activation.sh" in str(file_path):
                         critical_gpu_missing.append(file_path)
-                        
+
             if critical_gpu_missing and nvidia_available:
-                warnings.append("Run 'homodyne-post-install --gpu' to install GPU acceleration")
+                warnings.append(
+                    "Run 'homodyne-post-install --gpu' to install GPU acceleration"
+                )
             if not nvidia_available:
                 warnings.append("NVIDIA drivers not available")
             if jax_error:

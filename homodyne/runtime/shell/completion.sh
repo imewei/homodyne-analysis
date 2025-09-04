@@ -152,12 +152,17 @@ _homodyne_config_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # homodyne-config options
-    local main_opts="--help -h --mode -m --output -o --sample -s --experiment -e --author -a"
+    local main_opts="--help -h --mode -m --dataset-size -d --output -o --sample -s --experiment -e --author -a"
     
     case $prev in
         --mode|-m)
             local modes="static_isotropic static_anisotropic laminar_flow"
             COMPREPLY=($(compgen -W "$modes" -- "$cur"))
+            return 0
+            ;;
+        --dataset-size|-d)
+            local sizes="small standard large"
+            COMPREPLY=($(compgen -W "$sizes" -- "$cur"))
             return 0
             ;;
         --output|-o)
@@ -233,6 +238,7 @@ if [[ -n "$ZSH_VERSION" ]]; then
         args=(
             '(--help -h)'{--help,-h}'[Show help message]'
             '(--mode -m)'{--mode,-m}'[Analysis mode]:mode:(static_isotropic static_anisotropic laminar_flow)'
+            '(--dataset-size -d)'{--dataset-size,-d}'[Dataset size optimization]:size:(small standard large)'
             '(--output -o)'{--output,-o}'[Output configuration file]:file:_files -g "*.json"'
             '(--sample -s)'{--sample,-s}'[Sample name]:sample:'
             '(--experiment -e)'{--experiment,-e}'[Experiment description]:experiment:'
@@ -265,6 +271,10 @@ if [[ -n "$ZSH_VERSION" ]]; then
     compdef _homodyne_config_zsh hc-iso 2>/dev/null || true
     compdef _homodyne_config_zsh hc-aniso 2>/dev/null || true
     compdef _homodyne_config_zsh hc-flow 2>/dev/null || true
+    compdef _homodyne_config_zsh hconfig-small 2>/dev/null || true
+    compdef _homodyne_config_zsh hconfig-large 2>/dev/null || true
+    compdef _homodyne_config_zsh hc-small 2>/dev/null || true
+    compdef _homodyne_config_zsh hc-large 2>/dev/null || true
 fi
 
 # Register bash completion
@@ -291,6 +301,10 @@ if [[ -n "$BASH_VERSION" ]]; then
     complete -F _homodyne_config_completion hc-iso 2>/dev/null || true
     complete -F _homodyne_config_completion hc-aniso 2>/dev/null || true
     complete -F _homodyne_config_completion hc-flow 2>/dev/null || true
+    complete -F _homodyne_config_completion hconfig-small 2>/dev/null || true
+    complete -F _homodyne_config_completion hconfig-large 2>/dev/null || true
+    complete -F _homodyne_config_completion hc-small 2>/dev/null || true
+    complete -F _homodyne_config_completion hc-large 2>/dev/null || true
 fi
 
 # Quick command builder function

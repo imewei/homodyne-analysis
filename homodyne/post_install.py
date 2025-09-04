@@ -87,15 +87,21 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
     alias hr='homodyne --method robust'
     alias ha='homodyne --method all'
     alias hconfig='homodyne-config'
-    
+
     # Plotting shortcuts
     alias hexp='homodyne --plot-experimental-data'
     alias hsim='homodyne --plot-simulated-data'
-    
+
     # homodyne-config shortcuts
     alias hc-iso='homodyne-config --mode static_isotropic'
     alias hc-aniso='homodyne-config --mode static_anisotropic'
     alias hc-flow='homodyne-config --mode laminar_flow'
+
+    # Dataset-specific homodyne-config shortcuts
+    alias hconfig-small='homodyne-config --dataset-size small'
+    alias hconfig-large='homodyne-config --dataset-size large'
+    alias hc-small='homodyne-config --dataset-size small'
+    alias hc-large='homodyne-config --dataset-size large'
 
     # Linux GPU aliases (only for GPU-compatible methods)
     if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
@@ -149,7 +155,18 @@ if [[ -z "$_HOMODYNE_ZSH_COMPLETION_LOADED" ]]; then
         echo "  hc  = homodyne --method classical"
         echo "  hr  = homodyne --method robust"
         echo "  ha  = homodyne --method all"
+        echo ""
+        echo "Configuration shortcuts:"
         echo "  hconfig = homodyne-config"
+        echo "  hc-iso  = homodyne-config --mode static_isotropic"
+        echo "  hc-aniso = homodyne-config --mode static_anisotropic"
+        echo "  hc-flow = homodyne-config --mode laminar_flow"
+        echo ""
+        echo "Dataset-specific config shortcuts:"
+        echo "  hconfig-small = homodyne-config --dataset-size small"
+        echo "  hconfig-large = homodyne-config --dataset-size large"
+        echo "  hc-small = homodyne-config --dataset-size small"
+        echo "  hc-large = homodyne-config --dataset-size large"
 
         if [[ "$(uname -s)" == "Linux" ]] && command -v homodyne-gpu >/dev/null 2>&1; then
             echo ""
@@ -199,6 +216,7 @@ fi
         print("   • CPU aliases: hm, hc, hr, ha, hconfig")
         print("   • Plotting: hexp, hsim")
         print("   • Config: hc-iso, hc-aniso, hc-flow")
+        print("   • Dataset config: hconfig-small, hconfig-large, hc-small, hc-large")
         print("   • GPU aliases: hgm, hga (NumPyro GPU, Linux only)")
         return True
 
