@@ -146,6 +146,7 @@ class TestMainFunction:
                 experiment_name="Test Experiment",
                 author="Test Author",
                 mode="static_isotropic",
+                dataset_size="standard",
             )
             assert result == 0
 
@@ -179,6 +180,7 @@ class TestMainFunction:
                 experiment_name="Experiment",
                 author="Author",
                 mode="laminar_flow",
+                dataset_size="standard",
             )
             assert result == 0
 
@@ -199,6 +201,7 @@ class TestMainFunction:
                 experiment_name=None,
                 author=None,
                 mode="laminar_flow",
+                dataset_size="standard",
             )
             assert result == 0
 

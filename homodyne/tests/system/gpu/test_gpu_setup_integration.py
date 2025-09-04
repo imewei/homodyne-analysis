@@ -171,43 +171,46 @@ class TestMCMCGPUIntegration:
         try:
             # Test CPU backend selection (no GPU intent)
             os.environ.pop("HOMODYNE_GPU_INTENT", None)
-            
+
             try:
                 mcmc_func, backend_name, has_gpu = get_mcmc_backend()
-                
+
                 # Should select CPU backend (PyMC)
-                assert "cpu" in backend_name.lower() or "pymc" in backend_name.lower(), (
-                    f"Should select CPU backend, got {backend_name}"
-                )
+                assert (
+                    "cpu" in backend_name.lower() or "pymc" in backend_name.lower()
+                ), f"Should select CPU backend, got {backend_name}"
                 assert not has_gpu, "CPU backend should not report GPU capabilities"
-                
+
                 # Check that it's the CPU backend function
                 assert "cpu" in mcmc_func.__module__, (
                     f"Should import from CPU backend module, got {mcmc_func.__module__}"
                 )
-                
+
             except ImportError:
                 pytest.skip("PyMC CPU backend not available in test environment")
 
             # Test GPU backend selection (with GPU intent)
             os.environ["HOMODYNE_GPU_INTENT"] = "true"
-            
+
             try:
                 mcmc_func, backend_name, has_gpu = get_mcmc_backend()
-                
+
                 # Should select GPU backend (NumPyro) or fallback to CPU
-                assert ("gpu" in backend_name.lower() or "numpyro" in backend_name.lower() or 
-                        "cpu" in backend_name.lower()), (
-                    f"Should select GPU backend or fallback, got {backend_name}"
-                )
-                
+                assert (
+                    "gpu" in backend_name.lower()
+                    or "numpyro" in backend_name.lower()
+                    or "cpu" in backend_name.lower()
+                ), f"Should select GPU backend or fallback, got {backend_name}"
+
                 # Check that it's from the appropriate backend module
-                assert ("gpu" in mcmc_func.__module__ or "cpu" in mcmc_func.__module__), (
+                assert "gpu" in mcmc_func.__module__ or "cpu" in mcmc_func.__module__, (
                     f"Should import from backend module, got {mcmc_func.__module__}"
                 )
-                
+
             except ImportError:
-                pytest.skip("GPU backend dependencies not available in test environment")
+                pytest.skip(
+                    "GPU backend dependencies not available in test environment"
+                )
 
         finally:
             # Restore original environment
@@ -230,10 +233,13 @@ class TestMCMCGPUIntegration:
             # If GPU backend is available, should be able to import JAX
             if gpu_available:
                 import jax
+
                 logger.info(f"JAX version: {jax.__version__}")
                 logger.info(f"JAX devices: {jax.devices()}")
             else:
-                logger.info("JAX/GPU backend not available - this is normal on some systems")
+                logger.info(
+                    "JAX/GPU backend not available - this is normal on some systems"
+                )
 
         except ImportError:
             pytest.skip("GPU MCMC backend module not available")

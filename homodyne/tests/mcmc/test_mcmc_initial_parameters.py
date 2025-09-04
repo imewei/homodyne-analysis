@@ -284,7 +284,12 @@ class TestMCMCInitialParameterHandling:
             # Verify MCMC was called with classical results as initial
             # parameters
             mock_mcmc.assert_called_once_with(
-                mock_analyzer, classical_best_params, phi_angles, c2_exp, None
+                mock_analyzer,
+                classical_best_params,
+                phi_angles,
+                c2_exp,
+                None,
+                use_gpu_backend=False,
             )
 
             # Verify combined results
@@ -524,7 +529,12 @@ class TestMCMCInitialParameterHandling:
             # Verify MCMC was called with original initial parameters
             # (fallback)
             mock_mcmc.assert_called_once_with(
-                mock_analyzer, initial_params, phi_angles, c2_exp, None
+                mock_analyzer,
+                initial_params,
+                phi_angles,
+                c2_exp,
+                None,
+                use_gpu_backend=False,
             )
 
             # Verify only MCMC results are included

@@ -33,6 +33,7 @@ class TestHomodyneConfigCLI:
                     experiment_name=None,
                     author=None,
                     mode="laminar_flow",
+                    dataset_size="standard",
                 )
 
     def test_main_all_arguments(self):
@@ -66,6 +67,7 @@ class TestHomodyneConfigCLI:
                     experiment_name="Test Experiment",
                     author="Test Author",
                     mode="static_isotropic",
+                    dataset_size="standard",
                 )
 
     def test_main_short_arguments(self):
@@ -99,6 +101,7 @@ class TestHomodyneConfigCLI:
                     experiment_name="Short Experiment",
                     author="Short Author",
                     mode="static_anisotropic",
+                    dataset_size="standard",
                 )
 
     def test_main_mode_choices(self):
