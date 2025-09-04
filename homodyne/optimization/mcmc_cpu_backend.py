@@ -118,7 +118,7 @@ def run_cpu_mcmc_analysis(
             "3. Use alternative methods: 'homodyne --method classical'\n"
         )
         logger.error(error_msg)
-        raise ImportError(error_msg)
+        raise ImportError(error_msg) from None
 
     except Exception as e:
         error_msg = (
@@ -129,7 +129,7 @@ def run_cpu_mcmc_analysis(
             "• Robust: 'homodyne --method robust'\n"
         )
         logger.error(error_msg)
-        raise RuntimeError(error_msg)
+        raise RuntimeError(error_msg) from e
 
 
 def is_cpu_mcmc_available() -> bool:
@@ -148,7 +148,7 @@ def is_cpu_mcmc_available() -> bool:
         import pytensor
 
         # Verify PyTensor is in CPU mode
-        import pytensor.tensor as pt
+        import pytensor.tensor
 
         logger.info("✅ PyMC CPU backend dependencies available")
         logger.info(f"PyMC version: {pm.__version__}")

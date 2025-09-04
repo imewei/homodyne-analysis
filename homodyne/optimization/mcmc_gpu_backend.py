@@ -206,7 +206,7 @@ def run_gpu_mcmc_analysis(
             "5. Use classical methods: 'homodyne --method classical'\n"
         )
         logger.error(error_msg)
-        raise ImportError(error_msg)
+        raise ImportError(error_msg) from None
 
     except Exception as e:
         if force_cpu:
@@ -218,7 +218,7 @@ def run_gpu_mcmc_analysis(
                 "• Classical: 'homodyne --method classical'\n"
             )
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from e
         else:
             # Try falling back to CPU mode
             logger.warning(f"GPU MCMC failed ({e}), trying JAX CPU fallback...")
@@ -245,7 +245,7 @@ def run_gpu_mcmc_analysis(
                     "• Check JAX installation: python -c 'import jax; print(jax.devices())'\n"
                 )
                 logger.error(error_msg)
-                raise RuntimeError(error_msg)
+                raise RuntimeError(error_msg) from e
 
 
 def is_gpu_mcmc_available() -> bool:
@@ -293,7 +293,7 @@ def is_gpu_hardware_available() -> bool:
             logger.info("🖥️  No GPU hardware detected, JAX will use CPU")
 
         return gpu_available
-    except:
+    except Exception:
         return False
 
 

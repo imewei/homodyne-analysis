@@ -37,7 +37,7 @@ try:
     import numpyro
     import numpyro.distributions as dist
     from numpyro.diagnostics import effective_sample_size, gelman_rubin, hpdi
-    from numpyro.infer import MCMC, NUTS, init_to_median, init_to_uniform, init_to_value
+    from numpyro.infer import MCMC, NUTS, init_to_uniform
 
     JAX_AVAILABLE = True
 except ImportError as e:

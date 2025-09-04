@@ -43,8 +43,8 @@ except ImportError:
 
 # Import robust optimization with graceful degradation
 try:
+    from homodyne.optimization.robust import RobustHomodyneOptimizer  # type: ignore
     from homodyne.optimization.robust import (
-        RobustHomodyneOptimizer,  # type: ignore
         create_robust_optimizer,
     )
 

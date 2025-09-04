@@ -23,9 +23,11 @@ try:
         cleanup_gpu_files,
         cleanup_old_system_files,
         interactive_cleanup,
-        show_dry_run,
     )
     from homodyne.uninstall_scripts import main as cleanup_main
+    from homodyne.uninstall_scripts import (
+        show_dry_run,
+    )
 
     CLEANUP_AVAILABLE = True
 except ImportError:
