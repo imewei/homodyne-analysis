@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.run_homodyne
 
-.. autoattribute:: main
+.. autofunction:: main

@@ -76,7 +76,7 @@ Choose your path based on your experience and needs.
 1. **Full installation:** ``pip install homodyne-analysis[mcmc-all]`` (both CPU and GPU backends)
 2. **Post-install setup:** ``homodyne-post-install --shell zsh --gpu --advanced``
 3. **System validation:** ``homodyne-validate --verbose``
-4. **Configuration:** :doc:`configuration` - Detailed parameter setup
+4. **Configuration:** :doc:`configuration-guide` - Detailed parameter setup
 5. **Backend selection:** :doc:`../api-reference/mcmc` - CPU vs GPU backends
 
 **Recommended workflow for research:**

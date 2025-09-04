@@ -178,16 +178,12 @@ Documentation Contents
    :caption: User Guide
 
    user-guide/analysis-modes
-   user-guide/configuration
+   user-guide/configuration-guide
+   user-guide/advanced-optimization
    user-guide/cli-reference
    user-guide/plotting
    user-guide/examples
    user-guide/faq
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Quick Reference
-
    user-guide/quick-reference
    user-guide/troubleshooting-flowchart
 

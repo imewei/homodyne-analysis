@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.optimization.classical
 
-.. autoattribute:: ClassicalOptimizer
+.. autoclass:: ClassicalOptimizer

@@ -112,7 +112,7 @@ Cross-References
 * :doc:`../user-guide/getting-started` - Choose your path based on experience
 * :doc:`../user-guide/quickstart` - 5-minute tutorial
 * :doc:`../user-guide/quick-reference` - Essential commands and code snippets
-* :doc:`../user-guide/configuration` - Complete configuration reference
+* :doc:`../user-guide/configuration-guide` - Complete configuration reference
 
 **Isolated MCMC Backend Documentation:**
 

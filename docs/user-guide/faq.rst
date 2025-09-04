@@ -82,7 +82,7 @@ A: Use the configuration generator:
 
 **Q: Can I modify the generated configuration?**
 
-A: Yes! The JSON configuration file is human-readable and can be edited. See :doc:`configuration` for details.
+A: Yes! The JSON configuration file is human-readable and can be edited. See :doc:`configuration-guide` for details.
 
 **Q: What if my data has different angle arrangements?**
 

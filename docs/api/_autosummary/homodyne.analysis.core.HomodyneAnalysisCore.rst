@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.analysis.core
 
-.. autoattribute:: HomodyneAnalysisCore
+.. autoclass:: HomodyneAnalysisCore

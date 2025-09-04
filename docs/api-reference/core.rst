@@ -8,7 +8,7 @@ The core API provides the main classes and functions for homodyne analysis.
 HomodyneAnalysisCore
 --------------------
 
-.. autoclass:: HomodyneAnalysisCore
+.. autoclass:: homodyne.analysis.core.HomodyneAnalysisCore
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,7 +32,7 @@ The main analysis class that orchestrates the entire homodyne analysis workflow.
 ConfigManager
 -------------
 
-.. autoclass:: ConfigManager
+.. autoclass:: homodyne.core.config.ConfigManager
    :members:
    :undoc-members:
    :show-inheritance:

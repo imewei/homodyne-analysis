@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.optimization.robust
 
-.. autoattribute:: RobustHomodyneOptimizer
+.. autoclass:: RobustHomodyneOptimizer

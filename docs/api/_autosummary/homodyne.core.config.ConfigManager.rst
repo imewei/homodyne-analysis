@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.core.config
 
-.. autoattribute:: ConfigManager
+.. autoclass:: ConfigManager

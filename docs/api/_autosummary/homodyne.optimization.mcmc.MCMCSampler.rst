@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.optimization.mcmc
 
-.. autoattribute:: MCMCSampler
+.. autoclass:: MCMCSampler

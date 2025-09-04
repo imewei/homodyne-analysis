@@ -261,7 +261,7 @@ Configuration file errors
    * - ``"Invalid configuration"``
      - Regenerate: ``homodyne-config --mode <your_mode> --sample <name>``
    * - ``"Missing required field"``
-     - Compare with template in :doc:`configuration`
+     - Compare with template in :doc:`configuration-guide`
 
 File path issues
 ~~~~~~~~~~~~~~~~
@@ -638,7 +638,7 @@ Where to get help
    
    - :doc:`../developer-guide/troubleshooting` - Detailed technical issues
    - :doc:`../api-reference/index` - API documentation
-   - :doc:`configuration` - Configuration reference
+   - :doc:`configuration-guide` - Configuration reference
 
 2. **GitHub Issues:**
    

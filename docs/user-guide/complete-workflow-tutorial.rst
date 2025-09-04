@@ -317,7 +317,7 @@ Following these steps ensures robust, reproducible analysis of nonequilibrium tr
 For more detailed information on specific topics, see:
 
 * :doc:`installation` - Complete installation guide
-* :doc:`configuration` - Configuration file details
+* :doc:`configuration-guide` - Configuration file details
 * :doc:`analysis-modes` - Analysis mode selection
 * :doc:`plotting` - Advanced visualization options
 * :doc:`../developer-guide/troubleshooting` - Troubleshooting guide

@@ -323,7 +323,7 @@ Next Steps
 
 - **Having issues?** → :doc:`troubleshooting-flowchart` for step-by-step diagnosis
 - **Performance problems?** → :doc:`../developer-guide/performance` for optimization
-- **Configuration errors?** → :doc:`configuration` for complete reference
+- **Configuration errors?** → :doc:`configuration-guide` for complete reference
 
 **Advanced features:**
 

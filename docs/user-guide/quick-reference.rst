@@ -501,6 +501,7 @@ See Also
 
    * :doc:`installation` - Detailed installation guide
    * :doc:`quickstart` - Step-by-step tutorial
-   * :doc:`configuration` - Complete configuration reference
+   * :doc:`configuration-guide` - Complete configuration reference
+   * :doc:`advanced-optimization` - Advanced optimization techniques
    * :doc:`../api-reference/mcmc` - MCMC API documentation
    * :doc:`../developer-guide/packaging` - Backend architecture details

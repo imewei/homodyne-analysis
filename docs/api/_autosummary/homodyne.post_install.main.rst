@@ -3,4 +3,4 @@
 
 .. currentmodule:: homodyne.post_install
 
-.. autoattribute:: main
+.. autofunction:: main
