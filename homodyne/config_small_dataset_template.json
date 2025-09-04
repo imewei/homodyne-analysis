@@ -1,0 +1,906 @@
+{
+  "_template_info": {
+    "_comment": "SMALL DATASET HOMODYNE CONFIGURATION TEMPLATE - Optimized for ~10K data points",
+    "_creation_date": "2025-09-04",
+    "_based_on_analysis": "Default comprehensive template v0.7.2 optimized for small datasets with enhanced precision settings",
+    "_usage": "Copy this template and customize the analysis_mode, initial_parameters, and experimental_data sections for your ~10K data point experiment",
+    "_config_modes": {
+      "static_isotropic": "3-parameter optimization [D0, alpha, D_offset] - no angle filtering - optimized for small datasets",
+      "static_anisotropic": "3-parameter optimization [D0, alpha, D_offset] - with angle filtering - enhanced precision",
+      "laminar_flow": "7-parameter optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0] - conservative settings"
+    },
+    "_small_dataset_optimizations": "Enhanced precision, conservative sampling, tighter tolerances (1e-8 to 1e-10), comprehensive validation"
+  },
+  "metadata": {
+    "_comment": "Template metadata - Customize description and analysis_mode for your small dataset experiment",
+    "config_version": "0.7.2",
+    "description": "SMALL DATASET TEMPLATE: Enhanced precision homodyne scattering analysis for ~10K data points",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach with small dataset optimizations",
+    "analysis_mode": "CHANGE_ME: static_isotropic | static_anisotropic | laminar_flow",
+    "dataset_size": "~10K data points - enhanced precision configuration",
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data or 'hexp' shortcut for validation and comparison",
+      "simulated_data_plotting": "Use --plot-simulated-data or 'hsim' shortcut with --contrast and --offset parameters",
+      "phi_angles_override": "Command-line --phi-angles overrides config file settings",
+      "multi_method_support": "Separate plots generated for each optimization method (Nelder-Mead, Gurobi, etc.)",
+      "small_dataset_diagnostics": "Enhanced diagnostic plotting for thorough validation with limited data"
+    },
+    "parameters_optimized": "DEPENDS_ON_MODE: [D0,alpha,D_offset] for static modes, [D0,alpha,D_offset,gamma_dot_t0,beta,gamma_dot_t_offset,phi0] for laminar_flow",
+    "shell_completion": "Interactive mode removed - comprehensive shell aliases available: hm, hc, hr, ha (methods), hconfig, hexp, hsim (utilities), hc-iso, hc-aniso, hc-flow (config shortcuts), hgm, hga (GPU)",
+    "script_compatibility": "homodyne v0.7.2 with fast shell completion and small dataset optimization"
+  },
+  "experimental_data": {
+    "_comment": "CUSTOMIZE: Update paths and filenames for your small dataset experimental data",
+    "data_folder_path": "./data/YOUR_SMALL_DATASET_SAMPLE/",
+    "data_file_name": "your_small_dataset_experimental_data.hdf",
+    "phi_angles_path": "./data/phi_angles/",
+    "phi_angles_file": "phi_list.txt",
+    "exchange_key": "exchange",
+    "cache_file_path": "./data/YOUR_SMALL_DATASET_SAMPLE/",
+    "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}_small.npz",
+    "cache_compression": true,
+    "data_type": "float64",
+    "_data_type_note": "Full precision essential for small datasets",
+    "file_format": "NPZ",
+    "preprocessing": {
+      "apply_diagonal_correction": true,
+      "vectorized_correction": true,
+      "cache_processed_data": true,
+      "normalize_data": true,
+      "normalization_method": "baseline",
+      "small_dataset_enhancements": {
+        "enhanced_validation": true,
+        "careful_preprocessing": true,
+        "preserve_precision": true
+      }
+    }
+  },
+  "analyzer_parameters": {
+    "_comment": "CUSTOMIZE: Core physics parameters for your small dataset experiment - enhanced precision",
+    "temporal": {
+      "dt": 0.1,
+      "_dt_note": "Time step between frames in seconds - CUSTOMIZE for your acquisition",
+      "dt_unit": "seconds",
+      "start_frame": 50,
+      "_start_frame_note": "CUSTOMIZE: Conservative start for small datasets - preserve all useful data",
+      "end_frame": 10050,
+      "_end_frame_note": "CUSTOMIZE: Typical ~10K frame analysis window",
+      "frame_description": "Small dataset analysis time window (~10K frames)"
+    },
+    "scattering": {
+      "wavevector_q": 0.001,
+      "_q_note": "CUSTOMIZE: Scattering wavevector q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
+      "typical_range": [0.001, 0.1]
+    },
+    "geometry": {
+      "stator_rotor_gap": 2000000,
+      "_gap_note": "CUSTOMIZE: Gap in Angstroms - critical for laminar_flow, less important for static modes",
+      "gap_unit": "Å",
+      "gap_in_microns": 200
+    },
+    "computational": {
+      "num_threads": "auto",
+      "auto_detect_cores": true,
+      "max_threads_limit": 12,
+      "_max_threads_note": "Conservative threading for small dataset precision",
+      "memory_limit_gb": 32,
+      "_small_dataset_note": "Higher memory allocation for comprehensive analysis"
+    }
+  },
+  "initial_parameters": {
+    "_comment": "CUSTOMIZE: Starting values - CRITICAL for small dataset convergence. Conservative initialization",
+    "_mode_dependent_note": "Parameter count depends on analysis_mode: 3 for static modes, 7 for laminar_flow",
+    "values": "MODE_DEPENDENT: [100.0,0.0,10.0] for static, [100.0,0.0,10.0,1.0,0.0,0.0,0.0] for laminar_flow",
+    "parameter_names": "MODE_DEPENDENT: See _parameter_definitions below",
+    "_parameter_definitions": {
+      "static_modes": ["D0", "alpha", "D_offset"],
+      "laminar_flow": [
+        "D0",
+        "alpha", 
+        "D_offset",
+        "gamma_dot_t0",
+        "beta",
+        "gamma_dot_t_offset",
+        "phi0"
+      ]
+    },
+    "units": "MODE_DEPENDENT: [Å²/s,dimensionless,Å²/s] for static, [Å²/s,dimensionless,Å²/s,s⁻¹,dimensionless,s⁻¹,degrees] for laminar_flow",
+    "physical_meaning": {
+      "_common_to_all_modes": {
+        "D0": "Reference diffusion coefficient",
+        "alpha": "Power-law exponent for D(t) evolution", 
+        "D_offset": "Baseline diffusion coefficient"
+      },
+      "_laminar_flow_additional": {
+        "gamma_dot_t0": "Reference shear rate",
+        "beta": "Power-law exponent for shear rate evolution",
+        "gamma_dot_t_offset": "Baseline shear rate",
+        "phi0": "Angular offset between flow and scattering"
+      }
+    },
+    "active_parameters": "MODE_DEPENDENT: Matches parameter_names above",
+    "parameter_units": "MODE_DEPENDENT: Matches units above in dict format"
+  },
+  "optimization_config": {
+    "_comment": "Small dataset optimization settings with enhanced precision and conservative approaches",
+    "angle_filtering": {
+      "_mode_dependent": "disabled for static_isotropic, enabled for static_anisotropic and laminar_flow",
+      "enabled": "MODE_DEPENDENT: false for static_isotropic, true for others",
+      "target_ranges": [
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0
+        },
+        {
+          "min_angle": 80.0,
+          "max_angle": 100.0,
+          "_note": "static_anisotropic only"
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0
+        },
+        {
+          "min_angle": 260.0,
+          "max_angle": 280.0,
+          "_note": "static_anisotropic only"
+        }
+      ],
+      "fallback_to_all_angles": true,
+      "_performance_note": "Enhanced precision filtering for small datasets"
+    },
+    "classical_optimization": {
+      "methods": ["Nelder-Mead", "Gurobi"],
+      "_methods_note": "Classical methods with enhanced precision settings for small datasets",
+      "_method_flags": {
+        "--method classical": "Runs ONLY classical methods: Nelder-Mead, Gurobi (if licensed) with small dataset optimizations",
+        "--method robust": "Runs ONLY robust methods: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal with enhanced precision",
+        "--method mcmc": "Runs ONLY Bayesian MCMC sampling with conservative settings for small datasets",
+        "--method all": "Runs classical + robust + MCMC for comprehensive small dataset analysis"
+      },
+      "_gurobi_availability": "Requires Gurobi license (pip install gurobipy). Enhanced Trust Region SQP with small dataset settings.",
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": "MODE_DEPENDENT: 5000 for static, 10000 for laminar_flow",
+          "_maxiter_note": "Increased iterations for small dataset precision - higher SNR requirements",
+          "_small_dataset_scaling": "Enhanced iteration count for thorough exploration with limited data",
+          "xatol": 1e-8,
+          "_xatol_note": "Tight parameter tolerance essential for small dataset precision",
+          "_small_dataset_xatol": "Enhanced precision: 1e-8 for reliable convergence with limited statistics",
+          "fatol": 1e-8,
+          "_fatol_note": "Tight chi-squared tolerance for precise small dataset fitting",
+          "_small_dataset_fatol": "Enhanced precision: 1e-8 for accurate parameter estimation",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes crucial for small dataset convergence",
+          "initial_simplex": null,
+          "_initial_simplex_note": "Auto-generated based on parameter bounds with enhanced precision",
+          "return_all": false,
+          "_return_all_note": "Return only final result for efficiency"
+        },
+        "Gurobi": {
+          "_comment": "ENHANCED: Trust Region SQP with small dataset optimizations for precise convergence",
+          "_algorithm": "Iterative trust region SQP optimization with enhanced precision for small datasets",
+          "max_iterations": "MODE_DEPENDENT: 800 for static, 2000 for laminar_flow",
+          "_max_iterations_note": "Increased iterations for small dataset precision requirements",
+          "tolerance": 1e-7,
+          "_tolerance_note": "Tight convergence tolerance for small dataset accuracy",
+          "output_flag": 0,
+          "_output_flag_note": "Gurobi verbosity (0=silent, 1=verbose)",
+          "method": 2,
+          "_method_note": "Barrier method optimized for small dataset trust region subproblems",
+          "time_limit": "MODE_DEPENDENT: 600s for static, 1800s for laminar_flow",
+          "_time_limit_note": "Extended time limits for thorough small dataset optimization",
+          "_trust_region_settings": {
+            "initial_radius": 2.0,
+            "max_radius": 20.0,
+            "eta1": 0.05,
+            "eta2": 0.85,
+            "gamma1": 0.25,
+            "gamma2": 2.5,
+            "max_trust_iterations": 400,
+            "_note": "Conservative trust region parameters for small dataset precision",
+            "_rationale": "Smaller initial radius and careful expansion for precise small dataset optimization"
+          },
+          "_advantages": "Enhanced convergence for small datasets with careful parameter exploration",
+          "_requirements": "Gurobi license required for enhanced small dataset optimization performance"
+        }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "best_chi_squared, consensus, or first_success when multiple methods used"
+    },
+    "robust_optimization": {
+      "_comment": "ENHANCED: Robust optimization with small dataset precision settings",
+      "_performance_upgrades": "v0.7.2+ optimizations with small dataset enhancements for limited data scenarios",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # Run only robust methods with small dataset settings",
+        "python run_homodyne.py --method classical  # Include robust in classical analysis with precision",
+        "python run_homodyne.py --method all  # Comprehensive: classical + robust + MCMC for small datasets"
+      ],
+      "enabled": true,
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Options: wasserstein (recommended), ellipsoidal, scenario - enhanced for small datasets",
+      "uncertainty_radius": "MODE_DEPENDENT: 0.05 for static, 0.08 for laminar_flow",
+      "_uncertainty_radius_note": "Increased uncertainty radius for small dataset robustness",
+      "n_scenarios": 25,
+      "_n_scenarios_note": "Increased bootstrap scenarios for small dataset robustness - enhanced from 15",
+      "regularization_alpha": "MODE_DEPENDENT: 0.02 for static, 0.04 for laminar_flow",
+      "_regularization_alpha_note": "Increased L2 regularization for small dataset stability",
+      "regularization_beta": 0.002,
+      "_regularization_beta_note": "Increased L1 sparsity parameter for small dataset robustness",
+      "jacobian_epsilon": 1e-8,
+      "_jacobian_epsilon_note": "Smaller finite difference step for enhanced small dataset precision",
+      "enable_caching": true,
+      "_enable_caching_note": "Smart caching provides performance gains and reproducibility for small datasets",
+      "preferred_solver": "CLARABEL",
+      "_preferred_solver_note": "Optimized CVXPY solver: CLARABEL > SCS > CVXOPT with small dataset settings",
+      "solver_settings": {
+        "_comment": "Enhanced solver configuration for small dataset robust optimization with tighter tolerances",
+        "_solver_hierarchy": "CLARABEL (default) -> SCS (fallback) -> CVXOPT (last resort) - all with small dataset precision",
+        "CLARABEL": {
+          "_description": "Modern interior-point solver, optimized for small dataset scientific data fitting",
+          "max_iter": 1000,
+          "tol_gap_abs": 1e-7,
+          "tol_gap_rel": 1e-7,
+          "tol_feas": 1e-8,
+          "tol_infeas_abs": 1e-7,
+          "tol_infeas_rel": 1e-7,
+          "tol_ktratio": 1e-6,
+          "reduced_tol_gap_abs": 1e-5,
+          "reduced_tol_gap_rel": 1e-5,
+          "reduced_tol_feas": 1e-5,
+          "reduced_tol_infeas_abs": 1e-5,
+          "reduced_tol_infeas_rel": 1e-5,
+          "reduced_tol_ktratio": 1e-4,
+          "equilibrate_enable": true,
+          "equilibrate_max_iter": 50,
+          "equilibrate_min_scaling": 1e-10,
+          "equilibrate_max_scaling": 1e10,
+          "direct_kkt_solver": true,
+          "direct_solve_method": "qdldl",
+          "static_regularization_enable": true,
+          "static_regularization_constant": 1e-10,
+          "static_regularization_proportional": 1e-8,
+          "dynamic_regularization_enable": true,
+          "dynamic_regularization_eps": 1e-15,
+          "dynamic_regularization_delta": 1e-9,
+          "iterative_refinement_enable": true,
+          "iterative_refinement_reltol": 1e-14,
+          "iterative_refinement_abstol": 1e-14,
+          "iterative_refinement_max_iter": 15,
+          "iterative_refinement_stop_ratio": 3.0,
+          "presolve_enable": true,
+          "verbose": false,
+          "_small_dataset_note": "Enhanced precision settings for small dataset robustness"
+        },
+        "SCS": {
+          "_description": "Splitting conic solver, enhanced fallback for small dataset fitting",
+          "max_iters": 20000,
+          "eps": 1e-6,
+          "alpha": 1.8,
+          "rho_x": 1e-8,
+          "scale": 2.0,
+          "normalize": true,
+          "adaptive_scale": true,
+          "use_indirect": false,
+          "acceleration_lookback": 30,
+          "acceleration_interval": 15,
+          "write_data_filename": null,
+          "log_csv_filename": null,
+          "time_limit_secs": 600,
+          "verbose": false,
+          "_small_dataset_note": "Enhanced convergence settings for small dataset precision"
+        },
+        "CVXOPT": {
+          "_description": "Python-based solver, stable fallback for difficult small dataset problems",
+          "maxiters": 400,
+          "abstol": 1e-7,
+          "reltol": 1e-6,
+          "feastol": 1e-7,
+          "refinement": 3,
+          "show_progress": false,
+          "verbose": false,
+          "_small_dataset_note": "Conservative settings for stable small dataset optimization"
+        },
+        "GUROBI": {
+          "_description": "Commercial solver optimized for small dataset scientific optimization",
+          "_availability": "Requires Gurobi license",
+          "Method": 2,
+          "CrossOver": -1,
+          "BarHomogeneous": 1,
+          "BarIterLimit": 2000,
+          "TimeLimit": "MODE_DEPENDENT: 600s for static, 1200s for laminar_flow",
+          "MIPGap": 1e-5,
+          "NumericFocus": 3,
+          "OutputFlag": 0,
+          "ScaleFlag": 3,
+          "BarConvTol": 1e-8,
+          "FeasibilityTol": 1e-7,
+          "OptimalityTol": 1e-7,
+          "MarkowitzTol": 0.05,
+          "PerturbValue": 0.0001,
+          "Aggregate": 1,
+          "Presolve": 2,
+          "PreSparsify": 1,
+          "_small_dataset_note": "Enhanced precision tolerances for small dataset optimization"
+        }
+      },
+      "method_options": {
+        "wasserstein": {
+          "uncertainty_radius": "MODE_DEPENDENT: 0.05 for static, 0.08 for laminar_flow",
+          "regularization_alpha": "MODE_DEPENDENT: 0.02 for static, 0.04 for laminar_flow"
+        },
+        "scenario": {
+          "n_scenarios": 25,
+          "bootstrap_method": "residual"
+        },
+        "ellipsoidal": {
+          "gamma": "MODE_DEPENDENT: 0.15 for static, 0.20 for laminar_flow",
+          "regularization_alpha": "MODE_DEPENDENT: 0.02 for static, 0.04 for laminar_flow"
+        }
+      }
+    },
+    "mcmc_sampling": {
+      "_comment": "Isolated MCMC Backend Architecture - Small dataset optimizations with conservative sampling",
+      "_backend_info": {
+        "architecture": "Completely isolated backends prevent PyTensor/JAX namespace conflicts",
+        "cpu_backend": "Pure PyMC implementation (homodyne/optimization/mcmc_cpu_backend.py)",
+        "gpu_backend": "Pure NumPyro/JAX implementation (homodyne/optimization/mcmc_gpu_backend.py)",
+        "backend_selection": "Environment variable HOMODYNE_GPU_INTENT or command-based selection",
+        "compatibility": "Identical API and configuration, separate execution environments",
+        "small_dataset_enhancements": "Conservative sampling and enhanced diagnostics for limited data"
+      },
+      "enabled": true,
+      "sampler": "NUTS",
+      "draws": "MODE_DEPENDENT: 8000 for static, 12000 for laminar_flow",
+      "_draws_note": "Increased sample count for small dataset precision - enhanced from 3000/4000",
+      "_small_dataset_draws": "Conservative sampling essential for reliable uncertainty quantification with limited data",
+      "tune": "MODE_DEPENDENT: 2500 for static, 4000 for laminar_flow",
+      "_tune_note": "Extended tuning for small dataset convergence - enhanced from 800/1200", 
+      "_small_dataset_tune": "Extensive tuning required for reliable convergence with limited statistical power",
+      "thin": "MODE_DEPENDENT: 1 for static, 2 for laminar_flow",
+      "_thin_note": "Minimal thinning - NUTS handles autocorrelation well",
+      "_small_dataset_thin": "Conservative thinning to preserve samples from limited data",
+      "chains": 4,
+      "cores": 4,
+      "target_accept": "MODE_DEPENDENT: 0.93 for static, 0.90 for laminar_flow",
+      "_target_accept_note": "Higher acceptance rate for small dataset precision - enhanced from 0.85/0.80",
+      "_small_dataset_accept": "Conservative acceptance rate essential for reliable small dataset sampling",
+      "max_treedepth": "MODE_DEPENDENT: 10 for static, 12 for laminar_flow",
+      "_max_treedepth_note": "Increased exploration for small dataset thoroughness - enhanced from 8/10",
+      "_small_dataset_treedepth": "Deep exploration required for thorough small dataset parameter space coverage",
+      "return_inferencedata": true,
+      "backend_specific": {
+        "cpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_cpu_backend.py",
+          "_description": "Isolated PyMC implementation with complete PyTensor isolation and small dataset optimizations",
+          "_command": "homodyne --method mcmc (or HOMODYNE_GPU_INTENT=false)",
+          "_performance": "Cross-platform compatibility, reliable convergence, no JAX conflicts, small dataset precision",
+          "_isolation": "Complete separation from JAX/NumPyro dependencies",
+          "init_strategy": "adapt_diag",
+          "compute_convergence_checks": true,
+          "progressbar": true,
+          "pytensor_config": "Automatically configured for CPU-only mode with small dataset precision"
+        },
+        "gpu_backend": {
+          "_implementation": "homodyne.optimization.mcmc_gpu_backend.py",
+          "_description": "Isolated NumPyro/JAX implementation with complete PyMC separation and small dataset optimizations",
+          "_command": "homodyne-gpu --method mcmc (or HOMODYNE_GPU_INTENT=true)",
+          "_performance": "GPU acceleration with intelligent CPU fallback, no PyTensor conflicts, small dataset precision",
+          "_platform_support": "Linux with CUDA preferred, auto-fallback to CPU on other platforms",
+          "_isolation": "Complete separation from PyMC/PyTensor dependencies",
+          "init_strategy": "init_to_value",
+          "num_warmup": "Uses 'tune' parameter value",
+          "num_samples": "Uses 'draws' parameter value",
+          "chain_method": "vectorized", 
+          "progress_bar": true,
+          "jit_compile": true,
+          "device_memory_fraction": 0.8,
+          "jax_config": "Automatically configured for optimal GPU usage with small dataset precision"
+        }
+      },
+      "performance_features": {
+        "auto_tune_performance": true,
+        "use_progressive_sampling": true,
+        "use_intelligent_subsampling": false,
+        "_subsampling_note": "Disabled for small datasets to preserve all data",
+        "enable_jit_compilation": true,
+        "memory_optimization": true,
+        "small_dataset_enhancements": {
+          "conservative_initialization": true,
+          "enhanced_diagnostics": true,
+          "thorough_convergence_checking": true
+        }
+      }
+    },
+    "scaling_parameters": {
+      "_comment": "Physical scaling: c2_fitted = c2_theory * contrast + offset - small dataset precision",
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "contrast": {
+        "min": "MODE_DEPENDENT: 1e-4 for static, 0.05 for laminar_flow",
+        "max": 0.5,
+        "prior_mu": "MODE_DEPENDENT: 0.05 for static, 0.3 for laminar_flow",
+        "prior_sigma": "MODE_DEPENDENT: 0.005 for static, 0.05 for laminar_flow",
+        "type": "TruncatedNormal",
+        "_small_dataset_note": "Tighter priors for small dataset precision"
+      },
+      "offset": {
+        "min": "MODE_DEPENDENT: 1.0 for static, 0.05 for laminar_flow",
+        "max": "MODE_DEPENDENT: 1.5 for static, 1.95 for laminar_flow",
+        "prior_mu": "MODE_DEPENDENT: 1.3 for static, 1.0 for laminar_flow",
+        "prior_sigma": "MODE_DEPENDENT: 0.005 for static, 0.1 for laminar_flow",
+        "type": "TruncatedNormal",
+        "_small_dataset_note": "Conservative priors for small dataset stability"
+      }
+    }
+  },
+  "parameter_space": {
+    "_comment": "CUSTOMIZE: Parameter bounds and priors for small datasets - conservative settings",
+    "_bounds_note": "Parameter bounds depend on analysis_mode - enhanced precision for small dataset analysis",
+    "bounds": [
+      {
+        "_common_parameter_1": "D0",
+        "name": "D0",
+        "min": 1.0,
+        "max": 1000000.0,
+        "_customize_note": "Adjust D0 bounds based on your expected diffusion rates - conservative for small datasets",
+        "type": "TruncatedNormal",
+        "prior_mu": 10000.0,
+        "prior_sigma": 500.0,
+        "unit": "Å²/s",
+        "_small_dataset_note": "Tighter prior for enhanced small dataset convergence"
+      },
+      {
+        "_common_parameter_2": "alpha",
+        "name": "alpha",
+        "min": -2.0,
+        "max": 2.0,
+        "_customize_note": "Power-law exponent - typically [-2, 2] range is sufficient",
+        "type": "Normal",
+        "prior_mu": -1.5,
+        "prior_sigma": 0.05,
+        "unit": "dimensionless",
+        "_small_dataset_note": "Tighter prior for enhanced small dataset precision"
+      },
+      {
+        "_common_parameter_3": "D_offset",
+        "name": "D_offset",
+        "min": -100,
+        "max": 100,
+        "_customize_note": "Baseline diffusion - adjust based on system",
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 5.0,
+        "unit": "Å²/s",
+        "_small_dataset_note": "Tighter prior for enhanced small dataset stability"
+      },
+      {
+        "_laminar_flow_parameter_4": "gamma_dot_t0 (laminar_flow mode only)",
+        "name": "gamma_dot_t0",
+        "min": 1e-6,
+        "max": 1.0,
+        "_customize_note": "Reference shear rate - adjust for your flow conditions",
+        "type": "TruncatedNormal",
+        "prior_mu": 0.001,
+        "prior_sigma": 0.005,
+        "unit": "s⁻¹",
+        "_small_dataset_note": "Conservative prior for small dataset laminar flow analysis"
+      },
+      {
+        "_laminar_flow_parameter_5": "beta (laminar_flow mode only)",
+        "name": "beta",
+        "min": -2.0,
+        "max": 2.0,
+        "_customize_note": "Shear rate power-law exponent",
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.05,
+        "unit": "dimensionless",
+        "_small_dataset_note": "Tighter prior for enhanced small dataset precision"
+      },
+      {
+        "_laminar_flow_parameter_6": "gamma_dot_t_offset (laminar_flow mode only)",
+        "name": "gamma_dot_t_offset",
+        "min": -0.01,
+        "max": 0.01,
+        "_customize_note": "Baseline shear rate offset",
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.0005,
+        "unit": "s⁻¹",
+        "_small_dataset_note": "Conservative prior for small dataset precision"
+      },
+      {
+        "_laminar_flow_parameter_7": "phi0 (laminar_flow mode only)",
+        "name": "phi0",
+        "min": -10.0,
+        "max": 10.0,
+        "_customize_note": "Angular offset - adjust based on geometry",
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 2.5,
+        "unit": "degrees",
+        "_small_dataset_note": "Conservative prior for enhanced small dataset convergence"
+      }
+    ]
+  },
+  "analysis_settings": {
+    "_comment": "CUSTOMIZE: Set analysis_mode and corresponding static_mode/static_submode for small datasets",
+    "static_mode": "MODE_DEPENDENT: true for static_isotropic/static_anisotropic, false for laminar_flow",
+    "_static_mode_note": "Controls whether to use static (3-param) or dynamic (7-param) model",
+    "static_submode": "MODE_DEPENDENT: isotropic/anisotropic for static modes, null for laminar_flow",
+    "_submode_note": "Isotropic disables angle filtering, anisotropic enables it",
+    "model_description": {
+      "static_isotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with isotropic symmetry - small dataset precision",
+      "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering - enhanced for small datasets",
+      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics - conservative small dataset settings"
+    }
+  },
+  "advanced_settings": {
+    "_comment": "Advanced computational and numerical settings optimized for small datasets",
+    "data_loading": {
+      "use_diagonal_correction": true,
+      "vectorized_diagonal_fix": true
+    },
+    "chi_squared_calculation": {
+      "method": "standard",
+      "_scaling_note": "Scaling optimization always enabled for proper chi-squared calculation",
+      "uncertainty_estimation_factor": 0.15,
+      "_small_dataset_factor": "Increased from 0.1 for enhanced small dataset uncertainty estimation",
+      "minimum_sigma": 1e-12,
+      "_small_dataset_sigma": "Enhanced precision for small dataset analysis",
+      "fast_computation": false,
+      "_small_dataset_computation": "Disabled for full precision small dataset calculations",
+      "uncertainty_calculation": {
+        "enable_uncertainty": true,
+        "report_uncertainty": true,
+        "minimum_angles_for_uncertainty": "MODE_DEPENDENT: 1 for static_isotropic, 2+ for others",
+        "enhanced_small_dataset_uncertainty": true
+      },
+      "validity_check": {
+        "check_positive_D0": true,
+        "check_positive_gamma_dot_t0": "MODE_DEPENDENT: false for static modes, true for laminar_flow",
+        "check_positive_time_dependent": true,
+        "check_parameter_bounds": true,
+        "enhanced_small_dataset_validation": true
+      }
+    },
+    "numerical_integration": {
+      "method": "simpson",
+      "relative_tolerance": 1e-10,
+      "absolute_tolerance": 1e-14,
+      "_small_dataset_note": "Enhanced precision tolerances for small dataset accuracy"
+    },
+    "optimization_controls": {
+      "convergence_tolerance": 1e-10,
+      "_small_dataset_tolerance": "Enhanced from 1e-8 for small dataset precision",
+      "max_function_evaluations": "MODE_DEPENDENT: 10000 for static, 25000 for laminar_flow",
+      "_max_function_evaluations_note": "Increased limits for thorough small dataset exploration",
+      "parameter_scaling": "auto",
+      "finite_difference_step": 1e-10,
+      "_small_dataset_step": "Enhanced precision for small dataset gradients"
+    }
+  },
+  "performance_settings": {
+    "_comment": "Performance optimization settings for small dataset analysis",
+    "caching": {
+      "enable_memory_cache": true,
+      "enable_disk_cache": true,
+      "cache_size_limit_mb": "MODE_DEPENDENT: 1000-1500 for static, 2000 for laminar_flow",
+      "_small_dataset_cache": "Enhanced caching for comprehensive small dataset analysis",
+      "auto_cleanup": false,
+      "_cleanup_note": "Disabled for small dataset result preservation"
+    },
+    "parallel_processing": {
+      "enable_multiprocessing": true,
+      "chunk_size": "auto",
+      "backend": "threading"
+    },
+    "memory_management": {
+      "low_memory_mode": false,
+      "garbage_collection_frequency": 5,
+      "_small_dataset_gc": "More frequent GC for memory efficiency",
+      "memory_monitoring": true,
+      "_monitoring_note": "Enabled for small dataset resource tracking"
+    },
+    "numba_optimization": {
+      "enable_numba": true,
+      "warmup_numba": true,
+      "parallel_numba": true,
+      "cache_numba": true,
+      "stability_enhancements": {
+        "enable_kernel_warmup": true,
+        "warmup_iterations": "MODE_DEPENDENT: 5 for static, 8 for laminar_flow",
+        "_small_dataset_warmup": "Enhanced warmup for small dataset precision",
+        "optimize_memory_layout": true,
+        "enable_nogil": true,
+        "environment_optimization": {
+          "auto_configure": true,
+          "max_threads": "MODE_DEPENDENT: 4-6 for static, 8 for laminar_flow",
+          "_small_dataset_threads": "Conservative threading for small dataset precision",
+          "gc_optimization": true
+        }
+      },
+      "performance_monitoring": {
+        "enable_profiling": true,
+        "_small_dataset_profiling": "Enabled for small dataset optimization analysis",
+        "stable_benchmarking": true,
+        "adaptive_benchmarking": true,
+        "performance_baselines": true,
+        "target_cv": 0.05,
+        "_small_dataset_cv": "Tighter CV for small dataset precision",
+        "memory_monitoring": true,
+        "smart_caching": {
+          "enabled": true,
+          "max_items": "MODE_DEPENDENT: 100-150 for static, 200 for laminar_flow",
+          "_small_dataset_items": "Enhanced caching for small dataset analysis",
+          "max_memory_mb": "MODE_DEPENDENT: 500-750 for static, 1000 for laminar_flow"
+        }
+      }
+    },
+    "noise_model": {
+      "use_simple_forward_model": false,
+      "_note": "False uses full forward model consistent with classical optimization - essential for small datasets",
+      "sigma_prior": 0.05,
+      "_small_dataset_sigma": "Tighter sigma prior for small dataset precision"
+    }
+  },
+  "validation_rules": {
+    "_comment": "Quality control and validation thresholds optimized for small datasets",
+    "data_quality": {
+      "check_data_range": true,
+      "correlation_minimum": 0.0,
+      "correlation_maximum": 10.0,
+      "check_nan_values": true,
+      "nan_handling": "raise",
+      "small_dataset_enhancements": {
+        "enhanced_validation": true,
+        "thorough_data_checks": true,
+        "preserve_all_valid_data": true
+      }
+    },
+    "parameter_validation": {
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true,
+      "small_dataset_validation": {
+        "enhanced_bounds_checking": true,
+        "strict_physics_enforcement": true,
+        "comprehensive_correlation_analysis": true
+      }
+    },
+    "fit_quality": {
+      "_comment": "Chi-squared quality thresholds - conservative for small dataset analysis",
+      "overall_chi_squared": {
+        "excellent_threshold": 3.0,
+        "acceptable_threshold": 6.0,
+        "warning_threshold": 12.0,
+        "critical_threshold": 25.0,
+        "_small_dataset_note": "Tighter thresholds for enhanced small dataset quality assessment"
+      },
+      "per_angle_chi_squared": {
+        "excellent_threshold": 3.0,
+        "acceptable_threshold": 6.0,
+        "warning_threshold": 12.0,
+        "outlier_threshold_multiplier": 2.0,
+        "_small_dataset_multiplier": "Conservative outlier detection for small datasets",
+        "max_outlier_fraction": 0.15,
+        "_small_dataset_fraction": "Lower outlier tolerance for small dataset quality",
+        "min_good_angles": "MODE_DEPENDENT: 1 for static_isotropic, 3-4 for others",
+        "_small_dataset_angles": "Enhanced angle requirements for small dataset reliability"
+      }
+    },
+    "mcmc_convergence": {
+      "_comment": "MCMC convergence diagnostics - enhanced precision for small datasets",
+      "rhat_thresholds": {
+        "excellent_threshold": 1.005,
+        "good_threshold": 1.02,
+        "acceptable_threshold": 1.05,
+        "critical_threshold": 1.10,
+        "_small_dataset_note": "Tighter R-hat thresholds for small dataset precision"
+      },
+      "ess_thresholds": {
+        "excellent_threshold": 800,
+        "good_threshold": 400,
+        "acceptable_threshold": 200,
+        "minimum_threshold": 100,
+        "_small_dataset_note": "Higher ESS requirements for small dataset reliability"
+      },
+      "divergence_thresholds": {
+        "max_divergences_fraction": 0.02,
+        "warning_divergences_fraction": 0.005,
+        "_small_dataset_note": "Lower divergence tolerance for small dataset quality"
+      }
+    },
+    "frame_range": {
+      "minimum_frames": 5000,
+      "_small_dataset_minimum": "Conservative minimum for small dataset analysis",
+      "maximum_frames": 15000,
+      "_small_dataset_maximum": "Typical small dataset upper limit",
+      "check_continuity": true
+    }
+  },
+  "workflow_integration": {
+    "_comment": "Analysis workflow and integration settings optimized for small datasets",
+    "analysis_workflow": {
+      "auto_generate_plots": true,
+      "plot_integration_enabled": true,
+      "plot_experimental_data_on_load": false,
+      "cache_plot_data": true,
+      "save_intermediate_plots": true,
+      "_small_dataset_plots": "Enhanced plotting for comprehensive small dataset analysis"
+    },
+    "mcmc_integration": {
+      "auto_save_traces": true,
+      "trace_file_format": "netcdf",
+      "include_warmup_in_traces": true,
+      "_small_dataset_warmup": "Include warmup for small dataset diagnostics",
+      "convergence_diagnostics_auto": true,
+      "plot_mcmc_results": true,
+      "enhanced_small_dataset_diagnostics": true
+    },
+    "data_management": {
+      "experimental_data_cache": true,
+      "theoretical_data_cache": true,
+      "cache_directory": "./cache",
+      "auto_cleanup_cache": false,
+      "_small_dataset_cleanup": "Disabled for result preservation",
+      "cache_retention_days": 90,
+      "_small_dataset_retention": "Extended retention for small dataset analysis"
+    },
+    "error_handling": {
+      "continue_on_plot_errors": true,
+      "log_plot_errors": true,
+      "fallback_plotting": true,
+      "validate_plot_data": true,
+      "enhanced_small_dataset_error_handling": true
+    }
+  },
+  "output_settings": {
+    "_comment": "Output and reporting configuration optimized for small datasets",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results in subdirectories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json, all_robust_methods_summary.json. MCMC results in mcmc/ subdirectory. Enhanced diagnostics for small datasets.",
+    "results_directory": "./homodyne_results_small_dataset",
+    "_small_dataset_directory": "Dedicated directory for small dataset results",
+    "file_formats": {
+      "results_format": "json",
+      "save_intermediate": true,
+      "_small_dataset_intermediate": "Full intermediate saving for small dataset analysis",
+      "compression": false,
+      "_small_dataset_compression": "Disabled for full precision preservation",
+      "precision": "float64"
+    },
+    "file_naming": {
+      "timestamp_format": "%Y%m%d_%H%M%S",
+      "include_config_name": true,
+      "include_chi_squared": true,
+      "small_dataset_identifier": true
+    },
+    "reporting": {
+      "generate_plots": true,
+      "plot_formats": ["png", "pdf"],
+      "detailed_summary": true,
+      "convergence_diagnostics": true,
+      "enhanced_small_dataset_reporting": true
+    },
+    "plotting": {
+      "_comment": "Comprehensive plotting configuration optimized for small dataset analysis",
+      "general": {
+        "create_plots": true,
+        "plot_format": "png",
+        "dpi": 300,
+        "figure_size": "MODE_DEPENDENT: [12,10] for static, [14,10] for laminar_flow",
+        "_figsize_note": "Larger figures for detailed small dataset visualization",
+        "style": "publication",
+        "save_plots": true,
+        "show_plots": false
+      },
+      "c2_heatmaps": {
+        "enabled": true,
+        "_method_specific_note": "Separate heatmaps generated for each optimization method with enhanced small dataset detail",
+        "layout": "single_row",
+        "include_experimental": true,
+        "include_theoretical": true,
+        "include_residuals": true,
+        "colormap": "viridis",
+        "colorbar_position": "right",
+        "title_prefix": "MODE_DEPENDENT: Small Dataset C2 Correlation Function ([analysis_mode])",
+        "figsize": "MODE_DEPENDENT: [14,5] for static_isotropic, [17,6] for static_anisotropic, [20,7] for laminar_flow",
+        "_small_dataset_figsize": "Enhanced figure sizes for detailed small dataset visualization"
+      },
+      "mcmc_plots": {
+        "enabled": true,
+        "corner_plots": {
+          "enabled": true,
+          "show_titles": true,
+          "quantiles": [0.025, 0.16, 0.5, 0.84, 0.975],
+          "_small_dataset_quantiles": "Extended quantiles for small dataset uncertainty visualization",
+          "show_truths": false,
+          "use_arviz": true,
+          "figsize": "MODE_DEPENDENT: [11,11] for static, [17,17] for laminar_flow"
+        },
+        "trace_plots": {
+          "enabled": true,
+          "show_chains": true,
+          "show_warmup": true,
+          "_small_dataset_warmup": "Include warmup for small dataset diagnostics",
+          "compact_layout": false,
+          "_small_dataset_layout": "Non-compact layout for detailed small dataset analysis",
+          "figsize": "MODE_DEPENDENT: [12,8] for static, [14,16] for laminar_flow"
+        },
+        "convergence_diagnostics": {
+          "enabled": true,
+          "show_rhat": true,
+          "show_ess": true,
+          "show_mcse": true,
+          "show_energy": true,
+          "rhat_threshold": 1.05,
+          "ess_threshold": 200,
+          "_small_dataset_thresholds": "Enhanced thresholds for small dataset quality"
+        }
+      },
+      "diagnostic_plots": {
+        "enabled": true,
+        "chi_squared_summary": true,
+        "parameter_correlations": true,
+        "residual_analysis": true,
+        "convergence_history": true,
+        "small_dataset_enhanced_diagnostics": true
+      },
+      "output": {
+        "base_directory": "./plots_small_dataset",
+        "_small_dataset_directory": "Dedicated plotting directory for small datasets",
+        "subdirectories": {
+          "c2_heatmaps": "c2_correlation",
+          "parameter_plots": "parameters",
+          "mcmc_plots": "mcmc_analysis",
+          "diagnostics": "diagnostics"
+        },
+        "filename_template": "small_dataset_{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Enhanced naming for small dataset identification and traceability",
+        "include_timestamp": true,
+        "overwrite_existing": false
+      }
+    },
+    "logging": {
+      "log_level": "DEBUG",
+      "_small_dataset_log_level": "Enhanced logging for small dataset analysis",
+      "log_to_file": true,
+      "log_to_console": true,
+      "log_filename": "MODE_DEPENDENT: homodyne_small_dataset_[analysis_mode].log",
+      "rotation": {
+        "max_bytes": 20971520,
+        "_small_dataset_size": "Larger log files for comprehensive small dataset analysis",
+        "backup_count": 5,
+        "_small_dataset_backups": "More backup files for small dataset analysis preservation"
+      }
+    }
+  },
+  "_customization_guide": {
+    "_step_1": "Set analysis_mode in metadata section to: static_isotropic, static_anisotropic, or laminar_flow",
+    "_step_2": "Update experimental_data section with your small dataset file paths and sample name",
+    "_step_3": "Customize analyzer_parameters: dt (time step), q (wavevector), frame range (~10K), gap size",
+    "_step_4": "Adjust initial_parameters values based on your expected parameter ranges for small datasets",
+    "_step_5": "Modify parameter_space bounds to match your physical system constraints with conservative small dataset settings",
+    "_step_6": "Update analysis_settings: set static_mode and static_submode consistently with analysis_mode",
+    "_step_7": "Adjust performance_settings based on your computational resources - enhanced for small datasets",
+    "_step_8": "Customize validation_rules thresholds based on small dataset quality expectations - enhanced precision",
+    "_step_9": "Update output_settings paths and logging configuration with small dataset identifiers",
+    "_mode_dependent_values": "Search for 'MODE_DEPENDENT' throughout config to see values that need mode-specific customization",
+    "_small_dataset_specific": "Look for '_small_dataset_note' annotations for small dataset optimization explanations"
+  },
+  "_small_dataset_enhancements": {
+    "_precision_improvements": "Enhanced tolerances: 1e-8 to 1e-10 for convergence, 1e-7 to 1e-8 for solver settings",
+    "_sampling_enhancements": "Increased MCMC draws: 8000-12000 vs 3000-4000, tune: 2500-4000 vs 800-1200",
+    "_validation_improvements": "Tighter chi-squared thresholds, enhanced R-hat requirements, comprehensive diagnostics",
+    "_caching_strategy": "Conservative caching for reproducibility, disabled auto-cleanup, extended retention",
+    "_solver_optimizations": "Enhanced solver tolerances, increased iterations, conservative trust region settings",
+    "_output_enhancements": "Full precision output, comprehensive plotting, enhanced logging, dedicated directories"
+  }
+}
