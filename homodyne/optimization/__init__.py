@@ -16,15 +16,17 @@ for reliable and comparable results across different optimization approaches.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .classical import ClassicalOptimizer as _ClassicalOptimizer
-    from .mcmc import MCMCSampler as _MCMCSampler
+    from homodyne.optimization.classical import (
+        ClassicalOptimizer as _ClassicalOptimizer,
+    )
+    from homodyne.optimization.mcmc import MCMCSampler as _MCMCSampler
 
 # Track available exports
 _available_exports: list[str] = []
 
 # Always try to import ClassicalOptimizer
 try:
-    from .classical import ClassicalOptimizer
+    from homodyne.optimization.classical import ClassicalOptimizer
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:
@@ -35,7 +37,7 @@ except ImportError as e:
 
 # Conditionally import MCMC components
 try:
-    from .mcmc import MCMCSampler, create_mcmc_sampler
+    from homodyne.optimization.mcmc import MCMCSampler, create_mcmc_sampler
 
     _available_exports.extend(["MCMCSampler", "create_mcmc_sampler"])
 except ImportError as e:

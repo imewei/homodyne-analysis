@@ -17,6 +17,19 @@ import numpy as np
 import pytest
 
 # Import specific fixtures needed by tests - avoid star import to prevent circular imports
+from homodyne.tests.fixtures import (  # noqa: F401
+    create_invalid_config_file,
+    create_minimal_config_file,
+    dummy_analysis_results,
+    dummy_config,
+    dummy_correlation_data,
+    dummy_hdf5_data,
+    dummy_phi_angles,
+    dummy_theoretical_data,
+    dummy_time_arrays,
+    mock_optimization_result,
+    test_output_directory,
+)
 
 # CRITICAL: Set threading environment variables BEFORE any imports that might use Numba
 # This must happen before importing pytest, numpy, matplotlib, etc.
@@ -416,10 +429,6 @@ def test_data_dir():
 def sample_config_path():
     """Path to the sample configuration file."""
     return Path(__file__).parent.parent.parent / "homodyne_config.json"
-
-
-# Import all fixtures from fixtures module to make them available
-from homodyne.tests.fixtures import *  # noqa: F403, E402
 
 
 def pytest_report_header(config):

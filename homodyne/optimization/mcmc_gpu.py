@@ -569,7 +569,7 @@ class MCMCSampler:
         )
 
         # Get initialization values
-        init_params = self._prepare_initialization_values(
+        self._prepare_initialization_values(
             is_static_mode, effective_param_count, **kwargs
         )
 
@@ -928,7 +928,9 @@ class MCMCSampler:
             if len(init_params) > 1:
                 alpha = init_params[1]
                 if not (-3.0 <= alpha <= 3.0):
-                    logger.warning(f"alpha should be in [-3, 3], got {alpha} (adjust config bounds if needed)")
+                    logger.warning(
+                        f"alpha should be in [-3, 3], got {alpha} (adjust config bounds if needed)"
+                    )
                     return False
 
             # Additional constraint checks for laminar flow parameters

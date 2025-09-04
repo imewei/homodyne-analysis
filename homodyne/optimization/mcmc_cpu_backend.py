@@ -75,7 +75,7 @@ def run_cpu_mcmc_analysis(
 
     try:
         # Import mcmc.py only when needed to avoid import conflicts
-        from .mcmc import create_mcmc_sampler
+        from homodyne.optimization.mcmc import create_mcmc_sampler
 
         logger.info("✅ PyMC CPU dependencies loaded successfully")
 
@@ -235,11 +235,11 @@ def test_cpu_backend() -> bool:
         with pm.Model() as test_model:
             # Simple normal distribution
             mu = pm.Normal("mu", mu=0, sigma=1)
-            obs = pm.Normal("obs", mu=mu, sigma=1, observed=[1.0, 2.0, 3.0])
+            pm.Normal("obs", mu=mu, sigma=1, observed=[1.0, 2.0, 3.0])
 
         # Test sampling with minimal draws
         with test_model:
-            trace = pm.sample(
+            pm.sample(
                 draws=10,
                 tune=10,
                 chains=1,

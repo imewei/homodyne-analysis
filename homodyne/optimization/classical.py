@@ -43,7 +43,7 @@ except ImportError:
 
 # Import robust optimization with graceful degradation
 try:
-    from .robust import (
+    from homodyne.optimization.robust import (
         RobustHomodyneOptimizer,  # type: ignore
         create_robust_optimizer,
     )
@@ -647,10 +647,16 @@ class ClassicalOptimizer:
 
             # Default Gurobi options with iterative settings (matches config template defaults)
             # Mode-dependent defaults: higher iterations for complex parameter spaces
-            is_static = self.core.is_static_mode() if hasattr(self.core, 'is_static_mode') else True
+            is_static = (
+                self.core.is_static_mode()
+                if hasattr(self.core, "is_static_mode")
+                else True
+            )
             default_max_iter = 500 if is_static else 1500  # Static: 500, Laminar: 1500
-            default_time_limit = 120 if is_static else 600  # Static: 2min, Laminar: 10min
-            
+            default_time_limit = (
+                120 if is_static else 600
+            )  # Static: 2min, Laminar: 10min
+
             gurobi_options = {
                 "max_iterations": default_max_iter,  # MODE_DEPENDENT: matches config template
                 "tolerance": 1e-6,

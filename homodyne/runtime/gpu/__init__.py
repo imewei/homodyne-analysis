@@ -8,6 +8,6 @@ This module contains GPU acceleration runtime components including:
 - optimizer.py: GPU optimization and benchmarking utilities
 """
 
-from .optimizer import GPUOptimizer
+from homodyne.runtime.gpu.optimizer import GPUOptimizer
 
 __all__ = ["GPUOptimizer"]

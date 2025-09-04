@@ -152,7 +152,7 @@ def run_gpu_mcmc_analysis(
 
     try:
         # Import mcmc_gpu.py only when needed
-        from .mcmc_gpu import create_gpu_mcmc_sampler
+        from homodyne.optimization.mcmc_gpu import create_gpu_mcmc_sampler
 
         logger.info("✅ NumPyro/JAX dependencies loaded successfully")
 

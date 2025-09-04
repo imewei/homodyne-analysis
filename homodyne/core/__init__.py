@@ -7,8 +7,8 @@ This subpackage contains the fundamental building blocks:
 - Logging utilities
 """
 
-from .config import ConfigManager, configure_logging
-from .kernels import (
+from homodyne.core.config import ConfigManager, configure_logging
+from homodyne.core.kernels import (
     calculate_diffusion_coefficient_numba,
     calculate_shear_rate_numba,
     compute_g1_correlation_numba,
