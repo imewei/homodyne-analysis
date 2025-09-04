@@ -79,7 +79,7 @@ class TestMCMCInitialParameterHandling:
         mock_analyzer.best_params_classical = classical_best_params
 
         # Mock the isolated MCMC backend function
-        with patch("homodyne.run_homodyne.mcmc_function") as mock_mcmc_function:
+        with patch("homodyne.optimization.mcmc_cpu_backend.run_cpu_mcmc_analysis") as mock_mcmc_function:
             # Mock the direct return value (no intermediate sampler object)
             mock_mcmc_function.return_value = {
                 "posterior_means": {
@@ -157,7 +157,7 @@ class TestMCMCInitialParameterHandling:
         mock_analyzer.best_params_classical = None
 
         # Mock the isolated MCMC backend function
-        with patch("homodyne.run_homodyne.mcmc_function") as mock_mcmc_function:
+        with patch("homodyne.optimization.mcmc_cpu_backend.run_cpu_mcmc_analysis") as mock_mcmc_function:
             # Mock the direct return value (no intermediate sampler object)
             mock_mcmc_function.return_value = {
                 "posterior_means": {
