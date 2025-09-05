@@ -1333,7 +1333,7 @@ class HomodyneAnalysisCore:
                     "chi_squared_calculation", {}
                 )
             chi_config = self._cached_chi_config
-            uncertainty_factor = chi_config.get("uncertainty_estimation_factor", 0.1)
+            # uncertainty_estimation_factor removed - use pure standard deviation
             min_sigma = chi_config.get("minimum_sigma", 1e-10)
 
             # Calculate parameters for DOF calculation
@@ -1413,11 +1413,8 @@ class HomodyneAnalysisCore:
             else:
                 optimization_indices = list(range(len(phi_angles)))
 
-            optimization_chi2_angles = []
-
             # Calculate chi-squared for all angles (for detailed results)
             n_angles = len(phi_angles)
-            angle_chi2 = np.zeros(n_angles)
             angle_chi2_reduced = np.zeros(n_angles)
             angle_data_points = []
             scaling_solutions = []
@@ -1452,9 +1449,9 @@ class HomodyneAnalysisCore:
             angle_data_points = [n_data_per_angle] * n_angles
 
             # Phase 3: Vectorized batch processing with Numba optimization
-            # Pre-compute variance estimates for all angles (vectorized
-            # optimization)
-            exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
+            # Pre-compute variance estimates for all angles (vectorized optimization)
+            # Use pure standard deviation without any scaling factors
+            exp_std_batch = np.std(exp_flat, axis=1)
             sigma_batch = np.maximum(exp_std_batch, min_sigma)
 
             # Batch solve least squares for all angles using Numba with
@@ -1521,62 +1518,167 @@ class HomodyneAnalysisCore:
                 else:
                     raise
 
-            # Apply sigma normalization and DOF calculation (vectorized)
-            sigma_squared_batch = sigma_batch**2
-            dof_batch = np.maximum(n_data_per_angle - n_params, 1)
+            # ========================================================================
+            # PROPER CHI-SQUARED CALCULATION (Following Statistical Definition)
+            # ========================================================================
+            #
+            # From statistical definition:
+            # χ² = Σ((I_model,i - I_experiment,i)/σᵢ)²
+            # χ²_reduced = χ² / (N - K) where N = data points, K = parameters
+            #
+            # The chi2_raw_batch already contains the raw residual sums: Σ(residuals²)
+            # We need to normalize by σ² to get the proper χ² values
 
-            angle_chi2[:] = chi2_raw_batch / sigma_squared_batch
-            angle_chi2_reduced[:] = angle_chi2 / dof_batch
+            # Calculate residuals for diagnostic logging
+            residuals_batch = []
+            for i in range(n_angles):
+                theory_vec = theory_flat[i]
+                exp_vec = exp_flat[i]
+                contrast = contrast_batch[i]
+                offset = offset_batch[i]
+                fitted_vec = contrast * theory_vec + offset
+                residuals = exp_vec - fitted_vec
+                residuals_batch.append(residuals)
+
+            # Calculate proper statistical chi-squared per angle
+            sigma_squared_batch = sigma_batch**2  # σ² (uncertainty squared)
+            dof_batch = np.maximum(n_data_per_angle - n_params, 1)  # N - K per angle
+
+            # Proper chi-squared: χ² = Σ(residuals²/σ²)
+            angle_chi2_proper = chi2_raw_batch / sigma_squared_batch
+
+            # Proper reduced chi-squared: χ²_reduced = χ² / DoF
+            angle_chi2_reduced = angle_chi2_proper / dof_batch
 
             # Store scaling solutions for compatibility
             scaling_solutions = [
                 [contrast_batch[i], offset_batch[i]] for i in range(n_angles)
             ]
 
-            # Collect chi2 values for optimization angles (for averaging)
+            # Collect values for optimization angles (for averaging)
             if filter_angles_for_optimization:
-                optimization_chi2_angles = [
+                optimization_chi2_proper = [
+                    angle_chi2_proper[i] for i in optimization_indices
+                ]
+                optimization_chi2_reduced = [
                     angle_chi2_reduced[i] for i in optimization_indices
                 ]
             else:
-                optimization_chi2_angles = angle_chi2_reduced.tolist()
+                optimization_chi2_proper = angle_chi2_proper.tolist()
+                optimization_chi2_reduced = angle_chi2_reduced.tolist()
 
-            # Calculate average reduced chi-squared from optimization angles
-            # with uncertainty
-            if optimization_chi2_angles:
-                reduced_chi2 = np.mean(optimization_chi2_angles)
-                n_optimization_angles = len(optimization_chi2_angles)
+            # Backward compatibility arrays (deprecated)
+            angle_chi2_normalized = angle_chi2_proper  # For old code compatibility
 
-                # Calculate uncertainty in reduced chi-squared
+            # Calculate totals for proper statistical chi-squared
+            if optimization_chi2_proper:
+                n_optimization_angles = len(optimization_chi2_proper)
+
+                # Calculate total proper chi-squared: Σ(χ²) where χ² = Σ(residuals²/σ²)
+                total_chi2 = sum(optimization_chi2_proper)
+
+                # Calculate total degrees of freedom: Σ(N - K)
+                total_dof = (
+                    sum(angle_data_points[i] for i in optimization_indices)
+                    if filter_angles_for_optimization
+                    else sum(angle_data_points)
+                ) - len(parameters)
+                total_dof = max(1, total_dof)
+
+                # Calculate proper reduced chi-squared: χ²_reduced = χ² / DoF
+                reduced_chi2_true = total_chi2 / total_dof
+
+                # For backward compatibility, keep the old "normalized" name pointing to proper chi²
+                reduced_chi2 = total_chi2 / total_dof  # Same as reduced_chi2_true now
+
+                # Calculate sigma and residual statistics for diagnostics
+                all_residuals = np.concatenate(
+                    [
+                        residuals_batch[i]
+                        for i in (
+                            optimization_indices
+                            if filter_angles_for_optimization
+                            else range(len(residuals_batch))
+                        )
+                    ]
+                )
+                optimization_sigma = (
+                    sigma_batch[optimization_indices]
+                    if filter_angles_for_optimization
+                    else sigma_batch
+                )
+
+                # Logging to diagnose chi-squared calculation issues
+                logger.info("CHI² CALCULATION:")
+                logger.info(f"  total_chi2 (proper) = {total_chi2:.6e}")
+                logger.info(f"  total_dof = {total_dof}")
+                logger.info(f"  reduced_chi2_true = {reduced_chi2_true:.6e}")
+                logger.info(
+                    f"  sigma min/mean/max = {np.min(optimization_sigma):.6e} / {np.mean(optimization_sigma):.6e} / {np.max(optimization_sigma):.6e}"
+                )
+                logger.info(
+                    f"  residuals min/mean/max/sum = {np.min(all_residuals):.6e} / {np.mean(all_residuals):.6e} / {np.max(all_residuals):.6e} / {np.sum(all_residuals):.6e}"
+                )
+                logger.debug(
+                    f"  Per angle chi²: {[f'{x:.3e}' for x in optimization_chi2_proper]}"
+                )
+                logger.debug(
+                    f"  Per angle DoF: {[angle_data_points[i] - len(parameters) for i in (optimization_indices if filter_angles_for_optimization else range(len(angle_data_points)))]}"
+                )
+
+                # Calculate uncertainty in reduced chi-squared (for both versions)
                 if n_optimization_angles > 1:
-                    # Standard error of the mean
-                    reduced_chi2_std = np.std(optimization_chi2_angles, ddof=1)
+                    # Standard error of the mean for normalized version
+                    reduced_chi2_std = np.std(angle_chi2_normalized, ddof=1)
                     reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(
+                        n_optimization_angles
+                    )
+                    # Standard error of the mean for true version
+                    reduced_chi2_true_std = np.std(optimization_chi2_reduced, ddof=1)
+                    reduced_chi2_true_uncertainty = reduced_chi2_true_std / np.sqrt(
                         n_optimization_angles
                     )
                 else:
                     # Single angle case
                     reduced_chi2_std = 0.0
                     reduced_chi2_uncertainty = 0.0
+                    reduced_chi2_true_std = 0.0
+                    reduced_chi2_true_uncertainty = 0.0
 
                 logger.debug(
-                    f"Using average of {
-                        n_optimization_angles
-                    } optimization angles: χ²_red = {reduced_chi2:.6e} ± {
-                        reduced_chi2_uncertainty:.6e}"
+                    f"Using average of {n_optimization_angles} optimization angles: "
+                    f"True χ²_red = {reduced_chi2_true:.6e} ± {reduced_chi2_true_uncertainty:.6e}, "
+                    f"Normalized χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e} "
+                    f"(pure statistical calculation)"
                 )
             else:
                 # Fallback if no optimization angles (shouldn't happen)
+                # Use clean variable names from new calculation
                 reduced_chi2 = (
-                    np.mean(angle_chi2_reduced) if angle_chi2_reduced else 1e6
+                    np.mean(angle_chi2_normalized)
+                    if len(angle_chi2_normalized) > 0
+                    else 1e6
+                )
+                reduced_chi2_true = (
+                    np.mean(angle_chi2_reduced) if len(angle_chi2_reduced) > 0 else 1e6
                 )
                 reduced_chi2_std = (
+                    np.std(angle_chi2_normalized, ddof=1)
+                    if len(angle_chi2_normalized) > 1
+                    else 0.0
+                )
+                reduced_chi2_true_std = (
                     np.std(angle_chi2_reduced, ddof=1)
                     if len(angle_chi2_reduced) > 1
                     else 0.0
                 )
                 reduced_chi2_uncertainty = (
-                    reduced_chi2_std / np.sqrt(len(angle_chi2_reduced))
+                    reduced_chi2_std / np.sqrt(len(angle_chi2_normalized))
+                    if len(angle_chi2_normalized) > 1
+                    else 0.0
+                )
+                reduced_chi2_true_uncertainty = (
+                    reduced_chi2_true_std / np.sqrt(len(angle_chi2_reduced))
                     if len(angle_chi2_reduced) > 1
                     else 0.0
                 )
@@ -1591,51 +1693,53 @@ class HomodyneAnalysisCore:
             )
             if OPTIMIZATION_COUNTER % log_freq == 0:
                 logger.info(
-                    f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {
-                        reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
+                    f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: "
+                    f"True χ²_red = {reduced_chi2_true:.6e} ± {reduced_chi2_true_uncertainty:.6e}"
                 )
-                # Log reduced chi-square per angle
-                for i, (phi, chi2_red_angle) in enumerate(
+                # Log reduced chi-square per angle (true values)
+                for i, (phi, chi2_red_angle_true) in enumerate(
                     zip(phi_angles, angle_chi2_reduced, strict=False)
                 ):
                     logger.info(
-                        f"  Angle {i + 1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
+                        f"  Angle {i + 1} (φ={phi:.1f}°): True χ²_red = {chi2_red_angle_true:.6e}"
                     )
 
             if return_components:
-                # Calculate total chi2 for compatibility (sum of optimization
-                # angles)
-                total_chi2_compat = (
-                    sum(angle_chi2[i] for i in optimization_indices)
-                    if filter_angles_for_optimization
-                    else sum(angle_chi2)
-                )
-
-                # Calculate degrees of freedom
-                total_data_points = (
-                    sum(angle_data_points[i] for i in optimization_indices)
-                    if filter_angles_for_optimization
-                    else sum(angle_data_points)
-                )
-                num_parameters = len(parameters)
-                degrees_of_freedom = max(1, total_data_points - num_parameters)
+                # Use the properly calculated totals from above
+                if optimization_chi2_proper:
+                    total_chi2_compat = (
+                        total_chi2  # This is the proper statistical chi²
+                    )
+                    degrees_of_freedom = total_dof
+                else:
+                    # Fallback case (shouldn't happen normally)
+                    # Calculate proper chi² even in fallback
+                    total_chi2_compat = sum(angle_chi2_proper)
+                    total_data_points = sum(angle_data_points)
+                    degrees_of_freedom = max(1, total_data_points - len(parameters))
 
                 return {
                     "chi_squared": total_chi2_compat,
                     "reduced_chi_squared": float(reduced_chi2),
                     "reduced_chi_squared_uncertainty": float(reduced_chi2_uncertainty),
                     "reduced_chi_squared_std": float(reduced_chi2_std),
-                    "n_optimization_angles": len(optimization_chi2_angles),
+                    "reduced_chi_squared_true": float(reduced_chi2_true),
+                    "reduced_chi_squared_true_uncertainty": float(
+                        reduced_chi2_true_uncertainty
+                    ),
+                    "reduced_chi_squared_true_std": float(reduced_chi2_true_std),
+                    "n_optimization_angles": len(optimization_chi2_proper),
                     "degrees_of_freedom": degrees_of_freedom,
-                    "angle_chi_squared": angle_chi2,
+                    "angle_chi_squared": angle_chi2_proper,
                     "angle_chi_squared_reduced": angle_chi2_reduced,
+                    "angle_chi_squared_true_reduced": angle_chi2_reduced,
                     "angle_data_points": angle_data_points,
                     "phi_angles": phi_angles.tolist(),
                     "scaling_solutions": scaling_solutions,
                     "valid": True,
                 }
             else:
-                return float(reduced_chi2)
+                return float(reduced_chi2_true)
 
         except Exception as e:
             logger.warning(f"Chi-squared calculation failed: {e}")

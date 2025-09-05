@@ -552,7 +552,6 @@
     "chi_squared_calculation": {
       "method": "standard",
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared calculation",
-      "uncertainty_estimation_factor": 0.15,
       "_small_dataset_factor": "Increased from 0.1 for enhanced small dataset uncertainty estimation",
       "minimum_sigma": 1e-12,
       "_small_dataset_sigma": "Enhanced precision for small dataset analysis",

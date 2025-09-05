@@ -1741,9 +1741,20 @@ def _save_individual_method_results(
                     method_params, phi_angles
                 )
 
+                # Calculate detailed chi-squared analysis using core.py
+                chi2_result = analyzer.calculate_chi_squared_optimized(
+                    method_params, phi_angles, c2_exp, return_components=True
+                )
+
+                # Extract chi-squared values
+                chi_squared = chi2_result.get(
+                    "chi_squared", np.sum((c2_exp - c2_fitted) ** 2)
+                )
+                reduced_chi2_normalized = chi2_result.get("reduced_chi_squared", 1.0)
+                reduced_chi2_true = chi2_result.get("reduced_chi_squared_true", 1.0)
+
                 # Calculate residuals and statistics
                 residuals = c2_exp - c2_fitted
-                chi_squared = np.sum(residuals**2)
                 rms_error = np.sqrt(np.mean(residuals**2))
                 max_abs_error = np.max(np.abs(residuals))
 
@@ -1755,6 +1766,8 @@ def _save_individual_method_results(
             except (TypeError, AttributeError):
                 # Handle mock objects in tests
                 chi_squared = 1.0
+                reduced_chi2_normalized = 1.0
+                reduced_chi2_true = 1.0
                 rms_error = 0.1
                 max_abs_error = 0.1
                 uncertainties = np.full(len(method_params), 0.1)
@@ -1778,9 +1791,8 @@ def _save_individual_method_results(
                 },
                 "goodness_of_fit": {
                     "chi_squared": float(chi_squared),
-                    "chi_squared_per_dof": float(
-                        chi_squared / (c2_exp.size - len(method_params))
-                    ),
+                    "chi_squared_per_dof": float(reduced_chi2_true),
+                    "chi_squared_normalized": float(reduced_chi2_normalized),
                     "rms_error": float(rms_error),
                     "max_abs_error": float(max_abs_error),
                 },
@@ -2021,9 +2033,20 @@ def _save_individual_robust_method_results(
                     method_params, phi_angles
                 )
 
+                # Calculate detailed chi-squared analysis using core.py
+                chi2_result = analyzer.calculate_chi_squared_optimized(
+                    method_params, phi_angles, c2_exp, return_components=True
+                )
+
+                # Extract chi-squared values
+                chi_squared = chi2_result.get(
+                    "chi_squared", np.sum((c2_exp - c2_fitted) ** 2)
+                )
+                reduced_chi2_normalized = chi2_result.get("reduced_chi_squared", 1.0)
+                reduced_chi2_true = chi2_result.get("reduced_chi_squared_true", 1.0)
+
                 # Calculate residuals and statistics
                 residuals = c2_exp - c2_fitted
-                chi_squared = np.sum(residuals**2)
                 rms_error = np.sqrt(np.mean(residuals**2))
                 max_abs_error = np.max(np.abs(residuals))
 
@@ -2035,6 +2058,8 @@ def _save_individual_robust_method_results(
             except (TypeError, AttributeError):
                 # Handle mock objects in tests
                 chi_squared = 1.0
+                reduced_chi2_normalized = 1.0
+                reduced_chi2_true = 1.0
                 rms_error = 0.1
                 max_abs_error = 0.1
                 uncertainties = np.full(len(method_params), 0.1)
@@ -2062,9 +2087,8 @@ def _save_individual_robust_method_results(
                 },
                 "goodness_of_fit": {
                     "chi_squared": float(chi_squared),
-                    "chi_squared_per_dof": float(
-                        chi_squared / (c2_exp.size - len(method_params))
-                    ),
+                    "chi_squared_per_dof": float(reduced_chi2_true),
+                    "chi_squared_normalized": float(reduced_chi2_normalized),
                     "rms_error": float(rms_error),
                     "max_abs_error": float(max_abs_error),
                 },
@@ -2680,13 +2704,57 @@ def _generate_mcmc_plots(
         try:
             import json
 
-            # Calculate residuals for data saving (using fitted data)
-            residuals = c2_exp - c2_fitted
-
-            # Get parameter names and create parameter dictionary
+            # Extract best parameters from MCMC posterior means
+            posterior_means = mcmc_results.get("posterior_means", {})
             param_names = config.get("initial_parameters", {}).get(
                 "parameter_names", []
             )
+
+            if posterior_means and param_names:
+                best_params = [
+                    posterior_means.get(name, np.nan) for name in param_names
+                ]
+                logger.info(
+                    f"✓ Extracted MCMC posterior means: {dict(zip(param_names, best_params, strict=False))}"
+                )
+            else:
+                logger.warning(
+                    "No posterior means found in MCMC results, using NaN values"
+                )
+                best_params = [np.nan] * len(param_names) if param_names else []
+
+            # Calculate detailed chi-squared analysis using core.py
+            try:
+                chi2_result = analyzer.calculate_chi_squared_optimized(
+                    best_params, phi_angles, c2_exp, return_components=True
+                )
+
+                # Extract chi-squared values
+                chi_squared_detailed = chi2_result.get("chi_squared", np.nan)
+                reduced_chi2_normalized = chi2_result.get("reduced_chi_squared", np.nan)
+                reduced_chi2_true = chi2_result.get("reduced_chi_squared_true", np.nan)
+            except Exception as e:
+                logger.warning(
+                    f"Could not calculate detailed chi-squared for MCMC: {e}"
+                )
+                chi_squared_detailed = np.nan
+                reduced_chi2_normalized = np.nan
+                reduced_chi2_true = np.nan
+
+            # Calculate fitted C2 data using MCMC posterior means
+            try:
+                c2_fitted = analyzer.calculate_c2_single_angle_optimized(
+                    best_params, phi_angles
+                )
+                logger.info("✓ Calculated C2 fitted data using MCMC posterior means")
+            except Exception as e:
+                logger.warning(f"Could not calculate C2 fitted data for MCMC: {e}")
+                c2_fitted = np.ones_like(c2_exp) * np.nan
+
+            # Calculate residuals for data saving (using fitted data)
+            residuals = c2_exp - c2_fitted
+
+            # Create parameter dictionary from extracted values
             param_dict = dict(zip(param_names, best_params, strict=False))
 
             # Get diagnostics for quality assessment
@@ -2706,8 +2774,37 @@ def _generate_mcmc_plots(
 
             # Create standardized parameter info (matching classical/robust format)
             method_info = {
-                "method": "MCMC_NUTS",
-                "parameters": param_dict,
+                "method_name": "MCMC_NUTS",
+                "parameters": {
+                    name: {
+                        "value": float(param_dict.get(name, np.nan)),
+                        "uncertainty": float(
+                            np.nan
+                        ),  # Will be updated below with MCMC uncertainties
+                        "unit": analyzer.config.get("initial_parameters", {})
+                        .get("parameter_units", {})
+                        .get(name, "dimensionless"),
+                    }
+                    for name in param_names
+                },
+                "goodness_of_fit": {
+                    "chi_squared": float(chi_squared_detailed),
+                    "chi_squared_per_dof": float(reduced_chi2_true),
+                    "chi_squared_normalized": float(reduced_chi2_normalized),
+                    "rms_error": float(np.sqrt(np.mean(residuals**2))),
+                    "max_abs_error": float(np.max(np.abs(residuals))),
+                },
+                "convergence_info": {
+                    "success": diagnostics.get("converged", False),
+                    "iterations": mcmc_results.get("config", {}).get("draws", None),
+                    "termination_reason": f"Convergence quality: {convergence_quality}",
+                },
+                "data_info": {
+                    "n_angles": len(phi_angles),
+                    "n_data_points": c2_exp.size,
+                    "n_parameters": len(best_params),
+                    "degrees_of_freedom": max(1, c2_exp.size - len(best_params)),
+                },
                 "parameter_names": param_names,
                 "convergence_quality": convergence_quality,
                 "execution_time": mcmc_results.get("time", 0.0),
@@ -2747,25 +2844,37 @@ def _generate_mcmc_plots(
                                 param_data = trace.posterior[param_name].values.reshape(
                                     -1
                                 )
-                                uncertainties_list.append(np.std(param_data))
+                                uncertainty = np.std(param_data)
+                                uncertainties_list.append(uncertainty)
+                                # Update method_info with calculated uncertainty
+                                if param_name in method_info["parameters"]:
+                                    method_info["parameters"][param_name][
+                                        "uncertainty"
+                                    ] = float(uncertainty)
                             else:
                                 uncertainties_list.append(np.nan)
+                                if param_name in method_info["parameters"]:
+                                    method_info["parameters"][param_name][
+                                        "uncertainty"
+                                    ] = float(np.nan)
                         uncertainties = np.array(uncertainties_list)
             except Exception as e:
                 logger.warning(f"Could not calculate MCMC parameter uncertainties: {e}")
                 uncertainties = np.full(len(best_params), np.nan)
+                # Update method_info with NaN uncertainties on error
+                for param_name in param_names:
+                    if param_name in method_info["parameters"]:
+                        method_info["parameters"][param_name]["uncertainty"] = float(
+                            np.nan
+                        )
 
-            # Calculate chi-squared goodness of fit
-            chi_squared = np.nan
-            try:
-                # Calculate chi-squared using flattened residuals
-                residuals_flat = residuals.flatten()
-                # Remove any NaN values for chi-squared calculation
-                valid_residuals = residuals_flat[~np.isnan(residuals_flat)]
-                if len(valid_residuals) > 0:
-                    chi_squared = np.sum(valid_residuals**2)
-            except Exception as e:
-                logger.warning(f"Could not calculate chi-squared for MCMC: {e}")
+            # Use the detailed chi-squared calculation from core.py
+            chi_squared = chi_squared_detailed
+
+            # Save updated parameters.json file with proper uncertainties
+            with open(params_file, "w") as f:
+                json.dump(method_info, f, indent=2, default=str)
+            logger.info(f"✓ MCMC parameters updated with uncertainties: {params_file}")
 
             # Save standardized fitted_data.npz file
             data_file = mcmc_dir / "fitted_data.npz"

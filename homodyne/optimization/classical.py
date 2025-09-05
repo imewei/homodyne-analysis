@@ -43,8 +43,8 @@ except ImportError:
 
 # Import robust optimization with graceful degradation
 try:
-    from homodyne.optimization.robust import RobustHomodyneOptimizer  # type: ignore
     from homodyne.optimization.robust import (
+        RobustHomodyneOptimizer,  # type: ignore
         create_robust_optimizer,
     )
 
@@ -337,6 +337,93 @@ class ClassicalOptimizer:
                 method_results  # Add method-specific results
             )
             enhanced_result.best_method = best_method  # Add best method info
+
+            # Get detailed chi-squared analysis for the best parameters
+            try:
+                detailed_chi2_result = self.core.calculate_chi_squared_optimized(
+                    best_params, phi_angles, c2_experimental, return_components=True
+                )
+
+                if isinstance(detailed_chi2_result, dict):
+                    # DEBUGGING: Extract both chi-squared versions with clear semantics
+
+                    # 1. NORMALIZED chi-squared (with uncertainty_estimation_factor scaling)
+                    #    Formula: χ²_normalized = sum((exp - theory)² / (σ * uncertainty_factor)²)
+                    #    This is chi-squared with uncertainty weighting (NOT divided by DOF)
+                    normalized_chi2 = detailed_chi2_result.get(
+                        "reduced_chi_squared", None
+                    )
+
+                    # 2. TRUE statistical reduced chi-squared (proper statistical definition)
+                    #    Formula: χ²_true_reduced = sum((exp - theory)²) / DOF
+                    #    This is the correct statistical reduced chi-squared
+                    true_chi2 = detailed_chi2_result.get(
+                        "reduced_chi_squared_true", None
+                    )
+
+                    # DEBUGGING: Log values for verification
+                    logger.info("Classical optimization chi-squared debugging:")
+                    logger.info(f"  Optimization result.fun = {best_result.fun:.6e}")
+                    logger.info(
+                        f"  Detailed normalized χ²_red = {normalized_chi2:.6e}"
+                        if normalized_chi2 is not None
+                        else "  Normalized χ²_red = None"
+                    )
+                    logger.info(
+                        f"  Detailed true χ²_red = {true_chi2:.6e}"
+                        if true_chi2 is not None
+                        else "  True χ²_red = None"
+                    )
+                    logger.info(
+                        f"  Expected ratio (normalized/true) ≈ {1 / (0.1**2):.1f} if uncertainty_factor=0.1"
+                    )
+
+                    # VALIDATION: The true chi-squared should match result.fun from optimization
+                    if (
+                        true_chi2 is not None
+                        and abs(true_chi2 - best_result.fun) > 1e-10
+                    ):
+                        logger.warning(
+                            f"Chi-squared mismatch: optimization={best_result.fun:.6e}, detailed={true_chi2:.6e}"
+                        )
+
+                    # Add detailed chi-squared information to the result object
+                    enhanced_result.reduced_chi_squared = (
+                        normalized_chi2
+                        if normalized_chi2 is not None
+                        else best_result.fun
+                    )
+                    enhanced_result.reduced_chi_squared_true = (
+                        true_chi2 if true_chi2 is not None else best_result.fun
+                    )
+                    enhanced_result.reduced_chi_squared_uncertainty = (
+                        detailed_chi2_result.get("reduced_chi_squared_uncertainty", 0.0)
+                    )
+                    enhanced_result.reduced_chi_squared_true_uncertainty = (
+                        detailed_chi2_result.get(
+                            "reduced_chi_squared_true_uncertainty", 0.0
+                        )
+                    )
+
+                    # Additional debugging information
+                    enhanced_result.degrees_of_freedom = detailed_chi2_result.get(
+                        "degrees_of_freedom", None
+                    )
+
+                else:
+                    logger.warning(
+                        f"Detailed chi-squared result is not a dictionary: {type(detailed_chi2_result)}"
+                    )
+                    # Fallback: use the optimization result for both
+                    enhanced_result.reduced_chi_squared = best_result.fun
+                    enhanced_result.reduced_chi_squared_true = best_result.fun
+
+            except Exception as e:
+                logger.warning(f"Failed to get detailed chi-squared components: {e}")
+                logger.exception("Full traceback:")
+                # Fallback: use the optimization result for both
+                enhanced_result.reduced_chi_squared = best_result.fun
+                enhanced_result.reduced_chi_squared_true = best_result.fun
 
             return best_params, enhanced_result
         else:
