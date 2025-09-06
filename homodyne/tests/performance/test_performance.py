@@ -1081,7 +1081,6 @@ class TestOptimizationFeatures:
             },
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "uncertainty_estimation_factor": 0.1,
                     "minimum_sigma": 1e-6,
                     "validity_check": {"check_positive_D0": True},
                 }
@@ -1254,7 +1253,6 @@ class TestRegressionBenchmarks:
             "performance_settings": {"parallel_execution": True},
             "advanced_settings": {
                 "chi_squared_calculation": {
-                    "uncertainty_estimation_factor": 0.1,
                     "minimum_sigma": 1e-6,
                     "validity_check": {"check_positive_D0": True},
                 }

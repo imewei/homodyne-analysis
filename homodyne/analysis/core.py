@@ -1285,11 +1285,13 @@ class HomodyneAnalysisCore:
             # Ensure odd window size for proper padding
             pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
             pad_size = pad_window_size // 2
-            
+
             # Residuals are expected to be pre-padded when edge_method="reflect"
             # Extract the original (unpadded) portion at the end
             working_residuals = residuals
-            extract_indices = slice(pad_size, -pad_size) if pad_size > 0 else slice(None)
+            extract_indices = (
+                slice(pad_size, -pad_size) if pad_size > 0 else slice(None)
+            )
         else:
             working_residuals = residuals
             extract_indices = slice(None)

@@ -70,7 +70,9 @@ class TestIRLSMethodSelection:
         test_residuals = np.random.randn(20) * 0.1
 
         # Test IRLS method directly (use edge_method="none" for direct testing)
-        result = core._estimate_variance_irls_mad_robust(test_residuals, edge_method="none")
+        result = core._estimate_variance_irls_mad_robust(
+            test_residuals, edge_method="none"
+        )
 
         assert len(result) == len(test_residuals)
         assert np.all(result > 0)
@@ -132,7 +134,9 @@ class TestIRLSNumericalStability:
         """Test IRLS with very small residual values."""
         tiny_residuals = np.random.randn(25) * 1e-8
 
-        variances = stable_core._estimate_variance_irls_mad_robust(tiny_residuals, edge_method="none")
+        variances = stable_core._estimate_variance_irls_mad_robust(
+            tiny_residuals, edge_method="none"
+        )
 
         assert np.all(np.isfinite(variances)), "Should handle tiny values"
         assert np.all(variances > 0), "Should maintain positivity with tiny values"
@@ -141,7 +145,9 @@ class TestIRLSNumericalStability:
         """Test IRLS with very large residual values."""
         large_residuals = np.random.randn(25) * 1e6
 
-        variances = stable_core._estimate_variance_irls_mad_robust(large_residuals, edge_method="none")
+        variances = stable_core._estimate_variance_irls_mad_robust(
+            large_residuals, edge_method="none"
+        )
 
         assert np.all(np.isfinite(variances)), "Should handle large values"
         assert np.all(variances > 0), "Should maintain positivity with large values"
@@ -157,7 +163,9 @@ class TestIRLSNumericalStability:
             ]
         )
 
-        variances = stable_core._estimate_variance_irls_mad_robust(mixed_residuals, edge_method="none")
+        variances = stable_core._estimate_variance_irls_mad_robust(
+            mixed_residuals, edge_method="none"
+        )
 
         assert np.all(np.isfinite(variances)), "Should handle mixed scales"
         assert np.all(variances > 0), "Should maintain positivity with mixed scales"
@@ -309,7 +317,7 @@ class TestIRLSEdgeHandling:
         """Test that reflection edge handling produces reasonable edge variances."""
         # Create data with distinct edge behavior
         edge_data = np.array([0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5])
-        
+
         # Pre-pad data for edge_method="reflect" testing
         window_size = 7
         pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
@@ -322,7 +330,7 @@ class TestIRLSEdgeHandling:
 
         # Should return same size as original
         assert len(variances) == len(edge_data), "Output should match original size"
-        # Edge variances should be reasonable (not extremely large or small)  
+        # Edge variances should be reasonable (not extremely large or small)
         edge_var_ratio = variances[0] / np.mean(
             variances[2:-2]
         )  # Compare edge to center
@@ -337,7 +345,7 @@ class TestIRLSEdgeHandling:
     def test_no_edge_handling_vs_reflection(self, edge_test_core):
         """Test difference between reflection and no edge handling."""
         test_data = np.random.randn(15) * 0.12
-        
+
         # Pre-pad data for reflection test
         window_size = 7
         pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
@@ -355,8 +363,12 @@ class TestIRLSEdgeHandling:
         )
 
         # Both should be valid and same size as original
-        assert len(var_reflect) == len(test_data), "Reflection result should match original size"
-        assert len(var_no_reflect) == len(test_data), "No-reflection result should match original size"
+        assert len(var_reflect) == len(test_data), (
+            "Reflection result should match original size"
+        )
+        assert len(var_no_reflect) == len(test_data), (
+            "No-reflection result should match original size"
+        )
         assert np.all(np.isfinite(var_reflect)), "Reflection handling should be finite"
         assert np.all(np.isfinite(var_no_reflect)), (
             "No-reflection handling should be finite"
@@ -466,7 +478,9 @@ class TestIRLSRealWorldScenarios:
         hetero_residuals = np.random.normal(0, sigma_varying)
 
         # Test IRLS - should adapt to local variance
-        variances = realistic_core._estimate_variance_irls_mad_robust(hetero_residuals, edge_method="none")
+        variances = realistic_core._estimate_variance_irls_mad_robust(
+            hetero_residuals, edge_method="none"
+        )
 
         assert np.all(np.isfinite(variances)), "Should handle heteroscedastic data"
         assert np.all(variances > 0), "Should maintain positivity"

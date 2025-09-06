@@ -60,7 +60,6 @@ class TestAngleFilteringCore:
                 "data_loading": {"use_diagonal_correction": True},
                 "chi_squared_calculation": {
                     "validity_check": {"check_positive_D0": True},
-                    "uncertainty_estimation_factor": 0.1,
                     "minimum_sigma": 1e-10,
                     "_scaling_optimization_note": "Scaling optimization is always enabled: g₂ = offset + contrast × g₁",
                 },

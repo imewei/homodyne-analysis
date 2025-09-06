@@ -234,7 +234,7 @@ class TestIRLSVarianceEstimation:
         residuals = np.array(
             [0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5]
         )  # High values at edges
-        
+
         # Pre-pad residuals for edge_method="reflect" testing
         window_size = 5
         pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
@@ -507,7 +507,9 @@ class TestIRLSRobustness:
         # Most values small, one very large
         residuals = np.array([0.01, 0.02, 0.01, 100.0, 0.02, 0.01, 0.01])
 
-        variances = robust_test_core._estimate_variance_irls_mad_robust(residuals, edge_method="none")
+        variances = robust_test_core._estimate_variance_irls_mad_robust(
+            residuals, edge_method="none"
+        )
 
         # MAD-based IRLS should be robust to outliers
         assert np.all(np.isfinite(variances)), "Should handle extreme outliers"
