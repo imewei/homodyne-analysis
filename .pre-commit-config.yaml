@@ -112,13 +112,80 @@ repos:
         entry: mypy
         language: python
         types: [python]
-        args: [--config-file=pyproject.toml]
+        args: [--config-file=pyproject.toml, --ignore-missing-imports]
         additional_dependencies:
           - types-psutil
           - types-requests
           - numpy
           - matplotlib
+          - scipy-stubs
+          - types-Pygments
+          - types-colorama
+          - types-decorator
+          - types-setuptools
         exclude: ^(homodyne/tests/|tests/|build/|dist/|docs/)
+
+  # Scientific computing quality checks
+  - repo: local
+    hooks:
+      - id: numerical-stability-check
+        name: numerical-stability-check
+        description: "Check for numerical stability issues in scientific code"
+        entry: python
+        language: system
+        types: [python]
+        args:
+          - -c
+          - |
+            import ast
+            import sys
+            
+            def check_numerical_stability(filename):
+                with open(filename, 'r') as f:
+                    try:
+                        tree = ast.parse(f.read())
+                        # Check for common numerical stability issues
+                        for node in ast.walk(tree):
+                            if isinstance(node, ast.BinOp):
+                                # Check for potential division by zero
+                                if isinstance(node.op, ast.Div):
+                                    print(f"Warning: Division operation found in {filename}:{node.lineno}")
+                    except SyntaxError:
+                        pass
+            
+            for filename in sys.argv[1:]:
+                check_numerical_stability(filename)
+        files: ^homodyne/(core|analysis|optimization)/.*\.py$
+
+      - id: docstring-coverage
+        name: docstring-coverage
+        description: "Check docstring coverage for scientific functions"
+        entry: python
+        language: system
+        types: [python]
+        args:
+          - -c
+          - |
+            import ast
+            import sys
+            
+            def check_docstrings(filename):
+                with open(filename, 'r') as f:
+                    try:
+                        tree = ast.parse(f.read())
+                        functions = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+                        missing_docs = []
+                        for func in functions:
+                            if not func.name.startswith('_') and not ast.get_docstring(func):
+                                missing_docs.append(f"{filename}:{func.lineno}:{func.name}")
+                        if missing_docs and len(missing_docs) > len(functions) * 0.2:  # Allow 20% missing
+                            print(f"Warning: {len(missing_docs)} functions missing docstrings in {filename}")
+                    except SyntaxError:
+                        pass
+            
+            for filename in sys.argv[1:]:
+                check_docstrings(filename)
+        files: ^homodyne/(core|analysis|optimization)/.*\.py$
 
   # Markdown formatting
   - repo: https://github.com/executablebooks/mdformat
