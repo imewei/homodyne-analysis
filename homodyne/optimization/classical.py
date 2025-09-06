@@ -209,11 +209,26 @@ class ClassicalOptimizer:
         best_method = None  # Track which method produced the best result
         all_results = []  # Store all results for analysis
 
-        # Create objective function using utility method
+        # Get objective function settings from configuration
+        objective_config = self.optimization_config.get("objective_function", {})
+        objective_type = objective_config.get("type", "standard")
+        adaptive_target_alpha = objective_config.get("adaptive_target_alpha", 1.0)
+
+        # Validate adaptive_target_alpha range
+        if objective_type == "adaptive_target":
+            if not (0.8 <= adaptive_target_alpha <= 1.2):
+                logger.warning(
+                    f"adaptive_target_alpha {adaptive_target_alpha} outside recommended range [0.8, 1.2], clamping"
+                )
+                adaptive_target_alpha = np.clip(adaptive_target_alpha, 0.8, 1.2)
+
+        # Create objective function using enhanced method
         objective = self.create_objective_function(
             phi_angles,
             c2_experimental,
             f"Classical-{analysis_mode.capitalize()}",
+            objective_type=objective_type,
+            adaptive_target_alpha=adaptive_target_alpha,
         )
 
         # Try each method
@@ -232,6 +247,8 @@ class ClassicalOptimizer:
                     method_options=self.optimization_config.get(
                         "method_options", {}
                     ).get(method, {}),
+                    objective_type=objective_type,
+                    adaptive_target_alpha=adaptive_target_alpha,
                 )
 
                 elapsed = time.time() - start
@@ -291,7 +308,11 @@ class ClassicalOptimizer:
                 if hasattr(result, "fun"):  # Successful result
                     method_results[method] = {
                         "parameters": (
-                            result.x.tolist() if hasattr(result, "x") else None
+                            result.x.tolist()
+                            if hasattr(result, "x") and hasattr(result.x, "tolist")
+                            else result.x
+                            if hasattr(result, "x")
+                            else None
                         ),
                         "chi_squared": result.fun,
                         "success": (
@@ -582,9 +603,11 @@ class ClassicalOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         method_name: str = "Classical",
+        objective_type: str = "standard",
+        adaptive_target_alpha: float = 1.0,
     ):
         """
-        Create objective function for optimization.
+        Create objective function for optimization with adaptive chi-squared targeting support.
 
         Parameters
         ----------
@@ -594,6 +617,10 @@ class ClassicalOptimizer:
             Experimental correlation data
         method_name : str
             Name for logging purposes
+        objective_type : str
+            Type of objective function: "standard" or "adaptive_target"
+        adaptive_target_alpha : float
+            Target multiplier for adaptive chi-squared (α ∈ [0.8, 1.2])
 
         Returns
         -------
@@ -610,13 +637,48 @@ class ClassicalOptimizer:
             ].get("enabled", True)
 
         def objective(params):
-            return self.core.calculate_chi_squared_optimized(
-                params,
-                phi_angles,
-                c2_experimental,
-                method_name,
-                filter_angles_for_optimization=use_angle_filtering,
-            )
+            if objective_type == "standard":
+                # Option 1: Standard chi-squared minimization (default)
+                # Use reduced chi-squared for optimization
+                chi_squared = self.core.calculate_chi_squared_optimized(
+                    params,
+                    phi_angles,
+                    c2_experimental,
+                    method_name,
+                    filter_angles_for_optimization=use_angle_filtering,
+                )
+                return chi_squared
+
+            elif objective_type == "adaptive_target":
+                # Option 2: Adaptive target chi-squared
+                # IMPORTANT: With IRLS variance estimation, we need total chi-squared
+                # (not reduced) to properly compare against target = α * DOF
+                chi_components = self.core.calculate_chi_squared_optimized(
+                    params,
+                    phi_angles,
+                    c2_experimental,
+                    method_name,
+                    filter_angles_for_optimization=use_angle_filtering,
+                    return_components=True,
+                )
+
+                if not chi_components.get("valid", False):
+                    return float("inf")
+
+                # Get total chi-squared and DOF from IRLS-weighted calculation
+                # total_chi_squared = Σ((residuals/σ_IRLS)²) [unnormalized]
+                # target_chi_squared = α * DOF (where DOF = N_data - N_params)
+                total_chi_squared = chi_components["total_chi_squared"]
+                total_dof = chi_components["degrees_of_freedom"]
+
+                # Adaptive target: minimize squared deviation from target chi-squared
+                target_chi_squared = adaptive_target_alpha * total_dof  # α ∈ [0.8, 1.2]
+
+                # Squared deviation (quadratic, numerically stable)
+                return (total_chi_squared - target_chi_squared) ** 2
+
+            else:
+                raise ValueError(f"Unknown objective_type: {objective_type}")
 
         return objective
 
@@ -627,6 +689,8 @@ class ClassicalOptimizer:
         initial_parameters: np.ndarray,
         bounds: list[tuple[float, float]] | None = None,
         method_options: dict[str, Any] | None = None,
+        objective_type: str = "standard",
+        adaptive_target_alpha: float = 1.0,
     ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
         Run a single optimization method.
@@ -661,16 +725,16 @@ class ClassicalOptimizer:
                     initial_parameters,
                     bounds,
                     method_options,
+                    objective_type=objective_type,
+                    adaptive_target_alpha=adaptive_target_alpha,
                 )
             else:
-                # Filter out comment fields (keys starting with '_' and ending
-                # with '_note')
+                # Filter out comment fields (keys starting with '_')
+                # These are documentation/rationale fields not meant as solver options
                 filtered_options = {}
                 if method_options:
                     filtered_options = {
-                        k: v
-                        for k, v in method_options.items()
-                        if not (k.startswith("_") and k.endswith("_note"))
+                        k: v for k, v in method_options.items() if not k.startswith("_")
                     }
 
                 kwargs = {
@@ -996,6 +1060,8 @@ class ClassicalOptimizer:
             list[tuple[float, float]] | None
         ) = None,  # Used by robust optimizer internally
         method_options: dict[str, Any] | None = None,
+        objective_type: str = "standard",
+        adaptive_target_alpha: float = 1.0,
     ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
         Run robust optimization using CVXPY + Gurobi.
@@ -1061,13 +1127,20 @@ class ClassicalOptimizer:
             if robust_method is None:
                 raise ValueError(f"Unknown robust optimization method: {method}")
 
-            # Run robust optimization
+            # Combine method options with adaptive targeting parameters
+            robust_kwargs = {
+                "objective_type": objective_type,
+                "adaptive_target_alpha": adaptive_target_alpha,
+                **(method_options or {}),
+            }
+
+            # Run robust optimization with adaptive targeting support
             optimal_params, info = robust_optimizer.run_robust_optimization(
                 initial_parameters=initial_parameters,
                 phi_angles=phi_angles,
                 c2_experimental=c2_experimental,
                 method=robust_method,
-                **(method_options or {}),
+                **robust_kwargs,
             )
 
             if optimal_params is not None:

@@ -70,14 +70,17 @@
     },
     "scattering": {
       "wavevector_q": 0.001,
-      "_q_note": "CUSTOMIZE: Scattering wavevector q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "typical_range": [0.001, 0.1]
+      "_q_note": "CUSTOMIZE: Scattering wavevector q = 4\u03c0 sin(\u03b8/2)/\u03bb",
+      "q_unit": "\u00c5\u207b\u00b9",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "CUSTOMIZE: Gap in Angstroms - critical for laminar_flow, less important for static modes",
-      "gap_unit": "Å",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 200
     },
     "computational": {
@@ -95,7 +98,11 @@
     "values": "MODE_DEPENDENT: [100.0,0.0,10.0] for static, [100.0,0.0,10.0,1.0,0.0,0.0,0.0] for laminar_flow",
     "parameter_names": "MODE_DEPENDENT: See _parameter_definitions below",
     "_parameter_definitions": {
-      "static_modes": ["D0", "alpha", "D_offset"],
+      "static_modes": [
+        "D0",
+        "alpha",
+        "D_offset"
+      ],
       "laminar_flow": [
         "D0",
         "alpha",
@@ -106,7 +113,7 @@
         "phi0"
       ]
     },
-    "units": "MODE_DEPENDENT: [Å²/s,dimensionless,Å²/s] for static, [Å²/s,dimensionless,Å²/s,s⁻¹,dimensionless,s⁻¹,degrees] for laminar_flow",
+    "units": "MODE_DEPENDENT: [\u00c5\u00b2/s,dimensionless,\u00c5\u00b2/s] for static, [\u00c5\u00b2/s,dimensionless,\u00c5\u00b2/s,s\u207b\u00b9,dimensionless,s\u207b\u00b9,degrees] for laminar_flow",
     "physical_meaning": {
       "_common_to_all_modes": {
         "D0": "Reference diffusion coefficient",
@@ -152,7 +159,10 @@
       "_performance_note": "Optimized filtering provides 5-10x speedup for large datasets"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
       "_methods_note": "Classical methods with aggressive performance settings for large datasets",
       "_method_flags": {
         "--method classical": "Runs ONLY classical methods: Nelder-Mead, Gurobi (if licensed) with large dataset optimizations",
@@ -166,10 +176,10 @@
           "maxiter": "MODE_DEPENDENT: 1500 for static, 3000 for laminar_flow",
           "_maxiter_note": "Reduced iterations for large dataset efficiency - good statistics compensate",
           "_large_dataset_scaling": "Aggressive iteration reduction leveraging superior statistics from large datasets",
-          "xatol": 5e-6,
+          "xatol": 5e-06,
           "_xatol_note": "Relaxed parameter tolerance leveraging large dataset statistical power",
           "_large_dataset_xatol": "Performance-optimized: 5e-6 for fast convergence with excellent statistics",
-          "fatol": 5e-6,
+          "fatol": 5e-06,
           "_fatol_note": "Relaxed chi-squared tolerance for efficient large dataset fitting",
           "_large_dataset_fatol": "Performance-optimized: 5e-6 balancing speed with large dataset accuracy",
           "adaptive": true,
@@ -184,7 +194,7 @@
           "_algorithm": "Iterative trust region SQP optimization with aggressive performance for large datasets",
           "max_iterations": "MODE_DEPENDENT: 200 for static, 500 for laminar_flow",
           "_max_iterations_note": "Reduced iterations leveraging large dataset statistical power",
-          "tolerance": 5e-6,
+          "tolerance": 5e-06,
           "_tolerance_note": "Relaxed convergence tolerance for large dataset efficiency",
           "output_flag": 0,
           "_output_flag_note": "Gurobi verbosity (0=silent, 1=verbose)",
@@ -208,7 +218,19 @@
         }
       },
       "selection_strategy": "best_chi_squared",
-      "_selection_strategy_note": "best_chi_squared, consensus, or first_success when multiple methods used"
+      "_selection_strategy_note": "best_chi_squared, consensus, or first_success when multiple methods used",
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
+      }
     },
     "robust_optimization": {
       "_comment": "ENHANCED: Robust optimization with large dataset performance settings",
@@ -229,7 +251,7 @@
       "_regularization_alpha_note": "Reduced L2 regularization leveraging large dataset robustness",
       "regularization_beta": 0.0005,
       "_regularization_beta_note": "Reduced L1 sparsity parameter for large dataset efficiency",
-      "jacobian_epsilon": 1e-5,
+      "jacobian_epsilon": 1e-05,
       "_jacobian_epsilon_note": "Relaxed finite difference step for large dataset performance",
       "enable_caching": true,
       "_enable_caching_note": "Aggressive caching provides major performance gains for large datasets",
@@ -241,30 +263,30 @@
         "CLARABEL": {
           "_description": "Modern interior-point solver, performance-optimized for large dataset scientific data fitting",
           "max_iter": 300,
-          "tol_gap_abs": 1e-4,
-          "tol_gap_rel": 1e-4,
-          "tol_feas": 1e-5,
-          "tol_infeas_abs": 1e-4,
-          "tol_infeas_rel": 1e-4,
-          "tol_ktratio": 1e-3,
-          "reduced_tol_gap_abs": 1e-2,
-          "reduced_tol_gap_rel": 1e-2,
-          "reduced_tol_feas": 1e-2,
-          "reduced_tol_infeas_abs": 1e-2,
-          "reduced_tol_infeas_rel": 1e-2,
-          "reduced_tol_ktratio": 1e-1,
+          "tol_gap_abs": 0.0001,
+          "tol_gap_rel": 0.0001,
+          "tol_feas": 1e-05,
+          "tol_infeas_abs": 0.0001,
+          "tol_infeas_rel": 0.0001,
+          "tol_ktratio": 0.001,
+          "reduced_tol_gap_abs": 0.01,
+          "reduced_tol_gap_rel": 0.01,
+          "reduced_tol_feas": 0.01,
+          "reduced_tol_infeas_abs": 0.01,
+          "reduced_tol_infeas_rel": 0.01,
+          "reduced_tol_ktratio": 0.1,
           "equilibrate_enable": true,
           "equilibrate_max_iter": 20,
-          "equilibrate_min_scaling": 1e-6,
-          "equilibrate_max_scaling": 1e6,
+          "equilibrate_min_scaling": 1e-06,
+          "equilibrate_max_scaling": 1000000.0,
           "direct_kkt_solver": true,
           "direct_solve_method": "qdldl",
           "static_regularization_enable": true,
-          "static_regularization_constant": 1e-6,
-          "static_regularization_proportional": 1e-4,
+          "static_regularization_constant": 1e-06,
+          "static_regularization_proportional": 0.0001,
           "dynamic_regularization_enable": true,
           "dynamic_regularization_eps": 1e-11,
-          "dynamic_regularization_delta": 1e-5,
+          "dynamic_regularization_delta": 1e-05,
           "iterative_refinement_enable": false,
           "_refinement_note": "Disabled for large dataset performance",
           "presolve_enable": true,
@@ -274,9 +296,9 @@
         "SCS": {
           "_description": "Splitting conic solver, performance fallback for large dataset fitting",
           "max_iters": 5000,
-          "eps": 1e-3,
+          "eps": 0.001,
           "alpha": 1.8,
-          "rho_x": 1e-5,
+          "rho_x": 1e-05,
           "scale": 10.0,
           "normalize": true,
           "adaptive_scale": true,
@@ -292,9 +314,9 @@
         "CVXOPT": {
           "_description": "Python-based solver, fast fallback for large dataset problems",
           "maxiters": 100,
-          "abstol": 1e-4,
-          "reltol": 1e-3,
-          "feastol": 1e-4,
+          "abstol": 0.0001,
+          "reltol": 0.001,
+          "feastol": 0.0001,
           "refinement": 1,
           "show_progress": false,
           "verbose": false,
@@ -308,13 +330,13 @@
           "BarHomogeneous": 1,
           "BarIterLimit": 500,
           "TimeLimit": "MODE_DEPENDENT: 180s for static, 360s for laminar_flow",
-          "MIPGap": 1e-2,
+          "MIPGap": 0.01,
           "NumericFocus": 1,
           "OutputFlag": 0,
           "ScaleFlag": 3,
-          "BarConvTol": 1e-5,
-          "FeasibilityTol": 1e-4,
-          "OptimalityTol": 1e-4,
+          "BarConvTol": 1e-05,
+          "FeasibilityTol": 0.0001,
+          "OptimalityTol": 0.0001,
           "MarkowitzTol": 0.2,
           "PerturbValue": 0.0005,
           "Aggregate": 1,
@@ -336,6 +358,18 @@
           "gamma": "MODE_DEPENDENT: 0.05 for static, 0.08 for laminar_flow",
           "regularization_alpha": "MODE_DEPENDENT: 0.005 for static, 0.01 for laminar_flow"
         }
+      },
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
       }
     },
     "mcmc_sampling": {
@@ -454,7 +488,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 2000.0,
-        "unit": "Å²/s",
+        "unit": "\u00c5\u00b2/s",
         "_large_dataset_note": "Broader prior leveraging large dataset statistical power"
       },
       {
@@ -478,19 +512,19 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 15.0,
-        "unit": "Å²/s",
+        "unit": "\u00c5\u00b2/s",
         "_large_dataset_note": "Broader prior for large dataset parameter exploration"
       },
       {
         "_laminar_flow_parameter_4": "gamma_dot_t0 (laminar_flow mode only)",
         "name": "gamma_dot_t0",
-        "min": 1e-6,
+        "min": 1e-06,
         "max": 1.0,
         "_customize_note": "Reference shear rate - adjust for your flow conditions",
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.02,
-        "unit": "s⁻¹",
+        "unit": "s\u207b\u00b9",
         "_large_dataset_note": "Flexible prior for large dataset laminar flow analysis"
       },
       {
@@ -514,7 +548,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.002,
-        "unit": "s⁻¹",
+        "unit": "s\u207b\u00b9",
         "_large_dataset_note": "Flexible prior for large dataset efficiency"
       },
       {
@@ -538,9 +572,9 @@
     "static_submode": "MODE_DEPENDENT: isotropic/anisotropic for static modes, null for laminar_flow",
     "_submode_note": "Isotropic disables angle filtering, anisotropic enables it",
     "model_description": {
-      "static_isotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with isotropic symmetry - large dataset performance",
-      "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering - optimized for large datasets",
-      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics - aggressive large dataset settings"
+      "static_isotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with isotropic symmetry - large dataset performance",
+      "static_anisotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with angular filtering - optimized for large datasets",
+      "laminar_flow": "g\u2082 = g\u2081_diff \u00d7 g\u2081_shear with sinc\u00b2 term for full flow dynamics - aggressive large dataset settings"
     }
   },
   "advanced_settings": {
@@ -553,7 +587,9 @@
       "method": "standard",
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared calculation",
       "_large_dataset_factor": "Reduced from 0.1 leveraging large dataset statistical power",
-      "minimum_sigma": 1e-8,
+      "minimum_sigma": 1e-08,
+      "moving_window_size": 11,
+      "moving_window_edge_method": "reflect",
       "_large_dataset_sigma": "Relaxed precision for large dataset efficiency",
       "fast_computation": true,
       "_large_dataset_computation": "Enabled for high-speed large dataset calculations",
@@ -569,21 +605,31 @@
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true,
         "efficient_large_dataset_validation": true
+      },
+      "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
+      "variance_method": "irls_mad_robust",
+      "_variance_method_note": "Options: irls_mad_robust (default), mad_robust",
+      "irls_config": {
+        "max_iterations": 5,
+        "damping_factor": 0.7,
+        "convergence_tolerance": 0.0001,
+        "initial_sigma_squared": 0.001,
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev"
       }
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-6,
+      "relative_tolerance": 1e-06,
       "absolute_tolerance": 1e-10,
       "_large_dataset_note": "Balanced precision tolerances for large dataset efficiency"
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-6,
+      "convergence_tolerance": 1e-06,
       "_large_dataset_tolerance": "Relaxed from 1e-8 for large dataset performance",
       "max_function_evaluations": "MODE_DEPENDENT: 3000 for static, 8000 for laminar_flow",
       "_max_function_evaluations_note": "Reduced limits leveraging large dataset convergence efficiency",
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-6,
+      "finite_difference_step": 1e-06,
       "_large_dataset_step": "Relaxed precision for large dataset performance"
     }
   },
@@ -714,7 +760,7 @@
         "_large_dataset_note": "Reduced ESS requirements leveraging large dataset statistical power"
       },
       "divergence_thresholds": {
-        "max_divergences_fraction": 0.10,
+        "max_divergences_fraction": 0.1,
         "warning_divergences_fraction": 0.02,
         "_large_dataset_note": "Higher divergence tolerance for large dataset efficiency"
       }
@@ -785,7 +831,9 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png"],
+      "plot_formats": [
+        "png"
+      ],
       "_large_dataset_formats": "Single format for large dataset efficiency",
       "detailed_summary": false,
       "_large_dataset_summary": "Streamlined summary for large dataset performance",
@@ -823,7 +871,11 @@
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
           "_large_dataset_quantiles": "Standard quantiles for large dataset efficiency",
           "show_truths": false,
           "use_arviz": true,

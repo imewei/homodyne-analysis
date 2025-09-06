@@ -393,7 +393,6 @@
     },
     "chi_squared_calculation": {
       "method": "standard",
-      "uncertainty_estimation_factor": 1,
       "minimum_sigma": 1e-10,
       "fast_computation": true,
       "validity_check": {

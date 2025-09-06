@@ -10,7 +10,11 @@
       "simulated_data_plotting": "Use --plot-simulated-data or 'hsim' shortcut with scaling: --contrast 0.3 --offset 1.1",
       "phi_angles_override": "Command-line --phi-angles overrides config file phi angles"
     },
-    "parameters_optimized": ["D0", "alpha", "D_offset"],
+    "parameters_optimized": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
     "angle_filtering": "enabled",
     "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
     "script_compatibility": "homodyne v0.7.2"
@@ -47,14 +51,17 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "typical_range": [0.001, 0.1]
+      "_q_note": "Scattering wavevector magnitude: q = 4\u03c0 sin(\u03b8/2)/\u03bb",
+      "q_unit": "\u00c5\u207b\u00b9",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms (not critical for static anisotropic)",
-      "gap_unit": "Å",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 200
     },
     "computational": {
@@ -66,19 +73,35 @@
   },
   "initial_parameters": {
     "_comment": "Starting values for 3-parameter static anisotropic optimization [D0, alpha, D_offset]",
-    "values": [100.0, 0.0, 10.0],
-    "parameter_names": ["D0", "alpha", "D_offset"],
-    "units": ["Å²/s", "dimensionless", "Å²/s"],
+    "values": [
+      100.0,
+      0.0,
+      10.0
+    ],
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
+    "units": [
+      "\u00c5\u00b2/s",
+      "dimensionless",
+      "\u00c5\u00b2/s"
+    ],
     "physical_meaning": {
       "D0": "Reference diffusion coefficient",
       "alpha": "Power-law exponent for D(t) evolution",
       "D_offset": "Baseline diffusion coefficient"
     },
-    "active_parameters": ["D0", "alpha", "D_offset"],
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
     "parameter_units": {
-      "D0": "Å²/s",
+      "D0": "\u00c5\u00b2/s",
       "alpha": "dimensionless",
-      "D_offset": "Å²/s"
+      "D_offset": "\u00c5\u00b2/s"
     }
   },
   "optimization_config": {
@@ -87,16 +110,31 @@
       "enabled": true,
       "_anisotropic_note": "Angle filtering enabled for anisotropic analysis to focus on flow directions",
       "target_ranges": [
-        { "min_angle": -10.0, "max_angle": 10.0 },
-        { "min_angle": 80.0, "max_angle": 100.0 },
-        { "min_angle": 170.0, "max_angle": 190.0 },
-        { "min_angle": 260.0, "max_angle": 280.0 }
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0
+        },
+        {
+          "min_angle": 80.0,
+          "max_angle": 100.0
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0
+        },
+        {
+          "min_angle": 260.0,
+          "max_angle": 280.0
+        }
       ],
       "fallback_to_all_angles": true,
       "_fallback_note": "Use all angles if no angles found in target ranges"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
       "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
@@ -116,11 +154,11 @@
           "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
-          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter anisotropic case",
-          "tolerance": 1e-6,
+          "tolerance": 1e-06,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -144,7 +182,19 @@
         }
       },
       "selection_strategy": "best_chi_squared",
-      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
+      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
+      }
     },
     "robust_optimization": {
       "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
@@ -167,7 +217,7 @@
       "_regularization_alpha_note": "L2 regularization strength for parameter stability",
       "regularization_beta": 0.001,
       "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
-      "jacobian_epsilon": 1e-6,
+      "jacobian_epsilon": 1e-06,
       "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
       "enable_caching": true,
       "_enable_caching_note": "Enable performance caching for repeated computations",
@@ -179,19 +229,19 @@
         "CLARABEL": {
           "_description": "Interior-point solver optimized for anisotropic data fitting",
           "max_iter": 450,
-          "tol_gap_abs": 1e-5,
-          "tol_gap_rel": 1e-5,
-          "tol_feas": 1e-6,
-          "tol_infeas_abs": 1e-5,
-          "tol_infeas_rel": 1e-5,
-          "tol_ktratio": 1e-4,
+          "tol_gap_abs": 1e-05,
+          "tol_gap_rel": 1e-05,
+          "tol_feas": 1e-06,
+          "tol_infeas_abs": 1e-05,
+          "tol_infeas_rel": 1e-05,
+          "tol_ktratio": 0.0001,
           "equilibrate_enable": true,
           "equilibrate_max_iter": 25,
-          "equilibrate_min_scaling": 1e-7,
-          "equilibrate_max_scaling": 1e7,
+          "equilibrate_min_scaling": 1e-07,
+          "equilibrate_max_scaling": 10000000.0,
           "direct_kkt_solver": true,
           "static_regularization_enable": true,
-          "static_regularization_constant": 1e-8,
+          "static_regularization_constant": 1e-08,
           "dynamic_regularization_enable": true,
           "presolve_enable": true,
           "verbose": false
@@ -199,9 +249,9 @@
         "SCS": {
           "_description": "Conic solver optimized for anisotropic multi-angle problems",
           "max_iters": 10000,
-          "eps": 1e-4,
+          "eps": 0.0001,
           "alpha": 1.8,
-          "rho_x": 1e-6,
+          "rho_x": 1e-06,
           "scale": 3.5,
           "normalize": true,
           "adaptive_scale": true,
@@ -212,9 +262,9 @@
         "CVXOPT": {
           "_description": "Stable fallback solver for anisotropic problems",
           "maxiters": 180,
-          "abstol": 1e-5,
-          "reltol": 1e-4,
-          "feastol": 1e-5,
+          "abstol": 1e-05,
+          "reltol": 0.0001,
+          "feastol": 1e-05,
           "refinement": 3,
           "verbose": false
         },
@@ -229,16 +279,16 @@
           "_BarHomogeneous_note": "Use homogeneous barrier method",
           "TimeLimit": 300,
           "_TimeLimit_note": "Maximum solve time in seconds",
-          "MIPGap": 1e-4,
+          "MIPGap": 0.0001,
           "_MIPGap_note": "Optimality gap tolerance",
           "NumericFocus": 2,
           "_NumericFocus_note": "Numerical stability focus",
           "OutputFlag": 0,
           "_OutputFlag_note": "Suppress solver output",
           "ScaleFlag": 2,
-          "BarConvTol": 1e-8,
-          "FeasibilityTol": 1e-6,
-          "OptimalityTol": 1e-6
+          "BarConvTol": 1e-08,
+          "FeasibilityTol": 1e-06,
+          "OptimalityTol": 1e-06
         }
       },
       "method_options": {
@@ -254,6 +304,18 @@
           "gamma": 0.1,
           "regularization_alpha": 0.01
         }
+      },
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
       }
     },
     "mcmc_sampling": {
@@ -312,10 +374,16 @@
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
-      "fitted_range": { "min": 1.0, "max": 2.0 },
-      "theory_range": { "min": 0.0, "max": 1.0 },
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
       "contrast": {
-        "min": 1e-4,
+        "min": 0.0001,
         "max": 0.5,
         "prior_mu": 0.05,
         "prior_sigma": 0.01,
@@ -340,7 +408,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
         "name": "alpha",
@@ -358,7 +426,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       }
     ]
   },
@@ -369,7 +437,7 @@
     "static_submode": "anisotropic",
     "_submode_note": "Anisotropic mode - includes angle filtering for directional sensitivity",
     "model_description": {
-      "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering for anisotropic behavior"
+      "static_anisotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with angular filtering for anisotropic behavior"
     }
   },
   "advanced_settings": {
@@ -382,6 +450,8 @@
       "method": "standard",
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
       "minimum_sigma": 1e-10,
+      "moving_window_size": 11,
+      "moving_window_edge_method": "reflect",
       "fast_computation": true,
       "uncertainty_calculation": {
         "enable_uncertainty": true,
@@ -393,18 +463,28 @@
         "check_positive_gamma_dot_t0": false,
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true
+      },
+      "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
+      "variance_method": "irls_mad_robust",
+      "_variance_method_note": "Options: irls_mad_robust (default), mad_robust",
+      "irls_config": {
+        "max_iterations": 5,
+        "damping_factor": 0.7,
+        "convergence_tolerance": 0.0001,
+        "initial_sigma_squared": 0.001,
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev"
       }
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-8,
+      "relative_tolerance": 1e-08,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-8,
+      "convergence_tolerance": 1e-08,
       "max_function_evaluations": 5000,
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-8
+      "finite_difference_step": 1e-08
     }
   },
   "performance_settings": {
@@ -564,7 +644,10 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png", "pdf"],
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
       "detailed_summary": true,
       "convergence_diagnostics": true
     },
@@ -574,7 +657,10 @@
         "create_plots": true,
         "plot_format": "png",
         "dpi": 300,
-        "figure_size": [10, 8],
+        "figure_size": [
+          10,
+          8
+        ],
         "style": "publication",
         "save_plots": true,
         "show_plots": false
@@ -589,24 +675,37 @@
         "colormap": "viridis",
         "colorbar_position": "right",
         "title_prefix": "C2 Correlation Function (Static Anisotropic)",
-        "figsize": [15, 5]
+        "figsize": [
+          15,
+          5
+        ]
       },
       "mcmc_plots": {
         "enabled": true,
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
           "show_truths": false,
           "use_arviz": true,
-          "figsize": [9, 9]
+          "figsize": [
+            9,
+            9
+          ]
         },
         "trace_plots": {
           "enabled": true,
           "show_chains": true,
           "show_warmup": false,
           "compact_layout": true,
-          "figsize": [10, 6]
+          "figsize": [
+            10,
+            6
+          ]
         },
         "convergence_diagnostics": {
           "enabled": true,

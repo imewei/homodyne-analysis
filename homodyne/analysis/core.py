@@ -1164,6 +1164,194 @@ class HomodyneAnalysisCore:
 
                 return c2_calculated
 
+    def _estimate_variance_mad_moving_window(
+        self, residuals: np.ndarray, window_size: int = 7, min_variance: float = 1e-6
+    ) -> np.ndarray:
+        """
+        Estimate local variance using robust MAD (Median Absolute Deviation) in moving windows.
+
+        This method is more robust to outliers than standard variance estimation.
+
+        Parameters
+        ----------
+        residuals : np.ndarray
+            Residuals from model fit
+        window_size : int, default=7
+            Size of moving window (will be made odd for centering)
+        min_variance : float, default=1e-6
+            Minimum variance floor to prevent numerical issues
+
+        Returns
+        -------
+        np.ndarray
+            Array of local variance estimates
+
+        Notes
+        -----
+        Uses MAD-based robust variance estimation:
+        σ²ᵢ = (1.4826 × MAD)² where MAD = median|rⱼ - median(rₘ)|
+        The factor 1.4826 converts MAD to standard deviation for normal distribution.
+        """
+        # Get minimum sigma from existing config pattern
+        if not hasattr(self, "_cached_chi_config"):
+            self._cached_chi_config = self.config.get("advanced_settings", {}).get(
+                "chi_squared_calculation", {}
+            )
+        chi_config = self._cached_chi_config
+        config_min_sigma = chi_config.get("minimum_sigma", 1e-10)
+        min_variance = max(min_variance, config_min_sigma**2)
+
+        # Ensure odd window size for proper centering (k in your code)
+        k = window_size
+        if k % 2 == 0:
+            k += 1
+            logger.debug(f"MAD window size adjusted to odd number: {k}")
+
+        # Initialize variance array (sigma2_new in your code)
+        sigma2_new = np.zeros(len(residuals))
+
+        for i in range(len(residuals)):
+            # Symmetric window with edge handling
+            start = max(0, i - k // 2)
+            end = min(len(residuals), i + k // 2 + 1)
+            window_res = residuals[start:end]
+
+            # Robust MAD calculation
+            if len(window_res) >= 3:  # Need minimum points for reliable MAD
+                median_res = np.median(window_res)
+                mad = np.median(np.abs(window_res - median_res))
+                sigma2_new[i] = (1.4826 * mad) ** 2 if mad > 0 else min_variance
+            else:
+                # Fallback for very small windows
+                sigma2_new[i] = min_variance
+
+        return sigma2_new
+
+    def _estimate_variance_irls_mad_robust(
+        self, residuals: np.ndarray, window_size: int = 11, edge_method: str = "reflect"
+    ) -> np.ndarray:
+        """
+        IRLS (Iterative Reweighted Least Squares) with MAD robust variance estimation.
+
+        Implements the user's specified algorithm:
+        1. Initialize with uniform variance σ²ᵢ = 1e-3
+        2. Apply MAD moving window: σ²ᵢ = (1.4826 × MAD)²
+        3. Use damping: σ² = α·σ²_new + (1-α)·σ²_prev with α=0.7
+        4. Iterate until convergence
+
+        Parameters
+        ----------
+        residuals : np.ndarray
+            Residuals from model fit (may be pre-processed with edge reflection)
+        window_size : int, default=11
+            Size of moving window for MAD estimation
+        edge_method : str, default="reflect"
+            Edge handling method (currently only "reflect" supported)
+        max_iterations : int, default=5
+            Maximum IRLS iterations
+        damping_factor : float, default=0.7
+            Damping factor α for variance updates
+        convergence_tolerance : float, default=1e-4
+            Convergence tolerance for variance changes
+        initial_sigma_squared : float, default=1e-3
+            Initial uniform variance assumption
+
+        Returns
+        -------
+        np.ndarray
+            Final variance estimates (same size as original residuals)
+        """
+        # Get config parameters
+        if not hasattr(self, "_cached_chi_config"):
+            self._cached_chi_config = self.config.get("advanced_settings", {}).get(
+                "chi_squared_calculation", {}
+            )
+        chi_config = self._cached_chi_config
+        irls_config = chi_config.get("irls_config", {})
+
+        # Get IRLS parameters from config
+        max_iterations = irls_config.get("max_iterations", 5)
+        damping_factor = irls_config.get("damping_factor", 0.7)
+        convergence_tolerance = irls_config.get("convergence_tolerance", 1e-4)
+        initial_sigma_squared = irls_config.get("initial_sigma_squared", 1e-3)
+        min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
+
+        logger.debug(
+            f"Starting IRLS MAD robust variance estimation with {max_iterations} max iterations"
+        )
+
+        # Handle reflected residuals - extract original size
+        original_size = len(residuals)
+        if edge_method == "reflect":
+            pad_size = window_size // 2
+            # If residuals were padded, we need to account for that
+            if original_size > len(residuals) - 2 * pad_size:
+                # Residuals were not padded in this call, use as-is
+                working_residuals = residuals
+                extract_indices = slice(None)
+            else:
+                # Work with the full padded array but extract original portion later
+                working_residuals = residuals
+                extract_indices = (
+                    slice(pad_size, -pad_size) if pad_size > 0 else slice(None)
+                )
+        else:
+            working_residuals = residuals
+            extract_indices = slice(None)
+
+        # Step 1: Initialize with uniform variance σ²ᵢ = 1e-3
+        n_points = len(working_residuals)
+        sigma2 = np.full(n_points, initial_sigma_squared)
+        sigma2_prev = sigma2.copy()
+
+        # IRLS iterations
+        for iteration in range(max_iterations):
+            # Step 2: Apply MAD moving window variance estimation
+            sigma2_new = self._estimate_variance_mad_moving_window(
+                working_residuals,
+                window_size=window_size,
+                min_variance=min_sigma_squared,
+            )
+
+            # Step 3: Apply damping to prevent oscillations
+            if iteration > 0:
+                alpha = damping_factor
+                sigma2 = alpha * sigma2_new + (1 - alpha) * sigma2_prev
+            else:
+                sigma2 = sigma2_new.copy()  # First iteration: no damping
+
+            # Check convergence based on variance changes
+            variance_change = np.linalg.norm(sigma2 - sigma2_prev) / (
+                np.linalg.norm(sigma2_prev) + 1e-10
+            )
+
+            logger.debug(
+                f"IRLS iteration {iteration}: variance_change={variance_change:.6e}, "
+                f"mean_σ²={np.mean(sigma2):.6e}"
+            )
+
+            # Check convergence
+            if variance_change < convergence_tolerance and iteration > 0:
+                logger.info(
+                    f"IRLS MAD robust estimation converged after {iteration + 1} iterations"
+                )
+                break
+
+            # Update for next iteration
+            sigma2_prev = sigma2.copy()
+        else:
+            logger.warning(
+                f"IRLS MAD robust estimation did not converge after {max_iterations} iterations"
+            )
+
+        # Extract original size if we were working with padded data
+        final_variances = sigma2[extract_indices]
+
+        # Ensure minimum variance floor
+        final_variances = np.maximum(final_variances, min_sigma_squared)
+
+        return final_variances
+
     def calculate_chi_squared_optimized(
         self,
         parameters: np.ndarray,
@@ -1334,7 +1522,7 @@ class HomodyneAnalysisCore:
                 )
             chi_config = self._cached_chi_config
             # uncertainty_estimation_factor removed - use pure standard deviation
-            min_sigma = chi_config.get("minimum_sigma", 1e-10)
+            # min_sigma now handled within moving window estimation
 
             # Calculate parameters for DOF calculation
             n_params = len(parameters)
@@ -1451,8 +1639,8 @@ class HomodyneAnalysisCore:
             # Phase 3: Vectorized batch processing with Numba optimization
             # Pre-compute variance estimates for all angles (vectorized optimization)
             # Use pure standard deviation without any scaling factors
-            exp_std_batch = np.std(exp_flat, axis=1)
-            sigma_batch = np.maximum(exp_std_batch, min_sigma)
+            # Note: exp_std_batch and sigma_batch were used in old implementation,
+            # now using moving window variance estimation instead
 
             # Batch solve least squares for all angles using Numba with
             # fallback
@@ -1540,206 +1728,178 @@ class HomodyneAnalysisCore:
                 residuals = exp_vec - fitted_vec
                 residuals_batch.append(residuals)
 
-            # Calculate proper statistical chi-squared per angle
-            sigma_squared_batch = sigma_batch**2  # σ² (uncertainty squared)
-            dof_batch = np.maximum(n_data_per_angle - n_params, 1)  # N - K per angle
+            # CLEAN CHI-SQUARED CALCULATION using moving window variance estimation
+            angle_chi2_proper = []
+            angle_chi2_reduced = []
+            angle_sigma_values = []
 
-            # Proper chi-squared: χ² = Σ(residuals²/σ²)
-            angle_chi2_proper = chi2_raw_batch / sigma_squared_batch
+            # Get window size from config (consistent with existing config pattern)
+            window_size = chi_config.get("moving_window_size", 11)
 
-            # Proper reduced chi-squared: χ²_reduced = χ² / DoF
-            angle_chi2_reduced = angle_chi2_proper / dof_batch
+            # Get variance estimation method from config
+            # Default to IRLS MAD robust (replaces deprecated standard method)
+            variance_method = chi_config.get("variance_method", "irls_mad_robust")
+
+            # Calculate degrees of freedom per angle
+            dof_per_angle = max(1, n_data_per_angle - n_params)
+
+            # Process each angle with robust variance estimation
+            for i in range(n_angles):
+                residuals = residuals_batch[i]
+
+                # IRLS MAD ROBUST VARIANCE ESTIMATION (replaces standard method)
+                if variance_method == "irls_mad_robust":
+                    # Use IRLS with MAD moving window for robust variance estimation
+                    # Get edge method from config
+                    edge_method = chi_config.get("moving_window_edge_method", "reflect")
+
+                    # Apply reflection edge handling if needed
+                    if edge_method == "reflect":
+                        # Ensure odd window size
+                        pad_window_size = (
+                            window_size if window_size % 2 == 1 else window_size + 1
+                        )
+                        pad_size = pad_window_size // 2
+                        residuals_processed = np.pad(
+                            residuals, pad_size, mode="reflect"
+                        )
+                    else:
+                        residuals_processed = residuals
+
+                    sigma_variances = self._estimate_variance_irls_mad_robust(
+                        residuals_processed,
+                        window_size=window_size,
+                        edge_method=edge_method,
+                    )
+                    logger.debug(
+                        f"Angle {i}: Using IRLS MAD robust variance estimation with {edge_method} edges"
+                    )
+                else:
+                    # Fallback to simple MAD method without IRLS
+                    sigma_variances = self._estimate_variance_mad_moving_window(
+                        residuals, window_size=window_size
+                    )
+                    logger.debug(
+                        f"Angle {i}: Using MAD robust variance estimation (fallback)"
+                    )
+
+                sigma_per_point = np.sqrt(sigma_variances)
+
+                # Proper chi-squared: χ² = Σ(residuals²/σ²)
+                chi2_per_point = (residuals / sigma_per_point) ** 2
+                chi2_total_angle = np.sum(chi2_per_point)
+                chi2_reduced_angle = chi2_total_angle / dof_per_angle
+
+                angle_chi2_proper.append(chi2_total_angle)
+                angle_chi2_reduced.append(chi2_reduced_angle)
+                angle_sigma_values.append(
+                    np.mean(sigma_per_point)
+                )  # Average for logging
+
+            # Convert to numpy arrays for compatibility
+            angle_chi2_proper = np.array(angle_chi2_proper)
+            angle_chi2_reduced = np.array(angle_chi2_reduced)
 
             # Store scaling solutions for compatibility
             scaling_solutions = [
                 [contrast_batch[i], offset_batch[i]] for i in range(n_angles)
             ]
 
-            # Collect values for optimization angles (for averaging)
+            # Calculate optimization totals (existing pattern)
             if filter_angles_for_optimization:
                 optimization_chi2_proper = [
                     angle_chi2_proper[i] for i in optimization_indices
                 ]
-                optimization_chi2_reduced = [
-                    angle_chi2_reduced[i] for i in optimization_indices
+                total_data_points = sum(
+                    angle_data_points[i] for i in optimization_indices
+                )
+            else:
+                optimization_chi2_proper = angle_chi2_proper
+                total_data_points = sum(angle_data_points)
+
+            # Calculate total statistics
+            total_chi2 = sum(optimization_chi2_proper)
+            total_dof = max(1, total_data_points - len(parameters))
+            reduced_chi2 = total_chi2 / total_dof
+
+            # Collect residuals and sigma for logging
+            all_residuals = np.concatenate(
+                [
+                    residuals_batch[i]
+                    for i in (
+                        optimization_indices
+                        if filter_angles_for_optimization
+                        else range(len(residuals_batch))
+                    )
                 ]
-            else:
-                optimization_chi2_proper = angle_chi2_proper.tolist()
-                optimization_chi2_reduced = angle_chi2_reduced.tolist()
-
-            # Backward compatibility arrays (deprecated)
-            angle_chi2_normalized = angle_chi2_proper  # For old code compatibility
-
-            # Calculate totals for proper statistical chi-squared
-            if optimization_chi2_proper:
-                n_optimization_angles = len(optimization_chi2_proper)
-
-                # Calculate total proper chi-squared: Σ(χ²) where χ² = Σ(residuals²/σ²)
-                total_chi2 = sum(optimization_chi2_proper)
-
-                # Calculate total degrees of freedom: Σ(N - K)
-                total_dof = (
-                    sum(angle_data_points[i] for i in optimization_indices)
-                    if filter_angles_for_optimization
-                    else sum(angle_data_points)
-                ) - len(parameters)
-                total_dof = max(1, total_dof)
-
-                # Calculate proper reduced chi-squared: χ²_reduced = χ² / DoF
-                reduced_chi2_true = total_chi2 / total_dof
-
-                # For backward compatibility, keep the old "normalized" name pointing to proper chi²
-                reduced_chi2 = total_chi2 / total_dof  # Same as reduced_chi2_true now
-
-                # Calculate sigma and residual statistics for diagnostics
-                all_residuals = np.concatenate(
-                    [
-                        residuals_batch[i]
-                        for i in (
-                            optimization_indices
-                            if filter_angles_for_optimization
-                            else range(len(residuals_batch))
-                        )
-                    ]
-                )
-                optimization_sigma = (
-                    sigma_batch[optimization_indices]
-                    if filter_angles_for_optimization
-                    else sigma_batch
-                )
-
-                # Logging to diagnose chi-squared calculation issues
-                logger.info("CHI² CALCULATION:")
-                logger.info(f"  total_chi2 (proper) = {total_chi2:.6e}")
-                logger.info(f"  total_dof = {total_dof}")
-                logger.info(f"  reduced_chi2_true = {reduced_chi2_true:.6e}")
-                logger.info(
-                    f"  sigma min/mean/max = {np.min(optimization_sigma):.6e} / {np.mean(optimization_sigma):.6e} / {np.max(optimization_sigma):.6e}"
-                )
-                logger.info(
-                    f"  residuals min/mean/max/sum = {np.min(all_residuals):.6e} / {np.mean(all_residuals):.6e} / {np.max(all_residuals):.6e} / {np.sum(all_residuals):.6e}"
-                )
-                logger.debug(
-                    f"  Per angle chi²: {[f'{x:.3e}' for x in optimization_chi2_proper]}"
-                )
-                logger.debug(
-                    f"  Per angle DoF: {[angle_data_points[i] - len(parameters) for i in (optimization_indices if filter_angles_for_optimization else range(len(angle_data_points)))]}"
-                )
-
-                # Calculate uncertainty in reduced chi-squared (for both versions)
-                if n_optimization_angles > 1:
-                    # Standard error of the mean for normalized version
-                    reduced_chi2_std = np.std(angle_chi2_normalized, ddof=1)
-                    reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(
-                        n_optimization_angles
+            )
+            optimization_sigma = np.array(
+                [
+                    angle_sigma_values[i]
+                    for i in (
+                        optimization_indices
+                        if filter_angles_for_optimization
+                        else range(len(angle_sigma_values))
                     )
-                    # Standard error of the mean for true version
-                    reduced_chi2_true_std = np.std(optimization_chi2_reduced, ddof=1)
-                    reduced_chi2_true_uncertainty = reduced_chi2_true_std / np.sqrt(
-                        n_optimization_angles
-                    )
-                else:
-                    # Single angle case
-                    reduced_chi2_std = 0.0
-                    reduced_chi2_uncertainty = 0.0
-                    reduced_chi2_true_std = 0.0
-                    reduced_chi2_true_uncertainty = 0.0
+                ]
+            )
 
-                logger.debug(
-                    f"Using average of {n_optimization_angles} optimization angles: "
-                    f"True χ²_red = {reduced_chi2_true:.6e} ± {reduced_chi2_true_uncertainty:.6e}, "
-                    f"Normalized χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e} "
-                    f"(pure statistical calculation)"
+            # Clean logging (remove redundant calculations)
+            logger.info("CHI² CALCULATION (Moving Window Method):")
+            logger.info(f"  total_chi2 = {total_chi2:.6e}")
+            logger.info(f"  total_dof = {total_dof}")
+            logger.info(f"  reduced_chi2 = {reduced_chi2:.6e}")
+            logger.info(
+                f"  sigma min/mean/max = {np.min(optimization_sigma):.6e} / {np.mean(optimization_sigma):.6e} / {np.max(optimization_sigma):.6e}"
+            )
+            logger.info(
+                f"  residuals min/mean/max = {np.min(all_residuals):.6e} / {np.mean(all_residuals):.6e} / {np.max(all_residuals):.6e}"
+            )
+            logger.debug(f"  window_size = {window_size}")
+
+            # Simplified uncertainty calculation (remove dual versions)
+            if len(optimization_chi2_proper) > 1:
+                reduced_chi2_uncertainty = np.std(angle_chi2_reduced, ddof=1) / np.sqrt(
+                    len(optimization_chi2_proper)
                 )
             else:
-                # Fallback if no optimization angles (shouldn't happen)
-                # Use clean variable names from new calculation
-                reduced_chi2 = (
-                    np.mean(angle_chi2_normalized)
-                    if len(angle_chi2_normalized) > 0
-                    else 1e6
-                )
-                reduced_chi2_true = (
-                    np.mean(angle_chi2_reduced) if len(angle_chi2_reduced) > 0 else 1e6
-                )
-                reduced_chi2_std = (
-                    np.std(angle_chi2_normalized, ddof=1)
-                    if len(angle_chi2_normalized) > 1
-                    else 0.0
-                )
-                reduced_chi2_true_std = (
-                    np.std(angle_chi2_reduced, ddof=1)
-                    if len(angle_chi2_reduced) > 1
-                    else 0.0
-                )
-                reduced_chi2_uncertainty = (
-                    reduced_chi2_std / np.sqrt(len(angle_chi2_normalized))
-                    if len(angle_chi2_normalized) > 1
-                    else 0.0
-                )
-                reduced_chi2_true_uncertainty = (
-                    reduced_chi2_true_std / np.sqrt(len(angle_chi2_reduced))
-                    if len(angle_chi2_reduced) > 1
-                    else 0.0
-                )
-                logger.warning(
-                    "No optimization angles found, using average of all angles"
-                )
-
+                reduced_chi2_uncertainty = 0.0
             # Logging
             OPTIMIZATION_COUNTER += 1
             log_freq = self.config["performance_settings"].get(
-                "optimization_counter_log_frequency", 50
+                "optimization_counter_log_frequency", 500
             )
             if OPTIMIZATION_COUNTER % log_freq == 0:
                 logger.info(
                     f"Iteration {OPTIMIZATION_COUNTER:06d} [{method_name}]: "
-                    f"True χ²_red = {reduced_chi2_true:.6e} ± {reduced_chi2_true_uncertainty:.6e}"
+                    f"χ²_red = {reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
-                # Log reduced chi-square per angle (true values)
-                for i, (phi, chi2_red_angle_true) in enumerate(
+                # Log reduced chi-square per angle
+                for i, (phi, chi2_red_angle) in enumerate(
                     zip(phi_angles, angle_chi2_reduced, strict=False)
                 ):
                     logger.info(
-                        f"  Angle {i + 1} (φ={phi:.1f}°): True χ²_red = {chi2_red_angle_true:.6e}"
+                        f"  Angle {i + 1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
                     )
 
             if return_components:
-                # Use the properly calculated totals from above
-                if optimization_chi2_proper:
-                    total_chi2_compat = (
-                        total_chi2  # This is the proper statistical chi²
-                    )
-                    degrees_of_freedom = total_dof
-                else:
-                    # Fallback case (shouldn't happen normally)
-                    # Calculate proper chi² even in fallback
-                    total_chi2_compat = sum(angle_chi2_proper)
-                    total_data_points = sum(angle_data_points)
-                    degrees_of_freedom = max(1, total_data_points - len(parameters))
-
                 return {
-                    "chi_squared": total_chi2_compat,
-                    "reduced_chi_squared": float(reduced_chi2),
-                    "reduced_chi_squared_uncertainty": float(reduced_chi2_uncertainty),
-                    "reduced_chi_squared_std": float(reduced_chi2_std),
-                    "reduced_chi_squared_true": float(reduced_chi2_true),
-                    "reduced_chi_squared_true_uncertainty": float(
-                        reduced_chi2_true_uncertainty
-                    ),
-                    "reduced_chi_squared_true_std": float(reduced_chi2_true_std),
-                    "n_optimization_angles": len(optimization_chi2_proper),
-                    "degrees_of_freedom": degrees_of_freedom,
+                    "chi_squared": reduced_chi2,
+                    "reduced_chi_squared": reduced_chi2,
+                    "reduced_chi_squared_uncertainty": reduced_chi2_uncertainty,
+                    "total_chi_squared": total_chi2,
+                    "degrees_of_freedom": total_dof,
                     "angle_chi_squared": angle_chi2_proper,
                     "angle_chi_squared_reduced": angle_chi2_reduced,
-                    "angle_chi_squared_true_reduced": angle_chi2_reduced,
+                    "scaling_solutions": scaling_solutions,
                     "angle_data_points": angle_data_points,
                     "phi_angles": phi_angles.tolist(),
-                    "scaling_solutions": scaling_solutions,
+                    "n_optimization_angles": len(optimization_chi2_proper),
+                    "optimization_counter": OPTIMIZATION_COUNTER,
                     "valid": True,
                 }
             else:
-                return float(reduced_chi2_true)
+                return float(reduced_chi2)
 
         except Exception as e:
             logger.warning(f"Chi-squared calculation failed: {e}")

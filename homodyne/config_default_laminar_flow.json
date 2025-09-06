@@ -59,14 +59,17 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "typical_range": [0.001, 0.1]
+      "_q_note": "Scattering wavevector magnitude: q = 4\u03c0 sin(\u03b8/2)/\u03bb",
+      "q_unit": "\u00c5\u207b\u00b9",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms - critical for laminar flow analysis",
-      "gap_unit": "Å",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 200
     },
     "computational": {
@@ -78,7 +81,15 @@
   },
   "initial_parameters": {
     "_comment": "Starting values for 7-parameter laminar flow optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
-    "values": [100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0],
+    "values": [
+      100.0,
+      0.0,
+      10.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
     "parameter_names": [
       "D0",
       "alpha",
@@ -89,12 +100,12 @@
       "phi0"
     ],
     "units": [
-      "Å²/s",
+      "\u00c5\u00b2/s",
       "dimensionless",
-      "Å²/s",
-      "s⁻¹",
+      "\u00c5\u00b2/s",
+      "s\u207b\u00b9",
       "dimensionless",
-      "s⁻¹",
+      "s\u207b\u00b9",
       "degrees"
     ],
     "physical_meaning": {
@@ -116,12 +127,12 @@
       "phi0"
     ],
     "parameter_units": {
-      "D0": "Å²/s",
+      "D0": "\u00c5\u00b2/s",
       "alpha": "dimensionless",
-      "D_offset": "Å²/s",
-      "gamma_dot_t0": "s⁻¹",
+      "D_offset": "\u00c5\u00b2/s",
+      "gamma_dot_t0": "s\u207b\u00b9",
       "beta": "dimensionless",
-      "gamma_dot_t_offset": "s⁻¹",
+      "gamma_dot_t_offset": "s\u207b\u00b9",
       "phi0": "degrees"
     }
   },
@@ -131,15 +142,24 @@
       "enabled": true,
       "_flow_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits",
       "target_ranges": [
-        { "min_angle": -10.0, "max_angle": 10.0 },
-        { "min_angle": 170.0, "max_angle": 190.0 }
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0
+        }
       ],
       "fallback_to_all_angles": true,
       "_fallback_note": "Use all angles if no angles found in target ranges",
       "_performance_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
       "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
@@ -160,11 +180,11 @@
           "_adaptive_note": "Adaptive step sizes for better convergence"
         },
         "Gurobi": {
-          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 1500,
           "_max_iterations_note": "More iterations needed for complex 7-parameter flow case",
-          "tolerance": 1e-6,
+          "tolerance": 1e-06,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -190,7 +210,19 @@
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
-      "_optimization_note": "7-parameter optimization is complex - good initial values critical"
+      "_optimization_note": "7-parameter optimization is complex - good initial values critical",
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
+      }
     },
     "robust_optimization": {
       "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
@@ -213,7 +245,7 @@
       "_regularization_alpha_note": "Higher L2 regularization for 7-parameter stability",
       "regularization_beta": 0.001,
       "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
-      "jacobian_epsilon": 1e-6,
+      "jacobian_epsilon": 1e-06,
       "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
       "enable_caching": true,
       "_enable_caching_note": "Enable performance caching for repeated computations",
@@ -225,19 +257,19 @@
         "CLARABEL": {
           "_description": "Interior-point solver optimized for complex 7-parameter laminar flow",
           "max_iter": 600,
-          "tol_gap_abs": 1e-4,
-          "tol_gap_rel": 1e-4,
-          "tol_feas": 1e-5,
-          "tol_infeas_abs": 1e-4,
-          "tol_infeas_rel": 1e-4,
-          "tol_ktratio": 1e-3,
+          "tol_gap_abs": 0.0001,
+          "tol_gap_rel": 0.0001,
+          "tol_feas": 1e-05,
+          "tol_infeas_abs": 0.0001,
+          "tol_infeas_rel": 0.0001,
+          "tol_ktratio": 0.001,
           "equilibrate_enable": true,
           "equilibrate_max_iter": 40,
           "equilibrate_min_scaling": 1e-10,
-          "equilibrate_max_scaling": 1e10,
+          "equilibrate_max_scaling": 10000000000.0,
           "direct_kkt_solver": true,
           "static_regularization_enable": true,
-          "static_regularization_constant": 1e-7,
+          "static_regularization_constant": 1e-07,
           "dynamic_regularization_enable": true,
           "iterative_refinement_enable": true,
           "presolve_enable": true,
@@ -246,9 +278,9 @@
         "SCS": {
           "_description": "Conic solver optimized for high-dimensional laminar flow problems",
           "max_iters": 15000,
-          "eps": 1e-3,
+          "eps": 0.001,
           "alpha": 1.9,
-          "rho_x": 1e-6,
+          "rho_x": 1e-06,
           "scale": 5.0,
           "normalize": true,
           "adaptive_scale": true,
@@ -260,9 +292,9 @@
         "CVXOPT": {
           "_description": "Stable fallback solver for 7-parameter problems",
           "maxiters": 250,
-          "abstol": 1e-4,
-          "reltol": 1e-3,
-          "feastol": 1e-4,
+          "abstol": 0.0001,
+          "reltol": 0.001,
+          "feastol": 0.0001,
           "refinement": 3,
           "verbose": false
         },
@@ -278,16 +310,16 @@
           "BarIterLimit": 1500,
           "TimeLimit": 600,
           "_TimeLimit_note": "Extended timeout for 7-parameter problems",
-          "MIPGap": 1e-2,
+          "MIPGap": 0.01,
           "_MIPGap_note": "Relaxed gap for convergence",
           "NumericFocus": 3,
           "_NumericFocus_note": "Maximum numerical stability",
           "OutputFlag": 0,
           "_OutputFlag_note": "Suppress solver output",
           "ScaleFlag": 3,
-          "BarConvTol": 1e-5,
-          "FeasibilityTol": 1e-4,
-          "OptimalityTol": 1e-4,
+          "BarConvTol": 1e-05,
+          "FeasibilityTol": 0.0001,
+          "OptimalityTol": 0.0001,
           "MarkowitzTol": 0.01,
           "PerturbValue": 0.0005,
           "Presolve": 2
@@ -306,6 +338,18 @@
           "gamma": 0.15,
           "regularization_alpha": 0.02
         }
+      },
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
       }
     },
     "mcmc_sampling": {
@@ -370,8 +414,14 @@
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
-      "fitted_range": { "min": 1.0, "max": 2.0 },
-      "theory_range": { "min": 0.0, "max": 1.0 },
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
       "contrast": {
         "min": 0.05,
         "max": 0.5,
@@ -398,7 +448,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
         "name": "alpha",
@@ -416,16 +466,16 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
         "name": "gamma_dot_t0",
-        "min": 1e-6,
+        "min": 1e-06,
         "max": 1.0,
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.01,
-        "unit": "s⁻¹"
+        "unit": "s\u207b\u00b9"
       },
       {
         "name": "beta",
@@ -443,7 +493,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.001,
-        "unit": "s⁻¹"
+        "unit": "s\u207b\u00b9"
       },
       {
         "name": "phi0",
@@ -463,8 +513,8 @@
     "static_submode": null,
     "_submode_note": "Not applicable for laminar flow mode",
     "model_description": {
-      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics",
-      "flow_physics": "D(t) = D₀ × t^α + D_offset, γ̇(t) = γ̇₀ × t^β + γ̇_offset"
+      "laminar_flow": "g\u2082 = g\u2081_diff \u00d7 g\u2081_shear with sinc\u00b2 term for full flow dynamics",
+      "flow_physics": "D(t) = D\u2080 \u00d7 t^\u03b1 + D_offset, \u03b3\u0307(t) = \u03b3\u0307\u2080 \u00d7 t^\u03b2 + \u03b3\u0307_offset"
     }
   },
   "advanced_settings": {
@@ -477,6 +527,8 @@
       "method": "standard",
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
       "minimum_sigma": 1e-10,
+      "moving_window_size": 11,
+      "moving_window_edge_method": "reflect",
       "fast_computation": true,
       "uncertainty_calculation": {
         "enable_uncertainty": true,
@@ -488,19 +540,29 @@
         "check_positive_gamma_dot_t0": true,
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true
+      },
+      "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
+      "variance_method": "irls_mad_robust",
+      "_variance_method_note": "Options: irls_mad_robust (default), mad_robust",
+      "irls_config": {
+        "max_iterations": 5,
+        "damping_factor": 0.7,
+        "convergence_tolerance": 0.0001,
+        "initial_sigma_squared": 0.001,
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev"
       }
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-8,
+      "relative_tolerance": 1e-08,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-8,
+      "convergence_tolerance": 1e-08,
       "max_function_evaluations": 15000,
       "_max_function_evaluations_note": "Increased for 7-parameter complexity",
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-8
+      "finite_difference_step": 1e-08
     }
   },
   "performance_settings": {
@@ -661,7 +723,10 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png", "pdf"],
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
       "detailed_summary": true,
       "convergence_diagnostics": true
     },
@@ -671,7 +736,10 @@
         "create_plots": true,
         "plot_format": "png",
         "dpi": 300,
-        "figure_size": [12, 8],
+        "figure_size": [
+          12,
+          8
+        ],
         "_figsize_note": "Larger figures for complex 7-parameter results",
         "style": "publication",
         "save_plots": true,
@@ -687,17 +755,27 @@
         "colormap": "viridis",
         "colorbar_position": "right",
         "title_prefix": "C2 Correlation Function (Laminar Flow)",
-        "figsize": [18, 6]
+        "figsize": [
+          18,
+          6
+        ]
       },
       "mcmc_plots": {
         "enabled": true,
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
           "show_truths": false,
           "use_arviz": true,
-          "figsize": [15, 15],
+          "figsize": [
+            15,
+            15
+          ],
           "_figsize_note": "Large corner plot for 7 parameters"
         },
         "trace_plots": {
@@ -705,7 +783,10 @@
           "show_chains": true,
           "show_warmup": false,
           "compact_layout": false,
-          "figsize": [12, 14],
+          "figsize": [
+            12,
+            14
+          ],
           "_figsize_note": "Tall figure for 7 parameter traces"
         },
         "convergence_diagnostics": {

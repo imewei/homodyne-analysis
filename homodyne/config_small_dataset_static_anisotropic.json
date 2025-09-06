@@ -12,7 +12,11 @@
       "phi_angles_override": "Command-line --phi-angles overrides config file phi angles",
       "small_dataset_diagnostics": "Enhanced diagnostic plotting for thorough validation with limited data"
     },
-    "parameters_optimized": ["D0", "alpha", "D_offset"],
+    "parameters_optimized": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
     "angle_filtering": "enabled",
     "shell_completion": "Use argcomplete for shell completion (conda environments auto-enabled)",
     "script_compatibility": "homodyne v0.7.2 with small dataset optimization"
@@ -57,14 +61,17 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "typical_range": [0.001, 0.1]
+      "_q_note": "Scattering wavevector magnitude: q = 4\u03c0 sin(\u03b8/2)/\u03bb",
+      "q_unit": "\u00c5\u207b\u00b9",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms (not critical for static anisotropic)",
-      "gap_unit": "Å",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 200
     },
     "computational": {
@@ -78,19 +85,35 @@
   },
   "initial_parameters": {
     "_comment": "Starting values for 3-parameter static anisotropic optimization [D0, alpha, D_offset] - conservative for small datasets",
-    "values": [100.0, 0.0, 10.0],
-    "parameter_names": ["D0", "alpha", "D_offset"],
-    "units": ["Å²/s", "dimensionless", "Å²/s"],
+    "values": [
+      100.0,
+      0.0,
+      10.0
+    ],
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
+    "units": [
+      "\u00c5\u00b2/s",
+      "dimensionless",
+      "\u00c5\u00b2/s"
+    ],
     "physical_meaning": {
       "D0": "Reference diffusion coefficient",
       "alpha": "Power-law exponent for D(t) evolution",
       "D_offset": "Baseline diffusion coefficient"
     },
-    "active_parameters": ["D0", "alpha", "D_offset"],
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset"
+    ],
     "parameter_units": {
-      "D0": "Å²/s",
+      "D0": "\u00c5\u00b2/s",
       "alpha": "dimensionless",
-      "D_offset": "Å²/s"
+      "D_offset": "\u00c5\u00b2/s"
     }
   },
   "optimization_config": {
@@ -99,17 +122,32 @@
       "enabled": true,
       "_anisotropic_note": "Angle filtering enabled for anisotropic analysis to focus on flow directions",
       "target_ranges": [
-        { "min_angle": -10.0, "max_angle": 10.0 },
-        { "min_angle": 80.0, "max_angle": 100.0 },
-        { "min_angle": 170.0, "max_angle": 190.0 },
-        { "min_angle": 260.0, "max_angle": 280.0 }
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0
+        },
+        {
+          "min_angle": 80.0,
+          "max_angle": 100.0
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0
+        },
+        {
+          "min_angle": 260.0,
+          "max_angle": 280.0
+        }
       ],
       "fallback_to_all_angles": true,
       "_fallback_note": "Use all angles if no angles found in target ranges",
       "_performance_note": "Enhanced precision filtering for small datasets"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
       "_methods_note": "Classical methods with enhanced precision settings for small datasets: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available) with small dataset optimizations",
@@ -122,10 +160,10 @@
           "maxiter": 5000,
           "_maxiter_note": "Increased iterations for small dataset precision - higher SNR requirements",
           "_small_dataset_scaling": "Enhanced iteration count for thorough exploration with limited data",
-          "xatol": 1e-8,
+          "xatol": 1e-08,
           "_xatol_note": "Tight parameter tolerance essential for small dataset precision",
           "_small_dataset_xatol": "Enhanced precision: 1e-8 for reliable convergence with limited statistics",
-          "fatol": 1e-8,
+          "fatol": 1e-08,
           "_fatol_note": "Tight chi-squared tolerance for precise small dataset fitting",
           "_small_dataset_fatol": "Enhanced precision: 1e-8 for accurate parameter estimation",
           "adaptive": true,
@@ -136,7 +174,7 @@
           "_algorithm": "Iterative trust region SQP optimization with enhanced precision for small datasets",
           "max_iterations": 800,
           "_max_iterations_note": "Increased iterations for small dataset precision requirements",
-          "tolerance": 1e-7,
+          "tolerance": 1e-07,
           "_tolerance_note": "Tight convergence tolerance for small dataset accuracy",
           "output_flag": 0,
           "_output_flag_note": "Gurobi verbosity (0=silent, 1=verbose)",
@@ -161,7 +199,19 @@
         }
       },
       "selection_strategy": "best_chi_squared",
-      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success"
+      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
+      }
     },
     "robust_optimization": {
       "_comment": "ENHANCED: Robust optimization with small dataset precision settings",
@@ -185,7 +235,7 @@
       "_regularization_alpha_note": "Increased L2 regularization for small dataset stability",
       "regularization_beta": 0.002,
       "_regularization_beta_note": "Increased L1 sparsity parameter for small dataset robustness",
-      "jacobian_epsilon": 1e-8,
+      "jacobian_epsilon": 1e-08,
       "_jacobian_epsilon_note": "Smaller finite difference step for enhanced small dataset precision",
       "enable_caching": true,
       "_enable_caching_note": "Smart caching provides performance gains and reproducibility for small datasets",
@@ -197,30 +247,30 @@
         "CLARABEL": {
           "_description": "Modern interior-point solver, optimized for small dataset scientific data fitting",
           "max_iter": 1000,
-          "tol_gap_abs": 1e-7,
-          "tol_gap_rel": 1e-7,
-          "tol_feas": 1e-8,
-          "tol_infeas_abs": 1e-7,
-          "tol_infeas_rel": 1e-7,
-          "tol_ktratio": 1e-6,
-          "reduced_tol_gap_abs": 1e-5,
-          "reduced_tol_gap_rel": 1e-5,
-          "reduced_tol_feas": 1e-5,
-          "reduced_tol_infeas_abs": 1e-5,
-          "reduced_tol_infeas_rel": 1e-5,
-          "reduced_tol_ktratio": 1e-4,
+          "tol_gap_abs": 1e-07,
+          "tol_gap_rel": 1e-07,
+          "tol_feas": 1e-08,
+          "tol_infeas_abs": 1e-07,
+          "tol_infeas_rel": 1e-07,
+          "tol_ktratio": 1e-06,
+          "reduced_tol_gap_abs": 1e-05,
+          "reduced_tol_gap_rel": 1e-05,
+          "reduced_tol_feas": 1e-05,
+          "reduced_tol_infeas_abs": 1e-05,
+          "reduced_tol_infeas_rel": 1e-05,
+          "reduced_tol_ktratio": 0.0001,
           "equilibrate_enable": true,
           "equilibrate_max_iter": 50,
           "equilibrate_min_scaling": 1e-10,
-          "equilibrate_max_scaling": 1e10,
+          "equilibrate_max_scaling": 10000000000.0,
           "direct_kkt_solver": true,
           "direct_solve_method": "qdldl",
           "static_regularization_enable": true,
           "static_regularization_constant": 1e-10,
-          "static_regularization_proportional": 1e-8,
+          "static_regularization_proportional": 1e-08,
           "dynamic_regularization_enable": true,
           "dynamic_regularization_eps": 1e-15,
-          "dynamic_regularization_delta": 1e-9,
+          "dynamic_regularization_delta": 1e-09,
           "iterative_refinement_enable": true,
           "iterative_refinement_reltol": 1e-14,
           "iterative_refinement_abstol": 1e-14,
@@ -233,9 +283,9 @@
         "SCS": {
           "_description": "Splitting conic solver, enhanced fallback for small dataset fitting",
           "max_iters": 20000,
-          "eps": 1e-6,
+          "eps": 1e-06,
           "alpha": 1.8,
-          "rho_x": 1e-8,
+          "rho_x": 1e-08,
           "scale": 2.0,
           "normalize": true,
           "adaptive_scale": true,
@@ -251,9 +301,9 @@
         "CVXOPT": {
           "_description": "Python-based solver, stable fallback for difficult small dataset problems",
           "maxiters": 400,
-          "abstol": 1e-7,
-          "reltol": 1e-6,
-          "feastol": 1e-7,
+          "abstol": 1e-07,
+          "reltol": 1e-06,
+          "feastol": 1e-07,
           "refinement": 3,
           "show_progress": false,
           "verbose": false,
@@ -267,13 +317,13 @@
           "BarHomogeneous": 1,
           "BarIterLimit": 2000,
           "TimeLimit": 600,
-          "MIPGap": 1e-5,
+          "MIPGap": 1e-05,
           "NumericFocus": 3,
           "OutputFlag": 0,
           "ScaleFlag": 3,
-          "BarConvTol": 1e-8,
-          "FeasibilityTol": 1e-7,
-          "OptimalityTol": 1e-7,
+          "BarConvTol": 1e-08,
+          "FeasibilityTol": 1e-07,
+          "OptimalityTol": 1e-07,
           "MarkowitzTol": 0.05,
           "PerturbValue": 0.0001,
           "Aggregate": 1,
@@ -295,6 +345,18 @@
           "gamma": 0.15,
           "regularization_alpha": 0.02
         }
+      },
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
       }
     },
     "mcmc_sampling": {
@@ -372,10 +434,16 @@
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset - small dataset precision",
-      "fitted_range": { "min": 1.0, "max": 2.0 },
-      "theory_range": { "min": 0.0, "max": 1.0 },
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
       "contrast": {
-        "min": 1e-4,
+        "min": 0.0001,
         "max": 0.5,
         "prior_mu": 0.05,
         "prior_sigma": 0.005,
@@ -403,7 +471,7 @@
         "prior_mu": 10000.0,
         "prior_sigma": 500.0,
         "_small_dataset_note": "Tighter prior for enhanced small dataset convergence",
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
         "name": "alpha",
@@ -423,7 +491,7 @@
         "prior_mu": 0.0,
         "prior_sigma": 5.0,
         "_small_dataset_note": "Tighter prior for enhanced small dataset stability",
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       }
     ]
   },
@@ -434,7 +502,7 @@
     "static_submode": "anisotropic",
     "_submode_note": "Anisotropic mode - includes angle filtering for directional sensitivity",
     "model_description": {
-      "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering for anisotropic behavior - small dataset precision"
+      "static_anisotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with angular filtering for anisotropic behavior - small dataset precision"
     }
   },
   "advanced_settings": {
@@ -448,6 +516,8 @@
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
       "_small_dataset_factor": "Increased from 0.1 for enhanced small dataset uncertainty estimation",
       "minimum_sigma": 1e-12,
+      "moving_window_size": 11,
+      "moving_window_edge_method": "reflect",
       "_small_dataset_sigma": "Enhanced precision for small dataset analysis",
       "fast_computation": false,
       "_small_dataset_computation": "Disabled for full precision small dataset calculations",
@@ -464,6 +534,16 @@
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true,
         "enhanced_small_dataset_validation": true
+      },
+      "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
+      "variance_method": "irls_mad_robust",
+      "_variance_method_note": "Options: irls_mad_robust (default), mad_robust",
+      "irls_config": {
+        "max_iterations": 5,
+        "damping_factor": 0.7,
+        "convergence_tolerance": 0.0001,
+        "initial_sigma_squared": 0.001,
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev"
       }
     },
     "numerical_integration": {
@@ -597,7 +677,7 @@
         "excellent_threshold": 1.005,
         "good_threshold": 1.02,
         "acceptable_threshold": 1.05,
-        "critical_threshold": 1.10,
+        "critical_threshold": 1.1,
         "_small_dataset_note": "Tighter R-hat thresholds for small dataset precision"
       },
       "ess_thresholds": {
@@ -678,7 +758,10 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png", "pdf"],
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
       "detailed_summary": true,
       "convergence_diagnostics": true,
       "enhanced_small_dataset_reporting": true
@@ -689,7 +772,10 @@
         "create_plots": true,
         "plot_format": "png",
         "dpi": 300,
-        "figure_size": [12, 10],
+        "figure_size": [
+          12,
+          10
+        ],
         "_figsize_note": "Larger figures for detailed small dataset visualization",
         "style": "publication",
         "save_plots": true,
@@ -705,7 +791,10 @@
         "colormap": "viridis",
         "colorbar_position": "right",
         "title_prefix": "Small Dataset C2 Correlation Function (Static Anisotropic)",
-        "figsize": [17, 6],
+        "figsize": [
+          17,
+          6
+        ],
         "_small_dataset_figsize": "Enhanced figure sizes for detailed small dataset visualization"
       },
       "mcmc_plots": {
@@ -713,11 +802,20 @@
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.025, 0.16, 0.5, 0.84, 0.975],
+          "quantiles": [
+            0.025,
+            0.16,
+            0.5,
+            0.84,
+            0.975
+          ],
           "_small_dataset_quantiles": "Extended quantiles for small dataset uncertainty visualization",
           "show_truths": false,
           "use_arviz": true,
-          "figsize": [11, 11]
+          "figsize": [
+            11,
+            11
+          ]
         },
         "trace_plots": {
           "enabled": true,
@@ -726,7 +824,10 @@
           "_small_dataset_warmup": "Include warmup for small dataset diagnostics",
           "compact_layout": false,
           "_small_dataset_layout": "Non-compact layout for detailed small dataset analysis",
-          "figsize": [12, 8]
+          "figsize": [
+            12,
+            8
+          ]
         },
         "convergence_diagnostics": {
           "enabled": true,

@@ -65,14 +65,17 @@
     },
     "scattering": {
       "wavevector_q": 0.001,
-      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
-      "q_unit": "Å⁻¹",
-      "typical_range": [0.001, 0.1]
+      "_q_note": "Scattering wavevector magnitude: q = 4\u03c0 sin(\u03b8/2)/\u03bb",
+      "q_unit": "\u00c5\u207b\u00b9",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms - critical for laminar flow analysis",
-      "gap_unit": "Å",
+      "gap_unit": "\u00c5",
       "gap_in_microns": 200
     },
     "computational": {
@@ -86,7 +89,15 @@
   },
   "initial_parameters": {
     "_comment": "Starting values for 7-parameter laminar flow optimization [D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0]",
-    "values": [100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0],
+    "values": [
+      100.0,
+      0.0,
+      10.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
     "parameter_names": [
       "D0",
       "alpha",
@@ -97,12 +108,12 @@
       "phi0"
     ],
     "units": [
-      "Å²/s",
+      "\u00c5\u00b2/s",
       "dimensionless",
-      "Å²/s",
-      "s⁻¹",
+      "\u00c5\u00b2/s",
+      "s\u207b\u00b9",
       "dimensionless",
-      "s⁻¹",
+      "s\u207b\u00b9",
       "degrees"
     ],
     "physical_meaning": {
@@ -124,12 +135,12 @@
       "phi0"
     ],
     "parameter_units": {
-      "D0": "Å²/s",
+      "D0": "\u00c5\u00b2/s",
       "alpha": "dimensionless",
-      "D_offset": "Å²/s",
-      "gamma_dot_t0": "s⁻¹",
+      "D_offset": "\u00c5\u00b2/s",
+      "gamma_dot_t0": "s\u207b\u00b9",
       "beta": "dimensionless",
-      "gamma_dot_t_offset": "s⁻¹",
+      "gamma_dot_t_offset": "s\u207b\u00b9",
       "phi0": "degrees"
     }
   },
@@ -139,17 +150,32 @@
       "enabled": true,
       "_flow_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits - essential for large datasets",
       "target_ranges": [
-        { "min_angle": -10.0, "max_angle": 10.0 },
-        { "min_angle": 80.0, "max_angle": 100.0 },
-        { "min_angle": 170.0, "max_angle": 190.0 },
-        { "min_angle": 260.0, "max_angle": 280.0 }
+        {
+          "min_angle": -10.0,
+          "max_angle": 10.0
+        },
+        {
+          "min_angle": 80.0,
+          "max_angle": 100.0
+        },
+        {
+          "min_angle": 170.0,
+          "max_angle": 190.0
+        },
+        {
+          "min_angle": 260.0,
+          "max_angle": 280.0
+        }
       ],
       "fallback_to_all_angles": true,
       "_fallback_note": "Use all angles if no angles found in target ranges",
       "_performance_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits with large datasets"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
       "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
@@ -162,19 +188,19 @@
         "Nelder-Mead": {
           "maxiter": 2500,
           "_maxiter_note": "Large dataset optimization: moderate reduction from default for 7-parameter complexity with statistical power",
-          "xatol": 5e-6,
+          "xatol": 5e-06,
           "_xatol_note": "Large dataset optimization: relaxed parameter tolerance leveraging statistical robustness",
-          "fatol": 5e-6,
+          "fatol": 5e-06,
           "_fatol_note": "Large dataset optimization: relaxed function tolerance for efficiency",
           "adaptive": true,
           "_adaptive_note": "Adaptive step sizes essential for efficient convergence with complex 7-parameter space"
         },
         "Gurobi": {
-          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 400,
           "_max_iterations_note": "Large dataset optimization: moderate reduction leveraging statistical power for 7-parameter complexity",
-          "tolerance": 5e-6,
+          "tolerance": 5e-06,
           "_tolerance_note": "Large dataset optimization: relaxed convergence tolerance for efficiency",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -204,7 +230,19 @@
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
-      "_optimization_note": "7-parameter laminar flow optimization with large datasets - complex but benefits from statistical power"
+      "_optimization_note": "7-parameter laminar flow optimization with large datasets - complex but benefits from statistical power",
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
+      }
     },
     "robust_optimization": {
       "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers) for large datasets with laminar flow",
@@ -227,7 +265,7 @@
       "_regularization_alpha_note": "Large dataset optimization: moderate regularization for 7-parameter stability",
       "regularization_beta": 0.001,
       "_regularization_beta_note": "Large dataset optimization: moderate L1 sparsity parameter for 7-parameter space",
-      "jacobian_epsilon": 5e-6,
+      "jacobian_epsilon": 5e-06,
       "_jacobian_epsilon_note": "Large dataset optimization: relaxed finite difference step balancing accuracy and performance",
       "enable_caching": true,
       "_enable_caching_note": "Enable performance caching for repeated computations - critical gains for large datasets",
@@ -240,20 +278,20 @@
           "_description": "Interior-point solver optimized for 7-parameter laminar flow with large datasets",
           "max_iter": 400,
           "_max_iter_note": "Large dataset optimization: moderate iterations balancing performance and convergence for 7 parameters",
-          "tol_gap_abs": 5e-5,
-          "tol_gap_rel": 5e-5,
-          "tol_feas": 5e-5,
-          "tol_infeas_abs": 5e-5,
-          "tol_infeas_rel": 5e-5,
-          "tol_ktratio": 5e-4,
+          "tol_gap_abs": 5e-05,
+          "tol_gap_rel": 5e-05,
+          "tol_feas": 5e-05,
+          "tol_infeas_abs": 5e-05,
+          "tol_infeas_rel": 5e-05,
+          "tol_ktratio": 0.0005,
           "equilibrate_enable": true,
           "equilibrate_max_iter": 25,
           "_equilibrate_max_iter_note": "Large dataset optimization: moderate equilibration for 7-parameter stability",
-          "equilibrate_min_scaling": 1e-8,
-          "equilibrate_max_scaling": 1e8,
+          "equilibrate_min_scaling": 1e-08,
+          "equilibrate_max_scaling": 100000000.0,
           "direct_kkt_solver": true,
           "static_regularization_enable": true,
-          "static_regularization_constant": 1e-7,
+          "static_regularization_constant": 1e-07,
           "dynamic_regularization_enable": true,
           "iterative_refinement_enable": true,
           "_iterative_refinement_note": "Large dataset optimization: enabled for 7-parameter precision",
@@ -264,9 +302,9 @@
           "_description": "Conic solver optimized for 7-parameter large dataset laminar flow problems",
           "max_iters": 8000,
           "_max_iters_note": "Large dataset optimization: high iterations for 7-parameter convergence",
-          "eps": 5e-5,
+          "eps": 5e-05,
           "alpha": 1.6,
-          "rho_x": 5e-6,
+          "rho_x": 5e-06,
           "scale": 5.0,
           "normalize": true,
           "adaptive_scale": true,
@@ -282,9 +320,9 @@
           "_description": "Stable fallback solver for 7-parameter large dataset laminar flow problems",
           "maxiters": 200,
           "_maxiters_note": "Large dataset optimization: increased iterations for 7-parameter complexity",
-          "abstol": 5e-5,
-          "reltol": 5e-5,
-          "feastol": 5e-5,
+          "abstol": 5e-05,
+          "reltol": 5e-05,
+          "feastol": 5e-05,
           "refinement": 3,
           "_refinement_note": "Large dataset optimization: increased refinement for 7-parameter precision",
           "verbose": false
@@ -302,17 +340,17 @@
           "_BarIterLimit_note": "Large dataset optimization: high barrier iterations for 7-parameter convergence",
           "TimeLimit": 600,
           "_TimeLimit_note": "Large dataset optimization: extended timeout for 7-parameter complexity",
-          "MIPGap": 5e-3,
+          "MIPGap": 0.005,
           "NumericFocus": 2,
           "_NumericFocus_note": "Enhanced numerical focus for 7-parameter stability",
           "OutputFlag": 0,
           "_OutputFlag_note": "Suppress solver output",
           "ScaleFlag": 3,
-          "BarConvTol": 5e-6,
+          "BarConvTol": 5e-06,
           "_BarConvTol_note": "Large dataset optimization: enhanced convergence tolerance",
-          "FeasibilityTol": 5e-5,
+          "FeasibilityTol": 5e-05,
           "_FeasibilityTol_note": "Large dataset optimization: relaxed feasibility tolerance for efficiency",
-          "OptimalityTol": 5e-5,
+          "OptimalityTol": 5e-05,
           "_OptimalityTol_note": "Large dataset optimization: relaxed optimality tolerance for efficiency",
           "MarkowitzTol": 0.1,
           "PerturbValue": 0.0001,
@@ -337,6 +375,18 @@
           "regularization_alpha": 0.01,
           "_regularization_alpha_note": "Large dataset optimization: moderate regularization"
         }
+      },
+      "objective_function": {
+        "type": "standard",
+        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
+        "_type_options": {
+          "standard": "Traditional chi-squared minimization (default)",
+          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
+        },
+        "adaptive_target_alpha": 1.0,
+        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
+        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
+        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
       }
     },
     "mcmc_sampling": {
@@ -403,8 +453,14 @@
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
-      "fitted_range": { "min": 1.0, "max": 2.0 },
-      "theory_range": { "min": 0.0, "max": 1.0 },
+      "fitted_range": {
+        "min": 1.0,
+        "max": 2.0
+      },
+      "theory_range": {
+        "min": 0.0,
+        "max": 1.0
+      },
       "contrast": {
         "min": 0.0001,
         "_min_note": "Large dataset optimization: broader lower bound leveraging statistical power",
@@ -439,7 +495,7 @@
         "prior_mu": 10000.0,
         "prior_sigma": 2000.0,
         "_prior_sigma_note": "Large dataset optimization: broader prior leveraging statistical power",
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
         "name": "alpha",
@@ -459,16 +515,16 @@
         "prior_mu": 0.0,
         "prior_sigma": 15.0,
         "_prior_sigma_note": "Large dataset optimization: broader prior for parameter exploration",
-        "unit": "Å²/s"
+        "unit": "\u00c5\u00b2/s"
       },
       {
         "name": "gamma_dot_t0",
-        "min": 1e-6,
+        "min": 1e-06,
         "max": 1.0,
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.01,
-        "unit": "s⁻¹"
+        "unit": "s\u207b\u00b9"
       },
       {
         "name": "beta",
@@ -487,7 +543,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.001,
-        "unit": "s⁻¹"
+        "unit": "s\u207b\u00b9"
       },
       {
         "name": "phi0",
@@ -507,7 +563,7 @@
     "static_submode": null,
     "_submode_note": "Not applicable for laminar flow mode",
     "model_description": {
-      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics - large dataset performance"
+      "laminar_flow": "g\u2082 = g\u2081_diff \u00d7 g\u2081_shear with sinc\u00b2 term for full flow dynamics - large dataset performance"
     }
   },
   "advanced_settings": {
@@ -519,8 +575,10 @@
     "chi_squared_calculation": {
       "method": "standard",
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
-      "minimum_sigma": 1e-8,
+      "minimum_sigma": 1e-08,
       "_minimum_sigma_note": "Large dataset optimization: relaxed precision for efficiency",
+      "moving_window_size": 11,
+      "moving_window_edge_method": "reflect",
       "fast_computation": true,
       "_fast_computation_note": "Large dataset optimization: enabled for high-speed calculations",
       "uncertainty_calculation": {
@@ -533,22 +591,32 @@
         "check_positive_gamma_dot_t0": true,
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true
+      },
+      "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
+      "variance_method": "irls_mad_robust",
+      "_variance_method_note": "Options: irls_mad_robust (default), mad_robust",
+      "irls_config": {
+        "max_iterations": 5,
+        "damping_factor": 0.7,
+        "convergence_tolerance": 0.0001,
+        "initial_sigma_squared": 0.001,
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev"
       }
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-6,
+      "relative_tolerance": 1e-06,
       "_relative_tolerance_note": "Large dataset optimization: balanced precision for efficiency",
       "absolute_tolerance": 1e-10,
       "_absolute_tolerance_note": "Large dataset optimization: balanced precision tolerances"
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-6,
+      "convergence_tolerance": 1e-06,
       "_convergence_tolerance_note": "Large dataset optimization: relaxed from 1e-8 for performance",
       "max_function_evaluations": 5000,
       "_max_function_evaluations_note": "Large dataset optimization: moderate limit balancing efficiency and 7-parameter convergence",
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-6,
+      "finite_difference_step": 1e-06,
       "_finite_difference_step_note": "Large dataset optimization: relaxed precision for performance"
     }
   },
@@ -650,7 +718,7 @@
         "warning_threshold": 40.0,
         "outlier_threshold_multiplier": 3.0,
         "_outlier_threshold_multiplier_note": "Large dataset optimization: relaxed outlier detection for complex fits",
-        "max_outlier_fraction": 0.30,
+        "max_outlier_fraction": 0.3,
         "_max_outlier_fraction_note": "Large dataset optimization: higher outlier tolerance for 7-parameter complexity",
         "min_good_angles": 3,
         "_min_good_angles_note": "Large dataset optimization: moderate minimum for flow directionality"
@@ -745,7 +813,9 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png"],
+      "plot_formats": [
+        "png"
+      ],
       "_plot_formats_note": "Large dataset optimization: single format for efficiency",
       "detailed_summary": true,
       "_detailed_summary_note": "Large dataset optimization: enabled for comprehensive 7-parameter analysis documentation",
@@ -758,7 +828,10 @@
         "plot_format": "png",
         "dpi": 150,
         "_dpi_note": "Large dataset optimization: reduced DPI for storage efficiency",
-        "figure_size": [12, 8],
+        "figure_size": [
+          12,
+          8
+        ],
         "_figsize_note": "Large dataset optimization: larger figures for complex 7-parameter results",
         "style": "publication",
         "save_plots": true,
@@ -774,7 +847,10 @@
         "colormap": "viridis",
         "colorbar_position": "right",
         "title_prefix": "C2 Correlation Function (Large Dataset Laminar Flow)",
-        "figsize": [18, 6],
+        "figsize": [
+          18,
+          6
+        ],
         "_figsize_note": "Large dataset optimization: large figure for comprehensive flow visualization"
       },
       "mcmc_plots": {
@@ -782,10 +858,17 @@
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
           "show_truths": false,
           "use_arviz": true,
-          "figsize": [15, 15],
+          "figsize": [
+            15,
+            15
+          ],
           "_figsize_note": "Large dataset optimization: large corner plot for 7 parameters"
         },
         "trace_plots": {
@@ -795,7 +878,10 @@
           "_show_warmup_note": "Large dataset optimization: exclude warmup for storage efficiency",
           "compact_layout": false,
           "_compact_layout_note": "Large dataset optimization: full layout for 7-parameter analysis",
-          "figsize": [12, 14],
+          "figsize": [
+            12,
+            14
+          ],
           "_figsize_note": "Large dataset optimization: tall figure for 7 parameter traces"
         },
         "convergence_diagnostics": {
