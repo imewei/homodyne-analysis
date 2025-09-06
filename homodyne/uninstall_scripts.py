@@ -416,6 +416,34 @@ def main():
 
             success = True
         else:
+            # Add confirmation prompt for non-interactive cleanup
+            if not args.force:
+                print(
+                    "\n⚠️  This will remove all homodyne shell completion and setup files:"
+                )
+                print(
+                    "   • Shell completion scripts and aliases (hm, hc, hr, ha, etc.)"
+                )
+                print("   • GPU acceleration setup and activation scripts")
+                print("   • Advanced features CLI commands")
+                print("   • All conda activation hooks")
+                print("\n💡 To restore these files later, run:")
+                print("   homodyne-post-install --shell zsh --gpu --advanced")
+                print()
+
+                try:
+                    confirm = (
+                        input("🤔 Are you sure you want to proceed? [y/N]: ")
+                        .strip()
+                        .lower()
+                    )
+                    if not confirm.startswith("y"):
+                        print("🚫 Cleanup cancelled by user")
+                        return 0
+                except (KeyboardInterrupt, EOFError):
+                    print("\n🚫 Cleanup cancelled by user")
+                    return 0
+
             success = cleanup_all_files()
 
         print("\n" + "═" * 70)
@@ -432,6 +460,8 @@ def main():
             print("   • Restart your shell session")
             print("   • Or reactivate your virtual environment")
             print("   • Run 'pip uninstall homodyne-analysis' to complete removal")
+            print("\n🔧 To restore shell completion and setup files:")
+            print("   homodyne-post-install --shell zsh --gpu --advanced")
         else:
             print("⚠️  Cleanup had some issues")
             print("\n💡 Troubleshooting:")
@@ -459,12 +489,16 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  homodyne-cleanup                   # Remove all homodyne files
+  homodyne-cleanup                   # Remove all homodyne files (with confirmation)
+  homodyne-cleanup --force           # Remove all homodyne files (no confirmation)
   homodyne-cleanup --interactive     # Choose what to remove
   homodyne-cleanup --dry-run         # Show what would be removed
 
 This script removes homodyne-related files that were installed by
 homodyne-post-install. Run this BEFORE 'pip uninstall'.
+
+IMPORTANT: To restore files after cleanup, run:
+  homodyne-post-install --shell zsh --gpu --advanced
 
 Files removed:
   • Shell completion scripts (bash/zsh/fish)
@@ -487,6 +521,13 @@ Files removed:
         "-n",
         action="store_true",
         help="Show what would be removed without actually removing",
+    )
+
+    parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Skip confirmation prompt and force cleanup",
     )
 
     return parser.parse_args()
