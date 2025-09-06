@@ -2251,30 +2251,18 @@ class HomodyneAnalysisCore:
                     # Get edge method from config
                     edge_method = chi_config.get("moving_window_edge_method", "reflect")
 
-                    # Apply reflection edge handling if needed
-                    if edge_method == "reflect":
-                        # Ensure odd window size
-                        pad_window_size = (
-                            window_size if window_size % 2 == 1 else window_size + 1
-                        )
-                        pad_size = pad_window_size // 2
-                        residuals_processed = np.pad(
-                            residuals, pad_size, mode="reflect"
-                        )
-                    else:
-                        residuals_processed = residuals
-
+                    # IRLS methods handle edge padding internally - always pass original residuals
                     # Use selected variance estimator (optimized or legacy)
                     if hasattr(self, "_selected_variance_estimator"):
                         sigma_variances = self._selected_variance_estimator(
-                            residuals_processed,
+                            residuals,  # Always pass original residuals
                             window_size=window_size,
                             edge_method=edge_method,
                         )
                     else:
                         # Fallback to legacy method if not initialized
                         sigma_variances = self._estimate_variance_irls_mad_robust(
-                            residuals_processed,
+                            residuals,  # Always pass original residuals
                             window_size=window_size,
                             edge_method=edge_method,
                         )
@@ -2292,12 +2280,24 @@ class HomodyneAnalysisCore:
 
                 sigma_per_point = np.sqrt(sigma_variances)
 
-                # Proper chi-squared: χ² = Σ(residuals²/σ²)
-                # Use residuals_processed to match variance estimator input size
-                if edge_method == "reflect" and "residuals_processed" in locals():
-                    chi2_per_point = (residuals_processed / sigma_per_point) ** 2
+                # Debug size mismatch issues
+                if len(residuals) != len(sigma_per_point):
+                    logger.error(
+                        f"Size mismatch in chi-squared calculation: "
+                        f"residuals({len(residuals)}) != sigma_per_point({len(sigma_per_point)}). "
+                        f"Difference: {abs(len(residuals) - len(sigma_per_point))} elements."
+                    )
+                    # Truncate to smaller size to prevent crash
+                    min_size = min(len(residuals), len(sigma_per_point))
+                    residuals_for_calc = residuals[:min_size]
+                    sigma_for_calc = sigma_per_point[:min_size]
+                    logger.warning(f"Truncating both arrays to size {min_size}")
                 else:
-                    chi2_per_point = (residuals / sigma_per_point) ** 2
+                    residuals_for_calc = residuals
+                    sigma_for_calc = sigma_per_point
+
+                # Proper chi-squared: χ² = Σ(residuals²/σ²)
+                chi2_per_point = (residuals_for_calc / sigma_for_calc) ** 2
                 chi2_total_angle = np.sum(chi2_per_point)
                 chi2_reduced_angle = chi2_total_angle / dof_per_angle
 

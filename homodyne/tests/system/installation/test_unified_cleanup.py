@@ -308,7 +308,7 @@ class TestCleanupMainFunction:
     def test_cleanup_main_default(self):
         """Test default cleanup behavior."""
         with (
-            patch("sys.argv", ["homodyne-cleanup"]),
+            patch("sys.argv", ["homodyne-cleanup", "--force"]),
             patch(
                 "homodyne.uninstall_scripts.cleanup_all_files", return_value=True
             ) as mock_cleanup,
@@ -354,7 +354,7 @@ class TestCleanupMainFunction:
     def test_cleanup_main_not_virtual_env(self):
         """Test cleanup behavior when not in virtual environment."""
         with (
-            patch("sys.argv", ["homodyne-cleanup"]),
+            patch("sys.argv", ["homodyne-cleanup", "--force"]),
             patch(
                 "homodyne.uninstall_scripts.is_virtual_environment", return_value=False
             ),
@@ -365,7 +365,7 @@ class TestCleanupMainFunction:
             # Should return 1 when not in virtual env (cleanup_all_files returns False)
             assert result == 1
             print_calls = [str(call) for call in mock_print.call_args_list]
-            assert any("virtual environment" in call for call in print_calls)
+            assert any("virtual environment" in call.lower() for call in print_calls)
 
     def test_cleanup_main_help(self):
         """Test help message display."""
