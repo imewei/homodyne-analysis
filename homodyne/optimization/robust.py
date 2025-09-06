@@ -36,6 +36,7 @@ from sklearn.utils import resample
 # CVXPY import with graceful degradation
 try:
     import warnings
+    from typing import TYPE_CHECKING
 
     import cvxpy as cp
 
@@ -50,7 +51,10 @@ try:
     CVXPY_AVAILABLE = True
 except ImportError:
     CVXPY_AVAILABLE = False
-    cp = None
+    if TYPE_CHECKING:
+        import cvxpy as cp  # For type checking only
+    else:
+        cp = None
 
 # Check if Gurobi is available as a CVXPY solver
 try:
@@ -143,7 +147,7 @@ class RobustHomodyneOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         method: str = "wasserstein",
-        **kwargs,
+        **kwargs: Any,
     ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Run robust optimization using specified method.
@@ -802,10 +806,12 @@ class RobustHomodyneOptimizer:
             if residuals.ndim > 1:
                 # Resample along the time axis
                 resampled_residuals = np.apply_along_axis(
-                    lambda x: resample(x, n_samples=len(x)), -1, residuals
+                    lambda x: np.array(resample(x, n_samples=len(x))), -1, residuals
                 )
             else:
-                resampled_residuals = resample(residuals, n_samples=len(residuals))
+                resampled_residuals = np.array(
+                    resample(residuals, n_samples=len(residuals))
+                )
 
             # Create scenario by adding resampled residuals to fitted
             # correlation
@@ -841,7 +847,9 @@ class RobustHomodyneOptimizer:
             (fitted_correlation_function, jacobian_matrix)
         """
         # Create cache key for performance optimization
-        theta_key = tuple(theta) if self.settings.get("enable_caching", True) else None
+        theta_key: str | None = (
+            str(tuple(theta)) if self.settings.get("enable_caching", True) else None
+        )
 
         if theta_key and theta_key in self._jacobian_cache:
             return self._jacobian_cache[theta_key]
@@ -964,8 +972,8 @@ class RobustHomodyneOptimizer:
         """
         try:
             # Performance optimization: cache theoretical correlation
-            theta_key = (
-                tuple(theta) if self.settings.get("enable_caching", True) else None
+            theta_key: str | None = (
+                str(tuple(theta)) if self.settings.get("enable_caching", True) else None
             )
 
             if theta_key and theta_key in self._correlation_cache:
@@ -1191,7 +1199,9 @@ class RobustHomodyneOptimizer:
             logger.error(f"Error getting parameter bounds: {e}")
             return None
 
-    def _solve_cvxpy_problem_optimized(self, problem, method_name: str = "") -> bool:
+    def _solve_cvxpy_problem_optimized(
+        self, problem: Any, method_name: str = ""
+    ) -> bool:
         """
         Optimized CVXPY problem solving with preferred solver and fast fallback.
 
@@ -1207,14 +1217,15 @@ class RobustHomodyneOptimizer:
         bool
             True if solver succeeded, False otherwise
         """
+        # Check CVXPY availability at the start
+        if not CVXPY_AVAILABLE:
+            logger.error(f"{method_name}: CVXPY not available")
+            return False
+
         preferred_solver = self.settings.get("preferred_solver", "CLARABEL")
 
         # Try preferred solver first
         try:
-            if cp is None:
-                logger.error(f"{method_name}: CVXPY not available")
-                return False
-
             if preferred_solver == "CLARABEL":
                 logger.debug(f"{method_name}: Using preferred CLARABEL solver")
                 problem.solve(solver=cp.CLARABEL)
@@ -1242,10 +1253,6 @@ class RobustHomodyneOptimizer:
 
         # Fast fallback to SCS if preferred solver failed
         try:
-            if cp is None:
-                logger.error(f"{method_name}: CVXPY not available for fallback")
-                return False
-
             logger.debug(
                 f"{method_name}: Preferred solver failed. Trying SCS fallback."
             )
@@ -1277,7 +1284,7 @@ class RobustHomodyneOptimizer:
 
 
 def create_robust_optimizer(
-    analysis_core, config: dict[str, Any]
+    analysis_core: Any, config: dict[str, Any]
 ) -> RobustHomodyneOptimizer:
     """
     Factory function to create a RobustHomodyneOptimizer instance.
