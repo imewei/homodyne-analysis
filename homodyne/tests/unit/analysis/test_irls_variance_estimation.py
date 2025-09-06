@@ -161,7 +161,7 @@ class TestIRLSVarianceEstimation:
         residuals = np.random.randn(50) * 0.2
 
         variances = mock_core_with_irls_config._estimate_variance_irls_mad_robust(
-            residuals, window_size=7
+            residuals, window_size=7, edge_method="none"
         )
 
         # Basic checks
@@ -234,11 +234,19 @@ class TestIRLSVarianceEstimation:
         residuals = np.array(
             [0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5]
         )  # High values at edges
+        
+        # Pre-pad residuals for edge_method="reflect" testing
+        window_size = 5
+        pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
+        pad_size = pad_window_size // 2
+        padded_residuals = np.pad(residuals, pad_size, mode="reflect")
 
         variances = mock_core_with_irls_config._estimate_variance_irls_mad_robust(
-            residuals, window_size=5, edge_method="reflect"
+            padded_residuals, window_size=5, edge_method="reflect"
         )
 
+        # Should return same size as original (unpadded) residuals
+        assert len(variances) == len(residuals), "Output should match original size"
         # Edge variances should be reasonable (not infinite or zero)
         assert np.isfinite(variances[0]), "First element variance should be finite"
         assert np.isfinite(variances[-1]), "Last element variance should be finite"
@@ -499,7 +507,7 @@ class TestIRLSRobustness:
         # Most values small, one very large
         residuals = np.array([0.01, 0.02, 0.01, 100.0, 0.02, 0.01, 0.01])
 
-        variances = robust_test_core._estimate_variance_irls_mad_robust(residuals)
+        variances = robust_test_core._estimate_variance_irls_mad_robust(residuals, edge_method="none")
 
         # MAD-based IRLS should be robust to outliers
         assert np.all(np.isfinite(variances)), "Should handle extreme outliers"
@@ -517,7 +525,7 @@ class TestIRLSRobustness:
         residuals = np.random.randn(20) * 0.1
 
         variances = robust_test_core._estimate_variance_irls_mad_robust(
-            residuals, window_size=3
+            residuals, window_size=3, edge_method="none"
         )
 
         assert len(variances) == len(residuals), "Should handle small windows"
@@ -530,7 +538,7 @@ class TestIRLSRobustness:
         residuals = np.array([0.1, -0.2, 0.15])  # Only 3 points
 
         variances = robust_test_core._estimate_variance_irls_mad_robust(
-            residuals, window_size=3
+            residuals, window_size=3, edge_method="none"
         )
 
         assert len(variances) == 3, "Should handle short data arrays"

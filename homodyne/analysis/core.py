@@ -1281,20 +1281,15 @@ class HomodyneAnalysisCore:
         )
 
         # Handle reflected residuals - extract original size
-        original_size = len(residuals)
         if edge_method == "reflect":
-            pad_size = window_size // 2
-            # If residuals were padded, we need to account for that
-            if original_size > len(residuals) - 2 * pad_size:
-                # Residuals were not padded in this call, use as-is
-                working_residuals = residuals
-                extract_indices = slice(None)
-            else:
-                # Work with the full padded array but extract original portion later
-                working_residuals = residuals
-                extract_indices = (
-                    slice(pad_size, -pad_size) if pad_size > 0 else slice(None)
-                )
+            # Ensure odd window size for proper padding
+            pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
+            pad_size = pad_window_size // 2
+            
+            # Residuals are expected to be pre-padded when edge_method="reflect"
+            # Extract the original (unpadded) portion at the end
+            working_residuals = residuals
+            extract_indices = slice(pad_size, -pad_size) if pad_size > 0 else slice(None)
         else:
             working_residuals = residuals
             extract_indices = slice(None)
