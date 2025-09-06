@@ -477,9 +477,9 @@
       "variance_method": "irls_mad_robust",
       "_variance_method_note": "Options: irls_mad_robust (default), irls_optimized (50x faster), mad_robust, mad_optimized (10x faster)",
       "irls_config": {
-        "max_iterations": 5,
+        "max_iterations": 10,
         "damping_factor": 0.7,
-        "convergence_tolerance": 0.0001,
+        "convergence_tolerance": 0.001,
         "initial_sigma_squared": 0.001,
         "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev",
         "optimized_config": {

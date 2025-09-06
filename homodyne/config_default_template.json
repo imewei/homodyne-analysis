@@ -583,9 +583,9 @@
         }
       },
       "irls_config": {
-        "max_iterations": 5,
+        "max_iterations": 10,
         "damping_factor": 0.7,
-        "convergence_tolerance": 1e-4,
+        "convergence_tolerance": 1e-3,
         "initial_sigma_squared": 1e-3,
         "_algorithm_note": "IRLS with MAD: σ²ᵢ = (1.4826 × MAD)², damping: σ² = α·σ²_new + (1-α)·σ²_prev",
         "optimized_config": {

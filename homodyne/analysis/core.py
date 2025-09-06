@@ -466,7 +466,10 @@ class HomodyneAnalysisCore:
             # Use legacy methods
             self._selected_variance_estimator = self._estimate_variance_irls_mad_robust
             self._selected_chi_calculator = self.calculate_chi_squared_optimized
-            logger.info("Using legacy IRLS methods (performance optimization disabled)")
+            logger.warning(
+                "IRLS Performance optimization DISABLED - using legacy methods with 10 iterations. "
+                "Set 'performance_optimization.enabled: true' in config for 50-100x speedup."
+            )
             return
 
         # Configure optimized variance estimator
@@ -478,7 +481,10 @@ class HomodyneAnalysisCore:
             logger.info("Selected optimized IRLS variance estimator (50-100x speedup)")
         else:
             self._selected_variance_estimator = self._estimate_variance_irls_mad_robust
-            logger.info("Selected legacy IRLS variance estimator")
+            logger.warning(
+                f"Using legacy IRLS variance estimator (variance_estimator='{variance_estimator_type}'). "
+                "Set 'variance_estimator: irls_optimized' for optimal performance."
+            )
 
         # Configure optimized chi-squared calculator
         chi_calculator_type = perf_config.get("chi_calculator", "standard")
@@ -1395,6 +1401,29 @@ class HomodyneAnalysisCore:
 
                 return c2_calculated
 
+    def calculate_c2_correlation_vectorized(
+        self, parameters: np.ndarray, phi_angles: np.ndarray
+    ) -> np.ndarray:
+        """
+        Vectorized calculation of c2 correlation functions for multiple angles.
+
+        This method is an alias for calculate_c2_nonequilibrium_laminar_parallel
+        to maintain compatibility with the optimized chi-squared calculation.
+
+        Parameters
+        ----------
+        parameters : np.ndarray
+            Model parameters
+        phi_angles : np.ndarray
+            Array of scattering angles
+
+        Returns
+        -------
+        np.ndarray
+            Correlation functions for all angles
+        """
+        return self.calculate_c2_nonequilibrium_laminar_parallel(parameters, phi_angles)
+
     def _estimate_variance_mad_moving_window(
         self, residuals: np.ndarray, window_size: int = 7, min_variance: float = 1e-6
     ) -> np.ndarray:
@@ -1500,10 +1529,12 @@ class HomodyneAnalysisCore:
         chi_config = self._cached_chi_config
         irls_config = chi_config.get("irls_config", {})
 
-        # Get IRLS parameters from config
-        max_iterations = irls_config.get("max_iterations", 5)
+        # Get IRLS parameters from config - increased default iterations to match optimized method
+        max_iterations = irls_config.get("max_iterations", 10)  # Increased from 5 to 10
         damping_factor = irls_config.get("damping_factor", 0.7)
-        convergence_tolerance = irls_config.get("convergence_tolerance", 1e-4)
+        convergence_tolerance = irls_config.get(
+            "convergence_tolerance", 1e-3
+        )  # Relaxed from 1e-4
         initial_sigma_squared = irls_config.get("initial_sigma_squared", 1e-3)
         min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
 
@@ -1634,13 +1665,16 @@ class HomodyneAnalysisCore:
 
         if not use_vectorized_mad:
             # Fall back to legacy method if optimization disabled
+            logger.warning(
+                "IRLS fallback: optimized_config.use_vectorized_mad=False, "
+                "falling back to legacy method with 10 iterations"
+            )
             return self._estimate_variance_irls_mad_robust(
                 residuals, window_size, edge_method
             )
 
         # Handle edge reflection for residuals if needed
         working_residuals = residuals
-        extract_indices = slice(None)
 
         if edge_method == "reflect":
             # Add reflection padding
@@ -1652,7 +1686,6 @@ class HomodyneAnalysisCore:
                 left_pad = residuals[pad_size:0:-1]
                 right_pad = residuals[-2 : -pad_size - 2 : -1]
                 working_residuals = np.concatenate([left_pad, residuals, right_pad])
-                extract_indices = slice(pad_size, len(working_residuals) - pad_size)
 
         # Initialize variance estimates
         n_points = len(working_residuals)
@@ -1661,10 +1694,19 @@ class HomodyneAnalysisCore:
 
         # IRLS iterations with optimized MAD calculation
         for iteration in range(max_iterations):
-            # Use optimized vectorized MAD estimation on padded array
-            sigma2_new = _estimate_mad_vectorized_optimized(
-                working_residuals, window_size
-            )
+            try:
+                # Use optimized vectorized MAD estimation on padded array
+                sigma2_new = _estimate_mad_vectorized_optimized(
+                    working_residuals, window_size
+                )
+            except Exception as e:
+                logger.warning(
+                    f"IRLS JIT compilation failed: {e}. "
+                    "Falling back to legacy method for robustness."
+                )
+                return self._estimate_variance_irls_mad_robust(
+                    residuals, window_size, edge_method
+                )
 
             # Apply damping
             sigma2 = damping_factor * sigma2_new + (1 - damping_factor) * sigma2_prev
@@ -2322,17 +2364,17 @@ class HomodyneAnalysisCore:
                 optimization_sigma = np.array(all_sigma_values)
 
             # Clean logging (remove redundant calculations)
-            logger.info("CHI² CALCULATION (Moving Window Method):")
-            logger.info(f"  total_chi2 = {total_chi2:.6e}")
-            logger.info(f"  total_dof = {total_dof}")
-            logger.info(f"  reduced_chi2 = {reduced_chi2:.6e}")
-            logger.info(
+            logger.debug("CHI² CALCULATION (Moving Window Method):")
+            logger.debug(f"  total_chi2 = {total_chi2:.6e}")
+            logger.debug(f"  total_dof = {total_dof}")
+            logger.debug(f"  reduced_chi2 = {reduced_chi2:.6e}")
+            logger.debug(
                 f"  sigma min/mean/max = {np.min(optimization_sigma):.6e} / {np.mean(optimization_sigma):.6e} / {np.max(optimization_sigma):.6e}"
             )
-            logger.info(
+            logger.debug(
                 f"  sigma points = {len(optimization_sigma)} (individual variance estimates)"
             )
-            logger.info(
+            logger.debug(
                 f"  residuals min/mean/max = {np.min(all_residuals):.6e} / {np.mean(all_residuals):.6e} / {np.max(all_residuals):.6e}"
             )
             logger.debug(f"  window_size = {window_size}")
