@@ -13,6 +13,7 @@ This guide is for developers who want to contribute to the homodyne package or e
    security
    performance
    testing
+   pytest-config-guide
    troubleshooting
 
 Quick Developer Setup

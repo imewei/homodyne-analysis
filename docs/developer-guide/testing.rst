@@ -70,7 +70,7 @@ Running Tests
 
 **Test Execution Configurations**
 
-The project provides multiple pytest configurations optimized for different scenarios:
+The project provides multiple pytest configurations optimized for different scenarios. For detailed information about each configuration, see the :ref:`pytest_config_guide`.
 
 **Quick Development Tests (< 30 seconds)**
 
@@ -79,11 +79,11 @@ The project provides multiple pytest configurations optimized for different scen
    # Fast development tests
    pytest -c pytest-quick.ini
    
-   # Includes: Unit tests marked as "fast"
-   # Excludes: Integration, MCMC, performance, slow tests
-   # Use case: TDD development cycle
+   # Includes: Unit tests (excluding slow, MCMC, benchmarks)
+   # Timeout: 60 seconds with maxfail=5 for fast feedback
+   # Use case: TDD development cycle and rapid iteration
 
-**CI Tests (< 3 minutes)**
+**CI Tests (< 5 minutes)**
 
 .. code-block:: bash
 
@@ -92,9 +92,9 @@ The project provides multiple pytest configurations optimized for different scen
    
    # Includes: Unit and regression tests
    # Excludes: Performance, system, integration, MCMC tests
-   # Features: Parallel execution, coverage reporting
+   # Features: Parallel execution, 75% coverage requirement, 300s timeout
 
-**Full Test Suite (< 5 minutes)**
+**Full Test Suite (< 10 minutes)**
 
 .. code-block:: bash
 
@@ -102,17 +102,17 @@ The project provides multiple pytest configurations optimized for different scen
    pytest -c pytest-full.ini
    
    # Includes: All tests except benchmarks
-   # Features: Full coverage, parallel execution
+   # Features: 80% coverage, HTML reports, 600s timeout, parallel execution
 
-**Performance Benchmarks (5-15 minutes)**
+**Performance Benchmarks (10-20 minutes)**
 
 .. code-block:: bash
 
    # Performance benchmarking only
    pytest -c pytest-benchmarks.ini
    
-   # Includes: Only benchmark and performance tests
-   # Features: pytest-benchmark integration, performance tracking
+   # Includes: Benchmark, performance, slow, and hybrid IRLS tests
+   # Features: pytest-benchmark integration, controlled environment, 1200s timeout
 
 **Performance Optimizations Applied**
 
@@ -151,17 +151,42 @@ Recent optimizations have significantly improved test execution times:
 
 **Available Test Markers**
 
-The following test markers are defined in ``pyproject.toml``:
+The following test markers are defined across pytest configuration files:
 
+**Execution Time Markers:**
 - ``slow``: Long-running tests (>30s)
+- ``fast``: Quick tests (<1s)
+
+**Test Type Markers:**
+- ``unit``: Unit tests (isolated, no external dependencies)
 - ``integration``: End-to-end integration tests
+- ``system``: System-level tests (require environment setup)
+- ``regression``: Performance regression detection tests
+
+**Feature-Specific Markers:**
 - ``mcmc``: Tests requiring PyMC/ArviZ dependencies
 - ``performance``: Performance-related tests
 - ``benchmark``: Benchmarking tests with pytest-benchmark
 - ``memory``: Memory usage monitoring tests
-- ``regression``: Performance regression detection tests
+- ``optimization``: Tests for optimization methods (classical, robust, MCMC)
+
+**Computational Method Markers:**
+- ``irls``: Tests related to IRLS variance estimation
+- ``hybrid_irls``: Tests for hybrid limited-iteration IRLS approach
+- ``weighted_refit``: Tests for weighted refit functionality
+- ``mad_estimation``: Tests for MAD (Median Absolute Deviation) estimation
+- ``vectorized``: Tests for vectorized/optimized computation methods
+- ``numba``: Tests requiring Numba JIT compilation
+- ``convergence``: Tests for iterative algorithm convergence
+- ``angle_filtering``: Tests for angle filtering optimization features
+
+**Platform/Dependency Markers:**
 - ``jax``: Tests requiring JAX dependencies
 - ``gpu``: Tests that can utilize GPU acceleration
+
+**Environment Markers:**
+- ``ci_skip``: Tests to skip in CI environments
+- ``ci``: Tests suitable for CI execution
 
 **Parallel Testing**:
 
@@ -591,6 +616,29 @@ Continuous Integration
          - name: Upload coverage
            uses: codecov/codecov-action@v3
 
+.. _pytest_config_guide:
+
+Pytest Configuration Guide
+---------------------------
+
+For comprehensive information about the pytest configuration files, including detailed usage examples, troubleshooting tips, and integration with CLAUDE.md commands, see the dedicated :doc:`pytest-config-guide`.
+
+The guide covers:
+
+- **Configuration file overview** and when to use each one
+- **New test markers** for hybrid IRLS and related features
+- **Performance optimization** settings and environment variables
+- **Coverage configuration** improvements
+- **Usage examples** and best practices
+- **Integration** with development workflows
+
+**Key Configuration Files:**
+
+- ``pytest-quick.ini``: Fast development iteration (< 60s)
+- ``pytest-ci.ini``: CI/CD optimized testing (< 300s)  
+- ``pytest-full.ini``: Comprehensive testing with coverage (< 600s)
+- ``pytest-benchmarks.ini``: Performance testing and benchmarks (< 1200s)
+
 Test Best Practices
 -------------------
 
@@ -601,3 +649,4 @@ Test Best Practices
 5. **Performance**: Include performance regression tests
 6. **Documentation**: Document complex test scenarios
 7. **Maintenance**: Regularly update tests as code evolves
+8. **Configuration Selection**: Use appropriate pytest configuration for your use case
