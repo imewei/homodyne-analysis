@@ -46,7 +46,11 @@ keywords = [
 ]
 requires-python = ">=3.12"
 license = "MIT"
-dependencies = [ "numpy>=1.24.0,<2.3.0", "scipy>=1.9.0", "matplotlib>=3.5.0",]
+dependencies = [
+    "numpy>=1.24.0,<2.1.0",
+    "scipy>=1.9.0",
+    "matplotlib>=3.5.0",
+]
 [[project.authors]]
 name = "Wei Chen"
 email = "wchen@anl.gov"
@@ -59,21 +63,87 @@ name = "Wei Chen"
 email = "wchen@anl.gov"
 
 [project.optional-dependencies]
-data = [ "xpcs-viewer>=1.0.4",]
-performance = [ "numba>=0.61.0,<0.62.0", "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'", "jax>=0.7.0 ; sys_platform != 'linux'", "jaxlib>=0.4.35", "psutil>=5.8.0",]
-jax = [ "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'", "jax>=0.7.0 ; sys_platform != 'linux'", "jaxlib>=0.4.35",]
-mcmc = [ "pymc>=5.0.0", "arviz>=0.12.0", "pytensor>=2.8.0", "corner>=2.2.0",]
-mcmc-gpu = [ "numpyro>=0.13.0", "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'", "jax>=0.7.0 ; sys_platform != 'linux'", "jaxlib>=0.4.35",]
-mcmc-all = [ "homodyne-analysis[mcmc,mcmc-gpu]",]
-robust = [ "cvxpy>=1.4.0",]
-gurobi = [ "gurobipy>=11.0.0",]
-completion = [ "argcomplete>=3.0.0",]
-docs = [ "sphinx>=4.0.0", "furo>=2024.1.29", "myst-parser>=0.17.0", "sphinx-autodoc-typehints>=1.12.0", "numpydoc>=1.2.0", "linkify-it-py>=2.0.0", "sphinx-copybutton>=0.5.0",]
-test = [ "pytest>=6.2.0", "pytest-cov>=2.12.0", "pytest-xdist>=2.3.0", "pytest-benchmark>=4.0.0", "pytest-mock>=3.6.0", "pytest-html>=4.1.1", "pytest-metadata>=3.1.1", "hypothesis>=6.0.0", "coverage>=6.2.0",]
-quality = [ "black>=23.0.0", "isort>=5.12.0", "flake8>=6.0.0", "mypy>=1.8.0", "ruff>=0.1.0", "bandit>=1.8.0", "pip-audit>=2.6.0",]
-typing = [ "types-psutil>=5.9.0", "types-Pillow>=10.0.0", "types-six>=1.16.0", "types-requests>=2.28.0",]
-dev = [ "homodyne-analysis[test,docs,quality,typing]", "pre-commit>=3.0.0", "tox>=4.0.0", "build>=0.10.0", "twine>=4.0.0",]
-all = [ "homodyne-analysis[data,performance,jax,mcmc-all,robust,gurobi,completion,dev]",]
+# Performance optimization (JIT compilation)
+performance = [
+    "numba>=0.61.0,<0.62.0",
+    "psutil>=5.8.0",
+]
+
+# MCMC sampling (CPU backend - PyMC)
+mcmc = [
+    "pymc>=5.0.0",
+    "arviz>=0.12.0",
+    "pytensor>=2.8.0",
+    "corner>=2.2.0",
+]
+
+# GPU acceleration (JAX/NumPyro backend)
+gpu = [
+    "jax[cuda12-local]>=0.7.0 ; sys_platform == 'linux'",
+    "jax>=0.7.0 ; sys_platform != 'linux'",
+    "jaxlib>=0.4.35",
+    "numpyro>=0.13.0",
+]
+
+# Robust optimization methods
+robust = [
+    "cvxpy>=1.4.0",
+    "scikit-learn>=1.3.0",  # Required for resampling in robust.py
+]
+
+# Commercial optimization solver (requires license)
+gurobi = [
+    "gurobipy>=11.0.0",
+]
+
+# Data handling
+data = [
+    "xpcs-viewer>=1.0.4",
+]
+
+# Development tools
+dev = [
+    # Testing
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-mock>=3.6.0",
+    "pytest-html>=4.1.1",
+    "pytest-metadata>=3.1.1",
+    "coverage>=6.2.0",
+    # Code quality
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "isort>=5.12.0",
+    # Development workflow
+    "pre-commit>=3.0.0",
+    "build>=0.10.0",
+    "twine>=4.0.0",
+    # Shell completion
+    "argcomplete>=3.0.0",
+]
+
+# Documentation building
+docs = [
+    "sphinx>=6.0.0",
+    "furo>=2024.1.29",
+    "myst-parser>=2.0.0",
+    "sphinx-autodoc-typehints>=1.20.0",
+    "numpydoc>=1.2.0",
+    "sphinx-copybutton>=0.5.0",
+]
+
+# Complete installation (all scientific features)
+all = [
+    "homodyne-analysis[performance,mcmc,gpu,robust,data]",
+]
+
+# Full development environment
+dev-all = [
+    "homodyne-analysis[all,dev,docs]",
+]
 
 [project.urls]
 Homepage = "https://github.com/imewei/homodyne"
@@ -101,7 +171,7 @@ include-package-data = true
 
 [tool.black]
 line-length = 88
-target-version = [ "py312", "py313",]
+target-version = [ "py313", "py312",]
 include = "\\.pyi?$"
 extend-exclude = "/(\n  # directories\n  \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | \\.ruff_cache\n  | build\n  | dist\n  | __pycache__\n)/\n"
 
@@ -114,11 +184,11 @@ skip_glob = [ "build/*", "dist/*", "*.egg-info/*",]
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 exclude = [ ".eggs", ".git", ".mypy_cache", ".ruff_cache", ".tox", ".venv", "__pycache__", "build", "dist", "homodyne/_version.py",]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 mypy_path = "homodyne/typings"
 explicit_package_bases = true
 warn_return_any = true
@@ -153,7 +223,14 @@ format = "json"
 output = "bandit-report.json"
 
 [tool.setuptools.package-data]
-homodyne = [ "config_*.json", "templates/*.json", "typings/**/*.pyi", "post_install.py", "uninstall_scripts.py", "gpu_wrapper.py", "gpu_optimizer.py", "system_validator.py", "completion_advanced.sh", "gpu_activation_smart.sh", "runtime/**/*.py", "runtime/**/*.sh", "scripts/*.py", "scripts/*.md", "optimization/mcmc_cpu_backend.py", "optimization/mcmc_gpu_backend.py",]
+homodyne = [
+    "*.json",
+    "runtime/**/*",
+    "typings/**/*.pyi",
+    "optimization/mcmc_cpu_backend.py",
+    "optimization/mcmc_gpu_backend.py",
+    "py.typed",
+]
 
 [tool.ruff.lint]
 select = [ "E", "W", "F", "I", "B", "C4", "UP", "RUF",]
@@ -163,7 +240,47 @@ ignore = [ "E501", "B008", "RUF001", "RUF002", "RUF003",]
 minversion = "6.0"
 addopts = [ "--strict-config", "--strict-markers", "--color=yes", "-v", "-rA", "--tb=short", "--maxfail=5", "--show-capture=no",]
 testpaths = [ "homodyne/tests",]
-markers = [ "slow: marks tests as slow (deselect with '-m \"not slow\"')", "integration: marks tests as integration tests", "mcmc: marks tests requiring MCMC dependencies", "performance: marks performance-related tests", "benchmark: marks tests for benchmarking (requires pytest-benchmark)", "memory: marks tests that monitor memory usage", "regression: marks tests for performance regression detection", "import_time: marks tests that measure import performance", "optimization: marks tests for Phase 3 batch optimization features", "jax: marks tests requiring JAX dependencies", "gpu: marks tests that can utilize GPU acceleration (requires appropriate JAX installation)", "fast: marks tests that run quickly (< 1s)", "unit: marks unit tests (isolated, no external dependencies)", "system: marks system-level tests (require environment setup)", "ci_skip: marks tests to skip in CI environments", "ci: marks tests suitable for CI execution (unit and regression tests)",]
+markers = [
+    # Execution time markers
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "fast: marks tests that run quickly (< 1s)",
+    
+    # Test type markers
+    "unit: marks unit tests (isolated, no external dependencies)",
+    "integration: marks tests as integration tests", 
+    "system: marks system-level tests (require environment setup)",
+    "regression: marks tests for performance regression detection",
+    
+    # Feature-specific markers
+    "mcmc: marks tests requiring MCMC dependencies",
+    "mcmc_integration: marks tests for MCMC cross-backend integration",
+    "performance: marks performance-related tests",
+    "benchmark: marks tests for benchmarking (requires pytest-benchmark)",
+    "memory: marks tests that monitor memory usage",
+    "import_time: marks tests that measure import performance",
+    "optimization: marks tests for optimization methods (classical, robust, MCMC)",
+    "jit_compilation: marks tests for enhanced JIT compilation optimization",
+    "memory_pooling: marks tests for memory pool pre-allocation optimization",
+    "caching_system: marks tests for two-tier caching system optimization",
+    "adaptive_parallelization: marks tests for adaptive parallelization optimization",
+    "batch_processing: marks tests for batch processing optimization",
+    "cvxpy_optimization: marks tests for CVXPY solver optimization",
+    "configuration_validation: marks tests for configuration validation features",
+    
+    # Computational method markers
+    "irls: marks tests related to IRLS variance estimation and convergence",
+    "vectorized: marks tests for vectorized/optimized computation methods",
+    "numba: marks tests requiring Numba JIT compilation",
+    "convergence: marks tests for iterative algorithm convergence behavior",
+    
+    # Platform/dependency markers
+    "jax: marks tests requiring JAX dependencies",
+    "gpu: marks tests that can utilize GPU acceleration (requires appropriate JAX installation)",
+    
+    # Environment markers
+    "ci_skip: marks tests to skip in CI environments",
+    "ci: marks tests suitable for CI execution (unit and regression tests)",
+]
 filterwarnings = [ "error", "ignore::UserWarning", "ignore::DeprecationWarning", "ignore::PendingDeprecationWarning",]
 
 [tool.coverage.run]

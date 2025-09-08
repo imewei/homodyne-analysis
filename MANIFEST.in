@@ -1,87 +1,42 @@
 # homodyne-analysis - Distribution Manifest
-# Updated: 2025-09-03
-# Includes isolated MCMC backend architecture
+# Simplified and optimized version
+# Updated: 2025-01-07
 
-# Core documentation
+# Essential documentation
 include README.md
-include README.rst
 include LICENSE
 include CHANGELOG.md
-include CONTRIBUTING.md
-include AUTHORS.md
-include HISTORY.md
-
-# Build configuration
 include pyproject.toml
-include setup.py
-include setup.cfg
-include Makefile
-include requirements*.txt
-include pytest.ini
+
+# Test configuration files
 include pytest-*.ini
-include tox.ini
 
-# Include source code and data
-recursive-include homodyne *.py
-recursive-include homodyne *.pyi
-recursive-include homodyne *.json
-recursive-include homodyne *.yaml
-recursive-include homodyne *.yml
-recursive-include homodyne *.txt
-recursive-include homodyne *.md
-recursive-include homodyne *.sh
+# Package data files
+recursive-include homodyne *.py *.pyi *.json *.sh
+recursive-include homodyne/runtime *
 
-# Explicitly include isolated MCMC backend files
-include homodyne/optimization/mcmc_cpu_backend.py
-include homodyne/optimization/mcmc_gpu_backend.py
+# Requirements files (only existing ones)
+include requirements.txt
+include requirements-dev.txt
 
-# Include documentation
-recursive-include docs *.md
-recursive-include docs *.rst
-recursive-include docs *.txt
-recursive-include docs *.py
-include docs/Makefile
-include docs/make.bat
+# Documentation source (for source distributions)
+recursive-include docs *.rst *.md Makefile
 
-# Include tests (optional - comment out if you don't want tests in distribution)
-# recursive-include tests *.py
-# recursive-include homodyne/tests *.py
-# recursive-include homodyne/tests *.json
-# recursive-include homodyne/tests *.npz
+# Exclude build artifacts and caches
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+global-exclude *.swp *.swo *~
 
-# Exclude development and build files
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
-recursive-exclude * *.so
-recursive-exclude * *.dylib
-exclude .DS_Store
-
-# Exclude version control and CI files
-recursive-exclude .git *
-exclude .gitignore
-exclude .github
-
-# Exclude development cache and build directories
-recursive-exclude .pytest_cache *
-recursive-exclude .mypy_cache *
-recursive-exclude .ruff_cache *
-recursive-exclude *.egg-info *
-recursive-exclude build *
-recursive-exclude dist *
-recursive-exclude .tox *
-recursive-exclude .venv *
-
-# Exclude coverage and test artifacts
-exclude .coverage
-exclude htmlcov
-exclude .pytest_cache
-
-# Include development configuration for contributors
-include .pre-commit-config.yaml
-
-# Exclude editor and IDE files
-exclude .vscode
-exclude .idea
-exclude *.swp
-exclude *.swo
-exclude *~
+# Exclude version control and CI
+prune .git
+prune .github
+prune .tox
+prune .pytest_cache
+prune .mypy_cache
+prune .ruff_cache
+prune build
+prune dist
+prune *.egg-info
+prune htmlcov
+prune .venv
