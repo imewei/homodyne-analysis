@@ -16,6 +16,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+# Mark all tests in this module as system tests
+pytestmark = pytest.mark.system
+
 # Import the module under test
 from homodyne.run_homodyne import main, plot_simulated_data, print_banner, run_analysis
 

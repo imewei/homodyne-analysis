@@ -149,6 +149,14 @@ def run_gpu_mcmc_analysis(
     logger.info(
         f"🚀 Initializing NumPyro {jax_config['backend']} backend (PyMC isolated)"
     )
+    
+    # Enhanced GPU backend initialization logging
+    # Check if GPU debugging is enabled in config
+    gpu_logging_config = config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+    if gpu_logging_config.get("enabled", False):
+        logger.debug(f"GPU Backend Config: {jax_config}")
+        logger.debug(f"Force CPU mode: {force_cpu}")
+        logger.debug(f"Backend selection: {jax_config['backend']}")
 
     try:
         # Import mcmc_gpu.py only when needed
@@ -165,10 +173,18 @@ def run_gpu_mcmc_analysis(
         logger.info(f"Backend module: {sampler.__module__}")
         logger.info(f"🔒 Operating in {jax_config['backend']} mode (PyMC isolated)")
 
-        if jax_config["gpu_available"] and not force_cpu:
-            logger.info(f"🎮 Using {jax_config['gpu_count']} GPU(s) for acceleration")
-        else:
-            logger.info("🖥️  Using JAX CPU mode for computation")
+        # Enhanced GPU backend device logging
+        if gpu_logging_config.get("device_monitoring", True):
+            if jax_config["gpu_available"] and not force_cpu:
+                logger.info(f"🎮 Using {jax_config['gpu_count']} GPU(s) for acceleration")
+                if gpu_logging_config.get("compilation_logging", False):
+                    logger.debug(f"GPU device list: {jax_config.get('device_list', [])}")
+            else:
+                logger.info("🖥️  Using JAX CPU mode for computation")
+                if force_cpu:
+                    logger.debug("CPU mode: Explicitly requested by force_cpu parameter")
+                else:
+                    logger.debug("CPU mode: No GPU devices available")
 
         # Run analysis with GPU/JAX parameters (including static mode info)
         logger.info("Starting NumPyro MCMC analysis...")
@@ -181,6 +197,13 @@ def run_gpu_mcmc_analysis(
         )
 
         logger.info("✅ NumPyro MCMC analysis completed successfully")
+
+        # Enhanced GPU results logging
+        if gpu_logging_config.get("backend_switching", True):
+            actual_gpu_used = jax_config["gpu_available"] and not force_cpu
+            logger.debug(f"Analysis completed with GPU: {actual_gpu_used}")
+            if gpu_logging_config.get("performance_profiling", False) and isinstance(results, dict):
+                logger.debug(f"Results keys: {list(results.keys())}")
 
         # Add backend information to results
         if isinstance(results, dict):

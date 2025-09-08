@@ -140,8 +140,8 @@ class MockAnalysisCorePerformance:
 
         return c2_theory
 
-    def calculate_chi_squared_optimized(self, params, phi_angles, c2_experimental):
-        """Optimized chi-squared calculation."""
+    def calculate_chi_squared_optimized(self, params, phi_angles, c2_experimental, **kwargs):
+        """Optimized chi-squared calculation with support for additional parameters."""
         c2_theory = self.compute_c2_correlation_optimized(params, phi_angles)
         residuals = c2_experimental - c2_theory
         # Normalized chi-squared
@@ -210,9 +210,9 @@ class TestRobustOptimizationPerformance:
 
     def test_initialization_performance(self, performance_mock_core):
         """Test performance of optimizer initialization."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
 
         start_time = time.time()
 
@@ -227,12 +227,12 @@ class TestRobustOptimizationPerformance:
 
     def test_parameter_bounds_performance(self, performance_mock_core):
         """Test performance of parameter bounds extraction."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         start_time = time.time()
@@ -245,17 +245,17 @@ class TestRobustOptimizationPerformance:
         avg_bounds_time = (end_time - start_time) / 100
 
         # Bounds extraction should be very fast (< 1.0ms for CI compatibility)
-        assert avg_bounds_time < 0.001, (
-            f"Bounds extraction too slow: {avg_bounds_time:.4f}s"
-        )
+        assert (
+            avg_bounds_time < 0.001
+        ), f"Bounds extraction too slow: {avg_bounds_time:.4f}s"
         assert bounds is not None
         assert len(bounds) == 3
 
     def test_chi_squared_computation_performance(self, performance_mock_core):
         """Test performance of chi-squared computation."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
@@ -281,16 +281,16 @@ class TestRobustOptimizationPerformance:
         avg_chi_squared_time = (end_time - start_time) / 50
 
         # Chi-squared computation should be fast (< 10ms for 20x100 data, more lenient)
-        assert avg_chi_squared_time < 0.010, (
-            f"Chi-squared computation too slow: {avg_chi_squared_time:.4f}s"
-        )
+        assert (
+            avg_chi_squared_time < 0.010
+        ), f"Chi-squared computation too slow: {avg_chi_squared_time:.4f}s"
         assert np.isfinite(chi_squared)
 
     def test_theoretical_correlation_performance(self, performance_mock_core):
         """Test performance of theoretical correlation function computation."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
@@ -315,9 +315,9 @@ class TestRobustOptimizationPerformance:
         avg_correlation_time = (end_time - start_time) / 30
 
         # Theoretical correlation should be fast (< 500ms for 20x100x100 data)
-        assert avg_correlation_time < 0.5, (
-            f"Theoretical correlation too slow: {avg_correlation_time:.4f}s"
-        )
+        assert (
+            avg_correlation_time < 0.5
+        ), f"Theoretical correlation too slow: {avg_correlation_time:.4f}s"
         assert c2_theory.shape == (
             len(phi_angles),
             performance_mock_core.n_times,
@@ -326,9 +326,9 @@ class TestRobustOptimizationPerformance:
 
     def test_jacobian_computation_performance(self, performance_mock_core):
         """Test performance of Jacobian computation for linearization."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
@@ -347,18 +347,18 @@ class TestRobustOptimizationPerformance:
         # Jacobian computation involves finite differences, should be
         # reasonable (< 2s for 3D data, more lenient in CI)
         max_time = 5.0 if os.getenv("CI") else 2.0
-        assert jacobian_time < max_time, (
-            f"Jacobian computation too slow: {jacobian_time:.4f}s (max: {max_time:.1f}s)"
-        )
+        assert (
+            jacobian_time < max_time
+        ), f"Jacobian computation too slow: {jacobian_time:.4f}s (max: {max_time:.1f}s)"
         assert jacobian.shape[1] == len(test_params)
         assert jacobian.shape[0] == c2_theory.size
 
     @pytest.mark.skipif(not CVXPY_AVAILABLE, reason="CVXPY not available")
     def test_scenario_generation_performance(self, performance_mock_core):
         """Test performance of bootstrap scenario generation."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
@@ -384,7 +384,9 @@ class TestRobustOptimizationPerformance:
                 0.01 if os.getenv("CI") else 0.005
             )  # 10ms or 5ms per scenario
             max_time = base_time_per_scenario * n_scenarios
-            assert scenario_time < max_time, f"Scenario generation too slow: {
+            assert (
+                scenario_time < max_time
+            ), f"Scenario generation too slow: {
                 scenario_time:.4f}s for {n_scenarios} scenarios (max: {max_time:.4f}s)"
             assert len(scenarios) == n_scenarios
 
@@ -401,9 +403,9 @@ class TestRobustOptimizationPerformance:
             mock_core = MockAnalysisCorePerformance(
                 PERFORMANCE_CONFIG, n_angles, n_times
             )
-            assert RobustHomodyneOptimizer is not None, (
-                "RobustHomodyneOptimizer not available"
-            )
+            assert (
+                RobustHomodyneOptimizer is not None
+            ), "RobustHomodyneOptimizer not available"
             optimizer = RobustHomodyneOptimizer(mock_core, PERFORMANCE_CONFIG)
 
             test_params = np.array([150.0, -0.8, 20.0])
@@ -450,9 +452,9 @@ class TestRobustOptimizationPerformance:
 
             # Time ratio should not exceed size ratio by more than factor of 6
             # Relaxed from 4 to 6 since robust optimization can have worse scaling
-            assert time_ratio < 6 * size_ratio, (
-                f"Chi-squared scaling poor: time ratio {time_ratio:.2f} vs size ratio {size_ratio:.2f}"
-            )
+            assert (
+                time_ratio < 6 * size_ratio
+            ), f"Chi-squared scaling poor: time ratio {time_ratio:.2f} vs size ratio {size_ratio:.2f}"
 
         # Test solver scaling (more lenient due to optimization complexity)
         for i in range(1, len(solver_times)):
@@ -469,9 +471,9 @@ class TestRobustOptimizationPerformance:
 
                     solver_ratio = solver_times[i] / solver_times[i - 1]
                     # Solver can have more complex scaling due to optimization overhead
-                    assert solver_ratio < 8 * solver_size_ratio, (
-                        f"Solver scaling poor: time ratio {solver_ratio:.2f} vs size ratio {solver_size_ratio:.2f}"
-                    )
+                    assert (
+                        solver_ratio < 8 * solver_size_ratio
+                    ), f"Solver scaling poor: time ratio {solver_ratio:.2f} vs size ratio {solver_size_ratio:.2f}"
 
 
 @pytest.mark.performance
@@ -484,9 +486,9 @@ class TestRobustOptimizationBenchmarks:
 
     def test_wasserstein_optimization_benchmark(self, performance_mock_core, benchmark):
         """Benchmark Wasserstein DRO optimization."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])  # Close to true values
@@ -514,9 +516,9 @@ class TestRobustOptimizationBenchmarks:
 
     def test_scenario_optimization_benchmark(self, performance_mock_core, benchmark):
         """Benchmark scenario-based robust optimization."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])
@@ -544,9 +546,9 @@ class TestRobustOptimizationBenchmarks:
 
     def test_ellipsoidal_optimization_benchmark(self, performance_mock_core, benchmark):
         """Benchmark ellipsoidal robust optimization."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])
@@ -581,9 +583,9 @@ class TestRobustOptimizationBenchmarks:
         )
 
         # Robust optimizer
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         robust_optimizer = RobustHomodyneOptimizer(
             performance_mock_core, PERFORMANCE_CONFIG
         )
@@ -622,18 +624,18 @@ class TestRobustOptimizationBenchmarks:
             # Robust optimization may be slower due to convex formulation
             # but should be within reasonable bounds (< 10x classical)
             if robust_params is not None and classical_success:
-                assert robust_time < 10 * classical_time, (
-                    f"Robust optimization too slow: {robust_time:.3f}s vs classical {classical_time:.3f}s"
-                )
+                assert (
+                    robust_time < 10 * classical_time
+                ), f"Robust optimization too slow: {robust_time:.3f}s vs classical {classical_time:.3f}s"
 
     def test_solver_fallback_performance(self, performance_mock_core):
         """Test performance of solver fallback mechanism."""
         if not ROBUST_OPTIMIZATION_AVAILABLE or not CVXPY_AVAILABLE:
             pytest.skip("CVXPY not available")
 
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(performance_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([120.0, -0.6, 15.0])
@@ -667,9 +669,9 @@ class TestRobustOptimizationBenchmarks:
         if not ROBUST_OPTIMIZATION_AVAILABLE:
             pytest.skip("Robust optimization not available")
 
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
 
         # Test with caching enabled
         config_with_cache = PERFORMANCE_CONFIG.copy()
@@ -710,9 +712,9 @@ class TestRobustOptimizationBenchmarks:
 
         # Caching should provide some benefit or at least not make things worse
         # Allow some tolerance since bounds caching might have minimal impact
-        assert cached_second_time <= cached_first_time * 2.0, (
-            f"Caching performance degraded: {cached_second_time:.4f}s vs {cached_first_time:.4f}s"
-        )
+        assert (
+            cached_second_time <= cached_first_time * 2.0
+        ), f"Caching performance degraded: {cached_second_time:.4f}s vs {cached_first_time:.4f}s"
 
 
 @pytest.mark.performance
@@ -725,9 +727,9 @@ class TestRobustOptimizationMemoryUsage:
 
     def test_memory_efficient_scenario_generation(self, large_scale_mock_core):
         """Test memory efficiency of scenario generation with large datasets."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(large_scale_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
@@ -749,9 +751,9 @@ class TestRobustOptimizationMemoryUsage:
 
     def test_large_jacobian_computation(self, large_scale_mock_core):
         """Test Jacobian computation with large datasets."""
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(large_scale_mock_core, PERFORMANCE_CONFIG)
 
         test_params = np.array([150.0, -0.8, 20.0])
@@ -793,9 +795,9 @@ class TestRobustOptimizationStressTests:
         noise = np.random.normal(0, noise_level, mock_core.c2_experimental.shape)
         mock_core.c2_experimental += noise * np.mean(mock_core.c2_experimental)
 
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(mock_core, config)
 
         test_params = np.array([120.0, -0.6, 15.0])
@@ -815,9 +817,9 @@ class TestRobustOptimizationStressTests:
         optimization_time = end_time - start_time
 
         # Should complete within reasonable time even with high noise
-        assert optimization_time < 60, (
-            f"High noise optimization too slow: {optimization_time:.3f}s"
-        )
+        assert (
+            optimization_time < 60
+        ), f"High noise optimization too slow: {optimization_time:.3f}s"
 
         # If successful, results should be reasonable
         if optimal_params is not None:
@@ -830,9 +832,9 @@ class TestRobustOptimizationStressTests:
             pytest.skip("CVXPY not available")
 
         mock_core = MockAnalysisCorePerformance(PERFORMANCE_CONFIG)
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(mock_core, PERFORMANCE_CONFIG)
 
         # Test with extreme parameter values
@@ -857,9 +859,9 @@ class TestRobustOptimizationStressTests:
                     logging.info(
                         f"Chi-squared is infinite for extreme params {params} - this is expected"
                     )
-                    assert chi_squared == float("inf"), (
-                        f"Expected inf, got {chi_squared} for params {params}"
-                    )
+                    assert chi_squared == float(
+                        "inf"
+                    ), f"Expected inf, got {chi_squared} for params {params}"
             except (OverflowError, ValueError) as e:
                 # Acceptable to fail gracefully with extreme values
                 logging.warning(f"Expected failure with extreme params {params}: {e}")

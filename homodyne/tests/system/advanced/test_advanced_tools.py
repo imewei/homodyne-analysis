@@ -122,13 +122,13 @@ class TestHomodyneValidate:
         # Mock environment detection
         expected_env_info = {
             "platform": "Linux",
-            "python_version": "3.12",
+            "python_version": "3.13",
             "shell": "zsh",
             "conda_env": "test_env",
         }
 
         assert expected_env_info["platform"] == "Linux"
-        assert expected_env_info["python_version"] == "3.12"
+        assert expected_env_info["python_version"] == "3.13"
 
     def test_validate_test_categories(self):
         """Test individual validation categories."""
@@ -209,7 +209,7 @@ class TestHomodyneValidate:
             },
             "environment": {
                 "platform": "Linux",
-                "python_version": "3.12",
+                "python_version": "3.13",
                 "shell": "zsh",
             },
             "test_results": [],

@@ -14,6 +14,9 @@ from unittest.mock import patch
 
 import pytest
 
+# Mark all tests in this module as system tests
+pytestmark = pytest.mark.system
+
 # Import the module under test
 from homodyne.uninstall_scripts import (
     cleanup_completion_files,

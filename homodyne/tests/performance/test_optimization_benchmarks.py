@@ -70,15 +70,11 @@ BENCHMARK_CONFIG = {
         "geometry": {"stator_rotor_gap": 1000000},
     },
     "initial_parameters": {
-        "values": [100.0, -0.5, 10.0, 0.0, 0.0, 0.0, 0.0],
+        "values": [100.0, -0.5, 10.0],
         "parameter_names": [
             "D0",
             "alpha",
             "D_offset",
-            "unused1",
-            "unused2",
-            "unused3",
-            "unused4",
         ],
     },
     "optimization_config": {
@@ -113,6 +109,8 @@ BENCHMARK_CONFIG = {
             {"name": "D_offset", "min": 0.1, "max": 1000.0},
         ]
     },
+    "static_mode": True,
+    "static_submode": "isotropic",
     "analysis_settings": {"mode": "static", "num_parameters": 3},
 }
 
@@ -259,7 +257,23 @@ class OptimizationBenchmarkResult:
         if self.optimal_params is None or not self.success:
             return None
 
-        rel_error = np.abs(self.optimal_params - true_params) / np.abs(true_params)
+        # Handle parameter count mismatch gracefully
+        min_params = min(len(self.optimal_params), len(true_params))
+        if min_params == 0:
+            return None
+
+        # Only compare the overlapping parameters
+        optimal_subset = self.optimal_params[:min_params]
+        true_subset = true_params[:min_params]
+
+        # Avoid division by zero
+        mask = np.abs(true_subset) > 1e-12
+        if not np.any(mask):
+            return None
+
+        rel_error = np.abs(optimal_subset[mask] - true_subset[mask]) / np.abs(
+            true_subset[mask]
+        )
         return float(np.mean(rel_error))
 
     def __str__(self) -> str:
@@ -388,9 +402,9 @@ class TestOptimizationBenchmarks:
         """Benchmark robust optimization methods."""
         results = []
 
-        assert RobustHomodyneOptimizer is not None, (
-            "RobustHomodyneOptimizer not available"
-        )
+        assert (
+            RobustHomodyneOptimizer is not None
+        ), "RobustHomodyneOptimizer not available"
         optimizer = RobustHomodyneOptimizer(mock_core, BENCHMARK_CONFIG)
 
         robust_methods = [
@@ -472,9 +486,9 @@ class TestOptimizationBenchmarks:
             try:
                 config = BENCHMARK_CONFIG.copy()
                 config["optimization_config"]["mcmc_sampling"]["use_jax"] = use_jax
-                config["optimization_config"]["mcmc_sampling"]["draws"] = (
-                    60  # Reduced for benchmarking
-                )
+                config["optimization_config"]["mcmc_sampling"][
+                    "draws"
+                ] = 60  # Reduced for benchmarking
                 config["optimization_config"]["mcmc_sampling"]["tune"] = 30
 
                 sampler = MCMCSampler(mock_core, config)
@@ -648,9 +662,9 @@ class TestOptimizationBenchmarks:
         if MCMC_AVAILABLE and PYMC_AVAILABLE:
             assert MCMCSampler is not None
             config = BENCHMARK_CONFIG.copy()
-            config["optimization_config"]["mcmc_sampling"]["draws"] = (
-                40  # Reduced for large dataset
-            )
+            config["optimization_config"]["mcmc_sampling"][
+                "draws"
+            ] = 40  # Reduced for large dataset
             config["optimization_config"]["mcmc_sampling"]["tune"] = 20
 
             sampler = MCMCSampler(large_benchmark_mock_core, config)
@@ -721,9 +735,22 @@ class TestOptimizationBenchmarks:
                 and not isinstance(opt_result, Exception)
                 and hasattr(opt_result, "x")
             ):
-                param_error = np.mean(
-                    np.abs(opt_result.x - true_params) / np.abs(true_params)
-                )
+                # Handle parameter count mismatch gracefully
+                min_params = min(len(opt_result.x), len(true_params))
+                if min_params > 0:
+                    optimal_subset = opt_result.x[:min_params]
+                    true_subset = true_params[:min_params]
+                    # Avoid division by zero
+                    mask = np.abs(true_subset) > 1e-12
+                    if np.any(mask):
+                        param_error = np.mean(
+                            np.abs(optimal_subset[mask] - true_subset[mask])
+                            / np.abs(true_subset[mask])
+                        )
+                    else:
+                        param_error = None
+                else:
+                    param_error = None
                 convergence_results.append(
                     {
                         "method": "Classical-Nelder-Mead",
@@ -748,9 +775,22 @@ class TestOptimizationBenchmarks:
                 )
 
                 if optimal_params is not None:
-                    param_error = np.mean(
-                        np.abs(optimal_params - true_params) / np.abs(true_params)
-                    )
+                    # Handle parameter count mismatch gracefully
+                    min_params = min(len(optimal_params), len(true_params))
+                    if min_params > 0:
+                        optimal_subset = optimal_params[:min_params]
+                        true_subset = true_params[:min_params]
+                        # Avoid division by zero
+                        mask = np.abs(true_subset) > 1e-12
+                        if np.any(mask):
+                            param_error = np.mean(
+                                np.abs(optimal_subset[mask] - true_subset[mask])
+                                / np.abs(true_subset[mask])
+                            )
+                        else:
+                            param_error = None
+                    else:
+                        param_error = None
                     convergence_results.append(
                         {
                             "method": "Robust-Wasserstein",
@@ -798,13 +838,13 @@ class TestOptimizationBenchmarks:
             any_results = [
                 r for r in convergence_results if r["parameter_error"] is not None
             ]
-            assert len(any_results) > 0, (
-                "No method produced valid results from challenging start"
-            )
+            assert (
+                len(any_results) > 0
+            ), "No method produced valid results from challenging start"
         else:
-            assert len(good_convergence) > 0, (
-                "No method achieved good convergence from challenging start"
-            )
+            assert (
+                len(good_convergence) > 0
+            ), "No method achieved good convergence from challenging start"
 
 
 if __name__ == "__main__":

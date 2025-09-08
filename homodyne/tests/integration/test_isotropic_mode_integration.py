@@ -333,12 +333,12 @@ class TestIsotropicModeIntegration:
                     assert phi_angles[0] == 0.0
 
                     # Verify internal memory caching occurred
-                    assert core.cached_experimental_data is not None, (
-                        f"Cache not populated! Actual: {core.cached_experimental_data}"
-                    )
-                    assert core.cached_phi_angles is not None, (
-                        f"Phi angles cache not populated! Actual: {core.cached_phi_angles}"
-                    )
+                    assert (
+                        core.cached_experimental_data is not None
+                    ), f"Cache not populated! Actual: {core.cached_experimental_data}"
+                    assert (
+                        core.cached_phi_angles is not None
+                    ), f"Phi angles cache not populated! Actual: {core.cached_phi_angles}"
                     assert len(core.cached_phi_angles) == 1
                     assert core.cached_phi_angles[0] == 0.0
 

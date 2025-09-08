@@ -118,26 +118,20 @@ CPU-only MCMC (Pure PyMC)
 .. code-block:: bash
 
    pip install homodyne-analysis[mcmc]
-   # or
-   pip install -r requirements-mcmc-cpu.txt
 
 GPU MCMC (Pure NumPyro/JAX with CPU fallback)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   pip install homodyne-analysis[mcmc-gpu]  
-   # or
-   pip install -r requirements-mcmc-gpu.txt
+   pip install homodyne-analysis[gpu]
 
 Both Backends
 ~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   pip install homodyne-analysis[mcmc-all]
-   # or  
-   pip install -r requirements-mcmc-all.txt
+   pip install homodyne-analysis[mcmc,gpu]
 
 Everything
 ~~~~~~~~~~
@@ -145,25 +139,23 @@ Everything
 .. code-block:: bash
 
    pip install homodyne-analysis[all]
-   # or
-   pip install -r requirements-all.txt
 
 Requirements Files
 ------------------
 
-**New Isolated Backend Requirements**
+**Package Extras Structure**
 
-The package now includes specific requirements files for each backend:
+The package uses pyproject.toml extras for dependency management:
 
-- ``requirements-mcmc-cpu.txt``: Pure PyMC CPU backend dependencies
-- ``requirements-mcmc-gpu.txt``: Pure NumPyro/JAX GPU backend dependencies  
-- ``requirements-mcmc-all.txt``: Combined backend dependencies
+- ``[mcmc]``: PyMC CPU backend dependencies
+- ``[gpu]``: NumPyro/JAX GPU backend dependencies (with CPU fallback)
+- ``[robust]``: CVXPY and robust optimization dependencies
+- ``[all]``: All scientific features combined
 
-**Updated Files**
+**Requirements Files**
 
-- ``requirements-optional.txt``: Updated with isolated architecture notes
-- ``requirements-all.txt``: References new MCMC backend files
-- ``requirements-dev.txt``: Development dependencies for both backends
+- ``requirements.txt``: Core dependencies only
+- ``requirements-dev.txt``: Development dependencies
 
 Usage Examples
 --------------
@@ -242,10 +234,9 @@ Packaging Files
    include homodyne/optimization/mcmc_cpu_backend.py
    include homodyne/optimization/mcmc_gpu_backend.py
    
-   # Isolated backend requirements
-   include requirements-mcmc-cpu.txt
-   include requirements-mcmc-gpu.txt
-   include requirements-mcmc-all.txt
+   # Requirements files
+   include requirements.txt
+   include requirements-dev.txt
 
 **setup.py Updates**
 

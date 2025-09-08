@@ -207,9 +207,9 @@ class TestMCMCPerformance:
         avg_init_time = (end_time - start_time) / 5
 
         # MCMC initialization should be reasonably fast (< 100ms)
-        assert avg_init_time < 0.1, (
-            f"MCMC initialization too slow: {avg_init_time:.4f}s"
-        )
+        assert (
+            avg_init_time < 0.1
+        ), f"MCMC initialization too slow: {avg_init_time:.4f}s"
 
     def test_model_building_performance(self, mcmc_mock_core):
         """Test performance of PyMC model building."""
@@ -344,9 +344,9 @@ class TestMCMCPerformance:
         # Progressive might be slightly slower due to multiple stages but should be comparable
         # Allow up to 50% overhead for progressive strategy
         max_progressive_time = standard_time * 1.5
-        assert progressive_time < max_progressive_time, (
-            f"Progressive sampling too slow: {progressive_time:.3f}s vs standard {standard_time:.3f}s"
-        )
+        assert (
+            progressive_time < max_progressive_time
+        ), f"Progressive sampling too slow: {progressive_time:.3f}s vs standard {standard_time:.3f}s"
 
         # Both should succeed
         if (
@@ -391,9 +391,9 @@ class TestMCMCPerformance:
             avg_diagnostics_time = (end_time - start_time) / 3
 
             # Convergence diagnostics should be fast (< 200ms)
-            assert avg_diagnostics_time < 0.2, (
-                f"Convergence diagnostics too slow: {avg_diagnostics_time:.4f}s"
-            )
+            assert (
+                avg_diagnostics_time < 0.2
+            ), f"Convergence diagnostics too slow: {avg_diagnostics_time:.4f}s"
 
             # Check that diagnostics were computed
             if diagnostics is not None:
@@ -419,9 +419,9 @@ class TestMCMCPerformance:
         for sample_config in sample_counts:
             config = MCMC_PERFORMANCE_CONFIG.copy()
             config["optimization_config"]["mcmc_sampling"].update(sample_config)
-            config["optimization_config"]["mcmc_sampling"]["use_jax"] = (
-                False  # Consistent backend
-            )
+            config["optimization_config"]["mcmc_sampling"][
+                "use_jax"
+            ] = False  # Consistent backend
 
             sampler = MCMCSampler(mcmc_mock_core, config)
 
@@ -456,9 +456,9 @@ class TestMCMCPerformance:
                 time_ratio = timing_results[i] / timing_results[i - 1]
 
                 # Time ratio should not exceed sample ratio by more than factor of 3
-                assert time_ratio < 3 * sample_ratio, (
-                    f"Poor scaling: time ratio {time_ratio:.2f} vs sample ratio {sample_ratio:.2f}"
-                )
+                assert (
+                    time_ratio < 3 * sample_ratio
+                ), f"Poor scaling: time ratio {time_ratio:.2f} vs sample ratio {sample_ratio:.2f}"
 
 
 @pytest.mark.performance
@@ -495,9 +495,9 @@ class TestMCMCMemoryUsage:
         sampling_time = end_time - start_time
 
         # Should complete within reasonable time even with larger dataset
-        assert sampling_time < 60, (
-            f"Large dataset sampling too slow: {sampling_time:.3f}s"
-        )
+        assert (
+            sampling_time < 60
+        ), f"Large dataset sampling too slow: {sampling_time:.3f}s"
 
         if result.get("trace") is not None:
             # Check that results are reasonable

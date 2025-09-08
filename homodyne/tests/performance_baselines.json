@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "description": "Performance baselines for Homodyne analysis regression testing with actual test results",
-  "python_version": "3.13.5",
+  "python_version": "3.13",
   "baseline_date": "2025-09-06",
   "environment": {
     "numpy_version": "2.3.2",

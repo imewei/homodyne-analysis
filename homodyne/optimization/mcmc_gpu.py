@@ -163,6 +163,217 @@ class MCMCSampler:
 
         logger.debug("Performance features initialized")
 
+    def log_mcmc_gpu_progress(
+        self,
+        iteration: int,
+        stage: str = "",
+        chi_squared: float = None,
+        diagnostics: dict[str, Any] = None,
+        residuals: np.ndarray = None,
+        method_name: str = "MCMC-GPU",
+        gpu_config: dict[str, Any] = None,
+        device_info: dict[str, Any] = None,
+    ) -> None:
+        """
+        Standardized GPU MCMC logging method with comprehensive device monitoring.
+
+        This method provides unified GPU MCMC progress logging with JAX/NumPyro specific
+        diagnostics and device monitoring capabilities, matching the CPU MCMC logging
+        format while adding GPU-specific functionality.
+
+        Parameters
+        ----------
+        iteration : int
+            Current iteration number (-1 for post-analysis stages)
+        stage : str, optional
+            Current stage identifier (Setup, Sampling-Start, etc.)
+        chi_squared : float, optional
+            Current reduced chi-squared value
+        diagnostics : Dict[str, Any], optional
+            General diagnostics dictionary
+        residuals : np.ndarray, optional
+            Current residuals array for statistics
+        method_name : str, default "MCMC-GPU"
+            Method identifier for logging
+        gpu_config : Dict[str, Any], optional
+            GPU debugging configuration settings
+        device_info : Dict[str, Any], optional
+            Current device information and memory stats
+
+        Features
+        --------
+        - GPU device monitoring and memory tracking
+        - JAX compilation and performance profiling
+        - Backend switching detection (GPU ↔ CPU)
+        - NumPyro-specific sampling diagnostics
+        - Unified format with CPU MCMC logging
+        """
+        
+        # Get GPU logging configuration (fallback to CPU MCMC config for compatibility)
+        if gpu_config is None:
+            gpu_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+            
+        # Fallback to regular MCMC debug config for backward compatibility
+        if not gpu_config:
+            gpu_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_debug", {})
+
+        # Early exit if logging disabled
+        if not gpu_config.get("enabled", False):
+            return
+
+        # Performance mode check - minimal logging for production
+        performance_mode = gpu_config.get("performance_mode", False)
+        if performance_mode and stage not in ["Setup", "Completed", "Error", "Backend-Switch"]:
+            return
+
+        # Log frequency control
+        log_frequency = gpu_config.get("log_frequency", 100)
+        if iteration > 0 and iteration % log_frequency != 0:
+            return
+
+        # Build GPU-specific diagnostic information
+        gpu_diagnostics = {}
+        
+        # Device monitoring
+        if gpu_config.get("device_monitoring", True) and hasattr(self, "devices"):
+            try:
+                current_device = str(jax.devices()[0]) if jax else "Unknown"
+                gpu_diagnostics.update({
+                    "current_device": current_device,
+                    "gpu_available": self.gpu_available,
+                    "total_devices": len(self.devices) if hasattr(self, "devices") else 0,
+                    "gpu_count": len(self.gpu_devices) if hasattr(self, "gpu_devices") else 0,
+                })
+            except Exception as e:
+                gpu_diagnostics["device_error"] = str(e)
+
+        # Memory tracking
+        if gpu_config.get("memory_tracking", True) and device_info:
+            gpu_diagnostics.update({
+                "memory_usage": device_info.get("memory_usage", "unknown"),
+                "memory_total": device_info.get("memory_total", "unknown"),
+                "memory_available": device_info.get("memory_available", "unknown"),
+            })
+
+        # Backend switching detection
+        if gpu_config.get("backend_switching", True):
+            current_backend = self.performance_metrics.get("backend_used", "Unknown")
+            gpu_diagnostics["backend"] = current_backend
+            
+            # Log backend switches
+            if stage == "Backend-Switch":
+                logger.warning(f"{method_name} [{iteration:>6}] Backend switched: {diagnostics}")
+
+        # JAX debugging information
+        if gpu_config.get("jax_debugging", False) and jax:
+            try:
+                # JAX debugging checks
+                gpu_diagnostics.update({
+                    "jax_x64_enabled": jax.config.jax_enable_x64,
+                    "jax_platform": jax.default_backend(),
+                })
+            except Exception as e:
+                gpu_diagnostics["jax_debug_error"] = str(e)
+
+        # Performance profiling
+        if gpu_config.get("performance_profiling", False):
+            if hasattr(self, "performance_metrics"):
+                gpu_diagnostics.update({
+                    "sampling_time": self.performance_metrics.get("sampling_time"),
+                    "samples_per_second": self.performance_metrics.get("samples_per_second"),
+                    "effective_sample_rate": self.performance_metrics.get("effective_sample_rate"),
+                })
+
+        # Compilation logging
+        if gpu_config.get("compilation_logging", False) and device_info:
+            if "compilation_time" in device_info:
+                gpu_diagnostics["compilation_time"] = device_info["compilation_time"]
+
+        # Combine with provided diagnostics
+        if diagnostics:
+            gpu_diagnostics.update(diagnostics)
+
+        # Sampling progress logging
+        sampling_progress_enabled = gpu_config.get("sampling_progress", True)
+        if not sampling_progress_enabled and stage in ["Sampling-Start", "Sampling-Progress"]:
+            return
+
+        # Convergence monitoring
+        convergence_monitoring = gpu_config.get("convergence_monitoring", True)
+        if not convergence_monitoring and stage in ["Convergence-Assessment", "Chain-Mixing"]:
+            return
+
+        # Chain diagnostics
+        chain_diagnostics = gpu_config.get("chain_diagnostics", True)
+        if not chain_diagnostics and "chain" in stage.lower():
+            return
+
+        # Chi-squared tracking
+        chi_squared_tracking = gpu_config.get("chi_squared_tracking", True)
+        if not chi_squared_tracking and (chi_squared is not None or "chi" in stage.lower()):
+            return
+
+        # Format GPU-enhanced log message
+        log_parts = [f"{method_name} [{iteration:>6}]"]
+        
+        if stage:
+            log_parts.append(f"[{stage}]")
+
+        # Add GPU device information to main message
+        if gpu_diagnostics.get("current_device"):
+            device_short = gpu_diagnostics["current_device"].split("(")[0]  # Short device name
+            log_parts.append(f"[{device_short}]")
+
+        if chi_squared is not None:
+            log_parts.append(f"χ²={chi_squared:.6f}")
+
+        # Core diagnostics
+        if gpu_diagnostics:
+            diag_parts = []
+            for key, value in gpu_diagnostics.items():
+                if key in ["current_device", "backend", "gpu_count", "memory_usage"]:  # Priority info
+                    if isinstance(value, (int, float)):
+                        diag_parts.append(f"{key}={value}")
+                    else:
+                        diag_parts.append(f"{key}={value}")
+            
+            if diag_parts:
+                log_parts.append(f"({', '.join(diag_parts[:3])})")  # Limit to top 3 for readability
+
+        # Residual statistics (if enabled and available)
+        residual_stats_enabled = gpu_config.get("residual_statistics", False) if "mcmc_gpu_debug" in self.config.get("output_settings", {}).get("logging", {}) else gpu_config.get("residual_statistics", False)
+        if residual_stats_enabled and residuals is not None:
+            try:
+                if hasattr(residuals, "__len__") and len(residuals) > 0:
+                    res_min, res_mean, res_max = float(np.min(residuals)), float(np.mean(residuals)), float(np.max(residuals))
+                    log_parts.append(f"res=[{res_min:.3e}, {res_mean:.3e}, {res_max:.3e}]")
+            except Exception as e:
+                log_parts.append(f"res_err={str(e)[:20]}")
+
+        # Log the message
+        message = " ".join(log_parts)
+        
+        # Use appropriate log level based on stage
+        if stage in ["Error", "Failed"]:
+            logger.error(message)
+        elif stage in ["Warning", "Backend-Switch"]:
+            logger.warning(message)
+        elif stage in ["Setup", "Completed"]:
+            logger.info(message)
+        else:
+            logger.debug(message)
+
+        # Extended diagnostics for verbose modes (debug level)
+        if not performance_mode and gpu_diagnostics and len(gpu_diagnostics) > 3:
+            extended_info = []
+            for key, value in gpu_diagnostics.items():
+                if key not in ["current_device", "backend", "gpu_count", "memory_usage"]:
+                    extended_info.append(f"{key}={value}")
+            
+            if extended_info:
+                extended_msg = f"{method_name} [{iteration:>6}] Extended: {', '.join(extended_info[:5])}"
+                logger.debug(extended_msg)
+
     def _build_bayesian_model_optimized(
         self,
         c2_experimental: np.ndarray,
@@ -184,10 +395,16 @@ class MCMCSampler:
             bounds = self.config.get("bounds", [])
             n_angles = c2_data.shape[0] if c2_data is not None else len(phi_angles)
 
-            print(
-                f"   Building NumPyro Bayesian model in {
-                    'static' if is_static_mode else 'laminar flow'
-                } mode"
+            # Get GPU logging configuration
+            gpu_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+            
+            # Enhanced GPU model building logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Model-Building",
+                method_name="MCMC-GPU",
+                diagnostics={"mode": 'static' if is_static_mode else 'laminar flow', "n_angles": n_angles},
+                gpu_config=gpu_logging_config
             )
 
             # Helper function matching mcmc.py create_prior_from_config (lines 389-509)
@@ -204,8 +421,18 @@ class MCMCSampler:
                         prior_mu = bound.get("prior_mu", 0.0)
                         prior_sigma = bound.get("prior_sigma", 1.0)
 
-                        print(
-                            f"   Using configured prior for {param_name}: {prior_type}(μ={prior_mu}, σ={prior_sigma})"
+                        # Enhanced GPU prior configuration logging
+                        self.log_mcmc_gpu_progress(
+                            iteration=0,
+                            stage="Prior-Configuration",
+                            method_name="MCMC-GPU",
+                            diagnostics={
+                                "parameter": param_name,
+                                "prior_type": prior_type,
+                                "prior_mu": prior_mu,
+                                "prior_sigma": prior_sigma
+                            },
+                            gpu_config=gpu_logging_config
                         )
 
                         if prior_type == "TruncatedNormal":
@@ -270,7 +497,19 @@ class MCMCSampler:
 
                 if param_name in fallback_params:
                     params = fallback_params[param_name]
-                    print(f"   Using fallback prior for {param_name}: {params['type']}")
+                    # Enhanced GPU fallback prior logging
+                    self.log_mcmc_gpu_progress(
+                        iteration=0,
+                        stage="Prior-Fallback",
+                        method_name="MCMC-GPU",
+                        diagnostics={
+                            "parameter": param_name,
+                            "fallback_type": params['type'],
+                            "fallback_mu": params['mu'],
+                            "fallback_sigma": params['sigma']
+                        },
+                        gpu_config=gpu_logging_config
+                    )
 
                     if params["type"] == "TruncatedNormal":
                         return numpyro.sample(
@@ -288,7 +527,19 @@ class MCMCSampler:
                         )
 
                 # Default (matching line 505-507)
-                print(f"   Using default Normal prior for {param_name}")
+                # Enhanced GPU default prior logging
+                self.log_mcmc_gpu_progress(
+                    iteration=0,
+                    stage="Prior-Default",
+                    method_name="MCMC-GPU",
+                    diagnostics={
+                        "parameter": param_name,
+                        "default_type": "Normal",
+                        "default_mu": 0.0,
+                        "default_sigma": 1.0
+                    },
+                    gpu_config=gpu_logging_config
+                )
                 return numpyro.sample(param_name, dist.Normal(0.0, 1.0))
 
             # Create priors (matching mcmc.py lines 512-563)
@@ -318,16 +569,35 @@ class MCMCSampler:
             else:
                 sigma = numpyro.sample("sigma", dist.HalfNormal(sigma_value))
 
-            print(f"   Using noise model: {sigma_type}(σ={sigma_value})")
+            # Enhanced GPU noise model logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Noise-Model",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "sigma_type": sigma_type,
+                    "sigma_value": sigma_value
+                },
+                gpu_config=gpu_logging_config
+            )
 
             # FULL FORWARD MODEL WITH SCALING (matching lines 687-850)
-            print("   Using full forward model with scaling optimization")
-            print("   Properly accounting for per-angle contrast and offset scaling")
-            print("   Consistent with chi-squared calculation methodology")
-            print(
-                "   Enforcing physical constraints: c2_fitted ∈ [1,2], c2_theory ∈ [0,1]"
+            # Enhanced GPU forward model logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Forward-Model",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "model_type": "full_scaling_optimization",
+                    "scaling_approach": "per_angle_contrast_offset",
+                    "methodology": "chi_squared_consistent",
+                    "c2_fitted_bounds": "[1,2]",
+                    "c2_theory_bounds": "[0,1]",
+                    "contrast_bounds": "(0,0.5]",
+                    "offset_bounds": "(0,2.0)"
+                },
+                gpu_config=gpu_logging_config
             )
-            print("   Scaling parameter bounds: contrast ∈ (0, 0.5], offset ∈ (0, 2.0)")
 
             # Convert to JAX arrays if needed
             if not isinstance(c2_data, jnp.ndarray):
@@ -350,11 +620,18 @@ class MCMCSampler:
             offset_min = offset_config.get("min", 0.05)
             offset_max = offset_config.get("max", 1.95)
 
-            print(
-                f"   Using scaling priors: contrast TruncatedNormal(μ={contrast_mu}, σ={contrast_sigma}, [{contrast_min}, {contrast_max}])"
-            )
-            print(
-                f"   Using scaling priors: offset TruncatedNormal(μ={offset_mu}, σ={offset_sigma}, [{offset_min}, {offset_max}])"
+            # Enhanced GPU scaling priors logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Scaling-Priors",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "contrast_prior": f"TruncatedNormal(μ={contrast_mu}, σ={contrast_sigma})",
+                    "contrast_bounds": f"[{contrast_min}, {contrast_max}]",
+                    "offset_prior": f"TruncatedNormal(μ={offset_mu}, σ={offset_sigma})",
+                    "offset_bounds": f"[{offset_min}, {offset_max}]"
+                },
+                gpu_config=gpu_logging_config
             )
 
             # Per-angle scaling parameters using NumPyro plate
@@ -413,7 +690,20 @@ class MCMCSampler:
         Reference: mcmc.py lines 1157-1291
         """
 
-        print("     Preparing MCMC initialization parameters...")
+        # Get GPU logging configuration
+        gpu_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+        
+        # Enhanced GPU initialization logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="Initialization-Start",
+            method_name="MCMC-GPU",
+            diagnostics={
+                "effective_param_count": effective_param_count,
+                "static_mode": is_static_mode
+            },
+            gpu_config=gpu_logging_config
+        )
 
         # Priority system identical to mcmc.py (lines 1164-1190)
         best_params_classical = getattr(self.core, "best_params_classical", None)
@@ -423,19 +713,38 @@ class MCMCSampler:
         if best_params_classical is not None and not np.any(
             np.isnan(best_params_classical)
         ):
-            print("     ✓ Using Classical optimization results for MCMC initialization")
+            # Enhanced GPU initialization source logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-Classical",
+                method_name="MCMC-GPU",
+                diagnostics={"source": "classical_optimization", "param_count": len(best_params_classical)},
+                gpu_config=gpu_logging_config
+            )
             init_params = best_params_classical
         # Priority 2: Bayesian Optimization (lines 1176-1179)
         elif best_params_bo is not None and not np.any(np.isnan(best_params_bo)):
-            print("     ✓ Using Bayesian Optimization results for MCMC initialization")
+            # Enhanced GPU initialization source logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-BO",
+                method_name="MCMC-GPU",
+                diagnostics={"source": "bayesian_optimization", "param_count": len(best_params_bo)},
+                gpu_config=gpu_logging_config
+            )
             init_params = best_params_bo
         else:
             init_params = None
 
         # Priority 3: Configuration file (lines 1183-1203)
         if init_params is None:
-            print(
-                "     Using configuration file initial parameters for MCMC initialization"
+            # Enhanced GPU config initialization logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-Config",
+                method_name="MCMC-GPU",
+                diagnostics={"source": "configuration_file"},
+                gpu_config=gpu_logging_config
             )
             try:
                 config_initial_params = self.config.get("initial_parameters", {}).get(
@@ -445,17 +754,45 @@ class MCMCSampler:
                     init_params = np.array(
                         config_initial_params[:effective_param_count]
                     )
-                    print(f"     Configuration initialization values: {init_params}")
+                    # Enhanced GPU config values logging
+                    self.log_mcmc_gpu_progress(
+                        iteration=0,
+                        stage="Initialization-Config-Success",
+                        method_name="MCMC-GPU",
+                        diagnostics={"param_values": init_params.tolist()[:5]},  # Limit for readability
+                        gpu_config=gpu_logging_config
+                    )
                 else:
-                    print("     ⚠ No initial parameter values found in configuration")
+                    # Enhanced GPU config missing logging
+                    self.log_mcmc_gpu_progress(
+                        iteration=0,
+                        stage="Initialization-Config-Missing",
+                        method_name="MCMC-GPU",
+                        diagnostics={"warning": "no_initial_parameter_values"},
+                        gpu_config=gpu_logging_config
+                    )
                     init_params = None
             except Exception as e:
-                print(f"     ⚠ Error reading configuration parameters: {e}")
+                # Enhanced GPU config error logging
+                self.log_mcmc_gpu_progress(
+                    iteration=0,
+                    stage="Initialization-Config-Error",
+                    method_name="MCMC-GPU",
+                    diagnostics={"error": str(e)},
+                    gpu_config=gpu_logging_config
+                )
                 init_params = None
 
         # Priority 4: Hardcoded fallbacks - EXACT values from mcmc.py lines 1205-1225
         if init_params is None:
-            print("     ⚠ Using hardcoded fallback values for MCMC initialization")
+            # Enhanced GPU fallback initialization logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-Fallback-Start",
+                method_name="MCMC-GPU",
+                diagnostics={"source": "hardcoded_fallback", "warning": "using_default_values"},
+                gpu_config=gpu_logging_config
+            )
             fallback_params = [
                 16000.0,  # D0 - EXACT from mcmc.py line 1210
                 -1.5,  # alpha - EXACT from mcmc.py line 1211
@@ -471,32 +808,79 @@ class MCMCSampler:
                     ]
                 )
             init_params = np.array(fallback_params[:effective_param_count])
-            print(f"     Hardcoded fallback initialization values: {init_params}")
+            # Enhanced GPU fallback values logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-Fallback-Values",
+                method_name="MCMC-GPU",
+                diagnostics={"fallback_values": init_params.tolist()},
+                gpu_config=gpu_logging_config
+            )
 
         # Validation (lines 1227-1261)
-        print("     Validating initialization parameters for physical constraints...")
+        # Enhanced GPU validation logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="Initialization-Validation",
+            method_name="MCMC-GPU",
+            diagnostics={"validation_stage": "constraint_checking"},
+            gpu_config=gpu_logging_config
+        )
         if not self._validate_initialization_constraints(init_params, is_static_mode):
-            print("     ⚠ Initial parameters may violate constraints, adjusting...")
+            # Enhanced GPU constraint adjustment logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-Constraint-Violation",
+                method_name="MCMC-GPU",
+                diagnostics={"warning": "parameters_violate_constraints", "action": "adjusting"},
+                gpu_config=gpu_logging_config
+            )
             if len(init_params) > 0:
                 adjusted_params = init_params.copy()
                 adjusted_params[0] = min(adjusted_params[0], 500.0)  # Cap D0
-                print(
-                    f"     Adjusted D0 from {init_params[0]} to {adjusted_params[0]} for constraint safety"
+                # Enhanced GPU adjustment logging
+                self.log_mcmc_gpu_progress(
+                    iteration=0,
+                    stage="Initialization-D0-Adjustment",
+                    method_name="MCMC-GPU",
+                    diagnostics={
+                        "original_D0": float(init_params[0]),
+                        "adjusted_D0": float(adjusted_params[0]),
+                        "constraint_cap": 500.0
+                    },
+                    gpu_config=gpu_logging_config
                 )
                 init_params = adjusted_params
 
         # Final NaN check (lines 1249-1261)
         if np.any(np.isnan(init_params)):
-            print(
-                f"     ⚠ Warning: Initial parameters still contain NaN values: {init_params}"
+            # Enhanced GPU NaN detection logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-NaN-Warning",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "warning": "parameters_contain_NaN", 
+                    "nan_params": init_params.tolist(),
+                    "action": "using_safe_fallback"
+                },
+                gpu_config=gpu_logging_config
             )
-            print("     ⚠ Using safe fallback initialization")
             safe_params = [10.0, -1.5, 0.0]  # D0, alpha, D_offset
             if not is_static_mode:
                 safe_params.extend(
                     [0.001, 1.0, 0.0, 0.0]
                 )  # gamma_dot_t0, beta, gamma_dot_t_offset, phi0
             init_params = np.array(safe_params[:effective_param_count])
+            
+            # Enhanced GPU safe fallback logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Initialization-Safe-Fallback",
+                method_name="MCMC-GPU",
+                diagnostics={"safe_params": init_params.tolist()},
+                gpu_config=gpu_logging_config
+            )
 
         return init_params
 
@@ -539,23 +923,54 @@ class MCMCSampler:
             target_accept = 0.85
             max_treedepth = 10
 
-        print("🎯 NumPyro GPU MCMC Sampling")
-        print(
-            f"     Settings: draws={draws}, tune={tune}, chains={chains}, cores={cores}{thinning_info}"
-        )
-        print(
-            f"     Target acceptance: {target_accept}, Max tree depth: {max_treedepth}"
+        # Get GPU logging configuration for sampling
+        gpu_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+        
+        # Enhanced GPU sampling configuration logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="Sampling-Configuration",
+            method_name="MCMC-GPU",
+            diagnostics={
+                "draws": draws,
+                "tune": tune,
+                "chains": chains,
+                "cores": cores,
+                "thin": thin if thin > 1 else None,
+                "effective_draws": effective_draws,
+                "target_accept": target_accept,
+                "max_treedepth": max_treedepth
+            },
+            gpu_config=gpu_logging_config
         )
 
         # Thinning messages (matching lines 1305-1316)
         thinning_msg = f" with thinning={thin}" if thin > 1 else ""
-        print(
-            f"    Starting enhanced MCMC sampling ({draws} draws + {tune} tuning{thinning_msg})..."
+        # Enhanced GPU sampling start logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="Sampling-Start",
+            method_name="MCMC-GPU",
+            diagnostics={
+                "sampling_type": "enhanced_MCMC",
+                "draws_tune": f"{draws}+{tune}",
+                "thinning_msg": thinning_msg if thinning_msg else "no_thinning"
+            },
+            gpu_config=gpu_logging_config
         )
 
         if thin > 1:
-            print(
-                f"    Thinning: keeping every {thin} samples (effective samples: {effective_draws})"
+            # Enhanced GPU thinning logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Sampling-Thinning",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "thinning_factor": thin,
+                    "effective_samples": effective_draws,
+                    "total_draws": draws
+                },
+                gpu_config=gpu_logging_config
             )
 
         # Build model
@@ -578,7 +993,18 @@ class MCMCSampler:
 
         # Configure NUTS kernel with initialization
         # Use the most basic initialization strategy for testing
-        print("    Using uniform initialization strategy for debugging")
+        # Enhanced GPU initialization strategy logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="NUTS-Initialization-Strategy",
+            method_name="MCMC-GPU",
+            diagnostics={
+                "strategy": "uniform",
+                "purpose": "debugging",
+                "backend": backend
+            },
+            gpu_config=gpu_logging_config
+        )
         init_strategy = init_to_uniform()
 
         nuts_kernel = NUTS(
@@ -601,7 +1027,18 @@ class MCMCSampler:
         )
 
         # Run sampling with device context and fallback
-        print(f"    Running on {backend.upper()}")
+        # Enhanced GPU backend execution logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="Sampling-Backend-Start",
+            method_name="MCMC-GPU",
+            diagnostics={
+                "backend": backend.upper(),
+                "gpu_available": self.gpu_available,
+                "device_count": len(self.gpu_devices) if hasattr(self, "gpu_devices") else 0
+            },
+            gpu_config=gpu_logging_config
+        )
         start_time = time.time()
 
         try:
@@ -621,7 +1058,18 @@ class MCMCSampler:
                 mcmc.run(rng_key, c2_data=c2_jax, phi_data=phi_jax)
 
             sampling_time = time.time() - start_time
-            print(f"    ✓ {backend.upper()} sampling completed in {sampling_time:.2f}s")
+            # Enhanced GPU sampling success logging
+            self.log_mcmc_gpu_progress(
+                iteration=draws,
+                stage="Sampling-Success",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "backend": backend.upper(),
+                    "sampling_time": sampling_time,
+                    "device": str(device)
+                },
+                gpu_config=gpu_logging_config
+            )
 
         except Exception as e:
             if backend == "gpu":
@@ -630,14 +1078,37 @@ class MCMCSampler:
                 device = jax.devices("cpu")[0]
 
                 # Retry on CPU
-                print("    Retrying on CPU...")
+                # Enhanced GPU fallback logging
+                self.log_mcmc_gpu_progress(
+                    iteration=0,
+                    stage="Backend-Switch",
+                    method_name="MCMC-GPU",
+                    diagnostics={
+                        "from_backend": "GPU",
+                        "to_backend": "CPU", 
+                        "reason": str(e),
+                        "action": "retrying_on_cpu"
+                    },
+                    gpu_config=gpu_logging_config
+                )
                 try:
                     with jax.default_device(device):
                         rng_key = jax.random.PRNGKey(42)
                         mcmc.run(rng_key, c2_data=c2_jax, phi_data=phi_jax)
 
                     sampling_time = time.time() - start_time
-                    print(f"    ✓ CPU fallback completed in {sampling_time:.2f}s")
+                    # Enhanced GPU CPU fallback success logging
+                    self.log_mcmc_gpu_progress(
+                        iteration=draws,
+                        stage="CPU-Fallback-Success",
+                        method_name="MCMC-GPU",
+                        diagnostics={
+                            "backend": "CPU",
+                            "sampling_time": sampling_time,
+                            "fallback": True
+                        },
+                        gpu_config=gpu_logging_config
+                    )
                 except Exception as e2:
                     logger.error(f"Both GPU and CPU sampling failed: {e2}")
                     raise
@@ -682,15 +1153,38 @@ class MCMCSampler:
         Reference: mcmc.py lines 1433-1530
         """
 
-        print("\n" + "═" * 60)
-        print("      GPU-Accelerated MCMC/NUTS Sampling (NumPyro)")
-        print("═" * 60)
+        # Get GPU logging configuration for main method
+        gpu_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+        
+        # Enhanced GPU main analysis start logging
+        self.log_mcmc_gpu_progress(
+            iteration=0,
+            stage="Analysis-Start",
+            method_name="MCMC-GPU",
+            diagnostics={
+                "analysis_type": "GPU-Accelerated MCMC/NUTS",
+                "backend": "NumPyro",
+                "main_entry_point": True
+            },
+            gpu_config=gpu_logging_config
+        )
 
         # Extract data (matching lines 1439-1457)
         c2_experimental = kwargs.get("c2_experimental")
         phi_angles = kwargs.get("phi_angles")
 
         if c2_experimental is None or phi_angles is None:
+            # Enhanced GPU core integration logging
+            self.log_mcmc_gpu_progress(
+                iteration=0,
+                stage="Core-Data-Loading",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "core_method": "load_experimental_data",
+                    "reason": "missing_input_data"
+                },
+                gpu_config=gpu_logging_config
+            )
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Get mode information
@@ -754,11 +1248,23 @@ class MCMCSampler:
                 "successful": True,
             }
 
-            # Print summary (matching mcmc.py style)
-            print("\n📊 MCMC Results Summary:")
-            print(f"   Samples: {samples[next(iter(samples.keys()))].shape}")
-            print(f"   Backend: {self.performance_metrics.get('backend_used')}")
-            print(f"   Converged: {self.diagnostics.get('assessment', 'Unknown')}")
+            # Enhanced GPU results summary logging
+            sample_shape = samples[next(iter(samples.keys()))].shape
+            backend_used = self.performance_metrics.get('backend_used')
+            convergence_status = self.diagnostics.get('assessment', 'Unknown')
+            
+            self.log_mcmc_gpu_progress(
+                iteration=-1,
+                stage="Results-Summary",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "sample_shape": str(sample_shape),
+                    "backend": backend_used,
+                    "converged": convergence_status,
+                    "successful": True
+                },
+                gpu_config=gpu_logging_config
+            )
 
             return self.mcmc_result
 
@@ -769,6 +1275,18 @@ class MCMCSampler:
         Compute diagnostics matching mcmc.py exactly.
         Reference: mcmc.py lines 1532-1601
         """
+        # Get GPU logging configuration for diagnostics
+        gpu_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_gpu_debug", {})
+        
+        # Enhanced GPU diagnostics start logging
+        self.log_mcmc_gpu_progress(
+            iteration=-1,
+            stage="Diagnostics-Start",
+            method_name="MCMC-GPU",
+            diagnostics={"computation_type": "convergence_diagnostics"},
+            gpu_config=gpu_logging_config
+        )
+        
         diagnostics = {}
 
         try:
@@ -776,6 +1294,7 @@ class MCMCSampler:
 
             # R-hat (matching lines 1545-1557)
             rhat_values = []
+            rhat_start = time.time()
             for param_name, param_samples in samples.items():
                 if (
                     param_name != "likelihood" and param_samples.ndim > 1
@@ -789,9 +1308,27 @@ class MCMCSampler:
                         logger.warning(
                             f"R-hat calculation failed for {param_name}: {e}"
                         )
+            
+            rhat_time = time.time() - rhat_start
+            # Enhanced GPU R-hat computation logging
+            if rhat_values:
+                self.log_mcmc_gpu_progress(
+                    iteration=-1,
+                    stage="Diagnostics-Rhat",
+                    method_name="MCMC-GPU",
+                    diagnostics={
+                        "max_rhat": max(rhat_values),
+                        "min_rhat": min(rhat_values),
+                        "mean_rhat": sum(rhat_values) / len(rhat_values),
+                        "n_parameters": len(rhat_values),
+                        "computation_time": rhat_time
+                    },
+                    gpu_config=gpu_logging_config
+                )
 
             # Effective sample size (matching lines 1559-1569)
             ess_values = []
+            ess_start = time.time()
             for param_name, param_samples in samples.items():
                 if param_name != "likelihood":  # Skip likelihood
                     try:
@@ -801,8 +1338,27 @@ class MCMCSampler:
                         ess_values.append(ess_float)
                     except Exception as e:
                         logger.warning(f"ESS calculation failed for {param_name}: {e}")
+            
+            ess_time = time.time() - ess_start
+            # Enhanced GPU ESS computation logging
+            if ess_values:
+                self.log_mcmc_gpu_progress(
+                    iteration=-1,
+                    stage="Diagnostics-ESS",
+                    method_name="MCMC-GPU",
+                    diagnostics={
+                        "max_ess": max(ess_values),
+                        "min_ess": min(ess_values),
+                        "mean_ess": sum(ess_values) / len(ess_values),
+                        "n_parameters": len(ess_values),
+                        "computation_time": ess_time
+                    },
+                    gpu_config=gpu_logging_config
+                )
 
             # HDI intervals (matching lines 1571-1581)
+            hdi_start = time.time()
+            hdi_count = 0
             for param_name, param_samples in samples.items():
                 if param_name != "likelihood":  # Skip likelihood
                     try:
@@ -811,8 +1367,24 @@ class MCMCSampler:
                             float(hdi_90[0]),
                             float(hdi_90[1]),
                         ]
+                        hdi_count += 1
                     except Exception as e:
                         logger.warning(f"HDI calculation failed for {param_name}: {e}")
+            
+            hdi_time = time.time() - hdi_start
+            # Enhanced GPU HDI computation logging
+            if hdi_count > 0:
+                self.log_mcmc_gpu_progress(
+                    iteration=-1,
+                    stage="Diagnostics-HDI",
+                    method_name="MCMC-GPU",
+                    diagnostics={
+                        "hdi_intervals_computed": hdi_count,
+                        "hdi_probability": 0.9,
+                        "computation_time": hdi_time
+                    },
+                    gpu_config=gpu_logging_config
+                )
 
             # Overall assessment (matching lines 1583-1601)
             max_rhat = max(rhat_values) if rhat_values else 1.0
@@ -822,6 +1394,23 @@ class MCMCSampler:
             rhat_ok = max_rhat < 1.1
             ess_ok = min_ess > 100
             converged = rhat_ok and ess_ok
+
+            # Enhanced GPU convergence assessment logging
+            self.log_mcmc_gpu_progress(
+                iteration=-1,
+                stage="Diagnostics-Assessment",
+                method_name="MCMC-GPU",
+                diagnostics={
+                    "max_rhat": max_rhat,
+                    "min_ess": min_ess,
+                    "converged": converged,
+                    "rhat_ok": rhat_ok,
+                    "ess_ok": ess_ok,
+                    "n_parameters": len(rhat_values),
+                    "assessment": "Converged" if converged else "Check convergence"
+                },
+                gpu_config=gpu_logging_config
+            )
 
             diagnostics.update(
                 {

@@ -14,6 +14,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+# Mark all tests in this module as system tests
+pytestmark = pytest.mark.system
+
 # Import the module under test
 from homodyne.post_install import (
     detect_shell_type,

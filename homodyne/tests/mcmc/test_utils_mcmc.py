@@ -170,21 +170,21 @@ def assert_mcmc_config_values(
     """
     if expected_draws is not None:
         actual_draws = sampler.mcmc_config.get("draws", 1000)
-        assert actual_draws == expected_draws, (
-            f"Expected draws={expected_draws}, got {actual_draws}"
-        )
+        assert (
+            actual_draws == expected_draws
+        ), f"Expected draws={expected_draws}, got {actual_draws}"
 
     if expected_chains is not None:
         actual_chains = sampler.mcmc_config.get("chains", 2)
-        assert actual_chains == expected_chains, (
-            f"Expected chains={expected_chains}, got {actual_chains}"
-        )
+        assert (
+            actual_chains == expected_chains
+        ), f"Expected chains={expected_chains}, got {actual_chains}"
 
     if expected_tune is not None:
         actual_tune = sampler.mcmc_config.get("tune", 500)
-        assert actual_tune == expected_tune, (
-            f"Expected tune={expected_tune}, got {actual_tune}"
-        )
+        assert (
+            actual_tune == expected_tune
+        ), f"Expected tune={expected_tune}, got {actual_tune}"
 
 
 def create_mock_trace(chains=1, draws=20, parameters=None):

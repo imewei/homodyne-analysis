@@ -553,7 +553,9 @@ class TestMCMCDataSavingUpdates:
 
             # Mock theoretical calculation
             c2_theory = np.random.random((n_angles, n_t2, n_t1)) + 0.5
-            mock_analysis_core.calculate_c2_nonequilibrium_laminar_parallel.return_value = c2_theory
+            mock_analysis_core.calculate_c2_nonequilibrium_laminar_parallel.return_value = (
+                c2_theory
+            )
 
             # Test that scaling logic would be applied
             # This tests the conceptual framework - actual scaling tested in integration
@@ -822,7 +824,9 @@ class TestMCMCIntegrationWithUpdates:
             c2_exp = np.random.random((n_angles, n_t2, n_t1)) + 1.0
             c2_theory = np.random.random((n_angles, n_t2, n_t1)) + 0.8
 
-            mock_analysis_core.calculate_c2_nonequilibrium_laminar_parallel.return_value = c2_theory
+            mock_analysis_core.calculate_c2_nonequilibrium_laminar_parallel.return_value = (
+                c2_theory
+            )
 
             # Simulate the new data processing flow:
             # 1. Calculate theory

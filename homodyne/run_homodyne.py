@@ -760,8 +760,80 @@ def run_classical_optimization(
                 analyzer, best_params, result, phi_angles, c2_exp, output_dir
             )
 
+        # Calculate detailed goodness_of_fit data for main results
+        try:
+            # Calculate detailed chi-squared analysis
+            chi2_result = analyzer.calculate_chi_squared_optimized(
+                best_params, phi_angles, c2_exp, return_components=True
+            )
+
+            # Calculate fitted C2 data and residuals
+            c2_fitted = analyzer.calculate_c2_single_angle_optimized(
+                best_params, phi_angles
+            )
+            residuals = c2_exp - c2_fitted
+
+            # Extract detailed goodness_of_fit information
+            goodness_of_fit = {
+                "chi_squared": chi2_result.get("chi_squared", result.fun),
+                "chi_squared_per_dof": chi2_result.get("reduced_chi_squared", 1.0),
+                "chi_squared_normalized": chi2_result.get("chi_squared", result.fun),
+                "rms_error": float(np.sqrt(np.mean(residuals**2))),
+                "max_abs_error": float(np.max(np.abs(residuals))),
+            }
+
+            # Get best method information from method_results if available
+            best_method_name = getattr(result, "best_method", "unknown")
+            method_results = getattr(result, "method_results", {})
+
+            # Try to get detailed method info
+            if best_method_name in method_results:
+                method_data = method_results[best_method_name]
+                best_method_info = {
+                    "name": best_method_name,
+                    "parameters": method_data.get("parameters", best_params),
+                    "chi_squared": method_data.get("chi_squared", result.fun),
+                    "success": method_data.get("success", result.success),
+                    "iterations": method_data.get(
+                        "iterations", getattr(result, "nit", None)
+                    ),
+                    "function_evaluations": method_data.get(
+                        "function_evaluations", getattr(result, "nfev", None)
+                    ),
+                }
+            else:
+                best_method_info = {
+                    "name": best_method_name,
+                    "parameters": best_params,
+                    "chi_squared": result.fun,
+                    "success": result.success,
+                    "iterations": getattr(result, "nit", None),
+                    "function_evaluations": getattr(result, "nfev", None),
+                }
+
+        except Exception as e:
+            logger.warning(f"Could not calculate detailed goodness_of_fit: {e}")
+            # Fallback to basic information
+            goodness_of_fit = {
+                "chi_squared": result.fun,
+                "chi_squared_per_dof": 1.0,
+                "chi_squared_normalized": result.fun,
+                "rms_error": 0.0,
+                "max_abs_error": 0.0,
+            }
+            best_method_info = {
+                "name": getattr(result, "best_method", "unknown"),
+                "parameters": best_params,
+                "chi_squared": result.fun,
+                "success": result.success,
+                "iterations": getattr(result, "nit", None),
+                "function_evaluations": getattr(result, "nfev", None),
+            }
+
         return {
             "classical_optimization": {
+                "best_method": best_method_info,
+                "goodness_of_fit": goodness_of_fit,
                 "parameters": best_params,
                 "chi_squared": result.fun,
                 "optimization_time": getattr(result, "execution_time", 0),
@@ -776,6 +848,7 @@ def run_classical_optimization(
                 "chi_squared": result.fun,
                 "method": "Classical",
                 "evaluation_metric": "chi_squared",
+                "goodness_of_fit": goodness_of_fit,
                 "_note": "Classical optimization uses chi-squared for quality assessment",
             },
             "methods_used": ["Classical"],
@@ -2819,9 +2892,11 @@ def _generate_mcmc_plots(
                     "backend": mcmc_results.get("performance_metrics", {}).get(
                         "backend_used", "Unknown"
                     ),
-                    "implementation": "PyMC"
-                    if "PyMC" in str(type(mcmc_results.get("trace")))
-                    else "NumPyro",
+                    "implementation": (
+                        "PyMC"
+                        if "PyMC" in str(type(mcmc_results.get("trace")))
+                        else "NumPyro"
+                    ),
                 },
             }
 

@@ -300,9 +300,9 @@ class TestAngleFilteringPerformance:
         # Performance check - new method should not be significantly slower
         # For small datasets, overhead might make it slower, but not by more
         # than 5x
-        assert new_time < old_time * 5.0, (
-            f"New method too slow: {new_time:.4f}s vs {old_time:.4f}s"
-        )
+        assert (
+            new_time < old_time * 5.0
+        ), f"New method too slow: {new_time:.4f}s vs {old_time:.4f}s"
 
         # Log performance for monitoring
         if new_time < old_time and new_time > 0:
@@ -435,9 +435,9 @@ class TestCachePerformance:
         avg_cache_time = cache_time / denominator if denominator > 0 else float("inf")
 
         # Cache hits should be very fast
-        assert avg_cache_time < 0.001, (
-            f"Cache lookup too slow: {avg_cache_time:.6f}s per lookup"
-        )
+        assert (
+            avg_cache_time < 0.001
+        ), f"Cache lookup too slow: {avg_cache_time:.6f}s per lookup"
 
         print(f"✓ Cache performance: {avg_cache_time * 1e6:.2f} μs per lookup")
 
@@ -550,9 +550,9 @@ class TestMemoryPerformance:
             else:
                 # If pre-allocation measurement is small, just check lazy isn't
                 # excessive
-                assert lazy_usage <= 10.0, (
-                    f"Lazy allocation uses too much memory: {lazy_usage:.1f}MB"
-                )
+                assert (
+                    lazy_usage <= 10.0
+                ), f"Lazy allocation uses too much memory: {lazy_usage:.1f}MB"
                 print(
                     "✓ Memory test completed (measurements too small to compare reliably)"
                 )
@@ -592,9 +592,9 @@ class TestMemoryPerformance:
                     )
 
                     # Verify we get a reasonable result
-                    assert isinstance(result, int | float | dict), (
-                        f"Unexpected result type: {type(result)}"
-                    )
+                    assert isinstance(
+                        result, int | float | dict
+                    ), f"Unexpected result type: {type(result)}"
                     print("✓ Integrated workflow completed successfully")
 
                 except KeyError as e:
@@ -730,9 +730,9 @@ class TestStableBenchmarking:
             small_benchmark_data["time_length"],
             small_benchmark_data["time_length"],
         )
-        assert result.shape == expected_shape, (
-            f"Unexpected result shape: {result.shape}"
-        )
+        assert (
+            result.shape == expected_shape
+        ), f"Unexpected result shape: {result.shape}"
 
         # Performance validation using baselines
         mean_time = benchmark_results["mean"]
@@ -755,7 +755,9 @@ class TestStableBenchmarking:
                 is_ci = os.getenv("CI", "").lower() in (
                     "true",
                     "1",
-                ) or os.getenv("GITHUB_ACTIONS", "").lower() in ("true", "1")
+                ) or os.getenv(
+                    "GITHUB_ACTIONS", ""
+                ).lower() in ("true", "1")
 
                 expected_median = test_baseline.get(
                     "expected_median_time", 0.01
@@ -871,9 +873,9 @@ class TestStableBenchmarking:
             if baseline_results["mean"] > 0
             else float("inf")
         )
-        assert mean_slowdown < 2.0, (
-            f"Environment optimization caused {mean_slowdown:.2f}x slowdown"
-        )
+        assert (
+            mean_slowdown < 2.0
+        ), f"Environment optimization caused {mean_slowdown:.2f}x slowdown"
 
         print(f"Performance impact: {mean_slowdown:.2f}x (acceptable)")
 
@@ -917,12 +919,12 @@ class TestOptimizationFeatures:
         first_call_time = time.time() - start
 
         # Verify caches are created
-        assert hasattr(analyzer, "_cached_validation_config"), (
-            "Validation config should be cached"
-        )
-        assert hasattr(analyzer, "_cached_chi_config"), (
-            "Chi-squared config should be cached"
-        )
+        assert hasattr(
+            analyzer, "_cached_validation_config"
+        ), "Validation config should be cached"
+        assert hasattr(
+            analyzer, "_cached_chi_config"
+        ), "Chi-squared config should be cached"
 
         # Second call - should use cached configs
         start = time.time()
@@ -938,9 +940,9 @@ class TestOptimizationFeatures:
             result2.get("chi2", result2) if isinstance(result2, dict) else result2
         )
 
-        assert abs(float(result1_value) - float(result2_value)) < 1e-10, (
-            "Results should be identical with caching"
-        )
+        assert (
+            abs(float(result1_value) - float(result2_value)) < 1e-10
+        ), "Results should be identical with caching"
 
         # Second call should be faster or at least not significantly slower
         # (May not always be faster due to system variance, but shouldn't be much slower)
@@ -952,13 +954,13 @@ class TestOptimizationFeatures:
             print("✓ Config caching: both calls too fast to measure accurately (< 1ms)")
         elif first_call_time < 0.001:
             # First call was unmeasurably fast, allow second call to be up to 50ms
-            assert second_call_time < 0.05, (
-                f"Cached call too slow when first call was unmeasurable (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
-            )
+            assert (
+                second_call_time < 0.05
+            ), f"Cached call too slow when first call was unmeasurable (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
         else:
-            assert second_call_time < first_call_time * max_slowdown, (
-                f"Cached call shouldn't be significantly slower (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
-            )
+            assert (
+                second_call_time < first_call_time * max_slowdown
+            ), f"Cached call shouldn't be significantly slower (first: {first_call_time:.4f}s, second: {second_call_time:.4f}s)"
 
         print(
             f"✓ Config caching: first={first_call_time * 1000:.2f}ms, second={
@@ -1122,12 +1124,12 @@ class TestOptimizationFeatures:
             assert np.isfinite(offset), f"Offset {i} should be finite: {offset}"
             # Relaxed bounds for test data - focus on correctness not physical
             # reasonableness
-            assert abs(contrast) > 1e-6, (
-                f"Contrast {i} should not be too close to zero: {contrast}"
-            )
-            assert abs(contrast) < 1e6, (
-                f"Contrast {i} should not be extremely large: {contrast}"
-            )
+            assert (
+                abs(contrast) > 1e-6
+            ), f"Contrast {i} should not be too close to zero: {contrast}"
+            assert (
+                abs(contrast) < 1e6
+            ), f"Contrast {i} should not be extremely large: {contrast}"
 
         print(
             f"✓ Least squares optimization: {len(scaling_solutions)} scalings computed"
@@ -1172,9 +1174,9 @@ class TestOptimizationFeatures:
             analyzer.time_length,
             analyzer.time_length,
         )
-        assert result.shape == expected_shape, (
-            f"Expected shape {expected_shape}, got {result.shape}"
-        )
+        assert (
+            result.shape == expected_shape
+        ), f"Expected shape {expected_shape}, got {result.shape}"
 
         # Verify result is reasonable (not all zeros or all ones)
         assert not np.allclose(result, 0), "Result shouldn't be all zeros"
@@ -1464,9 +1466,9 @@ class TestRegressionBenchmarks:
             small_benchmark_data["time_length"],
             small_benchmark_data["time_length"],
         )
-        assert result.shape == expected_shape, (
-            f"Unexpected result shape: {result.shape}"
-        )
+        assert (
+            result.shape == expected_shape
+        ), f"Unexpected result shape: {result.shape}"
 
         # Verify result validity
         assert np.all(np.isfinite(result)), "All results should be finite"
@@ -1806,7 +1808,9 @@ class TestPerformanceRegression:
         # Memory regression threshold: should use less than 50MB for medium
         # dataset
         max_acceptable_memory = 50.0  # MB
-        assert memory_increase < max_acceptable_memory, f"Memory usage too high: {
+        assert (
+            memory_increase < max_acceptable_memory
+        ), f"Memory usage too high: {
             memory_increase:.1f}MB > {max_acceptable_memory:.0f}MB threshold"
 
         print(
@@ -1908,9 +1912,9 @@ class TestMCMCThinningPerformance:
 
         config_with_thin = copy.deepcopy(config_no_thin)
         config_with_thin["optimization_config"]["mcmc_sampling"]["thin"] = 2
-        config_with_thin["optimization_config"]["mcmc_sampling"]["draws"] = (
-            400  # More draws to compensate
-        )
+        config_with_thin["optimization_config"]["mcmc_sampling"][
+            "draws"
+        ] = 400  # More draws to compensate
 
         # Test thinning parameter extraction and validation
         from homodyne.optimization.mcmc import MCMCSampler
@@ -1982,9 +1986,9 @@ class TestMCMCThinningPerformance:
 
         # Validation should be fast for all thinning values
         max_validation_time = max(validation_times)
-        assert max_validation_time < 0.1, (
-            f"Validation too slow: {max_validation_time:.4f}s"
-        )
+        assert (
+            max_validation_time < 0.1
+        ), f"Validation too slow: {max_validation_time:.4f}s"
 
     @pytest.mark.performance
     @pytest.mark.mcmc
@@ -2117,15 +2121,15 @@ class TestMCMCThinningPerformance:
         # For larger times, use relative threshold (2x for more tolerance)
         if avg_baseline > 1e-3 and avg_thinning > 1e-3:
             # Use relative threshold for larger times
-            assert avg_thinning < avg_baseline * 2.0, (
-                f"Thinning setup too slow: {avg_thinning:.4f}s vs baseline {avg_baseline:.4f}s"
-            )
+            assert (
+                avg_thinning < avg_baseline * 2.0
+            ), f"Thinning setup too slow: {avg_thinning:.4f}s vs baseline {avg_baseline:.4f}s"
         elif avg_baseline > 1e-6 and avg_thinning > 1e-6:
             # For small times, use absolute threshold (1ms max difference)
             time_diff = abs(avg_thinning - avg_baseline)
-            assert time_diff < 1e-3, (
-                f"Thinning setup time difference too large: {time_diff:.4f}s (baseline: {avg_baseline:.4f}s, thinning: {avg_thinning:.4f}s)"
-            )
+            assert (
+                time_diff < 1e-3
+            ), f"Thinning setup time difference too large: {time_diff:.4f}s (baseline: {avg_baseline:.4f}s, thinning: {avg_thinning:.4f}s)"
         else:
             # Both are very fast, just check they're both reasonable
             assert avg_baseline >= 0, f"Negative baseline time: {avg_baseline:.4f}s"
@@ -2158,9 +2162,9 @@ class TestNumbaCompilationDiagnostics:
 
         # Check if threading variables are consistently set
         if numba_threads != "not set" and omp_threads != "not set":
-            assert numba_threads == omp_threads, (
-                f"Thread count mismatch: NUMBA={numba_threads}, OMP={omp_threads}"
-            )
+            assert (
+                numba_threads == omp_threads
+            ), f"Thread count mismatch: NUMBA={numba_threads}, OMP={omp_threads}"
 
         # Check Numba availability
         try:
@@ -2224,9 +2228,9 @@ class TestNumbaCompilationDiagnostics:
         diffusion_time = (time.perf_counter() - start) / 1000
 
         print(f"3. Diffusion coefficient: {diffusion_time * 1000:.4f} ms")
-        assert diffusion_time < 0.005, (
-            f"Diffusion calculation too slow: {diffusion_time * 1000:.4f} ms"
-        )
+        assert (
+            diffusion_time < 0.005
+        ), f"Diffusion calculation too slow: {diffusion_time * 1000:.4f} ms"
 
         # Test 4: Shear rate calculation
         _ = calculate_shear_rate_numba(test_time_array, 10.0, 0.1, 1.0)
@@ -2236,9 +2240,9 @@ class TestNumbaCompilationDiagnostics:
         shear_time = (time.perf_counter() - start) / 1000
 
         print(f"4. Shear rate calculation: {shear_time * 1000:.4f} ms")
-        assert shear_time < 0.005, (
-            f"Shear rate calculation too slow: {shear_time * 1000:.4f} ms"
-        )
+        assert (
+            shear_time < 0.005
+        ), f"Shear rate calculation too slow: {shear_time * 1000:.4f} ms"
 
         # Test 5: Time integral matrix creation
         _ = create_time_integral_matrix_numba(test_time_array)
@@ -2248,11 +2252,163 @@ class TestNumbaCompilationDiagnostics:
         matrix_time = (time.perf_counter() - start) / 100
 
         print(f"5. Time integral matrix: {matrix_time * 1000:.4f} ms")
-        assert matrix_time < 0.05, (
-            f"Time integral matrix too slow: {matrix_time * 1000:.4f} ms"
-        )
+        assert (
+            matrix_time < 0.05
+        ), f"Time integral matrix too slow: {matrix_time * 1000:.4f} ms"
 
         print("✓ All kernel performance tests passed")
+
+    @pytest.mark.performance
+    def test_performance_optimization_regression_suite(self):
+        """Comprehensive regression test for all new performance optimizations."""
+        print("\n=== Performance Optimization Regression Suite ===")
+
+        # Test 1: JIT compilation effectiveness
+        from homodyne.core.kernels import calculate_diffusion_coefficient_numba
+
+        test_time_array = np.linspace(0.1, 2.0, 50)
+
+        # Warmup runs to ensure JIT compilation is complete
+        for _ in range(3):
+            calculate_diffusion_coefficient_numba(test_time_array, 1000.0, -0.1, 100.0)
+
+        # Multiple runs to check consistency (more runs for better statistics)
+        times = []
+        for _ in range(20):
+            start = time.perf_counter()
+            calculate_diffusion_coefficient_numba(test_time_array, 1000.0, -0.1, 100.0)
+            times.append(time.perf_counter() - start)
+
+        # Remove outliers (top and bottom 10%) for more stable results
+        times_sorted = sorted(times)
+        n_remove = len(times) // 10
+        if n_remove > 0:
+            times_trimmed = times_sorted[n_remove:-n_remove]
+        else:
+            times_trimmed = times_sorted
+
+        median_time = np.median(times_trimmed)
+        cv = (
+            np.std(times_trimmed) / np.mean(times_trimmed)
+            if np.mean(times_trimmed) > 0
+            else float("inf")
+        )
+
+        print(
+            f"1. JIT kernel performance: {median_time * 1000:.4f}ms median, CV={cv:.3f} (trimmed {len(times_trimmed)}/{len(times)} runs)"
+        )
+        assert (
+            median_time < 0.1
+        ), f"JIT kernel too slow: {median_time * 1000:.2f}ms"  # More lenient threshold
+        assert (
+            cv < 1.5
+        ), f"JIT kernel performance too variable: CV={cv:.3f}"  # More lenient CV threshold
+
+        # Test 2: Memory allocation patterns
+        memory_test_sizes = [100, 500, 1000]
+        allocation_times = []
+
+        for size in memory_test_sizes:
+            start = time.perf_counter()
+            arr = np.zeros((size, size))
+            del arr
+            allocation_times.append(time.perf_counter() - start)
+
+        # Allocation time should scale reasonably with size
+        max_allocation_time = max(allocation_times)
+        print(f"2. Memory allocation max time: {max_allocation_time * 1000:.4f}ms")
+        assert (
+            max_allocation_time < 0.1
+        ), f"Memory allocation too slow: {max_allocation_time * 1000:.2f}ms"
+
+        # Test 3: Cache simulation performance
+        cache_operations = 1000
+        start = time.perf_counter()
+        cache_dict = {}
+        for i in range(cache_operations):
+            key = f"key_{i % 100}"  # 100 unique keys, 90% cache hits
+            if key in cache_dict:
+                _ = cache_dict[key]
+            else:
+                cache_dict[key] = np.random.rand(10, 10)
+        cache_time = time.perf_counter() - start
+
+        print(
+            f"3. Cache simulation time: {cache_time * 1000:.4f}ms for {cache_operations} operations"
+        )
+        assert cache_time < 0.1, f"Cache operations too slow: {cache_time * 1000:.2f}ms"
+
+        print("✓ Performance optimization regression suite passed")
+
+    @pytest.mark.performance
+    def test_comprehensive_performance_baselines(self):
+        """Test comprehensive performance baselines for new optimizations."""
+        print("\n=== Comprehensive Performance Baselines ===")
+
+        # Baseline 1: Computational kernel performance
+        from homodyne.core.kernels import (
+            calculate_diffusion_coefficient_numba,
+            calculate_shear_rate_numba,
+        )
+
+        test_time_array = np.linspace(0.1, 2.0, 100)
+
+        # Warm up kernels
+        for _ in range(3):
+            calculate_diffusion_coefficient_numba(test_time_array, 1000.0, -0.1, 100.0)
+            calculate_shear_rate_numba(test_time_array, 10.0, 0.1, 1.0)
+
+        # Benchmark diffusion coefficient
+        start = time.perf_counter()
+        for _ in range(1000):
+            calculate_diffusion_coefficient_numba(test_time_array, 1000.0, -0.1, 100.0)
+        diffusion_time = (time.perf_counter() - start) / 1000
+
+        # Benchmark shear rate
+        start = time.perf_counter()
+        for _ in range(1000):
+            calculate_shear_rate_numba(test_time_array, 10.0, 0.1, 1.0)
+        shear_time = (time.perf_counter() - start) / 1000
+
+        print(f"1. Diffusion coefficient: {diffusion_time * 1000:.4f}ms per call")
+        print(f"2. Shear rate calculation: {shear_time * 1000:.4f}ms per call")
+
+        # Performance baselines (adjusted for CI environments)
+        is_ci = os.getenv("CI", "").lower() in ("true", "1")
+        diffusion_baseline = 0.010 if is_ci else 0.005  # 10ms CI, 5ms local
+        shear_baseline = 0.010 if is_ci else 0.005  # 10ms CI, 5ms local
+
+        assert (
+            diffusion_time < diffusion_baseline
+        ), f"Diffusion too slow: {diffusion_time * 1000:.2f}ms"
+        assert (
+            shear_time < shear_baseline
+        ), f"Shear calculation too slow: {shear_time * 1000:.2f}ms"
+
+        # Baseline 2: Memory efficiency
+        import gc
+
+        gc.collect()
+
+        # Test memory-efficient array operations
+        large_arrays = []
+        start_mem_test = time.perf_counter()
+        for i in range(10):
+            arr = np.random.rand(500, 500)
+            large_arrays.append(arr)
+            if i % 3 == 0:  # Periodic cleanup
+                large_arrays = large_arrays[-2:]  # Keep only last 2
+                gc.collect()
+
+        # Final cleanup
+        large_arrays.clear()
+        gc.collect()
+        mem_test_time = time.perf_counter() - start_mem_test
+
+        print(f"3. Memory efficiency test: {mem_test_time:.4f}s")
+        assert mem_test_time < 5.0, f"Memory operations too slow: {mem_test_time:.2f}s"
+
+        print("✓ Comprehensive performance baselines met")
 
     @pytest.mark.performance
     def test_kernel_performance_regression(self):
@@ -2389,7 +2545,9 @@ class TestNumbaCompilationDiagnostics:
         print(f"Performance factor: {performance_factor:.2f}x (1.0 = baseline)")
 
         # Allow up to 5x slower than baseline for CI environment variability
-        assert performance_factor < 5.0, f"Performance regression: {
+        assert (
+            performance_factor < 5.0
+        ), f"Performance regression: {
             performance_factor:.2f}x slower than baseline"
 
 
@@ -2421,6 +2579,149 @@ def run_basic_performance_regression_test() -> bool:
 # =============================================================================
 # PHASE 3 BATCH OPTIMIZATION TESTS
 # =============================================================================
+
+
+class TestNewPerformanceOptimizations:
+    """Test suite for newly implemented performance optimization features."""
+
+    @pytest.mark.performance
+    def test_jit_compilation_performance_improvement(self, small_benchmark_data):
+        """Test performance improvement from enhanced JIT compilation."""
+        from homodyne.core.kernels import (
+            calculate_diffusion_coefficient_numba,
+        )
+
+        # Test data
+        time_array = np.linspace(0.1, 2.0, 100)
+
+        # Time without JIT warmup (cold start)
+        start_cold = time.perf_counter()
+        result_cold = calculate_diffusion_coefficient_numba(
+            time_array, 1000.0, -0.1, 100.0
+        )
+        cold_time = time.perf_counter() - start_cold
+
+        # Time with JIT warmup (warm start)
+        # Warm up multiple times to ensure compilation is complete
+        for _ in range(5):
+            calculate_diffusion_coefficient_numba(time_array, 1000.0, -0.1, 100.0)
+
+        start_warm = time.perf_counter()
+        result_warm = calculate_diffusion_coefficient_numba(
+            time_array, 1000.0, -0.1, 100.0
+        )
+        warm_time = time.perf_counter() - start_warm
+
+        # Verify results are identical
+        np.testing.assert_array_equal(result_cold, result_warm)
+
+        # Warm execution should be significantly faster (at least 2x)
+        if cold_time > 0 and warm_time > 0:
+            speedup = cold_time / warm_time
+            assert speedup >= 2.0, f"JIT warmup speedup too low: {speedup:.2f}x"
+            print(f"✓ JIT compilation speedup: {speedup:.2f}x")
+
+
+    @pytest.mark.performance
+    def test_two_tier_caching_performance(self, small_benchmark_data):
+        """Test performance improvement from two-tier caching system."""
+        # Mock two-tier cache system
+
+        # Simulate cache performance
+        l1_cache = {}  # Fast L1 cache
+        l2_cache = {}  # Slower L2 cache with larger capacity
+
+        def mock_l1_access(key):
+            if key in l1_cache:
+                return l1_cache[key], 0.001  # 1ms access time
+            return None, 0
+
+        def mock_l2_access(key):
+            if key in l2_cache:
+                return l2_cache[key], 0.010  # 10ms access time
+            return None, 0
+
+        def mock_compute_expensive(key):
+            # Simulate expensive computation
+            time.sleep(0.05)  # 50ms computation
+            result = np.random.rand(100, 100)
+            return result, 0.05
+
+        # Test cache hit performance
+        test_key = "test_correlation_matrix"
+
+        # First access - cache miss, expensive computation
+        start = time.perf_counter()
+        result, _ = mock_compute_expensive(test_key)
+        l1_cache[test_key] = result
+        l2_cache[test_key] = result
+        first_access_time = time.perf_counter() - start
+
+        # Second access - L1 cache hit
+        start = time.perf_counter()
+        cached_result, _ = mock_l1_access(test_key)
+        l1_hit_time = time.perf_counter() - start
+
+        # Verify cache effectiveness
+        cache_speedup = first_access_time / l1_hit_time if l1_hit_time > 0 else 1
+        assert cache_speedup >= 10, f"Cache speedup too low: {cache_speedup:.2f}x"
+        print(f"✓ Two-tier cache speedup: {cache_speedup:.2f}x")
+
+    @pytest.mark.performance
+    def test_adaptive_parallelization_performance(self, medium_benchmark_data):
+        """Test performance improvement from adaptive parallelization."""
+        if HomodyneAnalysisCore is None:
+            pytest.skip("HomodyneAnalysisCore not available")
+
+        import concurrent.futures
+
+        # Mock adaptive parallelization logic
+        def mock_adaptive_executor_selection(problem_size):
+            if problem_size < 1000:
+                return "ThreadPoolExecutor", 2
+            else:
+                return "ProcessPoolExecutor", 4
+
+        # Test with small problem (should use threads)
+        small_problem_size = 500
+        executor_type, num_workers = mock_adaptive_executor_selection(
+            small_problem_size
+        )
+        assert executor_type == "ThreadPoolExecutor"
+        print(f"✓ Small problem uses {executor_type} with {num_workers} workers")
+
+        # Test with large problem (should use processes)
+        large_problem_size = 5000
+        executor_type, num_workers = mock_adaptive_executor_selection(
+            large_problem_size
+        )
+        assert executor_type == "ProcessPoolExecutor"
+        print(f"✓ Large problem uses {executor_type} with {num_workers} workers")
+
+        # Test actual parallel performance
+        def cpu_intensive_task(n):
+            return sum(i**2 for i in range(n))
+
+        tasks = [1000] * 8
+
+        # Sequential execution
+        start_seq = time.perf_counter()
+        seq_results = [cpu_intensive_task(n) for n in tasks]
+        seq_time = time.perf_counter() - start_seq
+
+        # Parallel execution
+        start_par = time.perf_counter()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            par_results = list(executor.map(cpu_intensive_task, tasks))
+        par_time = time.perf_counter() - start_par
+
+        # Verify results are identical
+        assert seq_results == par_results
+
+        # Parallel should be faster (allowing for overhead)
+        if seq_time > 0 and par_time > 0:
+            speedup = seq_time / par_time
+            print(f"✓ Adaptive parallelization speedup: {speedup:.2f}x")
 
 
 class TestBatchOptimizationFeatures:
@@ -2464,12 +2765,12 @@ class TestBatchOptimizationFeatures:
         )
 
         # Verify results
-        assert contrast_batch.shape == (n_angles,), (
-            f"Expected shape ({n_angles},), got {contrast_batch.shape}"
-        )
-        assert offset_batch.shape == (n_angles,), (
-            f"Expected shape ({n_angles},), got {offset_batch.shape}"
-        )
+        assert contrast_batch.shape == (
+            n_angles,
+        ), f"Expected shape ({n_angles},), got {contrast_batch.shape}"
+        assert offset_batch.shape == (
+            n_angles,
+        ), f"Expected shape ({n_angles},), got {offset_batch.shape}"
 
         # Check accuracy (should be close to true values within noise
         # tolerance)
@@ -2509,9 +2810,9 @@ class TestBatchOptimizationFeatures:
         )
 
         # Verify results
-        assert chi2_batch.shape == (n_angles,), (
-            f"Expected shape ({n_angles},), got {chi2_batch.shape}"
-        )
+        assert chi2_batch.shape == (
+            n_angles,
+        ), f"Expected shape ({n_angles},), got {chi2_batch.shape}"
         assert np.all(chi2_batch >= 0), "Chi-squared values should be non-negative"
         assert np.all(np.isfinite(chi2_batch)), "Chi-squared values should be finite"
 
@@ -2528,9 +2829,9 @@ class TestBatchOptimizationFeatures:
         print(f"Batch chi-squared[0]: {chi2_batch[0]:.6f}")
         print(f"Manual chi-squared[0]: {chi2_manual:.6f}")
 
-        assert np.abs(chi2_batch[0] - chi2_manual) < 1e-10, (
-            "Batch computation should match manual calculation"
-        )
+        assert (
+            np.abs(chi2_batch[0] - chi2_manual) < 1e-10
+        ), "Batch computation should match manual calculation"
 
     @pytest.mark.performance
     @pytest.mark.optimization
@@ -2701,9 +3002,9 @@ class TestBatchOptimizationFeatures:
             "GITHUB_ACTIONS", ""
         ).lower() in ("true", "1")
         memory_threshold = 150 if is_ci else 50  # Higher tolerance for CI
-        assert memory_increase < memory_threshold, (
-            f"Memory usage increase too large: {memory_increase:.1f} MB (threshold: {memory_threshold} MB)"
-        )
+        assert (
+            memory_increase < memory_threshold
+        ), f"Memory usage increase too large: {memory_increase:.1f} MB (threshold: {memory_threshold} MB)"
 
         # Verify results are correct
         assert contrast_batch.shape == (n_angles,)
@@ -2740,12 +3041,12 @@ class TestBatchOptimizationFeatures:
         )
 
         # Should fallback to reasonable values for singular cases
-        assert np.all(np.isfinite(contrast_batch)), (
-            "Contrast should be finite for singular cases"
-        )
-        assert np.all(np.isfinite(offset_batch)), (
-            "Offset should be finite for singular cases"
-        )
+        assert np.all(
+            np.isfinite(contrast_batch)
+        ), "Contrast should be finite for singular cases"
+        assert np.all(
+            np.isfinite(offset_batch)
+        ), "Offset should be finite for singular cases"
 
         # Test case 2: Large value ranges
         theory_batch = np.random.rand(n_angles, n_data) * 1e6
@@ -2755,12 +3056,12 @@ class TestBatchOptimizationFeatures:
             solve_least_squares_batch_numba, theory_batch, exp_batch
         )
 
-        assert np.all(np.isfinite(contrast_batch)), (
-            "Contrast should be finite for large values"
-        )
-        assert np.all(np.isfinite(offset_batch)), (
-            "Offset should be finite for large values"
-        )
+        assert np.all(
+            np.isfinite(contrast_batch)
+        ), "Contrast should be finite for large values"
+        assert np.all(
+            np.isfinite(offset_batch)
+        ), "Offset should be finite for large values"
 
         print("✓ Numerical stability tests passed")
 

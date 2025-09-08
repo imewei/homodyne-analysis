@@ -434,7 +434,7 @@ If you use this package in your research, please cite:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for development workflow and standards.
+We welcome contributions! Please see our [Contributing Guide](docs/developer-guide/contributing.md) for development workflow and standards.
 
 ### Development Setup
 

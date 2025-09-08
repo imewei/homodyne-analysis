@@ -272,6 +272,9 @@ class TestConfigurationIntegration:
             # Create mock analyzer with ConfigManager
             mock_analyzer = Mock()
             mock_analyzer.config_manager = config_manager
+            # Ensure _selected_chi_calculator doesn't exist to force fallback to calculate_chi_squared_optimized
+            if hasattr(mock_analyzer, '_selected_chi_calculator'):
+                delattr(mock_analyzer, '_selected_chi_calculator')
 
             optimizer = ClassicalOptimizer(mock_analyzer, {})
 
@@ -291,6 +294,10 @@ class TestConfigurationIntegration:
 
             # Verify that angle filtering was enabled (from config)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
+            assert call_args is not None, "calculate_chi_squared_optimized was not called"
+            assert len(call_args) >= 2, "Method not called with positional and keyword args"
+            assert call_args[1] is not None, "No keyword arguments provided"
+            assert "filter_angles_for_optimization" in call_args[1], "filter_angles_for_optimization kwarg missing"
             assert call_args[1]["filter_angles_for_optimization"]
             assert result == 5.0
 
@@ -327,6 +334,9 @@ class TestConfigurationIntegration:
             # Create analyzer without ConfigManager
             mock_analyzer = Mock(spec=["calculate_chi_squared_optimized"])
             # Explicitly ensure no config_manager attribute exists
+            # Ensure _selected_chi_calculator doesn't exist to force fallback to calculate_chi_squared_optimized
+            if hasattr(mock_analyzer, '_selected_chi_calculator'):
+                delattr(mock_analyzer, '_selected_chi_calculator')
 
             optimizer = ClassicalOptimizer(
                 mock_analyzer,

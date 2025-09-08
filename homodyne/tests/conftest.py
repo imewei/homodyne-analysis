@@ -6,6 +6,19 @@ Configuration and shared fixtures for the test suite.
 """
 
 import os
+
+# CRITICAL: Set environment variables before ANY imports to avoid Numba threading issues
+# These must be set before Numba is imported for the first time
+os.environ["OMP_NUM_THREADS"] = "1"  # Use single thread to avoid conflicts
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMBA_NUM_THREADS"] = "1"  # Single thread for test stability
+os.environ["NUMBA_DISABLE_INTEL_SVML"] = "1"
+os.environ["NUMBA_FASTMATH"] = "0"  # Conservative JIT for stability
+os.environ["NUMBA_DISABLE_JIT"] = "1"  # Disable JIT to prevent threading conflicts
+os.environ["NUMBA_THREADING_LAYER"] = "safe"  # Use safe threading layer
+
+# Now safe to import everything else
 import shutil
 import sys
 import time
@@ -42,6 +55,7 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMBA_NUM_THREADS"] = "1"  # Single thread for test stability
 os.environ["NUMBA_DISABLE_INTEL_SVML"] = "1"
 os.environ["NUMBA_FASTMATH"] = "0"  # Conservative JIT for stability
+os.environ["NUMBA_DISABLE_JIT"] = "1"  # Disable JIT to prevent threading conflicts
 os.environ["NUMBA_THREADING_LAYER"] = "safe"  # Use safe threading layer
 
 # Now safe to import everything else
