@@ -48,15 +48,20 @@ class TestIRLSMethodSelection:
                 "chi_squared_calculation"
             ]
 
+            # Mock memory pooling attributes
+            core._pool_initialized = False
+            core._memory_pools = {}
+
             # Add the actual methods we want to test
             import homodyne.analysis.core
 
             AnalysisCore = homodyne.analysis.core.HomodyneAnalysisCore
-            core._estimate_variance_mad_moving_window = (
-                AnalysisCore._estimate_variance_mad_moving_window.__get__(core)
-            )
+            # Removed obsolete variance method reference
             core._estimate_variance_irls_mad_robust = (
                 AnalysisCore._estimate_variance_irls_mad_robust.__get__(core)
+            )
+            core._mad_moving_window_with_edge_handling = (
+                AnalysisCore._mad_moving_window_with_edge_handling.__get__(core)
             )
 
             return core
@@ -78,14 +83,14 @@ class TestIRLSMethodSelection:
         assert np.all(result > 0)
         assert np.all(np.isfinite(result))
 
-    def test_mad_fallback_method(self, mock_core_config):
-        """Test fallback to MAD method."""
-        core = mock_core_config("mad_robust")
+    def test_irls_mad_robust_method(self, mock_core_config):
+        """Test IRLS MAD robust method."""
+        core = mock_core_config("irls_mad_robust")
 
         test_residuals = np.random.randn(15) * 0.15
 
-        # Test MAD method directly
-        result = core._estimate_variance_mad_moving_window(test_residuals)
+        # Test IRLS MAD method directly
+        result = core._estimate_variance_irls_mad_robust(test_residuals, edge_method="none")
 
         assert len(result) == len(test_residuals)
         assert np.all(result > 0)
@@ -118,14 +123,19 @@ class TestIRLSNumericalStability:
         core.config = config
         core._cached_chi_config = config["advanced_settings"]["chi_squared_calculation"]
 
+        # Mock memory pooling attributes
+        core._pool_initialized = False
+        core._memory_pools = {}
+
         import homodyne.analysis.core
 
         AnalysisCore = homodyne.analysis.core.HomodyneAnalysisCore
-        core._estimate_variance_mad_moving_window = (
-            AnalysisCore._estimate_variance_mad_moving_window.__get__(core)
-        )
+        # Removed obsolete variance method reference
         core._estimate_variance_irls_mad_robust = (
             AnalysisCore._estimate_variance_irls_mad_robust.__get__(core)
+        )
+        core._mad_moving_window_with_edge_handling = (
+            AnalysisCore._mad_moving_window_with_edge_handling.__get__(core)
         )
 
         return core
@@ -197,14 +207,19 @@ class TestIRLSConvergenceBehavior:
         core.config = config
         core._cached_chi_config = config["advanced_settings"]["chi_squared_calculation"]
 
+        # Mock memory pooling attributes
+        core._pool_initialized = False
+        core._memory_pools = {}
+
         import homodyne.analysis.core
 
         AnalysisCore = homodyne.analysis.core.HomodyneAnalysisCore
-        core._estimate_variance_mad_moving_window = (
-            AnalysisCore._estimate_variance_mad_moving_window.__get__(core)
-        )
+        # Removed obsolete variance method reference
         core._estimate_variance_irls_mad_robust = (
             AnalysisCore._estimate_variance_irls_mad_robust.__get__(core)
+        )
+        core._mad_moving_window_with_edge_handling = (
+            AnalysisCore._mad_moving_window_with_edge_handling.__get__(core)
         )
 
         return core
@@ -266,12 +281,12 @@ class TestIRLSConvergenceBehavior:
             ]
 
         # Even without convergence, should produce valid results
-        assert np.all(np.isfinite(variances)), (
-            "Should produce finite results even without convergence"
-        )
-        assert np.all(variances > 0), (
-            "Should maintain positivity even without convergence"
-        )
+        assert np.all(
+            np.isfinite(variances)
+        ), "Should produce finite results even without convergence"
+        assert np.all(
+            variances > 0
+        ), "Should maintain positivity even without convergence"
 
 
 class TestIRLSEdgeHandling:
@@ -301,14 +316,19 @@ class TestIRLSEdgeHandling:
         core.config = config
         core._cached_chi_config = config["advanced_settings"]["chi_squared_calculation"]
 
+        # Mock memory pooling attributes
+        core._pool_initialized = False
+        core._memory_pools = {}
+
         import homodyne.analysis.core
 
         AnalysisCore = homodyne.analysis.core.HomodyneAnalysisCore
-        core._estimate_variance_mad_moving_window = (
-            AnalysisCore._estimate_variance_mad_moving_window.__get__(core)
-        )
+        # Removed obsolete variance method reference
         core._estimate_variance_irls_mad_robust = (
             AnalysisCore._estimate_variance_irls_mad_robust.__get__(core)
+        )
+        core._mad_moving_window_with_edge_handling = (
+            AnalysisCore._mad_moving_window_with_edge_handling.__get__(core)
         )
 
         return core
@@ -335,12 +355,12 @@ class TestIRLSEdgeHandling:
             variances[2:-2]
         )  # Compare edge to center
 
-        assert 0.1 < edge_var_ratio < 10, (
-            "Edge variance should be reasonable relative to center"
-        )
-        assert np.all(np.isfinite(variances)), (
-            "All edge-handled variances should be finite"
-        )
+        assert (
+            0.1 < edge_var_ratio < 10
+        ), "Edge variance should be reasonable relative to center"
+        assert np.all(
+            np.isfinite(variances)
+        ), "All edge-handled variances should be finite"
 
     def test_no_edge_handling_vs_reflection(self, edge_test_core):
         """Test difference between reflection and no edge handling."""
@@ -363,16 +383,16 @@ class TestIRLSEdgeHandling:
         )
 
         # Both should be valid and same size as original
-        assert len(var_reflect) == len(test_data), (
-            "Reflection result should match original size"
-        )
-        assert len(var_no_reflect) == len(test_data), (
-            "No-reflection result should match original size"
-        )
+        assert len(var_reflect) == len(
+            test_data
+        ), "Reflection result should match original size"
+        assert len(var_no_reflect) == len(
+            test_data
+        ), "No-reflection result should match original size"
         assert np.all(np.isfinite(var_reflect)), "Reflection handling should be finite"
-        assert np.all(np.isfinite(var_no_reflect)), (
-            "No-reflection handling should be finite"
-        )
+        assert np.all(
+            np.isfinite(var_no_reflect)
+        ), "No-reflection handling should be finite"
 
         # The middle values should be similar, edges might differ
         middle_indices = slice(3, -3)
@@ -413,14 +433,19 @@ class TestIRLSRealWorldScenarios:
         core.config = config
         core._cached_chi_config = config["advanced_settings"]["chi_squared_calculation"]
 
+        # Mock memory pooling attributes
+        core._pool_initialized = False
+        core._memory_pools = {}
+
         import homodyne.analysis.core
 
         AnalysisCore = homodyne.analysis.core.HomodyneAnalysisCore
-        core._estimate_variance_mad_moving_window = (
-            AnalysisCore._estimate_variance_mad_moving_window.__get__(core)
-        )
+        # Removed obsolete variance method reference
         core._estimate_variance_irls_mad_robust = (
             AnalysisCore._estimate_variance_irls_mad_robust.__get__(core)
+        )
+        core._mad_moving_window_with_edge_handling = (
+            AnalysisCore._mad_moving_window_with_edge_handling.__get__(core)
         )
 
         return core

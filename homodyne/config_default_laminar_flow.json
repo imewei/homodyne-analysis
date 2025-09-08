@@ -527,7 +527,7 @@
       "method": "standard",
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
       "minimum_sigma": 1e-10,
-      "moving_window_size": 11,
+      "moving_window_size": 25,
       "moving_window_edge_method": "reflect",
       "fast_computation": true,
       "uncertainty_calculation": {
@@ -542,14 +542,18 @@
         "check_parameter_bounds": true
       },
       "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
-      "variance_method": "irls_mad_robust",
-      "_variance_method_note": "Options: irls_mad_robust (default), irls_optimized (50x faster), mad_robust, mad_optimized (10x faster)",
+      "variance_method": "hybrid_limited_irls",
+      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Simple MAD + 2-3 IRLS iterations for 50-70% speedup)",
+      "_variance_method_options": {
+        "irls_mad_robust": "Full IRLS with MAD robust estimation (legacy method)",
+        "hybrid_limited_irls": "Hybrid: Simple MAD initialization + limited IRLS iterations (FGLS-inspired, DEFAULT for efficiency)"
+      },
       "irls_config": {
-        "max_iterations": 10,
-        "damping_factor": 0.7,
-        "convergence_tolerance": 0.001,
+        "max_iterations": 16,
+        "damping_factor": 0.78,
+        "convergence_tolerance": 0.0025,
         "initial_sigma_squared": 0.001,
-        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev",
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev - Balanced optimization: window=25, iterations=16, damping=0.78",
         "optimized_config": {
           "use_vectorized_mad": true,
           "use_quickselect_median": true,

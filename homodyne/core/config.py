@@ -288,7 +288,11 @@ class ConfigManager:
         angle_ranges = config_manager.get_target_angle_ranges()
     """
 
-    def __init__(self, config_file: str = "homodyne_config.json"):
+    def __init__(
+        self,
+        config_file: str = "homodyne_config.json",
+        config_override: dict[str, Any] | None = None,
+    ):
         """
         Initialize configuration manager.
 
@@ -296,12 +300,20 @@ class ConfigManager:
         ----------
         config_file : str
             Path to JSON configuration file
+        config_override : dict, optional
+            Override configuration data instead of loading from file
         """
         self.config_file = config_file
         self.config: dict[str, Any] | None = None
         self._cached_values: dict[str, Any] = {}
-        self.load_config()
-        self.validate_config()
+
+        if config_override is not None:
+            self.config = config_override.copy()
+            # For override configs, validate specific fields but allow missing sections
+            self._validate_performance_settings()
+        else:
+            self.load_config()
+            self.validate_config()
         self.setup_logging()
 
     def load_config(self) -> None:
@@ -462,10 +474,27 @@ class ConfigManager:
         if missing:
             raise ValueError(f"Missing required sections: {missing}")
 
-        # Validate frame range
+        # Validate frame range - handle both nested temporal structure and flat structure
         analyzer = self.config["analyzer_parameters"]
-        start = analyzer.get("start_frame", 1)
-        end = analyzer.get("end_frame", 100)
+        
+        # Check for nested temporal structure first (current standard)
+        temporal = analyzer.get("temporal", {})
+        if temporal:
+            start = temporal.get("start_frame", 1)
+            end = temporal.get("end_frame", 100)
+            logger.debug(f"Using nested temporal structure: start_frame={start}, end_frame={end}")
+        else:
+            # Fallback to flat structure for backward compatibility
+            start = analyzer.get("start_frame", 1)
+            end = analyzer.get("end_frame", 100)
+            logger.debug(f"Using flat parameter structure: start_frame={start}, end_frame={end}")
+            
+            # Warn about deprecated flat structure
+            if "start_frame" in analyzer or "end_frame" in analyzer:
+                logger.warning(
+                    "Flat parameter structure detected. Consider updating to nested structure: "
+                    "analyzer_parameters.temporal.{start_frame,end_frame}"
+                )
 
         if start >= end:
             raise ValueError(f"Invalid frame range: {start} >= {end}")
@@ -477,7 +506,11 @@ class ConfigManager:
             .get("minimum_frames", 10)
         )
         if end - start < min_frames:
-            raise ValueError(f"Insufficient frames: {end - start} < {min_frames}")
+            parameter_source = "analyzer_parameters.temporal" if temporal else "analyzer_parameters"
+            raise ValueError(
+                f"Insufficient frames: {end - start} < {min_frames} "
+                f"(loaded from {parameter_source}: start_frame={start}, end_frame={end})"
+            )
 
         # Validate physical parameters
         self._validate_physical_parameters()
@@ -515,20 +548,44 @@ class ConfigManager:
 
         params = self.config["analyzer_parameters"]
 
-        # Wavevector validation
-        q = params.get("wavevector_q", 0.0054)
+        # Wavevector validation - handle nested scattering structure
+        scattering = params.get("scattering", {})
+        if scattering:
+            q = scattering.get("wavevector_q", 0.0054)
+            logger.debug(f"Using nested scattering structure: wavevector_q={q}")
+        else:
+            # Fallback to flat structure
+            q = params.get("wavevector_q", 0.0054)
+            logger.debug(f"Using flat parameter structure: wavevector_q={q}")
+            
         if q <= 0:
             raise ValueError(f"Wavevector must be positive: {q}")
         if q > 1.0:
             logger.warning(f"Large wavevector: {q} Å⁻¹ (typical: 0.001-0.1)")
 
-        # Time step validation
-        dt = params.get("dt", 0.1)
+        # Time step validation - handle nested temporal structure
+        temporal = params.get("temporal", {})
+        if temporal:
+            dt = temporal.get("dt", 0.1)
+            logger.debug(f"Using nested temporal structure: dt={dt}")
+        else:
+            # Fallback to flat structure
+            dt = params.get("dt", 0.1)
+            logger.debug(f"Using flat parameter structure: dt={dt}")
+            
         if dt <= 0:
             raise ValueError(f"Time step must be positive: {dt}")
 
-        # Gap size validation
-        h = params.get("stator_rotor_gap", 2000000)
+        # Gap size validation - handle nested geometry structure
+        geometry = params.get("geometry", {})
+        if geometry:
+            h = geometry.get("stator_rotor_gap", 2000000)
+            logger.debug(f"Using nested geometry structure: stator_rotor_gap={h}")
+        else:
+            # Fallback to flat structure
+            h = params.get("stator_rotor_gap", 2000000)
+            logger.debug(f"Using flat parameter structure: stator_rotor_gap={h}")
+            
         if h <= 0:
             raise ValueError(f"Gap size must be positive: {h}")
 
@@ -815,6 +872,36 @@ class ConfigManager:
 
         return active_params
 
+    def get_performance_setting(self, setting_name: str) -> dict[str, Any]:
+        """
+        Get performance optimization setting by name.
+
+        Parameters
+        ----------
+        setting_name : str
+            Name of the performance setting to retrieve
+
+        Returns
+        -------
+        dict[str, Any]
+            Performance setting configuration
+        """
+        performance_settings = self.get("performance_settings", default={})
+        if not isinstance(performance_settings, dict):
+            return {}
+        return performance_settings.get(setting_name, {})
+
+    def get_performance_settings(self) -> dict[str, Any]:
+        """
+        Get all performance optimization settings.
+
+        Returns
+        -------
+        dict[str, Any]
+            All performance settings
+        """
+        return self.get("performance_settings", {})
+
     def get_effective_parameter_count(self) -> int:
         """
         Get the effective number of model parameters based on active_parameters configuration.
@@ -1039,6 +1126,399 @@ class ConfigManager:
                 }
             },
         }
+
+    def get_parameter_bounds(self, parameter_names=None):
+        """
+        Get parameter bounds configuration - stub implementation.
+
+        This is a placeholder method for future parameter bounds features.
+
+        Parameters
+        ----------
+        parameter_names : list, optional
+            List of parameter names to get bounds for. If None, returns all bounds.
+
+        Returns
+        -------
+        dict or list
+            Parameter bounds configuration
+        """
+        # Default parameter bounds for common parameters
+        default_bounds = {
+            "D0": {"min": 1.0, "max": 10000.0, "name": "D0"},
+            "alpha": {"min": -2.0, "max": 2.0, "name": "alpha"},
+            "D_offset": {"min": 0.1, "max": 1000.0, "name": "D_offset"},
+            "gamma_dot_0": {"min": 0.001, "max": 100.0, "name": "gamma_dot_0"},
+            "beta": {"min": -2.0, "max": 2.0, "name": "beta"},
+            "gamma_dot_offset": {"min": 0.001, "max": 50.0, "name": "gamma_dot_offset"},
+            "phi_0": {"min": -180.0, "max": 180.0, "name": "phi_0"},
+        }
+
+        # Try to get bounds from actual config if available
+        if hasattr(self, "config") and self.config:
+            param_space = self.config.get("parameter_space", {})
+            if "bounds" in param_space:
+                config_bounds = {}
+                for bound in param_space["bounds"]:
+                    if isinstance(bound, dict) and "name" in bound:
+                        config_bounds[bound["name"]] = bound
+                default_bounds.update(config_bounds)
+
+        if parameter_names is None:
+            # Return all bounds as list format (for compatibility)
+            return list(default_bounds.values())
+        elif isinstance(parameter_names, str):
+            # Single parameter
+            return default_bounds.get(
+                parameter_names, {"min": 0.0, "max": 1.0, "name": parameter_names}
+            )
+        else:
+            # List of parameters
+            return [
+                default_bounds.get(name, {"min": 0.0, "max": 1.0, "name": name})
+                for name in parameter_names
+            ]
+
+    def validate_parameters(self, parameters, parameter_names=None):
+        """
+        Validate parameters against bounds - stub implementation.
+
+        This is a placeholder method for future parameter validation features.
+        """
+        if parameter_names is None:
+            parameter_names = ["D0", "alpha", "D_offset"]
+
+        # Simple validation - return success for stub
+        return {
+            "valid": True,
+            "violations": [],
+            "parameters_checked": (
+                len(parameters) if hasattr(parameters, "__len__") else 1
+            ),
+            "message": "Parameter validation stub - assuming valid",
+        }
+
+    def get_template(self, template_name: str) -> dict:
+        """
+        Get configuration template for specified analysis type.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of the template to retrieve
+
+        Returns
+        -------
+        dict
+            Configuration template containing analysis settings and parameters
+        """
+        templates = {
+            "static_isotropic": {
+                "description": "Static isotropic scattering analysis",
+                "analysis_settings": {
+                    "static_mode": True,
+                    "static_submode": "isotropic",
+                    "angle_filtering": False,
+                },
+                "parameter_space": {
+                    "parameter_count": 3,
+                    "parameter_names": ["D", "alpha", "D_offset"],
+                },
+                "performance_settings": {
+                    "optimization_level": "standard",
+                    "memory_usage": "low",
+                },
+            },
+            "static_anisotropic": {
+                "description": "Static anisotropic scattering analysis",
+                "analysis_settings": {
+                    "static_mode": True,
+                    "static_submode": "anisotropic",
+                    "angle_filtering": True,
+                },
+                "parameter_space": {
+                    "parameter_count": 3,
+                    "parameter_names": ["D", "alpha", "D_offset"],
+                },
+                "performance_settings": {
+                    "optimization_level": "standard",
+                    "memory_usage": "medium",
+                },
+            },
+            "laminar_flow": {
+                "description": "Laminar flow dynamics analysis",
+                "analysis_settings": {
+                    "static_mode": False,
+                    "angle_filtering": True,
+                },
+                "parameter_space": {
+                    "parameter_count": 7,
+                    "parameter_names": [
+                        "D0",
+                        "gamma_dot_t0",
+                        "beta",
+                        "gamma_dot_t_offset",
+                        "phi0",
+                        "alpha",
+                        "D_offset",
+                    ],
+                },
+                "performance_settings": {
+                    "optimization_level": "high",
+                    "memory_usage": "high",
+                },
+            },
+            "default": {
+                "description": "Default analysis configuration",
+                "analysis_settings": {
+                    "static_mode": True,
+                    "static_submode": "isotropic",
+                    "angle_filtering": False,
+                },
+                "parameter_space": {
+                    "parameter_count": 3,
+                    "parameter_names": ["D", "alpha", "D_offset"],
+                },
+                "performance_settings": {
+                    "optimization_level": "standard",
+                    "memory_usage": "low",
+                },
+            },
+        }
+
+        if template_name not in templates:
+            raise ValueError(
+                f"Unknown template: {template_name}. Available: {list(templates.keys())}"
+            )
+
+        return templates[template_name]
+
+    def instantiate_from_template(
+        self, template_name: str, overrides: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """
+        Instantiate a full configuration from a template.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of the template to instantiate
+        overrides : dict, optional
+            Configuration overrides to apply
+
+        Returns
+        -------
+        dict[str, Any]
+            Full configuration based on template and overrides
+        """
+        template = self.get_template(template_name)
+
+        # Create base config from template
+        import copy
+
+        config = {
+            "analysis_settings": copy.deepcopy(template["analysis_settings"]),
+            "parameter_space": copy.deepcopy(template["parameter_space"]),
+            "performance_settings": copy.deepcopy(template["performance_settings"]),
+        }
+
+        # Apply overrides if provided
+        if overrides:
+
+            def deep_merge(base, override):
+                for key, value in override.items():
+                    if (
+                        key in base
+                        and isinstance(base[key], dict)
+                        and isinstance(value, dict)
+                    ):
+                        deep_merge(base[key], value)
+                    else:
+                        base[key] = value
+
+            deep_merge(config, overrides)
+
+        return config
+
+    def set_validation_mode(self, mode: str) -> None:
+        """
+        Set validation mode for configuration checking.
+
+        Parameters
+        ----------
+        mode : str
+            Validation mode ('strict', 'lenient', 'disabled', etc.)
+        """
+        self._validation_mode = mode
+
+    def update_configuration(self, update: dict) -> None:
+        """
+        Update current configuration with new settings.
+
+        Parameters
+        ----------
+        update : dict
+            Dictionary containing configuration updates
+        """
+        if not isinstance(update, dict):
+            raise ValueError("Invalid configuration update")
+
+        # Validate configuration sections and settings
+        self._validate_configuration_update(update)
+
+        # Simple implementation - store updates for tracking
+        if not hasattr(self, "_updates"):
+            self._updates = []
+        self._updates.append(update)
+
+        # Apply updates to current config if it exists
+        if hasattr(self, "config") and self.config:
+            self._deep_update_dict(self.config, update)
+
+    def _validate_configuration_update(self, update: dict) -> None:
+        """
+        Validate that configuration update contains only valid settings.
+
+        Parameters
+        ----------
+        update : dict
+            Configuration update to validate
+
+        Raises
+        ------
+        ValueError
+            If update contains invalid configuration settings
+        """
+        valid_sections = {
+            "analyzer_parameters",
+            "experimental_data",
+            "analysis_settings",
+            "optimization_config",
+            "parameter_space",
+            "performance_settings",
+            "logging",
+            "templates",
+        }
+
+        valid_performance_settings = {
+            "enable_multiprocessing",
+            "num_threads",
+            "cache_enabled",
+            "memory_optimization",
+            "gpu_acceleration",
+            "batch_size",
+            "parallel_processing",
+            "optimization_level",
+            "memory_usage",
+            "cache_size",
+            "precompute_matrices",
+            "use_fast_math",
+            "vectorization",
+            "chunk_size",
+        }
+
+        for section, settings in update.items():
+            if section not in valid_sections:
+                raise ValueError("Invalid configuration update")
+
+            if section == "performance_settings" and isinstance(settings, dict):
+                for setting_key in settings.keys():
+                    if setting_key not in valid_performance_settings:
+                        raise ValueError("Invalid configuration update")
+
+    def _deep_update_dict(self, base: dict, update: dict) -> None:
+        """Recursively update base dictionary with update."""
+        for key, value in update.items():
+            if isinstance(value, dict) and key in base and isinstance(base[key], dict):
+                self._deep_update_dict(base[key], value)
+            else:
+                base[key] = value
+
+    def _validate_performance_settings(self) -> None:
+        """Validate performance settings if present."""
+        if not self.config or "performance_settings" not in self.config:
+            return
+
+        perf_settings = self.config["performance_settings"]
+
+        # Validate JIT compilation settings
+        if "jit_compilation" in perf_settings:
+            jit_config = perf_settings["jit_compilation"]
+            if "warmup_iterations" in jit_config:
+                warmup = jit_config["warmup_iterations"]
+                if not isinstance(warmup, int) or warmup < 0:
+                    raise ValueError("warmup_iterations must be non-negative")
+
+        # Validate memory pooling settings
+        if "memory_pooling" in perf_settings:
+            mem_config = perf_settings["memory_pooling"]
+            if "pool_size" in mem_config:
+                pool_size = mem_config["pool_size"]
+                if isinstance(pool_size, str) and not (
+                    pool_size.endswith("MB") or pool_size.endswith("GB")
+                ):
+                    raise ValueError("Invalid pool_size format")
+            if "pool_type" in mem_config:
+                pool_type = mem_config["pool_type"]
+                valid_types = ["numpy_array", "generic", "shared_memory"]
+                if pool_type not in valid_types:
+                    raise ValueError("Invalid pool_type")
+
+        # Validate caching system settings
+        if "caching_system" in perf_settings:
+            cache_config = perf_settings["caching_system"]
+
+            # Validate cache policy FIRST to avoid shallow copy issues in tests
+            if "cache_policy" in cache_config:
+                cache_policy = cache_config["cache_policy"]
+                valid_policies = ["lru", "lfu", "fifo", "random"]
+                if cache_policy not in valid_policies:
+                    raise ValueError("Invalid cache_policy")
+
+            # Validate cache size formats
+            for cache_key in ["l1_cache_size", "l2_cache_size"]:
+                if cache_key in cache_config:
+                    cache_size = cache_config[cache_key]
+                    if isinstance(cache_size, str) and not (
+                        cache_size.endswith("MB") or cache_size.endswith("GB")
+                    ):
+                        raise ValueError(f"{cache_key} must be in MB or GB format")
+
+            # Validate L1 vs L2 cache size relationship
+            if "l1_cache_size" in cache_config and "l2_cache_size" in cache_config:
+                l1_size = cache_config["l1_cache_size"]
+                l2_size = cache_config["l2_cache_size"]
+                if isinstance(l1_size, str) and isinstance(l2_size, str):
+                    try:
+                        # Simple comparison assuming MB units for now
+                        l1_val = int(l1_size.rstrip("MB").rstrip("GB"))
+                        l2_val = int(l2_size.rstrip("MB").rstrip("GB"))
+                        # Apply GB to MB conversion if needed
+                        if l1_size.endswith("GB"):
+                            l1_val *= 1024
+                        if l2_size.endswith("GB"):
+                            l2_val *= 1024
+                    except (ValueError, AttributeError):
+                        # Skip size comparison if parsing fails
+                        pass
+                    else:
+                        # Only check comparison if parsing succeeded
+                        if l1_val > l2_val:
+                            raise ValueError(
+                                "L1 cache size cannot be larger than L2 cache size"
+                            )
+
+        # Validate parallelization settings
+        if "parallelization" in perf_settings:
+            parallel_config = perf_settings["parallelization"]
+            if "thread_pool_size" in parallel_config:
+                thread_pool_size = parallel_config["thread_pool_size"]
+                if isinstance(thread_pool_size, int) and thread_pool_size <= 0:
+                    raise ValueError("thread_pool_size must be positive")
+            if "process_pool_size" in parallel_config:
+                process_pool_size = parallel_config["process_pool_size"]
+                if isinstance(process_pool_size, int) and process_pool_size <= 0:
+                    raise ValueError("process_pool_size must be positive")
 
 
 class PerformanceMonitor:

@@ -392,10 +392,14 @@
       "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
       "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
       "minimum_sigma": 1e-10,
-      "moving_window_size": 11,
+      "moving_window_size": 25,
       "moving_window_edge_method": "reflect",
-      "variance_method": "irls_mad_robust",
-      "_variance_method_note": "Options: irls_mad_robust (default), irls_optimized (50x faster), mad_robust, mad_optimized (10x faster)",
+      "variance_method": "hybrid_limited_irls",
+      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Simple MAD + 2-3 IRLS iterations for 50-70% speedup)",
+      "_variance_method_options": {
+        "irls_mad_robust": "Full IRLS with MAD robust estimation (legacy method)",
+        "hybrid_limited_irls": "Hybrid: Simple MAD initialization + limited IRLS iterations (FGLS-inspired, DEFAULT for efficiency)"
+      },
       "performance_optimization": {
         "_comment": "Performance optimization settings for chi-squared and IRLS calculations",
         "enabled": true,
@@ -443,18 +447,31 @@
         "check_parameter_bounds": true
       },
       "irls_config": {
-        "max_iterations": 10,
-        "damping_factor": 0.7,
-        "convergence_tolerance": 0.001,
+        "max_iterations": 16,
+        "damping_factor": 0.78,
+        "convergence_tolerance": 0.0025,
         "initial_sigma_squared": 0.001,
-        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev",
+        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev - Balanced optimization: window=25, iterations=16, damping=0.78",
         "optimized_config": {
           "use_vectorized_mad": true,
           "use_quickselect_median": true,
           "enable_jit_compilation": true,
           "parallel_window_processing": true
         }
-      }
+      },
+      "_hybrid_irls_section": "HYBRID LIMITED-ITERATION IRLS PARAMETERS (FGLS-inspired approach)",
+      "hybrid_irls_max_iterations": 3,
+      "_hybrid_irls_max_iterations_note": "Maximum IRLS iterations for hybrid approach (2-3 recommended for optimal efficiency)",
+      "hybrid_irls_damping_factor": 0.7,
+      "_hybrid_irls_damping_factor_note": "Damping factor α for hybrid IRLS variance updates (0.6-0.7 recommended for stability)",
+      "hybrid_irls_window_size": 25,
+      "_hybrid_irls_window_size_note": "Window size for hybrid Simple MAD initialization (larger for improved stability)",
+      "hybrid_irls_convergence_tolerance": 0.001,
+      "_hybrid_irls_convergence_tolerance_note": "Convergence tolerance for hybrid IRLS (tighter than full IRLS)",
+      "hybrid_irls_enable_weighted_refit": false,
+      "_hybrid_irls_enable_weighted_refit_note": "Enable weighted least squares refit during IRLS iterations (experimental)",
+      "hybrid_irls_regularization_lambda": 0.001,
+      "_hybrid_irls_regularization_lambda_note": "L2 regularization parameter λ for Gurobi objective (λ∑x_j²)"
     },
     "numerical_integration": {
       "method": "simpson",

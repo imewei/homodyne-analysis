@@ -196,6 +196,36 @@
           "_requirements": "Gurobi license required for enhanced optimization performance"
         }
       },
+      "batch_processing": {
+        "_comment": "ENHANCED v0.8.0+: Batch processing optimization with multiple initial points and parallel execution",
+        "enabled": true,
+        "max_parallel_runs": "MODE_DEPENDENT: 4 for static, 6 for laminar_flow",
+        "_max_parallel_runs_note": "Number of simultaneous optimization runs - balance between speed and resource usage",
+        "multiple_initial_points": true,
+        "_multiple_initial_points_note": "Use multiple starting points to find global optimum and avoid local minima",
+        "initial_point_strategy": "latin_hypercube",
+        "_initial_point_strategy_options": {
+          "latin_hypercube": "Optimal space coverage for efficient parameter exploration (recommended)",
+          "random": "Simple random sampling - faster but less systematic",
+          "grid": "Grid-based sampling - thorough but computationally expensive for high dimensions"
+        },
+        "num_initial_points": "MODE_DEPENDENT: 8 for static, 12 for laminar_flow",
+        "_num_initial_points_note": "More points increase global optimization reliability but require more computation time",
+        "convergence_threshold": 0.01,
+        "_convergence_threshold_note": "Early stopping when multiple runs converge to similar objectives (fraction of best objective)",
+        "_performance_benefits": [
+          "Significantly improved global optimization reliability",
+          "Parallel execution reduces wall-clock time",
+          "Early convergence detection prevents unnecessary computation",
+          "Latin hypercube sampling ensures comprehensive parameter space exploration",
+          "Automatic fallback to single optimization if disabled"
+        ],
+        "_resource_scaling": {
+          "memory_overhead": "Minimal - shared objective function and data",
+          "cpu_utilization": "High - parallel optimization runs",
+          "recommended_cores": "4+ for optimal performance"
+        }
+      },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "best_chi_squared, consensus, or first_success when multiple methods used",
       "objective_function": {
@@ -236,9 +266,32 @@
       "_enable_caching_note": "Smart caching provides major performance gains",
       "preferred_solver": "CLARABEL",
       "_preferred_solver_note": "Optimized CVXPY solver: CLARABEL > SCS > CVXOPT",
+      "solver_optimization": {
+        "_comment": "ENHANCED v0.8.0+: Advanced CVXPY solver optimization with adaptive selection, warm-starts, and intelligent fallback",
+        "enable_warm_starts": true,
+        "_warm_starts_note": "Reuse previous solutions to accelerate convergence in iterative optimization",
+        "adaptive_solver_selection": true,
+        "_adaptive_selection_note": "Automatically select optimal solver based on problem size and structure",
+        "max_iterations": 10000,
+        "_max_iterations_note": "Maximum solver iterations - automatically reduced for fallback solvers",
+        "tolerance": 1e-6,
+        "_tolerance_note": "Solver convergence tolerance - automatically relaxed for fallback",
+        "enable_acceleration": true,
+        "_acceleration_note": "Enable solver acceleration techniques when available (e.g., Anderson acceleration for SCS)",
+        "verbose": false,
+        "time_limit": 300.0,
+        "_time_limit_note": "Maximum solve time in seconds per optimization problem"
+      },
       "solver_settings": {
-        "_comment": "Comprehensive solver configuration for CVXPY-based robust optimization",
-        "_solver_hierarchy": "CLARABEL (default) -> SCS (fallback) -> CVXOPT (last resort)",
+        "_comment": "Comprehensive solver configuration for CVXPY-based robust optimization with enhanced fallback chain",
+        "_solver_hierarchy": "Adaptive selection -> CLARABEL (default) -> SCS (fallback) -> ECOS -> CVXOPT (last resort)",
+        "_adaptive_features": [
+          "Problem size-based solver selection",
+          "Warm-start capability with solution reuse",
+          "Automatic parameter tuning for different solvers",
+          "Intelligent fallback with reduced precision for speed",
+          "Performance monitoring and solver statistics"
+        ],
         "CLARABEL": {
           "_description": "Modern interior-point solver, optimized for scientific data fitting",
           "max_iter": 500,
@@ -550,51 +603,45 @@
       "minimum_sigma": 1e-10,
       "moving_window_size": 11,
       "moving_window_edge_method": "reflect",
-      "variance_method": "irls_mad_robust",
-      "_variance_method_note": "Options: irls_mad_robust (default), irls_optimized (50x faster), mad_robust, mad_optimized (10x faster)",
+      "variance_method": "hybrid_limited_irls",
+      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Simple MAD + 2-3 IRLS iterations for 50-70% speedup)",
+      "_variance_method_options": {
+        "irls_mad_robust": "Full IRLS with MAD robust estimation (legacy method)",
+        "hybrid_limited_irls": "Hybrid: Simple MAD initialization + limited IRLS iterations (FGLS-inspired, DEFAULT for efficiency)"
+      },
       "performance_optimization": {
-        "_comment": "Performance optimization settings for chi-squared and IRLS calculations",
+        "_comment": "Simple performance settings - memory pooling removed for stability",
         "enabled": true,
-        "variance_estimator": "irls_optimized",
-        "_variance_estimator_note": "irls_optimized provides 50-100x speedup via JIT compilation and vectorization",
-        "chi_calculator": "vectorized_jit",
-        "_chi_calculator_note": "vectorized_jit provides 20-50x speedup with memory pooling",
-        "median_algorithm": "quickselect",
-        "_median_algorithm_note": "quickselect provides 5-10x speedup over numpy median for small arrays",
-        "jit_compilation": {
+        "numba_jit": {
           "enabled": true,
           "warmup_on_init": true,
-          "parallel_processing": true,
-          "fastmath": true,
-          "cache_kernels": true
-        },
-        "memory_optimization": {
-          "use_memory_pool": true,
-          "pool_size_mb": "MODE_DEPENDENT: 256 for static, 512 for laminar_flow",
-          "adaptive_caching": true,
-          "cache_strategy": "lru",
-          "max_cache_items": "MODE_DEPENDENT: 100 for static, 200 for laminar_flow"
-        },
-        "parallel_threads": {
-          "enabled": true,
-          "thread_count": "auto",
-          "chunk_size": "adaptive",
-          "backend": "threading"
+          "_note": "Simple Numba JIT compilation for core computational kernels"
         }
       },
-      "irls_config": {
-        "max_iterations": 10,
-        "damping_factor": 0.7,
-        "convergence_tolerance": 1e-3,
-        "initial_sigma_squared": 1e-3,
-        "_algorithm_note": "IRLS with MAD: σ²ᵢ = (1.4826 × MAD)², damping: σ² = α·σ²_new + (1-α)·σ²_prev",
-        "optimized_config": {
-          "use_vectorized_mad": true,
-          "use_quickselect_median": true,
-          "enable_jit_compilation": true,
-          "parallel_window_processing": true
-        }
-      },
+      "_moving_window_edge_method_note": "Edge handling: 'reflect' (mirror at boundaries), 'adaptive_window' (shrink at edges), 'global_fallback' (use global variance)",
+      "irls_max_iterations": 15,
+      "_irls_max_iterations_note": "Maximum IRLS iterations for variance convergence",
+      "irls_convergence_tolerance": 0.003,
+      "_irls_convergence_tolerance_note": "Relative tolerance for IRLS variance convergence",
+      "irls_damping_factor": 0.8,
+      "_irls_damping_factor_note": "Weight damping factor α=0.8 for stability",
+      "irls_initial_sigma_squared": 1e-3,
+      "_irls_initial_sigma_squared_note": "Initial uniform variance for first unweighted iteration",
+      "irls_min_window_size": 3,
+      "_irls_min_window_size_note": "Minimum window size for reliable MAD calculation",
+      "_hybrid_irls_section": "HYBRID LIMITED-ITERATION IRLS PARAMETERS (FGLS-inspired approach)",
+      "hybrid_irls_max_iterations": 3,
+      "_hybrid_irls_max_iterations_note": "Maximum IRLS iterations for hybrid approach (2-3 recommended for optimal efficiency)",
+      "hybrid_irls_damping_factor": 0.7,
+      "_hybrid_irls_damping_factor_note": "Damping factor α for hybrid IRLS variance updates (0.6-0.7 recommended for stability)",
+      "hybrid_irls_window_size": 25,
+      "_hybrid_irls_window_size_note": "Window size for hybrid Simple MAD initialization (larger for improved stability)",
+      "hybrid_irls_convergence_tolerance": 0.001,
+      "_hybrid_irls_convergence_tolerance_note": "Convergence tolerance for hybrid IRLS (tighter than full IRLS)",
+      "hybrid_irls_enable_weighted_refit": false,
+      "_hybrid_irls_enable_weighted_refit_note": "Enable weighted least squares refit during IRLS iterations (experimental)",
+      "hybrid_irls_regularization_lambda": 0.001,
+      "_hybrid_irls_regularization_lambda_note": "L2 regularization parameter λ for Gurobi objective (λ∑x_j²)",
       "fast_computation": true,
       "uncertainty_calculation": {
         "enable_uncertainty": true,
@@ -862,6 +909,64 @@
       "rotation": {
         "max_bytes": 10485760,
         "backup_count": 3
+      },
+      "optimization_debug": {
+        "enabled": false,
+        "log_frequency": 10,
+        "include_residuals": true,
+        "include_chi_squared": true,
+        "performance_mode": false,
+        "_optimization_debug_note": "Enhanced optimization logging for debugging convergence behavior",
+        "_log_frequency_note": "Log every N iterations (set to 1 for all iterations, higher values for less frequent logging)",
+        "_include_residuals_note": "Include min/mean/max residual statistics in optimization logs",
+        "_include_chi_squared_note": "Include reduced chi-squared values in optimization progress logs",
+        "_performance_mode_note": "Set to true to disable detailed logging for production runs"
+      },
+      "mcmc_debug": {
+        "enabled": false,
+        "sampling_progress": true,
+        "convergence_monitoring": true,
+        "chain_diagnostics": true,
+        "chi_squared_tracking": true,
+        "residual_statistics": false,
+        "log_frequency": 100,
+        "performance_mode": false,
+        "_mcmc_debug_note": "Comprehensive MCMC debugging and progress monitoring",
+        "_sampling_progress_note": "Log sampling progress during NUTS iterations",
+        "_convergence_monitoring_note": "Monitor and log R-hat, ESS, and convergence diagnostics",
+        "_chain_diagnostics_note": "Track chain mixing, divergences, and sampling efficiency",
+        "_chi_squared_tracking_note": "Log reduced chi-squared evolution during sampling",
+        "_residual_statistics_note": "Include min/mean/max residual statistics (may impact performance)",
+        "_mcmc_log_frequency_note": "Log every N draws during sampling (100 = every 100 draws)",
+        "_mcmc_performance_mode_note": "Minimal logging for production MCMC runs"
+      },
+      "mcmc_gpu_debug": {
+        "enabled": false,
+        "device_monitoring": true,
+        "memory_tracking": true,
+        "compilation_logging": false,
+        "backend_switching": true,
+        "performance_profiling": false,
+        "jax_debugging": false,
+        "sampling_progress": true,
+        "convergence_monitoring": true,
+        "chain_diagnostics": true,
+        "chi_squared_tracking": true,
+        "log_frequency": 100,
+        "performance_mode": false,
+        "_mcmc_gpu_debug_note": "Comprehensive GPU MCMC debugging with JAX/NumPyro specific monitoring",
+        "_device_monitoring_note": "Track GPU device usage, utilization, and switching between devices",
+        "_memory_tracking_note": "Monitor GPU memory allocation, usage patterns, and potential OOM conditions",
+        "_compilation_logging_note": "Log JAX JIT compilation events, kernel caching, and recompilation triggers",
+        "_backend_switching_note": "Track automatic fallback from GPU to CPU and reasons for backend changes",
+        "_performance_profiling_note": "Detailed GPU performance metrics: samples/sec, memory efficiency, compute utilization",
+        "_jax_debugging_note": "Enable JAX debugging features: NaN checks, device placement validation",
+        "_gpu_sampling_progress_note": "Log GPU-specific sampling progress with device and memory information",
+        "_gpu_convergence_monitoring_note": "GPU-accelerated R-hat, ESS computations with performance tracking",
+        "_gpu_chain_diagnostics_note": "Track GPU chain mixing with vectorized computation metrics",
+        "_gpu_chi_squared_note": "GPU-accelerated chi-squared tracking with device placement logging",
+        "_gpu_log_frequency_note": "GPU logging frequency (higher values recommended for performance)",
+        "_gpu_performance_mode_note": "Minimal GPU logging for production runs with maximum performance"
       }
     }
   },
