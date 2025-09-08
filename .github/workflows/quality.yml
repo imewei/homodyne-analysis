@@ -4,6 +4,11 @@ on:
   # Run only on main branch pushes or manual trigger
   push:
     branches: [main]
+    paths:
+      - 'homodyne/**/*.py'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.github/workflows/quality.yml'
   workflow_dispatch:
 
 env:
@@ -22,21 +27,34 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
-      - name: Install package
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
       - name: Security checks
         run: |
-          # Quick security scan
-          bandit -r homodyne/ -ll || true
+          # Check if bandit is available
+          if command -v bandit &> /dev/null; then
+            echo "Running bandit security scan..."
+            bandit -r homodyne/ -ll || echo "⚠️ Bandit scan completed with warnings"
+          else
+            echo "Installing bandit..."
+            pip install bandit
+            bandit -r homodyne/ -ll || echo "⚠️ Bandit scan completed with warnings"
+          fi
           
           # Vulnerability check (continue on error)
-          pip-audit --desc || echo "⚠️ Vulnerability scan completed with warnings"
+          if command -v pip-audit &> /dev/null; then
+            pip-audit --desc || echo "⚠️ Vulnerability scan completed with warnings"
+          else
+            echo "Installing pip-audit..."
+            pip install pip-audit
+            pip-audit --desc || echo "⚠️ Vulnerability scan completed with warnings"
+          fi
 
       - name: Upload results
         if: always()
