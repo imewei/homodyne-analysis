@@ -151,6 +151,7 @@ from ..core.kernels import (
     chi_squared_with_variance_batch_numba,
     compute_chi_squared_batch_numba,
     compute_g1_correlation_numba,
+    compute_chi_squared_with_residuals_batch_numba,
     compute_sinc_squared_numba,
     create_time_integral_matrix_numba,
     estimate_variance_irls_batch_numba,
@@ -2614,13 +2615,13 @@ class HomodyneAnalysisCore:
                 residuals, iteration_window_size, edge_method, min_sigma_squared, 3
             )
 
-            # Step 3: Enhanced damping to prevent oscillations
+            # Step 3: Enhanced damping with improved stability
             if iteration > 0:
-                # Adaptive damping: stronger damping for later iterations
+                # Fixed damping strategy: increase stability for later iterations
                 alpha = damping_factor * (
-                    1 - 0.1 * iteration
-                )  # Gradually increase damping
-                alpha = max(0.5, alpha)  # Minimum damping of 0.5
+                    1 + 0.1 * iteration
+                )  # Increase damping over iterations for stability
+                alpha = min(0.9, max(0.5, alpha))  # Constrain damping range
                 sigma2 = alpha * sigma2_new + (1 - alpha) * sigma2_prev
             else:
                 sigma2 = sigma2_new.copy()  # First iteration: no damping
@@ -3549,9 +3550,16 @@ class HomodyneAnalysisCore:
             if enable_performance_monitoring:
                 scaling_start = time.time()
 
-            # Pre-flatten all arrays for better memory access patterns
+            # Pre-flatten all arrays for better memory access patterns and cache locality
             theory_flat = c2_theory.reshape(n_angles, -1)
             exp_flat = c2_experimental.reshape(n_angles, -1)
+            
+            # Cache configuration parameters to avoid repeated dictionary lookups
+            min_sigma = chi_config.get("minimum_sigma", 1e-10)
+            max_chi2 = chi_config.get("max_chi_squared", 1e8)
+            window_size = chi_config.get("moving_window_size", 11)
+            edge_method = chi_config.get("moving_window_edge_method", "reflect")
+            variance_method = chi_config.get("variance_method", "hybrid_limited_irls")
 
             # SCALING OPTIMIZATION (ALWAYS ENABLED) - Vectorized implementation
             # =====================================
@@ -3584,32 +3592,41 @@ class HomodyneAnalysisCore:
             # Note: exp_std_batch and sigma_batch were used in old implementation,
             # now using moving window variance estimation instead
 
-            # Batch solve least squares for all angles using Numba with
-            # fallback
+            # Optimized batch processing: compute least squares and chi-squared with residuals in minimal passes
+            residuals_batch = []
+            chi2_raw_batch = np.zeros(n_angles, dtype=np.float64)
+            
             try:
+                # Step 1: Batch solve least squares for all angles using Numba
                 contrast_batch, offset_batch = solve_least_squares_batch_numba(
                     theory_flat, exp_flat
                 )
+                
+                # Step 2: Compute chi-squared values AND residuals in single optimized pass
+                chi2_raw_batch, residuals_array = compute_chi_squared_with_residuals_batch_numba(
+                    theory_flat, exp_flat, contrast_batch, offset_batch
+                )
+                
+                # Convert residuals array to list for compatibility with existing code
+                residuals_batch = [residuals_array[i] for i in range(n_angles)]
+                
             except RuntimeError as e:
                 if "NUMBA_NUM_THREADS" in str(e):
-                    # Fallback to non-Numba implementation for threading
-                    # conflicts
+                    # Fallback to non-Numba implementation for threading conflicts
                     logger.debug(
-                        "Using fallback least squares due to NUMBA threading conflict"
+                        "Using fallback implementation due to NUMBA threading conflict"
                     )
                     contrast_batch = np.zeros(n_angles, dtype=np.float64)
                     offset_batch = np.zeros(n_angles, dtype=np.float64)
 
-                    # Manual implementation of batch least squares
+                    # Manual implementation combining least squares, chi-squared, and residuals
                     for i in range(n_angles):
                         theory_vec = theory_flat[i]
                         exp_vec = exp_flat[i]
 
-                        # Solve: min ||A*x - b||^2 where A = [theory, ones], x
-                        # = [contrast, offset]
+                        # Solve least squares: min ||A*x - b||^2 where A = [theory, ones], x = [contrast, offset]
                         A = np.column_stack([theory_vec, np.ones(len(theory_vec))])
                         try:
-                            # Use least squares solver
                             x, _, _, _ = np.linalg.lstsq(A, exp_vec, rcond=None)
                             contrast_batch[i] = x[0]
                             offset_batch[i] = x[1]
@@ -3617,34 +3634,12 @@ class HomodyneAnalysisCore:
                             # Fallback values if linear algebra fails
                             contrast_batch[i] = 0.5
                             offset_batch[i] = 1.0
-                else:
-                    raise
 
-            # Batch compute chi-squared values using Numba with fallback
-            try:
-                chi2_raw_batch = compute_chi_squared_batch_numba(
-                    theory_flat, exp_flat, contrast_batch, offset_batch
-                )
-            except RuntimeError as e:
-                if "NUMBA_NUM_THREADS" in str(e):
-                    # Fallback to non-Numba implementation for threading
-                    # conflicts
-                    logger.debug(
-                        "Using fallback chi-squared computation due to NUMBA threading conflict"
-                    )
-                    chi2_raw_batch = np.zeros(n_angles, dtype=np.float64)
-
-                    # Manual implementation of batch chi-squared
-                    for i in range(n_angles):
-                        theory_vec = theory_flat[i]
-                        exp_vec = exp_flat[i]
-                        contrast = contrast_batch[i]
-                        offset = offset_batch[i]
-
-                        # Compute fitted values and chi-squared
-                        fitted_vec = contrast * theory_vec + offset
+                        # Compute fitted values, residuals, and chi-squared in single pass
+                        fitted_vec = contrast_batch[i] * theory_vec + offset_batch[i]
                         residuals = exp_vec - fitted_vec
                         chi2_raw_batch[i] = np.sum(residuals**2)
+                        residuals_batch.append(residuals)
                 else:
                     raise
 
@@ -3658,17 +3653,7 @@ class HomodyneAnalysisCore:
             #
             # The chi2_raw_batch already contains the raw residual sums: Σ(residuals²)
             # We need to normalize by σ² to get the proper χ² values
-
-            # Calculate residuals for diagnostic logging
-            residuals_batch = []
-            for i in range(n_angles):
-                theory_vec = theory_flat[i]
-                exp_vec = exp_flat[i]
-                contrast = contrast_batch[i]
-                offset = offset_batch[i]
-                fitted_vec = contrast * theory_vec + offset
-                residuals = exp_vec - fitted_vec
-                residuals_batch.append(residuals)
+            # Note: residuals_batch is now computed efficiently without redundant calculations
 
             # CLEAN CHI-SQUARED CALCULATION using moving window variance estimation
             angle_chi2_proper = []
@@ -3676,49 +3661,29 @@ class HomodyneAnalysisCore:
             angle_sigma_values = []
             all_sigma_values = []  # Store all individual sigma values for logging
 
-            # Get window size from config (consistent with existing config pattern)
-            window_size = chi_config.get("moving_window_size", 11)
-
-            # Get variance estimation method from config
-            # Default to IRLS MAD robust (replaces deprecated standard method)
-            variance_method = chi_config.get("variance_method", "irls_mad_robust")
-
             # Calculate degrees of freedom per angle
             dof_per_angle = max(1, n_data_per_angle - n_params)
 
             # BATCH PROCESSING: Process all angles simultaneously with vectorized operations
-            # Get edge method from config for batch processing
-            edge_method = chi_config.get("moving_window_edge_method", "reflect")
+            # Note: Configuration parameters are pre-cached above for performance
 
-            # Try batch variance estimation first (optimized path)
+            # Streamlined batch processing with fast validation
             batch_processing_success = False
-            try:
-                # Validate inputs for batch processing
-                if not residuals_batch or len(residuals_batch) == 0:
-                    raise ValueError(
-                        "Empty residuals_batch provided to batch processing"
-                    )
+            
+            # Fast validation checks
+            if (
+                residuals_batch 
+                and len(residuals_batch) > 0 
+                and all(len(res) >= 5 for res in residuals_batch)  # Minimum size for vectorized operations
+            ):
+                try:
+                    # Use batch IRLS variance estimation for all angles at once
+                    if variance_method == "irls_mad_robust":
+                        logger.debug(
+                            f"Using batch IRLS MAD robust variance estimation with {edge_method} edges for {n_angles} angles"
+                        )
 
-                # Check for minimum array size requirements
-                min_size_for_batch = (
-                    5  # Minimum reasonable size for vectorized operations
-                )
-                if any(len(res) < min_size_for_batch for res in residuals_batch):
-                    logger.debug(
-                        f"Some residuals arrays too small for batch processing (< {min_size_for_batch} elements), using sequential fallback"
-                    )
-                    raise ValueError(
-                        f"Residuals arrays too small for efficient batch processing"
-                    )
-
-                # Use batch IRLS variance estimation for all angles at once
-                if variance_method == "irls_mad_robust":
-                    logger.debug(
-                        f"Using batch IRLS MAD robust variance estimation with {edge_method} edges for {n_angles} angles"
-                    )
-
-                    # Batch variance estimation processes all angles simultaneously
-                    try:
+                        # Batch variance estimation processes all angles simultaneously
                         sigma_variances_batch = (
                             self._estimate_variance_irls_mad_robust_batch(
                                 residuals_batch,
@@ -3726,121 +3691,106 @@ class HomodyneAnalysisCore:
                                 edge_method=edge_method,
                             )
                         )
-                    except (RuntimeError, ValueError, MemoryError) as batch_error:
-                        logger.warning(
-                            f"Batch variance estimation failed: {str(batch_error)}"
-                        )
-                        raise batch_error
 
-                    # Validate batch variance results
-                    if (
-                        not sigma_variances_batch
-                        or len(sigma_variances_batch) != n_angles
-                    ):
-                        raise ValueError(
-                            f"Batch variance estimation returned invalid results: {len(sigma_variances_batch) if sigma_variances_batch else 0} != {n_angles}"
-                        )
-
-                    # Check for invalid variance values
-                    for i, sigma_vars in enumerate(sigma_variances_batch):
-                        if sigma_vars is None or len(sigma_vars) == 0:
-                            raise ValueError(f"Empty variance array for angle {i}")
-                        if not np.all(np.isfinite(sigma_vars)) or np.any(
-                            sigma_vars <= 0
+                        # Fast validation of batch variance results
+                        if (
+                            sigma_variances_batch
+                            and len(sigma_variances_batch) == n_angles
+                            and all(
+                                sigma_vars is not None 
+                                and len(sigma_vars) > 0 
+                                and np.all(np.isfinite(sigma_vars)) 
+                                and np.all(sigma_vars > 0)
+                                for sigma_vars in sigma_variances_batch
+                            )
                         ):
-                            logger.warning(
-                                f"Invalid variance values detected for angle {i}, falling back to sequential processing"
-                            )
-                            raise ValueError(f"Invalid variance values for angle {i}")
+                            # Calculate chi-squared values using batch Numba kernel
+                            # Note: min_sigma and max_chi2 are pre-cached for performance
 
-                    # Calculate chi-squared values using batch Numba kernel
-                    min_sigma = chi_config.get("minimum_sigma", 1e-10)
-                    max_chi2 = chi_config.get("max_chi_squared", 1e8)
-
-                    try:
-                        # Convert lists to numpy arrays for Numba compatibility
-                        residuals_batch_array = np.array(
-                            residuals_batch, dtype=np.float64
-                        )
-                        sigma_variances_batch_array = np.array(
-                            sigma_variances_batch, dtype=np.float64
-                        )
-
-                        # Use batch chi-squared calculation with variance normalization
-                        angle_chi2_proper, angle_chi2_reduced = (
-                            chi_squared_with_variance_batch_numba(
-                                residuals_batch_array,
-                                sigma_variances_batch_array,
-                                dof_per_angle,
-                            )
-                        )
-                    except (RuntimeError, ValueError) as chi2_error:
-                        if "NUMBA_NUM_THREADS" in str(chi2_error):
-                            logger.debug(
-                                "Numba threading conflict in batch chi-squared, falling back to sequential processing"
-                            )
-                        else:
-                            logger.warning(
-                                f"Batch chi-squared calculation failed: {str(chi2_error)}"
-                            )
-                        raise chi2_error
-
-                    # Validate chi-squared results
-                    if (
-                        len(angle_chi2_proper) != n_angles
-                        or len(angle_chi2_reduced) != n_angles
-                    ):
-                        raise ValueError(
-                            f"Batch chi-squared calculation returned wrong number of results"
-                        )
-
-                    # Apply limits and collect diagnostics
-                    angle_sigma_values = []
-                    all_sigma_values = []
-
-                    for i, (sigma_variances, residuals) in enumerate(
-                        zip(sigma_variances_batch, residuals_batch)
-                    ):
-                        try:
-                            sigma_per_point = np.sqrt(sigma_variances)
-
-                            # Apply minimum sigma floor and validate
-                            sigma_per_point_safe = np.maximum(
-                                sigma_per_point, min_sigma
-                            )
-
-                            # Additional validation for extreme values
-                            if not np.all(np.isfinite(sigma_per_point_safe)):
-                                logger.warning(
-                                    f"Non-finite sigma values detected for angle {i}"
+                            try:
+                                # Convert lists to numpy arrays for Numba compatibility
+                                residuals_batch_array = np.array(
+                                    residuals_batch, dtype=np.float64
                                 )
-                                # Replace non-finite values with minimum sigma
-                                sigma_per_point_safe = np.where(
-                                    np.isfinite(sigma_per_point_safe),
-                                    sigma_per_point_safe,
-                                    min_sigma,
+                                sigma_variances_batch_array = np.array(
+                                    sigma_variances_batch, dtype=np.float64
                                 )
 
-                            # Cap extremely large chi-squared values
+                                # Use batch chi-squared calculation with variance normalization
+                                angle_chi2_proper, angle_chi2_reduced = (
+                                    chi_squared_with_variance_batch_numba(
+                                        residuals_batch_array,
+                                        sigma_variances_batch_array,
+                                        dof_per_angle,
+                                    )
+                                )
+                            except (RuntimeError, ValueError) as chi2_error:
+                                if "NUMBA_NUM_THREADS" in str(chi2_error):
+                                    logger.debug(
+                                        "Numba threading conflict in batch chi-squared, falling back to sequential processing"
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"Batch chi-squared calculation failed: {str(chi2_error)}"
+                                    )
+                                raise chi2_error
+
+                            # Validate chi-squared results
                             if (
-                                not np.isfinite(angle_chi2_proper[i])
-                                or angle_chi2_proper[i] > max_chi2
+                                len(angle_chi2_proper) != n_angles
+                                or len(angle_chi2_reduced) != n_angles
                             ):
-                                logger.warning(
-                                    f"Angle {i}: Chi-squared {angle_chi2_proper[i]:.2e} exceeds maximum or is non-finite, capping"
+                                raise ValueError(
+                                    f"Batch chi-squared calculation returned wrong number of results"
                                 )
-                                angle_chi2_proper[i] = max_chi2
-                                angle_chi2_reduced[i] = max_chi2 / max(1, dof_per_angle)
 
-                            # Collect diagnostic values
-                            angle_sigma_values.append(np.mean(sigma_per_point_safe))
-                            all_sigma_values.extend(sigma_per_point_safe)
+                            # Apply limits and collect diagnostics
+                            angle_sigma_values = []
+                            all_sigma_values = []
 
-                        except Exception as angle_error:
-                            logger.error(
-                                f"Error processing angle {i} in batch results: {str(angle_error)}"
-                            )
-                            raise angle_error
+                            for i, (sigma_variances, residuals) in enumerate(
+                                zip(sigma_variances_batch, residuals_batch)
+                            ):
+                                try:
+                                    sigma_per_point = np.sqrt(sigma_variances)
+
+                                    # Apply minimum sigma floor and validate
+                                    sigma_per_point_safe = np.maximum(
+                                        sigma_per_point, min_sigma
+                                    )
+
+                                    # Additional validation for extreme values
+                                    if not np.all(np.isfinite(sigma_per_point_safe)):
+                                        logger.warning(
+                                            f"Non-finite sigma values detected for angle {i}"
+                                        )
+                                        # Replace non-finite values with minimum sigma
+                                        sigma_per_point_safe = np.where(
+                                            np.isfinite(sigma_per_point_safe),
+                                            sigma_per_point_safe,
+                                            min_sigma,
+                                        )
+
+                                    # Cap extremely large chi-squared values
+                                    if (
+                                        not np.isfinite(angle_chi2_proper[i])
+                                        or angle_chi2_proper[i] > max_chi2
+                                    ):
+                                        logger.warning(
+                                            f"Angle {i}: Chi-squared {angle_chi2_proper[i]:.2e} exceeds maximum or is non-finite, capping"
+                                        )
+                                        angle_chi2_proper[i] = max_chi2
+                                        angle_chi2_reduced[i] = max_chi2 / max(1, dof_per_angle)
+
+                                    # Collect diagnostic values
+                                    angle_sigma_values.append(np.mean(sigma_per_point_safe))
+                                    all_sigma_values.extend(sigma_per_point_safe)
+
+                                except Exception as angle_error:
+                                    logger.error(
+                                        f"Error processing angle {i} in batch results: {str(angle_error)}"
+                                    )
+                                    raise angle_error
 
                     # Convert to numpy arrays with validation
                     try:
@@ -3873,44 +3823,44 @@ class HomodyneAnalysisCore:
                             max_chi2 / max(1, dof_per_angle),
                         )
 
-                    batch_processing_success = True
-                    logger.debug(
-                        f"Batch processing completed successfully for {n_angles} angles"
-                    )
+                        batch_processing_success = True
+                        logger.debug(
+                            f"Batch processing completed successfully for {n_angles} angles"
+                        )
 
-                else:
-                    # Fallback to batch processing with legacy variance method
-                    raise NotImplementedError(
-                        f"Batch processing not implemented for variance method: {variance_method}"
-                    )
+                    else:
+                        # Fallback to batch processing with legacy variance method
+                        raise NotImplementedError(
+                            f"Batch processing not implemented for variance method: {variance_method}"
+                        )
 
-            except (
+                except (
                 RuntimeError,
                 ValueError,
                 NotImplementedError,
                 MemoryError,
-            ) as batch_error:
-                # Comprehensive error logging for debugging
-                error_type = type(batch_error).__name__
-                logger.warning(
-                    f"Batch processing failed with {error_type}: {str(batch_error)}"
-                )
-
-                # Additional context for specific error types
-                if "NUMBA_NUM_THREADS" in str(batch_error):
-                    logger.debug(
-                        "Numba threading conflict detected, this is expected in some environments"
-                    )
-                elif isinstance(batch_error, MemoryError):
+                ) as batch_error:
+                    # Comprehensive error logging for debugging
+                    error_type = type(batch_error).__name__
                     logger.warning(
-                        f"Memory exhaustion during batch processing of {n_angles} angles"
-                    )
-                elif isinstance(batch_error, NotImplementedError):
-                    logger.debug(
-                        f"Batch processing not available for current configuration"
+                        f"Batch processing failed with {error_type}: {str(batch_error)}"
                     )
 
-                batch_processing_success = False
+                    # Additional context for specific error types
+                    if "NUMBA_NUM_THREADS" in str(batch_error):
+                        logger.debug(
+                            "Numba threading conflict detected, this is expected in some environments"
+                        )
+                    elif isinstance(batch_error, MemoryError):
+                        logger.warning(
+                            f"Memory exhaustion during batch processing of {n_angles} angles"
+                        )
+                    elif isinstance(batch_error, NotImplementedError):
+                        logger.debug(
+                            f"Batch processing not available for current configuration"
+                        )
+
+                    batch_processing_success = False
 
             # Only use sequential fallback if batch processing failed
             if not batch_processing_success:

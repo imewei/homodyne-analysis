@@ -369,6 +369,62 @@ else:
 
 
 @njit(
+    nb.types.Tuple((float64[:], float64[:, :]))(
+        float64[:, :], float64[:, :], float64[:], float64[:]
+    ),
+    parallel=_USE_PARALLEL,
+    cache=True,
+    fastmath=True,
+)
+def _compute_chi_squared_with_residuals_batch_numba_impl(
+    theory_batch, exp_batch, contrast_batch, offset_batch
+):
+    """
+    Optimized batch compute chi-squared values and residuals for multiple angles.
+    
+    This eliminates redundant residual calculations in the scaling optimization pipeline
+    by computing both chi-squared values and residuals in a single pass.
+
+    Parameters
+    ----------
+    theory_batch : np.ndarray, shape (n_angles, n_data_points)
+        Theory values for each angle
+    exp_batch : np.ndarray, shape (n_angles, n_data_points)
+        Experimental values for each angle
+    contrast_batch : np.ndarray, shape (n_angles,)
+        Contrast scaling factors
+    offset_batch : np.ndarray, shape (n_angles,)
+        Offset values
+
+    Returns
+    -------
+    tuple
+        chi2_batch : np.ndarray, shape (n_angles,) - Chi-squared values for each angle
+        residuals_batch : np.ndarray, shape (n_angles, n_data_points) - Residuals for each angle
+    """
+    n_angles, n_data = theory_batch.shape
+    chi2_batch = np.zeros(n_angles, dtype=np.float64)
+    residuals_batch = np.zeros((n_angles, n_data), dtype=np.float64)
+
+    for i in prange(n_angles):
+        theory = theory_batch[i]
+        exp = exp_batch[i]
+        contrast = contrast_batch[i]
+        offset = offset_batch[i]
+
+        chi2 = 0.0
+        for j in range(n_data):
+            fitted_val = theory[j] * contrast + offset
+            residual = exp[j] - fitted_val
+            chi2 += residual * residual
+            residuals_batch[i, j] = residual
+
+        chi2_batch[i] = chi2
+
+    return chi2_batch, residuals_batch
+
+
+@njit(
     float64[:](float64[:, :], float64[:, :], float64[:], float64[:]),
     parallel=_USE_PARALLEL,
     cache=True,
@@ -444,8 +500,20 @@ if not NUMBA_AVAILABLE:
 
     compute_chi_squared_batch_numba = _compute_chi_squared_batch_fallback
     compute_chi_squared_batch_numba.signatures = []  # type: ignore[attr-defined]
+    
+    def _compute_chi_squared_with_residuals_batch_fallback(
+        theory_batch, exp_batch, contrast_batch, offset_batch
+    ):
+        """Fallback implementation when Numba is not available."""
+        return _compute_chi_squared_with_residuals_batch_numba_impl(
+            theory_batch, exp_batch, contrast_batch, offset_batch
+        )
+    
+    compute_chi_squared_with_residuals_batch_numba = _compute_chi_squared_with_residuals_batch_fallback
+    compute_chi_squared_with_residuals_batch_numba.signatures = []  # type: ignore[attr-defined]
 else:
     compute_chi_squared_batch_numba = _compute_chi_squared_batch_numba_impl
+    compute_chi_squared_with_residuals_batch_numba = _compute_chi_squared_with_residuals_batch_numba_impl
 
 
 # Use the already JIT-compiled implementations directly
@@ -594,7 +662,7 @@ def _mad_window_batch_numba_impl(
 
 @njit(
     float64[:, :](float64[:, :], int64, int64, float64, float64, float64, float64),
-    parallel=_USE_PARALLEL,
+    parallel=False,  # Changed from _USE_PARALLEL - function has no parallelizable operations
     cache=True,
     fastmath=True,
 )
@@ -910,8 +978,10 @@ def _hybrid_irls_batch_numba_impl(
             else:
                 sigma2_batch[angle_idx, i] = min_sigma_squared
     
-    # Step 2: Apply limited IRLS iterations with enhanced damping
+    # Step 2: Apply limited IRLS iterations with enhanced damping and convergence checking
     sigma2_prev_batch = sigma2_batch.copy()
+    converged_count = 0
+    adaptive_target_alpha = 1.0  # Target for reduced chi-squared
     
     for iteration in range(max_iterations):
         # Create new variance estimates using MAD moving window
@@ -958,25 +1028,67 @@ def _hybrid_irls_batch_numba_impl(
                 else:
                     sigma2_new_batch[angle_idx, i] = min_sigma_squared
         
-        # Step 3: Apply enhanced damping (vectorized)
+        # Step 3: Apply enhanced damping with improved stability
         if iteration > 0:
-            # Adaptive damping: stronger damping for later iterations
-            alpha = damping_factor * (1.0 - 0.1 * iteration)
-            alpha = max(0.5, alpha)  # Minimum damping of 0.5
+            # Fixed damping strategy: increase stability for later iterations
+            alpha = damping_factor * (1.0 + 0.1 * iteration)  # Increase damping over iterations
+            alpha = min(0.9, max(0.5, alpha))  # Constrain damping range
             
+            # Apply damping with convergence checking
+            max_change = 0.0
             for angle_idx in range(n_angles):
                 for i in range(n_points):
-                    sigma2_batch[angle_idx, i] = (
+                    new_val = (
                         alpha * sigma2_new_batch[angle_idx, i] 
                         + (1.0 - alpha) * sigma2_prev_batch[angle_idx, i]
                     )
+                    
+                    # Track maximum relative change for convergence
+                    if sigma2_prev_batch[angle_idx, i] > min_sigma_squared:
+                        rel_change = abs(new_val - sigma2_prev_batch[angle_idx, i]) / sigma2_prev_batch[angle_idx, i]
+                        max_change = max(max_change, rel_change)
+                    
+                    sigma2_batch[angle_idx, i] = new_val
+                    
+            # Simple convergence check based on variance change
+            if max_change < convergence_tolerance:
+                converged_count += 1
+                if converged_count >= 2:  # Require 2 consecutive convergent iterations
+                    break
+            else:
+                converged_count = 0
         else:
             # First iteration: no damping
             sigma2_batch[:, :] = sigma2_new_batch
         
-        # Step 4: Convergence checking (simplified for batch processing)
-        # Note: Full convergence checking would require chi-squared calculation
-        # For now, we rely on the iteration limit and damping for stability
+        # Step 4: Additional convergence checking via chi-squared approximation
+        if iteration > 0:
+            # Fast chi-squared approximation for overshooting detection
+            total_chi2_reduced_approx = 0.0
+            valid_angles = 0
+            
+            for angle_idx in range(n_angles):
+                residuals = residuals_batch[angle_idx]
+                chi2_sum = 0.0
+                valid_points = 0
+                
+                for i in range(n_points):
+                    if sigma2_batch[angle_idx, i] > min_sigma_squared and np.isfinite(residuals[i]):
+                        chi2_sum += residuals[i] ** 2 / sigma2_batch[angle_idx, i]
+                        valid_points += 1
+                
+                if valid_points > 1:
+                    chi2_reduced = chi2_sum / valid_points  # Approximate reduced chi2
+                    total_chi2_reduced_approx += chi2_reduced
+                    valid_angles += 1
+            
+            # Check for overshooting
+            if valid_angles > 0:
+                avg_chi2_reduced = total_chi2_reduced_approx / valid_angles
+                overshooting_threshold = 0.8 * adaptive_target_alpha
+                if avg_chi2_reduced < overshooting_threshold:
+                    # Early stop due to overshooting
+                    break
         
         # Store previous values for next iteration
         sigma2_prev_batch[:, :] = sigma2_batch
