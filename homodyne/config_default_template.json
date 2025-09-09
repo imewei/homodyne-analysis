@@ -60,14 +60,17 @@
     },
     "scattering": {
       "wavevector_q": 0.001,
-      "_q_note": "CUSTOMIZE: Scattering wavevector q = 4\u03c0 sin(\u03b8/2)/\u03bb",
-      "q_unit": "\u00c5\u207b\u00b9",
-      "typical_range": [0.001, 0.1]
+      "_q_note": "CUSTOMIZE: Scattering wavevector q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
+      "typical_range": [
+        0.001,
+        0.1
+      ]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "CUSTOMIZE: Gap in Angstroms - critical for laminar_flow, less important for static modes",
-      "gap_unit": "\u00c5",
+      "gap_unit": "Å",
       "gap_in_microns": 200
     },
     "computational": {
@@ -84,7 +87,11 @@
     "values": "MODE_DEPENDENT: [100.0,0.0,10.0] for static, [100.0,0.0,10.0,1.0,0.0,0.0,0.0] for laminar_flow",
     "parameter_names": "MODE_DEPENDENT: See _parameter_definitions below",
     "_parameter_definitions": {
-      "static_modes": ["D0", "alpha", "D_offset"],
+      "static_modes": [
+        "D0",
+        "alpha",
+        "D_offset"
+      ],
       "laminar_flow": [
         "D0",
         "alpha",
@@ -95,7 +102,7 @@
         "phi0"
       ]
     },
-    "units": "MODE_DEPENDENT: [\u00c5\u00b2/s,dimensionless,\u00c5\u00b2/s] for static, [\u00c5\u00b2/s,dimensionless,\u00c5\u00b2/s,s\u207b\u00b9,dimensionless,s\u207b\u00b9,degrees] for laminar_flow",
+    "units": "MODE_DEPENDENT: [Å²/s,dimensionless,Å²/s] for static, [Å²/s,dimensionless,Å²/s,s⁻¹,dimensionless,s⁻¹,degrees] for laminar_flow",
     "physical_meaning": {
       "_common_to_all_modes": {
         "D0": "Reference diffusion coefficient",
@@ -141,7 +148,10 @@
       "_performance_note": "Provides 3-5x speedup for complex optimization"
     },
     "classical_optimization": {
-      "methods": ["Nelder-Mead", "Gurobi"],
+      "methods": [
+        "Nelder-Mead",
+        "Gurobi"
+      ],
       "_methods_note": "Classical methods always available. Robust methods in separate section below.",
       "_method_flags": {
         "--method classical": "Runs ONLY classical methods: Nelder-Mead, Gurobi (if licensed)",
@@ -155,10 +165,10 @@
           "maxiter": "MODE_DEPENDENT: 2000 for static, 4000 for laminar_flow",
           "_maxiter_note": "Optimized for scientific data fitting - more iterations rarely help",
           "_dataset_scaling": "For large datasets (>1M points): reduce to 1500/3000 for efficiency",
-          "xatol": 1e-6,
+          "xatol": 1e-06,
           "_xatol_note": "Realistic parameter tolerance for experimental data with noise",
           "_large_dataset_xatol": "For >5M points: consider 5e-6 for faster convergence",
-          "fatol": 1e-6,
+          "fatol": 1e-06,
           "_fatol_note": "Practical chi-squared tolerance for noisy data fitting",
           "_large_dataset_fatol": "For >5M points: consider 5e-6 to balance precision vs speed",
           "adaptive": true,
@@ -169,11 +179,11 @@
           "_return_all_note": "Return only final result for efficiency"
         },
         "Gurobi": {
-          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": "MODE_DEPENDENT: 300 for static, 800 for laminar_flow",
           "_max_iterations_note": "Sufficient iterations for convergence without computational waste",
-          "tolerance": 1e-5,
+          "tolerance": 1e-05,
           "_tolerance_note": "Realistic convergence tolerance for experimental data",
           "output_flag": 0,
           "_output_flag_note": "Gurobi verbosity (0=silent, 1=verbose)",
@@ -193,7 +203,59 @@
             "_rationale": "Larger initial radius and more aggressive expansion for scientific optimization"
           },
           "_advantages": "Better convergence than old single-shot QP, handles bounds naturally",
-          "_requirements": "Gurobi license required for enhanced optimization performance"
+          "_requirements": "Gurobi license required for enhanced optimization performance",
+          "gradient_optimization": {
+            "_comment": "Advanced gradient calculation optimization for reduced function evaluations",
+            "adaptive_step_sizing": {
+              "enabled": true,
+              "base_epsilon": 1e-8,
+              "_base_epsilon_note": "Minimum finite difference step size",
+              "relative_factor": 0.01,
+              "_relative_factor_note": "Step size as fraction of parameter magnitude (1% default)",
+              "bounds_proximity_factor": 0.1,
+              "_bounds_proximity_factor_note": "Reduce step size when within this fraction of parameter bounds"
+            },
+            "boundary_aware_differences": {
+              "enabled": true,
+              "boundary_tolerance": 0.05,
+              "_boundary_tolerance_note": "Use forward/backward differences when within this fraction of bounds",
+              "prefer_central": true,
+              "_prefer_central_note": "Use central differences when possible for better accuracy"
+            },
+            "smart_scheduling": {
+              "enabled": true,
+              "base_frequency": "MODE_DEPENDENT: 2 for static, 3 for laminar_flow",
+              "_base_frequency_note": "Calculate gradient every N iterations (adaptive based on convergence)",
+              "adaptive_scheduling": true,
+              "_adaptive_scheduling_note": "Adjust frequency based on gradient norm and trust region changes",
+              "force_recalc_conditions": {
+                "trust_region_change_threshold": 0.5,
+                "gradient_norm_threshold": 1e-3,
+                "_conditions_note": "Force gradient recalculation when these conditions are met"
+              }
+            },
+            "enhanced_caching": {
+              "enabled": true,
+              "similarity_threshold": 1e-4,
+              "_similarity_threshold_note": "Reuse cached gradient when parameters change less than this (relative)",
+              "max_cache_size": 256,
+              "cache_strategy": "lru",
+              "_cache_strategy_options": ["lru", "fifo", "size_based"]
+            },
+            "combined_calculations": {
+              "enabled": true,
+              "_note": "Compute gradient and Hessian together to eliminate redundant function evaluations",
+              "three_point_stencil": true,
+              "_three_point_stencil_note": "Use f(x-h), f(x), f(x+h) for both gradient and Hessian"
+            },
+            "monitoring": {
+              "enabled": false,
+              "log_statistics": false,
+              "_log_statistics_note": "Log gradient calculation statistics for performance analysis",
+              "track_function_evaluations": true,
+              "_track_function_evaluations_note": "Count and report function evaluations saved"
+            }
+          }
         }
       },
       "batch_processing": {
@@ -228,18 +290,10 @@
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "best_chi_squared, consensus, or first_success when multiple methods used",
-      "objective_function": {
-        "type": "standard",
-        "_type_note": "Objective function type: 'standard' for min χ² or 'adaptive_target' for min (χ² - α·DOF)²",
-        "_type_options": {
-          "standard": "Traditional chi-squared minimization (default)",
-          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
-        },
-        "adaptive_target_alpha": 1.0,
-        "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared (recommended range: 0.8-1.2)",
-        "_adaptive_target_description": "When type='adaptive_target', minimizes (χ² - α·DOF)² where DOF = N_data - N_params",
-        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
-      }
+      "adaptive_target_alpha": 1.0,
+      "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared minimization: (χ² - α·DOF)² (recommended range: 0.8-1.2)",
+      "_adaptive_target_description": "Minimizes (χ² - α·DOF)² where DOF = N_data - N_params for statistically optimal fit",
+      "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
     },
     "robust_optimization": {
       "_comment": "ENHANCED: 100x-5000x performance improvements with caching and optimized solvers",
@@ -260,7 +314,7 @@
       "_regularization_alpha_note": "L2 regularization - higher for complex parameter spaces",
       "regularization_beta": 0.001,
       "_regularization_beta_note": "L1 sparsity parameter",
-      "jacobian_epsilon": 1e-6,
+      "jacobian_epsilon": 1e-06,
       "_jacobian_epsilon_note": "Finite difference step for adaptive Jacobians",
       "enable_caching": true,
       "_enable_caching_note": "Smart caching provides major performance gains",
@@ -274,7 +328,7 @@
         "_adaptive_selection_note": "Automatically select optimal solver based on problem size and structure",
         "max_iterations": 10000,
         "_max_iterations_note": "Maximum solver iterations - automatically reduced for fallback solvers",
-        "tolerance": 1e-6,
+        "tolerance": 1e-06,
         "_tolerance_note": "Solver convergence tolerance - automatically relaxed for fallback",
         "enable_acceleration": true,
         "_acceleration_note": "Enable solver acceleration techniques when available (e.g., Anderson acceleration for SCS)",
@@ -295,30 +349,30 @@
         "CLARABEL": {
           "_description": "Modern interior-point solver, optimized for scientific data fitting",
           "max_iter": 500,
-          "tol_gap_abs": 1e-5,
-          "tol_gap_rel": 1e-5,
-          "tol_feas": 1e-6,
-          "tol_infeas_abs": 1e-5,
-          "tol_infeas_rel": 1e-5,
-          "tol_ktratio": 1e-4,
-          "reduced_tol_gap_abs": 1e-3,
-          "reduced_tol_gap_rel": 1e-3,
-          "reduced_tol_feas": 1e-3,
-          "reduced_tol_infeas_abs": 1e-3,
-          "reduced_tol_infeas_rel": 1e-3,
-          "reduced_tol_ktratio": 1e-2,
+          "tol_gap_abs": 1e-05,
+          "tol_gap_rel": 1e-05,
+          "tol_feas": 1e-06,
+          "tol_infeas_abs": 1e-05,
+          "tol_infeas_rel": 1e-05,
+          "tol_ktratio": 0.0001,
+          "reduced_tol_gap_abs": 0.001,
+          "reduced_tol_gap_rel": 0.001,
+          "reduced_tol_feas": 0.001,
+          "reduced_tol_infeas_abs": 0.001,
+          "reduced_tol_infeas_rel": 0.001,
+          "reduced_tol_ktratio": 0.01,
           "equilibrate_enable": true,
           "equilibrate_max_iter": 30,
-          "equilibrate_min_scaling": 1e-8,
-          "equilibrate_max_scaling": 1e8,
+          "equilibrate_min_scaling": 1e-08,
+          "equilibrate_max_scaling": 100000000.0,
           "direct_kkt_solver": true,
           "direct_solve_method": "qdldl",
           "static_regularization_enable": true,
-          "static_regularization_constant": 1e-8,
-          "static_regularization_proportional": 1e-6,
+          "static_regularization_constant": 1e-08,
+          "static_regularization_proportional": 1e-06,
           "dynamic_regularization_enable": true,
           "dynamic_regularization_eps": 1e-13,
-          "dynamic_regularization_delta": 1e-7,
+          "dynamic_regularization_delta": 1e-07,
           "iterative_refinement_enable": true,
           "iterative_refinement_reltol": 1e-12,
           "iterative_refinement_abstol": 1e-12,
@@ -330,9 +384,9 @@
         "SCS": {
           "_description": "Splitting conic solver, optimized fallback for data fitting",
           "max_iters": 10000,
-          "eps": 1e-4,
+          "eps": 0.0001,
           "alpha": 1.8,
-          "rho_x": 1e-6,
+          "rho_x": 1e-06,
           "scale": 5.0,
           "normalize": true,
           "adaptive_scale": true,
@@ -347,9 +401,9 @@
         "CVXOPT": {
           "_description": "Python-based solver, stable fallback for difficult problems",
           "maxiters": 200,
-          "abstol": 1e-5,
-          "reltol": 1e-4,
-          "feastol": 1e-5,
+          "abstol": 1e-05,
+          "reltol": 0.0001,
+          "feastol": 1e-05,
           "refinement": 2,
           "show_progress": false,
           "verbose": false
@@ -362,13 +416,13 @@
           "BarHomogeneous": 1,
           "BarIterLimit": 1000,
           "TimeLimit": "MODE_DEPENDENT: 300s for static, 600s for laminar_flow",
-          "MIPGap": 1e-3,
+          "MIPGap": 0.001,
           "NumericFocus": 3,
           "OutputFlag": 0,
           "ScaleFlag": 3,
-          "BarConvTol": 1e-6,
-          "FeasibilityTol": 1e-5,
-          "OptimalityTol": 1e-5,
+          "BarConvTol": 1e-06,
+          "FeasibilityTol": 1e-05,
+          "OptimalityTol": 1e-05,
           "MarkowitzTol": 0.1,
           "PerturbValue": 0.0002,
           "Aggregate": 1,
@@ -390,18 +444,10 @@
           "regularization_alpha": "MODE_DEPENDENT: 0.01 for static, 0.02 for laminar_flow"
         }
       },
-      "objective_function": {
-        "type": "standard",
-        "_type_note": "Objective function type: 'standard' for min χ² or 'adaptive_target' for min (χ² - α·DOF)²",
-        "_type_options": {
-          "standard": "Traditional chi-squared minimization (default)",
-          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
-        },
-        "adaptive_target_alpha": 1.0,
-        "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared (recommended range: 0.8-1.2)",
-        "_adaptive_target_description": "When type='adaptive_target', minimizes (χ² - α·DOF)² where DOF = N_data - N_params",
-        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
-      }
+      "adaptive_target_alpha": 1.0,
+      "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared minimization: (χ² - α·DOF)² (recommended range: 0.8-1.2)",
+      "_adaptive_target_description": "Minimizes (χ² - α·DOF)² where DOF = N_data - N_params for statistically optimal fit",
+      "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
     },
     "mcmc_sampling": {
       "_comment": "Isolated MCMC Backend Architecture - Complete separation of PyMC CPU and NumPyro GPU implementations",
@@ -417,7 +463,7 @@
       "draws": "MODE_DEPENDENT: 3000 for static, 4000 for laminar_flow",
       "_draws_note": "Optimized sample count balancing accuracy and computational efficiency",
       "_large_dataset_draws": "For >1M points: 2000/3000 may be sufficient due to better statistics",
-      "tune": "MODE_DEPENDENT: 800 for static, 1200 for laminar_flow", 
+      "tune": "MODE_DEPENDENT: 800 for static, 1200 for laminar_flow",
       "_tune_note": "Sufficient tuning without excessive warmup time",
       "_large_dataset_tune": "For >5M points: 600/1000 often sufficient with good initialization",
       "thin": "MODE_DEPENDENT: 1 for static, 2 for laminar_flow",
@@ -445,7 +491,7 @@
           "pytensor_config": "Automatically configured for CPU-only mode"
         },
         "gpu_backend": {
-          "_implementation": "homodyne.optimization.mcmc_gpu_backend.py", 
+          "_implementation": "homodyne.optimization.mcmc_gpu_backend.py",
           "_description": "Isolated NumPyro/JAX implementation with complete PyMC separation",
           "_command": "homodyne-gpu --method mcmc (or HOMODYNE_GPU_INTENT=true)",
           "_performance": "GPU acceleration with intelligent CPU fallback, no PyTensor conflicts",
@@ -453,7 +499,7 @@
           "_isolation": "Complete separation from PyMC/PyTensor dependencies",
           "init_strategy": "init_to_value",
           "num_warmup": "Uses 'tune' parameter value",
-          "num_samples": "Uses 'draws' parameter value", 
+          "num_samples": "Uses 'draws' parameter value",
           "chain_method": "vectorized",
           "progress_bar": true,
           "jit_compile": true,
@@ -508,7 +554,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "\u00c5\u00b2/s"
+        "unit": "Å²/s"
       },
       {
         "_common_parameter_2": "alpha",
@@ -530,18 +576,18 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "\u00c5\u00b2/s"
+        "unit": "Å²/s"
       },
       {
         "_laminar_flow_parameter_4": "gamma_dot_t0 (laminar_flow mode only)",
         "name": "gamma_dot_t0",
-        "min": 1e-6,
+        "min": 1e-06,
         "max": 1.0,
         "_customize_note": "Reference shear rate - adjust for your flow conditions",
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.01,
-        "unit": "s\u207b\u00b9"
+        "unit": "s⁻¹"
       },
       {
         "_laminar_flow_parameter_5": "beta (laminar_flow mode only)",
@@ -563,7 +609,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.001,
-        "unit": "s\u207b\u00b9"
+        "unit": "s⁻¹"
       },
       {
         "_laminar_flow_parameter_7": "phi0 (laminar_flow mode only)",
@@ -585,9 +631,9 @@
     "static_submode": "MODE_DEPENDENT: isotropic/anisotropic for static modes, null for laminar_flow",
     "_submode_note": "Isotropic disables angle filtering, anisotropic enables it",
     "model_description": {
-      "static_isotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with isotropic symmetry",
-      "static_anisotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with angular filtering",
-      "laminar_flow": "g\u2082 = g\u2081_diff \u00d7 g\u2081_shear with sinc\u00b2 term for full flow dynamics"
+      "static_isotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with isotropic symmetry",
+      "static_anisotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with angular filtering",
+      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics"
     }
   },
   "advanced_settings": {
@@ -604,10 +650,10 @@
       "moving_window_size": 11,
       "moving_window_edge_method": "reflect",
       "variance_method": "hybrid_limited_irls",
-      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Simple MAD + 2-3 IRLS iterations for 50-70% speedup)",
+      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Global MAD + Huber weights for 25-40x speedup)",
       "_variance_method_options": {
         "irls_mad_robust": "Full IRLS with MAD robust estimation (legacy method)",
-        "hybrid_limited_irls": "Hybrid: Simple MAD initialization + limited IRLS iterations (FGLS-inspired, DEFAULT for efficiency)"
+        "hybrid_limited_irls": "Improved Hybrid: Global MAD + Huber robust weights + kernel smoothing (25-40x faster)"
       },
       "performance_optimization": {
         "_comment": "Simple performance settings - memory pooling removed for stability",
@@ -625,23 +671,15 @@
       "_irls_convergence_tolerance_note": "Relative tolerance for IRLS variance convergence",
       "irls_damping_factor": 0.8,
       "_irls_damping_factor_note": "Weight damping factor α=0.8 for stability",
-      "irls_initial_sigma_squared": 1e-3,
+      "irls_initial_sigma_squared": 0.001,
       "_irls_initial_sigma_squared_note": "Initial uniform variance for first unweighted iteration",
       "irls_min_window_size": 3,
       "_irls_min_window_size_note": "Minimum window size for reliable MAD calculation",
       "_hybrid_irls_section": "HYBRID LIMITED-ITERATION IRLS PARAMETERS (FGLS-inspired approach)",
-      "hybrid_irls_max_iterations": 3,
-      "_hybrid_irls_max_iterations_note": "Maximum IRLS iterations for hybrid approach (2-3 recommended for optimal efficiency)",
-      "hybrid_irls_damping_factor": 0.7,
-      "_hybrid_irls_damping_factor_note": "Damping factor α for hybrid IRLS variance updates (0.6-0.7 recommended for stability)",
-      "hybrid_irls_window_size": 25,
-      "_hybrid_irls_window_size_note": "Window size for hybrid Simple MAD initialization (larger for improved stability)",
-      "hybrid_irls_convergence_tolerance": 0.001,
-      "_hybrid_irls_convergence_tolerance_note": "Convergence tolerance for hybrid IRLS (tighter than full IRLS)",
-      "hybrid_irls_enable_weighted_refit": false,
-      "_hybrid_irls_enable_weighted_refit_note": "Enable weighted least squares refit during IRLS iterations (experimental)",
-      "hybrid_irls_regularization_lambda": 0.001,
-      "_hybrid_irls_regularization_lambda_note": "L2 regularization parameter λ for Gurobi objective (λ∑x_j²)",
+      "hybrid_irls_max_iterations": 2,
+      "_hybrid_irls_max_iterations_note": "Maximum IRLS iterations for improved approach (1-2 iterations typical)",
+      "hybrid_irls_convergence_tolerance": 0.01,
+      "_hybrid_irls_convergence_tolerance_note": "Convergence tolerance for improved IRLS (relaxed due to faster convergence)",
       "fast_computation": true,
       "uncertainty_calculation": {
         "enable_uncertainty": true,
@@ -653,19 +691,26 @@
         "check_positive_gamma_dot_t0": "MODE_DEPENDENT: false for static modes, true for laminar_flow",
         "check_positive_time_dependent": true,
         "check_parameter_bounds": true
-      }
+      },
+      "_improved_hybrid_irls_section": "IMPROVED HYBRID IRLS PARAMETERS (Global MAD + Huber Weights)",
+      "huber_constant_factor": 1.345,
+      "_huber_constant_factor_note": "Huber threshold factor for 95% efficiency (1.345 standard for robust statistics)",
+      "kernel_bandwidth_scale": 0.2,
+      "_kernel_bandwidth_scale_note": "Bandwidth scaling for kernel smoothing (0.1-0.3 range, affects local variance trends)",
+      "regularization_strength": 0.15,
+      "_regularization_strength_note": "Regularization strength λ for local/global variance blending (0.1-0.2 typical)"
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-8,
+      "relative_tolerance": 1e-08,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-8,
+      "convergence_tolerance": 1e-08,
       "max_function_evaluations": "MODE_DEPENDENT: 5000 for static, 15000 for laminar_flow",
       "_max_function_evaluations_note": "Higher limits for complex parameter spaces",
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-8
+      "finite_difference_step": 1e-08
     }
   },
   "performance_settings": {
@@ -825,7 +870,10 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": ["png", "pdf"],
+      "plot_formats": [
+        "png",
+        "pdf"
+      ],
       "detailed_summary": true,
       "convergence_diagnostics": true
     },
@@ -858,7 +906,11 @@
         "corner_plots": {
           "enabled": true,
           "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
+          "quantiles": [
+            0.16,
+            0.5,
+            0.84
+          ],
           "show_truths": false,
           "use_arviz": true,
           "figsize": "MODE_DEPENDENT: [9,9] for static, [15,15] for laminar_flow"
@@ -983,7 +1035,7 @@
     "_mode_dependent_values": "Search for 'MODE_DEPENDENT' throughout config to see values that need mode-specific customization"
   },
   "_recent_enhancements": {
-    "_gurobi_optimization": "Enhanced Trust Region SQP algorithm fixes \u03c7\u00b2 convergence issues in v0.7.1+",
+    "_gurobi_optimization": "Enhanced Trust Region SQP algorithm fixes χ² convergence issues in v0.7.1+",
     "_robust_optimization": "100x-5000x performance improvements with smart caching and optimized solvers",
     "_interactive_mode": "Completely removed - replaced with argcomplete shell completion",
     "_code_quality": "Full codebase formatted with black, linted with flake8, type-checked with mypy",

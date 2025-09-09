@@ -355,12 +355,12 @@ class TestKernelPerformance:
         chi_squared_time = time.time() - start_time
 
         # Performance assertions (adjust thresholds as needed)
-        assert (
-            least_squares_time < 0.1
-        ), f"Least squares time {least_squares_time:.4f}s too slow"
-        assert (
-            chi_squared_time < 0.05
-        ), f"Chi-squared time {chi_squared_time:.4f}s too slow"
+        assert least_squares_time < 0.1, (
+            f"Least squares time {least_squares_time:.4f}s too slow"
+        )
+        assert chi_squared_time < 0.05, (
+            f"Chi-squared time {chi_squared_time:.4f}s too slow"
+        )
 
         # Verify results
         assert contrast_batch.shape == (n_angles,)

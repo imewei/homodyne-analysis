@@ -50,8 +50,8 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_q_note": "Scattering wavevector magnitude: q = 4\u03c0 sin(\u03b8/2)/\u03bb",
-      "q_unit": "\u00c5\u207b\u00b9",
+      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
       "typical_range": [
         0.001,
         0.1
@@ -60,7 +60,7 @@
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms (not critical for static isotropic)",
-      "gap_unit": "\u00c5",
+      "gap_unit": "Å",
       "gap_in_microns": 200
     },
     "computational": {
@@ -83,9 +83,9 @@
       "D_offset"
     ],
     "units": [
-      "\u00c5\u00b2/s",
+      "Å²/s",
       "dimensionless",
-      "\u00c5\u00b2/s"
+      "Å²/s"
     ],
     "physical_meaning": {
       "D0": "Reference diffusion coefficient",
@@ -98,9 +98,9 @@
       "D_offset"
     ],
     "parameter_units": {
-      "D0": "\u00c5\u00b2/s",
+      "D0": "Å²/s",
       "alpha": "dimensionless",
-      "D_offset": "\u00c5\u00b2/s"
+      "D_offset": "Å²/s"
     }
   },
   "optimization_config": {
@@ -135,7 +135,7 @@
           "_adaptive_note": "Adaptive step sizes essential for robust convergence"
         },
         "Gurobi": {
-          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter isotropic case",
@@ -159,23 +159,54 @@
           },
           "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
           "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
-          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
+          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity",
+          "gradient_optimization": {
+            "_comment": "Advanced gradient calculation optimization for reduced function evaluations in 3-parameter static mode",
+            "adaptive_step_sizing": {
+              "enabled": true,
+              "base_epsilon": 1e-8,
+              "relative_factor": 0.01,
+              "bounds_proximity_factor": 0.1
+            },
+            "boundary_aware_differences": {
+              "enabled": true,
+              "boundary_tolerance": 0.05,
+              "prefer_central": true
+            },
+            "smart_scheduling": {
+              "enabled": true,
+              "base_frequency": 2,
+              "_base_frequency_note": "Calculate gradient every 2 iterations for simpler 3-parameter problem",
+              "adaptive_scheduling": true,
+              "force_recalc_conditions": {
+                "trust_region_change_threshold": 0.5,
+                "gradient_norm_threshold": 1e-3
+              }
+            },
+            "enhanced_caching": {
+              "enabled": true,
+              "similarity_threshold": 1e-4,
+              "max_cache_size": 256,
+              "cache_strategy": "lru"
+            },
+            "combined_calculations": {
+              "enabled": true,
+              "three_point_stencil": true
+            },
+            "monitoring": {
+              "enabled": false,
+              "log_statistics": false,
+              "track_function_evaluations": true
+            }
+          }
         }
       },
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
-      "objective_function": {
-        "type": "standard",
-        "_type_note": "Objective function type: 'standard' for min \u03c7\u00b2 or 'adaptive_target' for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
-        "_type_options": {
-          "standard": "Traditional chi-squared minimization (default)",
-          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
-        },
-        "adaptive_target_alpha": 1.0,
-        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
-        "_adaptive_target_description": "When type='adaptive_target', minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
-        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
-      }
+      "adaptive_target_alpha": 1.0,
+      "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared minimization: (χ² - α·DOF)² (recommended range: 0.8-1.2)",
+      "_adaptive_target_description": "Minimizes (χ² - α·DOF)² where DOF = N_data - N_params for statistically optimal fit",
+      "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
     },
     "robust_optimization": {
       "enabled": true,
@@ -246,18 +277,10 @@
           "Presolve": 2
         }
       },
-      "objective_function": {
-        "type": "standard",
-        "_type_note": "Objective function type: 'standard' for min \u03c7\u00b2 or 'adaptive_target' for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
-        "_type_options": {
-          "standard": "Traditional chi-squared minimization (default)",
-          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
-        },
-        "adaptive_target_alpha": 1.0,
-        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
-        "_adaptive_target_description": "When type='adaptive_target', minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
-        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
-      }
+      "adaptive_target_alpha": 1.0,
+      "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared minimization: (χ² - α·DOF)² (recommended range: 0.8-1.2)",
+      "_adaptive_target_description": "Minimizes (χ² - α·DOF)² where DOF = N_data - N_params for statistically optimal fit",
+      "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
     },
     "mcmc_sampling": {
       "_comment": "Isolated MCMC Backend Architecture - Static Isotropic Mode (3 parameters: D0, alpha, D_offset)",
@@ -349,7 +372,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "\u00c5\u00b2/s"
+        "unit": "Å²/s"
       },
       {
         "name": "alpha",
@@ -367,7 +390,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "\u00c5\u00b2/s"
+        "unit": "Å²/s"
       }
     ]
   },
@@ -378,7 +401,7 @@
     "static_submode": "isotropic",
     "_submode_note": "Isotropic mode - no angle dependence",
     "model_description": {
-      "static_isotropic": "g\u2082(t\u2081,t\u2082) ~ [exp(-q\u00b2 \u222b D(t)dt)]\u00b2 with isotropic symmetry"
+      "static_isotropic": "g₂(t₁,t₂) ~ [exp(-q² ∫ D(t)dt)]² with isotropic symmetry"
     }
   },
   "advanced_settings": {
@@ -395,10 +418,10 @@
       "moving_window_size": 25,
       "moving_window_edge_method": "reflect",
       "variance_method": "hybrid_limited_irls",
-      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Simple MAD + 2-3 IRLS iterations for 50-70% speedup)",
+      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Global MAD + Huber weights for 25-40x speedup)",
       "_variance_method_options": {
         "irls_mad_robust": "Full IRLS with MAD robust estimation (legacy method)",
-        "hybrid_limited_irls": "Hybrid: Simple MAD initialization + limited IRLS iterations (FGLS-inspired, DEFAULT for efficiency)"
+        "hybrid_limited_irls": "Improved Hybrid: Global MAD + Huber robust weights + kernel smoothing (25-40x faster)"
       },
       "performance_optimization": {
         "_comment": "Performance optimization settings for chi-squared and IRLS calculations",
@@ -451,7 +474,7 @@
         "damping_factor": 0.78,
         "convergence_tolerance": 0.0025,
         "initial_sigma_squared": 0.001,
-        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev - Balanced optimization: window=25, iterations=16, damping=0.78",
+        "_algorithm_note": "IRLS with MAD: σ²ᵢ = (1.4826 × MAD)², damping: σ² = α·σ²_new + (1-α)·σ²_prev - Balanced optimization: window=25, iterations=16, damping=0.78",
         "optimized_config": {
           "use_vectorized_mad": true,
           "use_quickselect_median": true,
@@ -460,18 +483,17 @@
         }
       },
       "_hybrid_irls_section": "HYBRID LIMITED-ITERATION IRLS PARAMETERS (FGLS-inspired approach)",
-      "hybrid_irls_max_iterations": 3,
-      "_hybrid_irls_max_iterations_note": "Maximum IRLS iterations for hybrid approach (2-3 recommended for optimal efficiency)",
-      "hybrid_irls_damping_factor": 0.7,
-      "_hybrid_irls_damping_factor_note": "Damping factor α for hybrid IRLS variance updates (0.6-0.7 recommended for stability)",
-      "hybrid_irls_window_size": 25,
-      "_hybrid_irls_window_size_note": "Window size for hybrid Simple MAD initialization (larger for improved stability)",
-      "hybrid_irls_convergence_tolerance": 0.001,
-      "_hybrid_irls_convergence_tolerance_note": "Convergence tolerance for hybrid IRLS (tighter than full IRLS)",
-      "hybrid_irls_enable_weighted_refit": false,
-      "_hybrid_irls_enable_weighted_refit_note": "Enable weighted least squares refit during IRLS iterations (experimental)",
-      "hybrid_irls_regularization_lambda": 0.001,
-      "_hybrid_irls_regularization_lambda_note": "L2 regularization parameter λ for Gurobi objective (λ∑x_j²)"
+      "hybrid_irls_max_iterations": 2,
+      "_hybrid_irls_max_iterations_note": "Maximum IRLS iterations for improved approach (1-2 iterations typical)",
+      "hybrid_irls_convergence_tolerance": 0.01,
+      "_hybrid_irls_convergence_tolerance_note": "Convergence tolerance for improved IRLS (relaxed due to faster convergence)",
+      "_improved_hybrid_irls_section": "IMPROVED HYBRID IRLS PARAMETERS (Global MAD + Huber Weights)",
+      "huber_constant_factor": 1.345,
+      "_huber_constant_factor_note": "Huber threshold factor for 95% efficiency (1.345 standard for robust statistics)",
+      "kernel_bandwidth_scale": 0.2,
+      "_kernel_bandwidth_scale_note": "Bandwidth scaling for kernel smoothing (0.1-0.3 range, affects local variance trends)",
+      "regularization_strength": 0.15,
+      "_regularization_strength_note": "Regularization strength λ for local/global variance blending (0.1-0.2 typical)"
     },
     "numerical_integration": {
       "method": "simpson",

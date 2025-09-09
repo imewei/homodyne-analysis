@@ -476,19 +476,23 @@ class ConfigManager:
 
         # Validate frame range - handle both nested temporal structure and flat structure
         analyzer = self.config["analyzer_parameters"]
-        
+
         # Check for nested temporal structure first (current standard)
         temporal = analyzer.get("temporal", {})
         if temporal:
             start = temporal.get("start_frame", 1)
             end = temporal.get("end_frame", 100)
-            logger.debug(f"Using nested temporal structure: start_frame={start}, end_frame={end}")
+            logger.debug(
+                f"Using nested temporal structure: start_frame={start}, end_frame={end}"
+            )
         else:
             # Fallback to flat structure for backward compatibility
             start = analyzer.get("start_frame", 1)
             end = analyzer.get("end_frame", 100)
-            logger.debug(f"Using flat parameter structure: start_frame={start}, end_frame={end}")
-            
+            logger.debug(
+                f"Using flat parameter structure: start_frame={start}, end_frame={end}"
+            )
+
             # Warn about deprecated flat structure
             if "start_frame" in analyzer or "end_frame" in analyzer:
                 logger.warning(
@@ -506,7 +510,9 @@ class ConfigManager:
             .get("minimum_frames", 10)
         )
         if end - start < min_frames:
-            parameter_source = "analyzer_parameters.temporal" if temporal else "analyzer_parameters"
+            parameter_source = (
+                "analyzer_parameters.temporal" if temporal else "analyzer_parameters"
+            )
             raise ValueError(
                 f"Insufficient frames: {end - start} < {min_frames} "
                 f"(loaded from {parameter_source}: start_frame={start}, end_frame={end})"
@@ -557,7 +563,7 @@ class ConfigManager:
             # Fallback to flat structure
             q = params.get("wavevector_q", 0.0054)
             logger.debug(f"Using flat parameter structure: wavevector_q={q}")
-            
+
         if q <= 0:
             raise ValueError(f"Wavevector must be positive: {q}")
         if q > 1.0:
@@ -572,7 +578,7 @@ class ConfigManager:
             # Fallback to flat structure
             dt = params.get("dt", 0.1)
             logger.debug(f"Using flat parameter structure: dt={dt}")
-            
+
         if dt <= 0:
             raise ValueError(f"Time step must be positive: {dt}")
 
@@ -585,7 +591,7 @@ class ConfigManager:
             # Fallback to flat structure
             h = params.get("stator_rotor_gap", 2000000)
             logger.debug(f"Using flat parameter structure: stator_rotor_gap={h}")
-            
+
         if h <= 0:
             raise ValueError(f"Gap size must be positive: {h}")
 

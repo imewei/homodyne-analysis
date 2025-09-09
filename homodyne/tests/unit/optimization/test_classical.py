@@ -297,7 +297,6 @@ class TestRealAlgorithmExecution:
             np.array([150.0, 0.0, 0.0]),
         ]
 
-
         successful_optimizations = 0
 
         for initial_guess in initial_guesses:
@@ -331,9 +330,9 @@ class TestRealAlgorithmExecution:
         )
 
         # Final result should be better than initial guess (or very close)
-        assert (
-            final_result.fun <= initial_value * 1.1
-        ), f"No improvement: initial={initial_value}, final={final_result.fun}"
+        assert final_result.fun <= initial_value * 1.1, (
+            f"No improvement: initial={initial_value}, final={final_result.fun}"
+        )
 
     def test_bounded_optimization_respects_constraints(self):
         """Test that optimization respects parameter bounds."""
@@ -391,10 +390,12 @@ class TestRealAlgorithmExecution:
         )
 
         # Test that bounds are respected
-        for i, (param_val, (min_bound, max_bound)) in enumerate(zip(result.x, bounds, strict=False)):
-            assert (
-                min_bound <= param_val <= max_bound
-            ), f"Parameter {i} = {param_val} violates bounds [{min_bound}, {max_bound}]"
+        for i, (param_val, (min_bound, max_bound)) in enumerate(
+            zip(result.x, bounds, strict=False)
+        ):
+            assert min_bound <= param_val <= max_bound, (
+                f"Parameter {i} = {param_val} violates bounds [{min_bound}, {max_bound}]"
+            )
 
     def test_optimization_convergence_monitoring(self):
         """Test optimization convergence monitoring and iteration tracking."""
@@ -769,9 +770,9 @@ class TestErrorHandling:
     def test_optimization_timeout(self, mock_analysis_core, basic_config):
         """Test handling of optimization timeout."""
         # Add timeout configuration
-        basic_config["optimization_config"]["classical_optimization"][
-            "timeout"
-        ] = 10  # 10 seconds
+        basic_config["optimization_config"]["classical_optimization"]["timeout"] = (
+            10  # 10 seconds
+        )
 
         optimizer = ClassicalOptimizer(mock_analysis_core, basic_config)
 

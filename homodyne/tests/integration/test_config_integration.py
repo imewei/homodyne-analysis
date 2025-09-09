@@ -273,8 +273,8 @@ class TestConfigurationIntegration:
             mock_analyzer = Mock()
             mock_analyzer.config_manager = config_manager
             # Ensure _selected_chi_calculator doesn't exist to force fallback to calculate_chi_squared_optimized
-            if hasattr(mock_analyzer, '_selected_chi_calculator'):
-                delattr(mock_analyzer, '_selected_chi_calculator')
+            if hasattr(mock_analyzer, "_selected_chi_calculator"):
+                delattr(mock_analyzer, "_selected_chi_calculator")
 
             optimizer = ClassicalOptimizer(mock_analyzer, {})
 
@@ -286,20 +286,39 @@ class TestConfigurationIntegration:
                 phi_angles, c2_experimental, "Test"
             )
 
-            # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=5.0)
+            # Mock the core method to return proper dictionary structure for return_components=True
+            def mock_chi_squared(*args, **kwargs):
+                if kwargs.get("return_components", False):
+                    return {
+                        "chi_squared": 5.0,
+                        "total_chi_squared": 50.0,
+                        "degrees_of_freedom": 10,
+                        "valid": True,
+                    }
+                return 5.0
+
+            mock_analyzer.calculate_chi_squared_optimized = Mock(
+                side_effect=mock_chi_squared
+            )
             test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
 
             # Verify that angle filtering was enabled (from config)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
-            assert call_args is not None, "calculate_chi_squared_optimized was not called"
-            assert len(call_args) >= 2, "Method not called with positional and keyword args"
+            assert call_args is not None, (
+                "calculate_chi_squared_optimized was not called"
+            )
+            assert len(call_args) >= 2, (
+                "Method not called with positional and keyword args"
+            )
             assert call_args[1] is not None, "No keyword arguments provided"
-            assert "filter_angles_for_optimization" in call_args[1], "filter_angles_for_optimization kwarg missing"
+            assert "filter_angles_for_optimization" in call_args[1], (
+                "filter_angles_for_optimization kwarg missing"
+            )
             assert call_args[1]["filter_angles_for_optimization"]
-            assert result == 5.0
+            # With adaptive target objective: (χ² - α·DOF)² = (50.0 - 1.0*10)² = 40² = 1600
+            assert result == 1600.0
 
         except ImportError:
             pytest.skip("Classical optimization module not available")
@@ -335,8 +354,8 @@ class TestConfigurationIntegration:
             mock_analyzer = Mock(spec=["calculate_chi_squared_optimized"])
             # Explicitly ensure no config_manager attribute exists
             # Ensure _selected_chi_calculator doesn't exist to force fallback to calculate_chi_squared_optimized
-            if hasattr(mock_analyzer, '_selected_chi_calculator'):
-                delattr(mock_analyzer, '_selected_chi_calculator')
+            if hasattr(mock_analyzer, "_selected_chi_calculator"):
+                delattr(mock_analyzer, "_selected_chi_calculator")
 
             optimizer = ClassicalOptimizer(
                 mock_analyzer,
@@ -350,8 +369,20 @@ class TestConfigurationIntegration:
                 phi_angles, c2_experimental, "Test"
             )
 
-            # Mock the core method
-            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=3.0)
+            # Mock the core method to return proper dictionary structure for return_components=True
+            def mock_chi_squared_2(*args, **kwargs):
+                if kwargs.get("return_components", False):
+                    return {
+                        "chi_squared": 3.0,
+                        "total_chi_squared": 30.0,
+                        "degrees_of_freedom": 10,
+                        "valid": True,
+                    }
+                return 3.0
+
+            mock_analyzer.calculate_chi_squared_optimized = Mock(
+                side_effect=mock_chi_squared_2
+            )
             test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             result = objective(test_params)
@@ -359,7 +390,8 @@ class TestConfigurationIntegration:
             # Should still use angle filtering (from config dict)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
             assert call_args[1]["filter_angles_for_optimization"]
-            assert result == 3.0
+            # With adaptive target objective: (χ² - α·DOF)² = (30.0 - 1.0*10)² = 20² = 400
+            assert result == 400.0
 
         except ImportError:
             pytest.skip("Classical optimization module not available")

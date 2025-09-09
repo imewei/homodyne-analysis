@@ -166,9 +166,9 @@ def assert_performance_stability(times, cv_threshold=0.3, max_cv=None, **kwargs)
     variance = sum((t - mean_time) ** 2 for t in times) / len(times)
     std_dev = variance**0.5
     cv = std_dev / mean_time if mean_time > 0 else 0
-    assert (
-        cv <= cv_threshold
-    ), f"Coefficient of variation {cv:.3f} exceeds threshold {cv_threshold}"
+    assert cv <= cv_threshold, (
+        f"Coefficient of variation {cv:.3f} exceeds threshold {cv_threshold}"
+    )
 
 
 # Performance test data storage

@@ -495,24 +495,37 @@ class TestAngleFilteringOptimizationIntegration:
             phi_angles, c2_experimental, "Test"
         )
 
-        # Test that the objective function calls the analyzer with angle
-        # filtering
+        # Test that the objective function calls the analyzer with angle filtering
+        def mock_chi_squared_classical(*args, **kwargs):
+            if kwargs.get("return_components", False):
+                return {
+                    "chi_squared": 10.0,
+                    "total_chi_squared": 100.0,
+                    "degrees_of_freedom": 10,
+                    "valid": True,
+                }
+            return 10.0
+
         test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
-        mock_analyzer.calculate_chi_squared_optimized.return_value = 10.0
+        mock_analyzer.calculate_chi_squared_optimized.side_effect = (
+            mock_chi_squared_classical
+        )
 
         result = objective(test_params)
 
         # Verify the call was made with angle filtering enabled
-        # Note: iteration parameter is added for optimization tracking
+        # Note: iteration parameter and return_components are added for optimization tracking
         mock_analyzer.calculate_chi_squared_optimized.assert_called_once_with(
             test_params,
             phi_angles,
             c2_experimental,
             "Test",
             filter_angles_for_optimization=True,
+            return_components=True,
             iteration=1,
         )
-        assert result == 10.0
+        # With adaptive target objective: (χ² - α·DOF)² = (100.0 - 1.0*10)² = 90² = 8100
+        assert result == 8100.0
 
     def test_mcmc_sampler_uses_angle_filtering(self):
         """Test that MCMC sampler uses angle filtering by default."""
@@ -578,9 +591,9 @@ class TestAngleFilteringOptimizationIntegration:
             for method_name in methods_to_check:
                 if hasattr(sampler, method_name):
                     method_sig = inspect.signature(getattr(sampler, method_name))
-                    assert (
-                        "filter_angles_for_optimization" in method_sig.parameters
-                    ), f"Missing parameter in {method_name}"
+                    assert "filter_angles_for_optimization" in method_sig.parameters, (
+                        f"Missing parameter in {method_name}"
+                    )
 
             print("✓ MCMC sampler uses angle filtering by default")
 
@@ -611,8 +624,20 @@ class TestAngleFilteringOptimizationIntegration:
                 phi_angles, c2_experimental, "Test"
             )
 
-            # Mock the core method to capture the call
-            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=10.0)
+            # Mock the core method to return proper dictionary structure for return_components=True
+            def mock_chi_squared_angle_filter(*args, **kwargs):
+                if kwargs.get("return_components", False):
+                    return {
+                        "chi_squared": 10.0,
+                        "total_chi_squared": 100.0,
+                        "degrees_of_freedom": 10,
+                        "valid": True,
+                    }
+                return 10.0
+
+            mock_analyzer.calculate_chi_squared_optimized = Mock(
+                side_effect=mock_chi_squared_angle_filter
+            )
             test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
@@ -708,9 +733,7 @@ class TestAngleFilteringEdgeCases:
                     is_included = True
                     break
 
-            assert (
-                is_included == should_include
-            ), f"Angle {angle}° should be {
+            assert is_included == should_include, f"Angle {angle}° should be {
                 'included' if should_include else 'excluded'
             }"
 
@@ -727,8 +750,8 @@ class TestAngleFilteringEdgeCases:
             mock_config_manager.is_angle_filtering_enabled.return_value = False
             mock_analyzer.config_manager = mock_config_manager
             # Ensure _selected_chi_calculator doesn't exist to force fallback to calculate_chi_squared_optimized
-            if hasattr(mock_analyzer, '_selected_chi_calculator'):
-                delattr(mock_analyzer, '_selected_chi_calculator')
+            if hasattr(mock_analyzer, "_selected_chi_calculator"):
+                delattr(mock_analyzer, "_selected_chi_calculator")
 
             # Test that classical optimizer respects ConfigManager
             optimizer = ClassicalOptimizer(mock_analyzer, {})
@@ -739,8 +762,20 @@ class TestAngleFilteringEdgeCases:
                 phi_angles, c2_experimental, "Test"
             )
 
-            # Mock the core method to capture the call
-            mock_analyzer.calculate_chi_squared_optimized = Mock(return_value=10.0)
+            # Mock the core method to return proper dictionary structure for return_components=True
+            def mock_chi_squared_config_mgr(*args, **kwargs):
+                if kwargs.get("return_components", False):
+                    return {
+                        "chi_squared": 10.0,
+                        "total_chi_squared": 100.0,
+                        "degrees_of_freedom": 10,
+                        "valid": True,
+                    }
+                return 10.0
+
+            mock_analyzer.calculate_chi_squared_optimized = Mock(
+                side_effect=mock_chi_squared_config_mgr
+            )
             test_params = np.array([1000.0, -0.1, 50.0, 0.01, -0.5, 0.001, 0.0])
 
             objective(test_params)
@@ -750,10 +785,16 @@ class TestAngleFilteringEdgeCases:
 
             # Verify that angle filtering was disabled (as configured)
             call_args = mock_analyzer.calculate_chi_squared_optimized.call_args
-            assert call_args is not None, "calculate_chi_squared_optimized was not called"
-            assert len(call_args) >= 2, "Method not called with positional and keyword args"
+            assert call_args is not None, (
+                "calculate_chi_squared_optimized was not called"
+            )
+            assert len(call_args) >= 2, (
+                "Method not called with positional and keyword args"
+            )
             assert call_args[1] is not None, "No keyword arguments provided"
-            assert "filter_angles_for_optimization" in call_args[1], "filter_angles_for_optimization kwarg missing"
+            assert "filter_angles_for_optimization" in call_args[1], (
+                "filter_angles_for_optimization kwarg missing"
+            )
             assert call_args[1]["filter_angles_for_optimization"] is False
 
         except ImportError:

@@ -845,10 +845,10 @@ class MCMCSampler:
     ) -> None:
         """
         Log standardized MCMC progress with sampling statistics and diagnostics.
-        
+
         This method provides consistent logging format for MCMC sampling progress,
         convergence monitoring, and chain diagnostics across all sampling stages.
-        
+
         Parameters
         ----------
         iteration : int
@@ -865,19 +865,24 @@ class MCMCSampler:
             MCMC method name (default: "MCMC-NUTS")
         mcmc_config : dict, optional
             MCMC logging configuration dictionary
-            
+
         Notes
         -----
         Logging is controlled by mcmc_debug configuration to avoid performance impact.
         Respects both mcmc_debug.enabled and standard debug logging levels.
         """
         import logging
+
         logger = logging.getLogger(__name__)
-        
+
         # Get MCMC logging configuration
         if mcmc_config is None:
-            mcmc_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_debug", {})
-        
+            mcmc_config = (
+                self.config.get("output_settings", {})
+                .get("logging", {})
+                .get("mcmc_debug", {})
+            )
+
         # Check if MCMC logging is enabled
         mcmc_log_enabled = mcmc_config.get("enabled", False)
         log_frequency = mcmc_config.get("log_frequency", 100)
@@ -887,63 +892,71 @@ class MCMCSampler:
         chi_squared_tracking = mcmc_config.get("chi_squared_tracking", True)
         include_residuals = mcmc_config.get("residual_statistics", False)
         performance_mode = mcmc_config.get("performance_mode", False)
-        
+
         # Only log if MCMC debugging enabled or debug level active
         if not (mcmc_log_enabled or logger.isEnabledFor(logging.DEBUG)):
             return
-            
+
         # Apply frequency filtering for sampling progress
-        if stage in ["Sampling", "Tuning"] and iteration % log_frequency != 0 and iteration > 0:
+        if (
+            stage in ["Sampling", "Tuning"]
+            and iteration % log_frequency != 0
+            and iteration > 0
+        ):
             return
-            
+
         # Performance mode: minimal logging
         if performance_mode and not logger.isEnabledFor(logging.DEBUG):
             return
-        
+
         # Build log message components
         log_parts = []
-        
+
         # Method name and stage/iteration
         stage_display = f"-{stage}" if stage else ""
         method_display = f"[{method_name}{stage_display}]"
-        
+
         if stage in ["Sampling", "Tuning"]:
             log_parts.append(f"{method_display} Draw {iteration}")
         else:
-            log_parts.append(f"{method_display} {stage} {iteration}" if stage else f"{method_display} Iteration {iteration}")
-        
+            log_parts.append(
+                f"{method_display} {stage} {iteration}"
+                if stage
+                else f"{method_display} Iteration {iteration}"
+            )
+
         # Chi-squared information
         if chi_squared_tracking and chi_squared is not None:
             log_parts.append(f"χ²_reduced={chi_squared:.6f}")
-        
+
         # Convergence diagnostics
         if convergence_monitoring and diagnostics:
             if "r_hat" in diagnostics:
                 r_hat_max = diagnostics.get("r_hat_max", diagnostics.get("r_hat", 1.0))
                 log_parts.append(f"R-hat_max={r_hat_max:.3f}")
-            
+
             if "ess" in diagnostics:
                 ess_min = diagnostics.get("ess_min", diagnostics.get("ess", 0))
                 log_parts.append(f"ESS_min={ess_min:.1f}")
-            
+
             if "converged" in diagnostics:
                 converged = diagnostics["converged"]
                 log_parts.append(f"converged={'Yes' if converged else 'No'}")
-        
+
         # Chain diagnostics
         if chain_diagnostics and diagnostics:
             if "divergent_fraction" in diagnostics:
                 div_frac = diagnostics["divergent_fraction"]
-                log_parts.append(f"divergences={div_frac*100:.1f}%")
-            
+                log_parts.append(f"divergences={div_frac * 100:.1f}%")
+
             if "sampling_efficiency" in diagnostics:
                 efficiency = diagnostics["sampling_efficiency"]
                 log_parts.append(f"efficiency={efficiency:.1f}%")
-            
+
             if "good_mixing" in diagnostics:
                 mixing = diagnostics["good_mixing"]
                 log_parts.append(f"mixing={'Good' if mixing else 'Poor'}")
-        
+
         # Residual statistics (performance impact warning in config)
         if include_residuals and residuals is not None and len(residuals) > 0:
             finite_residuals = residuals[np.isfinite(residuals)]
@@ -951,26 +964,30 @@ class MCMCSampler:
                 min_res = np.min(finite_residuals)
                 mean_res = np.mean(finite_residuals)
                 max_res = np.max(finite_residuals)
-                log_parts.append(f"residuals[min/mean/max]=[{min_res:.4f}/{mean_res:.4f}/{max_res:.4f}]")
-        
+                log_parts.append(
+                    f"residuals[min/mean/max]=[{min_res:.4f}/{mean_res:.4f}/{max_res:.4f}]"
+                )
+
         # Performance metrics
-        if hasattr(self, 'performance_metrics'):
+        if hasattr(self, "performance_metrics"):
             if "samples_per_second" in self.performance_metrics:
                 sps = self.performance_metrics["samples_per_second"]
                 log_parts.append(f"samples/s={sps:.1f}")
-        
+
         # Log the combined message
         log_message = ": ".join(log_parts)
         if mcmc_log_enabled:
             logger.info(log_message)
         else:
             logger.debug(log_message)
-        
+
         # Add recommendations if available
         if chain_diagnostics and diagnostics and "recommendations" in diagnostics:
             recommendations = diagnostics["recommendations"]
             if recommendations:
-                rec_msg = f"{method_display} Recommendations: " + "; ".join(recommendations[:2])  # Limit to 2 recommendations
+                rec_msg = f"{method_display} Recommendations: " + "; ".join(
+                    recommendations[:2]
+                )  # Limit to 2 recommendations
                 if mcmc_log_enabled:
                     logger.info(rec_msg)
                 else:
@@ -1218,7 +1235,11 @@ class MCMCSampler:
         cores = min(chains, getattr(self.core, "num_threads", 1))
 
         # Get MCMC logging configuration
-        mcmc_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_debug", {})
+        mcmc_logging_config = (
+            self.config.get("output_settings", {})
+            .get("logging", {})
+            .get("mcmc_debug", {})
+        )
 
         # Enhanced MCMC logging - replace print statements with conditional logging
         self.log_mcmc_progress(
@@ -1226,7 +1247,7 @@ class MCMCSampler:
             stage="Setup",
             method_name="MCMC-NUTS",
             diagnostics={"mode": analysis_mode, "n_params": effective_param_count},
-            mcmc_config=mcmc_logging_config
+            mcmc_config=mcmc_logging_config,
         )
 
         # Calculate effective draws after thinning
@@ -1244,15 +1265,15 @@ class MCMCSampler:
             "thin": thin,
             "effective_draws": effective_draws,
             "target_accept": target_accept,
-            "init_strategy": init_strategy
+            "init_strategy": init_strategy,
         }
-        
+
         self.log_mcmc_progress(
             iteration=0,
             stage="Configuration",
             diagnostics=setup_diagnostics,
             method_name="MCMC-NUTS",
-            mcmc_config=mcmc_logging_config
+            mcmc_config=mcmc_logging_config,
         )
 
         # Build the Bayesian model with angle filtering
@@ -1417,15 +1438,15 @@ class MCMCSampler:
                 "effective_draws": effective_draws,
                 "strategy": init_strategy,
                 "target_accept": target_accept,
-                "backend": "PyMC_CPU"
+                "backend": "PyMC_CPU",
             }
-            
+
             self.log_mcmc_progress(
                 iteration=0,
                 stage="Sampling-Start",
                 diagnostics=sampling_diagnostics,
                 method_name="MCMC-NUTS",
-                mcmc_config=mcmc_logging_config
+                mcmc_config=mcmc_logging_config,
             )
 
             if self.use_progressive_sampling and (
@@ -1481,26 +1502,26 @@ class MCMCSampler:
                 filter_angles_for_optimization=filter_angles_for_optimization,
                 iteration=-1,  # Final evaluation
             )
-            
+
             # Log successful chi-squared calculation
             self.log_mcmc_progress(
                 iteration=draws,
                 stage="Chi-squared-Final",
                 chi_squared=chi_squared,
                 method_name="MCMC-NUTS",
-                mcmc_config=mcmc_logging_config
+                mcmc_config=mcmc_logging_config,
             )
         except Exception as e:
             logger.warning(f"MCMC chi-squared calculation failed: {e}")
             chi_squared = np.inf
-            
+
             # Log chi-squared calculation failure
             self.log_mcmc_progress(
                 iteration=draws,
                 stage="Chi-squared-Failed",
                 diagnostics={"error": str(e)},
                 method_name="MCMC-NUTS",
-                mcmc_config=mcmc_logging_config
+                mcmc_config=mcmc_logging_config,
             )
 
         # Store performance metrics
@@ -1534,19 +1555,21 @@ class MCMCSampler:
         # Enhanced completion logging
         completion_diagnostics = {
             "total_time": mcmc_time,
-            "backend": self.performance_metrics['backend_used'],
-            "samples_per_second": self.performance_metrics.get('samples_per_second', 0),
+            "backend": self.performance_metrics["backend_used"],
+            "samples_per_second": self.performance_metrics.get("samples_per_second", 0),
             "effective_draws": effective_draws,
-            "sampling_efficiency": (effective_draws / mcmc_time) if mcmc_time > 0 else 0
+            "sampling_efficiency": (effective_draws / mcmc_time)
+            if mcmc_time > 0
+            else 0,
         }
-        
+
         self.log_mcmc_progress(
             iteration=draws,
             stage="Completed",
             chi_squared=chi_squared,
             diagnostics=completion_diagnostics,
             method_name="MCMC-NUTS",
-            mcmc_config=mcmc_logging_config
+            mcmc_config=mcmc_logging_config,
         )
 
         return results
@@ -1607,9 +1630,9 @@ class MCMCSampler:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertions after loading data
-        assert (
-            c2_experimental is not None and phi_angles is not None
-        ), "Failed to load experimental data"
+        assert c2_experimental is not None and phi_angles is not None, (
+            "Failed to load experimental data"
+        )
 
         # Use provided config or default
         if mcmc_config is None:
@@ -1630,9 +1653,9 @@ class MCMCSampler:
                 filter_angles_for_optimization = True
 
         # Ensure filter_angles_for_optimization is a boolean
-        assert isinstance(
-            filter_angles_for_optimization, bool
-        ), "filter_angles_for_optimization must be a boolean"
+        assert isinstance(filter_angles_for_optimization, bool), (
+            "filter_angles_for_optimization must be a boolean"
+        )
 
         # Run MCMC sampling with angle filtering
         results = self._run_mcmc_nuts_optimized(
@@ -1649,21 +1672,25 @@ class MCMCSampler:
         if "trace" in results:
             diagnostics = self.compute_convergence_diagnostics(results["trace"])
             results["diagnostics"] = diagnostics
-            
+
             # Log convergence assessment using standardized logging
-            mcmc_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_debug", {})
+            mcmc_logging_config = (
+                self.config.get("output_settings", {})
+                .get("logging", {})
+                .get("mcmc_debug", {})
+            )
             if diagnostics and "error" not in diagnostics:
                 self.log_mcmc_progress(
                     iteration=-1,  # Post-sampling analysis
-                    stage="Convergence-Assessment", 
+                    stage="Convergence-Assessment",
                     diagnostics={
                         "converged": diagnostics.get("converged", False),
                         "r_hat_max": diagnostics.get("max_rhat", 1.0),
                         "ess_min": diagnostics.get("min_ess", 0),
-                        "assessment": diagnostics.get("assessment", "Unknown")
+                        "assessment": diagnostics.get("assessment", "Unknown"),
                     },
                     method_name="MCMC-NUTS",
-                    mcmc_config=mcmc_logging_config
+                    mcmc_config=mcmc_logging_config,
                 )
 
         return results
@@ -1902,9 +1929,13 @@ class MCMCSampler:
                     divergent_fraction, min_ess_ratio
                 ),
             }
-            
+
             # Enhanced logging for chain mixing assessment
-            mcmc_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("mcmc_debug", {})
+            mcmc_logging_config = (
+                self.config.get("output_settings", {})
+                .get("logging", {})
+                .get("mcmc_debug", {})
+            )
             self.log_mcmc_progress(
                 iteration=-1,  # Post-sampling analysis
                 stage="Chain-Mixing",
@@ -1913,12 +1944,12 @@ class MCMCSampler:
                     "divergent_fraction": divergent_fraction,
                     "min_ess_ratio": min_ess_ratio,
                     "n_divergent": int(n_divergent),
-                    "recommendations": mixing_results["recommendations"]
+                    "recommendations": mixing_results["recommendations"],
                 },
                 method_name="MCMC-NUTS",
-                mcmc_config=mcmc_logging_config
+                mcmc_config=mcmc_logging_config,
             )
-            
+
             return mixing_results
 
         except Exception as e:

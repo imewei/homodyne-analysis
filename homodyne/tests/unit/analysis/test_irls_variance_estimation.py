@@ -113,8 +113,12 @@ class TestMADMovingWindowVariance:
         # Both window sizes should produce valid variance estimates
         assert np.all(var_small > 0), "Small window should produce positive variances"
         assert np.all(var_large > 0), "Large window should produce positive variances"
-        assert np.all(np.isfinite(var_small)), "Small window should produce finite variances"
-        assert np.all(np.isfinite(var_large)), "Large window should produce finite variances"
+        assert np.all(np.isfinite(var_small)), (
+            "Small window should produce finite variances"
+        )
+        assert np.all(np.isfinite(var_large)), (
+            "Large window should produce finite variances"
+        )
         assert len(var_small) == len(residuals), "Small window should preserve length"
         assert len(var_large) == len(residuals), "Large window should preserve length"
 
@@ -239,12 +243,12 @@ class TestIRLSVarianceEstimation:
         ] = original_damping
 
         # Both should produce valid results
-        assert np.all(
-            np.isfinite(var_high_damp)
-        ), "High damping should produce valid results"
-        assert np.all(
-            np.isfinite(var_low_damp)
-        ), "Low damping should produce valid results"
+        assert np.all(np.isfinite(var_high_damp)), (
+            "High damping should produce valid results"
+        )
+        assert np.all(np.isfinite(var_low_damp)), (
+            "Low damping should produce valid results"
+        )
 
     def test_irls_edge_handling_reflection(self, mock_core_with_irls_config):
         """Test IRLS with reflection edge handling."""
@@ -441,9 +445,9 @@ class TestIRLSConfigurationHandling:
             residuals = np.random.randn(15) * 0.12
             variances = core._estimate_variance_irls_mad_robust(residuals)
 
-            assert np.all(
-                variances > 0
-            ), "Custom parameters should produce valid results"
+            assert np.all(variances > 0), (
+                "Custom parameters should produce valid results"
+            )
 
 
 class TestIRLSAdaptiveTargetCompatibility:
@@ -556,9 +560,9 @@ class TestIRLSRobustness:
         # Variance at non-outlier positions should be reasonable
         non_outlier_indices = [0, 1, 2, 4, 5, 6]
         non_outlier_vars = variances[non_outlier_indices]
-        assert np.std(non_outlier_vars) < np.std(
-            residuals
-        ), "Should be robust to outliers"
+        assert np.std(non_outlier_vars) < np.std(residuals), (
+            "Should be robust to outliers"
+        )
 
     def test_irls_with_very_small_window(self, robust_test_core):
         """Test IRLS with very small window size."""
@@ -569,9 +573,9 @@ class TestIRLSRobustness:
         )
 
         assert len(variances) == len(residuals), "Should handle small windows"
-        assert np.all(
-            variances > 0
-        ), "Should produce valid variances with small windows"
+        assert np.all(variances > 0), (
+            "Should produce valid variances with small windows"
+        )
 
     def test_irls_with_short_data(self, robust_test_core):
         """Test IRLS with very short data arrays."""

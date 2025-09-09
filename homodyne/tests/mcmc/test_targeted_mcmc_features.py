@@ -192,14 +192,14 @@ class TestMCMCFunctionBehavior:
             assert result["config"] == mcmc_config, "Config should be preserved"
 
             # Verify posterior means structure and content
-            assert isinstance(
-                result["posterior_means"], dict
-            ), "Posterior means must be dict"
+            assert isinstance(result["posterior_means"], dict), (
+                "Posterior means must be dict"
+            )
 
             for param_name in param_names:
-                assert (
-                    param_name in result["posterior_means"]
-                ), f"Must have posterior mean for {param_name}"
+                assert param_name in result["posterior_means"], (
+                    f"Must have posterior mean for {param_name}"
+                )
                 assert (
                     result["posterior_means"][param_name] == expected_means[param_name]
                 ), f"Posterior mean for {param_name} should match expected value"
@@ -359,9 +359,9 @@ class TestChiSquaredRegression:
 
             # All results should be identical
             for i, result in enumerate(results):
-                assert (
-                    abs(result - results[0]) < 1e-15
-                ), f"Non-reproducible results with seed {seed}: run {i} gave {result}, expected {results[0]}"
+                assert abs(result - results[0]) < 1e-15, (
+                    f"Non-reproducible results with seed {seed}: run {i} gave {result}, expected {results[0]}"
+                )
 
         print(
             "✓ Numerical reproducibility test PASSED - calculations are deterministic with fixed seeds"
@@ -464,9 +464,9 @@ class TestIntegrationScenarios:
         # All versions should produce identical results
         base_result = results[versions[0]]
         for version in versions[1:]:
-            assert (
-                abs(results[version] - base_result) < 1e-15
-            ), f"Version consistency failed: {version} gave {results[version]}, expected {base_result}"
+            assert abs(results[version] - base_result) < 1e-15, (
+                f"Version consistency failed: {version} gave {results[version]}, expected {base_result}"
+            )
 
         print("✓ Version consistency test PASSED")
         print(f"  - Tested {len(versions)} versions")

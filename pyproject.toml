@@ -260,18 +260,19 @@ markers = [
     "import_time: marks tests that measure import performance",
     "optimization: marks tests for optimization methods (classical, robust, MCMC)",
     "jit_compilation: marks tests for enhanced JIT compilation optimization",
-    "memory_pooling: marks tests for memory pool pre-allocation optimization",
-    "caching_system: marks tests for two-tier caching system optimization",
-    "adaptive_parallelization: marks tests for adaptive parallelization optimization",
     "batch_processing: marks tests for batch processing optimization",
     "cvxpy_optimization: marks tests for CVXPY solver optimization",
     "configuration_validation: marks tests for configuration validation features",
     
     # Computational method markers
     "irls: marks tests related to IRLS variance estimation and convergence",
+    "hybrid_irls: marks tests specifically for hybrid limited-iteration IRLS approach",
+    "weighted_refit: marks tests for weighted refit functionality", 
+    "mad_estimation: marks tests for MAD (Median Absolute Deviation) estimation",
     "vectorized: marks tests for vectorized/optimized computation methods",
     "numba: marks tests requiring Numba JIT compilation",
     "convergence: marks tests for iterative algorithm convergence behavior",
+    "angle_filtering: marks tests for angle filtering optimization features",
     
     # Platform/dependency markers
     "jax: marks tests requiring JAX dependencies",

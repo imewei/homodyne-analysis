@@ -307,18 +307,18 @@ class TestMemoryOptimizationComparison:
         # Test that optimizers can be configured with caching settings
         performance_settings = consistent_config.get("performance_settings", {})
         assert performance_settings.get("enable_caching") is True
-        
+
         # Verify optimizer initialization with caching enabled
         assert classical_optimizer is not None
 
     def test_memory_optimization_settings(self, mock_analysis_core, consistent_config):
         """Test memory optimization settings."""
         classical_optimizer = ClassicalOptimizer(mock_analysis_core, consistent_config)
-        
+
         # Test that memory optimization is configurable
         performance_settings = consistent_config.get("performance_settings", {})
         assert performance_settings.get("memory_optimization") is True
-        
+
         # Verify optimizer can handle memory optimization configuration
         assert classical_optimizer is not None
 
@@ -421,7 +421,7 @@ class TestPerformanceComparison:
         # Test that memory optimization settings are accessible
         performance_settings = consistent_config.get("performance_settings", {})
         assert performance_settings.get("memory_optimization") is True
-        
+
         # Verify optimizer handles memory settings correctly
         assert classical_optimizer is not None
 

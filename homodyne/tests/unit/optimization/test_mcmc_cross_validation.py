@@ -173,12 +173,12 @@ class TestAPICompatibility:
                     ]
 
                     for attr in common_attributes:
-                        assert hasattr(
-                            cpu_sampler, attr
-                        ), f"CPU implementation missing attribute: {attr}"
-                        assert hasattr(
-                            gpu_sampler, attr
-                        ), f"GPU implementation missing attribute: {attr}"
+                        assert hasattr(cpu_sampler, attr), (
+                            f"CPU implementation missing attribute: {attr}"
+                        )
+                        assert hasattr(gpu_sampler, attr), (
+                            f"GPU implementation missing attribute: {attr}"
+                        )
 
     @pytest.mark.skipif(
         not BOTH_IMPLEMENTATIONS_AVAILABLE,
@@ -278,9 +278,9 @@ class TestOutputFormatConsistency:
                     for key in common_keys:
                         assert key in cpu_mcmc_config, f"CPU missing config key: {key}"
                         assert key in gpu_mcmc_config, f"GPU missing config key: {key}"
-                        assert (
-                            cpu_mcmc_config[key] == gpu_mcmc_config[key]
-                        ), f"Config mismatch for {key}"
+                        assert cpu_mcmc_config[key] == gpu_mcmc_config[key], (
+                            f"Config mismatch for {key}"
+                        )
 
 
 class TestErrorHandlingParity:
@@ -443,12 +443,12 @@ class TestPerformanceComparison:
                     gpu_init_time = time.time() - start_time
 
                     # Both should initialize within reasonable time (< 5 seconds)
-                    assert (
-                        cpu_init_time < 5.0
-                    ), f"CPU initialization too slow: {cpu_init_time:.2f}s"
-                    assert (
-                        gpu_init_time < 5.0
-                    ), f"GPU initialization too slow: {gpu_init_time:.2f}s"
+                    assert cpu_init_time < 5.0, (
+                        f"CPU initialization too slow: {cpu_init_time:.2f}s"
+                    )
+                    assert gpu_init_time < 5.0, (
+                        f"GPU initialization too slow: {gpu_init_time:.2f}s"
+                    )
 
                     # Log performance comparison
                     print(f"CPU initialization: {cpu_init_time:.4f}s")

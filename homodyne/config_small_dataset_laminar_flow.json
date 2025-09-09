@@ -65,8 +65,8 @@
     },
     "scattering": {
       "wavevector_q": 0.01,
-      "_q_note": "Scattering wavevector magnitude: q = 4\u03c0 sin(\u03b8/2)/\u03bb",
-      "q_unit": "\u00c5\u207b\u00b9",
+      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
       "typical_range": [
         0.001,
         0.1
@@ -75,7 +75,7 @@
     "geometry": {
       "stator_rotor_gap": 2000000,
       "_gap_note": "Gap in Angstroms - critical for laminar flow analysis",
-      "gap_unit": "\u00c5",
+      "gap_unit": "Å",
       "gap_in_microns": 200
     },
     "computational": {
@@ -106,12 +106,12 @@
       "phi0"
     ],
     "units": [
-      "\u00c5\u00b2/s",
+      "Å²/s",
       "dimensionless",
-      "\u00c5\u00b2/s",
-      "s\u207b\u00b9",
+      "Å²/s",
+      "s⁻¹",
       "dimensionless",
-      "s\u207b\u00b9",
+      "s⁻¹",
       "degrees"
     ],
     "physical_meaning": {
@@ -133,12 +133,12 @@
       "phi0"
     ],
     "parameter_units": {
-      "D0": "\u00c5\u00b2/s",
+      "D0": "Å²/s",
       "alpha": "dimensionless",
-      "D_offset": "\u00c5\u00b2/s",
-      "gamma_dot_t0": "s\u207b\u00b9",
+      "D_offset": "Å²/s",
+      "gamma_dot_t0": "s⁻¹",
       "beta": "dimensionless",
-      "gamma_dot_t_offset": "s\u207b\u00b9",
+      "gamma_dot_t_offset": "s⁻¹",
       "phi0": "degrees"
     }
   },
@@ -186,7 +186,7 @@
           "_adaptive_note": "Adaptive step sizes for better convergence with small datasets"
         },
         "Gurobi": {
-          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes \u03c7\u00b2 convergence)",
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 2000,
           "_max_iterations_note": "Small dataset optimization: More iterations needed for complex 7-parameter flow case with limited data",
@@ -220,18 +220,10 @@
       "selection_strategy": "best_chi_squared",
       "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
       "_optimization_note": "7-parameter optimization with small datasets is complex - good initial values and enhanced precision critical",
-      "objective_function": {
-        "type": "standard",
-        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
-        "_type_options": {
-          "standard": "Traditional chi-squared minimization (default)",
-          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
-        },
-        "adaptive_target_alpha": 1.0,
-        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
-        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
-        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
-      }
+      "adaptive_target_alpha": 1.0,
+      "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared minimization: (χ² - α·DOF)² (recommended range: 0.8-1.2)",
+      "_adaptive_target_description": "Minimizes (χ² - α·DOF)² where DOF = N_data - N_params for statistically optimal fit",
+      "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values"
     },
     "robust_optimization": {
       "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers) for small datasets",
@@ -377,18 +369,10 @@
           "_regularization_alpha_note": "Small dataset optimization: Enhanced regularization"
         }
       },
-      "objective_function": {
-        "type": "standard",
-        "_type_note": "Objective function type: \"standard\" for min \u03c7\u00b2 or \"adaptive_target\" for min (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2",
-        "_type_options": {
-          "standard": "Traditional chi-squared minimization (default)",
-          "adaptive_target": "Adaptive target chi-squared to prevent overfitting"
-        },
-        "adaptive_target_alpha": 1.0,
-        "_adaptive_target_alpha_note": "Target multiplier \u03b1 for adaptive chi-squared (recommended range: 0.8-1.2)",
-        "_adaptive_target_description": "When type=\"adaptive_target\", minimizes (\u03c7\u00b2 - \u03b1\u00b7DOF)\u00b2 where DOF = N_data - N_params",
-        "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
-      }
+      "adaptive_target_alpha": 1.0,
+      "_adaptive_target_alpha_note": "Target multiplier α for adaptive chi-squared minimization: (χ² - α·DOF)² (recommended range: 0.8-1.2)",
+      "_adaptive_target_description": "Minimizes (χ² - α·DOF)² where DOF = N_data - N_params for statistically optimal fit",
+      "_adaptive_target_benefits": "Prevents overfitting by targeting statistically reasonable chi-squared values in robust optimization"
     },
     "mcmc_sampling": {
       "_comment": "Isolated MCMC Backend Architecture - Small Dataset Laminar Flow Mode (7 parameters: D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0) - Enhanced precision and conservative sampling",
@@ -486,7 +470,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 10000.0,
         "prior_sigma": 1000.0,
-        "unit": "\u00c5\u00b2/s"
+        "unit": "Å²/s"
       },
       {
         "name": "alpha",
@@ -504,7 +488,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 10.0,
-        "unit": "\u00c5\u00b2/s"
+        "unit": "Å²/s"
       },
       {
         "name": "gamma_dot_t0",
@@ -513,7 +497,7 @@
         "type": "TruncatedNormal",
         "prior_mu": 0.001,
         "prior_sigma": 0.01,
-        "unit": "s\u207b\u00b9"
+        "unit": "s⁻¹"
       },
       {
         "name": "beta",
@@ -531,7 +515,7 @@
         "type": "Normal",
         "prior_mu": 0.0,
         "prior_sigma": 0.001,
-        "unit": "s\u207b\u00b9"
+        "unit": "s⁻¹"
       },
       {
         "name": "phi0",
@@ -551,8 +535,8 @@
     "static_submode": null,
     "_submode_note": "Not applicable for laminar flow mode",
     "model_description": {
-      "laminar_flow": "g\u2082 = g\u2081_diff \u00d7 g\u2081_shear with sinc\u00b2 term for full flow dynamics",
-      "flow_physics": "D(t) = D\u2080 \u00d7 t^\u03b1 + D_offset, \u03b3\u0307(t) = \u03b3\u0307\u2080 \u00d7 t^\u03b2 + \u03b3\u0307_offset",
+      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics",
+      "flow_physics": "D(t) = D₀ × t^α + D_offset, γ̇(t) = γ̇₀ × t^β + γ̇_offset",
       "small_dataset_note": "Enhanced precision and conservative sampling for reliable parameter estimation with limited data"
     }
   },
@@ -583,17 +567,17 @@
       },
       "_adaptive_targeting_note": "Adaptive chi-squared targeting is configured separately in optimization_config.classical_optimization.objective_function and optimization_config.robust_optimization.objective_function",
       "variance_method": "hybrid_limited_irls",
-      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Simple MAD + 2-3 IRLS iterations for 50-70% speedup)",
+      "_variance_method_note": "Variance estimation methods: 'irls_mad_robust' (15 iterations), 'hybrid_limited_irls' (Global MAD + Huber weights for 25-40x speedup)",
       "_variance_method_options": {
         "irls_mad_robust": "Full IRLS with MAD robust estimation (legacy method)",
-        "hybrid_limited_irls": "Hybrid: Simple MAD initialization + limited IRLS iterations (FGLS-inspired, DEFAULT for efficiency)"
+        "hybrid_limited_irls": "Improved Hybrid: Global MAD + Huber robust weights + kernel smoothing (25-40x faster)"
       },
       "irls_config": {
         "max_iterations": 18,
         "damping_factor": 0.75,
         "convergence_tolerance": 0.002,
         "initial_sigma_squared": 0.001,
-        "_algorithm_note": "IRLS with MAD: \u03c3\u00b2\u1d62 = (1.4826 \u00d7 MAD)\u00b2, damping: \u03c3\u00b2 = \u03b1\u00b7\u03c3\u00b2_new + (1-\u03b1)\u00b7\u03c3\u00b2_prev - Optimized for small datasets: window=21, iterations=18, damping=0.75",
+        "_algorithm_note": "IRLS with MAD: σ²ᵢ = (1.4826 × MAD)², damping: σ² = α·σ²_new + (1-α)·σ²_prev - Optimized for small datasets: window=21, iterations=18, damping=0.75",
         "optimized_config": {
           "use_vectorized_mad": true,
           "use_quickselect_median": true,

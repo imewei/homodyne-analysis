@@ -318,9 +318,9 @@ class TestMCMCConfigurationReading:
             validation_passed = False
             print(f"Validation failed with error: {e}")
 
-        assert (
-            validation_passed
-        ), "Configuration validation should pass with correct key names"
+        assert validation_passed, (
+            "Configuration validation should pass with correct key names"
+        )
 
     def test_configuration_key_mismatch_detection(self):
         """Test that demonstrates the key mismatch issue that was fixed."""

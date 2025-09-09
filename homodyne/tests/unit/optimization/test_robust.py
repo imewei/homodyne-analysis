@@ -756,12 +756,14 @@ class TestRealCVXPYExecution:
             assert -5.0 <= solution[2] <= 5.0
 
             # Test that solution is reasonable (not too far from true parameters)
-            for i, (true_val, solved_val) in enumerate(zip(true_params, solution, strict=False)):
+            for i, (true_val, solved_val) in enumerate(
+                zip(true_params, solution, strict=False)
+            ):
                 relative_error = abs(solved_val - true_val) / abs(true_val)
                 # Allow large tolerance since this is a simplified test
-                assert (
-                    relative_error < 2.0
-                ), f"Parameter {i}: true={true_val}, solved={solved_val}"
+                assert relative_error < 2.0, (
+                    f"Parameter {i}: true={true_val}, solved={solved_val}"
+                )
 
         except ImportError:
             pytest.skip("CVXPY not available")
@@ -862,9 +864,9 @@ class TestRealCVXPYExecution:
                     pass
 
             # At least one solver should succeed
-            assert (
-                successful_solvers > 0
-            ), f"No solvers succeeded out of {solvers_to_test}"
+            assert successful_solvers > 0, (
+                f"No solvers succeeded out of {solvers_to_test}"
+            )
 
         except ImportError:
             pytest.skip("CVXPY not available")

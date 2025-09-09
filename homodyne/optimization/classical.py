@@ -119,6 +119,7 @@ class ClassicalOptimizer:
         self._bounds_cache: BoundsType | None = None
         self._gurobi_model_cache: dict[str, Any] = {}
         self._jacobian_cache: dict[str, FloatArray] = {}
+        self._chi_squared_cache: dict[str, tuple[float, float, dict]] = {}
 
         # Cache configuration
         self._cache_config = {
@@ -127,6 +128,12 @@ class ClassicalOptimizer:
             "max_model_cache": 64,
             "max_jacobian_cache": 128,
             "jacobian_epsilon": 1e-6,
+            "chi_squared_caching": {
+                "enabled": True,
+                "max_cache_size": 1000,
+                "cache_hit_logging": False,
+                "clear_cache_on_method_change": True,
+            },
         }
 
         # Update with user configuration
@@ -135,18 +142,115 @@ class ClassicalOptimizer:
         )
         self._cache_config.update(cache_settings)
 
-        # Batch processing optimization settings
-        self.batch_optimization = self.config.get("optimization_methods", {}).get(
-            "batch_processing",
-            {
-                "enabled": True,
-                "max_parallel_runs": 4,
-                "multiple_initial_points": True,
-                "initial_point_strategy": "latin_hypercube",  # or "random", "grid"
-                "num_initial_points": 8,
-                "convergence_threshold": 0.01,  # Stop early if multiple runs converge to same result
-            },
+        # Cache statistics tracking
+        self._cache_stats = {
+            "chi_squared_hits": 0,
+            "chi_squared_misses": 0,
+            "chi_squared_total_calls": 0,
+        }
+
+        # Gradient optimization configuration
+        gurobi_config = (
+            config.get("optimization_config", {})
+            .get("classical_optimization", {})
+            .get("method_options", {})
+            .get("Gurobi", {})
         )
+        self._gradient_config = gurobi_config.get("gradient_optimization", {})
+
+        # Set mode-dependent defaults
+        is_static = getattr(self.core, "is_static_mode", lambda: True)()
+        default_base_frequency = 2 if is_static else 3
+
+        # Gradient optimization defaults
+        self._gradient_optimization = {
+            "adaptive_step_sizing": self._gradient_config.get(
+                "adaptive_step_sizing",
+                {
+                    "enabled": True,
+                    "base_epsilon": 1e-8,
+                    "relative_factor": 0.01,
+                    "bounds_proximity_factor": 0.1,
+                },
+            ),
+            "boundary_aware_differences": self._gradient_config.get(
+                "boundary_aware_differences",
+                {
+                    "enabled": True,
+                    "boundary_tolerance": 0.05,
+                    "prefer_central": True,
+                },
+            ),
+            "smart_scheduling": self._gradient_config.get(
+                "smart_scheduling",
+                {
+                    "enabled": True,
+                    "base_frequency": default_base_frequency,
+                    "adaptive_scheduling": True,
+                    "force_recalc_conditions": {
+                        "trust_region_change_threshold": 0.5,
+                        "gradient_norm_threshold": 1e-3,
+                    },
+                },
+            ),
+            "enhanced_caching": self._gradient_config.get(
+                "enhanced_caching",
+                {
+                    "enabled": True,
+                    "similarity_threshold": 1e-4,
+                    "max_cache_size": 256,
+                    "cache_strategy": "lru",
+                },
+            ),
+            "combined_calculations": self._gradient_config.get(
+                "combined_calculations",
+                {
+                    "enabled": True,
+                    "three_point_stencil": True,
+                },
+            ),
+            "monitoring": self._gradient_config.get(
+                "monitoring",
+                {
+                    "enabled": False,
+                    "log_statistics": False,
+                    "track_function_evaluations": True,
+                },
+            ),
+        }
+
+        # Gradient calculation state tracking
+        self._gradient_state = {
+            "last_gradient": None,
+            "last_parameters": None,
+            "last_iteration": -1,
+            "gradient_age": 0,
+            "function_evaluations_saved": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "boundary_adaptations": 0,
+        }
+
+        # Batch processing optimization settings with adaptive configuration
+        default_batch_config = {
+            "enabled": True,
+            "max_parallel_runs": 4,
+            "multiple_initial_points": True,
+            "initial_point_strategy": "latin_hypercube",  # or "random", "grid"
+            "num_initial_points": self._get_adaptive_num_initial_points(),
+            "convergence_threshold": 0.01,  # Stop early if multiple runs converge to same result
+        }
+
+        user_batch_config = self.config.get("optimization_methods", {}).get(
+            "batch_processing", {}
+        )
+        self.batch_optimization = {**default_batch_config, **user_batch_config}
+
+        # If user explicitly set num_initial_points, respect it
+        if "num_initial_points" not in user_batch_config:
+            self.batch_optimization["num_initial_points"] = (
+                self._get_adaptive_num_initial_points()
+            )
 
         # Extract optimization configuration
         self.optimization_config = config.get("optimization_config", {}).get(
@@ -248,9 +352,9 @@ class ClassicalOptimizer:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data to satisfy type checker
-        assert (
-            phi_angles is not None and c2_experimental is not None
-        ), "Failed to load experimental data"
+        assert phi_angles is not None and c2_experimental is not None, (
+            "Failed to load experimental data"
+        )
 
         best_result = None
         best_params = None
@@ -258,25 +362,23 @@ class ClassicalOptimizer:
         best_method = None  # Track which method produced the best result
         all_results = []  # Store all results for analysis
 
-        # Get objective function settings from configuration
-        objective_config = self.optimization_config.get("objective_function", {})
-        objective_type = objective_config.get("type", "standard")
-        adaptive_target_alpha = objective_config.get("adaptive_target_alpha", 1.0)
+        # Get adaptive target alpha from configuration (now the only objective function type)
+        adaptive_target_alpha = self.optimization_config.get(
+            "adaptive_target_alpha", 1.0
+        )
 
         # Validate adaptive_target_alpha range
-        if objective_type == "adaptive_target":
-            if not (0.8 <= adaptive_target_alpha <= 1.2):
-                logger.warning(
-                    f"adaptive_target_alpha {adaptive_target_alpha} outside recommended range [0.8, 1.2], clamping"
-                )
-                adaptive_target_alpha = np.clip(adaptive_target_alpha, 0.8, 1.2)
+        if not (0.8 <= adaptive_target_alpha <= 1.2):
+            logger.warning(
+                f"adaptive_target_alpha {adaptive_target_alpha} outside recommended range [0.8, 1.2], clamping"
+            )
+            adaptive_target_alpha = np.clip(adaptive_target_alpha, 0.8, 1.2)
 
-        # Create objective function using enhanced method
+        # Create adaptive target objective function
         objective = self.create_objective_function(
             phi_angles,
             c2_experimental,
             f"Classical-{analysis_mode.capitalize()}",
-            objective_type=objective_type,
             adaptive_target_alpha=adaptive_target_alpha,
         )
 
@@ -296,7 +398,6 @@ class ClassicalOptimizer:
                     method_options=self.optimization_config.get(
                         "method_options", {}
                     ).get(method, {}),
-                    objective_type=objective_type,
                     adaptive_target_alpha=adaptive_target_alpha,
                 )
 
@@ -357,9 +458,7 @@ class ClassicalOptimizer:
                 if hasattr(result, "fun"):  # Successful result
                     method_results[method] = {
                         "parameters": (
-                            result.x.tolist()
-                            if hasattr(result, "x") and hasattr(result.x, "tolist")
-                            else result.x if hasattr(result, "x") else None
+                            list(result.x) if hasattr(result, "x") else None
                         ),
                         "chi_squared": result.fun,
                         "success": (
@@ -409,7 +508,7 @@ class ClassicalOptimizer:
             # Get detailed chi-squared analysis for the best parameters
             try:
                 # Use the selected chi-squared calculator (optimized or standard)
-                if hasattr(self.core, '_selected_chi_calculator'):
+                if hasattr(self.core, "_selected_chi_calculator"):
                     detailed_chi2_result = self.core._selected_chi_calculator(
                         best_params, phi_angles, c2_experimental, return_components=True
                     )
@@ -657,11 +756,13 @@ class ClassicalOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         method_name: str = "Classical",
-        objective_type: str = "standard",
         adaptive_target_alpha: float = 1.0,
     ):
         """
-        Create objective function for optimization with adaptive chi-squared targeting support.
+        Create adaptive target objective function for optimization.
+
+        Uses the adaptive target approach: minimizes (χ² - α·DOF)² which prevents
+        overfitting and targets statistically reasonable chi-squared values.
 
         Parameters
         ----------
@@ -671,15 +772,13 @@ class ClassicalOptimizer:
             Experimental correlation data
         method_name : str
             Name for logging purposes
-        objective_type : str
-            Type of objective function: "standard" or "adaptive_target"
         adaptive_target_alpha : float
             Target multiplier for adaptive chi-squared (α ∈ [0.8, 1.2])
 
         Returns
         -------
         callable
-            Objective function for optimization
+            Adaptive target objective function for optimization
         """
         # Get angle filtering setting from configuration
         use_angle_filtering = True
@@ -692,88 +791,118 @@ class ClassicalOptimizer:
 
         # Initialize iteration counter for optimization progress tracking
         iteration_counter = [0]  # Use list to allow modification in nested function
-        
-        # Get optimization logging configuration
-        optimization_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("optimization_debug", {})
+
+        # Get optimization logging configuration (reserved for future use)
+        # optimization_logging_config = (
+        #     self.config.get("output_settings", {})
+        #     .get("logging", {})
+        #     .get("optimization_debug", {})
+        # )
 
         def objective(params):
             # Increment iteration counter for progress tracking
             iteration_counter[0] += 1
             current_iteration = iteration_counter[0]
-            
-            if objective_type == "standard":
-                # Option 1: Standard chi-squared minimization (default)
-                # Use reduced chi-squared for optimization
-                # Use the selected chi-squared calculator (optimized or standard)
-                if hasattr(self.core, '_selected_chi_calculator'):
-                    # Note: _selected_chi_calculator may not support iteration parameter
-                    # Fall back to original method for enhanced logging
-                    chi_squared = self.core.calculate_chi_squared_optimized(
-                        params,
-                        phi_angles,
-                        c2_experimental,
-                        method_name,
-                        filter_angles_for_optimization=use_angle_filtering,
-                        iteration=current_iteration,
-                    )
+
+            # Chi-squared caching implementation
+            cache_config = self._cache_config.get("chi_squared_caching", {})
+            use_cache = cache_config.get("enabled", True) and self._cache_config.get(
+                "enable_caching", True
+            )
+
+            if use_cache:
+                # Generate cache key from parameters
+                param_key = f"chi2_{hash(params.tobytes())}"
+
+                # Update cache statistics
+                self._cache_stats["chi_squared_total_calls"] += 1
+
+                # Check cache for existing result
+                if param_key in self._chi_squared_cache:
+                    cached_result, timestamp, stats = self._chi_squared_cache[param_key]
+                    self._cache_stats["chi_squared_hits"] += 1
+
+                    if cache_config.get("cache_hit_logging", False):
+                        logger.debug(
+                            f"Cache hit for iteration {current_iteration}, key: {param_key[:12]}..."
+                        )
+
+                    return cached_result
                 else:
-                    # Use original method with enhanced logging
-                    chi_squared = self.core.calculate_chi_squared_optimized(
-                        params,
-                        phi_angles,
-                        c2_experimental,
-                        method_name,
-                        filter_angles_for_optimization=use_angle_filtering,
-                        iteration=current_iteration,
-                    )
-                return chi_squared
+                    self._cache_stats["chi_squared_misses"] += 1
 
-            elif objective_type == "adaptive_target":
-                # Option 2: Adaptive target chi-squared
-                # IMPORTANT: With IRLS variance estimation, we need total chi-squared
-                # (not reduced) to properly compare against target = α * DOF
-                # Use the selected chi-squared calculator (optimized or standard)
-                if hasattr(self.core, '_selected_chi_calculator'):
-                    # Note: _selected_chi_calculator may not support iteration parameter
-                    # Fall back to original method for enhanced logging
-                    chi_components = self.core.calculate_chi_squared_optimized(
-                        params,
-                        phi_angles,
-                        c2_experimental,
-                        method_name,
-                        filter_angles_for_optimization=use_angle_filtering,
-                        return_components=True,
-                        iteration=current_iteration,
-                    )
-                else:
-                    # Use original method with enhanced logging
-                    chi_components = self.core.calculate_chi_squared_optimized(
-                        params,
-                        phi_angles,
-                        c2_experimental,
-                        method_name,
-                        filter_angles_for_optimization=use_angle_filtering,
-                        return_components=True,
-                        iteration=current_iteration,
-                    )
-
-                if not chi_components.get("valid", False):
-                    return float("inf")
-
-                # Get total chi-squared and DOF from IRLS-weighted calculation
-                # total_chi_squared = Σ((residuals/σ_IRLS)²) [unnormalized]
-                # target_chi_squared = α * DOF (where DOF = N_data - N_params)
-                total_chi_squared = chi_components["total_chi_squared"]
-                total_dof = chi_components["degrees_of_freedom"]
-
-                # Adaptive target: minimize squared deviation from target chi-squared
-                target_chi_squared = adaptive_target_alpha * total_dof  # α ∈ [0.8, 1.2]
-
-                # Squared deviation (quadratic, numerically stable)
-                return (total_chi_squared - target_chi_squared) ** 2
-
+            # Adaptive target chi-squared objective function
+            # IMPORTANT: With IRLS variance estimation, we need total chi-squared
+            # (not reduced) to properly compare against target = α * DOF
+            # Use the selected chi-squared calculator (optimized or standard)
+            if hasattr(self.core, "_selected_chi_calculator"):
+                # Note: _selected_chi_calculator may not support iteration parameter
+                # Fall back to original method for enhanced logging
+                chi_components = self.core.calculate_chi_squared_optimized(
+                    params,
+                    phi_angles,
+                    c2_experimental,
+                    method_name,
+                    filter_angles_for_optimization=use_angle_filtering,
+                    return_components=True,
+                    iteration=current_iteration,
+                )
             else:
-                raise ValueError(f"Unknown objective_type: {objective_type}")
+                # Use original method with enhanced logging
+                chi_components = self.core.calculate_chi_squared_optimized(
+                    params,
+                    phi_angles,
+                    c2_experimental,
+                    method_name,
+                    filter_angles_for_optimization=use_angle_filtering,
+                    return_components=True,
+                    iteration=current_iteration,
+                )
+
+            if not chi_components.get("valid", False):
+                return float("inf")
+
+            # Get total chi-squared and DOF from IRLS-weighted calculation
+            # total_chi_squared = Σ((residuals/σ_IRLS)²) [unnormalized]
+            # target_chi_squared = α * DOF (where DOF = N_data - N_params)
+            total_chi_squared = chi_components["total_chi_squared"]
+            total_dof = chi_components["degrees_of_freedom"]
+
+            # Adaptive target: minimize squared deviation from target chi-squared
+            target_chi_squared = adaptive_target_alpha * total_dof  # α ∈ [0.8, 1.2]
+
+            # Squared deviation (quadratic, numerically stable)
+            objective_value = (total_chi_squared - target_chi_squared) ** 2
+
+            # Store result in cache with LRU eviction
+            if use_cache and objective_value != float("inf"):
+                import time
+
+                timestamp = time.time()
+
+                # Implement LRU eviction if cache is full
+                max_cache_size = cache_config.get("max_cache_size", 1000)
+                if len(self._chi_squared_cache) >= max_cache_size:
+                    # Remove oldest entry (simple FIFO for now)
+                    oldest_key = min(
+                        self._chi_squared_cache.keys(),
+                        key=lambda k: self._chi_squared_cache[k][1],
+                    )
+                    del self._chi_squared_cache[oldest_key]
+
+                # Store in cache
+                cache_stats = {
+                    "iteration": current_iteration,
+                    "total_chi_squared": total_chi_squared,
+                    "total_dof": total_dof,
+                }
+                self._chi_squared_cache[param_key] = (
+                    objective_value,
+                    timestamp,
+                    cache_stats,
+                )
+
+            return objective_value
 
         return objective
 
@@ -784,7 +913,6 @@ class ClassicalOptimizer:
         initial_parameters: np.ndarray,
         bounds: list[tuple[float, float]] | None = None,
         method_options: dict[str, Any] | None = None,
-        objective_type: str = "standard",
         adaptive_target_alpha: float = 1.0,
     ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
@@ -820,7 +948,6 @@ class ClassicalOptimizer:
                     initial_parameters,
                     bounds,
                     method_options,
-                    objective_type=objective_type,
                     adaptive_target_alpha=adaptive_target_alpha,
                 )
             else:
@@ -955,14 +1082,23 @@ class ClassicalOptimizer:
                 f"Starting Gurobi iterative optimization with initial χ² = {f_current:.6e}"
             )
 
-            # Iterative trust region optimization
+            # Iterative trust region optimization with gradient tracking
+            previous_trust_radius = trust_radius
+
             for iteration in range(max_iter):
                 # Choose appropriate epsilon based on parameter magnitudes and trust region
                 base_epsilon = max(1e-8, trust_radius / 100)
 
-                # Estimate gradient using cached finite differences
+                # Estimate gradient using optimized cached finite differences
                 grad, grad_func_evals = self._compute_cached_gradient(
-                    x_current, objective_func, base_epsilon
+                    x_current,
+                    objective_func,
+                    base_epsilon,
+                    bounds,
+                    iteration,
+                    grad_norm if iteration > 0 else None,
+                    trust_radius,
+                    previous_trust_radius,
                 )
                 function_evaluations += grad_func_evals
 
@@ -974,20 +1110,21 @@ class ClassicalOptimizer:
                     )
                     break
 
-                # Estimate diagonal Hessian approximation (BFGS-like)
-                hessian_diag = np.ones(n_params)
-                for i in range(n_params):
-                    epsilon = base_epsilon * max(1.0, abs(x_current[i]))
-                    x_plus = x_current.copy()
-                    x_plus[i] += epsilon
-                    x_minus = x_current.copy()
-                    x_minus[i] -= epsilon
-
-                    f_plus = objective_func(x_plus)
-                    f_minus = objective_func(x_minus)
-                    second_deriv = (f_plus - 2 * f_current + f_minus) / (epsilon**2)
-                    hessian_diag[i] = max(1e-6, second_deriv)  # Ensure positive
-                    function_evaluations += 2
+                # Check if Hessian was already computed in combined calculation
+                if (
+                    self._gradient_optimization["combined_calculations"]["enabled"]
+                    and "cached_hessian" in self._gradient_state
+                    and grad_func_evals > 0
+                ):  # Only if gradient was actually computed
+                    # Reuse cached Hessian diagonal
+                    hessian_diag = self._gradient_state["cached_hessian"]
+                    hessian_func_evals = 0  # No additional function evaluations
+                else:
+                    # Fallback: compute Hessian separately (legacy method)
+                    hessian_diag, hessian_func_evals = self._compute_hessian_diagonal(
+                        x_current, objective_func, base_epsilon, bounds, f_current
+                    )
+                    function_evaluations += hessian_func_evals
 
                 try:
                     # Create Gurobi model for trust region subproblem
@@ -1074,12 +1211,14 @@ class ClassicalOptimizer:
 
                                     # Expand trust region if step is successful and near boundary
                                     if step_norm > 0.8 * trust_radius:
+                                        previous_trust_radius = trust_radius
                                         trust_radius = min(
                                             gurobi_options["trust_region_max"],
                                             2 * trust_radius,
                                         )
                                 else:
                                     # Reject step and shrink trust region
+                                    previous_trust_radius = trust_radius
                                     trust_radius = max(
                                         gurobi_options["trust_region_min"],
                                         0.5 * trust_radius,
@@ -1105,6 +1244,7 @@ class ClassicalOptimizer:
                                     break
                             else:
                                 # QP solve failed, shrink trust region and try again
+                                previous_trust_radius = trust_radius
                                 trust_radius = max(
                                     gurobi_options["trust_region_min"],
                                     0.25 * trust_radius,
@@ -1136,6 +1276,31 @@ class ClassicalOptimizer:
                 logger.debug(
                     f"Gurobi optimization completed: χ² = {f_current:.6e} after {iteration} iterations"
                 )
+
+                # Log gradient optimization performance statistics
+                self._log_gradient_statistics()
+
+                # Add gradient optimization info to result
+                if self._gradient_optimization["monitoring"][
+                    "track_function_evaluations"
+                ]:
+                    result.gradient_stats = {
+                        "function_evaluations_saved": self._gradient_state[
+                            "function_evaluations_saved"
+                        ],
+                        "cache_hit_rate": (
+                            self._gradient_state["cache_hits"]
+                            / max(
+                                1,
+                                self._gradient_state["cache_hits"]
+                                + self._gradient_state["cache_misses"],
+                            )
+                        ),
+                        "boundary_adaptations": self._gradient_state[
+                            "boundary_adaptations"
+                        ],
+                    }
+
                 return True, result
             else:
                 result = optimize.OptimizeResult(
@@ -1163,7 +1328,6 @@ class ClassicalOptimizer:
             list[tuple[float, float]] | None
         ) = None,  # Used by robust optimizer internally
         method_options: dict[str, Any] | None = None,
-        objective_type: str = "standard",
         adaptive_target_alpha: float = 1.0,
     ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
@@ -1232,7 +1396,6 @@ class ClassicalOptimizer:
 
             # Combine method options with adaptive targeting parameters
             robust_kwargs = {
-                "objective_type": objective_type,
                 "adaptive_target_alpha": adaptive_target_alpha,
                 **(method_options or {}),
             }
@@ -1511,6 +1674,23 @@ class ClassicalOptimizer:
                 "average_evaluation_time": (
                     total_time / (getattr(best_result, "nfev", None) or 1)
                 ),
+            },
+            "cache_performance": {
+                "chi_squared_cache_hits": self._cache_stats.get("chi_squared_hits", 0),
+                "chi_squared_cache_misses": self._cache_stats.get(
+                    "chi_squared_misses", 0
+                ),
+                "chi_squared_total_calls": self._cache_stats.get(
+                    "chi_squared_total_calls", 0
+                ),
+                "chi_squared_hit_rate": (
+                    (
+                        self._cache_stats.get("chi_squared_hits", 0)
+                        / max(1, self._cache_stats.get("chi_squared_total_calls", 1))
+                    )
+                    * 100
+                ),
+                "cache_size": len(self._chi_squared_cache),
             },
             "parameter_validation": {},
         }
@@ -1890,12 +2070,172 @@ class ClassicalOptimizer:
             "methods_tried": [name for name, _ in methods_to_try],
         }
 
+    def _compute_adaptive_step_size(
+        self, x_current: np.ndarray, bounds: BoundsType | None, base_epsilon: float
+    ) -> np.ndarray:
+        """
+        Compute adaptive step sizes for finite difference gradient calculation.
+
+        Parameters
+        ----------
+        x_current : np.ndarray
+            Current parameter values
+        bounds : BoundsType, optional
+            Parameter bounds for boundary-aware sizing
+        base_epsilon : float
+            Base epsilon value
+
+        Returns
+        -------
+        np.ndarray
+            Adaptive step sizes for each parameter
+        """
+        config = self._gradient_optimization["adaptive_step_sizing"]
+        if not config["enabled"]:
+            return np.full_like(x_current, base_epsilon)
+
+        n_params = len(x_current)
+        step_sizes = np.zeros(n_params)
+
+        base_eps = config["base_epsilon"]
+        relative_factor = config["relative_factor"]
+        bounds_factor = config["bounds_proximity_factor"]
+
+        for i in range(n_params):
+            # Base step size from parameter magnitude
+            magnitude_step = relative_factor * max(1.0, abs(x_current[i]))
+
+            # Apply bounds-aware reduction if near boundaries
+            if bounds is not None and i < len(bounds):
+                lb, ub = bounds[i]
+                if np.isfinite(lb) and np.isfinite(ub):
+                    param_range = ub - lb
+                    dist_to_lower = x_current[i] - lb
+                    dist_to_upper = ub - x_current[i]
+                    min_dist = min(dist_to_lower, dist_to_upper)
+
+                    # Reduce step size when close to bounds
+                    if min_dist < bounds_factor * param_range:
+                        proximity_reduction = min_dist / (bounds_factor * param_range)
+                        magnitude_step *= proximity_reduction
+                        self._gradient_state["boundary_adaptations"] += 1
+
+            # Final step size is maximum of base epsilon and magnitude-based step
+            step_sizes[i] = max(base_eps, magnitude_step)
+
+        return step_sizes
+
+    def _should_recalculate_gradient(
+        self,
+        x_current: np.ndarray,
+        iteration: int,
+        gradient_norm: float | None = None,
+        trust_radius: float | None = None,
+        previous_trust_radius: float | None = None,
+    ) -> bool:
+        """
+        Determine if gradient should be recalculated based on smart scheduling.
+
+        Parameters
+        ----------
+        x_current : np.ndarray
+            Current parameter values
+        iteration : int
+            Current iteration number
+        gradient_norm : float, optional
+            Current gradient norm
+        trust_radius : float, optional
+            Current trust region radius
+        previous_trust_radius : float, optional
+            Previous trust region radius
+
+        Returns
+        -------
+        bool
+            True if gradient should be recalculated
+        """
+        config = self._gradient_optimization["smart_scheduling"]
+        if not config["enabled"]:
+            return True  # Always recalculate if scheduling disabled
+
+        # Always calculate on first iteration
+        if iteration == 0 or self._gradient_state["last_gradient"] is None:
+            return True
+
+        # Check if enough iterations have passed
+        iterations_since_last = iteration - self._gradient_state["last_iteration"]
+        base_frequency = config["base_frequency"]
+
+        if iterations_since_last < base_frequency:
+            # Check force recalculation conditions
+            force_conditions = config.get("force_recalc_conditions", {})
+
+            # Force if trust region changed significantly
+            if trust_radius is not None and previous_trust_radius is not None:
+                trust_change = abs(trust_radius - previous_trust_radius) / max(
+                    previous_trust_radius, 1e-10
+                )
+                trust_threshold = force_conditions.get(
+                    "trust_region_change_threshold", 0.5
+                )
+                if trust_change > trust_threshold:
+                    return True
+
+            # Force if gradient norm is above threshold (indicating far from optimum)
+            if gradient_norm is not None:
+                grad_threshold = force_conditions.get("gradient_norm_threshold", 1e-3)
+                if gradient_norm > grad_threshold:
+                    return True
+
+            return False
+
+        return True
+
+    def _check_parameter_similarity(
+        self, x_current: np.ndarray, cached_params: np.ndarray
+    ) -> bool:
+        """
+        Check if current parameters are similar enough to reuse cached gradient.
+
+        Parameters
+        ----------
+        x_current : np.ndarray
+            Current parameter values
+        cached_params : np.ndarray
+            Cached parameter values
+
+        Returns
+        -------
+        bool
+            True if parameters are similar enough for gradient reuse
+        """
+        config = self._gradient_optimization["enhanced_caching"]
+        if not config["enabled"]:
+            return False
+
+        similarity_threshold = config["similarity_threshold"]
+
+        # Compute relative difference
+        rel_diff = np.abs(x_current - cached_params) / np.maximum(
+            np.abs(cached_params), 1e-10
+        )
+        max_rel_diff = np.max(rel_diff)
+
+        return max_rel_diff < similarity_threshold
 
     def _compute_cached_gradient(
-        self, x_current: np.ndarray, objective_func: callable, base_epsilon: float
+        self,
+        x_current: np.ndarray,
+        objective_func: callable,
+        base_epsilon: float,
+        bounds: BoundsType | None = None,
+        iteration: int = 0,
+        gradient_norm: float | None = None,
+        trust_radius: float | None = None,
+        previous_trust_radius: float | None = None,
     ) -> tuple[np.ndarray, int]:
         """
-        Compute gradient with caching for performance optimization.
+        Compute gradient with enhanced caching and smart scheduling.
 
         Parameters
         ----------
@@ -1905,45 +2245,75 @@ class ClassicalOptimizer:
             Objective function to differentiate
         base_epsilon : float
             Base finite difference step size
+        bounds : BoundsType, optional
+            Parameter bounds for boundary-aware differences
+        iteration : int, optional
+            Current iteration for smart scheduling
+        gradient_norm : float, optional
+            Previous gradient norm for adaptive scheduling
+        trust_radius : float, optional
+            Current trust region radius
+        previous_trust_radius : float, optional
+            Previous trust region radius
 
         Returns
         -------
         Tuple[np.ndarray, int]
             (gradient_vector, function_evaluations_count)
         """
-        if not self._cache_config.get("enable_caching", True):
-            return self._compute_gradient_direct(
-                x_current, objective_func, base_epsilon
+        # Check if gradient recalculation is needed
+        if not self._should_recalculate_gradient(
+            x_current, iteration, gradient_norm, trust_radius, previous_trust_radius
+        ):
+            # Reuse last gradient
+            self._gradient_state["gradient_age"] += 1
+            self._gradient_state["function_evaluations_saved"] += 2 * len(x_current)
+            return self._gradient_state["last_gradient"], 0
+
+        # Check enhanced caching with parameter similarity
+        if self._gradient_state[
+            "last_parameters"
+        ] is not None and self._check_parameter_similarity(
+            x_current, self._gradient_state["last_parameters"]
+        ):
+            self._gradient_state["cache_hits"] += 1
+            self._gradient_state["function_evaluations_saved"] += 2 * len(x_current)
+            return self._gradient_state["last_gradient"], 0
+
+        # Need to compute new gradient
+        self._gradient_state["cache_misses"] += 1
+
+        # Check if we should use combined gradient/Hessian calculation
+        if self._gradient_optimization["combined_calculations"]["enabled"]:
+            gradient, hessian_diag, func_evals = (
+                self._compute_combined_gradient_hessian(
+                    x_current, objective_func, base_epsilon, bounds
+                )
+            )
+            # Store Hessian for later use (avoiding recomputation in main loop)
+            self._gradient_state["cached_hessian"] = hessian_diag
+        else:
+            gradient, func_evals = self._compute_gradient_direct(
+                x_current, objective_func, base_epsilon, bounds
             )
 
-        # Create cache key from parameters and epsilon
-        x_key = f"{hash(x_current.tobytes())}_{base_epsilon:.2e}"
+        # Update state
+        self._gradient_state["last_gradient"] = gradient.copy()
+        self._gradient_state["last_parameters"] = x_current.copy()
+        self._gradient_state["last_iteration"] = iteration
+        self._gradient_state["gradient_age"] = 0
 
-        if x_key in self._gradient_cache:
-            return (
-                self._gradient_cache[x_key],
-                0,
-            )  # No function evaluations for cached result
-
-        # Compute gradient if not cached
-        gradient, func_evals = self._compute_gradient_direct(
-            x_current, objective_func, base_epsilon
-        )
-
-        # Cache management: limit cache size
-        if len(self._gradient_cache) >= self._cache_config["max_gradient_cache"]:
-            # Remove oldest entry (FIFO)
-            oldest_key = next(iter(self._gradient_cache))
-            del self._gradient_cache[oldest_key]
-
-        self._gradient_cache[x_key] = gradient
         return gradient, func_evals
 
-    def _compute_gradient_direct(
-        self, x_current: np.ndarray, objective_func: callable, base_epsilon: float
-    ) -> tuple[np.ndarray, int]:
+    def _compute_combined_gradient_hessian(
+        self,
+        x_current: np.ndarray,
+        objective_func: callable,
+        base_epsilon: float,
+        bounds: BoundsType | None = None,
+    ) -> tuple[np.ndarray, np.ndarray, int]:
         """
-        Compute gradient using finite differences.
+        Compute gradient and diagonal Hessian together using optimized 3-point stencil.
 
         Parameters
         ----------
@@ -1953,6 +2323,202 @@ class ClassicalOptimizer:
             Objective function to differentiate
         base_epsilon : float
             Base finite difference step size
+        bounds : BoundsType, optional
+            Parameter bounds for boundary-aware differences
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, int]
+            (gradient_vector, hessian_diagonal, function_evaluations_count)
+        """
+        n_params = len(x_current)
+        grad = np.zeros(n_params)
+        hessian_diag = np.zeros(n_params)
+
+        # Get adaptive step sizes
+        step_sizes = self._compute_adaptive_step_size(x_current, bounds, base_epsilon)
+
+        # OPTIMIZATION: Evaluate f(x) once and reuse
+        f_current = objective_func(x_current)
+        function_evaluations = 1
+
+        # OPTIMIZATION: Batch all function evaluations needed for all parameters
+        evaluation_batch = []
+        eval_mapping = []  # Maps batch index to (param_idx, eval_type, epsilon)
+
+        # Prepare all function evaluations
+        for i in range(n_params):
+            epsilon = step_sizes[i]
+
+            # Determine difference scheme based on boundary proximity
+            use_forward, use_backward = self._determine_difference_scheme(
+                x_current[i], bounds[i] if bounds and i < len(bounds) else None, epsilon
+            )
+
+            if use_forward:
+                # Forward difference: need f(x+h) and f(x+2h)
+                x_plus1 = x_current.copy()
+                x_plus1[i] += epsilon
+                x_plus2 = x_current.copy()
+                x_plus2[i] += 2 * epsilon
+
+                evaluation_batch.extend([x_plus1, x_plus2])
+                eval_mapping.extend(
+                    [(i, "forward_h", epsilon), (i, "forward_2h", epsilon)]
+                )
+
+            elif use_backward:
+                # Backward difference: need f(x-h) and f(x-2h)
+                x_minus1 = x_current.copy()
+                x_minus1[i] -= epsilon
+                x_minus2 = x_current.copy()
+                x_minus2[i] -= 2 * epsilon
+
+                evaluation_batch.extend([x_minus1, x_minus2])
+                eval_mapping.extend(
+                    [(i, "backward_h", epsilon), (i, "backward_2h", epsilon)]
+                )
+
+            else:
+                # Central difference: need f(x+h) and f(x-h)
+                x_plus = x_current.copy()
+                x_plus[i] += epsilon
+                x_minus = x_current.copy()
+                x_minus[i] -= epsilon
+
+                evaluation_batch.extend([x_plus, x_minus])
+                eval_mapping.extend(
+                    [(i, "central_plus", epsilon), (i, "central_minus", epsilon)]
+                )
+
+        # OPTIMIZATION: Use smart scheduling for batch evaluation
+        if self._gradient_optimization.get("smart_scheduling", {}).get(
+            "enabled", False
+        ):
+            evaluation_results = self._evaluate_batch_smart(
+                objective_func, evaluation_batch
+            )
+        else:
+            evaluation_results = [objective_func(x) for x in evaluation_batch]
+
+        function_evaluations += len(evaluation_results)
+
+        # Process results to compute gradient and Hessian
+        eval_data = {}  # Store evaluation results by (param_idx, eval_type)
+        result_idx = 0
+
+        for param_idx, eval_type, _epsilon in eval_mapping:
+            eval_data[(param_idx, eval_type)] = evaluation_results[result_idx]
+            result_idx += 1
+
+        # Compute gradient and Hessian for each parameter
+        for i in range(n_params):
+            epsilon = step_sizes[i]
+
+            # Check which difference scheme was used
+            if (i, "forward_h") in eval_data:
+                # Forward difference scheme
+                f_plus1 = eval_data[(i, "forward_h")]
+                f_plus2 = eval_data[(i, "forward_2h")]
+
+                # Forward difference approximations
+                grad[i] = (-3 * f_current + 4 * f_plus1 - f_plus2) / (2 * epsilon)
+                hessian_diag[i] = (f_current - 2 * f_plus1 + f_plus2) / (epsilon**2)
+
+            elif (i, "backward_h") in eval_data:
+                # Backward difference scheme
+                f_minus1 = eval_data[(i, "backward_h")]
+                f_minus2 = eval_data[(i, "backward_2h")]
+
+                # Backward difference approximations
+                grad[i] = (3 * f_current - 4 * f_minus1 + f_minus2) / (2 * epsilon)
+                hessian_diag[i] = (f_current - 2 * f_minus1 + f_minus2) / (epsilon**2)
+
+            else:
+                # Central difference scheme (most accurate)
+                f_plus = eval_data[(i, "central_plus")]
+                f_minus = eval_data[(i, "central_minus")]
+
+                # Central difference approximations
+                grad[i] = (f_plus - f_minus) / (2 * epsilon)
+                hessian_diag[i] = (f_plus - 2 * f_current + f_minus) / (epsilon**2)
+
+            # Ensure Hessian diagonal is positive definite
+            hessian_diag[i] = max(1e-6, hessian_diag[i])
+
+        return grad, hessian_diag, function_evaluations
+
+    def _determine_difference_scheme(
+        self, param_value: float, bounds: tuple[float, float] | None, epsilon: float
+    ) -> tuple[bool, bool]:
+        """
+        Determine whether to use forward, backward, or central differences.
+
+        Parameters
+        ----------
+        param_value : float
+            Current parameter value
+        bounds : tuple[float, float], optional
+            Parameter bounds (min, max)
+        epsilon : float
+            Step size
+
+        Returns
+        -------
+        Tuple[bool, bool]
+            (use_forward, use_backward)
+        """
+        config = self._gradient_optimization["boundary_aware_differences"]
+        if not config["enabled"] or bounds is None:
+            return False, False  # Use central differences
+
+        lb, ub = bounds
+        if not (np.isfinite(lb) and np.isfinite(ub)):
+            return False, False  # Use central differences for unbounded parameters
+
+        tolerance = config["boundary_tolerance"]
+        param_range = ub - lb
+
+        # Distance to boundaries
+        dist_to_lower = param_value - lb
+        dist_to_upper = ub - param_value
+
+        # Check if too close to bounds for central differences
+        boundary_threshold = tolerance * param_range
+
+        # Use forward differences if too close to lower bound
+        if dist_to_lower < boundary_threshold:
+            if param_value + 2 * epsilon <= ub:  # Ensure we can take forward steps
+                return True, False
+
+        # Use backward differences if too close to upper bound
+        if dist_to_upper < boundary_threshold:
+            if param_value - 2 * epsilon >= lb:  # Ensure we can take backward steps
+                return False, True
+
+        # Use central differences (default)
+        return False, False
+
+    def _compute_gradient_direct(
+        self,
+        x_current: np.ndarray,
+        objective_func: callable,
+        base_epsilon: float,
+        bounds: BoundsType | None = None,
+    ) -> tuple[np.ndarray, int]:
+        """
+        Compute gradient using boundary-aware finite differences with optimizations.
+
+        Parameters
+        ----------
+        x_current : np.ndarray
+            Current parameter values
+        objective_func : callable
+            Objective function to differentiate
+        base_epsilon : float
+            Base finite difference step size
+        bounds : BoundsType, optional
+            Parameter bounds for boundary-aware differences
 
         Returns
         -------
@@ -1963,8 +2529,133 @@ class ClassicalOptimizer:
         grad = np.zeros(n_params)
         function_evaluations = 0
 
+        # Get adaptive step sizes
+        step_sizes = self._compute_adaptive_step_size(x_current, bounds, base_epsilon)
+
+        # OPTIMIZATION: Compute f_current once and reuse
+        f_current = objective_func(x_current)
+        function_evaluations += 1
+
+        # OPTIMIZATION: Batch function evaluations for improved efficiency
+        evaluation_batch = []
+        eval_mapping = []  # Maps batch index to (param_idx, eval_type)
+
+        # Prepare all function evaluations needed
         for i in range(n_params):
-            epsilon = base_epsilon * max(1.0, abs(x_current[i]))
+            epsilon = step_sizes[i]
+
+            # Determine difference scheme based on boundary proximity
+            use_forward, use_backward = self._determine_difference_scheme(
+                x_current[i], bounds[i] if bounds and i < len(bounds) else None, epsilon
+            )
+
+            if use_forward:
+                # Forward difference: (f(x+h) - f(x)) / h
+                x_plus = x_current.copy()
+                x_plus[i] += epsilon
+                evaluation_batch.append(x_plus)
+                eval_mapping.append((i, "forward", epsilon))
+
+            elif use_backward:
+                # Backward difference: (f(x) - f(x-h)) / h
+                x_minus = x_current.copy()
+                x_minus[i] -= epsilon
+                evaluation_batch.append(x_minus)
+                eval_mapping.append((i, "backward", epsilon))
+
+            else:
+                # Central difference: (f(x+h) - f(x-h)) / (2h)
+                x_plus = x_current.copy()
+                x_plus[i] += epsilon
+                x_minus = x_current.copy()
+                x_minus[i] -= epsilon
+                evaluation_batch.extend([x_plus, x_minus])
+                eval_mapping.extend(
+                    [(i, "central_plus", epsilon), (i, "central_minus", epsilon)]
+                )
+
+        # OPTIMIZATION: Check if smart scheduling is enabled
+        if self._gradient_optimization.get("smart_scheduling", {}).get(
+            "enabled", False
+        ):
+            # Use parallel evaluation or smart batching
+            evaluation_results = self._evaluate_batch_smart(
+                objective_func, evaluation_batch
+            )
+        else:
+            # Sequential evaluation
+            evaluation_results = [objective_func(x) for x in evaluation_batch]
+
+        function_evaluations += len(evaluation_results)
+
+        # Process results to compute gradient
+        central_values = {}  # For central differences that need both +/- values
+        result_idx = 0
+
+        for param_idx, eval_type, epsilon in eval_mapping:
+            f_eval = evaluation_results[result_idx]
+            result_idx += 1
+
+            if eval_type == "forward":
+                grad[param_idx] = (f_eval - f_current) / epsilon
+            elif eval_type == "backward":
+                grad[param_idx] = (f_current - f_eval) / epsilon
+            elif eval_type == "central_plus":
+                central_values[(param_idx, "plus")] = f_eval
+            elif eval_type == "central_minus":
+                central_values[(param_idx, "minus")] = f_eval
+                # Compute central difference when we have both values
+                f_plus = central_values[(param_idx, "plus")]
+                f_minus = f_eval
+                grad[param_idx] = (f_plus - f_minus) / (2 * epsilon)
+
+        return grad, function_evaluations
+
+    def _compute_hessian_diagonal(
+        self,
+        x_current: np.ndarray,
+        objective_func: callable,
+        base_epsilon: float,
+        bounds: BoundsType | None = None,
+        f_current: float | None = None,
+    ) -> tuple[np.ndarray, int]:
+        """
+        Compute diagonal Hessian approximation (fallback when not using combined calculation).
+
+        Parameters
+        ----------
+        x_current : np.ndarray
+            Current parameter values
+        objective_func : callable
+            Objective function
+        base_epsilon : float
+            Base finite difference step size
+        bounds : BoundsType, optional
+            Parameter bounds
+        f_current : float, optional
+            Pre-computed f(x) value to avoid recomputation
+
+        Returns
+        -------
+        Tuple[np.ndarray, int]
+            (hessian_diagonal, function_evaluations_count)
+        """
+        n_params = len(x_current)
+        hessian_diag = np.zeros(n_params)
+        function_evaluations = 0
+
+        # Get adaptive step sizes
+        step_sizes = self._compute_adaptive_step_size(x_current, bounds, base_epsilon)
+
+        # Compute f(x) if not provided
+        if f_current is None:
+            f_current = objective_func(x_current)
+            function_evaluations += 1
+
+        for i in range(n_params):
+            epsilon = step_sizes[i]
+
+            # Use central difference for second derivative: f(x+h) - 2f(x) + f(x-h)
             x_plus = x_current.copy()
             x_plus[i] += epsilon
             x_minus = x_current.copy()
@@ -1972,10 +2663,30 @@ class ClassicalOptimizer:
 
             f_plus = objective_func(x_plus)
             f_minus = objective_func(x_minus)
-            grad[i] = (f_plus - f_minus) / (2 * epsilon)
+            second_deriv = (f_plus - 2 * f_current + f_minus) / (epsilon**2)
+            hessian_diag[i] = max(1e-6, second_deriv)  # Ensure positive
             function_evaluations += 2
 
-        return grad, function_evaluations
+        return hessian_diag, function_evaluations
+
+    def _log_gradient_statistics(self) -> None:
+        """Log gradient calculation performance statistics."""
+        if not self._gradient_optimization["monitoring"]["log_statistics"]:
+            return
+
+        stats = self._gradient_state
+        total_requests = stats["cache_hits"] + stats["cache_misses"]
+
+        if total_requests > 0:
+            hit_rate = stats["cache_hits"] / total_requests * 100
+            logger.info("Gradient optimization statistics:")
+            logger.info(
+                f"  Cache hit rate: {hit_rate:.1f}% ({stats['cache_hits']}/{total_requests})"
+            )
+            logger.info(
+                f"  Function evaluations saved: {stats['function_evaluations_saved']}"
+            )
+            logger.info(f"  Boundary adaptations: {stats['boundary_adaptations']}")
 
     def clear_caches(self) -> None:
         """
@@ -1988,12 +2699,35 @@ class ClassicalOptimizer:
         self._bounds_cache = None
         self._gurobi_model_cache.clear()
         self._jacobian_cache.clear()
+        self._chi_squared_cache.clear()
+
+        # Reset cache statistics
+        self._cache_stats = {
+            "chi_squared_hits": 0,
+            "chi_squared_misses": 0,
+            "chi_squared_total_calls": 0,
+        }
+
+        # Clear gradient optimization state
+        self._gradient_state = {
+            "last_gradient": None,
+            "last_parameters": None,
+            "last_iteration": -1,
+            "gradient_age": 0,
+            "function_evaluations_saved": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "boundary_adaptations": 0,
+            "cached_hessian": None,
+        }
 
         # Also clear existing result cache
         if hasattr(self, "_result_cache"):
             self._result_cache.clear()
 
-        logger.debug("Cleared classical optimization performance caches")
+        logger.debug(
+            "Cleared classical optimization performance caches and gradient state"
+        )
 
     # Helper methods for warm-start implementations
     def _apply_gurobi_warm_start(self, problem_signature: str, *args, **kwargs) -> dict:
@@ -2047,3 +2781,173 @@ class ClassicalOptimizer:
             return result
         except Exception as e:
             return {"success": False, "message": str(e)}
+
+    def _get_adaptive_num_initial_points(self) -> int:
+        """
+        Determine the number of initial points based on dataset size.
+
+        Returns
+        -------
+        int
+            Number of initial points to use for optimization:
+            - Small datasets (<10k points): 8 initial points
+            - Medium datasets (10k-100k points): 5 initial points
+            - Large datasets (>100k points): 3 initial points
+        """
+        try:
+            dataset_size = self._detect_dataset_size()
+
+            if dataset_size < 10_000:
+                return 8  # Small datasets - use full exploration
+            elif dataset_size < 100_000:
+                return 5  # Medium datasets - balanced approach
+            else:
+                return 3  # Large datasets - minimal initial points for speed
+
+        except Exception as e:
+            # Default to medium configuration if detection fails
+            logger.warning(
+                f"Failed to detect dataset size for adaptive configuration: {e}"
+            )
+            return 5
+
+    def _detect_dataset_size(self) -> int:
+        """
+        Detect the size of the current dataset for adaptive configuration.
+
+        Returns
+        -------
+        int
+            Number of data points in the experimental dataset
+        """
+        try:
+            # Check if we have access to the core analysis object
+            if hasattr(self, "core") and self.core is not None:
+                # Look for experimental data in core object
+                if (
+                    hasattr(self.core, "c2_experimental")
+                    and self.core.c2_experimental is not None
+                ):
+                    # Count total data points across all angles
+                    if hasattr(self.core.c2_experimental, "shape"):
+                        # For 2D array: (n_angles, n_points)
+                        if len(self.core.c2_experimental.shape) == 2:
+                            return int(np.prod(self.core.c2_experimental.shape))
+                        # For 1D array: just n_points
+                        else:
+                            return self.core.c2_experimental.shape[0]
+
+                # Alternative: check phi_angles length as proxy
+                if (
+                    hasattr(self.core, "phi_angles")
+                    and self.core.phi_angles is not None
+                ):
+                    if hasattr(self.core.phi_angles, "__len__"):
+                        # Estimate based on angles (typical: ~100-1000 points per angle)
+                        n_angles = len(self.core.phi_angles)
+                        estimated_points_per_angle = 500  # Conservative estimate
+                        return n_angles * estimated_points_per_angle
+
+            # Fallback: check if dataset size was stored during initialization
+            if hasattr(self, "_dataset_size_hint"):
+                return self._dataset_size_hint
+
+            # Default assumption for medium-sized dataset
+            logger.debug("Unable to detect exact dataset size, assuming medium dataset")
+            return 50_000
+
+        except Exception as e:
+            logger.warning(f"Error detecting dataset size: {e}")
+            # Safe default for medium dataset
+            return 50_000
+
+    def _evaluate_batch_smart(
+        self, objective_func: callable, evaluation_batch: list[np.ndarray]
+    ) -> list[float]:
+        """
+        Smart batch evaluation with optional parallelization and caching.
+
+        Parameters
+        ----------
+        objective_func : callable
+            Objective function to evaluate
+        evaluation_batch : list[np.ndarray]
+            List of parameter vectors to evaluate
+
+        Returns
+        -------
+        list[float]
+            Function values for each input in the batch
+        """
+        # For now, implement sequential evaluation with potential for future parallelization
+        # Future optimization: Use ThreadPoolExecutor for parallel evaluation
+        try:
+            # Check if parallel evaluation is enabled and beneficial
+            parallel_threshold = self._gradient_optimization.get(
+                "smart_scheduling", {}
+            ).get("parallel_threshold", 4)
+
+            if (
+                len(evaluation_batch) >= parallel_threshold
+                and self._can_use_parallel_evaluation()
+            ):
+                return self._evaluate_batch_parallel(objective_func, evaluation_batch)
+            else:
+                # Sequential evaluation (current default)
+                return [objective_func(x) for x in evaluation_batch]
+
+        except Exception as e:
+            logger.warning(
+                f"Smart batch evaluation failed, falling back to sequential: {e}"
+            )
+            return [objective_func(x) for x in evaluation_batch]
+
+    def _can_use_parallel_evaluation(self) -> bool:
+        """Check if parallel evaluation is safe and beneficial."""
+        # Conservative approach: only enable if explicitly configured
+        # Future enhancement: Check if objective function is thread-safe
+        return self._gradient_optimization.get("smart_scheduling", {}).get(
+            "enable_parallel", False
+        )
+
+    def _evaluate_batch_parallel(
+        self, objective_func: callable, evaluation_batch: list[np.ndarray]
+    ) -> list[float]:
+        """
+        Parallel batch evaluation using ThreadPoolExecutor.
+
+        Parameters
+        ----------
+        objective_func : callable
+            Objective function to evaluate
+        evaluation_batch : list[np.ndarray]
+            List of parameter vectors to evaluate
+
+        Returns
+        -------
+        list[float]
+            Function values for each input in the batch
+        """
+        import concurrent.futures
+
+        max_workers = self._gradient_optimization.get("smart_scheduling", {}).get(
+            "max_workers", 2
+        )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all evaluations
+            futures = [executor.submit(objective_func, x) for x in evaluation_batch]
+
+            # Collect results in order
+            results = []
+            for future in futures:
+                try:
+                    results.append(
+                        future.result(timeout=30)
+                    )  # 30-second timeout per evaluation
+                except Exception as e:
+                    logger.warning(f"Parallel evaluation failed: {e}")
+                    # Fallback to sequential for this batch
+                    raise e
+
+            return results

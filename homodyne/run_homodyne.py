@@ -964,9 +964,7 @@ def run_robust_optimization(
                     # Store method result in classical-compatible format
                     method_name = f"Robust-{method.capitalize()}"
                     method_results[method_name] = {
-                        "parameters": (
-                            params.tolist() if hasattr(params, "tolist") else params
-                        ),
+                        "parameters": (list(params)),
                         "chi_squared": chi_squared,
                         "success": True,
                         "method": method,

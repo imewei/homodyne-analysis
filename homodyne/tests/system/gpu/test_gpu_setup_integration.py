@@ -182,9 +182,9 @@ class TestMCMCGPUIntegration:
                 assert not has_gpu, "CPU backend should not report GPU capabilities"
 
                 # Check that it's the CPU backend function
-                assert (
-                    "cpu" in mcmc_func.__module__
-                ), f"Should import from CPU backend module, got {mcmc_func.__module__}"
+                assert "cpu" in mcmc_func.__module__, (
+                    f"Should import from CPU backend module, got {mcmc_func.__module__}"
+                )
 
             except ImportError:
                 pytest.skip("PyMC CPU backend not available in test environment")
@@ -203,9 +203,9 @@ class TestMCMCGPUIntegration:
                 ), f"Should select GPU backend or fallback, got {backend_name}"
 
                 # Check that it's from the appropriate backend module
-                assert (
-                    "gpu" in mcmc_func.__module__ or "cpu" in mcmc_func.__module__
-                ), f"Should import from backend module, got {mcmc_func.__module__}"
+                assert "gpu" in mcmc_func.__module__ or "cpu" in mcmc_func.__module__, (
+                    f"Should import from backend module, got {mcmc_func.__module__}"
+                )
 
             except ImportError:
                 pytest.skip(
@@ -306,13 +306,13 @@ class TestGPUSetupScriptLogic:
             )
 
             if "/usr/local/cuda" in test_path:
-                assert (
-                    "/usr/local/cuda" not in clean_path
-                ), f"Should remove CUDA paths from: {test_path}"
+                assert "/usr/local/cuda" not in clean_path, (
+                    f"Should remove CUDA paths from: {test_path}"
+                )
             else:
-                assert (
-                    clean_path == test_path
-                ), f"Should preserve non-CUDA paths: {test_path}"
+                assert clean_path == test_path, (
+                    f"Should preserve non-CUDA paths: {test_path}"
+                )
 
             logger.info(f"Path cleaning: {test_path} -> {clean_path}")
 
@@ -336,9 +336,9 @@ def test_integration_gpu_files_exist():
 
         if file_path.endswith(".sh"):
             # Check if shell script is executable
-            assert os.access(
-                full_path, os.X_OK
-            ), f"Shell script not executable: {file_path}"
+            assert os.access(full_path, os.X_OK), (
+                f"Shell script not executable: {file_path}"
+            )
 
     logger.info("All required GPU files are present and accessible")
 

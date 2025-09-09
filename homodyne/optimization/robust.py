@@ -387,16 +387,12 @@ class RobustHomodyneOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         uncertainty_radius: float | None = None,
-        objective_type: str = "standard",
         adaptive_target_alpha: float = 1.0,
     ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Distributionally Robust Optimization with Wasserstein uncertainty sets and adaptive targeting.
 
-        Solves: min_theta max_{P in U_epsilon(P_hat)} E_P[objective(theta, xi)]
-        Where objective can be:
-        - Standard: chi_squared(theta, xi)
-        - Adaptive target: (chi_squared(theta, xi) - alpha*DOF)^2
+        Solves: min_theta max_{P in U_epsilon(P_hat)} E_P[(chi_squared(theta, xi) - alpha*DOF)^2]
 
         Where U_epsilon(P_hat) is a Wasserstein ball around the empirical distribution
         of experimental data, providing robustness against measurement noise.
@@ -411,8 +407,6 @@ class RobustHomodyneOptimizer:
             Experimental correlation function data
         uncertainty_radius : float, optional
             Wasserstein ball radius (default: 5% of data variance)
-        objective_type : str
-            Type of objective: "standard" or "adaptive_target"
         adaptive_target_alpha : float
             Target multiplier for adaptive chi-squared (α ∈ [0.8, 1.2])
 
@@ -441,8 +435,11 @@ class RobustHomodyneOptimizer:
 
         # Log initial chi-squared
         initial_chi_squared = self._compute_chi_squared(
-            theta_init, phi_angles, c2_experimental,
-            method_name="Robust-Wasserstein", iteration=0
+            theta_init,
+            phi_angles,
+            c2_experimental,
+            method_name="Robust-Wasserstein",
+            iteration=0,
         )
         logger.info(f"DRO with Wasserstein radius: {epsilon:.6f}")
         logger.info(f"DRO initial χ²: {initial_chi_squared:.6f}")
@@ -474,26 +471,20 @@ class RobustHomodyneOptimizer:
             # Perturbed experimental data
             c2_perturbed = c2_experimental + xi
 
-            # Build objective based on type
+            # Build adaptive target objective
             residuals = c2_perturbed - c2_fitted_linear
             assert cp is not None  # Already checked above
             chi_squared = cp.sum_squares(residuals)
 
-            if objective_type == "standard":
-                # Option 1: Standard distributionally robust chi-squared
-                robust_objective_term = chi_squared
-            elif objective_type == "adaptive_target":
-                # Option 2: Adaptive target distributionally robust
-                # Calculate degrees of freedom: DoF = N - K
-                n_data_points = c2_experimental.size
-                dof = n_data_points - n_params
-                target_chi_squared = adaptive_target_alpha * dof  # α ∈ [0.8, 1.2]
+            # Adaptive target distributionally robust optimization
+            # Calculate degrees of freedom: DoF = N - K
+            n_data_points = c2_experimental.size
+            dof = n_data_points - n_params
+            target_chi_squared = adaptive_target_alpha * dof  # α ∈ [0.8, 1.2]
 
-                # Squared deviation for worst-case scenario (quadratic, numerically stable)
-                chi_squared_deviation = chi_squared - target_chi_squared
-                robust_objective_term = chi_squared_deviation**2
-            else:
-                raise ValueError(f"Unknown objective_type: {objective_type}")
+            # Squared deviation for worst-case scenario (quadratic, numerically stable)
+            chi_squared_deviation = chi_squared - target_chi_squared
+            robust_objective_term = chi_squared_deviation**2
 
             # Constraints
             constraints = []
@@ -528,8 +519,11 @@ class RobustHomodyneOptimizer:
                 # Compute final chi-squared with optimal parameters
                 if optimal_params is not None:
                     final_chi_squared = self._compute_chi_squared(
-                        optimal_params, phi_angles, c2_experimental,
-                        method_name="Robust-Wasserstein", iteration=-1  # Final iteration
+                        optimal_params,
+                        phi_angles,
+                        c2_experimental,
+                        method_name="Robust-Wasserstein",
+                        iteration=-1,  # Final iteration
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
@@ -576,16 +570,12 @@ class RobustHomodyneOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         n_scenarios: int | None = None,
-        objective_type: str = "standard",
         adaptive_target_alpha: float = 1.0,
     ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Scenario-Based Robust Optimization using bootstrap resampling with adaptive targeting.
 
-        Solves: min_theta max_{s in scenarios} objective(theta, scenario_s)
-        Where objective can be:
-        - Standard: chi_squared(theta, scenario_s)
-        - Adaptive target: (chi_squared(theta, scenario_s) - alpha*DOF)^2
+        Solves: min_theta max_{s in scenarios} (chi_squared(theta, scenario_s) - alpha*DOF)^2
 
         Generates scenarios from bootstrap resampling of experimental residuals
         to handle outliers and experimental variations.
@@ -600,8 +590,6 @@ class RobustHomodyneOptimizer:
             Experimental correlation function data
         n_scenarios : int, optional
             Number of bootstrap scenarios (default: 50)
-        objective_type : str
-            Type of objective: "standard" or "adaptive_target"
         adaptive_target_alpha : float
             Target multiplier for adaptive chi-squared (α ∈ [0.8, 1.2])
 
@@ -615,8 +603,11 @@ class RobustHomodyneOptimizer:
 
         # Log initial chi-squared
         initial_chi_squared = self._compute_chi_squared(
-            theta_init, phi_angles, c2_experimental,
-            method_name="Robust-Scenario", iteration=0
+            theta_init,
+            phi_angles,
+            c2_experimental,
+            method_name="Robust-Scenario",
+            iteration=0,
         )
         logger.info(f"Scenario-based optimization with {n_scenarios} scenarios")
         logger.info(f"Scenario initial χ²: {initial_chi_squared:.6f}")
@@ -676,34 +667,20 @@ class RobustHomodyneOptimizer:
             linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Build scenario constraints based on objective type
-            if objective_type == "standard":
-                # Option 1: Standard scenario-based robust optimization
-                # Min-max constraints: t >= chi_squared(theta, scenario_s) for all scenarios
-                for scenario_data in scenarios:
-                    residuals = scenario_data - c2_fitted_linear
-                    assert cp is not None  # Already checked above
-                    chi_squared_scenario = cp.sum_squares(residuals)
-                    constraints.append(t >= chi_squared_scenario)
+            # Build adaptive target scenario constraints
+            # Calculate degrees of freedom: DoF = N - K
+            n_data_points = c2_experimental.size
+            dof = n_data_points - n_params
+            target_chi_squared = adaptive_target_alpha * dof  # α ∈ [0.8, 1.2]
 
-            elif objective_type == "adaptive_target":
-                # Option 2: Adaptive target scenario-based robust optimization
-                # Calculate degrees of freedom: DoF = N - K
-                n_data_points = c2_experimental.size
-                dof = n_data_points - n_params
-                target_chi_squared = adaptive_target_alpha * dof  # α ∈ [0.8, 1.2]
-
-                # Min-max constraints: t >= (chi_squared(theta, scenario_s) - target)^2 for all scenarios
-                for scenario_data in scenarios:
-                    residuals = scenario_data - c2_fitted_linear
-                    assert cp is not None  # Already checked above
-                    chi_squared_scenario = cp.sum_squares(residuals)
-                    chi_squared_deviation = chi_squared_scenario - target_chi_squared
-                    adaptive_objective_scenario = chi_squared_deviation**2
-                    constraints.append(t >= adaptive_objective_scenario)
-
-            else:
-                raise ValueError(f"Unknown objective_type: {objective_type}")
+            # Min-max constraints: t >= (chi_squared(theta, scenario_s) - target)^2 for all scenarios
+            for scenario_data in scenarios:
+                residuals = scenario_data - c2_fitted_linear
+                assert cp is not None  # Already checked above
+                chi_squared_scenario = cp.sum_squares(residuals)
+                chi_squared_deviation = chi_squared_scenario - target_chi_squared
+                adaptive_objective_scenario = chi_squared_deviation**2
+                constraints.append(t >= adaptive_objective_scenario)
 
             # Regularization
             alpha = self.settings["regularization_alpha"]
@@ -723,8 +700,11 @@ class RobustHomodyneOptimizer:
                 # Compute final chi-squared
                 if optimal_params is not None:
                     final_chi_squared = self._compute_chi_squared(
-                        optimal_params, phi_angles, c2_experimental,
-                        method_name="Robust-Scenario", iteration=-1  # Final iteration
+                        optimal_params,
+                        phi_angles,
+                        c2_experimental,
+                        method_name="Robust-Scenario",
+                        iteration=-1,  # Final iteration
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
@@ -772,18 +752,14 @@ class RobustHomodyneOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         gamma: float | None = None,
-        objective_type: str = "standard",
         adaptive_target_alpha: float = 1.0,
     ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Ellipsoidal Uncertainty Sets Robust Optimization with adaptive targeting.
 
         Solves robust least squares with bounded uncertainty in experimental data:
-        min_theta objective(c2_exp + Delta, c2_theory(theta))
+        min_theta (||c2_exp + Delta - c2_theory(theta)||_2^2 - alpha*DOF)^2
         subject to ||Delta||_2 <= gamma
-        Where objective can be:
-        - Standard: ||c2_exp + Delta - c2_theory(theta)||_2^2
-        - Adaptive target: (||c2_exp + Delta - c2_theory(theta)||_2^2 - alpha*DOF)^2
 
         Parameters
         ----------
@@ -795,8 +771,6 @@ class RobustHomodyneOptimizer:
             Experimental correlation function data
         gamma : float, optional
             Uncertainty bound (default: 10% of data norm)
-        objective_type : str
-            Type of objective: "standard" or "adaptive_target"
         adaptive_target_alpha : float
             Target multiplier for adaptive chi-squared (α ∈ [0.8, 1.2])
 
@@ -810,8 +784,11 @@ class RobustHomodyneOptimizer:
 
         # Log initial chi-squared
         initial_chi_squared = self._compute_chi_squared(
-            theta_init, phi_angles, c2_experimental,
-            method_name="Robust-Ellipsoidal", iteration=0
+            theta_init,
+            phi_angles,
+            c2_experimental,
+            method_name="Robust-Ellipsoidal",
+            iteration=0,
         )
         logger.info(
             f"Ellipsoidal robust optimization with uncertainty bound: {gamma:.6f}"
@@ -872,23 +849,16 @@ class RobustHomodyneOptimizer:
             l2_reg = alpha * cp.sum_squares(delta_theta)
             l1_reg = beta * cp.norm(delta_theta, 1)
 
-            # Build objective based on type
-            if objective_type == "standard":
-                # Option 1: Standard ellipsoidal robust optimization
-                robust_objective_term = cp.sum_squares(residuals)
-            elif objective_type == "adaptive_target":
-                # Option 2: Adaptive target ellipsoidal robust optimization
-                # Calculate degrees of freedom: DoF = N - K
-                n_data_points = c2_experimental.size
-                dof = n_data_points - n_params
-                target_chi_squared = adaptive_target_alpha * dof  # α ∈ [0.8, 1.2]
+            # Build adaptive target objective
+            # Calculate degrees of freedom: DoF = N - K
+            n_data_points = c2_experimental.size
+            dof = n_data_points - n_params
+            target_chi_squared = adaptive_target_alpha * dof  # α ∈ [0.8, 1.2]
 
-                # Squared deviation (quadratic, numerically stable)
-                chi_squared = cp.sum_squares(residuals)
-                chi_squared_deviation = chi_squared - target_chi_squared
-                robust_objective_term = chi_squared_deviation**2
-            else:
-                raise ValueError(f"Unknown objective_type: {objective_type}")
+            # Squared deviation (quadratic, numerically stable)
+            chi_squared = cp.sum_squares(residuals)
+            chi_squared_deviation = chi_squared - target_chi_squared
+            robust_objective_term = chi_squared_deviation**2
 
             # Objective: robust least squares with regularization and adaptive targeting support
             objective = cp.Minimize(robust_objective_term + l2_reg + l1_reg)
@@ -904,8 +874,11 @@ class RobustHomodyneOptimizer:
                 # Compute final chi-squared
                 if optimal_params is not None:
                     final_chi_squared = self._compute_chi_squared(
-                        optimal_params, phi_angles, c2_experimental,
-                        method_name="Robust-Ellipsoidal", iteration=-1  # Final iteration
+                        optimal_params,
+                        phi_angles,
+                        c2_experimental,
+                        method_name="Robust-Ellipsoidal",
+                        iteration=-1,  # Final iteration
                     )
                     # Log final chi-squared and improvement
                     improvement = initial_chi_squared - final_chi_squared
@@ -1360,24 +1333,24 @@ class RobustHomodyneOptimizer:
         """
         try:
             # Use the selected chi-squared calculator (optimized or standard)
-            if hasattr(self.core, '_selected_chi_calculator'):
+            if hasattr(self.core, "_selected_chi_calculator"):
                 # Note: _selected_chi_calculator may not support iteration parameter
                 # Fall back to original method for enhanced logging
                 chi_squared = self.core.calculate_chi_squared_optimized(
-                    theta, 
-                    phi_angles, 
+                    theta,
+                    phi_angles,
                     c2_experimental,
                     method_name=method_name,
-                    iteration=iteration
+                    iteration=iteration,
                 )
             else:
                 # Use original method with enhanced logging
                 chi_squared = self.core.calculate_chi_squared_optimized(
-                    theta, 
-                    phi_angles, 
+                    theta,
+                    phi_angles,
                     c2_experimental,
                     method_name=method_name,
-                    iteration=iteration
+                    iteration=iteration,
                 )
             return float(chi_squared)
         except Exception as e:
@@ -1924,7 +1897,6 @@ class RobustHomodyneOptimizer:
 
         except Exception as e:
             return None, {"error": f"Failed to create ellipsoidal problem: {e}"}
-
 
 
 def create_robust_optimizer(
