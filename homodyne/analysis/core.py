@@ -313,8 +313,6 @@ def _calculate_median_quickselect_original(data: np.ndarray) -> float:
         return 0.5 * (arr[n // 2 - 1] + arr[n // 2])
 
 
-
-
 # Try to create JIT version with graceful fallback
 def _create_chi_squared_vectorized_jit():
     """Create JIT-compiled chi-squared function with fallback."""
@@ -476,9 +474,7 @@ class HomodyneAnalysisCore:
         self._l2_cache = {}  # Persistent cache for frequently accessed data
         self._l1_max_size = 32  # L1 cache for immediate access
         self._l2_max_size = 128  # L2 cache for long-term storage
-        self._cache_access_count = (
-            {}
-        )  # Track access frequency for intelligent promotion
+        self._cache_access_count = {}  # Track access frequency for intelligent promotion
 
         # Time array
         self.time_array = np.linspace(
@@ -516,9 +512,11 @@ class HomodyneAnalysisCore:
     def _setup_optimized_methods(self):
         """Configure optimized variance estimation and chi-squared calculation methods."""
         # Get configuration sections
-        chi_config = self.config.get("advanced_settings", {}).get("chi_squared_calculation", {})
+        chi_config = self.config.get("advanced_settings", {}).get(
+            "chi_squared_calculation", {}
+        )
         perf_config = chi_config.get("performance_optimization", {})
-        
+
         # Check if optimization is enabled
         self.optimization_enabled = perf_config.get("enabled", False)
 
@@ -534,32 +532,42 @@ class HomodyneAnalysisCore:
 
         # Configure variance estimation method based on config
         variance_method = chi_config.get("variance_method", "hybrid_limited_irls")
-        
+
         if variance_method == "hybrid_limited_irls":
             # Use hybrid Limited-Iteration IRLS with Simple MAD initialization
             # Check if batch processing is available
             if hasattr(self, "_estimate_variance_hybrid_limited_irls_batch"):
-                self._selected_variance_estimator = self._estimate_variance_hybrid_limited_irls_batch
+                self._selected_variance_estimator = (
+                    self._estimate_variance_hybrid_limited_irls_batch
+                )
                 logger.info(
                     "Selected Hybrid Limited IRLS variance estimator with batch processing "
                     "(50-70% faster than full IRLS through FGLS-inspired approach)"
                 )
             else:
-                self._selected_variance_estimator = self._estimate_variance_hybrid_limited_irls
+                self._selected_variance_estimator = (
+                    self._estimate_variance_hybrid_limited_irls
+                )
                 logger.info(
                     "Selected Hybrid Limited IRLS variance estimator "
                     "(50-70% faster than full IRLS through FGLS-inspired approach)"
                 )
-            
+
         elif variance_method == "irls_mad_robust":
             # Use full IRLS MAD robust variance estimator (existing default)
             if hasattr(self, "_estimate_variance_irls_mad_robust_batch"):
-                self._selected_variance_estimator = self._estimate_variance_irls_mad_robust_batch
-                logger.info("Selected IRLS MAD robust variance estimator with batch processing")
+                self._selected_variance_estimator = (
+                    self._estimate_variance_irls_mad_robust_batch
+                )
+                logger.info(
+                    "Selected IRLS MAD robust variance estimator with batch processing"
+                )
             else:
-                self._selected_variance_estimator = self._estimate_variance_irls_mad_robust
+                self._selected_variance_estimator = (
+                    self._estimate_variance_irls_mad_robust
+                )
                 logger.info("Selected IRLS MAD robust variance estimator")
-                
+
         else:
             # Fallback to standard IRLS method with warning
             logger.warning(
@@ -618,10 +626,6 @@ class HomodyneAnalysisCore:
         self._tuning_enabled = True
 
         # Cache system for computational results
-
-
-
-
 
     def _get_from_two_tier_cache(self, key: str):
         """
@@ -2115,7 +2119,6 @@ class HomodyneAnalysisCore:
         """
         return self.calculate_c2_nonequilibrium_laminar_parallel(parameters, phi_angles)
 
-
     def _estimate_variance_irls_mad_robust(
         self, residuals: np.ndarray, window_size: int = 11, edge_method: str = "reflect"
     ) -> np.ndarray:
@@ -2156,15 +2159,23 @@ class HomodyneAnalysisCore:
                 "chi_squared_calculation", {}
             )
         chi_config = self._cached_chi_config
-        
+
         # Handle both old (nested irls_config) and new (direct) config formats
         irls_config = chi_config.get("irls_config", {})
-        
+
         # New simplified format (direct in chi_config) takes precedence
-        max_iterations = chi_config.get("irls_max_iterations") or irls_config.get("max_iterations", 15)
-        damping_factor = chi_config.get("irls_damping_factor") or irls_config.get("damping_factor", 0.8)  
-        convergence_tolerance = chi_config.get("irls_convergence_tolerance") or irls_config.get("convergence_tolerance", 0.003)
-        initial_sigma_squared = chi_config.get("irls_initial_sigma_squared") or irls_config.get("initial_sigma_squared", 1e-3)
+        max_iterations = chi_config.get("irls_max_iterations") or irls_config.get(
+            "max_iterations", 15
+        )
+        damping_factor = chi_config.get("irls_damping_factor") or irls_config.get(
+            "damping_factor", 0.8
+        )
+        convergence_tolerance = chi_config.get(
+            "irls_convergence_tolerance"
+        ) or irls_config.get("convergence_tolerance", 0.003)
+        initial_sigma_squared = chi_config.get(
+            "irls_initial_sigma_squared"
+        ) or irls_config.get("initial_sigma_squared", 1e-3)
         min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
 
         logger.debug(
@@ -2177,15 +2188,25 @@ class HomodyneAnalysisCore:
             pad_window_size = window_size if window_size % 2 == 1 else window_size + 1
             pad_size = pad_window_size // 2
 
-            # Residuals are expected to be pre-padded when edge_method="reflect"
-            # Extract the original (unpadded) portion at the end
+            # When edge_method="reflect", residuals are expected to be pre-padded
+            # We need to extract the original (unpadded) portion for the final result
             working_residuals = residuals
-            extract_indices = (
-                slice(pad_size, -pad_size) if pad_size > 0 else slice(None)
-            )
+
+            # For reflection method, we always assume input is padded and extract center
+            if pad_size > 0:
+                extract_indices = slice(pad_size, -pad_size)
+                expected_output_size = len(residuals) - 2 * pad_size
+                logger.debug(
+                    f"Reflection edge method: extracting center portion from padded input (size {len(residuals)} -> {expected_output_size})"
+                )
+            else:
+                # Edge case: no padding needed
+                extract_indices = slice(None)
+                expected_output_size = len(residuals)
         else:
             working_residuals = residuals
             extract_indices = slice(None)
+            expected_output_size = len(residuals)
 
         # Step 1: Initialize with uniform variance σ²ᵢ = 1e-3
         n_points = len(working_residuals)
@@ -2194,14 +2215,20 @@ class HomodyneAnalysisCore:
 
         # IRLS iterations
         for iteration in range(max_iterations):
-            # Step 2: Apply MAD moving window variance estimation (inline implementation) 
+            # Step 2: Apply MAD moving window variance estimation (inline implementation)
             # Get window size and edge method from config
             config_window_size = chi_config.get("moving_window_size", window_size)
-            config_edge_method = chi_config.get("moving_window_edge_method", edge_method)
+            config_edge_method = chi_config.get(
+                "moving_window_edge_method", edge_method
+            )
             min_window_size = chi_config.get("irls_min_window_size", 3)
-            
+
             sigma2_new = self._mad_moving_window_with_edge_handling(
-                working_residuals, config_window_size, config_edge_method, min_sigma_squared, min_window_size
+                working_residuals,
+                config_window_size,
+                config_edge_method,
+                min_sigma_squared,
+                min_window_size,
             )
 
             # Step 3: Apply damping to prevent oscillations
@@ -2241,14 +2268,40 @@ class HomodyneAnalysisCore:
         # Ensure minimum variance floor
         final_variances = np.maximum(final_variances, min_sigma_squared)
 
+        # Safety check: ensure output size matches expected output size
+        if len(final_variances) != expected_output_size:
+            logger.warning(
+                f"Size mismatch after variance extraction: output({len(final_variances)}) != expected({expected_output_size}). "
+                f"Using truncation/padding to match expected size."
+            )
+            if len(final_variances) < expected_output_size:
+                # Pad with last variance value if output is too small
+                pad_value = (
+                    final_variances[-1]
+                    if len(final_variances) > 0
+                    else min_sigma_squared
+                )
+                final_variances = np.pad(
+                    final_variances,
+                    (0, expected_output_size - len(final_variances)),
+                    mode="constant",
+                    constant_values=pad_value,
+                )
+            else:
+                # Truncate if output is too large
+                final_variances = final_variances[:expected_output_size]
+
         return final_variances
 
     def _estimate_variance_irls_mad_robust_batch(
-        self, residuals_batch_list: list[np.ndarray], window_size: int = 11, edge_method: str = "reflect"
+        self,
+        residuals_batch_list: list[np.ndarray],
+        window_size: int = 11,
+        edge_method: str = "reflect",
     ) -> list[np.ndarray]:
         """
         Batch IRLS variance estimation for multiple angles with enhanced Numba optimization.
-        
+
         This method processes multiple angles simultaneously using vectorized operations
         and JIT-compiled kernels for maximum performance. It replaces sequential
         processing of angles with parallel batch operations.
@@ -2273,18 +2326,28 @@ class HomodyneAnalysisCore:
                 "chi_squared_calculation", {}
             )
         chi_config = self._cached_chi_config
-        
+
         # Handle both old (nested irls_config) and new (direct) config formats
         irls_config = chi_config.get("irls_config", {})
-        
+
         # New simplified format (direct in chi_config) takes precedence
-        max_iterations = chi_config.get("irls_max_iterations") or irls_config.get("max_iterations", 15)
-        damping_factor = chi_config.get("irls_damping_factor") or irls_config.get("damping_factor", 0.8)
-        convergence_tolerance = chi_config.get("irls_convergence_tolerance") or irls_config.get("convergence_tolerance", 0.003)
-        initial_sigma_squared = chi_config.get("irls_initial_sigma_squared") or irls_config.get("initial_sigma_squared", 1e-3)
+        max_iterations = chi_config.get("irls_max_iterations") or irls_config.get(
+            "max_iterations", 15
+        )
+        damping_factor = chi_config.get("irls_damping_factor") or irls_config.get(
+            "damping_factor", 0.8
+        )
+        convergence_tolerance = chi_config.get(
+            "irls_convergence_tolerance"
+        ) or irls_config.get("convergence_tolerance", 0.003)
+        initial_sigma_squared = chi_config.get(
+            "irls_initial_sigma_squared"
+        ) or irls_config.get("initial_sigma_squared", 1e-3)
         min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
 
-        logger.debug(f"Starting batch IRLS MAD robust variance estimation for {len(residuals_batch_list)} angles")
+        logger.debug(
+            f"Starting batch IRLS MAD robust variance estimation for {len(residuals_batch_list)} angles"
+        )
 
         # Convert list to 2D array for batch processing
         try:
@@ -2293,7 +2356,7 @@ class HomodyneAnalysisCore:
             if len(set(lengths)) == 1:
                 # All same length - can use efficient 2D array processing
                 residuals_batch_array = np.array(residuals_batch_list, dtype=np.float64)
-                
+
                 # Use enhanced Numba kernel for batch processing
                 try:
                     sigma_variances_batch = estimate_variance_irls_batch_numba(
@@ -2305,19 +2368,26 @@ class HomodyneAnalysisCore:
                         initial_sigma_squared,
                         min_sigma_squared,
                     )
-                    
+
                     # Convert back to list format for compatibility
-                    return [sigma_variances_batch[i] for i in range(len(residuals_batch_list))]
-                    
+                    return [
+                        sigma_variances_batch[i]
+                        for i in range(len(residuals_batch_list))
+                    ]
+
                 except RuntimeError as e:
                     if "NUMBA_NUM_THREADS" in str(e):
-                        logger.debug("Using fallback batch processing due to NUMBA threading conflict")
+                        logger.debug(
+                            "Using fallback batch processing due to NUMBA threading conflict"
+                        )
                         # Fall through to fallback processing
                     else:
                         raise
             else:
-                logger.debug("Residuals have different lengths, using fallback processing")
-                
+                logger.debug(
+                    "Residuals have different lengths, using fallback processing"
+                )
+
         except Exception as e:
             logger.debug(f"Batch array processing failed: {e}, using fallback")
 
@@ -2329,7 +2399,7 @@ class HomodyneAnalysisCore:
                 residuals, window_size=window_size, edge_method=edge_method
             )
             variance_results.append(variances)
-            
+
         return variance_results
 
     def _estimate_variance_simple_mad(
@@ -2337,18 +2407,18 @@ class HomodyneAnalysisCore:
     ) -> np.ndarray:
         """
         Simple MAD (Median Absolute Deviation) variance estimation without iterations.
-        
+
         Provides robust initialization for hybrid limited-iteration IRLS by performing
         a single-pass MAD estimation on unweighted least squares residuals. This method
         offers O(nk) complexity for efficient startup compared to iterative methods.
-        
+
         Key features:
         - Single-pass calculation (no iterations)
         - Larger default window size (25) for improved stability
         - Robust against outliers through median-based estimation
         - Compatible with existing edge handling methods
         - Suitable as initialization for hybrid IRLS approaches
-        
+
         Parameters
         ----------
         residuals : np.ndarray
@@ -2357,26 +2427,26 @@ class HomodyneAnalysisCore:
             Size of moving window for MAD estimation (larger for stability)
         edge_method : str, default="reflect"
             Edge handling method: "reflect", "adaptive_window", or "global_fallback"
-            
+
         Returns
         -------
         np.ndarray
             Variance estimates (σ²) for each data point
-            
+
         Notes
         -----
         This method implements the initialization step of the hybrid limited-iteration
         IRLS approach, inspired by feasible generalized least squares (FGLS). It provides
         a robust starting point that captures local variance structure without the
         computational cost of full iterative estimation.
-        
+
         The conversion factor 1.4826 is used to convert MAD to standard deviation
         assuming Gaussian residuals: σ ≈ 1.4826 × MAD.
         """
         n_points = len(residuals)
         if n_points == 0:
             return np.array([])
-            
+
         # Get minimum sigma from config for consistency
         if not hasattr(self, "_cached_chi_config"):
             self._cached_chi_config = self.config.get("advanced_settings", {}).get(
@@ -2385,60 +2455,62 @@ class HomodyneAnalysisCore:
         chi_config = self._cached_chi_config
         min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
         min_window_size = 3
-        
+
         # Initialize variance array
         sigma2_mad = np.full(n_points, min_sigma_squared)
-        
+
         # MAD factor for converting to variance: (1.4826)² ≈ 2.198
         mad_factor = (1.4826) ** 2
-        
+
         # Single-pass MAD estimation with moving window
         half_window = window_size // 2
-        
+
         for i in range(n_points):
             # Calculate window bounds
             start_idx = max(0, i - half_window)
             end_idx = min(n_points, i + half_window + 1)
-            
+
             # Extract window data
             window_residuals = residuals[start_idx:end_idx]
-            
+
             if len(window_residuals) >= min_window_size:
                 # Standard MAD calculation
                 median_res = np.median(window_residuals)
                 mad = np.median(np.abs(window_residuals - median_res))
-                
+
                 if mad > 0:
-                    sigma2_mad[i] = mad_factor * mad ** 2
+                    sigma2_mad[i] = mad_factor * mad**2
                 else:
                     sigma2_mad[i] = min_sigma_squared
             else:
                 # Handle edge cases based on edge method
                 if edge_method == "reflect":
                     # Use reflection for insufficient data
-                    reflected_residuals = self._reflect_residuals_at_edges(residuals, i, window_size)
+                    reflected_residuals = self._reflect_residuals_at_edges(
+                        residuals, i, window_size
+                    )
                     if len(reflected_residuals) >= min_window_size:
                         median_res = np.median(reflected_residuals)
                         mad = np.median(np.abs(reflected_residuals - median_res))
                         if mad > 0:
-                            sigma2_mad[i] = mad_factor * mad ** 2
+                            sigma2_mad[i] = mad_factor * mad**2
                         else:
                             sigma2_mad[i] = min_sigma_squared
                     else:
                         sigma2_mad[i] = min_sigma_squared
-                        
+
                 elif edge_method == "adaptive_window":
                     # Use available data even if window is smaller
                     if len(window_residuals) > 0:
                         median_res = np.median(window_residuals)
                         mad = np.median(np.abs(window_residuals - median_res))
                         if mad > 0:
-                            sigma2_mad[i] = mad_factor * mad ** 2
+                            sigma2_mad[i] = mad_factor * mad**2
                         else:
                             sigma2_mad[i] = min_sigma_squared
                     else:
                         sigma2_mad[i] = min_sigma_squared
-                        
+
                 elif edge_method == "global_fallback":
                     # Use global variance as fallback
                     global_var = np.var(residuals)
@@ -2449,10 +2521,10 @@ class HomodyneAnalysisCore:
                 else:
                     # Unknown edge method, use minimum variance
                     sigma2_mad[i] = min_sigma_squared
-                    
+
         # Apply minimum variance floor
         sigma2_mad = np.maximum(sigma2_mad, min_sigma_squared)
-        
+
         return sigma2_mad
 
     def _estimate_variance_hybrid_limited_irls(
@@ -2460,18 +2532,18 @@ class HomodyneAnalysisCore:
     ) -> np.ndarray:
         """
         Hybrid Limited-Iteration IRLS with Simple MAD initialization.
-        
+
         Implements the hybrid approach that combines Simple MAD initialization with
         capped IRLS iterations (2-3) for optimal balance between accuracy and efficiency.
         This method is inspired by feasible generalized least squares (FGLS) and provides
         robust convergence with significantly reduced computational cost.
-        
+
         Algorithm:
         1. Initialize σ²ᵢ using Simple MAD (replaces uniform initialization)
         2. Apply 2-3 capped IRLS iterations with enhanced damping
         3. Early stopping on convergence or overshooting detection
         4. Optional weighted refit integration at each iteration
-        
+
         Parameters
         ----------
         residuals : np.ndarray
@@ -2480,12 +2552,12 @@ class HomodyneAnalysisCore:
             Size of moving window for MAD estimation (larger for stability)
         edge_method : str, default="reflect"
             Edge handling method: "reflect", "adaptive_window", or "global_fallback"
-            
+
         Returns
         -------
         np.ndarray
             Final variance estimates (σ²) for each data point
-            
+
         Notes
         -----
         Key improvements over standard IRLS:
@@ -2498,73 +2570,81 @@ class HomodyneAnalysisCore:
         n_points = len(residuals)
         if n_points == 0:
             return np.array([])
-            
+
         # Get hybrid IRLS configuration parameters
         if not hasattr(self, "_cached_chi_config"):
             self._cached_chi_config = self.config.get("advanced_settings", {}).get(
                 "chi_squared_calculation", {}
             )
         chi_config = self._cached_chi_config
-        
+
         # Hybrid-specific parameters with fallback to IRLS config
         max_iterations = chi_config.get("hybrid_irls_max_iterations", 3)
         damping_factor = chi_config.get("hybrid_irls_damping_factor", 0.7)
-        convergence_tolerance = chi_config.get("hybrid_irls_convergence_tolerance", 0.001)
+        convergence_tolerance = chi_config.get(
+            "hybrid_irls_convergence_tolerance", 0.001
+        )
         min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
-        enable_weighted_refit = chi_config.get("hybrid_irls_enable_weighted_refit", False)
+        enable_weighted_refit = chi_config.get(
+            "hybrid_irls_enable_weighted_refit", False
+        )
         adaptive_target_alpha = chi_config.get("adaptive_target_alpha", 1.0)
-        
+
         logger.debug(
             f"Starting Hybrid Limited IRLS with Simple MAD initialization: "
             f"max_iterations={max_iterations}, damping_factor={damping_factor}"
         )
-        
+
         # Step 1: Initialize with Simple MAD (robust starting point)
         logger.debug("Step 1: Initializing with Simple MAD estimation")
         sigma2 = self._estimate_variance_simple_mad(residuals, window_size, edge_method)
         sigma2_prev = sigma2.copy()
-        
+
         # Track convergence for early stopping
         chi2_prev = np.inf
-        
+
         # Step 2: Apply limited IRLS iterations with enhanced damping
         for iteration in range(max_iterations):
             logger.debug(f"Hybrid IRLS iteration {iteration + 1}/{max_iterations}")
-            
+
             # Apply MAD moving window with current residuals
             # Use smaller window for iterations to be more responsive
             iteration_window_size = max(11, window_size // 2)
             sigma2_new = self._mad_moving_window_with_edge_handling(
                 residuals, iteration_window_size, edge_method, min_sigma_squared, 3
             )
-            
+
             # Step 3: Enhanced damping to prevent oscillations
             if iteration > 0:
                 # Adaptive damping: stronger damping for later iterations
-                alpha = damping_factor * (1 - 0.1 * iteration)  # Gradually increase damping
+                alpha = damping_factor * (
+                    1 - 0.1 * iteration
+                )  # Gradually increase damping
                 alpha = max(0.5, alpha)  # Minimum damping of 0.5
                 sigma2 = alpha * sigma2_new + (1 - alpha) * sigma2_prev
             else:
                 sigma2 = sigma2_new.copy()  # First iteration: no damping
-                
+
             # Step 4: Convergence checking with early stopping
             # Calculate chi-squared for convergence monitoring
             sigma_per_point = np.sqrt(sigma2)
             safe_sigma = np.maximum(sigma_per_point, np.sqrt(min_sigma_squared))
-            
+
             # Avoid division by zero
-            finite_mask = np.isfinite(residuals) & np.isfinite(safe_sigma) & (safe_sigma > 0)
+            finite_mask = (
+                np.isfinite(residuals) & np.isfinite(safe_sigma) & (safe_sigma > 0)
+            )
             if np.any(finite_mask):
                 residuals_finite = residuals[finite_mask]
                 sigma_finite = safe_sigma[finite_mask]
                 chi2_per_point = (residuals_finite / sigma_finite) ** 2
                 chi2_current = np.sum(chi2_per_point)
-                
+
                 # Calculate reduced chi-squared for overshooting detection
                 n_params = 3  # Typical parameter count for homodyne analysis
                 effective_dof = max(1, len(residuals_finite) - n_params)
                 chi2_reduced = chi2_current / effective_dof
-                
+
                 # Early stopping conditions
                 if iteration > 0:
                     # Convergence check
@@ -2575,7 +2655,7 @@ class HomodyneAnalysisCore:
                             f"chi2_change={chi2_change:.2e} < tolerance={convergence_tolerance}"
                         )
                         break
-                        
+
                     # Overshooting detection: χ²_red < 0.8α suggests overfitting
                     overshooting_threshold = 0.8 * adaptive_target_alpha
                     if chi2_reduced < overshooting_threshold:
@@ -2584,26 +2664,28 @@ class HomodyneAnalysisCore:
                             f"chi2_reduced={chi2_reduced:.3f} < {overshooting_threshold:.3f}"
                         )
                         break
-                
+
                 chi2_prev = chi2_current
             else:
-                logger.warning(f"Hybrid IRLS iteration {iteration + 1}: No finite residuals/sigma values")
+                logger.warning(
+                    f"Hybrid IRLS iteration {iteration + 1}: No finite residuals/sigma values"
+                )
                 break
-                
+
             # Store previous values for next iteration
             sigma2_prev = sigma2.copy()
-            
+
             # Optional: Weighted refit integration
             if enable_weighted_refit and iteration < max_iterations - 1:
                 try:
                     # Use current variance estimates as weights (1/sigma²)
                     weights = 1.0 / np.maximum(sigma2, min_sigma_squared)
                     weights = np.maximum(weights, 1e-10)  # Prevent extreme weights
-                    
+
                     # Weighted refit: recalculate residuals using weighted least squares approach
                     # This improves residual estimates by downweighting high-variance points
                     residuals_updated = self._apply_weighted_refit(residuals, weights)
-                    
+
                     if np.isfinite(residuals_updated).all():
                         residuals = residuals_updated
                         logger.debug(
@@ -2611,39 +2693,48 @@ class HomodyneAnalysisCore:
                             f"weight_range=[{np.min(weights):.2e}, {np.max(weights):.2e}]"
                         )
                     else:
-                        logger.warning(f"Weighted refit produced invalid residuals at iteration {iteration + 1}")
-                        
+                        logger.warning(
+                            f"Weighted refit produced invalid residuals at iteration {iteration + 1}"
+                        )
+
                 except Exception as e:
-                    logger.warning(f"Weighted refit failed at iteration {iteration + 1}: {e}")
-                
+                    logger.warning(
+                        f"Weighted refit failed at iteration {iteration + 1}: {e}"
+                    )
+
         # Step 5: Apply final variance floor and validation
         sigma2_final = np.maximum(sigma2, min_sigma_squared)
-        
+
         # Final validation
         if not np.all(np.isfinite(sigma2_final)):
             logger.warning("Non-finite values in Hybrid IRLS results, applying cleanup")
-            sigma2_final = np.where(np.isfinite(sigma2_final), sigma2_final, min_sigma_squared)
-            
+            sigma2_final = np.where(
+                np.isfinite(sigma2_final), sigma2_final, min_sigma_squared
+            )
+
         logger.debug(
             f"Hybrid Limited IRLS completed: mean_sigma2={np.mean(sigma2_final):.2e}, "
             f"min_sigma2={np.min(sigma2_final):.2e}, max_sigma2={np.max(sigma2_final):.2e}"
         )
-        
+
         return sigma2_final
 
     def _estimate_variance_hybrid_limited_irls_batch(
-        self, residuals_batch_list: list[np.ndarray], window_size: int = 25, edge_method: str = "reflect"
+        self,
+        residuals_batch_list: list[np.ndarray],
+        window_size: int = 25,
+        edge_method: str = "reflect",
     ) -> list[np.ndarray]:
         """
         Batch Hybrid Limited-Iteration IRLS with Simple MAD initialization.
-        
+
         Processes multiple angles simultaneously using the hybrid approach that combines
         Simple MAD initialization with capped IRLS iterations (2-3). Provides significant
         performance improvements over sequential processing while maintaining accuracy.
-        
+
         This method leverages the new hybrid Numba kernel for maximum performance,
         with fallback to sequential processing when needed.
-        
+
         Parameters
         ----------
         residuals_batch_list : list[np.ndarray]
@@ -2652,12 +2743,12 @@ class HomodyneAnalysisCore:
             Size of moving window for MAD estimation (larger for stability)
         edge_method : str, default="reflect"
             Edge handling method: "reflect", "adaptive_window", or "global_fallback"
-            
+
         Returns
         -------
         list[np.ndarray]
             List of variance estimates (σ²), one array per angle
-            
+
         Notes
         -----
         Performance benefits of hybrid batch processing:
@@ -2668,25 +2759,27 @@ class HomodyneAnalysisCore:
         """
         if not residuals_batch_list:
             return []
-            
+
         # Get hybrid IRLS configuration
         if not hasattr(self, "_cached_chi_config"):
             self._cached_chi_config = self.config.get("advanced_settings", {}).get(
                 "chi_squared_calculation", {}
             )
         chi_config = self._cached_chi_config
-        
+
         # Hybrid-specific parameters
         max_iterations = chi_config.get("hybrid_irls_max_iterations", 3)
         damping_factor = chi_config.get("hybrid_irls_damping_factor", 0.7)
-        convergence_tolerance = chi_config.get("hybrid_irls_convergence_tolerance", 0.001)
+        convergence_tolerance = chi_config.get(
+            "hybrid_irls_convergence_tolerance", 0.001
+        )
         min_sigma_squared = chi_config.get("minimum_sigma", 1e-10) ** 2
-        
+
         logger.debug(
             f"Starting Hybrid Limited IRLS batch processing: {len(residuals_batch_list)} angles, "
             f"max_iterations={max_iterations}, damping_factor={damping_factor}"
         )
-        
+
         try:
             # Check if all arrays have the same length for efficient batch processing
             array_lengths = [len(res) for res in residuals_batch_list]
@@ -2694,12 +2787,12 @@ class HomodyneAnalysisCore:
                 # Uniform array lengths - use efficient batch processing
                 n_angles = len(residuals_batch_list)
                 n_points = array_lengths[0]
-                
+
                 # Convert list to 2D array for batch processing
                 residuals_batch_array = np.zeros((n_angles, n_points), dtype=np.float64)
                 for i, residuals in enumerate(residuals_batch_list):
                     residuals_batch_array[i, :] = residuals
-                
+
                 # Use hybrid batch Numba kernel
                 sigma2_batch_array = hybrid_irls_batch_numba(
                     residuals_batch_array,
@@ -2709,25 +2802,31 @@ class HomodyneAnalysisCore:
                     convergence_tolerance,
                     min_sigma_squared,
                 )
-                
+
                 # Convert back to list format
                 variance_results = []
                 for i in range(n_angles):
                     variance_results.append(sigma2_batch_array[i, :].copy())
-                
-                logger.debug(f"Hybrid batch processing completed successfully for {n_angles} angles")
+
+                logger.debug(
+                    f"Hybrid batch processing completed successfully for {n_angles} angles"
+                )
                 return variance_results
-                
+
             else:
                 # Non-uniform array lengths - fall back to sequential processing
-                logger.debug("Non-uniform array lengths detected, using sequential hybrid processing")
-                raise ValueError("Non-uniform array lengths require sequential processing")
-                
+                logger.debug(
+                    "Non-uniform array lengths detected, using sequential hybrid processing"
+                )
+                raise ValueError(
+                    "Non-uniform array lengths require sequential processing"
+                )
+
         except (RuntimeError, ValueError, MemoryError) as batch_error:
             # Comprehensive fallback to sequential hybrid processing
             logger.warning(f"Hybrid batch processing failed: {str(batch_error)}")
             logger.info("Falling back to sequential hybrid IRLS processing")
-            
+
             variance_results = []
             for i, residuals in enumerate(residuals_batch_list):
                 try:
@@ -2737,7 +2836,9 @@ class HomodyneAnalysisCore:
                     )
                     variance_results.append(variances)
                 except Exception as angle_error:
-                    logger.error(f"Hybrid sequential processing failed for angle {i}: {str(angle_error)}")
+                    logger.error(
+                        f"Hybrid sequential processing failed for angle {i}: {str(angle_error)}"
+                    )
                     # Use simple MAD as ultimate fallback
                     try:
                         variances = self._estimate_variance_simple_mad(
@@ -2745,34 +2846,40 @@ class HomodyneAnalysisCore:
                         )
                         variance_results.append(variances)
                     except Exception as mad_error:
-                        logger.error(f"Simple MAD fallback failed for angle {i}: {str(mad_error)}")
+                        logger.error(
+                            f"Simple MAD fallback failed for angle {i}: {str(mad_error)}"
+                        )
                         # Ultimate fallback: minimum variance
                         variances = np.full(len(residuals), min_sigma_squared)
                         variance_results.append(variances)
-            
-            logger.debug(f"Sequential hybrid processing completed for {len(variance_results)} angles")
+
+            logger.debug(
+                f"Sequential hybrid processing completed for {len(variance_results)} angles"
+            )
             return variance_results
 
-    def _apply_weighted_refit(self, residuals: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    def _apply_weighted_refit(
+        self, residuals: np.ndarray, weights: np.ndarray
+    ) -> np.ndarray:
         """
         Apply weighted refit to improve residual estimates during IRLS iterations.
-        
+
         This method uses the current variance estimates (as weights) to recalculate
         residuals with a weighted least squares approach. High-variance points are
         downweighted, leading to more robust parameter estimates.
-        
+
         The approach implements a simplified weighted least squares refinement:
         - Uses weights = 1/σ² to downweight high-variance points
         - Applies robust smoothing to reduce outlier influence
         - Maintains residual structure while improving local estimates
-        
+
         Parameters
         ----------
         residuals : np.ndarray
             Original residuals from least squares fit
-        weights : np.ndarray  
+        weights : np.ndarray
             Weights = 1/σ² from current variance estimates
-            
+
         Returns
         -------
         np.ndarray
@@ -2780,30 +2887,32 @@ class HomodyneAnalysisCore:
         """
         if len(residuals) != len(weights):
             return residuals
-            
+
         if len(residuals) == 0:
             return residuals
-            
+
         # Apply weighted smoothing with adaptive kernel size
         # This reduces outlier influence while preserving signal structure
         try:
             # Normalize weights to prevent numerical issues
             weights_normalized = weights / np.mean(weights)
             weights_clipped = np.clip(weights_normalized, 0.1, 10.0)
-            
+
             # Apply weighted moving average with adaptive window
-            window_size = min(9, max(3, len(residuals) // 20))  # Adaptive window: 3-9 points
+            window_size = min(
+                9, max(3, len(residuals) // 20)
+            )  # Adaptive window: 3-9 points
             residuals_smoothed = np.zeros_like(residuals)
-            
+
             for i in range(len(residuals)):
                 # Define local window
                 start_idx = max(0, i - window_size // 2)
                 end_idx = min(len(residuals), i + window_size // 2 + 1)
-                
+
                 # Extract local residuals and weights
                 local_residuals = residuals[start_idx:end_idx]
                 local_weights = weights_clipped[start_idx:end_idx]
-                
+
                 # Weighted average
                 if np.sum(local_weights) > 0:
                     weighted_sum = np.sum(local_residuals * local_weights)
@@ -2811,18 +2920,22 @@ class HomodyneAnalysisCore:
                     residuals_smoothed[i] = weighted_sum / weight_sum
                 else:
                     residuals_smoothed[i] = residuals[i]
-            
+
             # Combine original and smoothed residuals with conservative blending
             # Use higher blending for points with lower weights (higher variance)
-            blend_factor = np.clip(1.0 / weights_normalized, 0.1, 0.3)  # 10-30% smoothing
-            residuals_refit = (1.0 - blend_factor) * residuals + blend_factor * residuals_smoothed
-            
+            blend_factor = np.clip(
+                1.0 / weights_normalized, 0.1, 0.3
+            )  # 10-30% smoothing
+            residuals_refit = (
+                1.0 - blend_factor
+            ) * residuals + blend_factor * residuals_smoothed
+
             # Validate output
             if not np.isfinite(residuals_refit).all():
                 return residuals
-                
+
             return residuals_refit
-            
+
         except Exception:
             # Return original residuals if weighted refit fails
             return residuals
@@ -2840,7 +2953,7 @@ class HomodyneAnalysisCore:
 
         Implements the corrected edge handling from the reference plan:
         - 'reflect' (default): mirror at boundaries
-        - 'adaptive_window': shrink at edges  
+        - 'adaptive_window': shrink at edges
         - 'global_fallback': use global variance
         """
         n = len(residuals)
@@ -2878,7 +2991,11 @@ class HomodyneAnalysisCore:
 
                 elif edge_method == "adaptive_window":
                     # Fallback to global variance
-                    global_var = np.var(residuals, ddof=1) if len(residuals) > 1 else min_sigma_squared
+                    global_var = (
+                        np.var(residuals, ddof=1)
+                        if len(residuals) > 1
+                        else min_sigma_squared
+                    )
                     sigma2_new[i] = max(global_var, min_sigma_squared)
 
                 elif edge_method == "global_fallback":
@@ -2886,7 +3003,9 @@ class HomodyneAnalysisCore:
                     global_median = np.median(residuals)
                     global_mad = np.median(np.abs(residuals - global_median))
                     sigma2_new[i] = (
-                        (1.4826 * global_mad) ** 2 if global_mad > 0 else min_sigma_squared
+                        (1.4826 * global_mad) ** 2
+                        if global_mad > 0
+                        else min_sigma_squared
                     )
 
                 else:
@@ -2908,7 +3027,7 @@ class HomodyneAnalysisCore:
     ) -> np.ndarray:
         """
         Reflect residuals at edges using mirror boundary conditions only.
-        
+
         Removed 'extend' method - only mirror reflection is implemented.
         """
         n = len(residuals)
@@ -3014,25 +3133,32 @@ class HomodyneAnalysisCore:
             variances = variances[:min_size]
             # Log the size adjustment
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.debug(f"Adjusted array sizes to {min_size} for chi-squared calculation")
+            logger.debug(
+                f"Adjusted array sizes to {min_size} for chi-squared calculation"
+            )
 
         # Convert variances to standard deviations for proper chi-squared calculation
         sigma_per_point = np.sqrt(variances)
-        
+
         # Apply minimum sigma floor to prevent division by zero
-        min_sigma = self.config.get("advanced_settings", {}).get("chi_squared_calculation", {}).get("minimum_sigma", 1e-10)
+        min_sigma = (
+            self.config.get("advanced_settings", {})
+            .get("chi_squared_calculation", {})
+            .get("minimum_sigma", 1e-10)
+        )
         sigma_safe = np.maximum(sigma_per_point, min_sigma)
-        
+
         # Check for finite values only
         finite_mask = np.isfinite(residuals) & np.isfinite(sigma_safe)
         if not np.any(finite_mask):
             return np.inf
-            
+
         # Use only finite values for calculation
         residuals_finite = residuals[finite_mask]
         sigma_finite = sigma_safe[finite_mask]
-        
+
         # Proper chi-squared: χ² = Σ((residuals/σ)²) - matches slow method calculation
         chi_squared_per_point = (residuals_finite / sigma_finite) ** 2
         chi_squared = np.sum(chi_squared_per_point)
@@ -3042,7 +3168,7 @@ class HomodyneAnalysisCore:
             n_params = len(parameters)
             effective_dof = max(1, len(residuals_finite) - n_params)
             reduced_chi_squared = chi_squared / effective_dof
-            
+
             return {
                 "chi_squared": reduced_chi_squared,  # Return reduced chi-squared like slow method
                 "reduced_chi_squared": reduced_chi_squared,
@@ -3073,10 +3199,10 @@ class HomodyneAnalysisCore:
     ) -> None:
         """
         Log standardized optimization progress with reduced chi-squared and residual statistics.
-        
+
         This method provides consistent logging format across all optimization methods,
         helping track convergence behavior and diagnose optimization issues.
-        
+
         Parameters
         ----------
         iteration : int
@@ -3091,47 +3217,48 @@ class HomodyneAnalysisCore:
             Total degrees of freedom for the fit
         optimization_config : dict, optional
             Configuration dictionary for logging control
-            
+
         Notes
         -----
         Logging is controlled by configuration settings to avoid performance impact.
         Only logs when debug level is enabled or optimization logging is explicitly enabled.
         """
         import logging
+
         logger = logging.getLogger(__name__)
-        
+
         # Check if optimization logging is enabled
         if optimization_config is None:
             optimization_config = {}
-            
+
         # Get optimization logging settings from config
         optimization_logging = optimization_config.get("optimization_debug", {})
         log_enabled = optimization_logging.get("enabled", False)
         log_frequency = optimization_logging.get("log_frequency", 10)
         include_residuals = optimization_logging.get("include_residuals", True)
         include_chi_squared = optimization_logging.get("include_chi_squared", True)
-        
+
         # Only log if enabled or if debug level is active
         if not (log_enabled or logger.isEnabledFor(logging.DEBUG)):
             return
-            
+
         # Only log every N iterations to avoid spam
         if iteration % log_frequency != 0 and iteration > 0:
             return
-        
+
         # Build log message components
         log_parts = []
-        
+
         # Method name and iteration
         method_display = f"[{method_name}]" if method_name else "[Optimization]"
         log_parts.append(f"{method_display} Iteration {iteration}")
-        
+
         # Chi-squared information
         if include_chi_squared and chi_squared is not None:
             log_parts.append(f"χ²_reduced={chi_squared:.6f}")
             if total_dof is not None:
                 log_parts.append(f"DOF={total_dof}")
-        
+
         # Residual statistics
         if include_residuals and residuals is not None and len(residuals) > 0:
             # Calculate residual statistics safely
@@ -3140,9 +3267,11 @@ class HomodyneAnalysisCore:
                 min_res = np.min(finite_residuals)
                 mean_res = np.mean(finite_residuals)
                 max_res = np.max(finite_residuals)
-                log_parts.append(f"residuals[min/mean/max]=[{min_res:.4f}/{mean_res:.4f}/{max_res:.4f}]")
+                log_parts.append(
+                    f"residuals[min/mean/max]=[{min_res:.4f}/{mean_res:.4f}/{max_res:.4f}]"
+                )
                 log_parts.append(f"n_residuals={len(finite_residuals)}")
-        
+
         # Log the combined message
         log_message = ": ".join(log_parts)
         if log_enabled:
@@ -3560,156 +3689,241 @@ class HomodyneAnalysisCore:
             # BATCH PROCESSING: Process all angles simultaneously with vectorized operations
             # Get edge method from config for batch processing
             edge_method = chi_config.get("moving_window_edge_method", "reflect")
-            
+
             # Try batch variance estimation first (optimized path)
             batch_processing_success = False
             try:
                 # Validate inputs for batch processing
                 if not residuals_batch or len(residuals_batch) == 0:
-                    raise ValueError("Empty residuals_batch provided to batch processing")
-                
+                    raise ValueError(
+                        "Empty residuals_batch provided to batch processing"
+                    )
+
                 # Check for minimum array size requirements
-                min_size_for_batch = 5  # Minimum reasonable size for vectorized operations
+                min_size_for_batch = (
+                    5  # Minimum reasonable size for vectorized operations
+                )
                 if any(len(res) < min_size_for_batch for res in residuals_batch):
-                    logger.debug(f"Some residuals arrays too small for batch processing (< {min_size_for_batch} elements), using sequential fallback")
-                    raise ValueError(f"Residuals arrays too small for efficient batch processing")
-                
+                    logger.debug(
+                        f"Some residuals arrays too small for batch processing (< {min_size_for_batch} elements), using sequential fallback"
+                    )
+                    raise ValueError(
+                        f"Residuals arrays too small for efficient batch processing"
+                    )
+
                 # Use batch IRLS variance estimation for all angles at once
                 if variance_method == "irls_mad_robust":
-                    logger.debug(f"Using batch IRLS MAD robust variance estimation with {edge_method} edges for {n_angles} angles")
-                    
+                    logger.debug(
+                        f"Using batch IRLS MAD robust variance estimation with {edge_method} edges for {n_angles} angles"
+                    )
+
                     # Batch variance estimation processes all angles simultaneously
                     try:
-                        sigma_variances_batch = self._estimate_variance_irls_mad_robust_batch(
-                            residuals_batch,
-                            window_size=window_size,
-                            edge_method=edge_method,
+                        sigma_variances_batch = (
+                            self._estimate_variance_irls_mad_robust_batch(
+                                residuals_batch,
+                                window_size=window_size,
+                                edge_method=edge_method,
+                            )
                         )
                     except (RuntimeError, ValueError, MemoryError) as batch_error:
-                        logger.warning(f"Batch variance estimation failed: {str(batch_error)}")
+                        logger.warning(
+                            f"Batch variance estimation failed: {str(batch_error)}"
+                        )
                         raise batch_error
-                    
+
                     # Validate batch variance results
-                    if not sigma_variances_batch or len(sigma_variances_batch) != n_angles:
-                        raise ValueError(f"Batch variance estimation returned invalid results: {len(sigma_variances_batch) if sigma_variances_batch else 0} != {n_angles}")
-                    
+                    if (
+                        not sigma_variances_batch
+                        or len(sigma_variances_batch) != n_angles
+                    ):
+                        raise ValueError(
+                            f"Batch variance estimation returned invalid results: {len(sigma_variances_batch) if sigma_variances_batch else 0} != {n_angles}"
+                        )
+
                     # Check for invalid variance values
                     for i, sigma_vars in enumerate(sigma_variances_batch):
                         if sigma_vars is None or len(sigma_vars) == 0:
                             raise ValueError(f"Empty variance array for angle {i}")
-                        if not np.all(np.isfinite(sigma_vars)) or np.any(sigma_vars <= 0):
-                            logger.warning(f"Invalid variance values detected for angle {i}, falling back to sequential processing")
+                        if not np.all(np.isfinite(sigma_vars)) or np.any(
+                            sigma_vars <= 0
+                        ):
+                            logger.warning(
+                                f"Invalid variance values detected for angle {i}, falling back to sequential processing"
+                            )
                             raise ValueError(f"Invalid variance values for angle {i}")
-                    
+
                     # Calculate chi-squared values using batch Numba kernel
                     min_sigma = chi_config.get("minimum_sigma", 1e-10)
                     max_chi2 = chi_config.get("max_chi_squared", 1e8)
-                    
+
                     try:
                         # Convert lists to numpy arrays for Numba compatibility
-                        residuals_batch_array = np.array(residuals_batch, dtype=np.float64)
-                        sigma_variances_batch_array = np.array(sigma_variances_batch, dtype=np.float64)
-                        
+                        residuals_batch_array = np.array(
+                            residuals_batch, dtype=np.float64
+                        )
+                        sigma_variances_batch_array = np.array(
+                            sigma_variances_batch, dtype=np.float64
+                        )
+
                         # Use batch chi-squared calculation with variance normalization
-                        angle_chi2_proper, angle_chi2_reduced = chi_squared_with_variance_batch_numba(
-                            residuals_batch_array, sigma_variances_batch_array, dof_per_angle
+                        angle_chi2_proper, angle_chi2_reduced = (
+                            chi_squared_with_variance_batch_numba(
+                                residuals_batch_array,
+                                sigma_variances_batch_array,
+                                dof_per_angle,
+                            )
                         )
                     except (RuntimeError, ValueError) as chi2_error:
                         if "NUMBA_NUM_THREADS" in str(chi2_error):
-                            logger.debug("Numba threading conflict in batch chi-squared, falling back to sequential processing")
+                            logger.debug(
+                                "Numba threading conflict in batch chi-squared, falling back to sequential processing"
+                            )
                         else:
-                            logger.warning(f"Batch chi-squared calculation failed: {str(chi2_error)}")
+                            logger.warning(
+                                f"Batch chi-squared calculation failed: {str(chi2_error)}"
+                            )
                         raise chi2_error
-                    
+
                     # Validate chi-squared results
-                    if len(angle_chi2_proper) != n_angles or len(angle_chi2_reduced) != n_angles:
-                        raise ValueError(f"Batch chi-squared calculation returned wrong number of results")
-                    
+                    if (
+                        len(angle_chi2_proper) != n_angles
+                        or len(angle_chi2_reduced) != n_angles
+                    ):
+                        raise ValueError(
+                            f"Batch chi-squared calculation returned wrong number of results"
+                        )
+
                     # Apply limits and collect diagnostics
                     angle_sigma_values = []
                     all_sigma_values = []
-                    
-                    for i, (sigma_variances, residuals) in enumerate(zip(sigma_variances_batch, residuals_batch)):
+
+                    for i, (sigma_variances, residuals) in enumerate(
+                        zip(sigma_variances_batch, residuals_batch)
+                    ):
                         try:
                             sigma_per_point = np.sqrt(sigma_variances)
-                            
+
                             # Apply minimum sigma floor and validate
-                            sigma_per_point_safe = np.maximum(sigma_per_point, min_sigma)
-                            
+                            sigma_per_point_safe = np.maximum(
+                                sigma_per_point, min_sigma
+                            )
+
                             # Additional validation for extreme values
                             if not np.all(np.isfinite(sigma_per_point_safe)):
-                                logger.warning(f"Non-finite sigma values detected for angle {i}")
+                                logger.warning(
+                                    f"Non-finite sigma values detected for angle {i}"
+                                )
                                 # Replace non-finite values with minimum sigma
                                 sigma_per_point_safe = np.where(
                                     np.isfinite(sigma_per_point_safe),
                                     sigma_per_point_safe,
-                                    min_sigma
+                                    min_sigma,
                                 )
-                            
+
                             # Cap extremely large chi-squared values
-                            if not np.isfinite(angle_chi2_proper[i]) or angle_chi2_proper[i] > max_chi2:
+                            if (
+                                not np.isfinite(angle_chi2_proper[i])
+                                or angle_chi2_proper[i] > max_chi2
+                            ):
                                 logger.warning(
                                     f"Angle {i}: Chi-squared {angle_chi2_proper[i]:.2e} exceeds maximum or is non-finite, capping"
                                 )
                                 angle_chi2_proper[i] = max_chi2
                                 angle_chi2_reduced[i] = max_chi2 / max(1, dof_per_angle)
-                            
+
                             # Collect diagnostic values
                             angle_sigma_values.append(np.mean(sigma_per_point_safe))
                             all_sigma_values.extend(sigma_per_point_safe)
-                            
+
                         except Exception as angle_error:
-                            logger.error(f"Error processing angle {i} in batch results: {str(angle_error)}")
+                            logger.error(
+                                f"Error processing angle {i} in batch results: {str(angle_error)}"
+                            )
                             raise angle_error
-                    
+
                     # Convert to numpy arrays with validation
                     try:
-                        angle_chi2_proper = np.array(angle_chi2_proper, dtype=np.float64)
-                        angle_chi2_reduced = np.array(angle_chi2_reduced, dtype=np.float64)
+                        angle_chi2_proper = np.array(
+                            angle_chi2_proper, dtype=np.float64
+                        )
+                        angle_chi2_reduced = np.array(
+                            angle_chi2_reduced, dtype=np.float64
+                        )
                     except (ValueError, TypeError) as conv_error:
-                        logger.error(f"Failed to convert batch results to numpy arrays: {str(conv_error)}")
+                        logger.error(
+                            f"Failed to convert batch results to numpy arrays: {str(conv_error)}"
+                        )
                         raise conv_error
-                    
+
                     # Final validation of batch results
-                    if not np.all(np.isfinite(angle_chi2_proper)) or not np.all(np.isfinite(angle_chi2_reduced)):
-                        logger.warning("Non-finite values detected in final batch chi-squared results")
+                    if not np.all(np.isfinite(angle_chi2_proper)) or not np.all(
+                        np.isfinite(angle_chi2_reduced)
+                    ):
+                        logger.warning(
+                            "Non-finite values detected in final batch chi-squared results"
+                        )
                         # Replace non-finite values with large but finite values
-                        angle_chi2_proper = np.where(np.isfinite(angle_chi2_proper), angle_chi2_proper, max_chi2)
-                        angle_chi2_reduced = np.where(np.isfinite(angle_chi2_reduced), angle_chi2_reduced, max_chi2 / max(1, dof_per_angle))
-                    
+                        angle_chi2_proper = np.where(
+                            np.isfinite(angle_chi2_proper), angle_chi2_proper, max_chi2
+                        )
+                        angle_chi2_reduced = np.where(
+                            np.isfinite(angle_chi2_reduced),
+                            angle_chi2_reduced,
+                            max_chi2 / max(1, dof_per_angle),
+                        )
+
                     batch_processing_success = True
-                    logger.debug(f"Batch processing completed successfully for {n_angles} angles")
-                    
+                    logger.debug(
+                        f"Batch processing completed successfully for {n_angles} angles"
+                    )
+
                 else:
                     # Fallback to batch processing with legacy variance method
-                    raise NotImplementedError(f"Batch processing not implemented for variance method: {variance_method}")
-                    
-            except (RuntimeError, ValueError, NotImplementedError, MemoryError) as batch_error:
+                    raise NotImplementedError(
+                        f"Batch processing not implemented for variance method: {variance_method}"
+                    )
+
+            except (
+                RuntimeError,
+                ValueError,
+                NotImplementedError,
+                MemoryError,
+            ) as batch_error:
                 # Comprehensive error logging for debugging
                 error_type = type(batch_error).__name__
-                logger.warning(f"Batch processing failed with {error_type}: {str(batch_error)}")
-                
+                logger.warning(
+                    f"Batch processing failed with {error_type}: {str(batch_error)}"
+                )
+
                 # Additional context for specific error types
                 if "NUMBA_NUM_THREADS" in str(batch_error):
-                    logger.debug("Numba threading conflict detected, this is expected in some environments")
+                    logger.debug(
+                        "Numba threading conflict detected, this is expected in some environments"
+                    )
                 elif isinstance(batch_error, MemoryError):
-                    logger.warning(f"Memory exhaustion during batch processing of {n_angles} angles")
+                    logger.warning(
+                        f"Memory exhaustion during batch processing of {n_angles} angles"
+                    )
                 elif isinstance(batch_error, NotImplementedError):
-                    logger.debug(f"Batch processing not available for current configuration")
-                
+                    logger.debug(
+                        f"Batch processing not available for current configuration"
+                    )
+
                 batch_processing_success = False
-                
+
             # Only use sequential fallback if batch processing failed
             if not batch_processing_success:
-                    
-                logger.info(f"Using sequential processing fallback for {n_angles} angles")
-                
+                logger.info(
+                    f"Using sequential processing fallback for {n_angles} angles"
+                )
+
                 # Enhanced sequential processing with improved error handling
                 angle_chi2_proper = []
                 angle_chi2_reduced = []
                 angle_sigma_values = []
                 all_sigma_values = []
-                
+
                 for i in range(n_angles):
                     residuals = residuals_batch[i]
 
@@ -3745,18 +3959,21 @@ class HomodyneAnalysisCore:
 
                     sigma_per_point = np.sqrt(sigma_variances)
 
-                    # Debug size mismatch issues
+                    # Handle size mismatch issues (should be rare with improved variance estimation)
                     if len(residuals) != len(sigma_per_point):
-                        logger.error(
-                            f"Size mismatch in chi-squared calculation: "
+                        logger.warning(
+                            f"Size mismatch in chi-squared calculation for angle {i}: "
                             f"residuals({len(residuals)}) != sigma_per_point({len(sigma_per_point)}). "
-                            f"Difference: {abs(len(residuals) - len(sigma_per_point))} elements."
+                            f"Difference: {abs(len(residuals) - len(sigma_per_point))} elements. "
+                            f"This indicates an issue in variance estimation - applying safety truncation."
                         )
                         # Truncate to smaller size to prevent crash
                         min_size = min(len(residuals), len(sigma_per_point))
                         residuals_for_calc = residuals[:min_size]
                         sigma_for_calc = sigma_per_point[:min_size]
-                        logger.warning(f"Truncating both arrays to size {min_size}")
+                        logger.debug(
+                            f"Angle {i}: Truncated both arrays to size {min_size} for chi-squared calculation"
+                        )
                     else:
                         residuals_for_calc = residuals
                         sigma_for_calc = sigma_per_point
@@ -3806,30 +4023,46 @@ class HomodyneAnalysisCore:
                     all_sigma_values.extend(
                         sigma_per_point
                     )  # Collect all individual values
-                
+
                 # Convert to numpy arrays for compatibility with validation
                 try:
                     angle_chi2_proper = np.array(angle_chi2_proper, dtype=np.float64)
                     angle_chi2_reduced = np.array(angle_chi2_reduced, dtype=np.float64)
-                    
+
                     # Final validation of sequential results
                     if not np.all(np.isfinite(angle_chi2_proper)):
-                        logger.warning("Non-finite values in sequential chi-squared results, cleaning up")
-                        angle_chi2_proper = np.where(np.isfinite(angle_chi2_proper), angle_chi2_proper, 1e6)
-                    
+                        logger.warning(
+                            "Non-finite values in sequential chi-squared results, cleaning up"
+                        )
+                        angle_chi2_proper = np.where(
+                            np.isfinite(angle_chi2_proper), angle_chi2_proper, 1e6
+                        )
+
                     if not np.all(np.isfinite(angle_chi2_reduced)):
-                        logger.warning("Non-finite values in sequential reduced chi-squared results, cleaning up")
-                        angle_chi2_reduced = np.where(np.isfinite(angle_chi2_reduced), angle_chi2_reduced, 1e6 / max(1, dof_per_angle))
-                    
+                        logger.warning(
+                            "Non-finite values in sequential reduced chi-squared results, cleaning up"
+                        )
+                        angle_chi2_reduced = np.where(
+                            np.isfinite(angle_chi2_reduced),
+                            angle_chi2_reduced,
+                            1e6 / max(1, dof_per_angle),
+                        )
+
                 except (ValueError, TypeError) as conv_error:
-                    logger.error(f"Failed to convert sequential results to numpy arrays: {str(conv_error)}")
+                    logger.error(
+                        f"Failed to convert sequential results to numpy arrays: {str(conv_error)}"
+                    )
                     # Create default arrays as last resort
                     angle_chi2_proper = np.full(n_angles, 1e6, dtype=np.float64)
-                    angle_chi2_reduced = np.full(n_angles, 1e6 / max(1, dof_per_angle), dtype=np.float64)
+                    angle_chi2_reduced = np.full(
+                        n_angles, 1e6 / max(1, dof_per_angle), dtype=np.float64
+                    )
 
             # Final safety check to ensure arrays are properly formatted
             if not isinstance(angle_chi2_proper, np.ndarray):
-                logger.warning("Chi-squared results not in numpy array format, converting")
+                logger.warning(
+                    "Chi-squared results not in numpy array format, converting"
+                )
                 angle_chi2_proper = np.array(angle_chi2_proper, dtype=np.float64)
                 angle_chi2_reduced = np.array(angle_chi2_reduced, dtype=np.float64)
 
@@ -3884,8 +4117,12 @@ class HomodyneAnalysisCore:
 
             # Enhanced optimization logging with standardized format
             # Get optimization logging configuration
-            optimization_logging_config = self.config.get("output_settings", {}).get("logging", {}).get("optimization_debug", {})
-            
+            optimization_logging_config = (
+                self.config.get("output_settings", {})
+                .get("logging", {})
+                .get("optimization_debug", {})
+            )
+
             # Standard debug logging (existing functionality)
             logger.debug("CHI² CALCULATION (Moving Window Method):")
             logger.debug(f"  total_chi2 = {total_chi2:.6e}")
@@ -3901,10 +4138,12 @@ class HomodyneAnalysisCore:
                 f"  residuals min/mean/max = {np.min(all_residuals):.6e} / {np.mean(all_residuals):.6e} / {np.max(all_residuals):.6e}"
             )
             logger.debug(f"  window_size = {window_size}")
-            
+
             # Enhanced optimization progress logging (new functionality)
             # This provides a standardized format for optimization tracking
-            if optimization_logging_config.get("enabled", False) or logger.isEnabledFor(logging.DEBUG):
+            if optimization_logging_config.get("enabled", False) or logger.isEnabledFor(
+                logging.DEBUG
+            ):
                 method_name = method_name or "Core-Analysis"
                 # Use the standardized logging method for consistency across optimization methods
                 self.log_optimization_progress(
@@ -3913,7 +4152,7 @@ class HomodyneAnalysisCore:
                     residuals=all_residuals,
                     method_name=method_name,
                     total_dof=total_dof,
-                    optimization_config=optimization_logging_config
+                    optimization_config=optimization_logging_config,
                 )
 
             # Simplified uncertainty calculation (remove dual versions)
@@ -5222,5 +5461,3 @@ def _get_quality_recommendations(quality: str, issues: list) -> list:
 # ============================================================================
 
 # Note: Additional methods would be defined here if needed
-
-
