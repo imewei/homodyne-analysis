@@ -1,0 +1,19 @@
+# JAX dependencies for high-performance computing
+# Generated from pyproject.toml [project.optional-dependencies.jax]
+# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+
+# Include core dependencies
+-r requirements.txt
+
+# JAX for high-performance numerical computations
+jax>=0.7.0
+jaxlib>=0.4.35
+
+# Note: For GPU support, install jaxlib with CUDA support:
+# pip install "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+#
+# For TPU support:
+# pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
+#
+# For CPU-only (default):
+# pip install jax jaxlib

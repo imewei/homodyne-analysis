@@ -1,0 +1,36 @@
+# Optional dependencies for Homodyne Scattering Analysis Package
+# Generated from pyproject.toml [project.optional-dependencies]
+# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+
+# Include core dependencies
+-r requirements.txt
+
+# Data handling
+xpcs-viewer>=1.0.4
+
+# Performance optimization (includes JAX for high-performance computing)
+numba>=0.61.0,<0.62.0
+jax>=0.7.0
+jaxlib>=0.4.35
+psutil>=5.8.0
+
+# MCMC and Bayesian analysis
+pymc>=5.0.0
+arviz>=0.12.0
+pytensor>=2.8.0
+corner>=2.2.0
+
+# Robust optimization
+cvxpy>=1.4.0
+
+# Gurobi optimization solver (requires license)
+gurobipy>=11.0.0
+
+# Shell completion (cross-platform support)
+argcomplete>=3.0.0
+
+# Note: Shell completion now includes:
+# - Windows PowerShell support
+# - Cross-platform path handling
+# - Fast completion caching
+# - Robust fallback mechanisms

@@ -5,6 +5,7 @@ homodyne_results/
 homodyne_analysis_results.json
 run.log
 WARP.md
+my_conf*.json
 
 # Development scripts
 scripts/dev_cleanup/
@@ -64,10 +65,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-test_report.html
-bandit_re*.json
-bandit-re*.json
-pip_audit_report.json
 
 # Translations
 *.mo
@@ -239,6 +236,3 @@ Thumbs.db
 *.tmp
 *.bak
 *.orig
-
-CLAUDE.md
-WARP.md

@@ -1,31 +1,25 @@
 # Homodyne Analysis Package - Development Makefile
 # ================================================
-# Updated: 2024-08-31 - Added shell completion and GPU acceleration setup targets
 
-.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv install dev-install test test-all lint format docs docs-serve build upload check setup-shell setup-gpu setup-advanced cleanup-homodyne
+.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv install dev-install test test-all lint format docs docs-serve build upload check
 
 # Default target
 help:
 	@echo "Homodyne Analysis Package - Development Commands"
 	@echo "=============================================="
 	@echo
-	@echo "Installation & Setup:"
-	@echo "  install         Install package in editable mode"
-	@echo "  dev-install     Install package with all development dependencies"
-	@echo "  setup-shell     Install shell completion (aliases: hm, hc, hr, ha)"
-	@echo "  setup-gpu       Install GPU acceleration (Linux only)"
-	@echo "  setup-advanced  Install advanced features (GPU optimization, validation)"
-	@echo "  setup-all       Install everything (shell, GPU, advanced features)"
-	@echo "  cleanup-homodyne Remove all homodyne setup files"
+	@echo "Development:"
+	@echo "  install      Install package in editable mode"
+	@echo "  dev-install  Install package with all development dependencies"
 	@echo
 	@echo "Testing:"
-	@echo "  test            Run tests with pytest"
-	@echo "  test-all        Run tests with all optional dependencies"
+	@echo "  test         Run tests with pytest"
+	@echo "  test-all     Run tests with all optional dependencies"
 	@echo "  test-performance     Run performance tests only"
 	@echo "  test-regression      Run performance regression tests"
-	@echo "  test-ci         Run CI-style performance tests"
-	@echo "  lint            Run code linting (ruff, mypy)"
-	@echo "  format          Format code with ruff and black"
+	@echo "  test-ci      Run CI-style performance tests"
+	@echo "  lint         Run code linting (flake8, mypy)"
+	@echo "  format       Format code with black"
 	@echo
 	@echo "Performance Baselines:"
 	@echo "  baseline-update      Update performance baselines"
@@ -33,22 +27,21 @@ help:
 	@echo "  baseline-report      Generate performance report"
 	@echo
 	@echo "Cleanup:"
-	@echo "  clean           Clean all build artifacts and cache files (preserves virtual environment)"
-	@echo "  clean-all       Clean everything including virtual environment"
-	@echo "  cleanup-homodyne Remove homodyne shell completion and GPU setup files"
-	@echo "  clean-build     Remove build artifacts"
-	@echo "  clean-pyc       Remove Python bytecode files"
-	@echo "  clean-test      Remove test and coverage artifacts"
-	@echo "  clean-venv      Remove virtual environment"
+	@echo "  clean        Clean all build artifacts and cache files (preserves virtual environment)"
+	@echo "  clean-all    Clean everything including virtual environment"
+	@echo "  clean-build  Remove build artifacts"
+	@echo "  clean-pyc    Remove Python bytecode files"
+	@echo "  clean-test   Remove test and coverage artifacts"
+	@echo "  clean-venv   Remove virtual environment"
 	@echo
 	@echo "Documentation:"
-	@echo "  docs            Build documentation"
-	@echo "  docs-serve      Serve documentation locally"
+	@echo "  docs         Build documentation"
+	@echo "  docs-serve   Serve documentation locally"
 	@echo
 	@echo "Packaging:"
-	@echo "  build           Build distribution packages"
-	@echo "  upload          Upload to PyPI"
-	@echo "  check           Check package metadata and distribution"
+	@echo "  build        Build distribution packages"
+	@echo "  upload       Upload to PyPI"
+	@echo "  check        Check package metadata and distribution"
 
 # Installation targets
 install:
@@ -57,46 +50,15 @@ install:
 dev-install:
 	pip install -e ".[all,dev,docs]"
 
-# Homodyne Setup targets
-setup-shell:
-	@echo "Installing shell completion (aliases: hm, hc, hr, ha)..."
-	homodyne-post-install --shell zsh
-	@echo "✅ Shell completion installed. Restart shell or run: source ~/.zshrc"
-
-setup-gpu:
-	@echo "Installing GPU acceleration (Linux only)..."
-	homodyne-post-install --gpu
-	@echo "✅ GPU acceleration installed. Test with: homodyne_gpu_status"
-
-setup-advanced:
-	@echo "Installing advanced features..."
-	homodyne-post-install --advanced
-	@echo "✅ Advanced features installed:"
-	@echo "  • homodyne-gpu-optimize - GPU optimization and benchmarking"
-	@echo "  • homodyne-validate - System validation"
-
-setup-all:
-	@echo "Installing all homodyne features..."
-	homodyne-post-install --shell zsh --gpu --advanced
-	@echo "✅ Complete homodyne setup installed!"
-	@echo "  • Shell aliases: hm, hc, hr, ha, hconfig"
-	@echo "  • GPU acceleration with smart detection"
-	@echo "  • Advanced CLI tools: homodyne-gpu-optimize, homodyne-validate"
-
-cleanup-homodyne:
-	@echo "Removing homodyne setup files..."
-	homodyne-cleanup
-	@echo "✅ Homodyne cleanup completed"
-
 # Testing targets
 test:
-	python -c "import sys; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
+	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
 
 test-all:
 	pytest -v --cov=homodyne --cov-report=html --cov-report=term
 
 test-fast:
-	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
+	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
 
 # Performance testing targets
 test-performance:
@@ -147,7 +109,6 @@ quality: format lint
 
 # Cleanup targets
 clean: clean-build clean-pyc clean-test
-	rm -rf node_modules/
 	@echo "Cleaned all build artifacts and cache files"
 
 clean-cache:
@@ -176,15 +137,7 @@ clean-test:
 	rm -rf htmlcov/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
-	find . -name '.benchmarks' -type d -exec rm -rf {} +
-	rm -f test_report.html
-	rm -f bandit-report.json
-	rm -f bandit_report.json
-	rm -f bandit-results.json
-	rm -f bandit_results.json
-	rm -f code_quality_report.md
-	rm -f pip_audit_report.json
-	rm -f coverage.xml
+	rm -rf .benchmarks/
 
 clean-venv:
 	rm -rf venv/
@@ -193,9 +146,7 @@ clean-venv:
 	rm -rf .env/
 
 clean-all: clean-build clean-pyc clean-test clean-venv
-	rm -rf node_modules/
 	@echo "Cleaned all build artifacts, cache files, and virtual environment"
-	@echo "Note: Run 'make cleanup-homodyne' to also remove shell completion and GPU setup"
 
 # Documentation targets
 docs:
