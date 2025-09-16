@@ -1,0 +1,22 @@
+# Exclude shell scripts and build files from language stats
+*.sh linguist-detectable=false
+Makefile linguist-detectable=false
+homodyne_complete linguist-detectable=false
+homodyne_completion_bypass.zsh linguist-detectable=false
+
+# Mark documentation as documentation
+*.md linguist-documentation=true
+*.rst linguist-documentation=true
+
+# Ensure Python is properly detected
+*.py linguist-language=Python
+
+# Mark test files appropriately
+**/tests/** linguist-detectable=false
+
+# Exclude generated/vendor files
+venv/** linguist-vendored=true
+.venv/** linguist-vendored=true
+build/** linguist-vendored=true
+dist/** linguist-vendored=true
+*.egg-info/** linguist-vendored=true
