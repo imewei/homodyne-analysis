@@ -4,6 +4,7 @@ homodyne_analysis_results/
 homodyne_results/
 homodyne_analysis_results.json
 run.log
+CLAUDE.md
 WARP.md
 my_conf*.json
 
