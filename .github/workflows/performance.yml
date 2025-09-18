@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,performance,mcmc]"
+          pip install -e ".[dev,performance]"
           pip install pytest-benchmark psutil
 
       - name: Set up performance test environment
@@ -145,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,performance,mcmc]"
+          pip install -e ".[dev,performance]"
           pip install pytest-benchmark psutil
 
       - name: Download current performance results
@@ -215,7 +215,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,performance,mcmc]"
+          pip install -e ".[dev,performance]"
           pip install pytest-benchmark psutil
 
       - name: Run comprehensive performance benchmark

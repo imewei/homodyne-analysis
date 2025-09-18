@@ -71,23 +71,18 @@ jobs:
         continue-on-error: true
         run: |
           # Install optional dependencies for comprehensive testing
-          pip install -e ".[mcmc,robust,data]" || echo "Some optional dependencies failed to install"
+          pip install -e ".[robust,data]" || echo "Some optional dependencies failed to install"
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: 1
 
       - name: Run core tests
         run: |
-          pytest homodyne/tests/ -v --tb=short --cov=homodyne --cov-report=xml --cov-report=term-missing -x -m "not slow and not integration and not mcmc"
+          pytest homodyne/tests/ -v --tb=short --cov=homodyne --cov-report=xml --cov-report=term-missing -x -m "not slow and not integration"
 
       - name: Run integration tests
         run: |
           pytest homodyne/tests/ -v --tb=short -m "integration and not slow"
 
-      - name: Run MCMC tests (with optional dependencies)
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        continue-on-error: true
-        run: |
-          pytest homodyne/tests/ -v --tb=short -m "mcmc and not slow"
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
