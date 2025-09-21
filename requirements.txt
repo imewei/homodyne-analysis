@@ -1,7 +1,31 @@
-# Core dependencies for Homodyne Scattering Analysis Package
+# Core Dependencies for Homodyne Scattering Analysis Package
+# ============================================================
 # Generated from pyproject.toml [project.dependencies]
-# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+# Last updated: v0.7.1 (2024-12-20)
+#
+# This file contains only the essential dependencies required for basic functionality.
+# For additional features, see:
+# - requirements-optional.txt (all optional features)
+# - requirements-jax.txt (high-performance computing)
+# - requirements-dev.txt (development tools)
 
-numpy>=1.24.0,<2.3.0
-scipy>=1.9.0
-matplotlib>=3.5.0
+# =============================================================================
+# Essential Scientific Computing Libraries
+# =============================================================================
+numpy>=1.24.0,<2.3.0  # Core array operations and mathematical functions
+scipy>=1.9.0          # Scientific computing algorithms and optimization
+matplotlib>=3.5.0     # Basic plotting and visualization
+
+# =============================================================================
+# Core Features Enabled
+# =============================================================================
+# With these dependencies, you can use:
+# ✅ Classical optimization (Nelder-Mead algorithm)
+# ✅ Basic correlation function analysis
+# ✅ Static and laminar flow analysis modes
+# ✅ Core I/O operations for XPCS data
+# ✅ Basic plotting and result visualization
+# ✅ Configuration management and CLI tools
+#
+# For additional optimization methods and features:
+# pip install -r requirements-optional.txt

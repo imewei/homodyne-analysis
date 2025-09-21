@@ -38,12 +38,9 @@ keywords = [
     "nonequilibrium-dynamics",
     "transport-coefficients",
     "optimization",
-    "bayesian-analysis",
-    "mcmc",
     "robust-optimization",
     "trust-region-optimization",
     "gurobi",
-    "jax",
     "high-performance-computing",
     "jit-compilation",
     "performance-optimization",
@@ -67,19 +64,7 @@ data = [
 ]
 performance = [
     "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
-    "jax>=0.7.0",  # High-performance numerical computations with JIT compilation
-    "jaxlib>=0.4.35",  # JAX backend library
     "psutil>=5.8.0",  # For memory profiling and system monitoring
-]
-jax = [
-    "jax>=0.7.0",  # High-performance numerical computations with JIT compilation
-    "jaxlib>=0.4.35",  # JAX backend library for CPU/GPU acceleration
-]
-mcmc = [
-    "pymc>=5.0.0",
-    "arviz>=0.12.0",
-    "pytensor>=2.8.0",
-    "corner>=2.2.0",  # For enhanced MCMC corner plots
 ]
 robust = [
     "cvxpy>=1.4.0",  # Convex optimization for robust methods
@@ -132,7 +117,7 @@ dev = [
     "twine>=4.0.0",
 ]
 all = [
-    "homodyne-analysis[data,performance,jax,mcmc,robust,gurobi,completion,dev]",
+    "homodyne-analysis[data,performance,robust,gurobi,completion,dev]",
 ]
 
 [project.urls]
@@ -237,15 +222,12 @@ testpaths = ["homodyne/tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
-    "mcmc: marks tests requiring MCMC dependencies",
     "performance: marks performance-related tests",
     "benchmark: marks tests for benchmarking (requires pytest-benchmark)",
     "memory: marks tests that monitor memory usage",
     "regression: marks tests for performance regression detection",
     "import_time: marks tests that measure import performance",
     "optimization: marks tests for Phase 3 batch optimization features",
-    "jax: marks tests requiring JAX dependencies",
-    "gpu: marks tests that can utilize GPU acceleration (requires appropriate JAX installation)",
 ]
 filterwarnings = [
     "error",
@@ -276,12 +258,6 @@ pretty = true
 [[tool.mypy.overrides]]
 module = [
     "numba.*",
-    "jax.*",
-    "jaxlib.*",
-    "pymc.*",
-    "arviz.*",
-    "pytensor.*",
-    "corner.*",
     "cvxpy.*",
     "gurobipy.*",
     "xpcs_viewer.*",

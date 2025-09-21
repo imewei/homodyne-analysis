@@ -1,36 +1,80 @@
-# Optional dependencies for Homodyne Scattering Analysis Package
+# Optional Dependencies for Homodyne Scattering Analysis Package
+# ==============================================================
 # Generated from pyproject.toml [project.optional-dependencies]
-# Last updated: v0.7.1 (Windows compatibility and pre-commit hooks)
+# Last updated: v0.7.1 (2024-12-20)
+#
+# This file includes ALL optional features for a complete installation.
+# For minimal installation, use: pip install -r requirements.txt
 
 # Include core dependencies
 -r requirements.txt
 
-# Data handling
-xpcs-viewer>=1.0.4
+# =============================================================================
+# Data Handling Dependencies
+# =============================================================================
+xpcs-viewer>=1.0.4     # XPCS data handling and visualization
+                       # GitHub: https://github.com/AdvancedPhotonSource/pyXpcsViewer
 
-# Performance optimization (includes JAX for high-performance computing)
-numba>=0.61.0,<0.62.0
-jax>=0.7.0
-jaxlib>=0.4.35
-psutil>=5.8.0
+# =============================================================================
+# High-Performance Computing Dependencies
+# =============================================================================
+numba>=0.61.0,<0.62.0  # JIT compilation for computational kernels (NumPy 2.2 compatible)
+jax>=0.7.0             # High-performance numerical computations with automatic differentiation
+jaxlib>=0.4.35         # JAX backend library for CPU/GPU/TPU acceleration
+psutil>=5.8.0          # System monitoring and memory profiling
 
-# MCMC and Bayesian analysis
-pymc>=5.0.0
-arviz>=0.12.0
-pytensor>=2.8.0
-corner>=2.2.0
+# =============================================================================
+# Advanced Optimization Methods
+# =============================================================================
 
-# Robust optimization
-cvxpy>=1.4.0
+# Robust Optimization (Uncertainty Quantification)
+cvxpy>=1.4.0           # Convex optimization for robust methods
+                       # Enables: Wasserstein DRO, Scenario-based, Ellipsoidal uncertainty
 
-# Gurobi optimization solver (requires license)
-gurobipy>=11.0.0
+# Commercial Optimization (Requires License)
+gurobipy>=11.0.0       # Gurobi optimization solver (requires commercial license)
+                       # Superior performance on large-scale optimization problems
 
-# Shell completion (cross-platform support)
-argcomplete>=3.0.0
+# =============================================================================
+# User Experience Enhancements
+# =============================================================================
+argcomplete>=3.0.0     # Cross-platform shell tab completion
+                       # Supports bash, zsh, fish, PowerShell
 
-# Note: Shell completion now includes:
-# - Windows PowerShell support
-# - Cross-platform path handling
-# - Fast completion caching
-# - Robust fallback mechanisms
+# =============================================================================
+# Feature Matrix with Optional Dependencies
+# =============================================================================
+#
+# Core features (requirements.txt only):
+# ✅ Classical optimization (Nelder-Mead)
+# ✅ Basic correlation function analysis
+# ✅ Static and laminar flow modes
+# ✅ Core I/O operations
+# ✅ Basic plotting
+#
+# Additional features with optional dependencies:
+# ✅ XPCS data loading (xpcs-viewer)
+# ✅ 3-5x speedup with JIT compilation (numba)
+# ✅ GPU/TPU acceleration (jax, jaxlib)
+# ✅ Memory profiling (psutil)
+# ✅ Robust optimization methods (cvxpy)
+# ✅ Commercial-grade optimization (gurobipy)
+# ✅ Shell tab completion (argcomplete)
+#
+# =============================================================================
+# Installation Examples
+# =============================================================================
+#
+# Complete installation:
+# pip install -r requirements-optional.txt
+#
+# Selective installation:
+# pip install -r requirements.txt
+# pip install numba jax jaxlib  # High-performance computing only
+# pip install cvxpy             # Robust optimization only
+# pip install argcomplete       # Shell completion only
+#
+# PyPI installation with extras:
+# pip install "homodyne-analysis[all]"         # All optional features
+# pip install "homodyne-analysis[performance]" # High-performance only
+# pip install "homodyne-analysis[robust]"      # Robust optimization only
