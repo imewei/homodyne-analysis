@@ -129,7 +129,7 @@ class UltraFastCache:
 
 
 # Pre-defined completions (zero computation)
-METHODS = ["classical", "mcmc", "robust", "all"]
+METHODS = ["classical", "robust", "all"]
 MODES = ["static_isotropic", "static_anisotropic", "laminar_flow"]
 
 # Lazy-loaded cache

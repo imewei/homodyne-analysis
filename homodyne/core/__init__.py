@@ -19,11 +19,11 @@ from .kernels import (
 
 __all__ = [
     "ConfigManager",
-    "configure_logging",
-    "create_time_integral_matrix_numba",
     "calculate_diffusion_coefficient_numba",
     "calculate_shear_rate_numba",
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
+    "configure_logging",
+    "create_time_integral_matrix_numba",
     "memory_efficient_cache",
 ]

@@ -19,10 +19,10 @@ Key Features:
 - Three analysis modes: Static Isotropic (3 params), Static Anisotropic (3 params),
   Laminar Flow (7 params)
 - Multiple optimization methods: Classical (Nelder-Mead, Gurobi), Robust
-  (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+  (Wasserstein DRO, Scenario-based, Ellipsoidal)
 - Noise-resistant analysis: Robust optimization for measurement uncertainty and outliers
 - High performance: Numba JIT compilation with 3-5x speedup and smart angle filtering
-- Scientific accuracy: Automatic g₂ = offset + contrast × g₁ fitting
+- Scientific accuracy: Automatic g2 = offset + contrast * g1 fitting
 - Consistent bounds: All optimization methods use identical parameter constraints
 
 Core Modules:
@@ -33,7 +33,6 @@ Core Modules:
 - optimization.classical: Multiple methods (Nelder-Mead, Gurobi QP) with angle filtering
 - optimization.robust: Robust optimization (Wasserstein DRO, Scenario-based,
   Ellipsoidal)
-- optimization.mcmc: PyMC-based Bayesian parameter estimation
 - plotting: Comprehensive visualization for data validation and diagnostics
 
 Authors: Wei Chen, Hongrui He
@@ -42,12 +41,6 @@ Institution: Argonne National Laboratory
 
 # Check Python version requirement early
 import sys
-
-if sys.version_info < (3, 12):
-    raise RuntimeError(
-        f"Python 3.12+ is required. You are using Python {sys.version}. "
-        "Please upgrade your Python installation or use a compatible environment."
-    )
 
 # Performance profiling utilities removed - functionality available via
 # core.config.performance_monitor
@@ -84,36 +77,21 @@ except ImportError as e:
         f"Robust optimization not available - missing CVXPY: {e}"
     )
 
-try:
-    from .optimization.mcmc import MCMCSampler, create_mcmc_sampler
-except ImportError as e:
-    MCMCSampler = None  # type: ignore[assignment]
-    create_mcmc_sampler = None  # type: ignore[assignment]
-    import logging
-
-    logging.getLogger(__name__).warning(
-        f"MCMC Bayesian analysis not available - missing PyMC/ArviZ: {e}"
-    )
 
 __all__ = [
-    # Core functionality
+    "ClassicalOptimizer",
     "ConfigManager",
-    "configure_logging",
-    "performance_monitor",
     "HomodyneAnalysisCore",
-    # Computational kernels
-    "create_time_integral_matrix_numba",
+    "RobustHomodyneOptimizer",
     "calculate_diffusion_coefficient_numba",
     "calculate_shear_rate_numba",
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
-    "memory_efficient_cache",
-    # Optimization methods (optional)
-    "ClassicalOptimizer",
-    "RobustHomodyneOptimizer",
+    "configure_logging",
     "create_robust_optimizer",
-    "MCMCSampler",
-    "create_mcmc_sampler",
+    "create_time_integral_matrix_numba",
+    "memory_efficient_cache",
+    "performance_monitor",
 ]
 
 # Version information

@@ -2,7 +2,7 @@
 Type stubs for mpl_toolkits.mplot3d 3D plotting.
 """
 
-from typing import Any, List, Optional, Union
+from typing import Any
 
 import numpy as np
 from matplotlib.axes import Axes
@@ -19,14 +19,14 @@ class Axes3D(Axes):
         Z: np.ndarray,
         rstride: int = ...,
         cstride: int = ...,
-        color: Optional[str] = ...,
-        cmap: Optional[str] = ...,
-        facecolors: Optional[np.ndarray] = ...,
-        norm: Optional[Any] = ...,
-        vmin: Optional[float] = ...,
-        vmax: Optional[float] = ...,
+        color: str | None = ...,
+        cmap: str | None = ...,
+        facecolors: np.ndarray | None = ...,
+        norm: Any | None = ...,
+        vmin: float | None = ...,
+        vmax: float | None = ...,
         shade: bool = ...,
-        alpha: Optional[float] = ...,
+        alpha: float | None = ...,
         **kwargs: Any,
     ) -> Any: ...
     def plot_wireframe(
@@ -36,17 +36,17 @@ class Axes3D(Axes):
         Z: np.ndarray,
         rstride: int = ...,
         cstride: int = ...,
-        color: Optional[str] = ...,
+        color: str | None = ...,
         **kwargs: Any,
     ) -> Any: ...
     def scatter(
         self,
-        xs: Union[np.ndarray, List[float]],
-        ys: Union[np.ndarray, List[float]],
-        zs: Union[np.ndarray, List[float]],
+        xs: np.ndarray | list[float],
+        ys: np.ndarray | list[float],
+        zs: np.ndarray | list[float],
         zdir: str = ...,
-        s: Union[float, np.ndarray] = ...,
-        c: Union[str, np.ndarray] = ...,
+        s: float | np.ndarray = ...,
+        c: str | np.ndarray = ...,
         depthshade: bool = ...,
         **kwargs: Any,
     ) -> Any: ...

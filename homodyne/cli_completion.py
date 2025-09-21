@@ -8,7 +8,7 @@ Usage:
     homodyne --install-completion zsh
     homodyne --install-completion fish
     # Shell completion in regular commands
-    homodyne --method <TAB>     # Shows: classical, mcmc, robust, all
+    homodyne --method <TAB>     # Shows: classical, robust, all
     homodyne --config <TAB>     # Shows available .json files
 """
 
@@ -32,7 +32,7 @@ class FastCompletionCache:
 
     def __init__(self):
         # Pre-computed static completions (never change)
-        self.METHODS = ["classical", "mcmc", "robust", "all"]
+        self.METHODS = ["classical", "robust", "all"]
         self.MODES = ["static_isotropic", "static_anisotropic", "laminar_flow"]
         self.COMMON_CONFIGS = ["config.json", "homodyne_config.json", "my_config.json"]
         self.COMMON_DIRS = ["output", "results", "data", "plots", "analysis"]
@@ -304,15 +304,15 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
     # Add fast completers to specific arguments
     for action in parser._actions:
         if action.dest == "method":
-            setattr(action, "completer", _fast_completer("method"))
+            action.completer = _fast_completer("method")
         elif action.dest == "config":
-            setattr(action, "completer", _fast_completer("config"))
+            action.completer = _fast_completer("config")
         elif action.dest == "output_dir":
-            setattr(action, "completer", _fast_completer("output_dir"))
+            action.completer = _fast_completer("output_dir")
         elif action.dest == "mode":
-            setattr(action, "completer", _fast_completer("mode"))
+            action.completer = _fast_completer("mode")
         elif action.dest == "output":
-            setattr(action, "completer", _fast_completer("config"))
+            action.completer = _fast_completer("config")
     # Enable argcomplete with error handling for zsh compdef issues
     try:
         argcomplete.autocomplete(parser)
@@ -352,7 +352,7 @@ def _handle_zsh_fallback_completion():
         current_word = words[0] if words else ""
     # Provide completions based on previous word
     if prev_word == "--method":
-        completions = ["classical", "mcmc", "robust", "all"]
+        completions = ["classical", "robust", "all"]
     elif prev_word == "--config":
         completions = HomodyneCompleter.config_files_completer(current_word, None)
     elif prev_word == "--output-dir":
@@ -399,7 +399,7 @@ else
         prev="${words[CURRENT-1]}"
         case "${prev}" in
             --method)
-                compadd classical mcmc robust all
+                compadd classical robust all
                 return 0
                 ;;
             --config)
@@ -423,10 +423,9 @@ else
     if ! compdef _homodyne_simple homodyne 2>/dev/null; then
         # Create convenience aliases as ultimate fallback
         alias homodyne-classical='homodyne --method classical'
-        alias homodyne-mcmc='homodyne --method mcmc'
         alias homodyne-robust='homodyne --method robust'
         alias homodyne-all='homodyne --method all'
-        echo "Note: Tab completion may not work. Use aliases: homodyne-classical, homodyne-mcmc, homodyne-robust, homodyne-all"
+        echo "Note: Tab completion may not work. Use aliases: homodyne-classical, homodyne-robust, homodyne-all"
     fi
 fi
 """,

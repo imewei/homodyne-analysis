@@ -15,10 +15,10 @@ under nonequilibrium laminar flow conditions. The model captures the interplay b
 Brownian diffusion and advective shear flow in the two-time correlation dynamics.
 
 The correlation function has the form:
-    g2(φ,t₁,t₂) = 1 + contrast × [g1(φ,t₁,t₂)]²
+    g2(φ,t₁,t₂) = 1 + contrast * [g1(φ,t₁,t₂)]²
 
 where g1 is the field correlation function with separable contributions:
-    g1(φ,t₁,t₂) = g1_diff(t₁,t₂) × g1_shear(φ,t₁,t₂)
+    g1(φ,t₁,t₂) = g1_diff(t₁,t₂) * g1_shear(φ,t₁,t₂)
 
 Diffusion Contribution:
     g1_diff(t₁,t₂) = exp[-q²/2 ∫|t₂-t₁| D(t')dt']
@@ -2374,9 +2374,6 @@ Validation:
             from homodyne.plotting import (
                 plot_c2_heatmaps,
                 plot_diagnostic_summary,
-                plot_mcmc_convergence_diagnostics,
-                plot_mcmc_corner,
-                plot_mcmc_trace,
             )
 
             # Extract output directory from output_data if available
@@ -2437,66 +2434,6 @@ Validation:
             # Parameter evolution plot - DISABLED (was non-functional)
             # This plot has been removed due to persistent issues
 
-            # Generate MCMC plots if trace data is available
-            if "mcmc_trace" in plot_data:
-                logger.info("Generating MCMC plots...")
-
-                # MCMC corner plot
-                try:
-                    success = plot_mcmc_corner(
-                        plot_data["mcmc_trace"],
-                        plots_dir,
-                        config,
-                        param_names=plot_data.get("parameter_names"),
-                        param_units=plot_data.get("parameter_units"),
-                    )
-                    if success:
-                        logger.info("✓ MCMC corner plot generated successfully")
-                    else:
-                        logger.warning("⚠ MCMC corner plot failed to generate")
-                except Exception as e:
-                    logger.error(f"Failed to generate MCMC corner plot: {e}")
-
-                # MCMC trace plots
-                try:
-                    success = plot_mcmc_trace(
-                        plot_data["mcmc_trace"],
-                        plots_dir,
-                        config,
-                        param_names=plot_data.get("parameter_names"),
-                        param_units=plot_data.get("parameter_units"),
-                    )
-                    if success:
-                        logger.info("✓ MCMC trace plots generated successfully")
-                    else:
-                        logger.warning("⚠ MCMC trace plots failed to generate")
-                except Exception as e:
-                    logger.error(f"Failed to generate MCMC trace plots: {e}")
-
-                # MCMC convergence diagnostics
-                if "mcmc_diagnostics" in plot_data:
-                    try:
-                        success = plot_mcmc_convergence_diagnostics(
-                            plot_data["mcmc_trace"],
-                            plot_data["mcmc_diagnostics"],
-                            plots_dir,
-                            config,
-                            param_names=plot_data.get("parameter_names"),
-                        )
-                        if success:
-                            logger.info(
-                                "✓ MCMC convergence diagnostics generated successfully"
-                            )
-                        else:
-                            logger.warning(
-                                "⚠ MCMC convergence diagnostics failed to generate"
-                            )
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to generate MCMC convergence diagnostics: {e}"
-                        )
-            else:
-                logger.debug("MCMC trace data not available - skipping MCMC plots")
 
             # Generate diagnostic summary plot only for --method all (multiple
             # methods)
@@ -2555,7 +2492,6 @@ Validation:
             for method_key in [
                 "classical_optimization",
                 "robust_optimization",
-                "mcmc_optimization",
             ]:
                 if method_key in results:
                     method_results = results[method_key]
@@ -2632,7 +2568,7 @@ Validation:
             plot_data["t1"] = t_array
             plot_data["t2"] = t_array
 
-            # Add parameter names and units for MCMC plotting
+            # Add parameter names and units for plotting
             param_names = config.get("initial_parameters", {}).get(
                 "parameter_names", []
             )
@@ -2646,63 +2582,6 @@ Validation:
                 param_units = [bound.get("unit", "") for bound in bounds]
                 plot_data["parameter_units"] = param_units
 
-            # Add MCMC-specific data if available
-            if "mcmc_optimization" in results:
-                mcmc_results = results["mcmc_optimization"]
-
-                # Add convergence diagnostics
-                if "convergence_diagnostics" in mcmc_results:
-                    plot_data["mcmc_diagnostics"] = mcmc_results[
-                        "convergence_diagnostics"
-                    ]
-
-                # Add posterior means
-                if "posterior_means" in mcmc_results:
-                    plot_data["posterior_means"] = mcmc_results["posterior_means"]
-
-                # Try to get MCMC trace data from live results first
-                trace_data = None
-                if "trace" in mcmc_results and mcmc_results["trace"] is not None:
-                    trace_data = mcmc_results["trace"]
-                    logger.debug("Using live MCMC trace data for plotting")
-                elif "trace" in results and results["trace"] is not None:
-                    # Check top-level trace data as fallback
-                    trace_data = results["trace"]
-                    logger.debug("Using top-level MCMC trace data for plotting")
-                else:
-                    # Final fallback: try to load from NetCDF file
-                    try:
-                        mcmc_results_dir = Path("homodyne_results") / "mcmc_results"
-                        trace_file = mcmc_results_dir / "mcmc_trace.nc"
-
-                        if trace_file.exists():
-                            try:
-                                import arviz as az
-
-                                trace_data = az.from_netcdf(str(trace_file))
-                                logger.debug(
-                                    f"Loaded MCMC trace data from {trace_file}"
-                                )
-                            except ImportError:
-                                logger.warning(
-                                    "ArviZ not available - cannot load MCMC trace for plotting"
-                                )
-                            except Exception as e:
-                                logger.warning(f"Failed to load MCMC trace data: {e}")
-                        else:
-                            logger.debug("MCMC trace file not found")
-
-                    except Exception as e:
-                        logger.warning(f"Error checking for MCMC trace file: {e}")
-
-                # Add trace data to plot_data if found
-                if trace_data is not None:
-                    plot_data["mcmc_trace"] = trace_data
-                    logger.info("✓ MCMC trace data available for plotting")
-                else:
-                    logger.debug(
-                        "MCMC trace data not available - trace plots will be skipped"
-                    )
 
             # Add overall plot data
             plot_data["chi_squared"] = best_chi2
@@ -2725,13 +2604,14 @@ Validation:
                     "chi_squared"
                 ]
 
-            if (
-                "mcmc_optimization" in results
-                and "chi_squared" in results["mcmc_optimization"]
-            ):
-                plot_data["mcmc_chi_squared"] = results["mcmc_optimization"][
-                    "chi_squared"
-                ]
+            # MCMC chi-squared handling removed
+            # if (
+            #     "mcmc_optimization" in results
+            #     and "chi_squared" in results["mcmc_optimization"]
+            # ):
+            #     plot_data["mcmc_chi_squared"] = results["mcmc_optimization"][
+            #         "chi_squared"
+            #     ]
 
             return plot_data
 

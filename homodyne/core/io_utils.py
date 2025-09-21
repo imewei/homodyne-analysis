@@ -17,7 +17,7 @@ Key Features:
 Data Formats Supported:
 - JSON: Configuration files, analysis results, metadata
 - NumPy (.npz): Correlation functions, parameter arrays, numerical data
-- Pickle (.pkl): Complex Python objects, MCMC traces, model instances
+- Pickle (.pkl): Complex Python objects, model instances (MCMC traces removed)
 - Matplotlib: Figures and plots with publication-quality settings
 
 Safety Features:
@@ -38,7 +38,7 @@ import logging
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -46,7 +46,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
+def ensure_dir(path: str | Path, permissions: int = 0o755) -> Path:
     """
     Thread-safe recursive directory creation with comprehensive error handling.
 
@@ -73,8 +73,8 @@ def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
                 or permissions issues
 
     Example:
-        >>> ensure_dir("./homodyne_results/mcmc/traces")
-        PosixPath('./homodyne_results/mcmc/traces')
+        >>> ensure_dir("./homodyne_results/classical/traces")
+        PosixPath('./homodyne_results/classical/traces')
 
         >>> ensure_dir("/tmp/analysis", permissions=0o700)  # Owner-only access
         PosixPath('/tmp/analysis')
@@ -97,7 +97,7 @@ def ensure_dir(path: Union[str, Path], permissions: int = 0o755) -> Path:
 
 
 def timestamped_filename(
-    base_name: str, chi2: Optional[float] = None, config: Optional[Dict] = None
+    base_name: str, chi2: float | None = None, config: dict | None = None
 ) -> str:
     """
     Generate intelligently formatted filenames with timestamps and analysis metadata.
@@ -132,8 +132,8 @@ def timestamped_filename(
         ...     "include_chi_squared": True,
         ...     "include_config_name": True
         ... }}}
-        >>> timestamped_filename("mcmc_results", 1.234e-3, config)
-        'mcmc_results_20240315_143022_chi2_0.001234_v5.1'
+        >>> timestamped_filename("classical_results", 1.234e-3, config)
+        'classical_results_20240315_143022_chi2_0.001234_v5.1'
 
         >>> timestamped_filename("quick_analysis")  # Minimal version
         'quick_analysis_20240315_143022'
@@ -221,7 +221,7 @@ def _json_serializer(obj):
         return str(obj)
 
 
-def save_json(data: Any, filepath: Union[str, Path], **kwargs: Any) -> bool:
+def save_json(data: Any, filepath: str | Path, **kwargs: Any) -> bool:
     """
     Save data as JSON with robust error handling and NumPy support.
 
@@ -291,7 +291,7 @@ def save_json(data: Any, filepath: Union[str, Path], **kwargs: Any) -> bool:
 
 def save_numpy(
     data: np.ndarray,
-    filepath: Union[str, Path],
+    filepath: str | Path,
     compressed: bool = True,
     **kwargs: Any,
 ) -> bool:
@@ -359,7 +359,7 @@ def save_numpy(
 
 def save_pickle(
     data: Any,
-    filepath: Union[str, Path],
+    filepath: str | Path,
     protocol: int = pickle.HIGHEST_PROTOCOL,
     **kwargs: Any,
 ) -> bool:
@@ -406,9 +406,9 @@ def save_pickle(
 
 def save_fig(
     figure: Any,
-    filepath: Union[str, Path],
+    filepath: str | Path,
     dpi: int = 300,
-    format: Optional[str] = None,
+    format: str | None = None,
     **kwargs: Any,
 ) -> bool:
     """
@@ -468,7 +468,7 @@ def save_fig(
 
 
 # Utility functions for common file operations
-def get_output_directory(config: Optional[Dict] = None) -> Path:
+def get_output_directory(config: dict | None = None) -> Path:
     """
     Get the output directory from configuration, creating it if necessary.
 
@@ -492,11 +492,11 @@ def get_output_directory(config: Optional[Dict] = None) -> Path:
 
 
 def save_classical_optimization_results(
-    results: Dict,
-    method_results: Optional[Dict] = None,
-    config: Optional[Dict] = None,
+    results: dict,
+    method_results: dict | None = None,
+    config: dict | None = None,
     base_name: str = "classical_results",
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """
     Save classical optimization results with method-specific organization.
 
@@ -579,10 +579,10 @@ def save_classical_optimization_results(
 
 
 def save_analysis_results(
-    results: Dict,
-    config: Optional[Dict] = None,
+    results: dict,
+    config: dict | None = None,
     base_name: str = "analysis_results",
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """
     Orchestrate comprehensive saving of analysis results in multiple formats.
 
@@ -593,14 +593,14 @@ def save_analysis_results(
     Save Strategy:
     - JSON: Main results, parameters, metadata (human-readable)
     - NumPy (.npz): Correlation data, large numerical arrays (efficient)
-    - Pickle (.pkl): Complex objects, MCMC traces, model instances (complete)
+    - Pickle (.pkl): Complex objects, model instances (complete; MCMC traces removed)
     - Method-specific: Individual files for each classical optimization method
 
     File Organization:
     - Timestamped base filename for chronological organization
     - Format-specific suffixes: .json, _data.npz, _full.pkl
     - Classical-only results saved to classical/ subdirectory
-    - Multi-method and MCMC results saved to main output directory
+    - Multi-method results saved to main output directory (MCMC removed)
     - Automatic directory creation and organization
     - Consistent naming across all output files
 
@@ -608,7 +608,7 @@ def save_analysis_results(
         results (Dict): Complete analysis results dictionary containing:
                        - Optimization results and parameters
                        - Correlation data arrays
-                       - MCMC traces and diagnostics
+                       # - MCMC traces and diagnostics  # REMOVED
                        - Configuration and metadata
         config (Optional[Dict]): Configuration for output directory and naming
         base_name (str): Prefix for all output files (default: "analysis_results")
@@ -624,7 +624,7 @@ def save_analysis_results(
         >>> results = {
         ...     "classical_optimization": {"parameters": [1.2, -0.5, 3.4]},
         ...     "correlation_data": np.random.rand(100, 50, 50),
-        ...     "mcmc_trace": mcmc_trace_object,
+        ...     # "mcmc_trace": mcmc_trace_object,  # REMOVED
         ...     "best_chi_squared": 1.234e-5
         ... }
         >>> status = save_analysis_results(results, config, "experiment_A")
@@ -676,8 +676,8 @@ def save_analysis_results(
     # For classical-only results, save to classical subdirectory
     if (
         "classical_optimization" in results
-        and "mcmc_optimization" not in results
-        and "mcmc_summary" not in results
+        # and "mcmc_optimization" not in results  # REMOVED
+        # and "mcmc_summary" not in results  # REMOVED
         and results.get("methods_used", []) == ["Classical"]
     ):
         # This is a classical-only result, save to classical subdirectory
@@ -686,7 +686,7 @@ def save_analysis_results(
         classical_dir.mkdir(parents=True, exist_ok=True)
         json_path = classical_dir / f"{filename_base}.json"
     else:
-        # This is a multi-method result or MCMC result, save to main directory
+        # This is a multi-method result, save to main directory
         json_path = output_dir / f"{filename_base}.json"
 
     save_status["json"] = save_json(results, json_path)
@@ -698,8 +698,8 @@ def save_analysis_results(
         # Use same directory logic as main JSON file
         if (
             "classical_optimization" in results
-            and "mcmc_optimization" not in results
-            and "mcmc_summary" not in results
+            # and "mcmc_optimization" not in results  # REMOVED
+            # and "mcmc_summary" not in results  # REMOVED
             and results.get("methods_used", []) == ["Classical"]
         ):
             npz_path = (output_dir / "classical") / f"{filename_base}_data.npz"
@@ -709,13 +709,14 @@ def save_analysis_results(
 
     # Save complex objects as pickle
     if any(
-        key.startswith("mcmc_") or key.startswith("bayesian_") for key in results.keys()
+        # key.startswith("mcmc_") or key.startswith("bayesian_")  # REMOVED - always False now
+        False for key in results.keys()
     ):
         # Use same directory logic as main JSON file
         if (
             "classical_optimization" in results
-            and "mcmc_optimization" not in results
-            and "mcmc_summary" not in results
+            # and "mcmc_optimization" not in results  # REMOVED
+            # and "mcmc_summary" not in results  # REMOVED
             and results.get("methods_used", []) == ["Classical"]
         ):
             pkl_path = (output_dir / "classical") / f"{filename_base}_full.pkl"

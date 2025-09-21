@@ -93,7 +93,7 @@
       "_usage_flags": {
         "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
         "--method robust": "Runs ONLY the three Robust-* methods for noise resistance",
-        "--method all": "Runs all methods above (classical + robust) + MCMC for complete analysis"
+        "--method all": "Runs all available methods (classical + robust)"
       },
       "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
       "method_options": {
@@ -151,20 +151,6 @@
         "NumericFocus": 3,
         "OutputFlag": 0
       }
-    },
-    "mcmc_sampling": {
-      "enabled": true,
-      "sampler": "NUTS",
-      "draws": 6000,
-      "_draws_note": "Standardized draws for consistency across configs",
-      "tune": 1500,
-      "thin": 2,
-      "_thin_note": "Moderate thinning for static mode (good convergence expected)",
-      "chains": 4,
-      "cores": 4,
-      "target_accept": 0.95,
-      "max_treedepth": 10,
-      "return_inferencedata": true
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
@@ -349,25 +335,6 @@
         "min_good_angles": 1
       }
     },
-    "mcmc_convergence": {
-      "_comment": "MCMC convergence criteria for 3-parameter case",
-      "rhat_thresholds": {
-        "excellent_threshold": 1.01,
-        "good_threshold": 1.05,
-        "acceptable_threshold": 1.1,
-        "critical_threshold": 1.2
-      },
-      "ess_thresholds": {
-        "excellent_threshold": 400,
-        "good_threshold": 200,
-        "acceptable_threshold": 100,
-        "minimum_threshold": 50
-      },
-      "divergence_thresholds": {
-        "max_divergences_fraction": 0.05,
-        "warning_divergences_fraction": 0.01
-      }
-    },
     "frame_range": {
       "minimum_frames": 10,
       "maximum_frames": null,
@@ -382,13 +349,6 @@
       "plot_experimental_data_on_load": false,
       "cache_plot_data": true,
       "save_intermediate_plots": false
-    },
-    "mcmc_integration": {
-      "auto_save_traces": true,
-      "trace_file_format": "netcdf",
-      "include_warmup_in_traces": false,
-      "convergence_diagnostics_auto": true,
-      "plot_mcmc_results": true
     },
     "data_management": {
       "experimental_data_cache": true,
@@ -406,7 +366,7 @@
   },
   "output_settings": {
     "_comment": "Output and reporting configuration",
-    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json. MCMC: results saved to mcmc/ subdirectory with same fitted_data.npz structure.",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json.",
     "results_directory": "./homodyne_results",
     "file_formats": {
       "results_format": "json",
@@ -448,33 +408,6 @@
         "title_prefix": "C2 Correlation Function (Static Isotropic)",
         "figsize": [12, 4]
       },
-      "mcmc_plots": {
-        "enabled": true,
-        "corner_plots": {
-          "enabled": true,
-          "show_titles": true,
-          "quantiles": [0.16, 0.5, 0.84],
-          "show_truths": false,
-          "use_arviz": true,
-          "figsize": [9, 9]
-        },
-        "trace_plots": {
-          "enabled": true,
-          "show_chains": true,
-          "show_warmup": false,
-          "compact_layout": true,
-          "figsize": [10, 6]
-        },
-        "convergence_diagnostics": {
-          "enabled": true,
-          "show_rhat": true,
-          "show_ess": true,
-          "show_mcse": true,
-          "show_energy": true,
-          "rhat_threshold": 1.1,
-          "ess_threshold": 100
-        }
-      },
       "diagnostic_plots": {
         "enabled": true,
         "chi_squared_summary": true,
@@ -487,7 +420,6 @@
         "subdirectories": {
           "c2_heatmaps": "c2_correlation",
           "parameter_plots": "parameters",
-          "mcmc_plots": "mcmc_analysis",
           "diagnostics": "diagnostics"
         },
         "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",

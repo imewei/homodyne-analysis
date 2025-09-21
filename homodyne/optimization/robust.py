@@ -28,7 +28,7 @@ Institution: Argonne National Laboratory
 
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from sklearn.utils import resample
@@ -73,7 +73,7 @@ class RobustHomodyneOptimizer:
     constraints defined in the configuration system.
     """
 
-    def __init__(self, analysis_core, config: Dict[str, Any]):
+    def __init__(self, analysis_core, config: dict[str, Any]):
         """
         Initialize robust optimizer.
 
@@ -134,7 +134,7 @@ class RobustHomodyneOptimizer:
         c2_experimental: np.ndarray,
         method: str = "wasserstein",
         **kwargs,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
+    ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Run robust optimization using specified method.
 
@@ -199,8 +199,8 @@ class RobustHomodyneOptimizer:
         theta_init: np.ndarray,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
-        uncertainty_radius: Optional[float] = None,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
+        uncertainty_radius: float | None = None,
+    ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Distributionally Robust Optimization with Wasserstein uncertainty sets.
 
@@ -367,8 +367,8 @@ class RobustHomodyneOptimizer:
         theta_init: np.ndarray,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
-        n_scenarios: Optional[int] = None,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
+        n_scenarios: int | None = None,
+    ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Scenario-Based Robust Optimization using bootstrap resampling.
 
@@ -535,8 +535,8 @@ class RobustHomodyneOptimizer:
         theta_init: np.ndarray,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
-        gamma: Optional[float] = None,
-    ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
+        gamma: float | None = None,
+    ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Ellipsoidal Uncertainty Sets Robust Optimization.
 
@@ -692,7 +692,7 @@ class RobustHomodyneOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         n_scenarios: int,
-    ) -> List[np.ndarray]:
+    ) -> list[np.ndarray]:
         """
         Generate bootstrap scenarios from experimental residuals.
 
@@ -742,7 +742,7 @@ class RobustHomodyneOptimizer:
         theta: np.ndarray,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute fitted correlation function and its Jacobian for linearization.
 
@@ -1036,7 +1036,7 @@ class RobustHomodyneOptimizer:
 
     def _get_parameter_bounds(
         self,
-    ) -> Optional[List[Tuple[Optional[float], Optional[float]]]]:
+    ) -> list[tuple[float | None, float | None]] | None:
         """
         Get parameter bounds from configuration.
 
@@ -1160,7 +1160,7 @@ class RobustHomodyneOptimizer:
         except Exception as e:
             logger.debug(
                 f"{method_name}: Preferred solver {preferred_solver} failed: {
-                    str(e)}"
+                    e!s}"
             )
 
         # Fast fallback to SCS if preferred solver failed
@@ -1180,7 +1180,7 @@ class RobustHomodyneOptimizer:
                 )
                 return True
         except Exception as e:
-            logger.debug(f"{method_name}: SCS fallback failed: {str(e)}")
+            logger.debug(f"{method_name}: SCS fallback failed: {e!s}")
 
         logger.error(f"{method_name}: All solvers failed to find a solution")
         return False
@@ -1199,7 +1199,7 @@ class RobustHomodyneOptimizer:
 
 
 def create_robust_optimizer(
-    analysis_core, config: Dict[str, Any]
+    analysis_core, config: dict[str, Any]
 ) -> RobustHomodyneOptimizer:
     """
     Factory function to create a RobustHomodyneOptimizer instance.

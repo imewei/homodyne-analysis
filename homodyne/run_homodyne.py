@@ -7,7 +7,6 @@ Correlation Spectroscopy (XPCS) under nonequilibrium conditions.
 
 This script provides a unified interface for:
 - Classical optimization (Nelder-Mead, Gurobi) for fast parameter estimation
-- Bayesian MCMC sampling (NUTS) for full posterior distributions
 - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal) for noise resistance
 - Dual analysis modes: Static (3 params) and Laminar Flow (7 params)
 - Comprehensive data validation and quality control
@@ -21,53 +20,37 @@ Method Flags Documentation
 | --method classical | Nelder-Mead + Gurobi                                     | Traditional classical methods     |
 |                    |                                                           | only (2 methods)                 |
 | --method robust    | Robust-Wasserstein + Robust-Scenario + Robust-Ellipsoidal| Robust methods only (3 methods)  |
-| --method mcmc      | MCMC sampling                                             | Bayesian sampling only (1 method)|
-| --method all       | Classical + Robust + MCMC                                 | All methods (5+ methods total)   |
+| --method all       | Classical + Robust                                        | All available methods (5 total)  |
 
-MCMC Initialization Logic for --method all
-==========================================
+Method Execution Logic for --method all
+=======================================
 
-The algorithm selects the BEST result from Classical and Robust methods:
+The --method all flag runs both Classical and Robust optimization methods:
 
-1. Extract Results:
-   - Gets chi-squared and parameters from both Classical and Robust results
-   - If a method failed, its chi-squared defaults to float('inf')
+1. Classical Optimization:
+   - Nelder-Mead: Derivative-free simplex algorithm
+   - Gurobi: Quadratic programming with trust region (if available)
+   - Fast execution with reliable parameter estimates
 
-2. Select Best Method by Chi-Squared:
-   - If both Classical and Robust succeeded: Uses whichever has lower chi-squared (better fit)
-   - If only Classical succeeded: Uses Classical results
-   - If only Robust succeeded: Uses Robust results
-   - If both failed: Falls back to original initial_params
+2. Robust Optimization:
+   - Wasserstein DRO: Distributionally robust with uncertainty sets
+   - Scenario-based: Bootstrap resampling for outlier resistance
+   - Ellipsoidal: Bounded uncertainty quantification
+   - Noise-resistant analysis for experimental data
 
-3. Decision Tree:
-   Both methods available?
-   ├─ YES: Compare chi-squared values
-   │   ├─ Classical chi² < Robust chi² → Use Classical params
-   │   └─ Robust chi² < Classical chi² → Use Robust params
-   ├─ Only Classical available → Use Classical params
-   ├─ Only Robust available → Use Robust params
-   └─ Neither available → Use original initial_params
-
-Example Scenarios:
-- Classical χ² = 1.5, Robust χ² = 2.3 → MCMC uses Classical parameters (better fit)
-- Classical χ² = 3.1, Robust χ² = 1.8 → MCMC uses Robust parameters (better fit)
-- Classical succeeds, Robust fails → MCMC uses Classical parameters
-- Classical fails, Robust succeeds → MCMC uses Robust parameters
-- Both fail → MCMC uses original initial parameters
-
-This ensures MCMC starts from the best available parameter estimate, improving
-convergence and efficiency by starting closer to the optimal solution.
+3. Result Comparison:
+   - Both methods provide independent parameter estimates
+   - Includes chi-squared goodness-of-fit metrics for comparison
+   - Users can evaluate robustness across optimization approaches
 """
 
 __author__ = "Wei Chen, Hongrui He"
 __credits__ = "Argonne National Laboratory"
 
 import argparse
-import json
 import logging
 import os
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -101,7 +84,7 @@ def _handle_completion_fast():
 
                 # Complete based on previous word
                 if prev_word in ["--method", "-m"]:
-                    methods = ["classical", "mcmc", "robust", "all"]
+                    methods = ["classical", "robust", "all"]
                     if current_word:
                         methods = [m for m in methods if m.startswith(current_word)]
                     for method in methods:
@@ -194,11 +177,10 @@ except ImportError:
 
 def print_method_documentation():
     """
-    Print the method flags documentation and MCMC initialization logic.
+    Print the method flags documentation.
 
     This function extracts and displays the comprehensive documentation
-    for all method flags (--classical, --robust, --mcmc, --all) and the
-    MCMC initialization logic for --method all.
+    for all method flags (--classical, --robust, --all).
     """
     doc = __doc__
     if not doc:
@@ -236,22 +218,6 @@ except ImportError:
         HomodyneAnalysisCore = None
         ClassicalOptimizer = None
         create_robust_optimizer = None
-
-# Import MCMC components - these require additional dependencies (PyMC, ArviZ)
-try:
-    # Try relative import first
-    from .optimization.mcmc import create_mcmc_sampler
-
-    MCMC_AVAILABLE = True
-except ImportError:
-    try:
-        # Try absolute import as fallback
-        from homodyne.optimization.mcmc import create_mcmc_sampler
-
-        MCMC_AVAILABLE = True
-    except ImportError:
-        create_mcmc_sampler = None
-        MCMC_AVAILABLE = False
 
 
 class MockResult:
@@ -536,25 +502,19 @@ def run_analysis(args: argparse.Namespace) -> None:
             results = run_classical_optimization(
                 analyzer, initial_params, phi_angles, c2_exp, args.output_dir
             )
-        elif args.method == "mcmc":
-            methods_attempted = ["MCMC"]
-            results = run_mcmc_optimization(
-                analyzer, initial_params, phi_angles, c2_exp, args.output_dir
-            )
         elif args.method == "robust":
             methods_attempted = ["Robust"]
             results = run_robust_optimization(
                 analyzer, initial_params, phi_angles, c2_exp, args.output_dir
             )
         elif args.method == "all":
-            methods_attempted = ["Classical", "Robust", "MCMC"]
+            methods_attempted = ["Classical", "Robust"]
             results = run_all_methods(
                 analyzer, initial_params, phi_angles, c2_exp, args.output_dir
             )
 
         if results:
             # Save results with their own method-specific plotting
-            # Classical and MCMC methods use their own dedicated plotting
             # functions
             analyzer.save_results_with_config(results, output_dir=str(args.output_dir))
 
@@ -571,125 +531,12 @@ def run_analysis(args: argparse.Namespace) -> None:
                 if method_key in results and "parameters" in results[method_key]:
                     method_params = results[method_key]["parameters"]
                     if method_params is not None:
-                        if method.upper() == "MCMC":
-                            # For MCMC, log convergence diagnostics instead of
-                            # chi-squared
-                            try:
-                                mcmc_results = results[method_key]
-                                if "diagnostics" in mcmc_results:
-                                    diag = mcmc_results["diagnostics"]
-                                    logger.info(
-                                        f"MCMC convergence diagnostics [{method}]:"
-                                    )
-                                    logger.info(
-                                        f"  Convergence status: {
-                                            diag.get('assessment', 'Unknown')
-                                        }"
-                                    )
-                                    logger.info(
-                                        f"  Maximum R̂ (R-hat): {
-                                            diag.get('max_rhat', 'N/A'):.4f}"
-                                    )
-                                    logger.info(
-                                        f"  Minimum ESS: {
-                                            diag.get('min_ess', 'N/A'):.0f}"
-                                    )
+                        # Store parameters for potential use by subsequent methods
+                        analyzer.set_initial_parameters(method_params)
+                        logger.info(f"✓ {method} results stored for potential initialization")
 
-                                    # Quality assessment based on convergence
-                                    # criteria from config
-                                    max_rhat = diag.get("max_rhat", float("inf"))
-                                    min_ess = diag.get("min_ess", 0)
-
-                                    # Get thresholds from config or use
-                                    # defaults
-                                    config = getattr(analyzer, "config", {})
-                                    validation_config = config.get(
-                                        "validation_rules", {}
-                                    )
-                                    mcmc_config = validation_config.get(
-                                        "mcmc_convergence", {}
-                                    )
-                                    rhat_thresholds = mcmc_config.get(
-                                        "rhat_thresholds", {}
-                                    )
-                                    ess_thresholds = mcmc_config.get(
-                                        "ess_thresholds", {}
-                                    )
-
-                                    excellent_rhat = rhat_thresholds.get(
-                                        "excellent_threshold", 1.01
-                                    )
-                                    good_rhat = rhat_thresholds.get(
-                                        "good_threshold", 1.05
-                                    )
-                                    acceptable_rhat = rhat_thresholds.get(
-                                        "acceptable_threshold", 1.1
-                                    )
-
-                                    excellent_ess = ess_thresholds.get(
-                                        "excellent_threshold", 400
-                                    )
-                                    good_ess = ess_thresholds.get("good_threshold", 200)
-                                    acceptable_ess = ess_thresholds.get(
-                                        "acceptable_threshold", 100
-                                    )
-
-                                    if (
-                                        max_rhat < excellent_rhat
-                                        and min_ess > excellent_ess
-                                    ):
-                                        quality = "excellent"
-                                    elif max_rhat < good_rhat and min_ess > good_ess:
-                                        quality = "good"
-                                    elif (
-                                        max_rhat < acceptable_rhat
-                                        and min_ess > acceptable_ess
-                                    ):
-                                        quality = "acceptable"
-                                    else:
-                                        quality = "poor"
-
-                                    logger.info(f"  MCMC quality: {quality.upper()}")
-
-                                    # Additional metrics if available
-                                    if "trace" in mcmc_results:
-                                        logger.info(
-                                            "  Sampling completed with posterior analysis available"
-                                        )
-                                else:
-                                    logger.warning(
-                                        f"No convergence diagnostics available for {method}"
-                                    )
-                            except Exception as e:
-                                logger.warning(
-                                    f"Failed to log MCMC diagnostics for {method}: {e}"
-                                )
-                        elif method.upper() == "CLASSICAL":
-                            # For classical optimization methods, use
-                            # chi-squared analysis
-                            try:
-                                # Save classical results to classical
-                                # subdirectory
-                                classical_output_dir = (
-                                    Path(args.output_dir) / "classical"
-                                )
-                                analyzer.analyze_per_angle_chi_squared(
-                                    np.array(method_params),
-                                    phi_angles,
-                                    c2_exp,
-                                    method_name=method,
-                                    save_to_file=True,
-                                    output_dir=str(classical_output_dir),
-                                )
-                            except Exception as e:
-                                logger.warning(
-                                    f"Per-angle analysis failed for {method}: {e}"
-                                )
-
-            logger.info("✓ Analysis completed successfully!")
-            logger.info(f"Successful methods: {', '.join(successful_methods)}")
-        else:
-            logger.error("❌ Analysis failed - no results generated")
+        # Check if any methods failed
+        if not successful_methods:
             if len(methods_attempted) == 1:
                 # Single method failed - this is a hard failure
                 logger.error(
@@ -776,13 +623,13 @@ def run_classical_optimization(
             c2_experimental=c2_exp,
         )
 
-        # Store best parameters on analyzer core for MCMC initialization
+        # Store best parameters on analyzer core
         if (
             hasattr(optimizer, "best_params_classical")
             and optimizer.best_params_classical is not None
         ):
             analyzer.best_params_classical = optimizer.best_params_classical
-            logger.info("✓ Classical results stored for MCMC initialization")
+            logger.info("✓ Classical results stored")
 
         # Save method-specific results with modern directory structure
         if output_dir is not None and best_params is not None:
@@ -971,11 +818,10 @@ def run_robust_optimization(
             result = None
             logger.error("❌ All robust methods failed")
 
-        # Store best parameters on analyzer core for potential MCMC
-        # initialization
+        # Store best parameters on analyzer core
         if best_params is not None:
             analyzer.best_params_robust = best_params
-            logger.info("✓ Robust results stored for potential MCMC initialization")
+            logger.info("✓ Robust results stored")
 
         # Save experimental and fitted data to robust directory
         if output_dir is not None and best_params is not None:
@@ -1050,270 +896,19 @@ def run_robust_optimization(
         return None
 
 
-def run_mcmc_optimization(
-    analyzer, initial_params, phi_angles, c2_exp, output_dir=None
-):
-    """
-    Execute Bayesian MCMC sampling using NUTS (No-U-Turn Sampler).
 
-    Provides full posterior distributions with uncertainty quantification.
-    Uses PyMC for robust sampling with convergence diagnostics (R-hat, ESS).
-    Results include parameter uncertainties and correlation analysis.
 
-    Parameters
-    ----------
-    analyzer : HomodyneAnalysisCore
-        Main analysis engine with loaded configuration
-    initial_params : list
-        Starting parameter values (used for prior initialization)
-    phi_angles : ndarray
-        Angular coordinates for the scattering data
-    c2_exp : ndarray
-        Experimental correlation function data
-    output_dir : Path, optional
-        Directory for saving MCMC traces and diagnostics
-
-    Returns
-    -------
-    dict or None
-        Results dictionary with posterior statistics and convergence info,
-        or None if sampling fails
-    """
-    logger = logging.getLogger(__name__)
-    logger.info("Running MCMC sampling...")
-
-    # Step 1: Check if create_mcmc_sampler is available (imported at module
-    # level)
-    if create_mcmc_sampler is None:
-        logger.error("❌ MCMC sampling not available - missing dependencies")
-        logger.error(
-            "❌ Install required dependencies: pip install pymc arviz pytensor"
-        )
-        return None
-
-    logger.info("✓ MCMC sampler available")
-
-    try:
-        # Step 2.5: Set initial parameters for MCMC if not already set by
-        # classical optimization
-        if (
-            not hasattr(analyzer, "best_params_classical")
-            or analyzer.best_params_classical is None
-        ):
-            analyzer.best_params_classical = initial_params
-            logger.info("✓ Using provided initial parameters for MCMC initialization")
-        else:
-            logger.info("✓ Using stored classical results for MCMC initialization")
-
-        # Step 3: Create MCMC sampler (this already validates)
-        logger.info("Creating MCMC sampler...")
-        sampler = create_mcmc_sampler(analyzer, analyzer.config)
-        logger.info("✓ MCMC sampler created successfully")
-
-        # Step 4: Run MCMC analysis and time execution
-        logger.info("Starting MCMC sampling...")
-        mcmc_start_time = time.time()
-
-        # Run the MCMC analysis with angle filtering by default
-        mcmc_results = sampler.run_mcmc_analysis(
-            c2_experimental=c2_exp,
-            phi_angles=phi_angles,
-            filter_angles_for_optimization=True,  # Use angle filtering by default
-        )
-
-        mcmc_execution_time = time.time() - mcmc_start_time
-        logger.info(f"✓ MCMC sampling completed in {mcmc_execution_time:.2f} seconds")
-
-        # Step 5 & 6: Save inference data and write convergence diagnostics
-        if output_dir is None:
-            output_dir = Path("./homodyne_results")
-        else:
-            output_dir = Path(output_dir)
-
-        # Create mcmc subdirectory
-        mcmc_output_dir = output_dir / "mcmc"
-        mcmc_output_dir.mkdir(parents=True, exist_ok=True)
-
-        # Save inference data (NetCDF via arviz.to_netcdf) if trace is
-        # available
-        if "trace" in mcmc_results and mcmc_results["trace"] is not None:
-            try:
-                import arviz as az
-
-                netcdf_path = mcmc_output_dir / "mcmc_trace.nc"
-                az.to_netcdf(mcmc_results["trace"], str(netcdf_path))
-                logger.info(f"✓ MCMC trace saved to NetCDF: {netcdf_path}")
-            except ImportError as import_err:
-                logger.error(f"❌ ArviZ not available for saving trace: {import_err}")
-                logger.error("❌ Install ArviZ: pip install arviz")
-            except Exception as e:
-                logger.error(f"❌ Failed to save NetCDF trace: {e}")
-
-        # Prepare summary results for JSON
-        summary_results = {
-            "method": "MCMC_NUTS",
-            "execution_time_seconds": mcmc_execution_time,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "posterior_means": mcmc_results.get("posterior_means", {}),
-            "mcmc_config": mcmc_results.get("config", {}),
-        }
-
-        # Add convergence diagnostics to summary
-        if "diagnostics" in mcmc_results:
-            diagnostics = mcmc_results["diagnostics"]
-            summary_results["convergence_diagnostics"] = {
-                "max_rhat": diagnostics.get("max_rhat"),
-                "min_ess": diagnostics.get("min_ess"),
-                "converged": diagnostics.get("converged", False),
-                "assessment": diagnostics.get("assessment", "Unknown"),
-            }
-
-            # Write convergence diagnostics to log (Step 6)
-            logger.info("Convergence Diagnostics:")
-            logger.info(f"  Max R-hat: {diagnostics.get('max_rhat', 'N/A')}")
-            logger.info(f"  Min ESS: {diagnostics.get('min_ess', 'N/A')}")
-            logger.info(f"  Converged: {diagnostics.get('converged', False)}")
-            logger.info(f"  Assessment: {diagnostics.get('assessment', 'Unknown')}")
-
-            if not diagnostics.get("converged", False):
-                logger.warning(
-                    "⚠ MCMC chains may not have converged - check diagnostics!"
-                )
-
-        # Add posterior statistics if available
-        if hasattr(sampler, "extract_posterior_statistics"):
-            try:
-                posterior_stats = sampler.extract_posterior_statistics(
-                    mcmc_results.get("trace")
-                )
-                if posterior_stats and "parameter_statistics" in posterior_stats:
-                    summary_results["parameter_statistics"] = posterior_stats[
-                        "parameter_statistics"
-                    ]
-            except Exception as e:
-                logger.warning(f"Failed to extract posterior statistics: {e}")
-
-        # Save summary JSON to output_dir/mcmc
-        summary_json_path = mcmc_output_dir / "mcmc_summary.json"
-        try:
-            with open(summary_json_path, "w") as f:
-                json.dump(summary_results, f, indent=2, default=str)
-            logger.info(f"✓ MCMC summary saved to: {summary_json_path}")
-        except Exception as e:
-            logger.error(f"❌ Failed to save MCMC summary JSON: {e}")
-
-        # Extract best parameters from posterior means for compatibility with
-        # other methods
-        best_params = None
-        if "posterior_means" in mcmc_results:
-            param_names = analyzer.config.get("initial_parameters", {}).get(
-                "parameter_names", []
-            )
-            posterior_means = mcmc_results["posterior_means"]
-            best_params = [posterior_means.get(name, 0.0) for name in param_names]
-
-        # Generate mcmc-specific plots and save data
-        if output_dir is not None and best_params is not None:
-            _generate_mcmc_plots(
-                analyzer,
-                best_params,
-                phi_angles,
-                c2_exp,
-                output_dir,
-                mcmc_results,
-            )
-
-        # Extract convergence quality for MCMC summary (no chi-squared
-        # calculation)
-        convergence_quality = "unknown"
-        if "diagnostics" in mcmc_results:
-            diag = mcmc_results["diagnostics"]
-            max_rhat = diag.get("max_rhat", float("inf"))
-            min_ess = diag.get("min_ess", 0)
-
-            # Use same thresholds as in per-angle analysis
-            if max_rhat < 1.01 and min_ess > 400:
-                convergence_quality = "excellent"
-            elif max_rhat < 1.05 and min_ess > 200:
-                convergence_quality = "good"
-            elif max_rhat < 1.1 and min_ess > 100:
-                convergence_quality = "acceptable"
-            else:
-                convergence_quality = "poor"
-
-            logger.info(f"MCMC convergence quality: {convergence_quality.upper()}")
-            logger.info(f"MCMC posterior mean parameters: {best_params}")
-        else:
-            logger.warning("No convergence diagnostics available for MCMC results")
-
-        # Format results for compatibility with main analysis framework
-        return {
-            "mcmc_optimization": {
-                "parameters": best_params,
-                "convergence_quality": convergence_quality,
-                "optimization_time": mcmc_execution_time,
-                "total_time": mcmc_execution_time,
-                "success": mcmc_results.get("diagnostics", {}).get("converged", True),
-                "method": "MCMC_NUTS",
-                "posterior_means": mcmc_results.get("posterior_means", {}),
-                "convergence_diagnostics": mcmc_results.get("diagnostics", {}),
-                # Include trace data for plotting
-                "trace": mcmc_results.get("trace"),
-                # Include chi_squared for plotting method selection
-                "chi_squared": mcmc_results.get("chi_squared", np.inf),
-            },
-            "mcmc_summary": {
-                "parameters": best_params,
-                "convergence_quality": convergence_quality,
-                "max_rhat": mcmc_results.get("diagnostics", {}).get("max_rhat", None),
-                "min_ess": mcmc_results.get("diagnostics", {}).get("min_ess", None),
-                "method": "MCMC",
-                "evaluation_metric": "convergence_diagnostics",
-                "_note": "MCMC uses convergence diagnostics instead of chi-squared for quality assessment",
-            },
-            "methods_used": ["MCMC"],
-            # Include trace and diagnostics at top level for plotting functions
-            "trace": mcmc_results.get("trace"),
-            "diagnostics": mcmc_results.get("diagnostics"),
-        }
-
-    except ImportError as e:
-        error_msg = f"MCMC optimization failed - missing dependencies: {e}"
-        logger.error(error_msg)
-        if "pymc" in str(e).lower():
-            logger.error("❌ Install PyMC: pip install pymc")
-        elif "arviz" in str(e).lower():
-            logger.error("❌ Install ArviZ: pip install arviz")
-        elif "pytensor" in str(e).lower():
-            logger.error("❌ Install PyTensor: pip install pytensor")
-        else:
-            logger.error(
-                "❌ Install required dependencies: pip install pymc arviz pytensor"
-            )
-        return None
-    except (ValueError, KeyError) as e:
-        error_msg = f"MCMC optimization failed - configuration error: {e}"
-        logger.error(error_msg)
-        logger.error("❌ Please check your MCMC configuration and parameter priors")
-        return None
-    except Exception as e:
-        error_msg = f"MCMC optimization failed - unexpected error: {e}"
-        logger.error(error_msg)
-        logger.error("❌ Please check your data files and MCMC configuration")
-        import traceback
-
-        logger.debug(f"Full traceback: {traceback.format_exc()}")
-        return None
 
 
 def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
     """
-    Execute all optimization methods: classical, robust, and MCMC sequentially.
+    Execute all available optimization methods: classical and robust sequentially.
 
     Comprehensive workflow that runs:
     1. Classical optimization (Nelder-Mead + Gurobi) for fast initial estimates
     2. Robust optimization (Wasserstein + Scenario + Ellipsoidal) for noise-resistant estimates
-    3. MCMC sampling for full uncertainty analysis
+
+    Use dedicated robust methods for uncertainty quantification.
 
     Gracefully handles failures in individual methods.
 
@@ -1369,65 +964,7 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
     else:
         logger.warning("⚠ Robust optimization failed")
 
-    # Run MCMC sampling
-    methods_attempted.append("MCMC")
-    logger.info("Attempting MCMC sampling...")
-
-    # MCMC Initialization Logic: Select best results from Classical and Robust methods
-    # This implements the decision tree documented in the module header
-    mcmc_initial_params = initial_params
-
-    # Step 1: Extract chi-squared and parameters from classical results
-    classical_chi_squared = float("inf")
-    classical_params = None
-    if classical_results and "classical_summary" in classical_results:
-        classical_params = classical_results["classical_summary"].get("parameters")
-        classical_chi_squared = classical_results["classical_summary"].get(
-            "chi_squared", float("inf")
-        )
-
-    # Step 2: Extract chi-squared and parameters from robust results
-    robust_chi_squared = float("inf")
-    robust_params = None
-    if robust_results and "robust_summary" in robust_results:
-        robust_params = robust_results["robust_summary"].get("parameters")
-        robust_chi_squared = robust_results["robust_summary"].get(
-            "chi_squared", float("inf")
-        )
-
-    # Step 3: Apply decision tree to select best parameters for MCMC
-    # initialization
-    if classical_params is not None and robust_params is not None:
-        if classical_chi_squared < robust_chi_squared:
-            mcmc_initial_params = classical_params
-            logger.info(
-                "✓ Using classical optimization results for MCMC initialization (better fit)"
-            )
-        else:
-            mcmc_initial_params = robust_params
-            logger.info(
-                "✓ Using robust optimization results for MCMC initialization (better fit)"
-            )
-    elif classical_params is not None:
-        mcmc_initial_params = classical_params
-        logger.info("✓ Using classical optimization results for MCMC initialization")
-    elif robust_params is not None:
-        mcmc_initial_params = robust_params
-        logger.info("✓ Using robust optimization results for MCMC initialization")
-    else:
-        logger.info(
-            "⚠ No optimization results available, using initial parameters for MCMC"
-        )
-
-    mcmc_results = run_mcmc_optimization(
-        analyzer, mcmc_initial_params, phi_angles, c2_exp, output_dir
-    )
-    if mcmc_results:
-        all_results.update(mcmc_results)
-        methods_used.append("MCMC")
-        logger.info("✓ MCMC sampling completed successfully")
-    else:
-        logger.warning("⚠ MCMC sampling failed")
+    # Users seeking uncertainty quantification should use robust optimization methods
 
     # Summary of results
     logger.info(f"Methods attempted: {', '.join(methods_attempted)}")
@@ -1458,21 +995,10 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
                 "quality_note": "Robust methods provide noise-resistant parameter estimates",
             }
 
-        if "MCMC" in methods_used and "mcmc_summary" in all_results:
-            mcmc_summary = all_results["mcmc_summary"]
-            methods_summary["MCMC"] = {
-                "evaluation_metric": "convergence_diagnostics",
-                "convergence_quality": mcmc_summary.get("convergence_quality"),
-                "max_rhat": mcmc_summary.get("max_rhat"),
-                "min_ess": mcmc_summary.get("min_ess"),
-                "parameters": mcmc_summary.get("parameters"),
-                "quality_note": "Convergence quality based on R̂ and ESS criteria",
-            }
-
         all_results["methods_comparison"] = {
             "_note": "Methods use different evaluation criteria - do not directly compare chi-squared to convergence diagnostics",
             "methods_summary": methods_summary,
-            "recommendation": "Use Classical for fast estimates; use Robust for noise-resistant estimates; use MCMC for uncertainty quantification",
+            "recommendation": "Use Classical for fast estimates; use Robust for noise-resistant estimates",
         }
 
         return all_results
@@ -2420,347 +1946,11 @@ def _generate_robust_plots(
 # by method-specific saving in _save_individual_robust_method_results
 
 
-# Note: _save_mcmc_fitted_data function removed - MCMC now saves data through
-# _generate_mcmc_plots function which has the proper consolidated
 # fitted_data.npz format
 
 
-def _generate_mcmc_plots(
-    analyzer, best_params, phi_angles, c2_exp, output_dir, mcmc_results
-):
-    """
-    Generate plots specifically for MCMC optimization results.
 
-    Parameters
-    ----------
-    analyzer : HomodyneAnalysisCore
-        Analysis engine with loaded configuration
-    best_params : np.ndarray
-        Optimized parameters from MCMC posterior means
-    phi_angles : np.ndarray
-        Angular coordinates for the scattering data
-    c2_exp : np.ndarray
-        Experimental correlation function data
-    output_dir : Path
-        Output directory for saving MCMC results
-    mcmc_results : dict
-        Complete MCMC results including trace data
-    """
-    logger = logging.getLogger(__name__)
 
-    try:
-        from pathlib import Path
-
-        import numpy as np
-
-        # Set up output directory path (but don't create it yet)
-        if output_dir is None:
-            output_dir = Path("./homodyne_results")
-        else:
-            output_dir = Path(output_dir)
-
-        # Check if plotting is enabled before creating directories
-        config = analyzer.config
-        output_settings = config.get("output_settings", {})
-        reporting = output_settings.get("reporting", {})
-        if not reporting.get("generate_plots", True):
-            logger.info(
-                "Plotting disabled in configuration - skipping MCMC plot generation"
-            )
-            return
-
-        # Create mcmc subdirectory only if plotting is enabled
-        mcmc_dir = output_dir / "mcmc"
-        mcmc_dir.mkdir(parents=True, exist_ok=True)
-
-        logger.info("Generating MCMC optimization plots...")
-
-        # Initialize time arrays that may be needed later
-        dt = analyzer.dt
-        n_angles, n_t2, n_t1 = c2_exp.shape
-        t2 = np.arange(n_t2) * dt
-        t1 = np.arange(n_t1) * dt
-
-        # Calculate theoretical data with optimized parameters
-        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-            best_params, phi_angles
-        )
-
-        # Generate C2 heatmaps in mcmc directory
-        try:
-            from homodyne.plotting import plot_c2_heatmaps
-
-            # Time arrays already initialized at function start
-
-            logger.info("Generating C2 correlation heatmaps for MCMC results...")
-            success = plot_c2_heatmaps(
-                c2_exp,
-                c2_theory,
-                phi_angles,
-                mcmc_dir,
-                config,
-                t2=t2,
-                t1=t1,
-            )
-
-            if success:
-                logger.info("✓ MCMC C2 heatmaps generated successfully")
-            else:
-                logger.warning("⚠ Some MCMC C2 heatmaps failed to generate")
-
-        except Exception as e:
-            logger.error(f"Failed to generate MCMC C2 heatmaps: {e}")
-
-        # Generate 3D surface plots with confidence intervals
-        try:
-            from homodyne.plotting import plot_3d_surface
-
-            # Extract posterior samples from trace for confidence intervals
-            trace = mcmc_results.get("trace")
-            if trace is not None:
-                logger.info(
-                    "Generating 3D surface plots with MCMC confidence intervals..."
-                )
-
-                # Get parameter samples from the trace
-                try:
-                    import arviz as az
-
-                    # Extract posterior samples - convert InferenceData to
-                    # numpy array
-                    if hasattr(trace, "posterior"):
-                        # Get parameter names from config
-                        param_names = config.get("initial_parameters", {}).get(
-                            "parameter_names", []
-                        )
-
-                        # Extract samples for each parameter and stack them
-                        param_samples = []
-                        for param_name in param_names:
-                            if param_name in trace.posterior:
-                                # Get all chains and draws for this parameter
-                                param_data = trace.posterior[param_name].values
-                                # Reshape from (chains, draws) to
-                                # (chains*draws,)
-                                param_samples.append(param_data.reshape(-1))
-
-                        if param_samples:
-                            # Stack to get shape (n_samples, n_parameters)
-                            param_samples_array = np.column_stack(param_samples)
-                            n_samples = min(
-                                500, param_samples_array.shape[0]
-                            )  # Limit for performance
-
-                            # Subsample for performance
-                            indices = np.linspace(
-                                0,
-                                param_samples_array.shape[0] - 1,
-                                n_samples,
-                                dtype=int,
-                            )
-                            param_samples_subset = param_samples_array[indices]
-
-                            logger.info(
-                                f"Using {n_samples} posterior samples for 3D confidence intervals"
-                            )
-
-                            # Generate C2 samples for each parameter sample
-                            c2_posterior_samples = []
-                            for i, params in enumerate(param_samples_subset):
-                                if i % 50 == 0:  # Log progress every 50 samples
-                                    logger.debug(
-                                        f"Processing posterior sample {i + 1}/{
-                                            n_samples
-                                        }"
-                                    )
-
-                                # Calculate theoretical C2 for this parameter
-                                # sample
-                                c2_sample = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
-                                    params, phi_angles
-                                )
-
-                                # Apply least squares scaling to match
-                                # experimental data structure
-                                for j in range(c2_exp.shape[0]):  # For each angle
-                                    exp_data = c2_exp[j].flatten()
-                                    theory_data = c2_sample[j].flatten()
-
-                                    # Least squares scaling: fitted = contrast
-                                    # * theory + offset
-                                    A = np.vstack(
-                                        [
-                                            theory_data,
-                                            np.ones(len(theory_data)),
-                                        ]
-                                    ).T
-                                    scaling, residuals, rank, s = np.linalg.lstsq(
-                                        A, exp_data, rcond=None
-                                    )
-                                    contrast, offset = scaling
-
-                                    # Apply scaling to this angle slice
-                                    c2_sample[j] = (
-                                        theory_data.reshape(c2_exp[j].shape) * contrast
-                                        + offset
-                                    )
-
-                                c2_posterior_samples.append(c2_sample)
-
-                            # Convert to numpy array: (n_samples, n_angles,
-                            # n_t2, n_t1)
-                            c2_posterior_samples = np.array(c2_posterior_samples)
-
-                            # Generate 3D plots for a subset of angles (to
-                            # avoid too many plots)
-                            n_angles = c2_exp.shape[0]
-                            angle_indices = np.linspace(
-                                0, n_angles - 1, min(5, n_angles), dtype=int
-                            )
-
-                            successful_3d_plots = 0
-                            for angle_idx in angle_indices:
-                                angle_deg = (
-                                    phi_angles[angle_idx]
-                                    if angle_idx < len(phi_angles)
-                                    else angle_idx
-                                )
-
-                                # Extract data for this angle
-                                # Shape: (n_t2, n_t1)
-                                c2_exp_angle = c2_exp[angle_idx]
-                                c2_fitted_angle = c2_theory[
-                                    angle_idx
-                                ]  # Shape: (n_t2, n_t1)
-                                c2_samples_angle = c2_posterior_samples[
-                                    :, angle_idx, :, :
-                                ]  # Shape: (n_samples, n_t2, n_t1)
-
-                                # Create 3D surface plot with confidence
-                                # intervals
-                                success = plot_3d_surface(
-                                    c2_experimental=c2_exp_angle,
-                                    c2_fitted=c2_fitted_angle,
-                                    posterior_samples=c2_samples_angle,
-                                    phi_angle=angle_deg,
-                                    outdir=mcmc_dir,
-                                    config=config,
-                                    t2=t2,
-                                    t1=t1,
-                                    confidence_level=0.95,
-                                )
-
-                                if success:
-                                    successful_3d_plots += 1
-
-                            if successful_3d_plots > 0:
-                                logger.info(
-                                    f"✓ Generated {successful_3d_plots} 3D surface plots with confidence intervals"
-                                )
-                            else:
-                                logger.warning(
-                                    "⚠ No 3D surface plots were generated successfully"
-                                )
-
-                        else:
-                            logger.warning("No parameter samples found in MCMC trace")
-
-                    else:
-                        logger.warning("MCMC trace does not contain posterior data")
-
-                except ImportError:
-                    logger.warning(
-                        "ArviZ not available - skipping 3D plots with confidence intervals"
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to process MCMC samples for 3D plotting: {e}"
-                    )
-
-            else:
-                logger.info(
-                    "No MCMC trace available - generating 3D plots without confidence intervals"
-                )
-                # Generate basic 3D plots without confidence intervals
-                n_angles = c2_exp.shape[0]
-                angle_indices = np.linspace(
-                    0, n_angles - 1, min(3, n_angles), dtype=int
-                )
-
-                successful_3d_plots = 0
-                for angle_idx in angle_indices:
-                    angle_deg = (
-                        phi_angles[angle_idx]
-                        if angle_idx < len(phi_angles)
-                        else angle_idx
-                    )
-
-                    success = plot_3d_surface(
-                        c2_experimental=c2_exp[angle_idx],
-                        c2_fitted=c2_theory[angle_idx],
-                        posterior_samples=None,  # No confidence intervals
-                        phi_angle=angle_deg,
-                        outdir=mcmc_dir,
-                        config=config,
-                        t2=t2,
-                        t1=t1,
-                    )
-
-                    if success:
-                        successful_3d_plots += 1
-
-                if successful_3d_plots > 0:
-                    logger.info(
-                        f"✓ Generated {successful_3d_plots} basic 3D surface plots"
-                    )
-
-        except Exception as e:
-            logger.error(f"Failed to generate 3D surface plots: {e}")
-
-        # Generate MCMC-specific plots (trace plots, corner plots, etc.)
-        try:
-            from homodyne.plotting import create_all_plots
-
-            # Prepare results data for plotting
-            plot_data = {
-                "experimental_data": c2_exp,
-                "theoretical_data": c2_theory,
-                "phi_angles": phi_angles,
-                "best_parameters": dict(
-                    zip(
-                        config.get("initial_parameters", {}).get("parameter_names", []),
-                        best_params,
-                        strict=False,
-                    )
-                ),
-                "parameter_names": config.get("initial_parameters", {}).get(
-                    "parameter_names", []
-                ),
-                "parameter_units": config.get("initial_parameters", {}).get(
-                    "units", []
-                ),
-                "mcmc_trace": mcmc_results.get("trace"),
-                "mcmc_diagnostics": mcmc_results.get("diagnostics", {}),
-                "method": "MCMC",
-            }
-
-            logger.info("Generating MCMC-specific plots (trace, corner, etc.)...")
-            plot_status = create_all_plots(plot_data, mcmc_dir, config)
-
-            successful_plots = sum(1 for status in plot_status.values() if status)
-            if successful_plots > 0:
-                logger.info(f"✓ Generated {successful_plots} MCMC plots successfully")
-            else:
-                logger.warning("⚠ No MCMC plots were generated successfully")
-
-        except Exception as e:
-            logger.error(f"Failed to generate MCMC-specific plots: {e}")
-
-    except Exception as e:
-        logger.error(f"Failed to generate MCMC plots: {e}")
-        import traceback
-
-        logger.debug(f"Full traceback: {traceback.format_exc()}")
 
 
 def plot_simulated_data(args: argparse.Namespace) -> None:
@@ -3050,7 +2240,7 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
 
     # Import matplotlib for custom plotting
     try:
-        import matplotlib.colors as colors
+        import matplotlib.colors  # noqa: F401
         import matplotlib.pyplot as plt
     except ImportError:
         logger.error("❌ Failed to import matplotlib")
@@ -3098,7 +2288,7 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
                 ax.set_title(
                     f"Fitted C₂ Correlation Function (φ = {phi_angle:.1f}°)\nfitted = {
                         args.contrast
-                    } × theory + {args.offset}",
+                    } * theory + {args.offset}",
                     fontsize=14,
                 )
                 filename = f"simulated_c2_fitted_phi_{phi_angle:.1f}deg.png"
@@ -3186,7 +2376,7 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     if data_type == "fitted":
         print("Plots generated:      Fitted C2 heatmaps for each phi angle")
         print(
-            f"Scaling applied:      fitted = {args.contrast} × theory + {args.offset}"
+            f"Scaling applied:      fitted = {args.contrast} * theory + {args.offset}"
         )
     else:
         print("Plots generated:      Theoretical C2 heatmaps for each phi angle")
@@ -3195,25 +2385,13 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     print("=" * 60)
 
 
-def main():
+def create_argument_parser():
     """
-    Command-line entry point for homodyne scattering analysis.
+    Create and configure the argument parser for homodyne analysis.
 
-    Provides a complete interface for XPCS analysis under nonequilibrium
-    conditions, supporting both static and laminar flow analysis modes
-    with classical and Bayesian optimization approaches.
+    Returns:
+        argparse.ArgumentParser: Configured argument parser
     """
-    # Check Python version requirement
-    if sys.version_info < (3, 12):
-        print(
-            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
-            file=sys.stderr,
-        )
-        print(
-            "Please upgrade your Python installation or use a compatible environment.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
     parser = argparse.ArgumentParser(
         description="Run homodyne scattering analysis for XPCS under nonequilibrium conditions",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -3226,7 +2404,7 @@ Examples:
   %(prog)s --output-dir ./homodyne_results --verbose   # Custom output directory with verbose logging
   %(prog)s --quiet                            # Run with file logging only (no console output)
   %(prog)s --static-isotropic                 # Force static mode (zero shear, 3 parameters)
-  %(prog)s --laminar-flow --method mcmc       # Force laminar flow mode with MCMC
+  %(prog)s --laminar-flow --method robust     # Force laminar flow mode with robust methods
   %(prog)s --static-isotropic --method robust # Run robust methods in static mode
   %(prog)s --static-isotropic --method all    # Run all methods in static mode
   %(prog)s --plot-simulated-data                  # Plot with default scaling: fitted = 1.0 * theory + 0.0
@@ -3238,17 +2416,16 @@ Examples:
 Method Quality Assessment:
   Classical: Uses chi-squared goodness-of-fit (lower is better)
   Robust:    Uses chi-squared with uncertainty resistance (robust to measurement noise)
-  MCMC:      Uses convergence diagnostics (R̂ < 1.1, ESS > 100 for acceptable quality)
 
-  Note: When running --method all, results use different evaluation criteria.
-        Do not directly compare chi-squared values to convergence diagnostics.
+  Note: When running --method all, both methods provide chi-squared metrics for comparison.
         Robust methods provide noise resistance at computational cost.
+        Classical methods offer faster execution with reliable parameter estimates.
         """,
     )
 
     parser.add_argument(
         "--method",
-        choices=["classical", "mcmc", "robust", "all"],
+        choices=["classical", "robust", "all"],
         default="classical",
         help="Analysis method to use (default: %(default)s)",
     )
@@ -3343,6 +2520,21 @@ Method Quality Assessment:
     if COMPLETION_AVAILABLE:
         setup_shell_completion(parser)
 
+    return parser
+
+
+def main():
+    """
+    Command-line entry point for homodyne scattering analysis.
+
+    Provides a complete interface for XPCS analysis under nonequilibrium
+    conditions, supporting both static and laminar flow analysis modes
+    with classical and robust optimization approaches.
+    """
+    # Check Python version requirement
+
+
+    parser = create_argument_parser()
     args = parser.parse_args()
 
     # Handle special commands first

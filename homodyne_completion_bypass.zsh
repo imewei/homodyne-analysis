@@ -25,7 +25,7 @@ _homodyne_complete() {
 
     case "$prev" in
         --method)
-            completions=(classical mcmc robust all)
+            completions=(classical robust all)
             ;;
         --config)
             completions=(*.json(N) config/*.json(N) configs/*.json(N))
@@ -152,7 +152,6 @@ bindkey '^Xc' _homodyne_config_complete_widget
 
 # Create convenient aliases as completion alternatives
 alias hc='homodyne --method classical'
-alias hm='homodyne --method mcmc'
 alias hr='homodyne --method robust'
 alias ha='homodyne --method all'
 
@@ -172,7 +171,6 @@ homodyne_help() {
     echo ""
     echo "Method shortcuts:"
     echo "  hc  = homodyne --method classical"
-    echo "  hm  = homodyne --method mcmc"
     echo "  hr  = homodyne --method robust"
     echo "  ha  = homodyne --method all"
     echo ""
@@ -186,7 +184,7 @@ homodyne_help() {
     echo "  hc-flow   = homodyne-config --mode laminar_flow"
     echo "  hc-config = homodyne-config"
     echo ""
-    echo "Available methods: classical mcmc robust all"
+    echo "Available methods: classical robust all"
     echo "Config files in current dir:"
     local configs=(*.json(N))
     if (( ${#configs} > 0 )); then

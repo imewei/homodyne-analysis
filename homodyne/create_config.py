@@ -52,6 +52,67 @@ except ImportError:
         pass
 
 
+def _remove_mcmc_sections(config):
+    """
+    Remove MCMC sections from configuration for clean generation.
+
+    This function removes deprecated MCMC sections from configuration
+    dictionaries to ensure that newly generated configurations are clean
+    and don't contain deprecated sections.
+    """
+    if not isinstance(config, dict):
+        return config
+
+    # Remove top-level MCMC sections
+    mcmc_sections_to_remove = []
+    for key in config.keys():
+        if key.startswith('mcmc_'):
+            mcmc_sections_to_remove.append(key)
+
+    # Create clean configuration
+    clean_config = {}
+    for key, value in config.items():
+        if key not in mcmc_sections_to_remove:
+            if key == 'optimization_config' and isinstance(value, dict):
+                # Clean optimization_config of MCMC subsections
+                clean_opt_config = {}
+                for opt_key, opt_value in value.items():
+                    if not opt_key.startswith('mcmc_'):
+                        clean_opt_config[opt_key] = opt_value
+                clean_config[key] = clean_opt_config
+            elif key == 'workflow_integration' and isinstance(value, dict):
+                # Clean workflow_integration of MCMC subsections
+                clean_workflow_config = {}
+                for workflow_key, workflow_value in value.items():
+                    if not workflow_key.startswith('mcmc_'):
+                        clean_workflow_config[workflow_key] = workflow_value
+                clean_config[key] = clean_workflow_config
+            elif key == 'validation_rules' and isinstance(value, dict):
+                # Clean validation_rules of MCMC subsections
+                clean_validation_config = {}
+                for val_key, val_value in value.items():
+                    if not val_key.startswith('mcmc_'):
+                        clean_validation_config[val_key] = val_value
+                clean_config[key] = clean_validation_config
+            elif key == 'output_settings' and isinstance(value, dict):
+                # Clean output_settings of MCMC plotting references
+                clean_output_config = {}
+                for out_key, out_value in value.items():
+                    if out_key == 'plotting' and isinstance(out_value, dict):
+                        clean_plotting_config = {}
+                        for plot_key, plot_value in out_value.items():
+                            if not plot_key.startswith('mcmc_'):
+                                clean_plotting_config[plot_key] = plot_value
+                        clean_output_config[out_key] = clean_plotting_config
+                    else:
+                        clean_output_config[out_key] = out_value
+                clean_config[key] = clean_output_config
+            else:
+                clean_config[key] = value
+
+    return clean_config
+
+
 def create_config_from_template(
     output_file="my_config.json",
     sample_name=None,
@@ -133,6 +194,10 @@ def create_config_from_template(
     # Remove template-specific fields from final config
     if "_template_info" in config:
         del config["_template_info"]
+
+    # Remove deprecated MCMC sections from generated configuration
+    # This ensures new configurations don't contain deprecated sections
+    config = _remove_mcmc_sections(config)
 
     # Apply customizations
     current_date = datetime.now().strftime("%Y-%m-%d")
@@ -231,6 +296,10 @@ def create_config_from_template(
         print("5. Verify initial parameter estimates for all 7 parameters")
         print(f"6. Run analysis with: homodyne --config {output_path}")
 
+    print("\nAvailable methods:")
+    print("  --method classical  # Nelder-Mead and Gurobi optimization")
+    print("  --method robust     # Wasserstein, scenario, and ellipsoidal robust methods")
+    print("  --method all        # All available methods (classical + robust)")
     print("\nDocumentation: CONFIGURATION_MODES.md")
     print(f"Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
 

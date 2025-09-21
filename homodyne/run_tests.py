@@ -96,7 +96,7 @@ def main():
     # Configure parallelization
     if args.parallel > 1:
         try:
-            import xdist
+            import xdist  # noqa: F401
 
             cmd.extend(["-n", str(args.parallel)])
         except ImportError:
@@ -105,7 +105,7 @@ def main():
     # Configure coverage
     if args.coverage:
         try:
-            import coverage
+            import coverage  # noqa: F401
 
             cmd.extend(
                 [
