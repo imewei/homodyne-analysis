@@ -40,13 +40,9 @@ suppress_warnings = [
 # Performance optimizations - mock heavy dependencies
 autodoc_mock_imports = [
     "numba",
-    "pymc",
-    "arviz",
-    "pytensor",
     "xpcs_viewer",
     "h5py",
     # Mock modules that don't exist but are referenced in docs
-    "mcmc",  # This appears to be incorrectly referenced
     "io_utils",  # Missing module referenced in autosummary
     "kernels",  # Missing module referenced in autosummary
     "classical",  # Missing module referenced in autosummary
@@ -59,7 +55,6 @@ autodoc_mock_imports = [
     "homodyne.core.kernels",
     "homodyne.core.io_utils",
     "homodyne.optimization",
-    "homodyne.optimization.mcmc",
     "homodyne.optimization.classical",
     "homodyne.plotting",
 ]

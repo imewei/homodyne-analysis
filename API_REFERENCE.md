@@ -1,7 +1,6 @@
 # Homodyne API Reference
 
-**Python 3.12+ Required** | **JAX Integration Available** | **Code Quality: Black ✅
-isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
+**Python 3.12+ Required** | **Code Quality: Black ✅ isort ✅ flake8 ~400** | **Trust Region Gurobi ✅**
 
 ## Core Modules
 
@@ -195,64 +194,6 @@ print(f"Final chi-squared: {info['final_chi_squared']}")
 
 ______________________________________________________________________
 
-### `homodyne.optimization.mcmc`
-
-#### `MCMCSampler`
-
-Bayesian MCMC sampling using PyMC with NUTS.
-
-```python
-class MCMCSampler:
-    def __init__(self, analysis_core: HomodyneAnalysisCore, config: Dict[str, Any])
-
-    # Methods
-    def run_mcmc_analysis(
-        self,
-        c2_experimental: Optional[np.ndarray] = None,
-        phi_angles: Optional[np.ndarray] = None,
-        mcmc_config: Optional[Dict[str, Any]] = None,
-        filter_angles_for_optimization: Optional[bool] = None
-    ) -> Dict[str, Any]
-
-    def compute_convergence_diagnostics(self, trace) -> Dict[str, Any]
-    def extract_posterior_statistics(self, trace) -> Dict[str, Any]
-    def generate_posterior_samples(self, n_samples: int = 1000) -> Optional[np.ndarray]
-```
-
-**Return Structure:**
-
-```python
-{
-    "trace": arviz.InferenceData,           # MCMC trace
-    "posterior_means": Dict[str, float],    # Parameter means
-    "chi_squared": float,                   # Model fit quality
-    "diagnostics": Dict[str, Any],          # Convergence diagnostics
-    "performance_metrics": Dict[str, Any]   # Timing information
-}
-```
-
-**Example Usage:**
-
-```python
-from homodyne.optimization.mcmc import MCMCSampler
-
-config = {
-    "mcmc": {
-        "chains": 4,
-        "draws": 2000,
-        "tune": 1000,
-        "target_accept": 0.8
-    }
-}
-
-sampler = MCMCSampler(analysis_core, config)
-result = sampler.run_mcmc_analysis()
-
-print(f"Posterior means: {result['posterior_means']}")
-print(f"R-hat diagnostics: {result['diagnostics']['r_hat']}")
-```
-
-______________________________________________________________________
 
 ### `homodyne.core.config`
 
@@ -320,12 +261,6 @@ def plot_c2_heatmaps(
 
 def plot_optimization_results(
     results: Dict[str, Any],
-    output_dir: Path,
-    config: Dict[str, Any]
-) -> None
-
-def plot_mcmc_diagnostics(
-    trace,
     output_dir: Path,
     config: Dict[str, Any]
 ) -> None
@@ -502,8 +437,6 @@ class DataFormatError(HomodyneError):
 class OptimizationError(HomodyneError):
     """Optimization convergence errors"""
 
-class MCMCError(HomodyneError):
-    """MCMC sampling errors"""
 ```
 
 ### Error Handling Example
@@ -555,7 +488,7 @@ homodyne --uninstall-completion powershell  # For PowerShell
 
 **Features:**
 
-- **Method completion**: `--method <TAB>` → classical, mcmc, robust, all
+- **Method completion**: `--method <TAB>` → classical, robust, all
 - **Config file completion**: `--config <TAB>` → available .json files
 - **Directory completion**: `--output-dir <TAB>` → available directories
 - **Context-aware**: Adapts based on current command context
@@ -586,55 +519,6 @@ The homodyne package maintains high code quality with comprehensive tooling:
 
 ______________________________________________________________________
 
-## Backend Integration
-
-### JAX Backend (GPU Acceleration)
-
-JAX integration provides GPU acceleration and JIT compilation for MCMC sampling:
-
-```python
-# JAX backend is automatically detected and used when available
-# Configuration in mcmc.py handles lazy importing:
-
-from homodyne.optimization.mcmc import _lazy_import_jax
-_lazy_import_jax()  # Automatically detects JAX availability
-
-# MCMC sampling with JAX (when available)
-sampler = MCMCSampler(analysis_core, config)
-result = sampler.run_mcmc_analysis()  # Uses JAX if available, NumPy fallback
-
-# Check if JAX is available
-from homodyne.optimization.mcmc import JAX_AVAILABLE
-print(f"JAX backend available: {JAX_AVAILABLE}")
-```
-
-**JAX Integration Features:**
-
-- **Automatic detection**: JAX used when available, graceful NumPy fallback
-- **GPU acceleration**: Utilizes GPU devices when present
-- **JIT compilation**: Additional performance boost beyond Numba
-- **Lazy loading**: JAX imported only when needed
-
-**Installation for JAX:**
-
-```bash
-pip install jax jaxlib  # CPU version
-# OR for GPU support:
-pip install jax[cuda12]  # CUDA 12
-```
-
-### NumPy Backend (Default Fallback)
-
-```python
-# NumPy backend used when JAX unavailable
-# No configuration needed - automatic fallback
-config = {
-    "mcmc": {
-        "chains": 4,
-        "draws": 2000
-    }
-}
-```
 
 ______________________________________________________________________
 
@@ -691,8 +575,7 @@ result = optimizer.run_optimization()
 ```python
 # Old format
 {
-    "optimization_method": "nelder-mead",
-    "mcmc_chains": 4
+    "optimization_method": "nelder-mead"
 }
 
 # New format
@@ -702,9 +585,6 @@ result = optimizer.run_optimization()
     },
     "classical": {
         "method": "nelder-mead"
-    },
-    "mcmc": {
-        "chains": 4
     }
 }
 ```

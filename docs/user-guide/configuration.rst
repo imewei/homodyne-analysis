@@ -3,6 +3,35 @@ Configuration Guide
 
 The homodyne package uses JSON configuration files to specify analysis parameters, file paths, and options.
 
+Available Analysis Methods
+---------------------------
+
+The homodyne package provides three main categories of parameter estimation methods:
+
+**Classical Optimization Methods**:
+
+- **Nelder-Mead**: Derivative-free simplex method, robust for noisy functions
+- **Gurobi**: Quadratic programming solver (requires license), efficient for smooth functions
+
+**Robust Optimization Methods**:
+
+- **Wasserstein DRO**: Distributionally robust optimization with Wasserstein uncertainty sets
+- **Scenario-based**: Multi-scenario optimization using bootstrap resampling
+- **Ellipsoidal**: Bounded uncertainty robust least squares
+
+**Method Selection**:
+
+.. code-block:: bash
+
+   # Use classical methods only
+   homodyne --method classical --config my_config.json
+
+   # Use robust methods only
+   homodyne --method robust --config my_config.json
+
+   # Use all available methods
+   homodyne --method all --config my_config.json
+
 Quick Configuration
 -------------------
 
@@ -80,10 +109,10 @@ Starting values for optimization:
      }
    }
 
-Parameter Bounds and Prior Distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Parameter Bounds and Constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Optimization constraints and MCMC prior distributions:
+Optimization constraints and parameter bounds:
 
 .. code-block:: javascript
 
@@ -98,7 +127,7 @@ Optimization constraints and MCMC prior distributions:
    }
 
 .. note::
-   **MCMC Prior Distributions**: All parameters use **Normal distributions** in MCMC sampling. The ``type`` field in configuration files affects both classical optimization bounds and MCMC prior specification. All seven parameters (D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0) use Normal priors in the Bayesian analysis.
+   **Parameter Bounds**: The ``type`` field specifies the parameter distribution type for bounds checking. All seven parameters (D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0) use Normal distributions for bounds specification.
 
 Parameter Constraints and Ranges
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,22 +294,6 @@ Optimization Configuration
 - **Scenario-based**: Multi-scenario optimization using bootstrap resampling for outlier resistance
 - **Ellipsoidal**: Robust least squares with bounded uncertainty in correlation functions
 
-**MCMC Configuration**:
-
-.. code-block:: javascript
-
-   {
-     "optimization_config": {
-       "mcmc_sampling": {
-         "enabled": true,
-         "draws": 2000,
-         "tune": 1000,
-         "chains": 4,
-         "cores": 4,
-         "target_accept": 0.9
-       }
-     }
-   }
 
 Performance Settings
 ~~~~~~~~~~~~~~~~~~~~
@@ -355,11 +368,15 @@ Configuration Templates
        "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0"]
      },
      "optimization_config": {
-       "mcmc_sampling": {
+       "classical_optimization": {
+         "methods": ["Nelder-Mead"],
+         "method_options": {
+           "Nelder-Mead": {"maxiter": 5000}
+         }
+       },
+       "robust_optimization": {
          "enabled": true,
-         "draws": 2000,
-         "tune": 1000,
-         "chains": 4
+         "uncertainty_model": "wasserstein"
        }
      }
    }
@@ -404,25 +421,30 @@ Common Configuration Patterns
      }
    }
 
-**MCMC with Convergence Diagnostics**:
+**Multi-Method Optimization Setup**:
 
 .. code-block:: javascript
 
    {
      "optimization_config": {
-       "mcmc_sampling": {
-         "draws": 4000,
-         "tune": 2000,
-         "chains": 6,
-         "target_accept": 0.95
+       "classical_optimization": {
+         "methods": ["Nelder-Mead", "Gurobi"],
+         "method_options": {
+           "Nelder-Mead": {"maxiter": 5000},
+           "Gurobi": {"time_limit": 600}
+         }
+       },
+       "robust_optimization": {
+         "enabled": true,
+         "uncertainty_model": "wasserstein",
+         "uncertainty_radius": 0.03
        }
      },
      "validation_rules": {
-       "mcmc_convergence": {
-         "rhat_thresholds": {
-           "excellent_threshold": 1.01,
-           "good_threshold": 1.05,
-           "acceptable_threshold": 1.1
+       "fit_quality": {
+         "overall_chi_squared": {
+           "excellent_threshold": 5.0,
+           "acceptable_threshold": 10.0
          }
        }
      }

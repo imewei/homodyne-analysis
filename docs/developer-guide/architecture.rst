@@ -22,7 +22,6 @@ The package follows a layered architecture:
    Optimization Layer
    ├── Classical Optimization (Nelder-Mead, Iterative Gurobi Trust Region)
    ├── Robust Optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
-   └── MCMC Sampling (NUTS)
            │
    Model Layer
    ├── Physical Models
@@ -45,7 +44,6 @@ Key Components
        def __init__(self, config_path: str)
        def validate(self) -> bool
        def get_analysis_settings(self) -> dict
-       def is_mcmc_enabled(self) -> bool
 
 **2. Analysis Core**
 
@@ -57,7 +55,6 @@ Key Components
        def load_experimental_data(self)
        def optimize_classical(self) -> OptimizeResult
        def optimize_robust(self) -> dict
-       def run_mcmc_sampling(self) -> dict
        def optimize_all(self) -> dict
 
 **3. Model System**
@@ -79,8 +76,6 @@ Key Components
    class RobustHomodyneOptimizer:
        """CVXPY-based robust optimization"""
 
-   class MCMCSampler:
-       """PyMC-based Bayesian sampling"""
 
 **5. Gurobi Trust Region Implementation**
 
@@ -133,9 +128,7 @@ Different optimization strategies are encapsulated:
        def optimize(self, objective_func, initial_params):
            return minimize(objective_func, initial_params, method='Nelder-Mead')
 
-   class MCMCStrategy(OptimizationStrategy):
        def optimize(self, objective_func, initial_params):
-           return run_mcmc_sampling(...)
 
 **2. Factory Pattern** - Model Creation
 
@@ -199,7 +192,6 @@ Data Flow
    Model Selection ──────────► Parameter Setup
          │
          ▼
-   Optimization Engine ──────► Classical/MCMC
          │
          ▼
    Results Processing ───────► Output Generation
@@ -223,8 +215,6 @@ Error Handling Strategy
    class OptimizationError(HomodyneError):
        """Optimization convergence errors"""
 
-   class MCMCConvergenceError(OptimizationError):
-       """MCMC-specific convergence issues"""
 
 **Error Recovery**:
 
@@ -273,11 +263,9 @@ Expensive computations are cached:
 
 **3. Parallel Processing**
 
-MCMC and data processing use parallelization:
 
 .. code-block:: python
 
-   # MCMC parallel chains
    with pm.Model():
        trace = pm.sample(
            draws=2000,
@@ -329,7 +317,6 @@ Testing Architecture
    │   └── test_optimization.py
    ├── integration/             # Integration tests
    │   ├── test_full_workflow.py
-   │   └── test_mcmc_integration.py
    └── fixtures/                # Test data and fixtures
        ├── sample_config.json
        └── test_data.h5

@@ -21,7 +21,6 @@ This document describes the comprehensive testing system for parameter constrain
 - **Core Parameters**: D0, alpha, D_offset, gamma_dot_t0, beta, gamma_dot_t_offset, phi0
 - **Scaling Parameters**: contrast, offset, c2_fitted, c2_theory
 - **Physical Functions**: D_time, gamma_dot_time
-- **MCMC Configuration**: draws, tune, chains
 
 ### 2. Constraint Synchronization (`fix_constraints.py`)
 
@@ -195,8 +194,6 @@ The test suite provides comprehensive coverage of:
 
 The constraint validation tests complement existing homodyne tests:
 
-- **Configuration Tests**: `test_config_json.py`, `test_mcmc_parameter_bounds_regression.py`
-- **Parameter Validation**: `test_mcmc_config_validation.py`
 - **Bounds Regression**: Ensures parameter bounds remain stable
 
 The new tests focus specifically on:

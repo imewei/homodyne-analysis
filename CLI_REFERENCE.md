@@ -35,7 +35,7 @@ homodyne [OPTIONS]
 
 ```bash
   -h, --help                    Show help message and exit
-  --method {classical,mcmc,robust,all}
+  --method {classical,robust,all}
                                 Analysis method to use (default: classical)
   --config CONFIG               Path to configuration file (default: ./homodyne_config.json)
   --output-dir OUTPUT_DIR       Output directory for results (default: ./homodyne_results)
@@ -63,7 +63,6 @@ homodyne [OPTIONS]
     license)
   - **Nelder-Mead**: Derivative-free simplex algorithm, robust for noisy functions
 - **robust**: Robust optimization with uncertainty quantification (requires CVXPY)
-- **mcmc**: Bayesian MCMC sampling using PyMC and NUTS
 - **all**: Run all available methods
 
 **Gurobi Trust Region Features (v0.6.5+):**
@@ -92,8 +91,6 @@ homodyne --config my_config.json
 # Custom output directory with verbose logging
 homodyne --output-dir ./homodyne_results --verbose
 
-# Run MCMC analysis with custom config
-homodyne --method mcmc --config mcmc_config.json
 
 # Force static isotropic mode
 homodyne --static-isotropic --method classical
@@ -144,16 +141,12 @@ homodyne_results/
 │   ├── scenario/
 │   ├── ellipsoidal/
 │   └── ...
-├── mcmc/                          # MCMC results (if run)
-│   ├── mcmc_summary.json          # MCMC summary statistics
-│   ├── mcmc_trace.nc              # NetCDF trace file
 │   ├── experimental_data.npz      # Original experimental data
-│   ├── fitted_data.npz            # MCMC fitted data
+│   ├── fitted_data.npz            # Optimization fitted data
 │   ├── residuals_data.npz         # Residuals
 │   ├── c2_heatmaps_phi_*.png      # Heatmap plots per angle
 │   ├── 3d_surface_phi_*.png       # 3D surface plots
 │   ├── 3d_surface_residuals_phi_*.png
-│   ├── trace_plot.png             # MCMC trace plots
 │   └── corner_plot.png            # Parameter posterior distributions
 ├── exp_data/                      # Experimental data plots (if --plot-experimental-data)
 │   ├── data_validation_phi_*.png  # Per-angle validation plots
@@ -241,7 +234,6 @@ homodyne-config --mode static_anisotropic --sample collagen --author "Your Name"
         "classical_optimization": {
             "methods": ["Nelder-Mead"]
         },
-        "mcmc_sampling": {
             "enabled": false,
             "chains": 4,
             "draws": 2000,
@@ -329,7 +321,7 @@ homodyne
 ## Limitations and Notes
 
 1. **No subcommands**: Unlike the idealized CLI structure, the current implementation
-   doesn't have subcommands like `homodyne analyze`, `homodyne mcmc`, etc.
+   doesn't have subcommands like `homodyne analyze`, etc.
 
 1. **Method selection**: Different optimization methods are selected via the `--method`
    flag, not separate commands.
@@ -344,7 +336,6 @@ homodyne
 
 1. **Optional dependencies**:
 
-   - MCMC requires PyMC installation
    - Robust optimization requires CVXPY
    - Some features require numba for performance
    - Shell completion requires `argcomplete`
@@ -415,7 +406,7 @@ The completion system provides multiple tiers of functionality:
 
 #### 1. **Tab Completion** (Primary Method)
 
-- **Method completion**: Tab complete `--method` options (classical, mcmc, robust, all)
+- **Method completion**: Tab complete `--method` options (classical, robust, all)
 - **File completion**: Tab complete `--config` with available .json files
 - **Directory completion**: Tab complete `--output-dir` with available directories
 - **Context-aware**: Completion adapts based on current command context
@@ -427,7 +418,6 @@ Fast shortcuts for common operations:
 
 ```bash
 hc          # homodyne --method classical
-hm          # homodyne --method mcmc
 hr          # homodyne --method robust
 ha          # homodyne --method all
 hconfig     # homodyne --config
@@ -446,7 +436,7 @@ homodyne_help    # Show all available options and current config files
 
 ```bash
 # Tab completion examples (press TAB at cursor position)
-homodyne --method <TAB>          # Shows: classical, mcmc, robust, all
+homodyne --method <TAB>          # Shows: classical, robust, all
 homodyne --config <TAB>          # Shows available .json files
 homodyne --output-dir <TAB>      # Shows available directories
 homodyne-config --mode <TAB>     # Shows: static_isotropic, static_anisotropic, laminar_flow
@@ -457,7 +447,6 @@ homodyne-config --mode <TAB>     # Shows: static_isotropic, static_anisotropic, 
 ```bash
 # Quick method selection
 hc                               # homodyne --method classical
-hm --verbose                     # homodyne --method mcmc --verbose
 hr --config my_config.json       # homodyne --method robust --config my_config.json
 ha                               # homodyne --method all
 
@@ -592,7 +581,6 @@ source ~/.bashrc  # For bash
 source ~/.zshrc   # For zsh
 # OR use shortcuts that always work:
 hc                # homodyne --method classical
-hm                # homodyne --method mcmc
 
 # Issue: argcomplete not found or compdef errors
 # Solution: Install completion dependencies and use fallback

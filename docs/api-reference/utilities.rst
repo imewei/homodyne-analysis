@@ -58,13 +58,9 @@ Plotting Utilities
 
 Plot experimental correlation data as heatmaps.
 
-**plot_mcmc_corner(trace, var_names=None)**
 
-Create corner plots for MCMC parameter distributions.
 
-**plot_mcmc_trace(trace, var_names=None)**
 
-Create trace plots for MCMC convergence diagnostics.
 
 **plot_3d_surface(data, x, y)**
 
@@ -140,8 +136,6 @@ Usage Examples
 .. code-block:: python
 
    from homodyne.plotting import (
-       plot_c2_heatmaps, plot_mcmc_corner,
-       plot_mcmc_trace, plot_3d_surface
    )
    from homodyne.core.io_utils import save_fig
 
@@ -151,15 +145,9 @@ Usage Examples
    )
    save_fig(fig1, "correlation_heatmaps.png", dpi=300)
 
-   # Plot MCMC results (if available)
-   if mcmc_trace is not None:
        # Corner plot for parameter distributions
-       fig2 = plot_mcmc_corner(mcmc_trace)
-       save_fig(fig2, "mcmc_corner.png", dpi=300)
 
        # Trace plots for convergence
-       fig3 = plot_mcmc_trace(mcmc_trace)
-       save_fig(fig3, "mcmc_trace.png", dpi=300)
 
 File I/O Functions
 ------------------

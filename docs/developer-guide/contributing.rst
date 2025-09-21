@@ -363,8 +363,6 @@ Use clear, descriptive titles:
 
 .. code-block:: text
 
-   Good: "Add support for custom prior distributions in MCMC"
-   Bad: "Fix MCMC"
 
 Include comprehensive descriptions:
 

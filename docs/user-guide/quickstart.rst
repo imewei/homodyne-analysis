@@ -8,7 +8,6 @@ Installation
 
 .. code-block:: bash
 
-   # Full installation with all features (MCMC, performance, data handling)
    pip install homodyne-analysis[all]
 
 5-Minute Tutorial
@@ -65,7 +64,6 @@ Ensure your experimental data is in the correct format:
 
    # Quick analysis using different methods:
    # hc        # homodyne --method classical
-   # hm        # homodyne --method mcmc
    # hr        # homodyne --method robust
    # ha        # homodyne --method all
 
@@ -76,14 +74,12 @@ Results are saved to the ``homodyne_results/`` directory with organized subdirec
 - **Main results**: ``homodyne_analysis_results.json`` with parameter estimates and fit quality
 - **Classical output**: ``./classical/`` subdirectory with method-specific directories (``nelder_mead/``, ``gurobi/``)
 - **Robust output**: ``./robust/`` subdirectory with method-specific directories (``wasserstein/``, ``scenario/``, ``ellipsoidal/``)
-- **MCMC output**: ``./mcmc/`` subdirectory with posterior distributions, trace data, diagnostics, and 3D visualizations
 - **Experimental plots**: ``./exp_data/`` subdirectory with validation plots (if using ``--plot-experimental-data``)
 
 **Method-Specific Outputs**:
 
 - **Classical** (``./classical/``): Method-specific directories with fast point estimates, consolidated ``fitted_data.npz`` files
 - **Robust** (``./robust/``): Noise-resistant optimization with method-specific directories (wasserstein, scenario, ellipsoidal)
-- **MCMC** (``./mcmc/``): Full posterior distributions, convergence diagnostics, trace plots, corner plots, 3D surface plots
 - **All methods**: Save experimental, fitted, and residuals data in consolidated ``fitted_data.npz`` files per method
 
 Python API Example
@@ -106,10 +102,6 @@ Python API Example
    classical_results = analysis.optimize_classical()
    print(f"Classical chi-squared: {classical_results.fun:.3f}")
 
-   # Optional: Run MCMC for uncertainty quantification
-   if config.is_mcmc_enabled():
-       mcmc_results = analysis.run_mcmc_sampling()
-       print(f"MCMC converged: {mcmc_results['converged']}")
 
 Analysis Modes Quick Reference
 ------------------------------
@@ -325,13 +317,9 @@ Common First-Time Issues
 **Slow performance:**
    Enable angle filtering and ensure Numba is installed for JIT compilation.
 
-**MCMC convergence issues:**
-   Start with classical optimization, then use those results to initialize MCMC.
 
-MCMC Prior Distributions
 ------------------------
 
-The homodyne package uses **Normal distributions** for all parameters in MCMC analysis:
 
 .. list-table:: Parameter Prior Distributions
    :widths: 20 30 15 35
@@ -373,7 +361,6 @@ The homodyne package uses **Normal distributions** for all parameters in MCMC an
 Scaling Parameters for Physical Constraints
 --------------------------------------------
 
-The MCMC implementation includes additional scaling parameters to ensure physical validity:
 
 .. list-table:: Scaling Parameter Constraints
    :widths: 20 30 15 35

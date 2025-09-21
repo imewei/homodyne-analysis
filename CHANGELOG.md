@@ -6,6 +6,64 @@ this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-09-18
+
+### BREAKING CHANGES
+
+- **MCMC Analysis Removed**: MCMC (Markov Chain Monte Carlo) functionality has been completely removed from homodyne-analysis to simplify the codebase and reduce dependency complexity
+  - Removed `homodyne.optimization.mcmc` module and all PyMC-based Bayesian analysis
+  - Removed `--method mcmc` CLI option with graceful deprecation handling
+  - Removed PyMC, ArviZ, PyTensor, and corner plot dependencies
+  - Updated all configuration templates to mark MCMC sections as deprecated
+
+### Added
+
+- **Enhanced Deprecation Handling**: Comprehensive migration guidance for users transitioning from MCMC
+  - Graceful handling of `--method mcmc` with detailed migration instructions
+  - Configuration system automatically ignores MCMC sections with deprecation warnings
+  - MCMC plotting functions replaced with informative deprecation stubs
+- **Migration Documentation**: Updated examples and documentation to focus on available methods
+  - Classical optimization (Nelder-Mead, Gurobi) for fast parameter estimation
+  - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal) for uncertainty resistance
+  - Comprehensive migration guide with alternative analysis workflows
+
+### Changed
+
+- **Method Selection**: `--method all` now runs only classical and robust optimization methods
+- **Configuration System**: MCMC sections in configuration files are automatically filtered out with warnings
+- **Dependencies**: Removed optional MCMC dependencies from installation requirements
+- **Documentation**: Updated all examples and tutorials to use classical and robust methods
+
+### Removed
+
+- **MCMC Module**: Complete removal of `homodyne/optimization/mcmc.py`
+- **MCMC Dependencies**: PyMC ≥5.0.0, ArviZ ≥0.12.0, PyTensor ≥2.8.0, corner ≥2.2.0
+- **MCMC Plotting**: Corner plots, trace plots, and convergence diagnostics
+- **MCMC Results**: Posterior sampling, trace storage, and Bayesian uncertainty quantification
+
+### Migration Guide
+
+**For Uncertainty Quantification (MCMC Alternative)**:
+- Use robust optimization methods for uncertainty resistance against measurement noise
+- Classical methods provide parameter error estimates and goodness-of-fit metrics
+- Both methods include comprehensive diagnostic plots and result validation
+
+**Command Migration**:
+```bash
+# Old MCMC usage (no longer works)
+# homodyne --method mcmc
+
+# New alternatives
+homodyne --method classical  # Fast parameter estimation
+homodyne --method robust     # Noise-resistant analysis
+homodyne --method all        # Both classical and robust methods
+```
+
+**Configuration Migration**:
+- MCMC configuration sections are automatically ignored with deprecation warnings
+- No manual configuration changes required - existing configs remain compatible
+- New configurations should focus on classical and robust optimization settings
+
 ## [0.7.1] - 2025-08-28
 
 ### Fixed

@@ -45,19 +45,16 @@ Installation Issues
    pip install numba
    pip install -e .
 
-**MCMC Dependencies**
 
 *Problem*: PyMC/ArviZ import errors
 
 .. code-block:: text
 
-   ImportError: PyMC is required for MCMC functionality
 
 *Solution*:
 
 .. code-block:: bash
 
-   # Install MCMC dependencies
    pip install pymc arviz pytensor
 
    # Test installation
@@ -290,12 +287,10 @@ Optimization Issues
        {"name": "D_offset", "min": 0, "max": 2000}
    ]
 
-MCMC Issues
 -----------
 
 **Convergence Diagnostics**
 
-*Problem*: MCMC chains not converging
 
 .. code-block:: text
 
@@ -306,9 +301,7 @@ MCMC Issues
 .. code-block:: python
 
    # Check convergence diagnostics
-   mcmc_result = analysis.run_mcmc_sampling()
 
-   for param, rhat in mcmc_result["rhat"].items():
        if rhat > 1.1:
            print(f"⚠️ {param}: R̂ = {rhat:.3f} (poor convergence)")
        else:
@@ -320,25 +313,20 @@ MCMC Issues
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["tune"] = 2000
 
 2. **More chains**:
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["chains"] = 6
 
 3. **Better initialization**:
 
 .. code-block:: python
 
-   # Use classical result to initialize MCMC
    classical_result = analysis.optimize_classical()
-   # MCMC will automatically use these results
 
 **Divergences**
 
-*Problem*: Sampling divergences during MCMC
 
 .. code-block:: text
 
@@ -350,19 +338,15 @@ MCMC Issues
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["target_accept"] = 0.95
 
 2. **Increase max tree depth**:
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["max_treedepth"] = 12
 
 3. **Better parameterization**: Check if model is well-conditioned
 
-**Memory Issues with MCMC**
 
-*Problem*: Out of memory during MCMC sampling
 
 *Solutions*:
 
@@ -370,19 +354,16 @@ MCMC Issues
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["draws"] = 1000
 
 2. **Fewer chains**:
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["chains"] = 2
 
 3. **Enable thinning**:
 
 .. code-block:: python
 
-   config["optimization_config"]["mcmc_sampling"]["thin"] = 2
 
 Performance Issues
 ------------------

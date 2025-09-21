@@ -199,7 +199,6 @@ A recommended approach is to use progressive complexity:
    python run_homodyne.py --static-anisotropic --method classical
 
    # Step 3: Full flow analysis (if needed)
-   python run_homodyne.py --laminar-flow --method mcmc
 
 Mode Selection Guidelines
 -------------------------

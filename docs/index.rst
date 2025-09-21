@@ -21,7 +21,7 @@ Overview
 This package analyzes time-dependent intensity correlation functions c₂(φ,t₁,t₂) in complex fluids under nonequilibrium conditions, capturing the interplay between Brownian diffusion and advective shear flow. The implementation provides:
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- **Multiple optimization methods**: Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+- **Multiple optimization methods**: Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal)
 - **High performance**: Numba JIT compilation with 3-5x speedup, JAX backend for GPU acceleration, comprehensive performance monitoring
 - **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
 
@@ -57,7 +57,6 @@ Quick Start
    # Main analysis command
    homodyne                                    # Default classical method
    homodyne --method robust                    # Robust optimization only
-   homodyne --method mcmc                      # MCMC sampling only
    homodyne --method all --verbose             # All methods with debug logging
 
    # Analysis mode control
@@ -115,7 +114,6 @@ Key Features
    Automatic g₂ = offset + contrast × g₁ fitting for accurate chi-squared calculations
 
 **Multiple Optimization Methods**
-   Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
 
 **Security and Code Quality**
    Comprehensive security scanning with Bandit, dependency vulnerability checking with pip-audit, and automated code quality tools
@@ -124,7 +122,6 @@ Key Features
    Experimental data validation plots and quality control
 
 **Visualization Tools**
-   Parameter evolution tracking, MCMC diagnostics, and corner plots
 
 **Performance Monitoring**
    Comprehensive performance testing, regression detection, and automated benchmarking
@@ -149,7 +146,6 @@ API Reference
    :maxdepth: 2
 
    api-reference/core
-   api-reference/mcmc
    api-reference/utilities
 
 Developer Guide

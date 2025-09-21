@@ -150,7 +150,6 @@ homodyne --install-completion <your-shell>
 Version 0.7.2 will focus on:
 
 - Additional robust optimization methods
-- Enhanced MCMC convergence diagnostics
 - Performance optimizations for large datasets
 - Extended JAX/GPU acceleration support
 - Advanced plotting customization options
@@ -165,7 +164,6 @@ ______________________________________________________________________
 
 - Complete homodyne scattering analysis framework
 - Multiple analysis modes (Static Isotropic, Static Anisotropic, Laminar Flow)
-- Comprehensive optimization methods (Classical, Robust, MCMC)
 - Shell completion system with argcomplete
 - Extensive configuration management
 - Professional visualization and plotting

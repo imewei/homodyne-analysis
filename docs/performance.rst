@@ -10,7 +10,7 @@ This comprehensive guide covers performance optimization, monitoring, and best p
 Performance Overview (v0.6.5+)
 ===============================
 
-The homodyne package includes comprehensive performance optimizations across all analysis methods: classical optimization, robust optimization, and MCMC sampling. Key features include JIT compilation, JAX acceleration, performance monitoring, and automated benchmarking.
+The homodyne package includes performance optimizations for classical and robust optimization methods. Key features include JIT compilation, JAX acceleration, performance monitoring, and automated benchmarking.
 
 Key Performance Features
 ------------------------
@@ -21,7 +21,6 @@ Key Performance Features
    - Optimized for chi-squared calculations and correlation functions
 
 **JAX Backend Integration**
-   - GPU/TPU acceleration for MCMC sampling
    - High-performance numerical computations
    - Automatic fallback to CPU when needed
 
@@ -34,7 +33,6 @@ Key Performance Features
 **Optimization-Specific Performance**
    - **Classical**: Optimized angle filtering, vectorized operations
    - **Robust**: CVXPY solver optimization, caching, progressive optimization
-   - **MCMC**: JAX/NumPyro acceleration, thinning support, convergence diagnostics
 
 Method Performance Comparison
 =============================
@@ -49,7 +47,6 @@ Method Performance Comparison
    - Best for: Noisy data, outlier resistance, measurement uncertainty
    - Trade-offs: Slower than classical, requires CVXPY
 
-3. **MCMC Sampling** (NUTS) - ~hours
    - Best for: Full uncertainty quantification, publication-quality results
    - Trade-offs: Slowest method, requires careful convergence assessment
 
@@ -121,7 +118,6 @@ Robust Optimization
 2. **Wasserstein DRO** - Moderate speed, good uncertainty modeling
 3. **Scenario-based** - Slowest, most robust to outliers
 
-MCMC Optimization
 -----------------
 
 **JAX Acceleration:**
@@ -131,7 +127,6 @@ MCMC Optimization
    # Enable JAX backend for GPU acceleration
    config = {
        "optimization_config": {
-           "mcmc_sampling": {
                "use_jax": True,  # Automatically detects GPU availability
                "cores": 4        # Multi-core CPU if JAX unavailable
            }
@@ -142,7 +137,6 @@ MCMC Optimization
 
 .. code-block:: python
 
-   # Optimized MCMC settings for different problem sizes
 
    # Static mode (3 parameters)
    static_config = {
@@ -263,13 +257,10 @@ Troubleshooting Performance Issues
 
 **Common Issues and Solutions:**
 
-1. **Slow MCMC Sampling**
    - Enable JAX backend: ``pip install jax jaxlib``
    - Reduce problem size: Use angle filtering
-   - Optimize MCMC settings: Increase ``thin`` parameter
 
 2. **High Memory Usage**
-   - Enable thinning in MCMC: ``"thin": 2`` or higher
    - Use progressive optimization: ``"enable_progressive_optimization": true``
    - Monitor with: ``@performance_monitor(monitor_memory=True)``
 
@@ -307,7 +298,6 @@ Best Practices
 1. **Start with classical** methods for rapid prototyping
 2. **Use angle filtering** to reduce computational complexity
 3. **Enable robust methods** for noisy/uncertain data
-4. **Run MCMC last** for full uncertainty quantification
 5. **Monitor performance** with built-in profiling tools
 
 **Production Deployment:**
@@ -315,7 +305,6 @@ Best Practices
 1. **Install performance extras**: ``pip install homodyne-analysis[performance,jax]``
 2. **Configure environment variables** for optimal threading
 3. **Enable caching** in robust optimization settings
-4. **Use appropriate hardware** (GPU for MCMC, multi-core for classical/robust)
 5. **Validate with benchmarks** before deployment
 
 Code Quality and Maintenance

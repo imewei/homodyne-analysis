@@ -6,7 +6,6 @@ System Requirements
 
 - **Python**: 3.12 or higher
 - **Operating System**: Windows, macOS, or Linux
-- **Memory**: Minimum 4GB RAM (8GB+ recommended for MCMC)
 - **Storage**: ~500MB for full installation with dependencies
 
 Quick Installation (Recommended)
@@ -28,7 +27,6 @@ This installs the core dependencies (numpy, scipy, matplotlib) along with the ma
 
    pip install homodyne-analysis[all]
 
-This includes all optional dependencies: performance acceleration (numba, jax), robust optimization (cvxpy), MCMC analysis (pymc, arviz, pytensor), documentation tools, and development utilities.
 
 Optional Installation Extras
 -----------------------------
@@ -43,11 +41,9 @@ You can install specific feature sets using pip extras:
    # OR for JAX-specific features:
    pip install homodyne-analysis[jax]
 
-**For MCMC Bayesian Analysis:**
 
 .. code-block:: bash
 
-   pip install homodyne-analysis[mcmc]
 
 **For Robust Optimization (Noise-Resistant Methods):**
 
@@ -104,7 +100,6 @@ You can install specific feature sets using pip extras:
 The completion system provides multiple interaction methods:
 
 - **Tab completion**: ``homodyne --method <TAB>`` shows available options
-- **Command shortcuts**: ``hc`` (classical), ``hm`` (mcmc), ``hr`` (robust), ``ha`` (all)
 - **Help reference**: ``homodyne_help`` shows all available options and current config files
 
 .. code-block:: bash
@@ -173,15 +168,11 @@ If you encounter import errors, try reinstalling the package:
    # Or with all dependencies
    pip install --upgrade homodyne-analysis[all]
 
-**MCMC Issues:**
 
-For MCMC functionality, ensure the mcmc extras are installed:
 
 .. code-block:: bash
 
-   pip install homodyne-analysis[mcmc]
 
-   # Test MCMC availability
    python -c "import pymc; print('PyMC available')"
 
 **Performance Issues:**

@@ -65,7 +65,6 @@ Package Structure
    ├── core/                  # Core analysis classes
    ├── optimization/          # Optimization algorithms
    │   ├── classical.py      # Classical optimization
-   │   └── mcmc.py           # MCMC sampling
    ├── models/               # Physical models
    ├── utils/                # Utility functions
    ├── config/               # Configuration management

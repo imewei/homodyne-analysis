@@ -112,7 +112,6 @@ make test-all
 
 # Run specific test categories
 pytest -v -m "not slow"           # Skip slow tests
-pytest -v -m "mcmc"              # Only MCMC tests
 pytest -v -m "performance"       # Only performance tests
 ```
 
@@ -121,7 +120,6 @@ pytest -v -m "performance"       # Only performance tests
 Our tests are organized by markers:
 - `slow`: Time-intensive tests
 - `integration`: Integration tests
-- `mcmc`: MCMC-specific tests  
 - `performance`: Performance benchmarks
 - `regression`: Regression tests
 

@@ -21,7 +21,7 @@ diffusion and advective shear flow.
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params),
   Laminar Flow (7 params)
 - **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust
-  (Wasserstein DRO, Scenario-based, Ellipsoidal), Bayesian MCMC (NUTS)
+  (Wasserstein DRO, Scenario-based, Ellipsoidal)
 - **Noise-resistant analysis**: Robust optimization methods for measurement uncertainty
   and outlier resistance
 - **High performance**: Numba JIT compilation with 3-5x speedup, vectorized operations,
@@ -101,16 +101,6 @@ pip install homodyne-analysis[jax]
 # - jaxlib>=0.4.35                 # JAX backend with CPU/GPU support
 ```
 
-**Bayesian MCMC Analysis:**
-
-```bash
-pip install homodyne-analysis[mcmc]
-# Includes:
-# - pymc>=5.0.0                    # Probabilistic programming
-# - arviz>=0.12.0                  # Bayesian data analysis
-# - pytensor>=2.8.0                # Tensor operations for PyMC
-# - corner>=2.2.0                  # Corner plots for MCMC results
-```
 
 **Robust Optimization:**
 
@@ -197,7 +187,7 @@ pip install homodyne-analysis[dev]
 
 ```bash
 pip install homodyne-analysis[all]
-# Includes: data, performance, jax, mcmc, robust, gurobi, dev
+# Includes: data, performance, robust, gurobi, dev
 # Complete installation with all optional dependencies
 ```
 
@@ -206,7 +196,7 @@ pip install homodyne-analysis[all]
 **For most users:**
 
 ```bash
-pip install homodyne-analysis[performance,mcmc,robust]  # Core analysis features
+pip install homodyne-analysis[performance,robust]  # Core analysis features
 ```
 
 **For developers:**
@@ -249,7 +239,6 @@ The homodyne package provides two main command-line tools:
 # Basic examples
 homodyne                                    # Default classical method
 homodyne --method robust                    # Robust optimization only  
-homodyne --method mcmc                      # MCMC sampling only
 homodyne --method all --verbose             # All methods with debug logging
 
 # Analysis mode control
@@ -316,7 +305,6 @@ homodyne --uninstall-completion bash   # or zsh, fish, powershell
 
 ```bash
 hc          # homodyne --method classical
-hm          # homodyne --method mcmc
 hr          # homodyne --method robust  
 ha          # homodyne --method all
 hconfig     # homodyne --config
@@ -326,7 +314,7 @@ hplot       # homodyne --plot-experimental-data
 **⚡ Tab Completion (When Working):**
 
 ```bash
-homodyne --method <TAB>     # Shows: classical, mcmc, robust, all
+homodyne --method <TAB>     # Shows: classical, robust, all
 homodyne --config <TAB>     # Shows available .json files
 homodyne --output-dir <TAB> # Shows available directories
 ```
@@ -358,7 +346,7 @@ config = ConfigManager("config.json")
 analysis = HomodyneAnalysisCore(config)
 results = analysis.optimize_classical()  # Fast (includes robust methods)
 results = analysis.optimize_robust()     # Robust methods only
-results = analysis.optimize_all()        # Classical + Robust + MCMC
+results = analysis.optimize_all()        # Classical + Robust
 ```
 
 ## Analysis Modes
@@ -654,22 +642,20 @@ tracking and debugging, regardless of console settings.
 - Use: Exploratory analysis, parameter screening
 - Command: `--method classical`
 
-**Bayesian MCMC (Comprehensive)**
 
 - Algorithm: NUTS sampler via PyMC (lazy-loaded for fast startup)
 - Speed: ~hours (with Numba JIT acceleration and optional thinning)
 - Features: Uncertainty quantification, thinning support, convergence diagnostics
 - Use: Uncertainty quantification, publication results
-- Command: `--method mcmc`
 
 **Combined**
 
-- Workflow: Classical → MCMC refinement
+- Workflow: Classical → Robust optimization
 - Command: `--method all`
 
 **Note**: Gurobi is automatically detected if installed and licensed. Both classical
 methods are attempted if available, with the best result selected based on chi-squared
-value. All optimization methods (Nelder-Mead, Gurobi, MCMC) use the same parameter
+value. All optimization methods (Nelder-Mead, Gurobi, Robust) use the same parameter
 bounds defined in the configuration for consistency.
 
 ### Performance Optimizations
@@ -788,17 +774,6 @@ export HOMODYNE_PERFORMANCE_MODE=1
 │   ├── scenario/
 │   ├── ellipsoidal/
 │   └── ...
-├── mcmc/                          # MCMC results (if run)
-│   ├── mcmc_summary.json          # MCMC summary statistics
-│   ├── mcmc_trace.nc              # NetCDF trace file
-│   ├── experimental_data.npz      # Original experimental data
-│   ├── fitted_data.npz            # MCMC fitted data
-│   ├── residuals_data.npz         # Residuals
-│   ├── c2_heatmaps_phi_*.png      # Heatmap plots per angle
-│   ├── 3d_surface_phi_*.png       # 3D surface plots
-│   ├── 3d_surface_residuals_phi_*.png
-│   ├── trace_plot.png             # MCMC trace plots
-│   └── corner_plot.png            # Parameter posterior distributions
 ├── exp_data/                      # Experimental data plots (if --plot-experimental-data)
 │   ├── data_validation_phi_*.png  # Per-angle validation plots
 │   └── summary_statistics.txt     # Data summary

@@ -18,7 +18,6 @@ The test suite is organized hierarchically:
    │   └── test_utils.py            # Utility function tests
    ├── integration/                  # Integration tests
    │   ├── test_full_workflow.py    # End-to-end workflow
-   │   ├── test_mcmc_integration.py # MCMC integration
    │   └── test_performance.py      # Performance benchmarks
    ├── fixtures/                     # Test data and fixtures
    │   ├── sample_configs/          # Sample configurations
@@ -49,8 +48,6 @@ Running Tests
    # Integration tests only
    pytest homodyne/tests/integration/ -v
 
-   # MCMC tests (slower)
-   pytest homodyne/tests/ -m mcmc
 
    # Quick tests only
    pytest homodyne/tests/ -m "not slow"
@@ -279,20 +276,13 @@ Integration Testing
                for recovered, true in zip(result.x, true_params):
                    assert abs(recovered - true) / true < 0.05
 
-**MCMC Integration Tests**:
 
 .. code-block:: python
 
-   # test_mcmc_integration.py
    @pytest.mark.slow
-   @pytest.mark.mcmc
-   class TestMCMCIntegration:
-       def test_mcmc_sampling(self, config_manager, synthetic_isotropic_data):
            tau, g1_data, true_params, q = synthetic_isotropic_data
 
-           # Enable MCMC in config
            config_manager.config["optimization_config"] = {
-               "mcmc_sampling": {
                    "enabled": True,
                    "draws": 500,    # Reduced for testing
                    "tune": 200,
@@ -308,16 +298,10 @@ Integration Testing
            # Run classical first
            classical_result = analysis.optimize_classical()
 
-           # Run MCMC
-           mcmc_result = analysis.run_mcmc_sampling()
 
            # Check convergence
-           assert mcmc_result["converged"]
-           assert all(rhat < 1.1 for rhat in mcmc_result["rhat"].values())
 
            # Check parameter uncertainties are reasonable
-           posterior_means = mcmc_result["posterior_summary"]["mean"]
-           posterior_stds = mcmc_result["posterior_summary"]["std"]
 
            for param_name in posterior_means.keys():
                mean_val = posterior_means[param_name]
@@ -426,7 +410,6 @@ Test Configuration
    testpaths = homodyne/tests
    markers =
        slow: marks tests as slow (deselect with '-m "not slow"')
-       mcmc: marks tests that use MCMC sampling
        benchmark: marks performance benchmark tests
        integration: marks integration tests
 

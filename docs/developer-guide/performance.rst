@@ -20,7 +20,6 @@ The homodyne package is designed to handle large datasets efficiently. Key perfo
 
 - **Memory Management**: Efficient handling of large correlation matrices
 - **Computational Optimization**: Numba JIT compilation and vectorization
-- **Parallel Processing**: Multi-core MCMC and data processing
 - **Algorithm Selection**: Optimizing Nelder-Mead configuration
 
 Optimization Strategies
@@ -93,15 +92,12 @@ Enable Numba for computational functions:
        # 5-10x speedup for model functions
        pass
 
-**4. Parallel MCMC with Thinning**
 
-Optimize MCMC sampling configuration with thinning support:
 
 .. code-block:: python
 
    config = {
        "optimization_config": {
-           "mcmc_sampling": {
                "chains": 4,           # Match CPU cores
                "cores": 4,            # Parallel processing
                "draws": 2000,         # Raw samples to draw
@@ -271,15 +267,12 @@ Choose appropriate optimization algorithms:
        }
    }
 
-**2. MCMC Tuning with Thinning**
 
-Optimize MCMC parameters for efficiency:
 
 .. code-block:: python
 
    config = {
        "optimization_config": {
-           "mcmc_sampling": {
                "target_accept": 0.9,      # Higher acceptance
                "max_treedepth": 10,       # Prevent divergences
                "adapt_step_size": True,   # Auto-tuning
@@ -352,9 +345,7 @@ Performance Benchmarks
      - 6x
      - Full optimization
 
-**MCMC Performance with Thinning**:
 
-.. list-table:: MCMC Benchmarks
    :widths: 15 10 15 10 10 40
    :header-rows: 1
 
@@ -483,7 +474,6 @@ Performance Best Practices
 3. **Set appropriate thread counts** (match CPU cores)
 4. **Enable JIT compilation** for model functions
 
-**MCMC**:
 
 1. **Start with classical optimization** for good initial values
 2. **Use 4 chains** as a good balance
@@ -523,7 +513,6 @@ Troubleshooting Performance Issues
 3. Reduce dataset size if possible
 4. Check for memory leaks
 
-**MCMC Convergence Issues**:
 
 1. Increase tuning steps
 2. Adjust target acceptance rate

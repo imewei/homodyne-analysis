@@ -54,12 +54,12 @@ Example 1: Basic Isotropic Analysis
    - Chi-squared: 1.23
    - Analysis time: 12.3s
 
-Example 2: Flow Analysis with MCMC
------------------------------------
+Example 2: Flow Analysis with Robust Methods
+-------------------------------------------
 
-**Scenario**: Complete analysis of a system under flow conditions with uncertainty quantification.
+**Scenario**: Complete analysis of a system under flow conditions with noise resistance.
 
-**Configuration** (``flow_mcmc_example.json``):
+**Configuration** (``flow_robust_example.json``):
 
 .. code-block:: javascript
 
@@ -83,18 +83,10 @@ Example 2: Flow Analysis with MCMC
        "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0"]
      },
      "optimization_config": {
-       "mcmc_sampling": {
+       "robust_optimization": {
          "enabled": true,
-         "draws": 3000,
-         "tune": 1500,
-         "chains": 4,
-         "target_accept": 0.95
-       },
-       "scaling_parameters": {
-         "fitted_range": {"min": 1.0, "max": 2.0},
-         "theory_range": {"min": 0.0, "max": 1.0},
-         "contrast": {"min": 0.05, "max": 0.5, "prior_mu": 0.3, "prior_sigma": 0.1, "type": "TruncatedNormal"},
-         "offset": {"min": 0.05, "max": 1.95, "prior_mu": 1.0, "prior_sigma": 0.2, "type": "TruncatedNormal"}
+         "uncertainty_model": "wasserstein",
+         "uncertainty_radius": 0.05
        }
      }
    }
@@ -104,16 +96,16 @@ Example 2: Flow Analysis with MCMC
 .. code-block:: bash
 
    # Step 1: Data validation (optional, saves to ./homodyne_results/exp_data/)
-   python run_homodyne.py --config flow_mcmc_example.json --plot-experimental-data
+   python run_homodyne.py --config flow_robust_example.json --plot-experimental-data
 
    # Step 2: Classical optimization for initial estimates (saves to ./homodyne_results/classical/)
-   python run_homodyne.py --config flow_mcmc_example.json --method classical
+   python run_homodyne.py --config flow_robust_example.json --method classical
 
-   # Step 3: MCMC sampling for uncertainty quantification (saves to ./homodyne_results/mcmc/)
-   python run_homodyne.py --config flow_mcmc_example.json --method mcmc
+   # Step 3: Robust optimization for uncertainty resistance (saves to ./homodyne_results/robust/)
+   python run_homodyne.py --config flow_robust_example.json --method robust
 
    # Step 4: Complete analysis with both methods (recommended)
-   python run_homodyne.py --config flow_mcmc_example.json --method all
+   python run_homodyne.py --config flow_robust_example.json --method all
 
 **Expected Output**:
 
@@ -123,11 +115,11 @@ Example 2: Flow Analysis with MCMC
    - D₀: 1876.3, α: -0.94, D_offset: 112.5, γ̇₀: 12.8
    - Chi-squared: 1.45
 
-   MCMC Results:
-   - Convergence: ✅ Excellent (R̂ < 1.01)
-   - D₀: 1876 ± 89, α: -0.94 ± 0.08
-   - D_offset: 113 ± 24, γ̇₀: 12.8 ± 1.2
-   - Posterior samples: 12,000
+   Robust Results:
+   - Optimization: ✅ Converged
+   - D₀: 1881 ± 45, α: -0.93 ± 0.05
+   - D_offset: 108 ± 18, γ̇₀: 12.6 ± 0.8
+   - Uncertainty resistance: Excellent
 
 Example 3: Performance-Optimized Analysis
 ------------------------------------------
@@ -434,27 +426,19 @@ Starting from version 6.0, the analysis results are organized into method-specif
    │   │   └── [similar structure]
    │   └── ellipsoidal/                 # Ellipsoidal robust method
    │       └── [similar structure]
-   └── mcmc/                            # MCMC method outputs (--method mcmc)
        ├── fitted_data.npz              # Consolidated data (experimental, fitted, residuals, parameters)
-       ├── mcmc_summary.json            # MCMC convergence diagnostics and posterior statistics
-       ├── mcmc_trace.nc                # NetCDF trace data (ArviZ format)
        ├── c2_heatmaps_phi_*.png        # C2 correlation heatmaps using posterior means
        ├── 3d_surface_phi_*.png         # 3D surface plots with 95% confidence intervals
        ├── 3d_surface_residuals_phi_*.png # 3D residuals plots for quality assessment
-       ├── trace_plot.png               # MCMC trace plots
        └── corner_plot.png              # Parameter posterior distributions
 
 **Key Changes**:
 
 - **Main results file**: Now saved in output directory instead of current directory
 - **Classical method**: Results organized in dedicated ``./homodyne_results/classical/`` subdirectory
-- **MCMC method**: Results organized in dedicated ``./homodyne_results/mcmc/`` subdirectory
 - **Experimental data plots**: Saved to ``./homodyne_results/exp_data/`` when using ``--plot-experimental-data``
-- **Data files**: Both classical and MCMC methods save experimental, fitted, and residuals data as ``.npz`` files
 - **Method-specific outputs**:
   - **Classical**: Point estimates with C2 heatmaps (diagnostic plots skipped)
-  - **MCMC**: Posterior distributions with trace data, convergence diagnostics, specialized plots, and 3D surface visualizations
-- **3D visualization**: MCMC method automatically generates publication-quality 3D surface plots with confidence intervals
 - **Fitted data calculation**: Both methods use least squares scaling optimization (``fitted = contrast * theory + offset``)
 - **Plotting behavior**: The ``--plot-experimental-data`` flag now skips all fitting and exits immediately after plotting
 
@@ -479,11 +463,11 @@ Each analysis generates a main ``diagnostic_summary.png`` file in the root resul
   - Grid lines for enhanced readability
   - Shows placeholder if uncertainties unavailable
 
-**Subplot 3: MCMC Convergence Diagnostics (Top Right)**
-  - R̂ (R-hat) convergence assessment for MCMC methods
-  - Color coding: Green (R̂ < 1.1), Orange (1.1 ≤ R̂ < 1.2), Red (R̂ ≥ 1.2)
-  - Dashed red line at R̂ = 1.1 convergence threshold
-  - Shows placeholder for classical-only methods
+**Subplot 3: Method Performance Metrics (Top Right)**
+  - Performance comparison across different optimization methods
+  - Execution time and convergence metrics
+  - Quality indicators for classical and robust methods
+  - Shows success status and solution quality
 
 **Subplot 4: Residuals Distribution Analysis (Bottom, Full Width)**
   - Histogram of residuals (experimental - theoretical)
@@ -506,9 +490,10 @@ Additional Visualization Outputs
   - Time axes (t₁, t₂) showing correlation delay times
   - Viridis colormap for correlation intensity visualization
 
-**MCMC-Specific Plots** (when applicable)
-  - ``trace_plot.png``: MCMC chain traces for convergence assessment
-  - ``corner_plot.png``: Parameter posterior distributions and correlations
+**Method-Specific Diagnostics**
+  - Classical method diagnostics showing convergence criteria
+  - Robust method diagnostics showing uncertainty resistance
+  - Parameter error estimates and confidence intervals
 
 **Data Validation Plots** (``data_validation_*.png``)
   - Experimental data quality assessment plots
@@ -583,7 +568,6 @@ Complete data structure for each method:
   - **Complete data access**: Experimental, fitted, and residual data together
   - **Coordinate information**: Full time and angular coordinate arrays included
   - **Statistical metadata**: Parameter uncertainties and goodness-of-fit metrics
-  - **Consistent format**: Same structure across all optimization methods (classical, robust, MCMC)
 
 **Array Dimensions:**
   - **Correlation functions**: ``(n_angles, n_t2, n_t1)`` - typically ``(4, 60-100, 60-100)``
@@ -625,43 +609,38 @@ All methods use consistent data array dimensions:
 
 This standardized structure enables direct comparison of optimization performance and facilitates automated analysis workflows across different methods.
 
-MCMC Prior Distributions
-------------------------
+Available Optimization Methods
+---------------------------------
 
-All parameters use **Normal distributions** in the MCMC implementation:
+The homodyne package provides two main optimization approaches:
 
-.. code-block:: python
+1. **Classical Optimization** (Default)
+   - Fast parameter estimation using Nelder-Mead and Gurobi algorithms
+   - Reliable convergence with parameter error estimates
+   - Best for clean experimental data with minimal noise
 
-   import pymc as pm
+2. **Robust Optimization** (For noisy data)
+   - Handles measurement noise and experimental uncertainties
+   - Distributionally robust methods (Wasserstein, Scenario-based, Ellipsoidal)
+   - Better for experimental data with outliers or systematic errors
 
-   # Standard prior distributions used in homodyne MCMC
-   with pm.Model() as model:
-       # All parameters use Normal distributions
-       D0 = pm.Normal("D0", mu=1e4, sigma=1000.0)                      # Diffusion coefficient [Å²/s]
-       alpha = pm.Normal("alpha", mu=-1.5, sigma=0.1)                 # Time exponent [dimensionless]
-       D_offset = pm.Normal("D_offset", mu=0.0, sigma=10.0)            # Baseline diffusion [Å²/s]
-       gamma_dot_t0 = pm.Normal("gamma_dot_t0", mu=1e-3, sigma=1e-2)   # Reference shear rate [s⁻¹]
-       beta = pm.Normal("beta", mu=0.0, sigma=0.1)                     # Shear exponent [dimensionless]
-       gamma_dot_t_offset = pm.Normal("gamma_dot_t_offset", mu=0.0, sigma=1e-3)  # Baseline shear [s⁻¹]
-       phi0 = pm.Normal("phi0", mu=0.0, sigma=5.0)                     # Angular offset [degrees]
+**Usage Examples**:
 
-**Configuration Example:**
+.. code-block:: bash
 
-.. code-block:: json
+   # Classical optimization (default)
+   python run_homodyne.py --method classical
 
-   {
-     "parameter_space": {
-       "bounds": [
-         {"name": "D0", "min": 1.0, "max": 1000000, "type": "Normal"},
-         {"name": "alpha", "min": -2.0, "max": 2.0, "type": "Normal"},
-         {"name": "D_offset", "min": -100, "max": 100, "type": "Normal"},
-         {"name": "gamma_dot_t0", "min": 1e-6, "max": 1.0, "type": "Normal"},
-         {"name": "beta", "min": -2.0, "max": 2.0, "type": "Normal"},
-         {"name": "gamma_dot_t_offset", "min": -1e-2, "max": 1e-2, "type": "Normal"},
-         {"name": "phi0", "min": -10, "max": 10, "type": "Normal"}
-       ]
-     }
-   }
+   # Robust optimization for noisy data
+   python run_homodyne.py --method robust
+
+   # Run both methods for comparison
+   python run_homodyne.py --method all
+
+**Uncertainty Quantification**:
+- Classical methods provide parameter error estimates
+- Robust methods provide uncertainty resistance guarantees
+- Both methods include comprehensive goodness-of-fit metrics
 
 Example 6: Logging Control for Different Scenarios
 ----------------------------------------------------
@@ -728,8 +707,8 @@ Example 6: Logging Control for Different Scenarios
    # Troubleshoot analysis with detailed logging
    homodyne --config problem_sample.json --method all --verbose
 
-   # Debug MCMC convergence issues
-   homodyne --config mcmc_issue.json --method mcmc --verbose
+   # Debug robust optimization issues
+   homodyne --config robust_issue.json --method robust --verbose
 
 **Key Benefits**:
 
@@ -745,7 +724,6 @@ Example 6: Logging Control for Different Scenarios
    ./output_directory/
    ├── run.log                    # Complete analysis log
    ├── classical/                 # Classical method results
-   ├── mcmc/                      # MCMC method results
    └── homodyne_analysis_results.json  # Main results
 
 **Error Handling Note**: In quiet mode, errors are only logged to files, so check ``run.log`` files for troubleshooting.
