@@ -22,12 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.0
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.12"
           cache: "pip"
@@ -37,7 +37,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          pip install vulture radon xenon complexity mccabe pycodestyle pydocstyle
+          pip install vulture>=2.9 radon>=6.0.1 xenon>=0.9.0 complexity>=0.14.0 mccabe>=0.7.0 pycodestyle>=2.11.0 pydocstyle>=6.3.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: 1
 
@@ -105,7 +105,7 @@ jobs:
           fi
 
       - name: Upload quality report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: code-quality-report-${{ github.run_number }}
           path: |
@@ -143,17 +143,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.12"
 
       - name: Install pip-tools and analysis tools
         run: |
           python -m pip install --upgrade pip
-          pip install pip-tools pipdeptree pip-licenses pip-audit safety
+          pip install pip-tools>=7.3.0 pipdeptree>=2.13.0 pip-licenses>=4.3.0 pip-audit>=2.6.0 safety>=3.0.0
 
       - name: Analyze dependencies
         run: |
@@ -191,7 +191,7 @@ jobs:
           echo '```' >> dependency_report.md
 
       - name: Upload dependency report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: dependency-analysis-report-${{ github.run_number }}
           path: dependency_report.md
@@ -202,10 +202,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.12"
           cache: "pip"
@@ -234,7 +234,7 @@ jobs:
           echo '```' >> coverage_report.md
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: coverage-reports-${{ github.run_number }}
           path: |
@@ -246,7 +246,7 @@ jobs:
 
       - name: Upload to Codecov
         continue-on-error: true
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v4.6.0
         with:
           file: ./coverage.xml
           flags: comprehensive
@@ -260,7 +260,7 @@ jobs:
     if: always()
     steps:
       - name: Download all reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.3.0
 
       - name: Create quality dashboard
         run: |
