@@ -116,13 +116,7 @@ from typing import Any
 import numpy as np
 
 # Import optional dependencies
-try:
-    from pyxpcsviewer import XpcsFile as xf
-
-    PYXPCSVIEWER_AVAILABLE = True
-except ImportError:
-    PYXPCSVIEWER_AVAILABLE = False
-    xf = None
+# pyxpcsviewer dependency removed - replaced with direct h5py usage
 
 # Import performance optimization dependencies
 try:
@@ -634,125 +628,74 @@ class HomodyneAnalysisCore:
         return c2_experimental, self.time_length, phi_angles, num_angles
 
     def _load_raw_data(self, phi_angles: np.ndarray, num_angles: int) -> np.ndarray:
-        """Load raw data from HDF5 files."""
-        logger.debug("Starting _load_raw_data method")
+        """Load raw data from HDF5 files using advanced XPCS loader."""
+        logger.debug("Starting _load_raw_data method with advanced XPCS loader")
 
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
 
-        data_config = self.config["experimental_data"]
-        folder = data_config["data_folder_path"]
-        filename = data_config["data_file_name"]
-        exchange_key = data_config.get("exchange_key", "exchange")
+        # Import the new XPCS data loader
+        from homodyne.data.xpcs_loader import XPCSDataLoader
 
-        full_path = os.path.join(folder, filename)
-        logger.info(f"Opening HDF5 data file: {full_path}")
-        logger.debug(f"Exchange key: {exchange_key}")
         logger.debug(
-            f"Frame range: {
-                self.start_frame}-{
-                self.end_frame} (length: {
-                self.time_length})"
+            f"Frame range: {self.start_frame}-{self.end_frame} (length: {self.time_length})"
         )
-
-        # Open data file
-        if not PYXPCSVIEWER_AVAILABLE or xf is None:
-            raise ImportError(
-                "pyxpcsviewer is required for loading raw experimental data. "
-                "Install it with: pip install pyxpcsviewer"
-            )
 
         try:
-            data_file = xf(full_path)
-            logger.debug(f"Successfully opened HDF5 file: {filename}")
-        except Exception as e:
-            logger.error(f"Failed to open HDF5 file {full_path}: {e}")
-            raise
+            # Initialize the XPCS data loader with current configuration
+            loader = XPCSDataLoader(config_dict=self.config)
 
-        # Pre-allocate output
-        expected_shape = (num_angles, self.time_length, self.time_length)
-        c2_experimental = np.zeros(expected_shape, dtype=np.float64)
-        logger.debug(f"Pre-allocated output array with shape: {expected_shape}")
+            # Load experimental data using the new loader
+            # This returns: (c2_experimental, time_length, phi_angles_loaded, num_angles_loaded)
+            c2_experimental, time_length_loaded, phi_angles_loaded, num_angles_loaded = loader.load_experimental_data()
 
-        # Handle data loading for isotropic static mode vs normal mode
-        if self.config_manager.is_static_isotropic_enabled():
-            # In isotropic static mode, load data only once and use for the
-            # single dummy angle
-            logger.info(
-                "Isotropic static mode: Loading single correlation matrix for dummy angle"
-            )
+            logger.info(f"XPCS data loader detected format and loaded data successfully")
+            logger.debug(f"Loaded data shape: {c2_experimental.shape}")
+            logger.debug(f"Phi angles loaded: {len(phi_angles_loaded)}")
 
-            try:
-                # Load data once for isotropic case
-                raw_data = data_file.get_twotime_c2(exchange_key, correct_diag=False)
-                if raw_data is None:
-                    raise ValueError(
-                        "get_twotime_c2 returned None in isotropic static mode"
-                    )
-
-                # Ensure raw_data is a NumPy array
-                raw_data_np = np.array(raw_data)
-                sliced_data = raw_data_np[
-                    self.start_frame : self.end_frame,
-                    self.start_frame : self.end_frame,
-                ]
-                # Use the same data for the single dummy angle
-                c2_experimental[0] = sliced_data.astype(np.float64)
-                logger.debug(
-                    f"  Isotropic mode - Raw data shape: {
-                        raw_data_np.shape} -> sliced: {
-                        sliced_data.shape}"
+            # Validate loaded data dimensions match expectations
+            if c2_experimental.shape[1] != self.time_length or c2_experimental.shape[2] != self.time_length:
+                logger.warning(
+                    f"Loaded data time dimensions ({c2_experimental.shape[1]}, {c2_experimental.shape[2]}) "
+                    f"don't match expected time_length ({self.time_length})"
                 )
+                # Update time_length to match loaded data
+                self.time_length = c2_experimental.shape[1]
+                logger.info(f"Updated time_length to {self.time_length} to match loaded data")
 
-            except Exception as e:
-                logger.error(f"Failed to load data in isotropic static mode: {e}")
-                raise
-        else:
-            # Normal mode: load data for each angle
-            logger.info(f"Loading data for {num_angles} angles...")
-            for i in range(num_angles):
-                angle_deg = phi_angles[i]
-                logger.debug(f"Loading angle {i + 1}/{num_angles} (φ={angle_deg:.2f}°)")
+            # For isotropic static mode, we might have loaded multiple angles but only need one
+            if self.config_manager.is_static_isotropic_enabled():
+                logger.info("Isotropic static mode: Using first correlation matrix for dummy angle")
+                # Create single-angle array for isotropic mode
+                isotropic_data = np.zeros((1, c2_experimental.shape[1], c2_experimental.shape[2]), dtype=np.float64)
+                isotropic_data[0] = c2_experimental[0]  # Use first loaded matrix
+                c2_experimental = isotropic_data
+                logger.debug(f"Isotropic mode data shape: {c2_experimental.shape}")
 
-                try:
-                    # Fix: Pass correct_diag as bool, not int. If you want
-                    # diagonal correction, set to True, else False.
-                    raw_data = data_file.get_twotime_c2(
-                        exchange_key, correct_diag=False
+            # Ensure we have the expected number of angles for non-isotropic modes
+            if not self.config_manager.is_static_isotropic_enabled():
+                if c2_experimental.shape[0] != num_angles:
+                    logger.warning(
+                        f"Loaded {c2_experimental.shape[0]} angles, expected {num_angles}. "
+                        f"Using loaded data dimensions."
                     )
-                    if raw_data is None:
-                        raise ValueError(
-                            f"get_twotime_c2 returned None for angle {
-                                i +
-                                1} (φ={
-                                angle_deg:.2f}°)"
-                        )
-                    # Ensure raw_data is a NumPy array
-                    raw_data_np = np.array(raw_data)
-                    sliced_data = raw_data_np[
-                        self.start_frame : self.end_frame,
-                        self.start_frame : self.end_frame,
-                    ]
-                    c2_experimental[i] = sliced_data.astype(np.float64)
-                    logger.debug(
-                        f"  Raw data shape: {
-                            raw_data_np.shape} -> sliced: {
-                            sliced_data.shape}"
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to load data for angle {
-                            i +
-                            1} (φ={
-                            angle_deg:.2f}°): {e}"
-                    )
-                    raise
 
-        logger.info(
-            f"Successfully loaded raw data with final shape: {
-                c2_experimental.shape}"
-        )
-        return c2_experimental
+            logger.info(f"Successfully loaded raw data with final shape: {c2_experimental.shape}")
+            return c2_experimental
+
+        except Exception as e:
+            logger.error(f"Failed to load data using XPCS loader: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+
+            # Provide helpful error message based on error type
+            if "FileNotFoundError" in str(type(e)):
+                logger.error("Check that data file path and name are correct in configuration")
+            elif "XPCSDataFormatError" in str(type(e)):
+                logger.error("HDF5 file format not recognized as APS old or APS-U format")
+            elif "h5py" in str(e).lower():
+                logger.error("HDF5 file may be corrupted or inaccessible")
+
+            raise
 
     def _fix_diagonal_correction_vectorized(self, c2_data: np.ndarray) -> np.ndarray:
         """Apply diagonal correction to correlation matrices."""

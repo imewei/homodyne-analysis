@@ -56,11 +56,12 @@ dependencies = [
     "numpy>=1.24.0,<2.3.0",
     "scipy>=1.9.0",
     "matplotlib>=3.5.0",
+    "h5py>=3.8.0",  # HDF5 file support for XPCS data loading
 ]
 
 [project.optional-dependencies]
 data = [
-    "xpcs-viewer>=1.0.4",  # XPCS data handling (pyXpcsViewer): https://github.com/AdvancedPhotonSource/pyXpcsViewer
+    # HDF5 support is now included in core dependencies via h5py
 ]
 performance = [
     "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
@@ -260,7 +261,6 @@ module = [
     "numba.*",
     "cvxpy.*",
     "gurobipy.*",
-    "xpcs_viewer.*",
 ]
 ignore_missing_imports = true
 
