@@ -2,11 +2,7 @@
 include README.md
 include LICENSE
 include CHANGELOG.md
-include CONTRIBUTING.md
-include CLI_REFERENCE.md
-include API_REFERENCE.md
-include PRE_COMMIT_SETUP.md
-include SECURITY.md
+include DEVELOPMENT.md
 include pyproject.toml
 include Makefile
 include requirements*.txt

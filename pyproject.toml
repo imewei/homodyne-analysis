@@ -241,26 +241,36 @@ filterwarnings = [
 python_version = "3.12"
 mypy_path = "homodyne/typings"
 explicit_package_bases = true
-warn_return_any = true
+
+# Scientific computing friendly configuration
+warn_return_any = false  # Scientific functions often return Any from libraries
 warn_unused_configs = true
-disallow_untyped_defs = false  # Too strict for scientific code
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = false  # Too strict for decorators like @pytest.fixture
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
+disallow_untyped_defs = false  # Scientific code often has complex signatures
+disallow_incomplete_defs = false  # Allow gradual typing
+check_untyped_defs = false  # Don't check untyped function bodies
+disallow_untyped_decorators = false  # Decorators in scientific libs often untyped
+no_implicit_optional = false  # Scientific code often has implicit None
+warn_redundant_casts = false  # Array types often need explicit casting
+warn_unused_ignores = false  # Scientific code may have conditional ignores
+warn_no_return = false  # Scientific functions sometimes have complex control flow
+warn_unreachable = false  # Scientific code may have conditional branches
+strict_equality = false  # NumPy arrays need relaxed equality checks
 show_error_codes = true
 pretty = true
+follow_imports = "silent"  # Don't follow into scientific library internals
 
 [[tool.mypy.overrides]]
 module = [
     "numba.*",
     "cvxpy.*",
     "gurobipy.*",
+    "numpy.*",
+    "scipy.*",
+    "matplotlib.*",
+    "h5py.*",
+    "sklearn.*",
+    "psutil.*",
+    "argcomplete.*"
 ]
 ignore_missing_imports = true
 

@@ -15,6 +15,9 @@ from typing import Any, TypeVar
 
 import numpy as np
 
+# Import shared numba availability flag
+from .optimization_utils import NUMBA_AVAILABLE
+
 # Numba imports with fallbacks
 try:
     from numba import float64, int64, jit, njit, prange, types
@@ -24,10 +27,8 @@ try:
     except (ImportError, AttributeError):
         # Fallback for older numba versions or different import paths
         Tuple = getattr(types, "Tuple", types.UniTuple)  # type: ignore[union-attr]
-
-    NUMBA_AVAILABLE = True
 except ImportError:
-    NUMBA_AVAILABLE = False
+    pass  # NUMBA_AVAILABLE already set from optimization_utils
 
     # Fallback decorators when Numba is unavailable
     F = TypeVar("F", bound=Callable[..., Any])

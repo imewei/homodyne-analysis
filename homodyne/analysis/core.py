@@ -121,11 +121,8 @@ import numpy as np
 # Import performance optimization dependencies
 try:
     from numba import jit, njit, prange
-
-    NUMBA_AVAILABLE = True
 except ImportError:
-    NUMBA_AVAILABLE = False
-
+    # Fallback decorators when Numba is unavailable
     def jit(*args, **kwargs):
         return args[0] if args and callable(args[0]) else lambda f: f
 
@@ -149,8 +146,8 @@ from ..core.kernels import (
 
 logger = logging.getLogger(__name__)
 
-# Global optimization counter for performance tracking
-OPTIMIZATION_COUNTER = 0
+# Import shared optimization utilities
+from ..core.optimization_utils import increment_optimization_counter, NUMBA_AVAILABLE
 
 # Default thread count for parallelization
 DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
@@ -310,6 +307,9 @@ class HomodyneAnalysisCore:
             self.time_length = size
             self.time_array = test_time
 
+            # Clear cache to avoid inconsistencies during temporary context
+            self._diffusion_integral_cache.clear()
+
             try:
                 # Warm up the main correlation calculation
                 _ = self.calculate_c2_nonequilibrium_laminar_parallel(
@@ -327,6 +327,9 @@ class HomodyneAnalysisCore:
                     self.time_length = original_time_length
                 if original_time_array is not None:
                     self.time_array = original_time_array
+
+                # Clear cache again after restoration to ensure consistency
+                self._diffusion_integral_cache.clear()
 
             elapsed = time.time() - start_time
             logger.info(
@@ -562,6 +565,33 @@ class HomodyneAnalysisCore:
                 )
                 with np.load(cache_file) as data:
                     c2_experimental = data["c2_exp"].astype(np.float64)
+
+            # Validate cached data dimensions match expectations
+            if (
+                c2_experimental.shape[1] != self.time_length
+                or c2_experimental.shape[2] != self.time_length
+            ):
+                logger.warning(
+                    f"Cached data time dimensions ({c2_experimental.shape[1]}, {c2_experimental.shape[2]}) "
+                    f"don't match expected time_length ({self.time_length})"
+                )
+                # Update time_length to match cached data
+                self.time_length = c2_experimental.shape[1]
+                logger.info(
+                    f"Updated time_length to {self.time_length} to match cached data"
+                )
+
+                # Update time_array to match new time_length
+                self.time_array = np.linspace(
+                    self.dt,
+                    self.dt * self.time_length,
+                    self.time_length,
+                    dtype=np.float64,
+                )
+
+                # Clear cached integral matrices as they're now invalid
+                self._diffusion_integral_cache.clear()
+                logger.debug(f"Updated time_array to length {len(self.time_array)}, cleared integral cache")
         else:
             logger.info(
                 f"Cache miss: Loading raw data (cache file {cache_file} not found)"
@@ -664,6 +694,18 @@ class HomodyneAnalysisCore:
                 logger.info(
                     f"Updated time_length to {self.time_length} to match loaded data"
                 )
+
+                # Update time_array to match new time_length
+                self.time_array = np.linspace(
+                    self.dt,
+                    self.dt * self.time_length,
+                    self.time_length,
+                    dtype=np.float64,
+                )
+
+                # Clear cached integral matrices as they're now invalid
+                self._diffusion_integral_cache.clear()
+                logger.debug(f"Updated time_array to length {len(self.time_array)}, cleared integral cache")
 
             # For isotropic static mode, we might have loaded multiple angles but only need one
             if self.config_manager.is_static_isotropic_enabled():
@@ -1214,8 +1256,6 @@ class HomodyneAnalysisCore:
         - Warning: 5.0 < reduced_chi2 ≤ 10.0
         - Poor/Critical: reduced_chi2 > 10.0
         """
-        global OPTIMIZATION_COUNTER
-
         # Parameter validation with caching
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
@@ -1550,14 +1590,14 @@ class HomodyneAnalysisCore:
                 )
 
             # Logging
-            OPTIMIZATION_COUNTER += 1
+            counter = increment_optimization_counter()
             log_freq = self.config["performance_settings"].get(
                 "optimization_counter_log_frequency", 50
             )
-            if OPTIMIZATION_COUNTER % log_freq == 0:
+            if counter % log_freq == 0:
                 logger.info(
                     f"Iteration {
-                        OPTIMIZATION_COUNTER:06d} [{method_name}]: χ²_red = {
+                        counter:06d} [{method_name}]: χ²_red = {
                         reduced_chi2:.6e} ± {
                         reduced_chi2_uncertainty:.6e}"
                 )

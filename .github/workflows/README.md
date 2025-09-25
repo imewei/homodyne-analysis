@@ -4,12 +4,12 @@ This directory contains GitHub Actions workflows for the homodyne repository.
 
 ## 🚀 Current Status
 
-**All workflows are currently disabled** and moved to `workflows-disabled/` for
-reference. The project relies on:
+**Updated workflows are now active** with configurations matching the current codebase:
 
+- **ci.yml**: Core CI pipeline with tests, quality checks, and build validation
+- **quality.yml**: Code quality checks with relaxed mypy for scientific computing
 - **ReadTheDocs**: Automatic documentation deployment from `main` branch
 - **Local Development**: Pre-commit hooks and local testing tools
-- **Manual Quality Assurance**: Developer-driven code quality checks
 
 ## 📁 Disabled Workflows
 
@@ -22,14 +22,22 @@ Comprehensive CI/CD workflows have been temporarily disabled but preserved in
 - `metrics.yml` - Code metrics and statistics tracking
 - `release.yml` - Automated release management
 
-## 🔄 Re-enabling Workflows
+## 🔄 Active Workflows
 
-To re-enable CI/CD workflows:
+Current active workflows:
 
-1. Move desired workflow files from `workflows-disabled/` to `workflows/`
-1. Update dependency installation commands to exclude MCMC packages
-1. Review and update Python version matrix (currently supports 3.12+)
-1. Verify all referenced dependency groups exist in `pyproject.toml`
+**ci.yml** - Main CI pipeline:
+- Multi-OS testing (Ubuntu, Windows, macOS)
+- Python 3.12 and 3.13 support
+- MCMC mocking for clean tests
+- Package building and metadata validation
+- Security scanning with Bandit and pip-audit
+
+**quality.yml** - Code quality checks:
+- Pre-commit hooks validation
+- Relaxed MyPy type checking (scientific computing friendly)
+- Code formatting (Black, isort, Ruff)
+- Security auditing
 
 ## 📖 ReadTheDocs Configuration
 
@@ -40,18 +48,19 @@ Documentation is automatically built and deployed via ReadTheDocs:
 - **Live docs**: https://homodyne.readthedocs.io/
 - **Build process**: `cd docs && make clean && make html`
 
-## 🧹 MCMC Cleanup Notes
+## 🧹 Post-MCMC Cleanup
 
-The disabled workflows have been updated to reflect MCMC removal:
+The active workflows reflect complete MCMC removal:
 
-- Removed references to PyMC, ArviZ, corner, and PyTensor dependencies
-- Updated installation commands to exclude MCMC-related extras
-- Test matrices focus on core functionality (classical + robust optimization)
-- Documentation builds no longer attempt to import MCMC modules
+- **No MCMC dependencies**: PyMC, ArviZ, corner, PyTensor, and JAX removed
+- **Mock imports**: sys.modules mocking prevents MCMC import errors
+- **Focus**: Classical (Nelder-Mead, Gurobi) and Robust optimization only
+- **Relaxed MyPy**: Scientific computing friendly type checking
+- **Clean tests**: All tests run with MCMC modules disabled
 
 ## 🔧 Local Development
 
-With workflows disabled, use these local commands:
+Use these commands for local development and testing:
 
 ```bash
 # Run tests with MCMC mocking (as used in Makefile)

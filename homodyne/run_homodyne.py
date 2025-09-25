@@ -54,6 +54,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Module-level logger for consistent logging across all functions
+logger = logging.getLogger(__name__)
+
 
 # CRITICAL: Handle shell completion BEFORE any heavy imports
 # This must be the very first thing we do to avoid 5+ second startup times
@@ -351,7 +354,6 @@ def run_analysis(args: argparse.Namespace) -> None:
     args : argparse.Namespace
         Command-line arguments specifying analysis configuration
     """
-    logger = logging.getLogger(__name__)
 
     # Load configuration and initialize analysis engine
 
@@ -591,7 +593,6 @@ def run_classical_optimization(
         Results dictionary with optimized parameters and fit statistics,
         or None if optimization fails
     """
-    logger = logging.getLogger(__name__)
     logger.info("Running classical optimization...")
 
     try:
@@ -727,7 +728,6 @@ def run_robust_optimization(
         Dictionary containing optimization results and metadata,
         or None if all robust methods fail
     """
-    logger = logging.getLogger(__name__)
     logger.info("Running robust optimization...")
 
     try:
@@ -926,7 +926,6 @@ def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=Non
         Combined results from all successful methods,
         or None if all methods fail
     """
-    logger = logging.getLogger(__name__)
     logger.info("Running all optimization methods...")
 
     all_results = {}
@@ -1046,7 +1045,6 @@ def _generate_classical_plots(
     homodyne.plotting.plot_c2_heatmaps : Underlying plotting function
     ClassicalOptimizer.run_classical_optimization_optimized : Method that generates method_results
     """
-    logger = logging.getLogger(__name__)
 
     # Check if classical directories should be created
     import os
@@ -1243,7 +1241,6 @@ def _save_individual_method_results(
     output_dir : Path
         Output directory for saving classical results
     """
-    logger = logging.getLogger(__name__)
 
     # Check if classical directories should be created
     import os
@@ -1536,7 +1533,6 @@ def _save_individual_robust_method_results(
     t2 : np.ndarray
         Time delay array for t2 dimension (t2 = np.arange(n_t2) * dt)
     """
-    logger = logging.getLogger(__name__)
 
     try:
         import json
@@ -1783,7 +1779,6 @@ def _generate_robust_plots(
     homodyne.plotting.plot_c2_heatmaps : Underlying plotting function
     ClassicalOptimizer.run_classical_optimization_optimized : Method that generates method_results
     """
-    logger = logging.getLogger(__name__)
 
     try:
         from pathlib import Path
@@ -1960,7 +1955,6 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     args : argparse.Namespace
         Command-line arguments containing config path and output directory
     """
-    logger = logging.getLogger(__name__)
 
     logger.info("Starting simulated data plotting...")
     logger.info(f"Configuration file: {args.config}")
@@ -2555,9 +2549,6 @@ def main():
 
     # Setup logging and prepare output directory
     setup_logging(args.verbose, args.quiet, args.output_dir)
-
-    # Create logger for this module
-    logger = logging.getLogger(__name__)
 
     # Print informative banner
     print_banner(args)

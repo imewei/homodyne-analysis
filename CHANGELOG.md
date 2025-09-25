@@ -349,7 +349,7 @@ homodyne --method all        # Both classical and robust methods
   robust fallback mechanisms
   - Fast standalone completion script (`homodyne_complete`) with zero package
     dependencies for instant performance
-  - Comprehensive shell shortcuts: `hc` (classical), `hm` (mcmc), `hr` (robust), `ha`
+  - Comprehensive shell shortcuts: `hc` (classical), `hr` (robust), `ha`
     (all methods)
   - Silent loading option for completion system without startup notifications
   - Three-tier fallback system: tab completion → shortcuts → help system

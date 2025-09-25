@@ -6,7 +6,6 @@
 # This file contains only the essential dependencies required for basic functionality.
 # For additional features, see:
 # - requirements-optional.txt (all optional features)
-# - requirements-jax.txt (high-performance computing)
 # - requirements-dev.txt (development tools)
 
 # =============================================================================
@@ -15,6 +14,7 @@
 numpy>=1.24.0,<2.3.0  # Core array operations and mathematical functions
 scipy>=1.9.0          # Scientific computing algorithms and optimization
 matplotlib>=3.5.0     # Basic plotting and visualization
+h5py>=3.8.0           # HDF5 file support for XPCS data loading
 
 # =============================================================================
 # Core Features Enabled
@@ -23,7 +23,7 @@ matplotlib>=3.5.0     # Basic plotting and visualization
 # ✅ Classical optimization (Nelder-Mead algorithm)
 # ✅ Basic correlation function analysis
 # ✅ Static and laminar flow analysis modes
-# ✅ Core I/O operations for XPCS data
+# ✅ HDF5 data loading and I/O operations
 # ✅ Basic plotting and result visualization
 # ✅ Configuration management and CLI tools
 #

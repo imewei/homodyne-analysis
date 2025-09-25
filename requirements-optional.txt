@@ -10,17 +10,9 @@
 -r requirements.txt
 
 # =============================================================================
-# Data Handling Dependencies
-# =============================================================================
-xpcs-viewer>=1.0.4     # XPCS data handling and visualization
-                       # GitHub: https://github.com/AdvancedPhotonSource/pyXpcsViewer
-
-# =============================================================================
 # High-Performance Computing Dependencies
 # =============================================================================
 numba>=0.61.0,<0.62.0  # JIT compilation for computational kernels (NumPy 2.2 compatible)
-jax>=0.7.0             # High-performance numerical computations with automatic differentiation
-jaxlib>=0.4.35         # JAX backend library for CPU/GPU/TPU acceleration
 psutil>=5.8.0          # System monitoring and memory profiling
 
 # =============================================================================
@@ -53,9 +45,7 @@ argcomplete>=3.0.0     # Cross-platform shell tab completion
 # ✅ Basic plotting
 #
 # Additional features with optional dependencies:
-# ✅ XPCS data loading (xpcs-viewer)
 # ✅ 3-5x speedup with JIT compilation (numba)
-# ✅ GPU/TPU acceleration (jax, jaxlib)
 # ✅ Memory profiling (psutil)
 # ✅ Robust optimization methods (cvxpy)
 # ✅ Commercial-grade optimization (gurobipy)
@@ -70,7 +60,7 @@ argcomplete>=3.0.0     # Cross-platform shell tab completion
 #
 # Selective installation:
 # pip install -r requirements.txt
-# pip install numba jax jaxlib  # High-performance computing only
+# pip install numba             # High-performance computing only
 # pip install cvxpy             # Robust optimization only
 # pip install argcomplete       # Shell completion only
 #

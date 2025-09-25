@@ -31,8 +31,6 @@ logger = logging.getLogger(__name__)
 
 # Removed MCMC plotting dependencies (arviz, corner) - no longer used
 
-# Global variables for lazy-loaded modules
-_plotting_deps = None
 
 
 def get_plot_config(config: dict | None = None) -> dict[str, Any]:

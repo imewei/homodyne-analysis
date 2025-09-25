@@ -56,8 +56,11 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Global optimization counter for tracking iterations
-OPTIMIZATION_COUNTER = 0
+# Import shared optimization utilities
+from ..core.optimization_utils import (
+    get_optimization_counter,
+    reset_optimization_counter,
+)
 
 
 class ClassicalOptimizer:
@@ -1246,9 +1249,8 @@ class ClassicalOptimizer:
 
     def reset_optimization_counter(self):
         """Reset the global optimization counter."""
-        global OPTIMIZATION_COUNTER
-        OPTIMIZATION_COUNTER = 0
+        reset_optimization_counter()
 
     def get_optimization_counter(self) -> int:
         """Get current optimization counter value."""
-        return OPTIMIZATION_COUNTER
+        return get_optimization_counter()

@@ -52,13 +52,13 @@ dev-install:
 
 # Testing targets
 test:
-	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
+	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
 
 test-all:
 	pytest -v --cov=homodyne --cov-report=html --cov-report=term
 
 test-fast:
-	PYTHONPATH=/Users/b80985/Projects/homodyne python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
+	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
 
 # Performance testing targets
 test-performance:
