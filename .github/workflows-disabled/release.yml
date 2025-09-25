@@ -1,5 +1,9 @@
 name: Release
 
+# WORKFLOW DISABLED: Moved to workflows-disabled/ after MCMC removal
+# Automated release workflow for streamlined homodyne package (no MCMC)
+# To re-enable: Move to .github/workflows/ and update package dependencies
+
 "on":
   push:
     tags:

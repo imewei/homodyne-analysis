@@ -1,5 +1,9 @@
 name: Performance Tests
 
+# WORKFLOW DISABLED: Moved to workflows-disabled/ after MCMC removal
+# Performance tests now focus on classical and robust optimization methods
+# To re-enable: Move to .github/workflows/ and verify test suite compatibility
+
 "on":
   push:
     branches: [main, develop]

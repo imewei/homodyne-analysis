@@ -32,7 +32,6 @@ import json
 import logging
 import multiprocessing as mp
 import time
-import warnings
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, NotRequired, TypedDict, cast
@@ -86,8 +85,6 @@ class ClassicalOptimizationConfig(TypedDict, total=False):
 
     methods: list[str]
     method_options: dict[str, OptimizationMethodConfig]
-
-
 
 
 class OptimizationConfig(TypedDict, total=False):
@@ -357,7 +354,6 @@ class ConfigManager:
                 logger.exception("Full traceback for configuration loading failure:")
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
-
 
     def _optimize_config_structure(self) -> None:
         """
@@ -963,8 +959,6 @@ class ConfigManager:
                         }
                     },
                 },
-                # DEPRECATED: bayesian_inference section removed with MCMC
-                # "bayesian_inference": {"mcmc_draws": 1000, "mcmc_tune": 500},
             },
             "parameter_space": {
                 "bounds": [
@@ -1040,7 +1034,6 @@ class ConfigManager:
                     "description": "Standard production configuration",
                     "classical_methods": ["Nelder-Mead"],
                     "bo_n_calls": 20,
-                    # DEPRECATED: "mcmc_draws": 1000,
                 }
             },
         }

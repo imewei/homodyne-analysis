@@ -46,20 +46,6 @@ Installation Issues
    pip install -e .
 
 
-*Problem*: PyMC/ArviZ import errors
-
-.. code-block:: text
-
-
-*Solution*:
-
-.. code-block:: bash
-
-   pip install pymc arviz pytensor
-
-   # Test installation
-   python -c "import pymc; print('PyMC available')"
-   python -c "import arviz; print('ArviZ available')"
 
 Configuration Issues
 --------------------

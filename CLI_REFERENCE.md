@@ -145,9 +145,6 @@ homodyne_results/
 │   ├── fitted_data.npz            # Optimization fitted data
 │   ├── residuals_data.npz         # Residuals
 │   ├── c2_heatmaps_phi_*.png      # Heatmap plots per angle
-│   ├── 3d_surface_phi_*.png       # 3D surface plots
-│   ├── 3d_surface_residuals_phi_*.png
-│   └── corner_plot.png            # Parameter posterior distributions
 ├── exp_data/                      # Experimental data plots (if --plot-experimental-data)
 │   ├── data_validation_phi_*.png  # Per-angle validation plots
 │   └── summary_statistics.txt     # Data summary

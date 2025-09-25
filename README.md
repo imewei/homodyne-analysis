@@ -101,7 +101,6 @@ pip install homodyne-analysis[jax]
 # - jaxlib>=0.4.35                 # JAX backend with CPU/GPU support
 ```
 
-
 **Robust Optimization:**
 
 ```bash
@@ -642,12 +641,6 @@ tracking and debugging, regardless of console settings.
 - Use: Exploratory analysis, parameter screening
 - Command: `--method classical`
 
-
-- Algorithm: NUTS sampler via PyMC (lazy-loaded for fast startup)
-- Speed: ~hours (with Numba JIT acceleration and optional thinning)
-- Features: Uncertainty quantification, thinning support, convergence diagnostics
-- Use: Uncertainty quantification, publication results
-
 **Combined**
 
 - Workflow: Classical → Robust optimization
@@ -901,7 +894,7 @@ t2 = data["t2"]                        # Second correlation time array (n_t2,) [
 - **Coordinate information**: Full time and angular coordinate arrays included
 - **Statistical metadata**: Parameter uncertainties and goodness-of-fit metrics
 - **Consistent format**: Same structure across all optimization methods (classical,
-  robust, MCMC)
+  robust)
 
 **Array Dimensions:**
 
@@ -1094,14 +1087,9 @@ A **2×3 grid layout** containing:
 - **Includes grid lines** for better readability
 - Shows **"No uncertainty data available"** if uncertainties aren't computed
 
-#### Subplot 3: MCMC Convergence Diagnostics (Top Right)
+#### Subplot 3: Convergence Diagnostics Placeholder (Top Right)
 
-- **Horizontal bar chart** of R̂ (R-hat) values for convergence assessment
-- **Y-axis**: Parameter names
-- **X-axis**: R̂ values (convergence metric)
-- **Color coding**: Green (R̂ < 1.1), Orange (1.1 ≤ R̂ < 1.2), Red (R̂ ≥ 1.2)
-- **Red dashed line** at R̂ = 1.1 (convergence threshold)
-- Shows **"No MCMC convergence diagnostics available"** for classical-only methods
+- Shows **"No convergence diagnostics available"** for current optimization methods
 
 #### Subplot 4: Residuals Distribution Analysis (Bottom, Full Width)
 
@@ -1123,9 +1111,8 @@ provide meaningful cross-method comparisons.
 | Command | Main `diagnostic_summary.png` | Method-Specific Diagnostic Plots |
 |---------|-------------------------------|-----------------------------------| |
 `--method classical` | ❌ Not generated (single method) | ❌ Not generated | |
-`--method robust` | ❌ Not generated (single method) | ❌ Not generated | |
-`--method mcmc` | ❌ Not generated (single method) | ❌ Not generated | | `--method all` |
-✅ Root directory | ❌ Not generated |
+`--method robust` | ❌ Not generated (single method) | ❌ Not generated | | |
+`--method all` | ✅ Root directory | ❌ Not generated |
 
 ### 3. Additional Diagnostic/Visualization Outputs
 
@@ -1136,11 +1123,6 @@ provide meaningful cross-method comparisons.
 - **Method-specific** versions for each optimization approach
 - **Time axes**: t₁ and t₂ (correlation delay times)
 - **Color mapping**: Viridis colormap showing correlation intensity
-
-#### MCMC-Specific Plots (when applicable)
-
-- **`trace_plot.png`**: MCMC chain traces for each parameter
-- **`corner_plot.png`**: Parameter posterior distributions and correlations
 
 #### Data Validation Plots (`data_validation_*.png`)
 
@@ -1258,8 +1240,7 @@ details.
 
 #### **API Reference**
 
-- **[Core Analysis](docs/api-reference/core.rst)**: Main analysis classes and functions
-- **[Optimization Methods](docs/api-reference/mcmc.rst)**: MCMC, classical, and robust
+- **[Core Analysis](docs/api-reference/core.rst)**: Main analysis classes and classical
   optimization
 - **[Robust Methods](docs/api-reference/robust.rst)**: Noise-resistant optimization
   techniques
@@ -1346,7 +1327,6 @@ Development workflow |
 **Performance:**
 
 - **JIT Compilation**: Numba warmup eliminates compilation overhead
-- **JAX Integration**: Optional GPU acceleration for MCMC
 - **Memory Management**: Automatic cleanup and smart caching
 - **Benchmarking**: Comprehensive performance regression testing
 - **Shell Completion**: Multi-tier fallback system for enhanced UX

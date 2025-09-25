@@ -608,7 +608,6 @@ def save_analysis_results(
         results (Dict): Complete analysis results dictionary containing:
                        - Optimization results and parameters
                        - Correlation data arrays
-                       # - MCMC traces and diagnostics  # REMOVED
                        - Configuration and metadata
         config (Optional[Dict]): Configuration for output directory and naming
         base_name (str): Prefix for all output files (default: "analysis_results")
@@ -624,7 +623,6 @@ def save_analysis_results(
         >>> results = {
         ...     "classical_optimization": {"parameters": [1.2, -0.5, 3.4]},
         ...     "correlation_data": np.random.rand(100, 50, 50),
-        ...     # "mcmc_trace": mcmc_trace_object,  # REMOVED
         ...     "best_chi_squared": 1.234e-5
         ... }
         >>> status = save_analysis_results(results, config, "experiment_A")
@@ -674,12 +672,9 @@ def save_analysis_results(
 
     # Save main results as JSON
     # For classical-only results, save to classical subdirectory
-    if (
-        "classical_optimization" in results
-        # and "mcmc_optimization" not in results  # REMOVED
-        # and "mcmc_summary" not in results  # REMOVED
-        and results.get("methods_used", []) == ["Classical"]
-    ):
+    if "classical_optimization" in results and results.get("methods_used", []) == [
+        "Classical"
+    ]:
         # This is a classical-only result, save to classical subdirectory
         classical_dir = output_dir / "classical"
 
@@ -696,12 +691,9 @@ def save_analysis_results(
         results["correlation_data"], np.ndarray
     ):
         # Use same directory logic as main JSON file
-        if (
-            "classical_optimization" in results
-            # and "mcmc_optimization" not in results  # REMOVED
-            # and "mcmc_summary" not in results  # REMOVED
-            and results.get("methods_used", []) == ["Classical"]
-        ):
+        if "classical_optimization" in results and results.get("methods_used", []) == [
+            "Classical"
+        ]:
             npz_path = (output_dir / "classical") / f"{filename_base}_data.npz"
         else:
             npz_path = output_dir / f"{filename_base}_data.npz"
@@ -709,16 +701,14 @@ def save_analysis_results(
 
     # Save complex objects as pickle
     if any(
-        # key.startswith("mcmc_") or key.startswith("bayesian_")  # REMOVED - always False now
-        False for key in results.keys()
+        # Complex object detection logic
+        False
+        for key in results.keys()
     ):
         # Use same directory logic as main JSON file
-        if (
-            "classical_optimization" in results
-            # and "mcmc_optimization" not in results  # REMOVED
-            # and "mcmc_summary" not in results  # REMOVED
-            and results.get("methods_used", []) == ["Classical"]
-        ):
+        if "classical_optimization" in results and results.get("methods_used", []) == [
+            "Classical"
+        ]:
             pkl_path = (output_dir / "classical") / f"{filename_base}_full.pkl"
         else:
             pkl_path = output_dir / f"{filename_base}_full.pkl"

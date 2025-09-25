@@ -1,5 +1,9 @@
 name: Continuous Integration
 
+# WORKFLOW DISABLED: Moved to workflows-disabled/ after MCMC removal
+# This workflow has been updated to exclude MCMC dependencies
+# To re-enable: Move to .github/workflows/ and verify dependency groups exist
+
 "on":
   push:
     branches: [main, develop]
@@ -62,7 +66,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e ".[test,performance,robust,data]" || pip install -e ".[test]"
+          pip install -e ".[test,performance,robust]" || pip install -e ".[test]"
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: 1
 
@@ -74,7 +78,6 @@ jobs:
         if: success() || failure()
         run: |
           pytest homodyne/tests/ -v --tb=short -m "integration and not slow" --maxfail=2
-
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'

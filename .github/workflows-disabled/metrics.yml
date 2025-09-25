@@ -1,5 +1,9 @@
 name: CI Metrics & Performance
 
+# WORKFLOW DISABLED: Moved to workflows-disabled/ after MCMC removal
+# Metrics collection for streamlined CI pipeline (no MCMC dependencies)
+# To re-enable: Move to .github/workflows/ after main CI workflows are enabled
+
 "on":
   workflow_run:
     workflows: ["Continuous Integration", "Fast CI", "Optimized CI"]
@@ -132,4 +136,3 @@ jobs:
                 });
               }
             }
-

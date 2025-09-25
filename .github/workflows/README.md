@@ -2,117 +2,66 @@
 
 This directory contains GitHub Actions workflows for the homodyne repository.
 
-## 🚀 Active Workflows
+## 🚀 Current Status
 
-### [`deploy-docs.yml`](./deploy-docs.yml) - Documentation Build Testing
+**All workflows are currently disabled** and moved to `workflows-disabled/` for
+reference. The project relies on:
 
-- **Purpose**: Test documentation builds to ensure ReadTheDocs deployment will succeed
-- **Trigger**:
-  - Push to `main` branch
-  - Pull requests to `main`
-  - Manual workflow dispatch
-- **Method**: Build-only testing (no deployment - handled by ReadTheDocs)
-- **Output**: Documentation available at https://homodyne.readthedocs.io/
-- **Features**:
-  - Builds documentation with Sphinx
-  - Comprehensive build verification
-  - Performance statistics
-  - Validates compatibility before ReadTheDocs deployment
+- **ReadTheDocs**: Automatic documentation deployment from `main` branch
+- **Local Development**: Pre-commit hooks and local testing tools
+- **Manual Quality Assurance**: Developer-driven code quality checks
 
-### [`docs.yml`](./docs.yml) - Documentation Testing
+## 📁 Disabled Workflows
 
-- **Purpose**: Test documentation builds on PRs and feature branches
-- **Trigger**:
-  - Pull requests to `main`
-  - Push to `develop` or `feature/*` branches
-  - Manual workflow dispatch
-- **Method**: Build-only testing (no deployment)
-- **Features**:
-  - Validates documentation builds correctly
-  - Uploads build artifacts for review
-  - Fast feedback for contributors
-  - Python 3.12+ compatibility testing
+Comprehensive CI/CD workflows have been temporarily disabled but preserved in
+`workflows-disabled/`:
 
-## 📋 Workflow Strategy
+- `ci.yml` - Full test suite, quality checks, and build validation
+- `code-quality.yml` - Advanced code analysis and dependency scanning
+- `performance.yml` - Performance testing and benchmarking
+- `metrics.yml` - Code metrics and statistics tracking
+- `release.yml` - Automated release management
 
-1. **ReadTheDocs Deployment**: Documentation is automatically deployed via ReadTheDocs
-   on push to `main`
-1. **Build Validation**: `deploy-docs.yml` validates builds will succeed before
-   ReadTheDocs attempts deployment
-1. **Quality Assurance**: `docs.yml` validates changes before merging
-1. **Single Responsibility**: Each workflow has a clear, focused purpose
+## 🔄 Re-enabling Workflows
 
-## 🛠️ Setup Requirements
+To re-enable CI/CD workflows:
 
-### ReadTheDocs Configuration
+1. Move desired workflow files from `workflows-disabled/` to `workflows/`
+1. Update dependency installation commands to exclude MCMC packages
+1. Review and update Python version matrix (currently supports 3.12+)
+1. Verify all referenced dependency groups exist in `pyproject.toml`
 
-1. Documentation is automatically built and deployed via ReadTheDocs
-1. Configuration file: `.readthedocs.yaml`
-1. Builds triggered automatically on push to `main` branch
-1. Live documentation: https://homodyne.readthedocs.io/
+## 📖 ReadTheDocs Configuration
 
-### Repository Requirements
+Documentation is automatically built and deployed via ReadTheDocs:
 
-- GitHub Actions must be enabled
-- Python 3.12+ required
-- Sphinx documentation dependencies in `pyproject.toml`
-- ReadTheDocs webhook configured (automatic)
+- **Configuration**: `.readthedocs.yaml`
+- **Triggers**: Automatic on push to `main` branch
+- **Live docs**: https://homodyne.readthedocs.io/
+- **Build process**: `cd docs && make clean && make html`
 
-## 📖 Documentation Build Process
+## 🧹 MCMC Cleanup Notes
 
-Both workflows use the standard documentation build process:
+The disabled workflows have been updated to reflect MCMC removal:
+
+- Removed references to PyMC, ArviZ, corner, and PyTensor dependencies
+- Updated installation commands to exclude MCMC-related extras
+- Test matrices focus on core functionality (classical + robust optimization)
+- Documentation builds no longer attempt to import MCMC modules
+
+## 🔧 Local Development
+
+With workflows disabled, use these local commands:
 
 ```bash
-cd docs
-make clean
-make html
+# Run tests with MCMC mocking (as used in Makefile)
+make test
+
+# Quality checks
+make lint
+make format
+make type-check
+
+# Documentation
+cd docs && make html
 ```
-
-The build process:
-
-1. Installs package with `[docs]` dependencies
-1. Cleans previous builds
-1. Generates HTML documentation
-1. Verifies `index.html` exists
-1. Provides build statistics
-
-## 🔧 Troubleshooting
-
-If documentation deployment fails:
-
-1. **Check ReadTheDocs Build Logs**:
-
-   - Visit https://readthedocs.org/projects/homodyne/builds/
-   - Look for build errors and warnings
-   - Verify all dependencies are correctly specified
-
-1. **Verify Repository Status**:
-
-   - Ensure `.readthedocs.yaml` configuration is correct
-   - Check that all required files are committed to `main`
-   - Verify webhook is properly configured
-
-1. **Check GitHub Actions Logs**:
-
-   - Look for build errors in the workflow runs
-   - Verify all dependencies install correctly
-   - Use workflow to validate builds before ReadTheDocs attempts
-
-1. **Manual Build Testing**:
-
-   - Use "Run workflow" button on `deploy-docs.yml` to test builds
-   - Check Actions tab for detailed error messages
-
-## 📊 Performance
-
-- **Testing workflow** (`docs.yml`): ~2-3 minutes
-- **Build validation** (`deploy-docs.yml`): ~3-5 minutes
-- **ReadTheDocs deployment**: ~5-10 minutes after push to main
-
-## 🎯 Best Practices
-
-1. **Test First**: Always test documentation changes with PRs
-1. **Clean Builds**: Workflows use `make clean` for consistency
-1. **Artifact Storage**: Test builds are saved for 7 days
-1. **Minimal Permissions**: Each workflow uses minimal required permissions
-1. **Clear Naming**: Workflow names clearly indicate their purpose

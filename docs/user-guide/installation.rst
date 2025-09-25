@@ -173,7 +173,6 @@ If you encounter import errors, try reinstalling the package:
 .. code-block:: bash
 
 
-   python -c "import pymc; print('PyMC available')"
 
 **Performance Issues:**
 

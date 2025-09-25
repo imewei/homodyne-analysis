@@ -155,14 +155,6 @@ OPTIMIZATION_COUNTER = 0
 # Default thread count for parallelization
 DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
 
-# Check for optional dependencies
-try:
-    import pymc  # noqa: F401
-
-    PYMC_AVAILABLE = True
-except ImportError:
-    PYMC_AVAILABLE = False
-
 
 class HomodyneAnalysisCore:
     """
@@ -647,27 +639,42 @@ class HomodyneAnalysisCore:
 
             # Load experimental data using the new loader
             # This returns: (c2_experimental, time_length, phi_angles_loaded, num_angles_loaded)
-            c2_experimental, time_length_loaded, phi_angles_loaded, num_angles_loaded = loader.load_experimental_data()
+            (
+                c2_experimental,
+                time_length_loaded,
+                phi_angles_loaded,
+                num_angles_loaded,
+            ) = loader.load_experimental_data()
 
-            logger.info(f"XPCS data loader detected format and loaded data successfully")
+            logger.info("XPCS data loader detected format and loaded data successfully")
             logger.debug(f"Loaded data shape: {c2_experimental.shape}")
             logger.debug(f"Phi angles loaded: {len(phi_angles_loaded)}")
 
             # Validate loaded data dimensions match expectations
-            if c2_experimental.shape[1] != self.time_length or c2_experimental.shape[2] != self.time_length:
+            if (
+                c2_experimental.shape[1] != self.time_length
+                or c2_experimental.shape[2] != self.time_length
+            ):
                 logger.warning(
                     f"Loaded data time dimensions ({c2_experimental.shape[1]}, {c2_experimental.shape[2]}) "
                     f"don't match expected time_length ({self.time_length})"
                 )
                 # Update time_length to match loaded data
                 self.time_length = c2_experimental.shape[1]
-                logger.info(f"Updated time_length to {self.time_length} to match loaded data")
+                logger.info(
+                    f"Updated time_length to {self.time_length} to match loaded data"
+                )
 
             # For isotropic static mode, we might have loaded multiple angles but only need one
             if self.config_manager.is_static_isotropic_enabled():
-                logger.info("Isotropic static mode: Using first correlation matrix for dummy angle")
+                logger.info(
+                    "Isotropic static mode: Using first correlation matrix for dummy angle"
+                )
                 # Create single-angle array for isotropic mode
-                isotropic_data = np.zeros((1, c2_experimental.shape[1], c2_experimental.shape[2]), dtype=np.float64)
+                isotropic_data = np.zeros(
+                    (1, c2_experimental.shape[1], c2_experimental.shape[2]),
+                    dtype=np.float64,
+                )
                 isotropic_data[0] = c2_experimental[0]  # Use first loaded matrix
                 c2_experimental = isotropic_data
                 logger.debug(f"Isotropic mode data shape: {c2_experimental.shape}")
@@ -680,7 +687,9 @@ class HomodyneAnalysisCore:
                         f"Using loaded data dimensions."
                     )
 
-            logger.info(f"Successfully loaded raw data with final shape: {c2_experimental.shape}")
+            logger.info(
+                f"Successfully loaded raw data with final shape: {c2_experimental.shape}"
+            )
             return c2_experimental
 
         except Exception as e:
@@ -689,9 +698,13 @@ class HomodyneAnalysisCore:
 
             # Provide helpful error message based on error type
             if "FileNotFoundError" in str(type(e)):
-                logger.error("Check that data file path and name are correct in configuration")
+                logger.error(
+                    "Check that data file path and name are correct in configuration"
+                )
             elif "XPCSDataFormatError" in str(type(e)):
-                logger.error("HDF5 file format not recognized as APS old or APS-U format")
+                logger.error(
+                    "HDF5 file format not recognized as APS old or APS-U format"
+                )
             elif "h5py" in str(e).lower():
                 logger.error("HDF5 file may be corrupted or inaccessible")
 
@@ -2314,10 +2327,7 @@ Validation:
 
         try:
             # Import plotting module
-            from homodyne.plotting import (
-                plot_c2_heatmaps,
-                plot_diagnostic_summary,
-            )
+            from homodyne.plotting import plot_c2_heatmaps, plot_diagnostic_summary
 
             # Extract output directory from output_data if available
             output_dir = output_data.get("output_dir")
@@ -2376,7 +2386,6 @@ Validation:
 
             # Parameter evolution plot - DISABLED (was non-functional)
             # This plot has been removed due to persistent issues
-
 
             # Generate diagnostic summary plot only for --method all (multiple
             # methods)
@@ -2525,7 +2534,6 @@ Validation:
                 param_units = [bound.get("unit", "") for bound in bounds]
                 plot_data["parameter_units"] = param_units
 
-
             # Add overall plot data
             plot_data["chi_squared"] = best_chi2
             plot_data["method"] = best_method.replace("_optimization", "").title()
@@ -2546,15 +2554,6 @@ Validation:
                 plot_data["robust_chi_squared"] = results["robust_optimization"][
                     "chi_squared"
                 ]
-
-            # MCMC chi-squared handling removed
-            # if (
-            #     "mcmc_optimization" in results
-            #     and "chi_squared" in results["mcmc_optimization"]
-            # ):
-            #     plot_data["mcmc_chi_squared"] = results["mcmc_optimization"][
-            #         "chi_squared"
-            #     ]
 
             return plot_data
 

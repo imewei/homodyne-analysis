@@ -428,9 +428,6 @@ Starting from version 6.0, the analysis results are organized into method-specif
    │       └── [similar structure]
        ├── fitted_data.npz              # Consolidated data (experimental, fitted, residuals, parameters)
        ├── c2_heatmaps_phi_*.png        # C2 correlation heatmaps using posterior means
-       ├── 3d_surface_phi_*.png         # 3D surface plots with 95% confidence intervals
-       ├── 3d_surface_residuals_phi_*.png # 3D residuals plots for quality assessment
-       └── corner_plot.png              # Parameter posterior distributions
 
 **Key Changes**:
 

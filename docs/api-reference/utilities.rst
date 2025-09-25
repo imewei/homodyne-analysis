@@ -62,9 +62,6 @@ Plot experimental correlation data as heatmaps.
 
 
 
-**plot_3d_surface(data, x, y)**
-
-Create 3D surface plots of correlation data.
 
 Usage Examples
 --------------
@@ -145,7 +142,6 @@ Usage Examples
    )
    save_fig(fig1, "correlation_heatmaps.png", dpi=300)
 
-       # Corner plot for parameter distributions
 
        # Trace plots for convergence
 

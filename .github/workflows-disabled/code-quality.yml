@@ -1,5 +1,9 @@
 name: Code Quality Analysis
 
+# WORKFLOW DISABLED: Moved to workflows-disabled/ after MCMC removal
+# This workflow focuses on core functionality (classical + robust optimization)
+# To re-enable: Move to .github/workflows/ and verify dependency groups exist
+
 "on":
   schedule:
     # Run every Sunday at 3 AM UTC

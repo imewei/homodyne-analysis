@@ -531,9 +531,8 @@ def run_analysis(args: argparse.Namespace) -> None:
                 if method_key in results and "parameters" in results[method_key]:
                     method_params = results[method_key]["parameters"]
                     if method_params is not None:
-                        # Store parameters for potential use by subsequent methods
-                        analyzer.set_initial_parameters(method_params)
-                        logger.info(f"✓ {method} results stored for potential initialization")
+                        # Parameters already saved with results
+                        logger.debug(f"✓ {method} parameters available in results")
 
         # Check if any methods failed
         if not successful_methods:
@@ -894,10 +893,6 @@ def run_robust_optimization(
         logger.error(error_msg)
         logger.exception("Full traceback for robust optimization failure:")
         return None
-
-
-
-
 
 
 def run_all_methods(analyzer, initial_params, phi_angles, c2_exp, output_dir=None):
@@ -1949,10 +1944,6 @@ def _generate_robust_plots(
 # fitted_data.npz format
 
 
-
-
-
-
 def plot_simulated_data(args: argparse.Namespace) -> None:
     """
     Generate and plot theoretical C2 correlation function heatmaps using initial parameters.
@@ -2532,7 +2523,6 @@ def main():
     with classical and robust optimization approaches.
     """
     # Check Python version requirement
-
 
     parser = create_argument_parser()
     args = parser.parse_args()
