@@ -31,7 +31,6 @@ import time
 from typing import Any
 
 import numpy as np
-from sklearn.utils import resample
 
 # CVXPY import with graceful degradation
 try:
@@ -52,6 +51,30 @@ except ImportError:
     GUROBI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+def _bootstrap_resample(data: np.ndarray, n_samples: int = None) -> np.ndarray:
+    """
+    Simple bootstrap resampling using numpy.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Input data to resample
+    n_samples : int, optional
+        Number of samples to draw (default: same as input size)
+
+    Returns
+    -------
+    np.ndarray
+        Resampled data with replacement
+    """
+    if n_samples is None:
+        n_samples = len(data)
+
+    # Generate random indices with replacement
+    random_indices = np.random.choice(len(data), size=n_samples, replace=True)
+    return data[random_indices]
 
 
 class RobustHomodyneOptimizer:
@@ -712,10 +735,10 @@ class RobustHomodyneOptimizer:
             if residuals.ndim > 1:
                 # Resample along the time axis
                 resampled_residuals = np.apply_along_axis(
-                    lambda x: resample(x, n_samples=len(x)), -1, residuals
+                    lambda x: _bootstrap_resample(x, n_samples=len(x)), -1, residuals
                 )
             else:
-                resampled_residuals = resample(residuals, n_samples=len(residuals))
+                resampled_residuals = _bootstrap_resample(residuals, n_samples=len(residuals))
 
             # Create scenario by adding resampled residuals to fitted
             # correlation
