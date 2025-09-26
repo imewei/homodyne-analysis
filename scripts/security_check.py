@@ -58,18 +58,18 @@ def main():
             failed_checks.append(check["description"])
 
     # Summary
-    print(f"\n📊 Security Check Summary")
+    print("\n📊 Security Check Summary")
     print(f"Total checks: {len(checks)}")
     print(f"Passed: {len(checks) - len(failed_checks)}")
     print(f"Failed: {len(failed_checks)}")
 
     if failed_checks:
-        print(f"\n❌ Failed checks:")
+        print("\n❌ Failed checks:")
         for check in failed_checks:
             print(f"  - {check}")
         sys.exit(1)
     else:
-        print(f"\n✅ All security checks passed!")
+        print("\n✅ All security checks passed!")
         print("🎉 No security issues found!")
         sys.exit(0)
 

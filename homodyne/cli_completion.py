@@ -24,7 +24,7 @@ try:
     ARGCOMPLETE_AVAILABLE = True
 except ImportError:
     ARGCOMPLETE_AVAILABLE = False
-    argcomplete = None
+    argcomplete = None  # type: ignore[assignment]
 
 
 class FastCompletionCache:
@@ -303,16 +303,16 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
 
     # Add fast completers to specific arguments
     for action in parser._actions:
-        if action.dest == "method":
-            action.completer = _fast_completer("method")
-        elif action.dest == "config":
-            action.completer = _fast_completer("config")
-        elif action.dest == "output_dir":
-            action.completer = _fast_completer("output_dir")
-        elif action.dest == "mode":
-            action.completer = _fast_completer("mode")
-        elif action.dest == "output":
-            action.completer = _fast_completer("config")
+        if action.dest == "method" and hasattr(action, 'completer'):
+            action.completer = _fast_completer("method")  # type: ignore[attr-defined]
+        elif action.dest == "config" and hasattr(action, 'completer'):
+            action.completer = _fast_completer("config")  # type: ignore[attr-defined]
+        elif action.dest == "output_dir" and hasattr(action, 'completer'):
+            action.completer = _fast_completer("output_dir")  # type: ignore[attr-defined]
+        elif action.dest == "mode" and hasattr(action, 'completer'):
+            action.completer = _fast_completer("mode")  # type: ignore[attr-defined]
+        elif action.dest == "output" and hasattr(action, 'completer'):
+            action.completer = _fast_completer("config")  # type: ignore[attr-defined]
     # Enable argcomplete with error handling for zsh compdef issues
     try:
         argcomplete.autocomplete(parser)

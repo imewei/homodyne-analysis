@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 # Removed MCMC plotting dependencies (arviz, corner) - no longer used
 
 
-
 def get_plot_config(config: dict | None = None) -> dict[str, Any]:
     """
     Extract plotting configuration from the main config dictionary.
@@ -159,18 +158,14 @@ def plot_c2_heatmaps(
 
     # Validate input dimensions
     if exp.shape != theory.shape:
-        logger.error(
-            f"Shape mismatch: exp {
-                exp.shape} vs theory {
-                theory.shape}"
-        )
+        logger.error(f"Shape mismatch: exp {exp.shape} vs theory {theory.shape}")
         return False
 
     if len(phi_angles) != exp.shape[0]:
         logger.error(
-            f"Number of angles ({
-                len(phi_angles)}) doesn't match data shape ({
-                exp.shape[0]})"
+            f"Number of angles ({len(phi_angles)}) doesn't match data shape ({
+                exp.shape[0]
+            })"
         )
         return False
 
@@ -323,7 +318,7 @@ def plot_c2_heatmaps(
                 stats_text,
                 transform=ax3.transAxes,
                 verticalalignment="top",
-                bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+                bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
             )
 
             # Save the plot
@@ -343,23 +338,17 @@ def plot_c2_heatmaps(
                 # Simplified format for method directories:
                 # c2_heatmaps_[method_name].png
                 if len(phi_angles) == 1:
-                    filename = f"c2_heatmaps_{method_name}.{
-                        plot_config['plot_format']}"
+                    filename = f"c2_heatmaps_{method_name}.{plot_config['plot_format']}"
                 else:
-                    filename = f"c2_heatmaps_{method_name}_phi_{
-                        phi:.1f}deg.{
-                        plot_config['plot_format']}"
+                    filename = f"c2_heatmaps_{method_name}_phi_{phi:.1f}deg.{
+                        plot_config['plot_format']
+                    }"
             else:
                 # Original format for backward compatibility
-                method_prefix = (
-                    f"{
-                        method_name.lower()}_"
-                    if method_name
-                    else ""
-                )
-                filename = f"{method_prefix}c2_heatmaps_phi_{
-                    phi:.1f}deg.{
-                    plot_config['plot_format']}"
+                method_prefix = f"{method_name.lower()}_" if method_name else ""
+                filename = f"{method_prefix}c2_heatmaps_phi_{phi:.1f}deg.{
+                    plot_config['plot_format']
+                }"
             filepath = outdir / filename
 
             if save_fig(
@@ -380,8 +369,7 @@ def plot_c2_heatmaps(
             plt.close("all")  # Clean up any partial figures
 
     logger.info(
-        f"Successfully created {success_count}/{
-            len(phi_angles)} C2 heatmap plots"
+        f"Successfully created {success_count}/{len(phi_angles)} C2 heatmap plots"
     )
     return success_count == len(phi_angles)
 
@@ -547,13 +535,14 @@ def plot_diagnostic_summary(
                             residuals = exp_data - theory_data
                             logger.debug(
                                 f"Computed residuals from exp - theory data, shape: {
-                                    residuals.shape}"
+                                    residuals.shape
+                                }"
                             )
                         else:
                             logger.warning(
                                 f"Shape mismatch: exp_data {
-                                    exp_data.shape} vs theory_data {
-                                    theory_data.shape}"
+                                    exp_data.shape
+                                } vs theory_data {theory_data.shape}"
                             )
                 except Exception as e:
                     logger.warning(f"Could not compute residuals from data: {e}")
@@ -631,8 +620,7 @@ def plot_diagnostic_summary(
 
         # Save the plot
         method_prefix = f"{method_name.lower()}_" if method_name else ""
-        filename = f"{method_prefix}diagnostic_summary.{
-            plot_config['plot_format']}"
+        filename = f"{method_prefix}diagnostic_summary.{plot_config['plot_format']}"
         filepath = outdir / filename
 
         success = save_fig(

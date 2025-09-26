@@ -40,7 +40,7 @@ try:
     CVXPY_AVAILABLE = True
 except ImportError:
     CVXPY_AVAILABLE = False
-    cp = None
+    cp = None  # type: ignore[assignment]
 
 # Check if Gurobi is available as a CVXPY solver
 try:
@@ -86,12 +86,12 @@ class RobustHomodyneOptimizer:
         """
         self.core = analysis_core
         self.config = config
-        self.best_params_robust = None
+        self.best_params_robust: np.ndarray | None = None
 
         # Performance optimization caches
-        self._jacobian_cache = {}
-        self._correlation_cache = {}
-        self._bounds_cache = None
+        self._jacobian_cache: dict[tuple[Any, ...], Any] = {}
+        self._correlation_cache: dict[tuple[Any, ...], Any] = {}
+        self._bounds_cache: list[tuple[float | None, float | None]] | None = None
 
         # Extract robust optimization configuration
         self.robust_config = config.get("optimization_config", {}).get(
@@ -182,8 +182,7 @@ class RobustHomodyneOptimizer:
             if result[0] is not None:
                 self.best_params_robust = result[0]
                 logger.info(
-                    f"Robust optimization completed in {
-                        optimization_time:.2f}s"
+                    f"Robust optimization completed in {optimization_time:.2f}s"
                 )
             else:
                 logger.warning("Robust optimization failed to converge")
@@ -232,7 +231,7 @@ class RobustHomodyneOptimizer:
 
         # Get parameter bounds (cached for performance)
         if self._bounds_cache is None and self.settings.get("enable_caching", True):
-            self._bounds_cache = self._get_parameter_bounds()
+            self._bounds_cache = self._get_parameter_bounds()  # type: ignore[assignment]
         bounds = (
             self._bounds_cache
             if self.settings.get("enable_caching", True)
@@ -322,10 +321,8 @@ class RobustHomodyneOptimizer:
                     improvement = initial_chi_squared - final_chi_squared
                     percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
-                        f"DRO final χ²: {
-                            final_chi_squared:.6f} (improvement: {
-                            improvement:.6f}, {
-                            percent_improvement:.2f}%)"
+                        f"DRO final χ²: {final_chi_squared:.6f} (improvement: {
+                            improvement:.6f}, {percent_improvement:.2f}%)"
                     )
                 else:
                     final_chi_squared = float("inf")
@@ -349,10 +346,7 @@ class RobustHomodyneOptimizer:
 
                 return optimal_params, info
             else:
-                logger.error(
-                    f"DRO optimization failed with status: {
-                        problem.status}"
-                )
+                logger.error(f"DRO optimization failed with status: {problem.status}")
                 return None, {
                     "status": problem.status,
                     "method": "distributionally_robust",
@@ -420,7 +414,7 @@ class RobustHomodyneOptimizer:
         n_params = len(theta_init)
         # Get parameter bounds (cached for performance)
         if self._bounds_cache is None and self.settings.get("enable_caching", True):
-            self._bounds_cache = self._get_parameter_bounds()
+            self._bounds_cache = self._get_parameter_bounds()  # type: ignore[assignment]
         bounds = (
             self._bounds_cache
             if self.settings.get("enable_caching", True)
@@ -491,10 +485,8 @@ class RobustHomodyneOptimizer:
                     improvement = initial_chi_squared - final_chi_squared
                     percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
-                        f"Scenario final χ²: {
-                            final_chi_squared:.6f} (improvement: {
-                            improvement:.6f}, {
-                            percent_improvement:.2f}%)"
+                        f"Scenario final χ²: {final_chi_squared:.6f} (improvement: {
+                            improvement:.6f}, {percent_improvement:.2f}%)"
                     )
                 else:
                     final_chi_squared = float("inf")
@@ -518,8 +510,7 @@ class RobustHomodyneOptimizer:
                 return optimal_params, info
             else:
                 logger.error(
-                    f"Scenario optimization failed with status: {
-                        problem.status}"
+                    f"Scenario optimization failed with status: {problem.status}"
                 )
                 return None, {
                     "status": problem.status,
@@ -568,15 +559,14 @@ class RobustHomodyneOptimizer:
             theta_init, phi_angles, c2_experimental
         )
         logger.info(
-            f"Ellipsoidal robust optimization with uncertainty bound: {
-                gamma:.6f}"
+            f"Ellipsoidal robust optimization with uncertainty bound: {gamma:.6f}"
         )
         logger.info(f"Ellipsoidal initial χ²: {initial_chi_squared:.6f}")
 
         n_params = len(theta_init)
         # Get parameter bounds (cached for performance)
         if self._bounds_cache is None and self.settings.get("enable_caching", True):
-            self._bounds_cache = self._get_parameter_bounds()
+            self._bounds_cache = self._get_parameter_bounds()  # type: ignore[assignment]
         bounds = (
             self._bounds_cache
             if self.settings.get("enable_caching", True)
@@ -647,10 +637,8 @@ class RobustHomodyneOptimizer:
                     improvement = initial_chi_squared - final_chi_squared
                     percent_improvement = (improvement / initial_chi_squared) * 100
                     logger.info(
-                        f"Ellipsoidal final χ²: {
-                            final_chi_squared:.6f} (improvement: {
-                            improvement:.6f}, {
-                            percent_improvement:.2f}%)"
+                        f"Ellipsoidal final χ²: {final_chi_squared:.6f} (improvement: {
+                            improvement:.6f}, {percent_improvement:.2f}%)"
                     )
                 else:
                     final_chi_squared = float("inf")
@@ -674,8 +662,7 @@ class RobustHomodyneOptimizer:
                 return optimal_params, info
             else:
                 logger.error(
-                    f"Ellipsoidal optimization failed with status: {
-                        problem.status}"
+                    f"Ellipsoidal optimization failed with status: {problem.status}"
                 )
                 return None, {
                     "status": problem.status,
@@ -1154,13 +1141,13 @@ class RobustHomodyneOptimizer:
             if problem.status in ["optimal", "optimal_inaccurate"]:
                 logger.debug(
                     f"{method_name}: Preferred solver succeeded with status: {
-                        problem.status}"
+                        problem.status
+                    }"
                 )
                 return True
         except Exception as e:
             logger.debug(
-                f"{method_name}: Preferred solver {preferred_solver} failed: {
-                    e!s}"
+                f"{method_name}: Preferred solver {preferred_solver} failed: {e!s}"
             )
 
         # Fast fallback to SCS if preferred solver failed
@@ -1176,7 +1163,8 @@ class RobustHomodyneOptimizer:
             if problem.status in ["optimal", "optimal_inaccurate"]:
                 logger.debug(
                     f"{method_name}: SCS fallback succeeded with status: {
-                        problem.status}"
+                        problem.status
+                    }"
                 )
                 return True
         except Exception as e:

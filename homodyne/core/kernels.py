@@ -322,7 +322,7 @@ if NUMBA_AVAILABLE:
 else:
     solve_least_squares_batch_numba = _solve_least_squares_batch_fallback
     # Add signatures attribute for compatibility with numba compiled functions
-    solve_least_squares_batch_numba.signatures = []
+    solve_least_squares_batch_numba.signatures = []  # type: ignore[attr-defined]
 
 
 def _compute_chi_squared_batch_numba_impl(
@@ -388,7 +388,7 @@ if NUMBA_AVAILABLE:
 else:
     compute_chi_squared_batch_numba = _compute_chi_squared_batch_fallback
     # Add signatures attribute for compatibility with numba compiled functions
-    compute_chi_squared_batch_numba.signatures = []
+    compute_chi_squared_batch_numba.signatures = []  # type: ignore[attr-defined]
 
 
 # Apply numba decorator to all other functions if available, otherwise use
@@ -439,8 +439,8 @@ else:
 
     # Add empty signatures attribute for fallback functions when numba
     # unavailable
-    create_time_integral_matrix_numba.signatures = []
-    calculate_diffusion_coefficient_numba.signatures = []
-    calculate_shear_rate_numba.signatures = []
-    compute_g1_correlation_numba.signatures = []
-    compute_sinc_squared_numba.signatures = []
+    create_time_integral_matrix_numba.signatures = []  # type: ignore[attr-defined]
+    calculate_diffusion_coefficient_numba.signatures = []  # type: ignore[attr-defined]
+    calculate_shear_rate_numba.signatures = []  # type: ignore[attr-defined]
+    compute_g1_correlation_numba.signatures = []  # type: ignore[attr-defined]
+    compute_sinc_squared_numba.signatures = []  # type: ignore[attr-defined]

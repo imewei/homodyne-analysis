@@ -204,11 +204,19 @@ select = [
 ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
+    "B904",  # raise from within except (acceptable for error context)
+    "UP035", # typing import deprecation (gradual migration)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # unused imports in __init__.py
 "tests/**/*.py" = ["F401", "F811"]  # allow unused imports in tests
+"homodyne/analysis/core.py" = ["RUF001", "RUF002", "RUF003"]  # scientific Greek letters
+"homodyne/core/config.py" = ["RUF001", "RUF003"]  # scientific notation
+"homodyne/plotting.py" = ["RUF001", "RUF003"]  # scientific Greek letters
+"homodyne/run_homodyne.py" = ["RUF003", "E402"]  # scientific notation, completion imports
+"homodyne/optimization/classical.py" = ["E402"]  # shared utility imports
+"scripts/validate_requirements.py" = ["RUF001"]  # allow info emoji
 
 [tool.pytest.ini_options]
 minversion = "6.0"

@@ -96,7 +96,7 @@ def main():
     # Configure parallelization
     if args.parallel > 1:
         try:
-            import xdist  # noqa: F401
+            import xdist  # type: ignore[import-untyped]  # noqa: F401
 
             cmd.extend(["-n", str(args.parallel)])
         except ImportError:

@@ -28,10 +28,10 @@ try:
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:
-    ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc]
+    ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc,no-redef]
     import warnings
 
-    warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning)
+    warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning, stacklevel=2)
 
 
 # Dynamic __all__ - suppress Pylance warning as this is intentional

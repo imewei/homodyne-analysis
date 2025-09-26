@@ -15,7 +15,6 @@ These tests verify:
 
 import argparse
 import sys
-from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -30,9 +29,12 @@ try:
 except ImportError:
     # Fallback for testing - create a minimal parser
     import argparse
+
     def create_argument_parser():
         parser = argparse.ArgumentParser()
-        parser.add_argument("--method", choices=["classical", "robust", "all"], default="classical")
+        parser.add_argument(
+            "--method", choices=["classical", "robust", "all"], default="classical"
+        )
         return parser
 
 
@@ -44,24 +46,23 @@ class TestCLIMethodValidation:
         parser = create_argument_parser()
 
         # Test classical method
-        args = parser.parse_args(['--method', 'classical'])
-        assert args.method == 'classical'
+        args = parser.parse_args(["--method", "classical"])
+        assert args.method == "classical"
 
         # Test robust method
-        args = parser.parse_args(['--method', 'robust'])
-        assert args.method == 'robust'
+        args = parser.parse_args(["--method", "robust"])
+        assert args.method == "robust"
 
         # Test all method
-        args = parser.parse_args(['--method', 'all'])
-        assert args.method == 'all'
-
+        args = parser.parse_args(["--method", "all"])
+        assert args.method == "all"
 
     def test_invalid_method_rejected(self):
         """Test that invalid methods are rejected."""
         parser = create_argument_parser()
 
         with pytest.raises(SystemExit):
-            parser.parse_args(['--method', 'invalid_method'])
+            parser.parse_args(["--method", "invalid_method"])
 
     def test_method_choices_exclude_mcmc(self):
         """Test that method choices do not include MCMC."""
@@ -70,19 +71,19 @@ class TestCLIMethodValidation:
         # Find the method argument
         method_action = None
         for action in parser._actions:
-            if hasattr(action, 'dest') and action.dest == 'method':
+            if hasattr(action, "dest") and action.dest == "method":
                 method_action = action
                 break
 
         assert method_action is not None, "Method argument not found"
-        assert method_action.choices == ['classical', 'robust', 'all']
-        assert 'mcmc' not in method_action.choices
+        assert method_action.choices == ["classical", "robust", "all"]
+        assert "mcmc" not in method_action.choices
 
     def test_default_method_is_classical(self):
         """Test that default method is classical."""
         parser = create_argument_parser()
         args = parser.parse_args([])
-        assert args.method == 'classical'
+        assert args.method == "classical"
 
 
 class TestShellCompletion:
@@ -94,7 +95,10 @@ class TestShellCompletion:
         # We'll need to examine the actual completion implementation
         pass  # Implementation will depend on completion system structure
 
-    @patch.dict('os.environ', {'_ARGCOMPLETE': '1', 'COMP_LINE': 'homodyne --method ', 'COMP_POINT': '18'})
+    @patch.dict(
+        "os.environ",
+        {"_ARGCOMPLETE": "1", "COMP_LINE": "homodyne --method ", "COMP_POINT": "18"},
+    )
     def test_argcomplete_excludes_mcmc(self):
         """Test argcomplete doesn't suggest mcmc for --method completion."""
         # Mock the completion behavior
@@ -111,30 +115,34 @@ class TestCLIHelp:
         help_text = parser.format_help()
 
         # Help should mention the available choices
-        assert 'classical' in help_text
-        assert 'robust' in help_text
-        assert 'all' in help_text
+        assert "classical" in help_text
+        assert "robust" in help_text
+        assert "all" in help_text
 
         # Help should not prominently feature mcmc in method choices
         # (it might still be in examples or migration text)
         method_help_section = self._extract_method_help(help_text)
-        assert 'mcmc' not in method_help_section
+        assert "mcmc" not in method_help_section
 
     def _extract_method_help(self, help_text: str) -> str:
         """Extract the method argument help section."""
-        lines = help_text.split('\n')
+        lines = help_text.split("\n")
         method_section = []
         in_method_section = False
 
         for line in lines:
-            if '--method' in line and '{classical' in line:
+            if "--method" in line and "{classical" in line:
                 in_method_section = True
             if in_method_section:
                 method_section.append(line)
-                if line.strip() and not line.startswith(' ') and len(method_section) > 1:
+                if (
+                    line.strip()
+                    and not line.startswith(" ")
+                    and len(method_section) > 1
+                ):
                     break
 
-        return '\n'.join(method_section)
+        return "\n".join(method_section)
 
 
 class TestIntegrationScenarios:
@@ -146,15 +154,15 @@ class TestIntegrationScenarios:
 
         # Test realistic command line scenarios
         valid_commands = [
-            ['--method', 'classical', '--config', 'test.json'],
-            ['--method', 'robust', '--verbose'],
-            ['--method', 'all', '--output-dir', '/tmp/results'],
-            ['--config', 'test.json'],  # Should use default method
+            ["--method", "classical", "--config", "test.json"],
+            ["--method", "robust", "--verbose"],
+            ["--method", "all", "--output-dir", "/tmp/results"],
+            ["--config", "test.json"],  # Should use default method
         ]
 
         for cmd in valid_commands:
             args = parser.parse_args(cmd)
-            assert args.method in ['classical', 'robust', 'all']
+            assert args.method in ["classical", "robust", "all"]
 
     def test_method_all_behavior_change(self):
         """Test that --method all now excludes MCMC."""
@@ -163,14 +171,14 @@ class TestIntegrationScenarios:
         # Now: --method all runs classical + robust only
 
         parser = create_argument_parser()
-        args = parser.parse_args(['--method', 'all'])
+        args = parser.parse_args(["--method", "all"])
 
         # The argument parsing succeeds
-        assert args.method == 'all'
+        assert args.method == "all"
 
         # The actual behavior change will be tested in the analysis engine tests
         # This test just ensures the CLI accepts the 'all' option
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

@@ -39,7 +39,7 @@ class Axes3D(Axes):
         color: str | None = ...,
         **kwargs: Any,
     ) -> Any: ...
-    def scatter(
+    def scatter(  # type: ignore[override]
         self,
         xs: np.ndarray | list[float],
         ys: np.ndarray | list[float],
@@ -50,6 +50,6 @@ class Axes3D(Axes):
         depthshade: bool = ...,
         **kwargs: Any,
     ) -> Any: ...
-    def set_xlabel(self, xlabel: str, **kwargs: Any) -> None: ...
-    def set_ylabel(self, ylabel: str, **kwargs: Any) -> None: ...
+    def set_xlabel(self, xlabel: str, **kwargs: Any) -> None: ...  # type: ignore[override]
+    def set_ylabel(self, ylabel: str, **kwargs: Any) -> None: ...  # type: ignore[override]
     def set_zlabel(self, zlabel: str, **kwargs: Any) -> None: ...

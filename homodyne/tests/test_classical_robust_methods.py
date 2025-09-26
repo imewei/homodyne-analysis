@@ -15,7 +15,8 @@ Part of Task 5.6: Validate that classical and robust methods work correctly
 import sys
 
 # Add the homodyne-analysis root directory to Python path for imports
-sys.path.insert(0, '/home/wei/Documents/GitHub/homodyne-analysis')
+sys.path.insert(0, "/home/wei/Documents/GitHub/homodyne-analysis")
+
 
 def test_classical_optimization_imports():
     """Test that classical optimization methods can be imported successfully."""
@@ -24,6 +25,7 @@ def test_classical_optimization_imports():
     try:
         # Test classical optimization module
         from homodyne.optimization import ClassicalOptimizer
+
         print("✅ ClassicalOptimizer imported successfully")
 
         # Test that ClassicalOptimizer can be instantiated (without full core)
@@ -46,7 +48,7 @@ def test_classical_optimization_imports():
             print(f"✅ Available classical methods: {available_methods}")
 
             # Verify that no MCMC methods are included
-            mcmc_methods = [m for m in available_methods if 'mcmc' in m.lower()]
+            mcmc_methods = [m for m in available_methods if "mcmc" in m.lower()]
             if mcmc_methods:
                 print(f"⚠️  Found MCMC methods that should be removed: {mcmc_methods}")
             else:
@@ -64,6 +66,7 @@ def test_classical_optimization_imports():
         print(f"❌ Unexpected error testing classical imports: {e}")
         return False
 
+
 def test_robust_optimization_imports():
     """Test that robust optimization methods can be imported successfully."""
     print("\n🧪 Testing robust optimization method imports...")
@@ -71,6 +74,7 @@ def test_robust_optimization_imports():
     try:
         # Test robust optimization module
         from homodyne.optimization.robust import CVXPY_AVAILABLE, GUROBI_AVAILABLE
+
         print("✅ Robust optimization module imported successfully")
 
         print(f"i  CVXPY available: {CVXPY_AVAILABLE}")
@@ -106,12 +110,16 @@ def test_robust_optimization_imports():
             optimizer = ClassicalOptimizer(mock_core, mock_config)
 
             available_methods = optimizer.get_available_methods()
-            robust_methods = [m for m in available_methods if 'robust' in m.lower()]
+            robust_methods = [m for m in available_methods if "robust" in m.lower()]
 
             if robust_methods:
-                print(f"✅ Robust methods available in ClassicalOptimizer: {robust_methods}")
+                print(
+                    f"✅ Robust methods available in ClassicalOptimizer: {robust_methods}"
+                )
             else:
-                print("i  No robust methods found in ClassicalOptimizer (may require CVXPY)")
+                print(
+                    "i  No robust methods found in ClassicalOptimizer (may require CVXPY)"
+                )
 
         except Exception as e:
             print(f"⚠️  Could not test robust methods in ClassicalOptimizer: {e}")
@@ -124,6 +132,7 @@ def test_robust_optimization_imports():
     except Exception as e:
         print(f"❌ Unexpected error testing robust imports: {e}")
         return False
+
 
 def test_optimization_method_selection():
     """Test that optimization methods can be selected and initialized correctly."""
@@ -145,7 +154,7 @@ def test_optimization_method_selection():
 
         # Test method selection logic
         available_methods = optimizer.get_available_methods()
-        valid_methods = [m for m in available_methods if 'mcmc' not in m.lower()]
+        valid_methods = [m for m in available_methods if "mcmc" not in m.lower()]
 
         print(f"✅ Total available methods: {len(available_methods)}")
         print(f"✅ Valid non-MCMC methods: {valid_methods}")
@@ -168,6 +177,7 @@ def test_optimization_method_selection():
     except Exception as e:
         print(f"❌ Error testing method selection: {e}")
         return False
+
 
 def test_core_parameter_estimation():
     """Test that core parameter estimation functionality works without MCMC."""
@@ -199,10 +209,10 @@ def test_core_parameter_estimation():
                 "chi_squared_calculation": {
                     "validity_check": {
                         "check_positive_D0": True,
-                        "check_parameter_bounds": True
+                        "check_parameter_bounds": True,
                     }
                 }
-            }
+            },
         }
 
         optimizer = ClassicalOptimizer(mock_core, mock_config)
@@ -222,7 +232,9 @@ def test_core_parameter_estimation():
             is_valid, reason = optimizer.validate_parameters(invalid_params, "Test")
             print(f"✅ Invalid parameters test: {is_valid}, reason: {reason}")
         except Exception as e:
-            print(f"⚠️  Invalid parameter validation test skipped due to config issue: {e}")
+            print(
+                f"⚠️  Invalid parameter validation test skipped due to config issue: {e}"
+            )
             # Still count as success if the method exists and can be called
 
         # Test parameter bounds extraction
@@ -237,6 +249,7 @@ def test_core_parameter_estimation():
     except Exception as e:
         print(f"❌ Unexpected error testing parameter estimation: {e}")
         return False
+
 
 def test_optimization_workflow():
     """Test that complete optimization workflow can be initialized."""
@@ -254,7 +267,14 @@ def test_optimization_workflow():
                 self.num_diffusion_params = 3
                 self.num_shear_rate_params = 3
 
-            def calculate_chi_squared_optimized(self, params, phi_angles, c2_experimental, method_name, filter_angles_for_optimization=True):
+            def calculate_chi_squared_optimized(
+                self,
+                params,
+                phi_angles,
+                c2_experimental,
+                method_name,
+                filter_angles_for_optimization=True,
+            ):
                 # Mock chi-squared calculation
                 return np.sum((params - 1e-10) ** 2) * 1e20  # Simple quadratic function
 
@@ -263,9 +283,7 @@ def test_optimization_workflow():
             "optimization_config": {
                 "classical_optimization": {
                     "methods": ["Nelder-Mead"],
-                    "method_options": {
-                        "Nelder-Mead": {"maxiter": 10, "fatol": 1e-6}
-                    }
+                    "method_options": {"Nelder-Mead": {"maxiter": 10, "fatol": 1e-6}},
                 }
             },
             "initial_parameters": {"values": [1e-10, 1e-12, 1e-14]},
@@ -275,7 +293,7 @@ def test_optimization_workflow():
                     {"name": "D1", "min": 1e-15, "max": 1e-10},
                     {"name": "D2", "min": 1e-18, "max": 1e-12},
                 ]
-            }
+            },
         }
 
         optimizer = ClassicalOptimizer(mock_core, mock_config)
@@ -285,7 +303,9 @@ def test_optimization_workflow():
         phi_angles = np.linspace(0.1, 1.0, 10)
         c2_experimental = np.random.random(10) * 0.1
 
-        objective_func = optimizer.create_objective_function(phi_angles, c2_experimental, "Test")
+        objective_func = optimizer.create_objective_function(
+            phi_angles, c2_experimental, "Test"
+        )
         print("✅ Objective function creation successful")
 
         # Test single method runner (with mock data)
@@ -295,11 +315,11 @@ def test_optimization_workflow():
             objective_func=objective_func,
             initial_parameters=initial_params,
             bounds=None,
-            method_options={"maxiter": 5}  # Very short run for testing
+            method_options={"maxiter": 5},  # Very short run for testing
         )
 
         print(f"✅ Single method execution test: success={success}")
-        if success and hasattr(result, 'x'):
+        if success and hasattr(result, "x"):
             print(f"✅ Optimization result returned valid parameters: {result.x[:3]}")
 
         return True
@@ -307,6 +327,7 @@ def test_optimization_workflow():
     except Exception as e:
         print(f"❌ Error testing optimization workflow: {e}")
         return False
+
 
 def run_all_tests():
     """Run all classical and robust method validation tests."""
@@ -336,9 +357,12 @@ def run_all_tests():
         print("✅ Core optimization infrastructure intact after MCMC removal")
         print("✅ Method selection and workflows functional")
     else:
-        print(f"❌ {total - passed} tests failed - classical/robust methods need attention")
+        print(
+            f"❌ {total - passed} tests failed - classical/robust methods need attention"
+        )
 
     return passed == total
+
 
 if __name__ == "__main__":
     success = run_all_tests()

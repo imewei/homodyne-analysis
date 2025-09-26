@@ -12,7 +12,8 @@ numba detection utilities.
 
 # Numba availability detection
 try:
-    import numba
+    import numba  # noqa: F401
+
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False

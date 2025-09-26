@@ -143,11 +143,9 @@ from ..core.kernels import (
     memory_efficient_cache,
     solve_least_squares_batch_numba,
 )
+from ..core.optimization_utils import NUMBA_AVAILABLE, increment_optimization_counter
 
 logger = logging.getLogger(__name__)
-
-# Import shared optimization utilities
-from ..core.optimization_utils import increment_optimization_counter, NUMBA_AVAILABLE
 
 # Default thread count for parallelization
 DEFAULT_NUM_THREADS = min(16, mp.cpu_count())
@@ -245,6 +243,9 @@ class HomodyneAnalysisCore:
             self.time_length,
             dtype=np.float64,
         )
+
+        # Memory pool for correlation calculations
+        self._c2_results_pool: np.ndarray | None = None
 
     def _setup_performance(self):
         """Configure performance settings."""
@@ -345,18 +346,16 @@ class HomodyneAnalysisCore:
         """Print initialization summary."""
         logger.info("HomodyneAnalysis Core initialized:")
         logger.info(
-            f"  • Frames: {
-                self.start_frame}-{
-                self.end_frame} ({
-                self.time_length} frames)"
+            f"  • Frames: {self.start_frame}-{self.end_frame} ({
+                self.time_length
+            } frames)"
         )
         logger.info(f"  • Time step: {self.dt} s/frame")
         logger.info(f"  • Wavevector: {self.wavevector_q:.6f} A^-1")
         logger.info(f"  • Gap size: {self.stator_rotor_gap / 1e4:.1f} um")
         logger.info(f"  • Threads: {self.num_threads}")
         logger.info(
-            f"  • Optimizations: {
-                'Numba JIT' if NUMBA_AVAILABLE else 'Pure Python'}"
+            f"  • Optimizations: {'Numba JIT' if NUMBA_AVAILABLE else 'Pure Python'}"
         )
 
     def is_static_mode(self) -> bool:
@@ -591,7 +590,9 @@ class HomodyneAnalysisCore:
 
                 # Clear cached integral matrices as they're now invalid
                 self._diffusion_integral_cache.clear()
-                logger.debug(f"Updated time_array to length {len(self.time_array)}, cleared integral cache")
+                logger.debug(
+                    f"Updated time_array to length {len(self.time_array)}, cleared integral cache"
+                )
         else:
             logger.info(
                 f"Cache miss: Loading raw data (cache file {cache_file} not found)"
@@ -671,9 +672,9 @@ class HomodyneAnalysisCore:
             # This returns: (c2_experimental, time_length, phi_angles_loaded, num_angles_loaded)
             (
                 c2_experimental,
-                time_length_loaded,
+                _time_length_loaded,
                 phi_angles_loaded,
-                num_angles_loaded,
+                _num_angles_loaded,
             ) = loader.load_experimental_data()
 
             logger.info("XPCS data loader detected format and loaded data successfully")
@@ -705,7 +706,9 @@ class HomodyneAnalysisCore:
 
                 # Clear cached integral matrices as they're now invalid
                 self._diffusion_integral_cache.clear()
-                logger.debug(f"Updated time_array to length {len(self.time_array)}, cleared integral cache")
+                logger.debug(
+                    f"Updated time_array to length {len(self.time_array)}, cleared integral cache"
+                )
 
             # For isotropic static mode, we might have loaded multiple angles but only need one
             if self.config_manager.is_static_isotropic_enabled():
@@ -1097,17 +1100,21 @@ class HomodyneAnalysisCore:
             else:
                 # Laminar flow case: use pre-allocated memory pool for better
                 # performance
-                if not hasattr(
-                    self, "_c2_results_pool"
-                ) or self._c2_results_pool.shape != (
-                    num_angles,
-                    self.time_length,
-                    self.time_length,
-                ):
+                need_new_pool = (
+                    self._c2_results_pool is None
+                    or self._c2_results_pool.shape != (
+                        num_angles,
+                        self.time_length,
+                        self.time_length,
+                    )
+                )
+                if need_new_pool:
                     self._c2_results_pool = np.empty(
                         (num_angles, self.time_length, self.time_length),
                         dtype=np.float64,
                     )
+                # At this point, _c2_results_pool is guaranteed to be not None
+                assert self._c2_results_pool is not None
                 c2_results = self._c2_results_pool
 
                 # Pre-compute shear integrals once if applicable
@@ -1310,10 +1317,7 @@ class HomodyneAnalysisCore:
                     param_max = bound.get("max", np.inf)
 
                     if not (param_min <= param_val <= param_max):
-                        reason = f'Parameter {
-                            bound.get(
-                                "name",
-                                f"p{i}")} out of bounds'
+                        reason = f"Parameter {bound.get('name', f'p{i}')} out of bounds"
                         return (
                             np.inf
                             if not return_components
@@ -1378,15 +1382,12 @@ class HomodyneAnalysisCore:
 
                 logger.debug(
                     f"Filtering angles for optimization: using {
-                        len(optimization_indices)}/{
-                        len(phi_angles)} angles"
+                        len(optimization_indices)
+                    }/{len(phi_angles)} angles"
                 )
                 if optimization_indices:
                     filtered_angles = phi_angles[optimization_indices]
-                    logger.debug(
-                        f"Optimization angles: {
-                            filtered_angles.tolist()}"
-                    )
+                    logger.debug(f"Optimization angles: {filtered_angles.tolist()}")
                 else:
                     # Check if fallback is enabled
                     should_fallback = True
@@ -1566,8 +1567,9 @@ class HomodyneAnalysisCore:
                     reduced_chi2_uncertainty = 0.0
 
                 logger.debug(
-                    f"Using average of {n_optimization_angles} optimization angles: χ²_red = {
-                        reduced_chi2:.6e} ± {
+                    f"Using average of {
+                        n_optimization_angles
+                    } optimization angles: χ²_red = {reduced_chi2:.6e} ± {
                         reduced_chi2_uncertainty:.6e}"
                 )
             else:
@@ -1596,21 +1598,15 @@ class HomodyneAnalysisCore:
             )
             if counter % log_freq == 0:
                 logger.info(
-                    f"Iteration {
-                        counter:06d} [{method_name}]: χ²_red = {
-                        reduced_chi2:.6e} ± {
-                        reduced_chi2_uncertainty:.6e}"
+                    f"Iteration {counter:06d} [{method_name}]: χ²_red = {
+                        reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
                 )
                 # Log reduced chi-square per angle
                 for i, (phi, chi2_red_angle) in enumerate(
                     zip(phi_angles, angle_chi2_reduced, strict=False)
                 ):
                     logger.info(
-                        f"  Angle {
-                            i +
-                            1} (φ={
-                            phi:.1f}°): χ²_red = {
-                            chi2_red_angle:.6e}"
+                        f"  Angle {i + 1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
                     )
 
             if return_components:
@@ -1844,8 +1840,7 @@ class HomodyneAnalysisCore:
                 "poor" if per_angle_quality != "critical" else per_angle_quality
             )
             quality_issues.append(
-                f"{
-                    unacceptable_fraction:.1%} angles unacceptable (max allowed: {
+                f"{unacceptable_fraction:.1%} angles unacceptable (max allowed: {
                     max_outlier_fraction:.1%})"
             )
 
@@ -1854,8 +1849,7 @@ class HomodyneAnalysisCore:
                 "warning" if per_angle_quality == "excellent" else per_angle_quality
             )
             quality_issues.append(
-                f"{
-                    outlier_fraction:.1%} statistical outliers (max recommended: {
+                f"{outlier_fraction:.1%} statistical outliers (max recommended: {
                     max_outlier_fraction:.1%})"
             )
 
@@ -1995,49 +1989,42 @@ class HomodyneAnalysisCore:
         overall_uncertainty = chi_results.get("reduced_chi_squared_uncertainty", 0.0)
         if overall_uncertainty > 0:
             logger.info(
-                f"  Overall χ²_red: {
-                    chi_results['reduced_chi_squared']:.6e} ± {
+                f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ± {
                     overall_uncertainty:.6e} ({overall_quality})"
             )
         else:
             logger.info(
-                f"  Overall χ²_red: {
-                    chi_results['reduced_chi_squared']:.6e} ({overall_quality})"
+                f"  Overall χ²_red: {chi_results['reduced_chi_squared']:.6e} ({
+                    overall_quality
+                })"
             )
         logger.info(
-            f"  Mean per-angle χ²_red: {
-                mean_chi2_red:.6e} ± {
-                std_chi2_red:.6e}"
+            f"  Mean per-angle χ²_red: {mean_chi2_red:.6e} ± {std_chi2_red:.6e}"
         )
         logger.info(f"  Range: {min_chi2_red:.6e} - {max_chi2_red:.6e}")
 
         # Quality assessment logging
         logger.info(f"  Quality Assessment: {combined_quality.upper()}")
         logger.info(
-            f"    Overall: {overall_quality} (threshold: {
-                acceptable_overall:.1f})"
+            f"    Overall: {overall_quality} (threshold: {acceptable_overall:.1f})"
         )
         logger.info(f"    Per-angle: {per_angle_quality}")
 
         # Angle categorization
         logger.info("  Angle Categorization:")
         logger.info(
-            f"    Good angles: {num_good_angles}/{
-                len(angles)} ({
-                100 * num_good_angles / len(angles):.1f}%) [χ²_red ≤ {acceptable_per_angle}]"
+            f"    Good angles: {num_good_angles}/{len(angles)} ({
+                100 * num_good_angles / len(angles):.1f}%) [χ²_red ≤ {
+                acceptable_per_angle
+            }]"
         )
         logger.info(
-            f"    Unacceptable angles: {
-                len(unacceptable_angles)}/{
-                len(angles)} ({
+            f"    Unacceptable angles: {len(unacceptable_angles)}/{len(angles)} ({
                 100 * unacceptable_fraction:.1f}%) [χ²_red > {acceptable_per_angle}]"
         )
         logger.info(
-            f"    Statistical outliers: {
-                len(outlier_angles)}/{
-                len(angles)} ({
-                100 * outlier_fraction:.1f}%) [χ²_red > {
-                    outlier_threshold:.3f}]"
+            f"    Statistical outliers: {len(outlier_angles)}/{len(angles)} ({
+                100 * outlier_fraction:.1f}%) [χ²_red > {outlier_threshold:.3f}]"
         )
 
         # Warnings and issues
@@ -2126,9 +2113,9 @@ class HomodyneAnalysisCore:
                 )
         else:
             if results_format == "json":
-                output_file = "homodyne_analysis_results.json"
+                output_file = Path("homodyne_analysis_results.json")
             else:
-                output_file = f"homodyne_analysis_results.{results_format}"
+                output_file = Path(f"homodyne_analysis_results.{results_format}")
 
         try:
             # Save to JSON format regardless of specified format for
@@ -2197,10 +2184,7 @@ class HomodyneAnalysisCore:
             time_t2 = np.arange(n_t2) * dt
             time_t1 = np.arange(n_t1) * dt
 
-            logger.debug(
-                f"Data shape for validation plot: {
-                    c2_experimental.shape}"
-            )
+            logger.debug(f"Data shape for validation plot: {c2_experimental.shape}")
             logger.debug(
                 f"Time parameters: dt={dt}, t2_max={time_t2[-1]:.1f}s, t1_max={time_t1[-1]:.1f}s"
             )
@@ -2265,9 +2249,9 @@ Diagonal mean: {diag_mean:.4f}
 Contrast: {contrast:.3f}
 
 Validation:
-{'✓' if 0.9 < mean_val < 1.2 else '✗'} Mean around 1.0
-{'✓' if diag_mean > mean_val else '✗'} Diagonal enhanced
-{'✓' if contrast > 0.001 else '✗'} Sufficient contrast"""
+{"✓" if 0.9 < mean_val < 1.2 else "✗"} Mean around 1.0
+{"✓" if diag_mean > mean_val else "✗"} Diagonal enhanced
+{"✓" if contrast > 0.001 else "✗"} Sufficient contrast"""
 
                 ax2.text(
                     0.05,
@@ -2277,7 +2261,7 @@ Validation:
                     fontsize=9,
                     verticalalignment="top",
                     fontfamily="monospace",
-                    bbox=dict(boxstyle="round", facecolor="lightblue", alpha=0.7),
+                    bbox={"boxstyle": "round", "facecolor": "lightblue", "alpha": 0.7},
                 )
 
             # Overall title
@@ -2316,7 +2300,7 @@ Validation:
                 .get("plotting", {})
                 .get("general", {})
                 if self.config
-                else {}.get("show_plots", False)
+                else False
             )  # type: ignore
             if show_plots:
                 plt.show()
@@ -2474,7 +2458,7 @@ Validation:
         logger = logging.getLogger(__name__)
 
         try:
-            plot_data = {}
+            plot_data: dict[str, Any] = {}
 
             # Find the best method results
             best_method = None
@@ -2542,7 +2526,7 @@ Validation:
                         theoretical_data = self._generate_theoretical_data(
                             best_params_list, self._last_phi_angles
                         )
-                        plot_data["theoretical_data"] = theoretical_data
+                        plot_data["theoretical_data"] = theoretical_data.tolist() if hasattr(theoretical_data, 'tolist') else theoretical_data
                     except Exception as e:
                         logger.warning(
                             f"Failed to generate theoretical data for plotting: {e}"
@@ -2575,8 +2559,8 @@ Validation:
                 plot_data["parameter_units"] = param_units
 
             # Add overall plot data
-            plot_data["chi_squared"] = best_chi2
-            plot_data["method"] = best_method.replace("_optimization", "").title()
+            plot_data["chi_squared"] = float(best_chi2)
+            plot_data["method"] = str(best_method).replace("_optimization", "").title()
 
             # Add individual method chi-squared values for diagnostic plotting
             if (
@@ -2623,10 +2607,7 @@ Validation:
 
         try:
             # Use the existing physics model to generate theoretical data
-            logger.debug(
-                f"Generating theoretical data for {
-                    len(phi_angles)} angles"
-            )
+            logger.debug(f"Generating theoretical data for {len(phi_angles)} angles")
 
             # Call the main correlation calculation method
             theoretical_data = self.calculate_c2_nonequilibrium_laminar_parallel(
@@ -2636,7 +2617,8 @@ Validation:
 
             logger.debug(
                 f"Successfully generated theoretical data with shape: {
-                    theoretical_data.shape}"
+                    theoretical_data.shape
+                }"
             )
             return theoretical_data
 

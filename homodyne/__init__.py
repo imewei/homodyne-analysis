@@ -59,7 +59,7 @@ from .core.kernels import (
 try:
     from .optimization.classical import ClassicalOptimizer
 except ImportError as e:
-    ClassicalOptimizer = None  # type: ignore[assignment]
+    ClassicalOptimizer = None  # type: ignore[assignment,misc]
     import logging
 
     logging.getLogger(__name__).warning(
@@ -69,7 +69,7 @@ except ImportError as e:
 try:
     from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
 except ImportError as e:
-    RobustHomodyneOptimizer = None  # type: ignore[assignment]
+    RobustHomodyneOptimizer = None  # type: ignore[assignment,misc]
     create_robust_optimizer = None  # type: ignore[assignment]
     import logging
 

@@ -218,9 +218,9 @@ except ImportError:
         from homodyne.optimization.robust import create_robust_optimizer
     except ImportError:
         # Will be handled with specific error messages during runtime
-        HomodyneAnalysisCore = None
-        ClassicalOptimizer = None
-        create_robust_optimizer = None
+        HomodyneAnalysisCore = None  # type: ignore[assignment,misc]
+        ClassicalOptimizer = None  # type: ignore[assignment,misc]
+        create_robust_optimizer = None  # type: ignore[assignment]
 
 
 class MockResult:
@@ -461,7 +461,7 @@ def run_analysis(args: argparse.Namespace) -> None:
 
     # Load experimental data
     logger.info("Loading experimental data...")
-    c2_exp, time_length, phi_angles, num_angles = analyzer.load_experimental_data()
+    c2_exp, _time_length, phi_angles, _num_angles = analyzer.load_experimental_data()
 
     # If only plotting experimental data, exit after loading and plotting
     if args.plot_experimental_data:
@@ -635,7 +635,7 @@ def run_classical_optimization(
         if output_dir is not None and best_params is not None:
             # Create time arrays using correct dt from analyzer
             dt = analyzer.dt
-            n_angles, n_t2, n_t1 = c2_exp.shape
+            _n_angles, n_t2, n_t1 = c2_exp.shape
             t2 = np.arange(n_t2) * dt
             t1 = np.arange(n_t1) * dt
 
@@ -826,7 +826,7 @@ def run_robust_optimization(
         if output_dir is not None and best_params is not None:
             # Create time arrays using correct dt from analyzer
             dt = analyzer.dt
-            n_angles, n_t2, n_t1 = c2_exp.shape
+            _n_angles, n_t2, n_t1 = c2_exp.shape
             t2 = np.arange(n_t2) * dt
             t1 = np.arange(n_t1) * dt
 
@@ -1082,7 +1082,7 @@ def _generate_classical_plots(
 
         # Initialize time arrays for plotting
         dt = analyzer.dt
-        n_angles, n_t2, n_t1 = c2_exp.shape
+        _n_angles, n_t2, n_t1 = c2_exp.shape
         t2 = np.arange(n_t2) * dt
         t1 = np.arange(n_t1) * dt
 
@@ -1811,7 +1811,7 @@ def _generate_robust_plots(
 
         # Initialize time arrays for plotting using correct dt from analyzer
         dt = analyzer.dt
-        n_angles, n_t2, n_t1 = c2_exp.shape
+        _n_angles, n_t2, n_t1 = c2_exp.shape
         t2 = np.arange(n_t2) * dt
         t1 = np.arange(n_t1) * dt
 

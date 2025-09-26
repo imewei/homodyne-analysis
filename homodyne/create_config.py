@@ -35,7 +35,6 @@ Generated Configuration Includes:
 
 import argparse
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -66,42 +65,42 @@ def _remove_mcmc_sections(config):
     # Remove top-level MCMC sections
     mcmc_sections_to_remove = []
     for key in config.keys():
-        if key.startswith('mcmc_'):
+        if key.startswith("mcmc_"):
             mcmc_sections_to_remove.append(key)
 
     # Create clean configuration
     clean_config = {}
     for key, value in config.items():
         if key not in mcmc_sections_to_remove:
-            if key == 'optimization_config' and isinstance(value, dict):
+            if key == "optimization_config" and isinstance(value, dict):
                 # Clean optimization_config of MCMC subsections
                 clean_opt_config = {}
                 for opt_key, opt_value in value.items():
-                    if not opt_key.startswith('mcmc_'):
+                    if not opt_key.startswith("mcmc_"):
                         clean_opt_config[opt_key] = opt_value
                 clean_config[key] = clean_opt_config
-            elif key == 'workflow_integration' and isinstance(value, dict):
+            elif key == "workflow_integration" and isinstance(value, dict):
                 # Clean workflow_integration of MCMC subsections
                 clean_workflow_config = {}
                 for workflow_key, workflow_value in value.items():
-                    if not workflow_key.startswith('mcmc_'):
+                    if not workflow_key.startswith("mcmc_"):
                         clean_workflow_config[workflow_key] = workflow_value
                 clean_config[key] = clean_workflow_config
-            elif key == 'validation_rules' and isinstance(value, dict):
+            elif key == "validation_rules" and isinstance(value, dict):
                 # Clean validation_rules of MCMC subsections
                 clean_validation_config = {}
                 for val_key, val_value in value.items():
-                    if not val_key.startswith('mcmc_'):
+                    if not val_key.startswith("mcmc_"):
                         clean_validation_config[val_key] = val_value
                 clean_config[key] = clean_validation_config
-            elif key == 'output_settings' and isinstance(value, dict):
+            elif key == "output_settings" and isinstance(value, dict):
                 # Clean output_settings of MCMC plotting references
                 clean_output_config = {}
                 for out_key, out_value in value.items():
-                    if out_key == 'plotting' and isinstance(out_value, dict):
+                    if out_key == "plotting" and isinstance(out_value, dict):
                         clean_plotting_config = {}
                         for plot_key, plot_value in out_value.items():
-                            if not plot_key.startswith('mcmc_'):
+                            if not plot_key.startswith("mcmc_"):
                                 clean_plotting_config[plot_key] = plot_value
                         clean_output_config[out_key] = clean_plotting_config
                     else:
@@ -298,7 +297,9 @@ def create_config_from_template(
 
     print("\nAvailable methods:")
     print("  --method classical  # Nelder-Mead and Gurobi optimization")
-    print("  --method robust     # Wasserstein, scenario, and ellipsoidal robust methods")
+    print(
+        "  --method robust     # Wasserstein, scenario, and ellipsoidal robust methods"
+    )
     print("  --method all        # All available methods (classical + robust)")
     print("\nDocumentation: CONFIGURATION_MODES.md")
     print(f"Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
@@ -307,16 +308,6 @@ def create_config_from_template(
 def main():
     """Command-line interface for config creation."""
     # Check Python version requirement
-    if sys.version_info < (3, 12):
-        print(
-            f"Error: Python 3.12+ is required. You are using Python {sys.version}",
-            file=sys.stderr,
-        )
-        print(
-            "Please upgrade your Python installation or use a compatible environment.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
     parser = argparse.ArgumentParser(
         description="Create homodyne analysis configuration from mode-specific templates",
         formatter_class=argparse.RawDescriptionHelpFormatter,

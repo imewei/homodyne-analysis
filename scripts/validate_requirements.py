@@ -9,36 +9,38 @@ Usage:
     python scripts/validate_requirements.py
 """
 
+import re
 import sys
 from pathlib import Path
-import toml
-import re
-from typing import Dict, List, Set, Tuple
 
-def parse_requirements_file(file_path: Path) -> Set[str]:
+import toml  # type: ignore[import-untyped]
+
+
+def parse_requirements_file(file_path: Path) -> set[str]:
     """Parse a requirements file and return set of package names."""
-    packages = set()
+    packages: set[str] = set()
 
     if not file_path.exists():
         print(f"⚠️  Requirements file not found: {file_path}")
         return packages
 
-    with open(file_path, 'r') as f:
+    with open(file_path) as f:
         for line in f:
             line = line.strip()
 
             # Skip comments, empty lines, and -r includes
-            if not line or line.startswith('#') or line.startswith('-r'):
+            if not line or line.startswith("#") or line.startswith("-r"):
                 continue
 
             # Extract package name (before version specifiers)
-            package_match = re.match(r'^([a-zA-Z0-9_-]+)', line)
+            package_match = re.match(r"^([a-zA-Z0-9_-]+)", line)
             if package_match:
                 packages.add(package_match.group(1).lower())
 
     return packages
 
-def get_pyproject_dependencies() -> Dict[str, Set[str]]:
+
+def get_pyproject_dependencies() -> dict[str, set[str]]:
     """Extract dependencies from pyproject.toml."""
     pyproject_path = Path("pyproject.toml")
 
@@ -46,33 +48,34 @@ def get_pyproject_dependencies() -> Dict[str, Set[str]]:
         print("❌ pyproject.toml not found!")
         return {}
 
-    with open(pyproject_path, 'r') as f:
+    with open(pyproject_path) as f:
         pyproject = toml.load(f)
 
     deps = {}
 
     # Core dependencies
     core_deps = set()
-    for dep in pyproject.get('project', {}).get('dependencies', []):
-        package_match = re.match(r'^([a-zA-Z0-9_-]+)', dep)
+    for dep in pyproject.get("project", {}).get("dependencies", []):
+        package_match = re.match(r"^([a-zA-Z0-9_-]+)", dep)
         if package_match:
             core_deps.add(package_match.group(1).lower())
-    deps['core'] = core_deps
+    deps["core"] = core_deps
 
     # Optional dependencies
-    optional_deps = pyproject.get('project', {}).get('optional-dependencies', {})
+    optional_deps = pyproject.get("project", {}).get("optional-dependencies", {})
     for group, dep_list in optional_deps.items():
         group_deps = set()
         for dep in dep_list:
             # Skip self-references like "homodyne-analysis[test,docs]"
-            if 'homodyne-analysis[' in dep:
+            if "homodyne-analysis[" in dep:
                 continue
-            package_match = re.match(r'^([a-zA-Z0-9_-]+)', dep)
+            package_match = re.match(r"^([a-zA-Z0-9_-]+)", dep)
             if package_match:
                 group_deps.add(package_match.group(1).lower())
         deps[group] = group_deps
 
     return deps
+
 
 def validate_requirements():
     """Validate all requirements files against pyproject.toml."""
@@ -126,33 +129,35 @@ def validate_requirements():
         print(f"📊 {req_file}: {len(req_packages)} packages")
 
     # Validate requirements-optional.txt (comprehensive)
-    print(f"\n🧪 Validating requirements-optional.txt...")
+    print("\n🧪 Validating requirements-optional.txt...")
     opt_req_path = Path("requirements-optional.txt")
     opt_packages = parse_requirements_file(opt_req_path)
 
     # Expected packages from multiple groups
     expected_optional = set()
-    for group in ['data', 'performance', 'jax', 'robust', 'gurobi', 'completion']:
+    for group in ["data", "performance", "jax", "robust", "gurobi", "completion"]:
         expected_optional.update(pyproject_deps.get(group, set()))
 
     missing_opt = expected_optional - opt_packages
     if missing_opt:
-        print(f"❌ Missing packages in requirements-optional.txt: {sorted(missing_opt)}")
+        print(
+            f"❌ Missing packages in requirements-optional.txt: {sorted(missing_opt)}"
+        )
         validation_results.append(False)
     else:
-        print(f"✅ All expected optional packages present")
+        print("✅ All expected optional packages present")
         validation_results.append(True)
 
     print(f"📊 requirements-optional.txt: {len(opt_packages)} packages")
 
     # Validate requirements-dev.txt (comprehensive)
-    print(f"\n🧪 Validating requirements-dev.txt...")
+    print("\n🧪 Validating requirements-dev.txt...")
     dev_req_path = Path("requirements-dev.txt")
     dev_packages = parse_requirements_file(dev_req_path)
 
     # Expected packages from dev-related groups
     expected_dev = set()
-    for group in ['test', 'docs', 'quality', 'typing', 'completion']:
+    for group in ["test", "docs", "quality", "typing", "completion"]:
         expected_dev.update(pyproject_deps.get(group, set()))
 
     missing_dev = expected_dev - dev_packages
@@ -160,20 +165,20 @@ def validate_requirements():
         print(f"❌ Missing packages in requirements-dev.txt: {sorted(missing_dev)}")
         validation_results.append(False)
     else:
-        print(f"✅ All expected development packages present")
+        print("✅ All expected development packages present")
         validation_results.append(True)
 
     print(f"📊 requirements-dev.txt: {len(dev_packages)} packages")
 
     # Check for MCMC-related packages (should be absent)
-    print(f"\n🧪 Checking for deprecated MCMC packages...")
-    mcmc_packages = {'pymc', 'arviz', 'pytensor', 'corner'}
+    print("\n🧪 Checking for deprecated MCMC packages...")
+    mcmc_packages = {"pymc", "arviz", "pytensor", "corner"}
 
     all_req_files = [
         "requirements.txt",
         "requirements-jax.txt",
         "requirements-optional.txt",
-        "requirements-dev.txt"
+        "requirements-dev.txt",
     ]
 
     mcmc_found = False
@@ -207,6 +212,7 @@ def validate_requirements():
         print("🔧 Please review and update requirements files")
 
     return passed == total
+
 
 if __name__ == "__main__":
     success = validate_requirements()
