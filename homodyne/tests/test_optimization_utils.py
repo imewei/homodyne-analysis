@@ -35,9 +35,9 @@ def test_optimization_counter_functionality():
 
     # Test increment functionality
     first_increment = increment_optimization_counter()
-    assert (
-        first_increment == 1
-    ), f"Expected first increment to return 1, got {first_increment}"
+    assert first_increment == 1, (
+        f"Expected first increment to return 1, got {first_increment}"
+    )
     assert get_optimization_counter() == 1, "Expected counter to be 1 after increment"
     print("✅ Counter increment working correctly")
 
@@ -45,12 +45,12 @@ def test_optimization_counter_functionality():
     for i in range(2, 6):  # Test counts 2-5
         count = increment_optimization_counter()
         expected = i
-        assert (
-            count == expected
-        ), f"Expected increment {i} to return {expected}, got {count}"
-        assert (
-            get_optimization_counter() == expected
-        ), f"Expected counter to be {expected}"
+        assert count == expected, (
+            f"Expected increment {i} to return {expected}, got {count}"
+        )
+        assert get_optimization_counter() == expected, (
+            f"Expected counter to be {expected}"
+        )
 
     print("✅ Multiple increments working correctly")
 
@@ -62,9 +62,9 @@ def test_optimization_counter_functionality():
 
     # Test that increment works after reset
     after_reset_increment = increment_optimization_counter()
-    assert (
-        after_reset_increment == 1
-    ), f"Expected first increment after reset to return 1, got {after_reset_increment}"
+    assert after_reset_increment == 1, (
+        f"Expected first increment after reset to return 1, got {after_reset_increment}"
+    )
     print("✅ Counter functionality complete and correct")
 
 
@@ -84,9 +84,9 @@ def test_numba_availability_detection():
     from homodyne.core.optimization_utils import NUMBA_AVAILABLE
 
     # With numba mocked as None, NUMBA_AVAILABLE should be False
-    assert (
-        not NUMBA_AVAILABLE
-    ), f"Expected NUMBA_AVAILABLE to be False when numba is mocked, got {NUMBA_AVAILABLE}"
+    assert not NUMBA_AVAILABLE, (
+        f"Expected NUMBA_AVAILABLE to be False when numba is mocked, got {NUMBA_AVAILABLE}"
+    )
     print("✅ Numba unavailable detection working correctly")
 
     # Test with numba mocked as available
@@ -102,9 +102,9 @@ def test_numba_availability_detection():
         from homodyne.core.optimization_utils import NUMBA_AVAILABLE
 
         # With mock numba available, NUMBA_AVAILABLE should be True
-        assert (
-            NUMBA_AVAILABLE
-        ), f"Expected NUMBA_AVAILABLE to be True when numba is available, got {NUMBA_AVAILABLE}"
+        assert NUMBA_AVAILABLE, (
+            f"Expected NUMBA_AVAILABLE to be True when numba is available, got {NUMBA_AVAILABLE}"
+        )
         print("✅ Numba available detection working correctly")
 
     # Reset numba mocking for other tests
@@ -149,9 +149,9 @@ def test_integration_with_classical_optimizer():
 
         # Test get counter
         initial = optimizer.get_optimization_counter()
-        assert (
-            initial == 0
-        ), f"Expected initial counter from optimizer to be 0, got {initial}"
+        assert initial == 0, (
+            f"Expected initial counter from optimizer to be 0, got {initial}"
+        )
         print("✅ Classical optimizer get counter integration working")
 
         print("✅ Classical optimizer integration complete and correct")
@@ -189,9 +189,9 @@ def test_integration_with_analysis_core():
         from homodyne.core.optimization_utils import increment_optimization_counter
 
         # Test that analysis core correctly imports NUMBA_AVAILABLE from our shared module
-        assert (
-            not NUMBA_AVAILABLE
-        ), f"Expected NUMBA_AVAILABLE to be False in analysis core with mocked numba, got {NUMBA_AVAILABLE}"
+        assert not NUMBA_AVAILABLE, (
+            f"Expected NUMBA_AVAILABLE to be False in analysis core with mocked numba, got {NUMBA_AVAILABLE}"
+        )
         print("✅ Analysis core NUMBA_AVAILABLE import working")
 
         # Test that increment function works (this is what analysis core calls)
@@ -233,18 +233,18 @@ def test_module_imports_correctly():
 
         # Verify all expected attributes are present
         assert hasattr(opt_utils, "NUMBA_AVAILABLE"), "Module missing NUMBA_AVAILABLE"
-        assert hasattr(
-            opt_utils, "OPTIMIZATION_COUNTER"
-        ), "Module missing OPTIMIZATION_COUNTER"
-        assert hasattr(
-            opt_utils, "get_optimization_counter"
-        ), "Module missing get_optimization_counter"
-        assert hasattr(
-            opt_utils, "reset_optimization_counter"
-        ), "Module missing reset_optimization_counter"
-        assert hasattr(
-            opt_utils, "increment_optimization_counter"
-        ), "Module missing increment_optimization_counter"
+        assert hasattr(opt_utils, "OPTIMIZATION_COUNTER"), (
+            "Module missing OPTIMIZATION_COUNTER"
+        )
+        assert hasattr(opt_utils, "get_optimization_counter"), (
+            "Module missing get_optimization_counter"
+        )
+        assert hasattr(opt_utils, "reset_optimization_counter"), (
+            "Module missing reset_optimization_counter"
+        )
+        assert hasattr(opt_utils, "increment_optimization_counter"), (
+            "Module missing increment_optimization_counter"
+        )
 
         print("✅ Module attribute availability working")
         print("✅ Module import functionality complete and correct")

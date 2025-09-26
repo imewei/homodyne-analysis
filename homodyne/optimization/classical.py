@@ -202,9 +202,9 @@ class ClassicalOptimizer:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data to satisfy type checker
-        assert (
-            phi_angles is not None and c2_experimental is not None
-        ), "Failed to load experimental data"
+        assert phi_angles is not None and c2_experimental is not None, (
+            "Failed to load experimental data"
+        )
 
         best_result = None
         best_params = None
