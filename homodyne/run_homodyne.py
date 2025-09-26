@@ -1816,7 +1816,7 @@ def _generate_robust_plots(
         t1 = np.arange(n_t1) * dt
 
         # Generate theoretical data with best parameters
-        c2_theory = analyzer.calculate_c2_single_angle_optimized(
+        c2_theory = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
             best_params, phi_angles
         )
 

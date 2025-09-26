@@ -158,7 +158,7 @@ class RobustHomodyneOptimizer:
         self,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, tuple[np.ndarray, np.ndarray]]:
         """
         Subsample experimental data to reduce memory usage in robust optimization.
 
@@ -174,8 +174,8 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        tuple[np.ndarray, np.ndarray]
-            (subsampled_phi_angles, subsampled_c2_data)
+        tuple[np.ndarray, np.ndarray, tuple[np.ndarray, np.ndarray]]
+            (subsampled_phi_angles, subsampled_c2_data, (angle_indices, time_indices))
         """
         max_data_points = self.settings.get("max_data_points", 50000)
         time_subsample = self.settings.get("time_subsample_factor", 4)
@@ -190,7 +190,10 @@ class RobustHomodyneOptimizer:
         # If data is already small enough, return as-is
         if current_size <= max_data_points:
             logger.info("Data size acceptable - no subsampling needed")
-            return phi_angles, c2_experimental
+            # Return full indices for no subsampling case
+            angle_indices = np.arange(len(phi_angles))
+            time_indices = np.arange(n_times)
+            return phi_angles, c2_experimental, (angle_indices, time_indices)
 
         # Subsample angles (every angle_subsample_factor angles)
         angle_indices = np.arange(0, len(phi_angles), angle_subsample)
@@ -216,6 +219,9 @@ class RobustHomodyneOptimizer:
             time_indices_2 = np.arange(0, new_n_times, additional_time_factor)
             subsampled_c2_data = subsampled_c2_data[:, time_indices_2, :][:, :, time_indices_2]
 
+            # Update time_indices to reflect the additional subsampling
+            time_indices = time_indices[time_indices_2]
+
             final_n_angles, final_n_times, _ = subsampled_c2_data.shape
             final_size = final_n_angles * final_n_times * final_n_times
             final_reduction = current_size / final_size
@@ -223,7 +229,41 @@ class RobustHomodyneOptimizer:
             logger.info(f"Final data size: {final_size:,} points ({final_n_angles} angles × {final_n_times}² times)")
             logger.info(f"Total memory reduction: {final_reduction:.1f}x smaller")
 
-        return subsampled_phi_angles, subsampled_c2_data
+        return subsampled_phi_angles, subsampled_c2_data, (angle_indices, time_indices)
+
+    def _apply_subsampling_to_fitted_data(
+        self,
+        fitted_data: np.ndarray,
+        angle_indices: np.ndarray,
+        time_indices: np.ndarray
+    ) -> np.ndarray:
+        """
+        Apply the same subsampling pattern to fitted correlation data.
+
+        This ensures fitted data has the same shape as subsampled experimental data
+        for CVXPY operations, avoiding shape mismatch errors.
+
+        Parameters
+        ----------
+        fitted_data : np.ndarray
+            Fitted correlation data from core engine (n_angles, n_times, n_times)
+        angle_indices : np.ndarray
+            Indices used for angle subsampling
+        time_indices : np.ndarray
+            Indices used for time subsampling
+
+        Returns
+        -------
+        np.ndarray
+            Subsampled fitted data matching experimental data shape
+        """
+        # Apply angle subsampling
+        subsampled_angles = fitted_data[angle_indices]
+
+        # Apply time subsampling to both time dimensions
+        subsampled_data = subsampled_angles[:, time_indices, :][:, :, time_indices]
+
+        return subsampled_data
 
     def run_robust_optimization(
         self,
@@ -326,7 +366,7 @@ class RobustHomodyneOptimizer:
             uncertainty_radius = self.settings["uncertainty_radius"]
 
         # Subsample data for memory efficiency
-        phi_angles_sub, c2_experimental_sub = self._subsample_data_for_memory(
+        phi_angles_sub, c2_experimental_sub, (angle_indices, time_indices) = self._subsample_data_for_memory(
             phi_angles, c2_experimental
         )
 
@@ -365,7 +405,7 @@ class RobustHomodyneOptimizer:
             # Compute fitted correlation function (linearized around
             # theta_init) using subsampled data
             c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles_sub, c2_experimental_sub
+                theta_init, phi_angles_sub, c2_experimental_sub, angle_indices, time_indices
             )
 
             # Linear approximation: c2_fitted ≈ c2_fitted_init + J @ (theta -
@@ -494,7 +534,7 @@ class RobustHomodyneOptimizer:
             n_scenarios = self.settings["n_scenarios"]
 
         # Subsample data for memory efficiency
-        phi_angles_sub, c2_experimental_sub = self._subsample_data_for_memory(
+        phi_angles_sub, c2_experimental_sub, (angle_indices, time_indices) = self._subsample_data_for_memory(
             phi_angles, c2_experimental
         )
 
@@ -552,7 +592,7 @@ class RobustHomodyneOptimizer:
             # Optimized: Pre-compute linearized correlation once outside the
             # loop (using subsampled data)
             c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles_sub, c2_experimental_sub
+                theta_init, phi_angles_sub, c2_experimental_sub, angle_indices, time_indices
             )
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
@@ -663,7 +703,7 @@ class RobustHomodyneOptimizer:
             gamma = float(0.1 * np.linalg.norm(c2_experimental))
 
         # Subsample data for memory efficiency
-        phi_angles_sub, c2_experimental_sub = self._subsample_data_for_memory(
+        phi_angles_sub, c2_experimental_sub, (angle_indices, time_indices) = self._subsample_data_for_memory(
             phi_angles, c2_experimental
         )
 
@@ -697,7 +737,7 @@ class RobustHomodyneOptimizer:
 
             # Linearized fitted correlation function (using subsampled data)
             c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles_sub, c2_experimental_sub
+                theta_init, phi_angles_sub, c2_experimental_sub, angle_indices, time_indices
             )
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
@@ -842,6 +882,8 @@ class RobustHomodyneOptimizer:
         theta: np.ndarray,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
+        angle_indices: np.ndarray | None = None,
+        time_indices: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute fitted correlation function and its Jacobian for linearization.
@@ -857,6 +899,10 @@ class RobustHomodyneOptimizer:
             Angular positions
         c2_experimental : np.ndarray
             Experimental data for scaling optimization
+        angle_indices : np.ndarray, optional
+            Indices used for angle subsampling
+        time_indices : np.ndarray, optional
+            Indices used for time subsampling
 
         Returns
         -------
@@ -874,7 +920,7 @@ class RobustHomodyneOptimizer:
             return self._jacobian_cache[theta_key]
 
         # Compute fitted correlation function at theta (with scaling applied)
-        c2_fitted = self._compute_fitted_correlation(theta, phi_angles, c2_experimental)
+        c2_fitted = self._compute_fitted_correlation(theta, phi_angles, c2_experimental, angle_indices, time_indices)
 
         # Optimized Jacobian computation with adaptive epsilon
         epsilon = self.settings.get("jacobian_epsilon", 1e-6)
@@ -897,10 +943,10 @@ class RobustHomodyneOptimizer:
             theta_perturbations
         ):
             c2_plus = self._compute_fitted_correlation(
-                theta_plus, phi_angles, c2_experimental
+                theta_plus, phi_angles, c2_experimental, angle_indices, time_indices
             )
             c2_minus = self._compute_fitted_correlation(
-                theta_minus, phi_angles, c2_experimental
+                theta_minus, phi_angles, c2_experimental, angle_indices, time_indices
             )
 
             jacobian[:, i] = (c2_plus.flatten() - c2_minus.flatten()) / (
@@ -968,6 +1014,8 @@ class RobustHomodyneOptimizer:
         theta: np.ndarray,
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
+        angle_indices: np.ndarray | None = None,
+        time_indices: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Compute fitted correlation function with proper scaling: fitted = contrast * theory + offset.
@@ -983,6 +1031,10 @@ class RobustHomodyneOptimizer:
             Angular positions
         c2_experimental : np.ndarray
             Experimental data for scaling optimization
+        angle_indices : np.ndarray, optional
+            Indices used for angle subsampling
+        time_indices : np.ndarray, optional
+            Indices used for time subsampling
 
         Returns
         -------
@@ -998,7 +1050,32 @@ class RobustHomodyneOptimizer:
                 c2_theory = self._correlation_cache[theta_key]
             else:
                 # Get raw theoretical correlation
-                c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
+                # Handle subsampling: if we have subsampling indices, call core with original data
+                if angle_indices is not None and time_indices is not None:
+                    # Reconstruct original phi_angles from subsampling
+                    # We need to get the original angles from which phi_angles was subsampled
+                    # For now, try to get them from the core or use a reasonable reconstruction
+                    try:
+                        # Try to get original phi_angles from core attributes
+                        if hasattr(self.core, 'phi_angles_full'):
+                            original_phi_angles = self.core.phi_angles_full
+                        elif hasattr(self.core, 'config_manager') and hasattr(self.core.config_manager, 'phi_angles'):
+                            original_phi_angles = self.core.config_manager.phi_angles
+                        else:
+                            # Fallback: reconstruct using angle step size
+                            angle_step = phi_angles[1] - phi_angles[0] if len(phi_angles) > 1 else 0.1
+                            n_original_angles = len(angle_indices) * self.settings.get('angle_subsample_factor', 2)
+                            original_phi_angles = np.linspace(phi_angles[0], phi_angles[0] + (n_original_angles - 1) * angle_step, n_original_angles)
+
+                        c2_theory_full = self._compute_theoretical_correlation(theta, original_phi_angles)
+                        # Apply subsampling to match experimental data shape
+                        c2_theory = self._apply_subsampling_to_fitted_data(c2_theory_full, angle_indices, time_indices)
+                    except Exception as e:
+                        logger.warning(f"Failed to use original phi_angles for subsampling: {e}. Using direct computation.")
+                        # Fallback: use direct computation and hope shapes match
+                        c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
+                else:
+                    c2_theory = self._compute_theoretical_correlation(theta, phi_angles)
 
                 # Cache if enabled
                 if theta_key and self.settings.get("enable_caching", True):
