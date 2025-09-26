@@ -863,8 +863,12 @@ class RobustHomodyneOptimizer:
         Tuple[np.ndarray, np.ndarray]
             (fitted_correlation_function, jacobian_matrix)
         """
-        # Create cache key for performance optimization
-        theta_key = tuple(theta) if self.settings.get("enable_caching", True) else None
+        # Disable caching for robust optimization to avoid shape mismatch issues
+        # Note: The shape mismatch occurs because the core analysis engine returns
+        # data with original time dimensions even when passed subsampled phi_angles.
+        # The core engine's internal state (time_length, time_array) was set during
+        # initialization with full data, so it ignores subsampled time dimensions.
+        theta_key = None
 
         if theta_key and theta_key in self._jacobian_cache:
             return self._jacobian_cache[theta_key]
@@ -986,10 +990,9 @@ class RobustHomodyneOptimizer:
             Fitted correlation function (scaled to match experimental data)
         """
         try:
-            # Performance optimization: cache theoretical correlation
-            theta_key = (
-                tuple(theta) if self.settings.get("enable_caching", True) else None
-            )
+            # Disable caching for robust optimization to avoid shape mismatch issues
+            # Core analysis engine returns original time dimensions even with subsampled angles
+            theta_key = None
 
             if theta_key and theta_key in self._correlation_cache:
                 c2_theory = self._correlation_cache[theta_key]
