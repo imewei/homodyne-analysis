@@ -764,9 +764,15 @@ def run_robust_optimization(
             try:
                 logger.info(f"  Trying Robust-{method.capitalize()}...")
 
+                # Convert initial parameters to NumPy array if needed
+                if not isinstance(initial_params, np.ndarray):
+                    initial_params_array = np.array(initial_params)
+                else:
+                    initial_params_array = initial_params
+
                 # Run individual robust method
                 params, method_info = robust_optimizer.run_robust_optimization(
-                    initial_parameters=initial_params,
+                    initial_parameters=initial_params_array,
                     phi_angles=phi_angles,
                     c2_experimental=c2_exp,
                     method=method,
