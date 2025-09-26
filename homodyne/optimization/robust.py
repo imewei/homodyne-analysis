@@ -136,6 +136,10 @@ class RobustHomodyneOptimizer:
             "jacobian_epsilon": 1e-6,  # Finite difference step size
             "enable_caching": True,  # Enable performance caching
             "preferred_solver": "CLARABEL",  # Preferred solver
+            # Memory optimization settings
+            "max_data_points": 50000,  # Maximum data points for robust optimization
+            "time_subsample_factor": 4,  # Subsample every N time points
+            "angle_subsample_factor": 2,  # Subsample every N angles
         }
 
         # Merge with user configuration
@@ -149,6 +153,77 @@ class RobustHomodyneOptimizer:
                 "Install with: pip install cvxpy"
             )
         return True
+
+    def _subsample_data_for_memory(
+        self,
+        phi_angles: np.ndarray,
+        c2_experimental: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Subsample experimental data to reduce memory usage in robust optimization.
+
+        This method reduces the data size by subsampling angles and time points
+        to keep the problem size manageable for CVXPY optimization.
+
+        Parameters
+        ----------
+        phi_angles : np.ndarray
+            Full array of angular positions
+        c2_experimental : np.ndarray
+            Full experimental correlation data (n_angles, n_times, n_times)
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            (subsampled_phi_angles, subsampled_c2_data)
+        """
+        max_data_points = self.settings.get("max_data_points", 50000)
+        time_subsample = self.settings.get("time_subsample_factor", 4)
+        angle_subsample = self.settings.get("angle_subsample_factor", 2)
+
+        # Calculate current data size
+        n_angles, n_times, _ = c2_experimental.shape
+        current_size = n_angles * n_times * n_times
+
+        logger.info(f"Original data size: {current_size:,} points ({n_angles} angles × {n_times}² times)")
+
+        # If data is already small enough, return as-is
+        if current_size <= max_data_points:
+            logger.info("Data size acceptable - no subsampling needed")
+            return phi_angles, c2_experimental
+
+        # Subsample angles (every angle_subsample_factor angles)
+        angle_indices = np.arange(0, len(phi_angles), angle_subsample)
+        subsampled_phi_angles = phi_angles[angle_indices]
+        subsampled_c2_angles = c2_experimental[angle_indices]
+
+        # Subsample time points (every time_subsample_factor points)
+        time_indices = np.arange(0, n_times, time_subsample)
+        subsampled_c2_data = subsampled_c2_angles[:, time_indices, :][:, :, time_indices]
+
+        new_n_angles, new_n_times, _ = subsampled_c2_data.shape
+        new_size = new_n_angles * new_n_times * new_n_times
+        reduction_factor = current_size / new_size
+
+        logger.info(f"Subsampled data size: {new_size:,} points ({new_n_angles} angles × {new_n_times}² times)")
+        logger.info(f"Memory reduction: {reduction_factor:.1f}x smaller")
+
+        # If still too large, apply more aggressive subsampling
+        if new_size > max_data_points:
+            additional_time_factor = int(np.ceil(np.sqrt(new_size / max_data_points)))
+            logger.warning(f"Data still too large, applying additional {additional_time_factor}x time subsampling")
+
+            time_indices_2 = np.arange(0, new_n_times, additional_time_factor)
+            subsampled_c2_data = subsampled_c2_data[:, time_indices_2, :][:, :, time_indices_2]
+
+            final_n_angles, final_n_times, _ = subsampled_c2_data.shape
+            final_size = final_n_angles * final_n_times * final_n_times
+            final_reduction = current_size / final_size
+
+            logger.info(f"Final data size: {final_size:,} points ({final_n_angles} angles × {final_n_times}² times)")
+            logger.info(f"Total memory reduction: {final_reduction:.1f}x smaller")
+
+        return subsampled_phi_angles, subsampled_c2_data
 
     def run_robust_optimization(
         self,
@@ -250,6 +325,11 @@ class RobustHomodyneOptimizer:
         if uncertainty_radius is None:
             uncertainty_radius = self.settings["uncertainty_radius"]
 
+        # Subsample data for memory efficiency
+        phi_angles_sub, c2_experimental_sub = self._subsample_data_for_memory(
+            phi_angles, c2_experimental
+        )
+
         n_params = len(theta_init)
 
         # Get parameter bounds (cached for performance)
@@ -262,7 +342,7 @@ class RobustHomodyneOptimizer:
         )
 
         # Estimate data uncertainty from experimental variance
-        data_std = np.std(c2_experimental, axis=-1, keepdims=True)
+        data_std = np.std(c2_experimental_sub, axis=-1, keepdims=True)
         epsilon = uncertainty_radius * np.mean(data_std)
 
         # Log initial chi-squared
@@ -279,13 +359,13 @@ class RobustHomodyneOptimizer:
 
             # CVXPY variables
             theta = cp.Variable(n_params)
-            # Uncertain data perturbations
-            xi = cp.Variable(c2_experimental.shape)
+            # Uncertain data perturbations (using subsampled data)
+            xi = cp.Variable(c2_experimental_sub.shape)
 
             # Compute fitted correlation function (linearized around
-            # theta_init)
+            # theta_init) using subsampled data
             c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles, c2_experimental
+                theta_init, phi_angles_sub, c2_experimental_sub
             )
 
             # Linear approximation: c2_fitted ≈ c2_fitted_init + J @ (theta -
@@ -296,8 +376,8 @@ class RobustHomodyneOptimizer:
             linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Perturbed experimental data
-            c2_perturbed = c2_experimental + xi
+            # Perturbed experimental data (using subsampled data)
+            c2_perturbed = c2_experimental_sub + xi
 
             # Robust objective: minimize worst-case residuals (experimental -
             # fitted)
@@ -413,7 +493,12 @@ class RobustHomodyneOptimizer:
         if n_scenarios is None:
             n_scenarios = self.settings["n_scenarios"]
 
-        # Log initial chi-squared
+        # Subsample data for memory efficiency
+        phi_angles_sub, c2_experimental_sub = self._subsample_data_for_memory(
+            phi_angles, c2_experimental
+        )
+
+        # Log initial chi-squared (using original data for consistent reporting)
         initial_chi_squared = self._compute_chi_squared(
             theta_init, phi_angles, c2_experimental
         )
@@ -429,9 +514,9 @@ class RobustHomodyneOptimizer:
         else:
             n_scenarios = 50  # Default fallback
 
-        # Generate scenarios using bootstrap resampling
+        # Generate scenarios using bootstrap resampling (with subsampled data)
         scenarios = self._generate_bootstrap_scenarios(
-            theta_init, phi_angles, c2_experimental, n_scenarios
+            theta_init, phi_angles_sub, c2_experimental_sub, n_scenarios
         )
 
         n_params = len(theta_init)
@@ -465,9 +550,9 @@ class RobustHomodyneOptimizer:
                         constraints.append(theta[i] <= ub)
 
             # Optimized: Pre-compute linearized correlation once outside the
-            # loop
+            # loop (using subsampled data)
             c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles, c2_experimental
+                theta_init, phi_angles_sub, c2_experimental_sub
             )
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
@@ -577,6 +662,11 @@ class RobustHomodyneOptimizer:
         if gamma is None:
             gamma = float(0.1 * np.linalg.norm(c2_experimental))
 
+        # Subsample data for memory efficiency
+        phi_angles_sub, c2_experimental_sub = self._subsample_data_for_memory(
+            phi_angles, c2_experimental
+        )
+
         # Log initial chi-squared
         initial_chi_squared = self._compute_chi_squared(
             theta_init, phi_angles, c2_experimental
@@ -603,11 +693,11 @@ class RobustHomodyneOptimizer:
 
             # CVXPY variables
             theta = cp.Variable(n_params)
-            delta = cp.Variable(c2_experimental.shape)  # Uncertainty in data
+            delta = cp.Variable(c2_experimental_sub.shape)  # Uncertainty in data (subsampled)
 
-            # Linearized fitted correlation function
+            # Linearized fitted correlation function (using subsampled data)
             c2_fitted_init, jacobian = self._compute_linearized_correlation(
-                theta_init, phi_angles, c2_experimental
+                theta_init, phi_angles_sub, c2_experimental_sub
             )
             delta_theta = theta - theta_init
             # Reshape jacobian @ delta_theta to match c2_fitted_init shape
@@ -615,8 +705,8 @@ class RobustHomodyneOptimizer:
             linear_correction_reshaped = linear_correction.reshape(c2_fitted_init.shape)
             c2_fitted_linear = c2_fitted_init + linear_correction_reshaped
 
-            # Robust residuals (experimental - fitted)
-            c2_perturbed = c2_experimental + delta
+            # Robust residuals (experimental - fitted, using subsampled data)
+            c2_perturbed = c2_experimental_sub + delta
             residuals = c2_perturbed - c2_fitted_linear
 
             # Constraints
