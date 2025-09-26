@@ -7,6 +7,7 @@ run.log
 CLAUDE.md
 WARP.md
 my_conf*.json
+bandit_report.json
 
 # Development scripts
 scripts/dev_cleanup/

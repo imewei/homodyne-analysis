@@ -1,7 +1,7 @@
 # Homodyne Analysis Package - Development Makefile
 # ================================================
 
-.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv install dev-install test test-all lint format docs docs-serve build upload check
+.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv install dev-install test test-all lint format docs docs-serve build upload check build-fast build-dev build-prod watch benchmark cache-stats build-optimize
 
 # Default target
 help:
@@ -52,12 +52,15 @@ dev-install:
 
 # Testing targets
 test:
+	@echo "🧪 Running optimized test suite..."
 	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
 
 test-all:
+	@echo "🧪 Running comprehensive test suite with coverage..."
 	pytest -v --cov=homodyne --cov-report=html --cov-report=term
 
 test-fast:
+	@echo "⚡ Running fast test suite..."
 	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
 
 # Performance testing targets
@@ -93,19 +96,22 @@ baseline-report:
 
 # Code quality targets
 lint:
+	@echo "🔍 Running linting checks..."
 	ruff check homodyne/
 	mypy homodyne/
 
 format:
+	@echo "✨ Formatting code..."
 	ruff format homodyne/ tests/
 	black homodyne/ tests/
 	isort homodyne/ tests/
 
 ruff-fix:
+	@echo "🔧 Auto-fixing linting issues..."
 	ruff check --fix homodyne/
 
 quality: format lint
-	@echo "Code quality checks completed"
+	@echo "✅ Code quality checks completed"
 
 # Cleanup targets
 clean: clean-build clean-pyc clean-test
@@ -138,6 +144,7 @@ clean-test:
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	rm -rf .benchmarks/
+	rm -f bandit*.json
 
 clean-venv:
 	rm -rf venv/
@@ -172,3 +179,104 @@ pre-commit:
 
 install-hooks:
 	pre-commit install
+
+# Build Optimization Targets
+# ==========================
+
+# Fast development build with caching
+build-fast:
+	@echo "🚀 Fast development build with caching..."
+	python build_optimizer.py --mode dev --cache
+
+# Development build with hot reload
+build-dev:
+	@echo "🔥 Starting development server with hot reload..."
+	python build_optimizer.py --mode dev --watch
+
+# Production optimized build
+build-prod:
+	@echo "⚡ Production build with maximum optimization..."
+	python build_optimizer.py --mode production --optimize
+
+# Watch mode for continuous development
+watch:
+	@echo "👀 Starting file watcher for automatic rebuilds..."
+	python build_optimizer.py --watch
+
+# Build performance benchmarking
+benchmark:
+	@echo "📊 Running build performance benchmarks..."
+	python build_optimizer.py --benchmark --compare-baseline
+
+# Build optimization analysis
+build-optimize:
+	@echo "🔧 Analyzing and optimizing build performance..."
+	python build_optimizer.py --mode production --optimize --benchmark
+
+# Cache statistics and cleanup
+cache-stats:
+	@echo "📈 Build cache statistics:"
+	@if [ -f .build_cache/cache_metrics.json ]; then \
+		python -c "import json; data=json.load(open('.build_cache/cache_metrics.json')); print(f'Cache hit rate: {data.get(\"hit_rate\", 0):.1f}%'); print(f'Total entries: {data.get(\"total_entries\", 0)}'); print(f'Last updated: {data.get(\"last_updated\", \"Never\")}')"; \
+	else \
+		echo "No cache statistics available. Run 'make build-fast' first."; \
+	fi
+
+# Parallel testing with optimization
+test-parallel:
+	@echo "🧪 Running tests in parallel..."
+	pytest -n auto --tb=short --continue-on-collection-errors
+
+# Fast test execution with caching
+test-cached:
+	@echo "⚡ Running cached tests..."
+	pytest --cache-clear -q --tb=no --continue-on-collection-errors
+
+# Optimized code quality checks
+quality-fast:
+	@echo "✨ Running optimized code quality checks..."
+	ruff check --fix homodyne/ & \
+	ruff format homodyne/ & \
+	mypy homodyne/ & \
+	wait
+	@echo "Code quality checks completed in parallel"
+
+# Clean build cache
+clean-cache-full:
+	rm -rf .build_cache/
+	rm -rf .pytest_cache/
+	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
+	find . -name '__pycache__' -type d -exec rm -rf {} +
+	@echo "All caches cleaned"
+
+# Development environment optimization
+dev-optimize:
+	@echo "🔧 Optimizing development environment..."
+	pip install -e ".[performance,dev]" --upgrade
+	pre-commit install
+	python build_optimizer.py --clean --cache
+	@echo "Development environment optimized"
+
+# Memory profiling during builds
+profile-memory:
+	@echo "📊 Profiling memory usage during build..."
+	python -m memory_profiler build_optimizer.py --mode dev
+
+# Build system health check
+build-health:
+	@echo "🏥 Build system health check..."
+	@python -c "import sys, psutil, multiprocessing; print(f'Python: {sys.version_info[:2]}'); print(f'CPU cores: {multiprocessing.cpu_count()}'); print(f'Memory: {psutil.virtual_memory().total // (1024**3)} GB'); print(f'Available: {psutil.virtual_memory().available // (1024**3)} GB')"
+	@if command -v ccache >/dev/null 2>&1; then echo "ccache: available"; else echo "ccache: not installed (consider installing for faster C/C++ compilation)"; fi
+	@if command -v ninja >/dev/null 2>&1; then echo "ninja: available"; else echo "ninja: not installed (consider installing for faster builds)"; fi
+
+# Install build optimization dependencies
+install-build-deps:
+	@echo "📦 Installing build optimization dependencies..."
+	pip install psutil toml watchdog cython joblib threadpoolctl
+	if command -v brew >/dev/null 2>&1; then \
+		brew install ccache ninja; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		sudo apt-get install ccache ninja-build; \
+	fi
+	@echo "Build optimization dependencies installed"

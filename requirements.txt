@@ -11,7 +11,7 @@
 # =============================================================================
 # Essential Scientific Computing Libraries
 # =============================================================================
-numpy>=1.24.0,<2.3.0  # Core array operations and mathematical functions
+numpy>=1.24.0,<2.4.0  # Core array operations and mathematical functions
 scipy>=1.9.0          # Scientific computing algorithms and optimization
 matplotlib>=3.5.0     # Basic plotting and visualization
 h5py>=3.8.0           # HDF5 file support for XPCS data loading

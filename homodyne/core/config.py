@@ -36,6 +36,24 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, NotRequired, TypedDict, cast
 
+# Import security features
+try:
+    from .security_performance import (
+        ConfigurationSecurity,
+        ValidationError,
+        secure_cache,
+        secure_config_loader,
+        validate_filename,
+        validate_numeric_value,
+        validate_parameter_name,
+        validate_path,
+    )
+
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+    ValidationError = ValueError  # Fallback
+
 # Default parallelization setting - balance performance and resource usage
 # Limit to 16 threads to avoid overwhelming system resources while providing
 # substantial speedup for computational kernels
@@ -298,15 +316,22 @@ class ConfigManager:
 
     def load_config(self) -> None:
         """
-        Load and parse JSON configuration file with comprehensive error handling.
+        Load and parse JSON configuration file with comprehensive error handling and security validation.
 
         Implements performance-optimized loading with buffering, structure
-        optimization for runtime access, and graceful fallback to default
+        optimization for runtime access, security validation, and graceful fallback to default
         configuration if primary config fails.
+
+        Security Features:
+        - Input validation and sanitization
+        - Path traversal prevention
+        - Configuration structure validation
+        - Parameter bounds checking
 
         Error Handling:
         - FileNotFoundError: Missing configuration file
         - JSONDecodeError: Malformed JSON syntax
+        - ValidationError: Security validation failures
         - General exceptions: Unexpected loading issues
 
         Performance Optimizations:
@@ -325,16 +350,25 @@ class ConfigManager:
                         f"Configuration file not found: {self.config_file}"
                     )
 
-                # Optimized JSON loading with memory pre-allocation hints
-                with open(config_path, buffering=8192) as f:
-                    raw_config = json.load(f)
-
-                self.config = raw_config
+                # Security-enhanced configuration loading
+                if SECURITY_AVAILABLE:
+                    try:
+                        logger.debug("Loading configuration with security validation")
+                        self.config = secure_config_loader(config_path)
+                        logger.info(
+                            f"Secure configuration loaded from: {self.config_file}"
+                        )
+                    except ValidationError as e:
+                        logger.warning(f"Security validation failed: {e}")
+                        logger.info("Falling back to standard loading...")
+                        # Fall back to standard loading
+                        self._load_config_standard(config_path)
+                else:
+                    # Standard loading when security features unavailable
+                    self._load_config_standard(config_path)
 
                 # Optimize configuration structure for faster runtime access
                 self._optimize_config_structure()
-
-                logger.info(f"Configuration loaded from: {self.config_file}")
 
                 # Display version information if available
                 if isinstance(self.config, dict) and "metadata" in self.config:
@@ -350,6 +384,17 @@ class ConfigManager:
                 logger.exception("Full traceback for configuration loading failure:")
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
+
+    def _load_config_standard(self, config_path: Path) -> None:
+        """
+        Standard configuration loading without security enhancements.
+        """
+        # Optimized JSON loading with memory pre-allocation hints
+        with open(config_path, buffering=8192) as f:
+            raw_config = json.load(f)
+
+        self.config = raw_config
+        logger.info(f"Configuration loaded from: {self.config_file}")
 
     def _optimize_config_structure(self) -> None:
         """

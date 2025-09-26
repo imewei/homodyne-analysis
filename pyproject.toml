@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions with comprehensive optimization methods, pre-commit hooks, and cross-platform shell completion"
+description = "Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) with robust optimization methods"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -36,72 +36,53 @@ keywords = [
     "correlation-spectroscopy",
     "soft-matter",
     "nonequilibrium-dynamics",
-    "transport-coefficients",
     "optimization",
     "robust-optimization",
-    "trust-region-optimization",
-    "gurobi",
-    "high-performance-computing",
-    "jit-compilation",
-    "performance-optimization",
-    "code-quality",
-    "pre-commit-hooks",
-    "shell-completion",
-    "cross-platform",
-    "windows-compatibility",
-    "security-scanning",
+    "scientific-computing",
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=1.24.0,<2.3.0",
+    "numpy>=1.24.0,<2.4.0",
     "scipy>=1.9.0",
     "matplotlib>=3.5.0",
     "h5py>=3.8.0",  # HDF5 file support for XPCS data loading
 ]
 
 [project.optional-dependencies]
-data = [
-    # HDF5 support is now included in core dependencies via h5py
-]
 performance = [
-    "numba>=0.61.0,<0.62.0",  # Ensure NumPy 2.2 compatibility
-    "psutil>=5.8.0",  # For memory profiling and system monitoring
+    "numba>=0.62.0,<0.63.0",  # JIT compilation for computational kernels (NumPy 2.2+ compatible)
+    "psutil>=5.8.0",  # System monitoring and memory profiling
+    "joblib>=1.3.0",  # Parallel processing utilities
 ]
 robust = [
     "cvxpy>=1.4.0",  # Convex optimization for robust methods
 ]
-gurobi = [
-    "gurobipy>=11.0.0",  # Gurobi optimization solver (requires license)
-]
-completion = [
-    "argcomplete>=3.0.0",  # Shell tab completion
-]
 docs = [
-    "sphinx>=4.0.0",
-    "sphinx-rtd-theme>=1.0.0",
-    "myst-parser>=0.17.0",
-    "sphinx-autodoc-typehints>=1.12.0",
-    "numpydoc>=1.2.0",
+    "sphinx>=8.2.0",
+    "sphinx-rtd-theme>=3.0.0",
+    "myst-parser>=4.0.0",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "numpydoc>=1.9.0",
     "linkify-it-py>=2.0.0",
 ]
 test = [
-    "pytest>=6.2.0",
-    "pytest-cov>=2.12.0",
-    "pytest-xdist>=2.3.0",
-    "pytest-benchmark>=4.0.0",
-    "pytest-mock>=3.6.0",  # For mocking utilities in tests
+    "pytest>=8.4.0",
+    "pytest-cov>=7.0.0",
+    "pytest-xdist>=3.6.0",
+    "pytest-benchmark>=5.1.0",
+    "pytest-mock>=3.12.0",  # For mocking utilities in tests
     "pytest-html>=4.1.1",  # For HTML test reports
     "pytest-metadata>=3.1.1",  # For test metadata
     "hypothesis>=6.0.0",  # For property-based testing
-    "coverage>=6.2.0",  # Coverage measurement
+    "coverage>=7.0.0",  # Coverage measurement
 ]
 quality = [
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.5.0",
-    "ruff>=0.1.0",  # Modern linter and formatter
-    "bandit>=1.8.0",  # Security linter for Python code
+    "black>=25.0.0",
+    "isort>=6.0.0",
+    "flake8>=7.0.0",
+    "mypy>=1.18.0",
+    "ruff>=0.13.0",  # Modern linter and formatter
+    "bandit>=1.8.6",  # Security linter for Python code
     "pip-audit>=2.6.0",  # Security vulnerability scanner for dependencies
 ]
 typing = [
@@ -111,14 +92,13 @@ typing = [
     "types-requests>=2.28.0",
 ]
 dev = [
-    "homodyne-analysis[test,docs,quality,typing]",
+    "homodyne-analysis[test,docs,quality,performance]",
     "pre-commit>=3.0.0",
-    "tox>=4.0.0",
     "build>=0.10.0",
     "twine>=4.0.0",
 ]
 all = [
-    "homodyne-analysis[data,performance,robust,gurobi,completion,dev]",
+    "homodyne-analysis[performance,robust,dev]",
 ]
 
 [project.urls]
@@ -134,15 +114,14 @@ homodyne-config = "homodyne.create_config:main"
 [tool.setuptools]
 packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
 include-package-data = true
+zip-safe = false  # Ensure compatibility with compiled extensions
 
 [tool.setuptools.package-data]
 homodyne = [
     "config_*.json",
-    "templates/*.json",
     "typings/**/*.pyi",
     "completion_fast.py",
     "cli_completion.py",
-    "*_complete"
 ]
 
 [tool.setuptools.dynamic]
@@ -233,10 +212,6 @@ markers = [
     "integration: marks tests as integration tests",
     "performance: marks performance-related tests",
     "benchmark: marks tests for benchmarking (requires pytest-benchmark)",
-    "memory: marks tests that monitor memory usage",
-    "regression: marks tests for performance regression detection",
-    "import_time: marks tests that measure import performance",
-    "optimization: marks tests for Phase 3 batch optimization features",
 ]
 filterwarnings = [
     "error",

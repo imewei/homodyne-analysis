@@ -12,22 +12,23 @@ recursive-include homodyne/typings *.pyi
 
 # Include configuration templates and data files
 recursive-include homodyne *.json
-recursive-include homodyne/templates *.json
 
 # Include shell completion scripts
 include homodyne_complete
-recursive-include homodyne *_complete
-recursive-include homodyne completion_fast.py
-recursive-include homodyne cli_completion.py
+include homodyne/completion_fast.py
+include homodyne/cli_completion.py
 
 # Include documentation files
 recursive-include docs *.md
 recursive-include docs *.rst
-recursive-include docs *.txt
 recursive-include docs *.py
 include docs/Makefile
-include docs/make.bat
-recursive-include docs/dev *.md
+include docs/conf.py
+recursive-include docs/_static *
+recursive-include docs/api-reference *
+recursive-include docs/dev *
+recursive-include docs/developer-guide *
+recursive-include docs/user-guide *
 
 # Exclude test files from the package
 recursive-exclude homodyne/tests *
@@ -54,8 +55,6 @@ recursive-exclude build *
 recursive-exclude dist *
 recursive-exclude .tox *
 recursive-exclude .venv *
-exclude .benchmarks
-exclude homodyne/.benchmarks
 
 # Exclude coverage and test artifacts
 exclude .coverage
@@ -68,13 +67,9 @@ exclude tox.ini
 include .pre-commit-config.yaml
 
 # Exclude development configuration files
-exclude .claude
 exclude benchmark_performance.py
 exclude my_config*.json
-exclude WARP.md
 exclude bandit_report.json
-exclude .bandit
-exclude .security
 
 # Exclude editor and IDE files
 exclude .vscode

@@ -1,4 +1,8 @@
-name: CI
+# Consolidated CI/CD Pipeline for Homodyne Analysis Scientific Computing
+# DISABLED: Workflows consolidated and moved here for future re-enabling
+# To re-enable: Move to .github/workflows/ and update dependencies as needed
+
+name: Consolidated CI
 
 on:
   push:
@@ -6,6 +10,12 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      run_performance_tests:
+        description: "Run performance benchmarks"
+        required: false
+        default: "false"
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,12 +26,16 @@ env:
   PYTHONUNBUFFERED: 1
   FORCE_COLOR: 1
   PIP_PROGRESS_BAR: off
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
 
 jobs:
+  # ============================================================================
+  # Core Testing
+  # ============================================================================
   test:
-    name: Test (${{ matrix.python-version }})
+    name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -40,21 +54,23 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e ".[test]" || pip install -e "."
-        env:
-          PIP_DISABLE_PIP_VERSION_CHECK: 1
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install -e .
 
-      - name: Run tests (relaxed)
+      - name: Run core tests
         run: |
-          # Run tests with relaxed settings appropriate for scientific computing
-          pytest homodyne/tests/ -v --tb=short --maxfail=10 --continue-on-collection-errors \
-            -x --disable-warnings || echo "Some tests failed but continuing..."
+          pytest homodyne/tests/ -v --tb=short --maxfail=5 \
+            --continue-on-collection-errors --disable-warnings
 
+  # ============================================================================
+  # Code Quality (Non-blocking)
+  # ============================================================================
   quality:
-    name: Code Quality (Relaxed)
+    name: Code Quality
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true  # Don't fail CI on code quality issues
+    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -69,29 +85,33 @@ jobs:
       - name: Install quality tools
         run: |
           python -m pip install --upgrade pip
-          pip install black flake8 isort || echo "Quality tools installation failed"
+          pip install black flake8 isort mypy
 
-      - name: Run Black formatter check (relaxed)
+      - name: Run Black formatter check
         continue-on-error: true
-        run: |
-          black --check --diff --color homodyne/ || echo "Black formatting issues found (non-blocking)"
+        run: black --check --diff --color homodyne/
 
       - name: Run flake8 (relaxed for scientific computing)
         continue-on-error: true
         run: |
-          # Relaxed flake8 settings appropriate for scientific computing
           flake8 homodyne/ --max-line-length=120 --max-complexity=15 \
-            --ignore=E203,W503,E501,C901 --statistics || echo "Flake8 issues found (non-blocking)"
+            --ignore=E203,W503,E501,C901 --statistics
 
-      - name: Check import sorting (relaxed)
+      - name: Check import sorting
         continue-on-error: true
-        run: |
-          isort --check-only --diff --profile black --line-length=120 homodyne/ || echo "Import sorting issues found (non-blocking)"
+        run: isort --check-only --diff --profile black --line-length=120 homodyne/
 
+      - name: Run mypy type checking
+        continue-on-error: true
+        run: mypy homodyne/ --ignore-missing-imports --show-error-codes
+
+  # ============================================================================
+  # Package Building
+  # ============================================================================
   build:
     name: Build Package
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -103,32 +123,110 @@ jobs:
           python-version: "3.12"
 
       - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip build
+        run: python -m pip install --upgrade pip build
 
       - name: Build package
-        run: |
-          python -m build
+        run: python -m build
 
       - name: Test package installation
         run: |
           pip install dist/*.whl
-          python -c "import homodyne; print('Package installed successfully')" || echo "Import test failed but package built"
+          python -c "import homodyne; print('Package installed successfully')"
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+
+  # ============================================================================
+  # Performance Tests (Optional)
+  # ============================================================================
+  performance:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.inputs.run_performance_tests == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies with performance extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-optional.txt
+          pip install -e .
+
+      - name: Run performance benchmarks
+        run: |
+          pytest homodyne/tests/ -k "performance" --benchmark-only \
+            --benchmark-json=benchmark.json || echo "Performance tests completed"
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: benchmark.json
+
+  # ============================================================================
+  # Security Scanning
+  # ============================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit pip-audit
+
+      - name: Run bandit security scan
+        continue-on-error: true
+        run: bandit -r homodyne/ -f json -o bandit-report.json
+
+      - name: Run pip-audit
+        continue-on-error: true
+        run: pip-audit --format=json --output=pip-audit-report.json
+
+  # ============================================================================
+  # Summary
+  # ============================================================================
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [test, quality, build]
+    needs: [test, quality, build, security]
     if: always()
+
     steps:
       - name: Create summary
         run: |
-          echo "## CI Results (Relaxed for Scientific Computing)" >> $GITHUB_STEP_SUMMARY
+          echo "## CI Results" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status | Note |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests | ${{ needs.test.result }} | Core functionality |" >> $GITHUB_STEP_SUMMARY
-          echo "| Quality | ${{ needs.quality.result }} | Non-blocking checks |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result }} | Package creation |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} | Core functionality tests |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality | ${{ needs.quality.result }} | Code quality checks (non-blocking) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} | Package building |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} | Security scanning (non-blocking) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✨ **This workflow is optimized for rapid iteration in scientific computing.**" >> $GITHUB_STEP_SUMMARY
-          echo "Quality checks are advisory only and won't block merges." >> $GITHUB_STEP_SUMMARY
+          echo "✨ **Consolidated workflow for scientific computing package**" >> $GITHUB_STEP_SUMMARY
+          echo "Quality and security checks are advisory and won't block CI." >> $GITHUB_STEP_SUMMARY
