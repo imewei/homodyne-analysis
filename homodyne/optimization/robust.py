@@ -38,7 +38,6 @@ try:
         MemoryLimitError,
         ValidationError,
         monitor_memory,
-        secure_cache,
         secure_scientific_computation,
         validate_array_dimensions,
     )
@@ -81,7 +80,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _bootstrap_resample(data: np.ndarray, n_samples: int = None) -> np.ndarray:
+def _bootstrap_resample(data: np.ndarray, n_samples: int | None = None) -> np.ndarray:
     """
     Simple bootstrap resampling using numpy.
 

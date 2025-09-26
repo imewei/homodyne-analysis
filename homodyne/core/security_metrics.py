@@ -194,7 +194,7 @@ class SecurityMetricsCollector:
 
             # Get recent events
             recent_events = [e for e in self._events if e.timestamp > one_hour_ago]
-            recent_metrics = [m for m in self._metrics if m.timestamp > one_hour_ago]
+            [m for m in self._metrics if m.timestamp > one_hour_ago]
 
             # Calculate component scores
             input_validation_score = self._calculate_input_validation_score(
@@ -573,9 +573,7 @@ def get_security_health_status() -> dict[str, Any]:
         "status": (
             "healthy"
             if health_score.overall_score >= 80
-            else "warning"
-            if health_score.overall_score >= 60
-            else "critical"
+            else "warning" if health_score.overall_score >= 60 else "critical"
         ),
         "component_scores": {
             "input_validation": health_score.input_validation_score,

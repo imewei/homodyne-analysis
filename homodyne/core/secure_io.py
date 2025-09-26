@@ -370,7 +370,7 @@ def load_numpy_secure(
                         return npz_file["data"]
                     else:
                         # Return first array if 'data' key not found
-                        key = list(npz_file.keys())[0]
+                        key = next(iter(npz_file.keys()))
                         return npz_file[key]
             else:
                 return np.load(filepath, mmap_mode=mmap_mode)
@@ -382,7 +382,7 @@ def load_numpy_secure(
                     if "data" in npz_file:
                         return npz_file["data"]
                     else:
-                        key = list(npz_file.keys())[0]
+                        key = next(iter(npz_file.keys()))
                         return npz_file[key]
             else:
                 return np.load(filepath)

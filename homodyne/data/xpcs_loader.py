@@ -24,15 +24,15 @@ Key Features:
 import json
 import logging
 import os
-import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 
 # Handle h5py dependency
 try:
     import h5py
+
     HAS_H5PY = True
 except ImportError:
     HAS_H5PY = False
@@ -44,20 +44,23 @@ logger = logging.getLogger(__name__)
 
 class XPCSDataFormatError(Exception):
     """Raised when XPCS data format is not recognized or invalid."""
+
     pass
 
 
 class XPCSDependencyError(Exception):
     """Raised when required dependencies are not available."""
+
     pass
 
 
 class XPCSConfigurationError(Exception):
     """Raised when configuration is invalid or missing required parameters."""
+
     pass
 
 
-def load_xpcs_config(config_path: Union[str, Path]) -> Dict[str, Any]:
+def load_xpcs_config(config_path: str | Path) -> dict[str, Any]:
     """
     Load XPCS configuration from JSON file.
 
@@ -77,7 +80,7 @@ def load_xpcs_config(config_path: Union[str, Path]) -> Dict[str, Any]:
 
     try:
         if config_path.suffix.lower() == ".json":
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config = json.load(f)
             logger.info(f"Loaded JSON configuration: {config_path}")
             return config
@@ -111,8 +114,8 @@ class XPCSDataLoader:
 
     def __init__(
         self,
-        config_path: Optional[str] = None,
-        config_dict: Optional[Dict] = None,
+        config_path: str | None = None,
+        config_dict: dict | None = None,
     ):
         """
         Initialize XPCS data loader with JSON configuration.
@@ -145,7 +148,7 @@ class XPCSDataLoader:
         # Validate configuration
         self._validate_configuration()
 
-        logger.info(f"XPCS data loader initialized for HDF5 format auto-detection")
+        logger.info("XPCS data loader initialized for HDF5 format auto-detection")
 
     def _check_dependencies(self) -> None:
         """Check for required dependencies and raise error if missing."""
@@ -156,7 +159,9 @@ class XPCSDataLoader:
 
         if missing_deps:
             error_msg = f"Missing required dependencies: {', '.join(missing_deps)}. "
-            error_msg += "Please install them with: pip install " + " ".join(missing_deps)
+            error_msg += "Please install them with: pip install " + " ".join(
+                missing_deps
+            )
             logger.error(error_msg)
             raise XPCSDependencyError(error_msg)
 
@@ -215,7 +220,7 @@ class XPCSDataLoader:
         else:
             return self.analyzer_config.get(param_name, default)
 
-    def load_experimental_data(self) -> Tuple[np.ndarray, int, np.ndarray, int]:
+    def load_experimental_data(self) -> tuple[np.ndarray, int, np.ndarray, int]:
         """
         Load experimental data with priority: cache NPZ → raw HDF → error.
 
@@ -290,7 +295,7 @@ class XPCSDataLoader:
 
         return c2_experimental, time_length, data["phi_angles_list"], num_angles
 
-    def _load_from_cache(self, cache_path: str) -> Dict[str, Any]:
+    def _load_from_cache(self, cache_path: str) -> dict[str, Any]:
         """Load data from NPZ cache file."""
         with np.load(cache_path, allow_pickle=True) as data:
             # Validate cache metadata if available
@@ -303,7 +308,7 @@ class XPCSDataLoader:
                 "c2_exp": data["c2_exp"],
             }
 
-    def _load_from_hdf(self, hdf_path: str) -> Dict[str, Any]:
+    def _load_from_hdf(self, hdf_path: str) -> dict[str, Any]:
         """Load and process data from HDF5 file."""
         # Detect format
         logger.debug("Starting HDF5 format detection")
@@ -348,18 +353,20 @@ class XPCSDataLoader:
                     f"Available root keys: {available_keys}"
                 )
 
-    def _load_aps_old_format(self, hdf_path: str) -> Dict[str, Any]:
+    def _load_aps_old_format(self, hdf_path: str) -> dict[str, Any]:
         """Load data from APS old format HDF5 file."""
         with h5py.File(hdf_path, "r") as f:
             # Load q and phi lists
-            dqlist = f["xpcs/dqlist"][0, :]  # Shape (1, N) -> (N,)
+            # dqlist = f["xpcs/dqlist"][0, :]  # Available but not currently used
             dphilist = f["xpcs/dphilist"][0, :]  # Shape (1, N) -> (N,)
 
             # Load correlation data from exchange/C2T_all
             c2t_group = f["exchange/C2T_all"]
             c2_keys = list(c2t_group.keys())
 
-            logger.debug(f"Loading {len(c2_keys)} correlation matrices from APS old format")
+            logger.debug(
+                f"Loading {len(c2_keys)} correlation matrices from APS old format"
+            )
 
             # Load all correlation matrices
             c2_matrices = []
@@ -386,7 +393,7 @@ class XPCSDataLoader:
                 "c2_exp": c2_exp,
             }
 
-    def _load_aps_u_format(self, hdf_path: str) -> Dict[str, Any]:
+    def _load_aps_u_format(self, hdf_path: str) -> dict[str, Any]:
         """Load data from APS-U new format HDF5 file using processed_bins mapping."""
         with h5py.File(hdf_path, "r") as f:
             # Load the processed_bins mapping
@@ -400,7 +407,9 @@ class XPCSDataLoader:
             n_phi = len(phi_values)
 
             logger.debug(f"APS-U format: {n_q} q-values, {n_phi} phi-values")
-            logger.debug(f"Processed bins: {len(processed_bins)} correlation matrices available")
+            logger.debug(
+                f"Processed bins: {len(processed_bins)} correlation matrices available"
+            )
 
             # Map processed_bins to (q,phi) pairs
             qphi_pairs = []
@@ -426,7 +435,9 @@ class XPCSDataLoader:
             corr_group = f["xpcs/twotime/correlation_map"]
             c2_keys = sorted(corr_group.keys())
 
-            logger.debug(f"Loading {len(valid_bin_indices)} correlation matrices from APS-U format")
+            logger.debug(
+                f"Loading {len(valid_bin_indices)} correlation matrices from APS-U format"
+            )
 
             c2_matrices = []
             for bin_idx in valid_bin_indices:
@@ -497,14 +508,16 @@ class XPCSDataLoader:
         Returns:
             Frame-sliced correlation matrices, shape (n_phi, sliced_frames, sliced_frames)
         """
-        start_frame = self._get_temporal_param("start_frame", 1) - 1  # Convert to 0-based
+        start_frame = (
+            self._get_temporal_param("start_frame", 1) - 1
+        )  # Convert to 0-based
         end_frame = self._get_temporal_param("end_frame", c2_matrices.shape[-1])
 
         # Validate frame parameters
         max_frames = c2_matrices.shape[-1]
         if start_frame < 0:
             start_frame = 0
-            logger.warning(f"start_frame adjusted to 0")
+            logger.warning("start_frame adjusted to 0")
         if end_frame > max_frames:
             end_frame = max_frames
             logger.warning(f"end_frame adjusted to {max_frames}")
@@ -512,21 +525,25 @@ class XPCSDataLoader:
         # Apply frame slicing if needed
         if start_frame > 0 or end_frame < max_frames:
             c2_exp = c2_matrices[:, start_frame:end_frame, start_frame:end_frame]
-            logger.debug(f"Applied frame slicing: [{start_frame}:{end_frame}] -> shape {c2_exp.shape}")
+            logger.debug(
+                f"Applied frame slicing: [{start_frame}:{end_frame}] -> shape {c2_exp.shape}"
+            )
         else:
             c2_exp = c2_matrices
             logger.debug("No frame slicing needed - using full range")
 
         return c2_exp
 
-    def _save_to_cache(self, data: Dict[str, Any], cache_path: str) -> None:
+    def _save_to_cache(self, data: dict[str, Any], cache_path: str) -> None:
         """Save processed data to NPZ cache file with metadata."""
         # Ensure cache directory exists
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
 
         # Add cache metadata
         start_frame = self._get_temporal_param("start_frame", 1)
-        end_frame = self._get_temporal_param("end_frame", data["c2_exp"].shape[-1] + start_frame - 1)
+        end_frame = self._get_temporal_param(
+            "end_frame", data["c2_exp"].shape[-1] + start_frame - 1
+        )
 
         cache_metadata = {
             "start_frame": start_frame,
@@ -551,9 +568,11 @@ class XPCSDataLoader:
         # Log cache statistics
         file_size_mb = os.path.getsize(cache_path) / (1024 * 1024)
         logger.info(f"Cache saved: {cache_path}")
-        logger.info(f"Cache size: {file_size_mb:.2f} MB, Phi angles: {cache_metadata['phi_count']}")
+        logger.info(
+            f"Cache size: {file_size_mb:.2f} MB, Phi angles: {cache_metadata['phi_count']}"
+        )
 
-    def _save_text_files(self, data: Dict[str, Any]) -> None:
+    def _save_text_files(self, data: dict[str, Any]) -> None:
         """Save phi_angles list to text file."""
         # Get output directory
         phi_folder = self.exp_config.get("phi_angles_path", "./")
@@ -592,7 +611,7 @@ class XPCSDataLoader:
 
 
 # Convenience function for simple usage
-def load_xpcs_data(config_path: str) -> Tuple[np.ndarray, int, np.ndarray, int]:
+def load_xpcs_data(config_path: str) -> tuple[np.ndarray, int, np.ndarray, int]:
     """
     Convenience function to load XPCS data from configuration file.
 
@@ -616,10 +635,10 @@ def load_xpcs_data(config_path: str) -> Tuple[np.ndarray, int, np.ndarray, int]:
 
 # Export main classes and functions
 __all__ = [
-    "XPCSDataLoader",
-    "load_xpcs_data",
-    "XPCSDataFormatError",
-    "XPCSDependencyError",
     "XPCSConfigurationError",
+    "XPCSDataFormatError",
+    "XPCSDataLoader",
+    "XPCSDependencyError",
     "load_xpcs_config",
+    "load_xpcs_data",
 ]

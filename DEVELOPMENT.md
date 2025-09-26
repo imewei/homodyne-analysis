@@ -1,14 +1,17 @@
 # Development Guide
 
-This guide covers all aspects of developing the homodyne analysis package: setup, workflow, testing, API reference, and security practices.
+This guide covers all aspects of developing the homodyne analysis package: setup,
+workflow, testing, API reference, and security practices.
 
 ## Development Setup
 
 ### Prerequisites
+
 - Python 3.12+
 - Git
 
 ### Installation
+
 ```bash
 # Clone repository
 git clone https://github.com/imewei/homodyne.git
@@ -27,6 +30,7 @@ pytest -v
 ## Code Quality Standards
 
 ### Formatting and Linting
+
 ```bash
 # Format code
 black homodyne --line-length 88
@@ -45,6 +49,7 @@ pip-audit
 ```
 
 ### Code Quality Status
+
 - ✅ **Black**: 100% compliant (88-character line length)
 - ✅ **isort**: 100% compliant (import sorting)
 - ✅ **Bandit**: 0 medium/high severity security issues
@@ -68,6 +73,7 @@ SKIP=mypy,bandit git commit -m "Emergency commit"
 ```
 
 **Configured hooks:**
+
 - **Black**: Code formatting (88 characters)
 - **isort**: Import sorting (black profile)
 - **Ruff**: Fast linting with auto-fixes
@@ -81,6 +87,7 @@ SKIP=mypy,bandit git commit -m "Emergency commit"
 ## Testing
 
 ### Running Tests
+
 ```bash
 # Basic test run
 pytest -v
@@ -95,12 +102,14 @@ pytest -v -m "integration"       # Integration tests only
 ```
 
 ### Test Categories
+
 - `slow`: Time-intensive tests
 - `integration`: Integration tests
 - `performance`: Performance benchmarks
 - `regression`: Regression tests
 
 ### Writing Tests
+
 - Place tests in `homodyne/tests/`
 - Use descriptive test names: `test_[module]_[feature]_[condition]`
 - Add appropriate markers: `@pytest.mark.slow`
@@ -111,6 +120,7 @@ pytest -v -m "integration"       # Integration tests only
 ### Core Analysis Classes
 
 #### `HomodyneAnalysisCore`
+
 Main analysis engine for XPCS data processing.
 
 ```python
@@ -138,6 +148,7 @@ class HomodyneAnalysisCore:
 ```
 
 #### `ClassicalOptimizer`
+
 Classical optimization methods (Nelder-Mead, Gurobi).
 
 ```python
@@ -165,12 +176,14 @@ class ClassicalOptimizer:
 ```
 
 **Gurobi Trust Region Features:**
+
 - Iterative trust region SQP approach
 - Adaptive trust region: radius 0.1 → 1e-8 to 1.0 range
 - Parameter-scaled finite differences
 - Expected convergence: 10-30 iterations
 
 #### `RobustHomodyneOptimizer`
+
 Robust optimization with uncertainty quantification.
 
 ```python
@@ -189,11 +202,13 @@ class RobustHomodyneOptimizer:
 ```
 
 **Available Methods:**
+
 - `wasserstein`: Wasserstein Distributionally Robust Optimization
 - `scenario`: Scenario-based robust optimization
 - `ellipsoidal`: Ellipsoidal uncertainty sets
 
 #### `ConfigManager`
+
 Configuration management and validation.
 
 ```python
@@ -213,6 +228,7 @@ class ConfigManager:
 ### Utility Functions
 
 #### High-Performance Kernels
+
 ```python
 from homodyne.core.kernels import (
     compute_g1_correlation_numba,
@@ -227,6 +243,7 @@ def solve_least_squares_batch_numba(theory_batch, exp_batch) -> np.ndarray
 ```
 
 #### Data Utilities
+
 ```python
 from homodyne.utils.data import (
     load_experimental_data,
@@ -240,6 +257,7 @@ def validate_data_format(data: np.ndarray) -> bool
 ```
 
 #### Performance Monitoring
+
 ```python
 from homodyne.utils.performance import (
     benchmark_method,
@@ -274,6 +292,7 @@ except OptimizationError as e:
 ### Advanced Usage
 
 #### Custom Objective Functions
+
 ```python
 from homodyne.optimization.classical import ClassicalOptimizer
 
@@ -289,6 +308,7 @@ class CustomOptimizer(ClassicalOptimizer):
 ```
 
 #### Batch Processing
+
 ```python
 def batch_analyze(data_files: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
     results = []
@@ -309,6 +329,7 @@ def batch_analyze(data_files: List[str], config: Dict[str, Any]) -> List[Dict[st
 ## Repository Management
 
 ### Cleaning Development Artifacts
+
 ```bash
 # Quick clean (recommended)
 make clean
@@ -323,6 +344,7 @@ make clean-build   # Build artifacts
 ```
 
 **Files automatically ignored:**
+
 - Bytecode: `__pycache__/`, `*.py[cod]`
 - Build: `build/`, `dist/`, `*.egg-info/`
 - Tests: `.pytest_cache/`, `.coverage*`, `htmlcov/`
@@ -330,6 +352,7 @@ make clean-build   # Build artifacts
 - Data: `data/`, `homodyne_results*/`, `my_config*.json`
 
 ### Before Committing
+
 ```bash
 make clean
 git status  # Verify working tree is clean
@@ -338,6 +361,7 @@ git status  # Verify working tree is clean
 ## Submitting Changes
 
 ### Workflow
+
 ```bash
 # Create feature branch
 git checkout -b feature/your-feature-name
@@ -359,6 +383,7 @@ git push origin feature/your-feature-name
 ```
 
 ### Pull Request Guidelines
+
 - Include tests for new features
 - Update documentation as needed
 - Follow code style guidelines
@@ -369,6 +394,7 @@ git push origin feature/your-feature-name
 ## Release Process
 
 For maintainers:
+
 ```bash
 # Update version in homodyne/__init__.py
 # Clean and test
@@ -389,6 +415,7 @@ make upload  # Upload to PyPI
 ## Security
 
 ### Security Features
+
 - **Bandit**: Continuous security scanning (0 medium/high severity issues)
 - **pip-audit**: Dependency vulnerability scanning
 - **Pre-commit hooks**: Automatic security checks
@@ -397,23 +424,27 @@ make upload  # Upload to PyPI
 ### Reporting Vulnerabilities
 
 **Critical security issues:**
+
 - Email: wchen@anl.gov with subject "SECURITY: Homodyne Vulnerability"
 - Include: Description, reproduction steps, impact assessment
 - Response: Within 48 hours
 - Timeline: Fix within 7-14 days
 
 **Non-critical issues:**
+
 - Create GitHub issue with "security" label
 - Use standard issue template
 
 ### Security Response Process
+
 1. **Acknowledgment**: Receipt within 48 hours
-2. **Assessment**: Impact review (1-3 days)
-3. **Development**: Fix development and testing (3-7 days)
-4. **Release**: Security patch with advisory
-5. **Disclosure**: Coordinated disclosure after fix
+1. **Assessment**: Impact review (1-3 days)
+1. **Development**: Fix development and testing (3-7 days)
+1. **Release**: Security patch with advisory
+1. **Disclosure**: Coordinated disclosure after fix
 
 ### Security Tools
+
 ```bash
 # Manual security scanning
 bandit -r homodyne/ -f json -o bandit_report.json
@@ -429,4 +460,5 @@ safety check --json --output safety_report.json
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the MIT
+License.

@@ -39,9 +39,6 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-# Check Python version requirement early
-import sys
-
 # Performance profiling utilities removed - functionality available via
 # core.config.performance_monitor
 from .analysis.core import HomodyneAnalysisCore

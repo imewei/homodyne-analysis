@@ -9,18 +9,17 @@ Performance target: < 50ms total completion time
 """
 
 import json
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 class UltraFastCache:
     """Minimal cache implementation with zero dependencies."""
 
     def __init__(self) -> None:
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
         try:
             self.cache_file = (
                 Path.home() / ".cache" / "homodyne" / "completion_cache.json"
@@ -95,7 +94,7 @@ class UltraFastCache:
                 "timestamp": time.time(),
             }
 
-    def get_files(self, directory: str = ".") -> List[str]:
+    def get_files(self, directory: str = ".") -> list[str]:
         """Get files with built-in prioritization."""
         files = self._data.get("files", {}).get(directory, [])
 
@@ -111,7 +110,7 @@ class UltraFastCache:
 
         return priority_files + other_files[:8]  # Total limit: ~12 files
 
-    def get_dirs(self, directory: str = ".") -> List[str]:
+    def get_dirs(self, directory: str = ".") -> list[str]:
         """Get directories with built-in prioritization."""
         dirs = self._data.get("dirs", {}).get(directory, [])
 

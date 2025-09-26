@@ -208,7 +208,7 @@ class TestSecureCache:
 
         # Manually corrupt cache entry (simulate attack)
         if "key1" in cache._cache:
-            data, timestamp, old_hash = cache._cache["key1"]
+            data, timestamp, _old_hash = cache._cache["key1"]
             cache._cache["key1"] = (data, timestamp, "corrupted_hash")
 
         # Should return None due to integrity check failure
@@ -262,7 +262,7 @@ class TestSecureFileManager:
         temp_files = []
 
         # Create multiple temp files
-        for i in range(3):
+        for _i in range(3):
             with manager.secure_temp_file() as temp_path:
                 temp_files.append(temp_path)
                 # Files exist during context
@@ -416,7 +416,7 @@ class TestMemoryMonitoring:
     """Test memory monitoring functionality."""
 
     @pytest.mark.skipif(
-        not hasattr(monitor_memory, "__call__"),
+        not callable(monitor_memory),
         reason="Memory monitoring not available",
     )
     def test_memory_monitor_decorator(self):

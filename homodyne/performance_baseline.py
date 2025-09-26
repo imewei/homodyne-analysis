@@ -178,7 +178,7 @@ class PerformanceProfiler:
             end_cpu_times = self.process.cpu_times()
 
             # Get memory peak
-            current, peak = tracemalloc.get_traced_memory()
+            _current, peak = tracemalloc.get_traced_memory()
             tracemalloc.stop()
 
             # Calculate metrics
@@ -282,15 +282,15 @@ class PerformanceProfiler:
 
             # Test chi-squared calculation performance
             with self.monitor_performance("chi_squared_calculation"):
-                for i in range(10):  # Multiple iterations for better measurement
+                for _i in range(10):  # Multiple iterations for better measurement
                     chi2 = core.calculate_chi_squared_optimized(
                         test_params, test_angles, test_data
                     )
 
             # Test correlation function calculation
             with self.monitor_performance("correlation_calculation"):
-                for i in range(5):  # Multiple iterations
-                    corr = core.calculate_c2_nonequilibrium_laminar_parallel(
+                for _i in range(5):  # Multiple iterations
+                    core.calculate_c2_nonequilibrium_laminar_parallel(
                         test_params, test_angles
                     )
 

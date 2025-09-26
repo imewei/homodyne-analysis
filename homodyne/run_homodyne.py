@@ -54,6 +54,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 # Module-level logger for consistent logging across all functions
 logger = logging.getLogger(__name__)
 
@@ -152,8 +154,6 @@ def _handle_completion_fast():
 
 # Call completion handler immediately - before any heavy imports
 _handle_completion_fast()
-
-import numpy as np
 
 # Import completion support
 try:

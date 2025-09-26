@@ -112,7 +112,7 @@
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": 500,
           "_max_iterations_note": "Fewer iterations needed for 3-parameter isotropic case",
-          "tolerance": 1e-06,
+          "tolerance": 1e-6,
           "_tolerance_note": "Convergence tolerance for optimization",
           "output_flag": 0,
           "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
@@ -154,8 +154,8 @@
     },
     "scaling_parameters": {
       "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
-      "fitted_range": {"min": 1.0, "max": 2.0},
-      "theory_range": {"min": 0.0, "max": 1.0},
+      "fitted_range": { "min": 1.0, "max": 2.0 },
+      "theory_range": { "min": 0.0, "max": 1.0 },
       "contrast": {
         "min": 1e-4,
         "max": 0.5,
@@ -240,14 +240,14 @@
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-08,
+      "relative_tolerance": 1e-8,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-08,
+      "convergence_tolerance": 1e-8,
       "max_function_evaluations": 5000,
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-08
+      "finite_difference_step": 1e-8
     }
   },
   "performance_settings": {
@@ -289,7 +289,7 @@
         "stable_benchmarking": false,
         "adaptive_benchmarking": false,
         "performance_baselines": false,
-        "target_cv": 0.10,
+        "target_cv": 0.1,
         "memory_monitoring": true,
         "smart_caching": {
           "enabled": true,

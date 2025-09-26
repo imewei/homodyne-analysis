@@ -62,10 +62,7 @@
       "wavevector_q": 0.001,
       "_q_note": "CUSTOMIZE: Scattering wavevector q = 4\u03c0 sin(\u03b8/2)/\u03bb",
       "q_unit": "\u00c5\u207b\u00b9",
-      "typical_range": [
-        0.001,
-        0.1
-      ]
+      "typical_range": [0.001, 0.1]
     },
     "geometry": {
       "stator_rotor_gap": 2000000,
@@ -87,11 +84,7 @@
     "values": "MODE_DEPENDENT: [100.0,0.0,10.0] for static, [100.0,0.0,10.0,1.0,0.0,0.0,0.0] for laminar_flow",
     "parameter_names": "MODE_DEPENDENT: See _parameter_definitions below",
     "_parameter_definitions": {
-      "static_modes": [
-        "D0",
-        "alpha",
-        "D_offset"
-      ],
+      "static_modes": ["D0", "alpha", "D_offset"],
       "laminar_flow": [
         "D0",
         "alpha",
@@ -148,10 +141,7 @@
       "_performance_note": "Provides 3-5x speedup for complex optimization"
     },
     "classical_optimization": {
-      "methods": [
-        "Nelder-Mead",
-        "Gurobi"
-      ],
+      "methods": ["Nelder-Mead", "Gurobi"],
       "_methods_note": "Classical methods always available. Robust methods in separate section below.",
       "_method_flags": {
         "--method classical": "Runs ONLY classical methods: Nelder-Mead, Gurobi (if licensed)",
@@ -175,7 +165,7 @@
           "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
           "max_iterations": "MODE_DEPENDENT: 500 for static, 1500 for laminar_flow",
           "_max_iterations_note": "Trust region iterations - more needed for complex parameters",
-          "tolerance": 1e-06,
+          "tolerance": 1e-6,
           "_tolerance_note": "Convergence tolerance for trust region updates",
           "output_flag": 0,
           "_output_flag_note": "Gurobi verbosity (0=silent, 1=verbose)",
@@ -219,7 +209,7 @@
       "_regularization_alpha_note": "L2 regularization - higher for complex parameter spaces",
       "regularization_beta": 0.001,
       "_regularization_beta_note": "L1 sparsity parameter",
-      "jacobian_epsilon": 1e-06,
+      "jacobian_epsilon": 1e-6,
       "_jacobian_epsilon_note": "Finite difference step for adaptive Jacobians",
       "enable_caching": true,
       "_enable_caching_note": "Smart caching provides major performance gains",
@@ -316,7 +306,7 @@
       {
         "_laminar_flow_parameter_4": "gamma_dot_t0 (laminar_flow mode only)",
         "name": "gamma_dot_t0",
-        "min": 1e-06,
+        "min": 1e-6,
         "max": 1.0,
         "_customize_note": "Reference shear rate - adjust for your flow conditions",
         "type": "TruncatedNormal",
@@ -397,15 +387,15 @@
     },
     "numerical_integration": {
       "method": "simpson",
-      "relative_tolerance": 1e-08,
+      "relative_tolerance": 1e-8,
       "absolute_tolerance": 1e-12
     },
     "optimization_controls": {
-      "convergence_tolerance": 1e-08,
+      "convergence_tolerance": 1e-8,
       "max_function_evaluations": "MODE_DEPENDENT: 5000 for static, 15000 for laminar_flow",
       "_max_function_evaluations_note": "Higher limits for complex parameter spaces",
       "parameter_scaling": "auto",
-      "finite_difference_step": 1e-08
+      "finite_difference_step": 1e-8
     }
   },
   "performance_settings": {
@@ -539,10 +529,7 @@
     },
     "reporting": {
       "generate_plots": true,
-      "plot_formats": [
-        "png",
-        "pdf"
-      ],
+      "plot_formats": ["png", "pdf"],
       "detailed_summary": true,
       "convergence_diagnostics": true
     },

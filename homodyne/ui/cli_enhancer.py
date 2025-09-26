@@ -208,7 +208,7 @@ class CLIEnhancer:
             table.add_column("Status", justify="center")
             table.add_column("Time", style="yellow")
 
-            for task_id, task_info in summary["tasks"].items():
+            for _task_id, task_info in summary["tasks"].items():
                 progress_pct = task_info["progress"] * 100
                 progress_str = f"{progress_pct:.1f}%"
 
@@ -237,7 +237,7 @@ class CLIEnhancer:
         else:
             print("\nProgress Summary:")
             print("-" * 40)
-            for task_id, task_info in summary["tasks"].items():
+            for _task_id, task_info in summary["tasks"].items():
                 progress_pct = task_info["progress"] * 100
                 status = "DONE" if task_info["completed"] else "RUNNING"
                 elapsed = task_info["elapsed"]
@@ -250,7 +250,7 @@ class CLIEnhancer:
             )
 
     def print_error_with_context(
-        self, error: Exception, context: str = "", suggestions: list[str] = None
+        self, error: Exception, context: str = "", suggestions: list[str] | None = None
     ) -> None:
         """Print error with contextual information and suggestions."""
         if suggestions is None:
@@ -287,7 +287,7 @@ class CLIEnhancer:
             print()
 
     def prompt_user_choice(
-        self, question: str, choices: list[str], default: str = None
+        self, question: str, choices: list[str], default: str | None = None
     ) -> str:
         """Prompt user for a choice with validation."""
         if self.enable_rich and self.console:

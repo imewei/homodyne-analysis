@@ -303,15 +303,15 @@ def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
 
     # Add fast completers to specific arguments
     for action in parser._actions:
-        if action.dest == "method" and hasattr(action, 'completer'):
+        if action.dest == "method" and hasattr(action, "completer"):
             action.completer = _fast_completer("method")  # type: ignore[attr-defined]
-        elif action.dest == "config" and hasattr(action, 'completer'):
+        elif action.dest == "config" and hasattr(action, "completer"):
             action.completer = _fast_completer("config")  # type: ignore[attr-defined]
-        elif action.dest == "output_dir" and hasattr(action, 'completer'):
+        elif action.dest == "output_dir" and hasattr(action, "completer"):
             action.completer = _fast_completer("output_dir")  # type: ignore[attr-defined]
-        elif action.dest == "mode" and hasattr(action, 'completer'):
+        elif action.dest == "mode" and hasattr(action, "completer"):
             action.completer = _fast_completer("mode")  # type: ignore[attr-defined]
-        elif action.dest == "output" and hasattr(action, 'completer'):
+        elif action.dest == "output" and hasattr(action, "completer"):
             action.completer = _fast_completer("config")  # type: ignore[attr-defined]
     # Enable argcomplete with error handling for zsh compdef issues
     try:

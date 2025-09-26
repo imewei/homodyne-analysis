@@ -161,7 +161,7 @@ class SecureCache:
             if key not in self._cache:
                 return None
 
-            data, timestamp, expected_hash = self._cache[key]
+            data, _timestamp, expected_hash = self._cache[key]
 
             # Skip integrity check for performance tests, do it occasionally
             if self._operation_count % 50 == 0:
@@ -435,7 +435,7 @@ class SecureFileManager:
 
     @contextmanager
     def secure_file_read(
-        self, file_path: Path, max_size: int = None
+        self, file_path: Path, max_size: int | None = None
     ) -> Generator[mmap.mmap, None, None]:
         """
         Memory-mapped secure file reading for large datasets.

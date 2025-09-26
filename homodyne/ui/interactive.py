@@ -167,7 +167,7 @@ class InteractiveInterface:
         """Check if running in Streamlit environment."""
         try:
             return "streamlit" in globals() or hasattr(st, "sidebar")
-        except:
+        except (NameError, AttributeError):
             return False
 
     def _initialize_workflows(self) -> dict[str, list[WorkflowStep]]:

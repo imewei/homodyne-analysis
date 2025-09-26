@@ -39,14 +39,8 @@ from typing import Any, NotRequired, TypedDict, cast
 # Import security features
 try:
     from .security_performance import (
-        ConfigurationSecurity,
         ValidationError,
-        secure_cache,
         secure_config_loader,
-        validate_filename,
-        validate_numeric_value,
-        validate_parameter_name,
-        validate_path,
     )
 
     SECURITY_AVAILABLE = True

@@ -177,7 +177,7 @@ class PerformanceMonitor:
             end_cpu_times = self.process.cpu_times()
 
             # Get memory statistics
-            current, peak = tracemalloc.get_traced_memory()
+            _current, peak = tracemalloc.get_traced_memory()
             tracemalloc.stop()
 
             # Calculate metrics
@@ -257,7 +257,7 @@ class PerformanceMonitor:
             end_memory = self.process.memory_info()
             end_cpu_times = self.process.cpu_times()
 
-            current, peak = tracemalloc.get_traced_memory()
+            _current, peak = tracemalloc.get_traced_memory()
             tracemalloc.stop()
 
             # Record measurements
@@ -626,7 +626,7 @@ class PerformanceMonitor:
         durations = [b.duration for b in report.benchmarks]
         errors = [b.statistics["stdev"] for b in report.benchmarks]
 
-        bars = ax1.bar(range(len(names)), durations, yerr=errors, capsize=5)
+        ax1.bar(range(len(names)), durations, yerr=errors, capsize=5)
         ax1.set_title("Benchmark Durations")
         ax1.set_ylabel("Time (seconds)")
         ax1.set_xticks(range(len(names)))
@@ -648,7 +648,7 @@ class PerformanceMonitor:
         cv_values = [
             b.statistics["cv"] * 100 for b in report.benchmarks
         ]  # Convert to percentage
-        bars = ax3.bar(range(len(names)), cv_values)
+        ax3.bar(range(len(names)), cv_values)
         ax3.set_title("Performance Variability (Coefficient of Variation)")
         ax3.set_ylabel("CV (%)")
         ax3.set_xticks(range(len(names)))
@@ -882,7 +882,7 @@ def main():
 
         if args.mode == "regression" and args.baseline:
             # Regression testing mode
-            results = monitor.benchmark_core_operations()
+            monitor.benchmark_core_operations()
             regressions = monitor.detect_performance_regressions(args.baseline)
 
             if regressions:
@@ -898,11 +898,11 @@ def main():
         elif args.component:
             # Component-specific monitoring
             if args.component == "core":
-                results = monitor.benchmark_core_operations()
+                monitor.benchmark_core_operations()
             elif args.component == "optimization":
-                results = monitor.benchmark_optimization_methods()
+                monitor.benchmark_optimization_methods()
             elif args.component == "data":
-                results = monitor.benchmark_data_operations()
+                monitor.benchmark_data_operations()
         else:
             # Comprehensive monitoring
             monitor.benchmark_core_operations()

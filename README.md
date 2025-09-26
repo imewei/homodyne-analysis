@@ -4,23 +4,29 @@
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
 [![PyPI version](https://badge.fury.io/py/homodyne-analysis.svg)](https://badge.fury.io/py/homodyne-analysis)
 
-Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium conditions. Implements theoretical framework from [He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121).
+Python package for analyzing homodyne scattering in X-ray Photon Correlation
+Spectroscopy (XPCS) under nonequilibrium conditions. Implements theoretical framework
+from [He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121).
 
 ## Features
 
-- **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
-- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal)
+- **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params),
+  Laminar Flow (7 params)
+- **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust
+  (Wasserstein DRO, Scenario-based, Ellipsoidal)
 - **High performance**: Numba JIT compilation, vectorized operations
 - **Noise resistance**: Robust optimization for measurement uncertainty
 
 ## Installation
 
 ### Standard Installation
+
 ```bash
 pip install homodyne-analysis[all]
 ```
 
 ### Development Installation
+
 ```bash
 git clone https://github.com/imewei/homodyne.git
 cd homodyne
@@ -28,6 +34,7 @@ pip install -e .[all]
 ```
 
 ### Optional Dependencies
+
 - **Performance**: `pip install homodyne-analysis[performance]` (numba, jax)
 - **Robust optimization**: `pip install homodyne-analysis[robust]` (cvxpy)
 - **Gurobi solver**: `pip install homodyne-analysis[gurobi]` (requires license)
@@ -58,6 +65,7 @@ homodyne [OPTIONS]
 ```
 
 **Key Options:**
+
 - `--method {classical,robust,all}` - Analysis method (default: classical)
 - `--config CONFIG` - Configuration file (default: ./homodyne_config.json)
 - `--output-dir DIR` - Output directory (default: ./homodyne_results)
@@ -70,6 +78,7 @@ homodyne [OPTIONS]
 - `--plot-simulated-data` - Plot theoretical correlations
 
 **Examples:**
+
 ```bash
 # Basic analysis
 homodyne --method classical
@@ -95,6 +104,7 @@ homodyne-config [OPTIONS]
 ```
 
 **Options:**
+
 - `--mode {static_isotropic,static_anisotropic,laminar_flow}` - Analysis mode
 - `--output OUTPUT` - Output file (default: my_config.json)
 - `--sample SAMPLE` - Sample name
@@ -102,6 +112,7 @@ homodyne-config [OPTIONS]
 - `--experiment EXPERIMENT` - Experiment description
 
 **Examples:**
+
 ```bash
 # Default laminar flow config
 homodyne-config
@@ -129,6 +140,7 @@ source ~/.bashrc
 ```
 
 **Shortcuts (always available):**
+
 ```bash
 hc          # homodyne --method classical
 hr          # homodyne --method robust
@@ -139,23 +151,25 @@ hplot       # homodyne --plot-experimental-data
 
 ## Analysis Modes
 
-| Mode | Parameters | Use Case | Speed |
-|------|------------|----------|-------|
-| **Static Isotropic** | 3 | Isotropic systems, fastest analysis | ⭐⭐⭐ |
-| **Static Anisotropic** | 3 | Static with angular dependence | ⭐⭐ |
-| **Laminar Flow** | 7 | Flow and shear analysis | ⭐ |
+| Mode | Parameters | Use Case | Speed | |------|------------|----------|-------| |
+**Static Isotropic** | 3 | Isotropic systems, fastest analysis | ⭐⭐⭐ | | **Static
+Anisotropic** | 3 | Static with angular dependence | ⭐⭐ | | **Laminar Flow** | 7 | Flow
+and shear analysis | ⭐ |
 
 ### Static Isotropic (3 parameters)
+
 - Parameters: D₀, α, D_offset
 - No angle filtering
 - Fastest mode for isotropic samples
 
 ### Static Anisotropic (3 parameters)
+
 - Parameters: D₀, α, D_offset
 - Angle filtering enabled
 - For static samples with angular variations
 
 ### Laminar Flow (7 parameters)
+
 - Parameters: D₀, α, D_offset, γ̇₀, β, γ̇_offset, φ₀
 - Full physics model with flow effects
 - For systems under shear
@@ -189,20 +203,23 @@ print(f"Results: {results}")
 ## Optimization Methods
 
 ### Classical Methods
+
 - **Nelder-Mead**: Derivative-free simplex algorithm
 - **Gurobi**: Iterative trust region optimization (requires license)
 
 ### Robust Methods
+
 - **Robust-Wasserstein**: Distributionally robust with Wasserstein uncertainty
 - **Robust-Scenario**: Bootstrap scenario-based optimization
 - **Robust-Ellipsoidal**: Ellipsoidal uncertainty sets
 
-Use `--method robust` for noisy data with outliers.
-Use `--method classical` for clean, low-noise data.
+Use `--method robust` for noisy data with outliers. Use `--method classical` for clean,
+low-noise data.
 
 ## Configuration
 
 ### Creating Configurations
+
 ```bash
 # Generate templates
 homodyne-config --mode static_isotropic --sample protein_01
@@ -210,7 +227,9 @@ homodyne-config --mode laminar_flow --sample microgel
 ```
 
 ### Mode Selection
+
 Configuration files specify analysis mode:
+
 ```json
 {
   "analysis_settings": {
@@ -221,6 +240,7 @@ Configuration files specify analysis mode:
 ```
 
 **Rules:**
+
 - `static_mode: false` → Laminar Flow Mode (7 params)
 - `static_mode: true, static_submode: "isotropic"` → Static Isotropic (3 params)
 - `static_mode: true, static_submode: "anisotropic"` → Static Anisotropic (3 params)
@@ -250,6 +270,7 @@ homodyne_results/
 ## Performance
 
 ### Environment Optimization
+
 ```bash
 export OMP_NUM_THREADS=8
 export NUMBA_DISABLE_INTEL_SVML=1
@@ -257,6 +278,7 @@ export HOMODYNE_PERFORMANCE_MODE=1
 ```
 
 ### Optimizations
+
 - **Numba JIT**: 3-5x speedup for core calculations
 - **Vectorized operations**: Optimized array processing
 - **Memory efficiency**: Smart caching and allocation
@@ -266,14 +288,17 @@ export HOMODYNE_PERFORMANCE_MODE=1
 
 The package implements correlation functions in nonequilibrium laminar flow:
 
-**Full Nonequilibrium Model:**
-$$c_2(\vec{q}, t_1, t_2) = 1 + \beta\left[e^{-q^2\int J(t)dt}\right] \times \text{sinc}^2\left[\frac{1}{2\pi} qh \int\dot{\gamma}(t)\cos(\phi(t))dt\right]$$
+**Full Nonequilibrium Model:** $$c_2(\\vec{q}, t_1, t_2) = 1 +
+\\beta\\left\[e^{-q^2\\int J(t)dt}\\right\] \\times
+\\text{sinc}^2\\left\[\\frac{1}{2\\pi} qh
+\\int\\dot{\\gamma}(t)\\cos(\\phi(t))dt\\right\]$$
 
 **Key Parameters:**
-- $\vec{q}$: scattering wavevector [Å⁻¹]
+
+- $\\vec{q}$: scattering wavevector [Å⁻¹]
 - $h$: gap between stator and rotor [Å]
-- $\phi(t)$: angle between shear/flow direction and $\vec{q}$ [degrees]
-- $\dot{\gamma}(t)$: time-dependent shear rate [s⁻¹]
+- $\\phi(t)$: angle between shear/flow direction and $\\vec{q}$ [degrees]
+- $\\dot{\\gamma}(t)$: time-dependent shear rate [s⁻¹]
 - $D(t)$: time-dependent diffusion coefficient [Å²/s]
 
 ## Citation
@@ -295,6 +320,7 @@ $$c_2(\vec{q}, t_1, t_2) = 1 + \beta\left[e^{-q^2\int J(t)dt}\right] \times \tex
 ## Development
 
 Development setup:
+
 ```bash
 git clone https://github.com/imewei/homodyne.git
 cd homodyne
@@ -309,5 +335,4 @@ isort homodyne/
 flake8 homodyne/
 ```
 
-**Authors:** Wei Chen, Hongrui He (Argonne National Laboratory)
-**License:** MIT
+**Authors:** Wei Chen, Hongrui He (Argonne National Laboratory) **License:** MIT

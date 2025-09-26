@@ -14,10 +14,7 @@ for reliable and comparable results across different optimization approaches.
 """
 
 # Import with error handling for optional dependencies
-from typing import TYPE_CHECKING, Any, List, Optional, Type
-
-if TYPE_CHECKING:
-    from .classical import ClassicalOptimizer
+from typing import Any
 
 # Track available exports
 _available_exports: list[str] = []

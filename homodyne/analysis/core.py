@@ -1102,7 +1102,8 @@ class HomodyneAnalysisCore:
                 # performance
                 need_new_pool = (
                     self._c2_results_pool is None
-                    or self._c2_results_pool.shape != (
+                    or self._c2_results_pool.shape
+                    != (
                         num_angles,
                         self.time_length,
                         self.time_length,
@@ -2526,7 +2527,11 @@ Validation:
                         theoretical_data = self._generate_theoretical_data(
                             best_params_list, self._last_phi_angles
                         )
-                        plot_data["theoretical_data"] = theoretical_data.tolist() if hasattr(theoretical_data, 'tolist') else theoretical_data
+                        plot_data["theoretical_data"] = (
+                            theoretical_data.tolist()
+                            if hasattr(theoretical_data, "tolist")
+                            else theoretical_data
+                        )
                     except Exception as e:
                         logger.warning(
                             f"Failed to generate theoretical data for plotting: {e}"

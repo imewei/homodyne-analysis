@@ -30,6 +30,12 @@ from typing import Any
 import numpy as np
 import scipy.optimize as optimize
 
+# Import shared optimization utilities
+from ..core.optimization_utils import (
+    get_optimization_counter,
+    reset_optimization_counter,
+)
+
 try:
     import gurobipy as gp
     from gurobipy import GRB
@@ -55,12 +61,6 @@ except ImportError:
     ROBUST_OPTIMIZATION_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
-
-# Import shared optimization utilities
-from ..core.optimization_utils import (
-    get_optimization_counter,
-    reset_optimization_counter,
-)
 
 
 class ClassicalOptimizer:
@@ -202,9 +202,9 @@ class ClassicalOptimizer:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data to satisfy type checker
-        assert phi_angles is not None and c2_experimental is not None, (
-            "Failed to load experimental data"
-        )
+        assert (
+            phi_angles is not None and c2_experimental is not None
+        ), "Failed to load experimental data"
 
         best_result = None
         best_params = None
@@ -898,8 +898,9 @@ class ClassicalOptimizer:
         method: str,
         objective_func,
         initial_parameters: np.ndarray,
-        bounds: list[tuple[float, float]]
-        | None = None,  # Used by robust optimizer internally
+        bounds: (
+            list[tuple[float, float]] | None
+        ) = None,  # Used by robust optimizer internally
         method_options: dict[str, Any] | None = None,
     ) -> tuple[bool, optimize.OptimizeResult | Exception]:
         """
@@ -1063,7 +1064,11 @@ class ClassicalOptimizer:
             },
             "convergence_info": {
                 method: {
-                    "converged": getattr(result, "success", False) if not isinstance(result, Exception) else False,
+                    "converged": (
+                        getattr(result, "success", False)
+                        if not isinstance(result, Exception)
+                        else False
+                    ),
                     "iterations": getattr(result, "nit", None),
                     "function_evaluations": getattr(result, "nfev", None),
                     "message": getattr(result, "message", None),

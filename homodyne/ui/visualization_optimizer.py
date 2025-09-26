@@ -242,7 +242,7 @@ class VisualizationOptimizer:
         **kwargs,
     ) -> dict[str, Any]:
         """Create optimized correlation function heatmaps."""
-        start_time = time.time()
+        time.time()
 
         with ProgressContext(
             "Creating correlation heatmaps", len(phi_angles)
@@ -548,8 +548,8 @@ class VisualizationOptimizer:
                     y=values,
                     mode="lines+markers",
                     name=param_name,
-                    line=dict(color=color, width=3),
-                    marker=dict(size=6, color=color),
+                    line={"color": color, "width": 3},
+                    marker={"size": 6, "color": color},
                 )
             )
 

@@ -10,7 +10,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### BREAKING CHANGES
 
-- **MCMC Analysis Removed**: MCMC (Markov Chain Monte Carlo) functionality has been completely removed from homodyne-analysis to simplify the codebase and reduce dependency complexity
+- **MCMC Analysis Removed**: MCMC (Markov Chain Monte Carlo) functionality has been
+  completely removed from homodyne-analysis to simplify the codebase and reduce
+  dependency complexity
   - Removed `homodyne.optimization.mcmc` module and all PyMC-based Bayesian analysis
   - Removed `--method mcmc` CLI option with graceful deprecation handling
   - Removed PyMC, ArviZ, PyTensor, and corner plot dependencies
@@ -18,37 +20,46 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- **Enhanced Deprecation Handling**: Comprehensive migration guidance for users transitioning from MCMC
+- **Enhanced Deprecation Handling**: Comprehensive migration guidance for users
+  transitioning from MCMC
   - Graceful handling of `--method mcmc` with detailed migration instructions
   - Configuration system automatically ignores MCMC sections with deprecation warnings
   - MCMC plotting functions replaced with informative deprecation stubs
-- **Migration Documentation**: Updated examples and documentation to focus on available methods
+- **Migration Documentation**: Updated examples and documentation to focus on available
+  methods
   - Classical optimization (Nelder-Mead, Gurobi) for fast parameter estimation
-  - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal) for uncertainty resistance
+  - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal) for uncertainty
+    resistance
   - Comprehensive migration guide with alternative analysis workflows
 
 ### Changed
 
-- **Method Selection**: `--method all` now runs only classical and robust optimization methods
-- **Configuration System**: MCMC sections in configuration files are automatically filtered out with warnings
+- **Method Selection**: `--method all` now runs only classical and robust optimization
+  methods
+- **Configuration System**: MCMC sections in configuration files are automatically
+  filtered out with warnings
 - **Dependencies**: Removed optional MCMC dependencies from installation requirements
-- **Documentation**: Updated all examples and tutorials to use classical and robust methods
+- **Documentation**: Updated all examples and tutorials to use classical and robust
+  methods
 
 ### Removed
 
 - **MCMC Module**: Complete removal of `homodyne/optimization/mcmc.py`
 - **MCMC Dependencies**: PyMC ≥5.0.0, ArviZ ≥0.12.0, PyTensor ≥2.8.0, corner ≥2.2.0
 - **MCMC Plotting**: Corner plots, trace plots, and convergence diagnostics
-- **MCMC Results**: Posterior sampling, trace storage, and Bayesian uncertainty quantification
+- **MCMC Results**: Posterior sampling, trace storage, and Bayesian uncertainty
+  quantification
 
 ### Migration Guide
 
 **For Uncertainty Quantification (MCMC Alternative)**:
+
 - Use robust optimization methods for uncertainty resistance against measurement noise
 - Classical methods provide parameter error estimates and goodness-of-fit metrics
 - Both methods include comprehensive diagnostic plots and result validation
 
 **Command Migration**:
+
 ```bash
 # Old MCMC usage (no longer works)
 # homodyne --method mcmc
@@ -60,6 +71,7 @@ homodyne --method all        # Both classical and robust methods
 ```
 
 **Configuration Migration**:
+
 - MCMC configuration sections are automatically ignored with deprecation warnings
 - No manual configuration changes required - existing configs remain compatible
 - New configurations should focus on classical and robust optimization settings
@@ -349,8 +361,7 @@ homodyne --method all        # Both classical and robust methods
   robust fallback mechanisms
   - Fast standalone completion script (`homodyne_complete`) with zero package
     dependencies for instant performance
-  - Comprehensive shell shortcuts: `hc` (classical), `hr` (robust), `ha`
-    (all methods)
+  - Comprehensive shell shortcuts: `hc` (classical), `hr` (robust), `ha` (all methods)
   - Silent loading option for completion system without startup notifications
   - Three-tier fallback system: tab completion → shortcuts → help system
 - **Code Quality Improvements**: Comprehensive formatting and linting applied across

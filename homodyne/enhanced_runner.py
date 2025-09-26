@@ -352,7 +352,7 @@ class EnhancedHomodyneRunner:
                 if self.memory_monitor:
                     self.memory_monitor.stop_monitoring()
 
-    def _determine_methods(self, method_choice: str) -> List[str]:
+    def _determine_methods(self, method_choice: str) -> list[str]:
         """Determine which methods to run based on choice."""
         if method_choice == "classical":
             return ["nelder_mead", "gurobi"]
@@ -364,7 +364,7 @@ class EnhancedHomodyneRunner:
             return [method_choice]
 
     def _estimate_total_steps(
-        self, methods: List[str], config_manager: ConfigManager
+        self, methods: list[str], config_manager: ConfigManager
     ) -> int:
         """Estimate total number of progress steps."""
         base_steps = 3  # config validation, data loading, visualization
@@ -381,7 +381,7 @@ class EnhancedHomodyneRunner:
         args: argparse.Namespace,
         config_manager: ConfigManager,
         visualizer: Any,
-        methods: List[str],
+        methods: list[str],
         tracker: Any,
         main_task: str,
     ) -> dict[str, Any]:
@@ -407,8 +407,6 @@ class EnhancedHomodyneRunner:
 
         # Step 2: Run optimization methods
         for method in methods:
-            method_task = f"optimization_{method}"
-
             with ProgressContext(f"Running {method} optimization", 10) as progress:
                 # Simulate optimization iterations
                 for i in range(10):
@@ -554,7 +552,7 @@ def main() -> int:
     """
     try:
         # Create enhanced CLI parser
-        parser, cli_enhancer = create_enhanced_cli()
+        parser, _cli_enhancer = create_enhanced_cli()
 
         # Add shell completion
         setup_shell_completion(parser)
@@ -569,9 +567,7 @@ def main() -> int:
         log_level = (
             logging.WARNING
             if verbosity == 0
-            else logging.INFO
-            if verbosity == 1
-            else logging.DEBUG
+            else logging.INFO if verbosity == 1 else logging.DEBUG
         )
         logging.basicConfig(
             level=log_level,
