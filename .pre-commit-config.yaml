@@ -167,6 +167,17 @@ repos:
 default_language_version:
   python: python3.12
 
+# Performance optimization
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+fail_fast: false  # Run all hooks even if one fails
+minimum_pre_commit_version: 3.0.0
+
+# CI configuration
+ci:
+  autofix_prs: true
+  autofix_commit_msg: "🔧 Auto-fix pre-commit hooks"
+  skip: []
+
 # Exclude certain directories and files
 exclude: |
   (?x)^(
@@ -178,6 +189,8 @@ exclude: |
       \.ruff_cache/|
       \.tox/|
       \.venv/|
+      \.build_cache/|
+      \.test_cache/|
       _build/|
       build/|
       dist/|
@@ -187,5 +200,9 @@ exclude: |
       \.benchmarks/|
       bandit_report\.json|
       coverage\.xml|
-      htmlcov/
+      htmlcov/|
+      performance_monitoring/|
+      performance_reports/|
+      build_benchmark_results\.json|
+      test_benchmark_results\.json
   )$
