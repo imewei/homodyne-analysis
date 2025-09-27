@@ -1,0 +1,89 @@
+🚀 Complete CLI Options for Homodyne Analysis
+
+  📋 1. Main Analysis Tool: homodyne
+
+  Core Options:
+
+  - --method {classical,robust,all} - Analysis method (default: classical)
+  - --config CONFIG - Configuration file path (default: ./homodyne_config.json)
+  - --output-dir OUTPUT_DIR - Results directory (default: ./homodyne_results)
+
+  Logging & Output:
+
+  - --verbose - Enable DEBUG level logging
+  - --quiet - Disable console output (file logging only)
+
+  Analysis Modes:
+
+  - --static-isotropic - 3 parameters, no angle selection (fastest)
+  - --static-anisotropic - 3 parameters, with angle selection
+  - --laminar-flow - 7 parameters, full flow analysis
+
+  Plotting & Simulation:
+
+  - --plot-experimental-data - Generate validation plots of loaded data
+  - --plot-simulated-data - Plot theoretical C2 heatmaps from config
+  - --contrast CONTRAST - Scaling parameter (default: 1.0)
+  - --offset OFFSET - Offset parameter (default: 0.0)
+  - --phi-angles PHI_ANGLES - Custom angles: "0,45,90,135"
+
+  Shell Completion:
+
+  - --install-completion {bash,zsh,fish,powershell} - Install completion
+  - --uninstall-completion {bash,zsh,fish,powershell} - Remove completion
+
+  ---
+  ⚙️ 2. Configuration Creator: homodyne-config
+
+  Template Selection:
+
+  - --mode/-m {static_isotropic,static_anisotropic,laminar_flow} - Analysis mode
+
+  Output & Metadata:
+
+  - --output/-o OUTPUT - Config filename (default: my_config.json)
+  - --sample/-s SAMPLE - Sample name for data paths
+  - --experiment/-e EXPERIMENT - Experiment description
+  - --author/-a AUTHOR - Author name
+
+  ---
+  🔧 3. Enhanced Runner: python -m homodyne.cli.enhanced_runner
+
+  Core Options:
+
+  - --method/-m {classical,robust,all} - Analysis method
+  - --config/-c CONFIG - Configuration file
+  - --output-dir/-o OUTPUT_DIR - Output directory
+
+  Enhanced Features:
+
+  - --interactive - Launch interactive configuration assistant
+  - --verbose/-v - Increase verbosity (-vv for more)
+  - --quiet/-q - Suppress non-essential output
+  - --monitor-performance - Enable detailed performance monitoring
+  - --validate-config - Validate configuration and exit
+  - --dry-run - Show what would be executed without running
+
+  ---
+  📝 Quick Examples:
+
+  # Basic analysis
+  homodyne --method classical --config my_config.json
+
+  # Run all methods with verbose output
+  homodyne --method all --verbose
+
+  # Create configuration for protein study
+  homodyne-config --mode static_isotropic --sample protein_01 --author "Your Name"
+
+  # Plot simulated data with custom scaling
+  homodyne --plot-simulated-data --contrast 1.5 --offset 0.1
+
+  # Enhanced runner with performance monitoring
+  python -m homodyne.cli.enhanced_runner --interactive --monitor-performance
+
+  🎯 Method Quality Assessment:
+
+  - Classical: Chi-squared goodness-of-fit (lower = better)
+  - Robust: Chi-squared with uncertainty resistance (noise-resistant)
+  - All: Compare both methods for reliability vs. speed trade-offs

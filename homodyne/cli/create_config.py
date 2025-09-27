@@ -38,9 +38,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from ..config import get_template_path
+
 # Import advanced shell completion functionality
 try:
-    from homodyne.ui.completion.adapter import setup_shell_completion
+    from ..ui.completion.adapter import setup_shell_completion
 
     COMPLETION_AVAILABLE = True
     COMPLETION_SYSTEM = "advanced"
@@ -162,28 +164,20 @@ def create_config_from_template(
         Invalid analysis mode specified
     """
 
-    # Validate and select appropriate template
-    valid_modes = {
-        "static_isotropic": "config_static_isotropic.json",
-        "static_anisotropic": "config_static_anisotropic.json",
-        "laminar_flow": "config_laminar_flow.json",
-        "template": "config_template.json",  # Fallback to master template
-    }
+    # Validate mode and get template path using config module
+    valid_modes = ["static_isotropic", "static_anisotropic", "laminar_flow"]
 
     if mode not in valid_modes:
-        raise ValueError(
-            f"Invalid mode '{mode}'. Valid modes: {list(valid_modes.keys())[:-1]}"
-        )
+        raise ValueError(f"Invalid mode '{mode}'. Valid modes: {valid_modes}")
 
-    # Get template path (now that we're inside the homodyne package)
-    template_dir = Path(__file__).parent
-    template_file = template_dir / valid_modes[mode]
-
-    # Fallback to master template if mode-specific template doesn't exist
-    if not template_file.exists() and mode != "template":
-        print(f"Warning: Mode-specific template not found: {template_file}")
+    # Get template path using the config module
+    try:
+        template_file = get_template_path(mode)
+    except ValueError:
+        # Fallback to template if mode not found
+        print(f"Warning: Mode-specific template not found for '{mode}'")
         print("Falling back to master template...")
-        template_file = template_dir / "config_template.json"
+        template_file = get_template_path("template")
 
     if not template_file.exists():
         raise FileNotFoundError(f"Template not found: {template_file}")

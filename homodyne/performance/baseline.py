@@ -64,7 +64,7 @@ except ImportError:
 
 # Performance monitoring tools
 try:
-    import numba
+    import numba  # noqa: F401
 
     NUMBA_AVAILABLE = True
 except ImportError:

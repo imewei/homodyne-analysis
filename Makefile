@@ -25,6 +25,8 @@ help:
 	@echo "  baseline-update      Update performance baselines"
 	@echo "  baseline-reset       Reset all performance baselines"
 	@echo "  baseline-report      Generate performance report"
+	@echo "  performance-analysis Run comprehensive performance analysis"
+	@echo "  performance-analysis-quick  Run quick performance analysis"
 	@echo
 	@echo "Cleanup:"
 	@echo "  clean        Clean all build artifacts and cache files (preserves virtual environment)"
@@ -94,6 +96,15 @@ baseline-report:
 	pytest homodyne/tests/test_performance.py -v --tb=short --durations=0
 	@echo "✓ Performance report completed"
 
+# Comprehensive performance analysis
+performance-analysis:
+	@echo "🔍 Running comprehensive performance analysis..."
+	python scripts/run_performance_analysis.py --full-report
+
+performance-analysis-quick:
+	@echo "⚡ Running quick performance analysis..."
+	python scripts/run_performance_analysis.py --quick
+
 # Code quality targets
 lint:
 	@echo "🔍 Running linting checks..."
@@ -145,6 +156,7 @@ clean-test:
 	rm -rf .ruff_cache/
 	rm -rf .benchmarks/
 	rm -f bandit*.json
+	rm -rf node_modules/
 
 clean-venv:
 	rm -rf venv/

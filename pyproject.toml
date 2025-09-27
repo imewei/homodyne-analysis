@@ -108,8 +108,8 @@ Repository = "https://github.com/imewei/homodyne"
 Issues = "https://github.com/imewei/homodyne/issues"
 
 [project.scripts]
-homodyne = "homodyne.run_homodyne:main"
-homodyne-config = "homodyne.create_config:main"
+homodyne = "homodyne.cli.run_homodyne:main"
+homodyne-config = "homodyne.cli.create_config:main"
 
 [tool.setuptools]
 packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
@@ -118,7 +118,7 @@ zip-safe = false  # Ensure compatibility with compiled extensions
 
 [tool.setuptools.package-data]
 homodyne = [
-    "config_*.json",
+    "config/*.json",
     "typings/**/*.pyi",
     "completion_fast.py",
     "cli_completion.py",

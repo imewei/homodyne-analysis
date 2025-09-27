@@ -16,6 +16,9 @@ recursive-include homodyne *.json
 # Include advanced completion system
 recursive-include homodyne/ui/completion *.py
 
+# Include developer and CI scripts
+recursive-include scripts *.py
+
 # Include documentation files
 recursive-include docs *.md
 recursive-include docs *.rst

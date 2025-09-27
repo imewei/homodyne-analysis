@@ -208,6 +208,11 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# Node.js (not needed for Python project)
+node_modules/
+package-lock.json
+yarn.lock
+
 # PyPI configuration file
 .pypirc
 

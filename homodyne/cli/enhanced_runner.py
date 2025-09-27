@@ -32,7 +32,7 @@ except ImportError:
 
 # Import advanced completion system
 try:
-    from .ui.completion.adapter import (
+    from ..ui.completion.adapter import (
         install_shell_completion,
         setup_shell_completion,
         uninstall_shell_completion,
@@ -53,14 +53,14 @@ except ImportError:
     COMPLETION_SYSTEM = "none"
 
 # Import existing core components
-from .core.config import ConfigManager
-from .ui.cli_enhancer import CLIEnhancer, create_enhanced_cli
-from .ui.error_reporter import create_error_reporter
-from .ui.interactive import create_interactive_interface
+from ..core.config import ConfigManager
+from ..ui.cli_enhancer import CLIEnhancer, create_enhanced_cli
+from ..ui.error_reporter import create_error_reporter
+from ..ui.interactive import create_interactive_interface
 
 # Import UI components
-from .ui.progress import ProgressContext, get_progress_tracker, track_analysis_progress
-from .ui.visualization_optimizer import create_optimized_visualizer
+from ..ui.progress import ProgressContext, get_progress_tracker, track_analysis_progress
+from ..ui.visualization_optimizer import create_optimized_visualizer
 
 
 class EnhancedHomodyneRunner:
@@ -583,7 +583,9 @@ def main() -> int:
         log_level = (
             logging.WARNING
             if verbosity == 0
-            else logging.INFO if verbosity == 1 else logging.DEBUG
+            else logging.INFO
+            if verbosity == 1
+            else logging.DEBUG
         )
         logging.basicConfig(
             level=log_level,

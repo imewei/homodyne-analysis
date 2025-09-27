@@ -74,21 +74,64 @@ except ImportError as e:
         f"Robust optimization not available - missing CVXPY: {e}"
     )
 
+# Backward compatibility imports for CLI functions
+try:
+    from .cli.create_config import main as create_config_main
+    from .cli.enhanced_runner import main as enhanced_runner_main
+    from .cli.run_homodyne import main as run_homodyne_main
+except ImportError:
+    run_homodyne_main = None
+    create_config_main = None
+    enhanced_runner_main = None
+
+# Backward compatibility imports for plotting functions
+try:
+    from .visualization.enhanced_plotting import EnhancedPlottingManager
+    from .visualization.plotting import get_plot_config, plot_c2_heatmaps
+except ImportError:
+    plot_c2_heatmaps = None
+    get_plot_config = None
+    EnhancedPlottingManager = None
+
+# Backward compatibility imports for performance monitoring
+try:
+    from .performance import PerformanceMonitor
+except ImportError:
+    PerformanceMonitor = None
+
+# Backward compatibility imports for configuration utilities
+try:
+    from .config import TEMPLATE_FILES, get_config_dir, get_template_path
+except ImportError:
+    get_template_path = None
+    get_config_dir = None
+    TEMPLATE_FILES = None
+
 
 __all__ = [
     "ClassicalOptimizer",
     "ConfigManager",
+    "EnhancedPlottingManager",
     "HomodyneAnalysisCore",
+    "PerformanceMonitor",
     "RobustHomodyneOptimizer",
+    "TEMPLATE_FILES",
     "calculate_diffusion_coefficient_numba",
     "calculate_shear_rate_numba",
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
     "configure_logging",
+    "create_config_main",
     "create_robust_optimizer",
     "create_time_integral_matrix_numba",
+    "enhanced_runner_main",
+    "get_config_dir",
+    "get_plot_config",
+    "get_template_path",
     "memory_efficient_cache",
     "performance_monitor",
+    "plot_c2_heatmaps",
+    "run_homodyne_main",
 ]
 
 # Version information

@@ -14,7 +14,7 @@ Includes:
 5. Optimization opportunity prioritization
 
 Usage:
-    python run_performance_analysis.py [--quick] [--full-report] [--dashboard]
+    python scripts/run_performance_analysis.py [--quick] [--full-report] [--dashboard]
 """
 
 import argparse
@@ -84,7 +84,7 @@ def main():
     cmd = [
         sys.executable,
         "-m",
-        "homodyne.performance_baseline",
+        "homodyne.performance.baseline",
         "--profile-mode",
         "quick",
     ]
@@ -101,7 +101,7 @@ def main():
         cmd = [
             sys.executable,
             "-m",
-            "homodyne.performance_monitoring",
+            "homodyne.performance.monitoring",
             "--mode",
             "comprehensive",
         ]

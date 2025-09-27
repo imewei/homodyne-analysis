@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 try:
-    from homodyne.run_homodyne import create_argument_parser
+    from homodyne.cli.run_homodyne import create_argument_parser
 except ImportError:
     # Fallback for testing - create a minimal parser
     def create_argument_parser():

@@ -16,6 +16,12 @@ from typing import Any
 
 import numpy as np
 
+from ..ui.error_reporter import create_error_reporter
+
+# Import UI enhancements
+from ..ui.progress import ProgressContext, get_progress_tracker, track_io_progress
+from ..ui.visualization_optimizer import create_optimized_visualizer
+
 # Import original plotting functions
 from .plotting import create_all_plots as original_create_all_plots
 from .plotting import (
@@ -23,11 +29,6 @@ from .plotting import (
 )
 from .plotting import plot_c2_heatmaps as original_plot_c2_heatmaps
 from .plotting import plot_diagnostic_summary as original_plot_diagnostic_summary
-from .ui.error_reporter import create_error_reporter
-
-# Import UI enhancements
-from .ui.progress import ProgressContext, get_progress_tracker, track_io_progress
-from .ui.visualization_optimizer import create_optimized_visualizer
 
 
 class EnhancedPlottingManager:

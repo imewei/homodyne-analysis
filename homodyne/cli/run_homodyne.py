@@ -1019,7 +1019,7 @@ def _generate_classical_plots(
 
         # Generate plots for each successful optimization method
         try:
-            from .plotting import plot_c2_heatmaps
+            from ..visualization.plotting import plot_c2_heatmaps
 
             # Check if method_results are available
             method_results = getattr(result, "method_results", {})
@@ -1716,7 +1716,7 @@ def _generate_robust_plots(
 
         import numpy as np
 
-        from .plotting import plot_c2_heatmaps
+        from ..visualization.plotting import plot_c2_heatmaps
 
         # Set up output directory path (but don't create it yet)
         if output_dir is None:
