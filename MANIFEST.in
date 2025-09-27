@@ -14,7 +14,6 @@ recursive-include homodyne/typings *.pyi
 recursive-include homodyne *.json
 
 # Include shell completion scripts
-include homodyne_complete
 include homodyne/completion_fast.py
 include homodyne/cli_completion.py
 

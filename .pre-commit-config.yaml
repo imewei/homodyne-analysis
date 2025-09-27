@@ -119,7 +119,7 @@ repos:
           - types-requests
           - numpy
           - matplotlib
-        exclude: ^(homodyne/tests/|tests/|build/|dist/|docs/|homodyne_complete)
+        exclude: ^(homodyne/tests/|tests/|build/|dist/|docs/)
 
   # Markdown formatting
   - repo: https://github.com/executablebooks/mdformat

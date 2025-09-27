@@ -1,8 +1,6 @@
 # Exclude shell scripts and build files from language stats
 *.sh linguist-detectable=false
 Makefile linguist-detectable=false
-homodyne_complete linguist-detectable=false
-homodyne_completion_bypass.zsh linguist-detectable=false
 
 # Mark documentation as documentation
 *.md linguist-documentation=true

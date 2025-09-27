@@ -224,7 +224,6 @@ filterwarnings = [
 python_version = "3.12"
 mypy_path = "homodyne/typings"
 explicit_package_bases = true
-exclude = ["homodyne_complete"]
 
 # Scientific computing friendly configuration
 warn_return_any = false  # Scientific functions often return Any from libraries
