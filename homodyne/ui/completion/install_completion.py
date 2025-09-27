@@ -29,7 +29,6 @@ Examples:
 
 import argparse
 import sys
-from pathlib import Path
 
 from installer import (
     CompletionInstaller,
