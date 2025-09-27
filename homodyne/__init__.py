@@ -109,13 +109,13 @@ except ImportError:
 
 
 __all__ = [
+    "TEMPLATE_FILES",
     "ClassicalOptimizer",
     "ConfigManager",
     "EnhancedPlottingManager",
     "HomodyneAnalysisCore",
     "PerformanceMonitor",
     "RobustHomodyneOptimizer",
-    "TEMPLATE_FILES",
     "calculate_diffusion_coefficient_numba",
     "calculate_shear_rate_numba",
     "compute_g1_correlation_numba",
