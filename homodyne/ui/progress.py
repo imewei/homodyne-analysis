@@ -26,7 +26,6 @@ from typing import Any
 try:
     from rich.console import Console
     from rich.live import Live
-    from rich.panel import Panel
     from rich.progress import (
         BarColumn,
         MofNCompleteColumn,
@@ -38,7 +37,6 @@ try:
         TimeRemainingColumn,
         TransferSpeedColumn,
     )
-    from rich.table import Table
     from rich.text import Text
 
     RICH_AVAILABLE = True

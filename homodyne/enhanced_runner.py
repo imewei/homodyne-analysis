@@ -30,11 +30,27 @@ except ImportError:
     PSUTIL_AVAILABLE = False
     psutil = None
 
-from .cli_completion import (
-    install_shell_completion,
-    setup_shell_completion,
-    uninstall_shell_completion,
-)
+# Import advanced completion system
+try:
+    from .ui.completion.adapter import (
+        install_shell_completion,
+        setup_shell_completion,
+        uninstall_shell_completion,
+    )
+
+    COMPLETION_SYSTEM = "advanced"
+except ImportError:
+    # Define dummy functions
+    def setup_shell_completion(parser):
+        pass
+
+    def install_shell_completion(shell):
+        return 1
+
+    def uninstall_shell_completion(shell):
+        return 1
+
+    COMPLETION_SYSTEM = "none"
 
 # Import existing core components
 from .core.config import ConfigManager
@@ -567,9 +583,7 @@ def main() -> int:
         log_level = (
             logging.WARNING
             if verbosity == 0
-            else logging.INFO
-            if verbosity == 1
-            else logging.DEBUG
+            else logging.INFO if verbosity == 1 else logging.DEBUG
         )
         logging.basicConfig(
             level=log_level,

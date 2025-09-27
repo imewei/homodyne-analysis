@@ -38,13 +38,15 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-# Import shell completion functionality
+# Import advanced shell completion functionality
 try:
-    from homodyne.cli_completion import setup_shell_completion
+    from homodyne.ui.completion.adapter import setup_shell_completion
 
     COMPLETION_AVAILABLE = True
+    COMPLETION_SYSTEM = "advanced"
 except ImportError:
     COMPLETION_AVAILABLE = False
+    COMPLETION_SYSTEM = "none"
 
     def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
         """Fallback when completion is not available."""

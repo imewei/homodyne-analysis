@@ -60,112 +60,37 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-# CRITICAL: Handle shell completion BEFORE any heavy imports
-# This must be the very first thing we do to avoid 5+ second startup times
-def _handle_completion_fast():
-    """Ultra-fast completion handler that bypasses all heavy imports."""
-    # Only handle completion if argcomplete is actively requesting completions
-    # (not just setup). This is indicated by _ARGCOMPLETE=1 specifically
-    if os.environ.get("_ARGCOMPLETE") == "1":
-        # This is definitely an active completion request - handle it fast
-        try:
-            # Get completion context
-            comp_line = os.environ.get("COMP_LINE", "")
-            comp_point = int(os.environ.get("COMP_POINT", len(comp_line)))
-
-            # Parse command line up to cursor position
-            words = comp_line[:comp_point].split()
-
-            if len(words) >= 1:
-                # Check if we're completing after an argument flag
-                if comp_line[comp_point - 1 : comp_point].isspace():
-                    # Space after last word - completing the value for that argument
-                    prev_word = words[-1] if words else ""
-                    current_word = ""
-                else:
-                    # No space - still typing the current word
-                    prev_word = words[-2] if len(words) >= 2 else ""
-                    current_word = words[-1] if words else ""
-
-                # Complete based on previous word
-                if prev_word in ["--method", "-m"]:
-                    methods = ["classical", "robust", "all"]
-                    if current_word:
-                        methods = [m for m in methods if m.startswith(current_word)]
-                    for method in methods:
-                        print(method)
-                    sys.exit(0)
-                elif prev_word in ["--config", "-c"]:
-                    # Fast config file completion
-                    try:
-                        from pathlib import Path
-
-                        cwd = Path.cwd()
-                        json_files = [
-                            f.name
-                            for f in cwd.iterdir()
-                            if f.is_file() and f.suffix == ".json"
-                        ]
-                        priority = [
-                            "config.json",
-                            "homodyne_config.json",
-                            "my_config.json",
-                        ]
-                        result = [f for f in priority if f in json_files]
-                        result.extend([f for f in json_files if f not in priority][:8])
-                        if current_word:
-                            result = [f for f in result if f.startswith(current_word)]
-                        for r in result:
-                            print(r)
-                    except Exception:
-                        # Fallback to common config files if directory scan fails
-                        print("config.json")
-                        print("homodyne_config.json")
-                    sys.exit(0)
-                elif prev_word in ["--output-dir", "-o"]:
-                    # Fast directory completion
-                    try:
-                        from pathlib import Path
-
-                        cwd = Path.cwd()
-                        dirs = [d.name for d in cwd.iterdir() if d.is_dir()]
-                        priority = ["output", "results", "data", "plots", "analysis"]
-                        result = [f for f in priority if f in dirs]
-                        result.extend([f for f in dirs if f not in priority][:5])
-                        if current_word:
-                            result = [d for d in result if d.startswith(current_word)]
-                        for d in result:
-                            print(d + "/")
-                    except Exception:
-                        # Fallback to common output directories if scan fails
-                        print("output/")
-                        print("results/")
-                    sys.exit(0)
-
-            # For any other completion case, just exit empty
-            sys.exit(0)
-
-        except Exception:
-            # If completion handling fails, exit silently
-            sys.exit(0)
-
-    return False
-
-
-# Call completion handler immediately - before any heavy imports
-_handle_completion_fast()
-
-# Import completion support
+# Call fast completion handler immediately - before any heavy imports
 try:
-    from .cli_completion import (
+    from .ui.completion.fast_handler import handle_fast_completion
+
+    handle_fast_completion()
+except ImportError:
+    # Fallback to minimal fast completion if advanced system not available
+    if os.environ.get("_ARGCOMPLETE") == "1":
+        # Basic fallback completion
+        comp_line = os.environ.get("COMP_LINE", "")
+        if "--method" in comp_line:
+            print("vi")
+            print("mcmc")
+            print("hybrid")
+        elif "--config" in comp_line:
+            print("config.json")
+        sys.exit(0)
+
+# Import advanced completion system
+try:
+    from .ui.completion.adapter import (
         install_shell_completion,
         setup_shell_completion,
         uninstall_shell_completion,
     )
 
     COMPLETION_AVAILABLE = True
+    COMPLETION_SYSTEM = "advanced"
 except ImportError:
     COMPLETION_AVAILABLE = False
+    COMPLETION_SYSTEM = "none"
 
     # Define dummy functions to avoid Pylance errors
     def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:

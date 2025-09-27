@@ -1,4 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
+# Research-grade documentation for homodyne-analysis package
 
 import os
 import sys
@@ -12,21 +13,34 @@ if os.path.exists(homodyne_path):
     sys.path.insert(0, homodyne_path)
 
 # -- Project information -----------------------------------------------------
-project = "Homodyne Analysis"
-copyright = "2025, Wei Chen, Hongrui He"
+project = "Homodyne Analysis: Research Documentation"
+copyright = "2025, Wei Chen, Hongrui He - Argonne National Laboratory"
 author = "Wei Chen, Hongrui He"
-release = "0.6.6"
-version = "0.6.6"
+release = "0.7.1"
+version = "0.7.1"
+
+# Research-specific metadata
+project_description = "High-performance XPCS analysis with robust optimization for nonequilibrium soft matter"
+github_url = "https://github.com/imewei/homodyne"
+doi = "10.1073/pnas.2401162121"
+institution = "Argonne National Laboratory"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    # "sphinx.ext.autosummary",  # Disabled due to import issues with mocked modules
+    "sphinx.ext.imgmath",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.githubpages",
     "myst_parser",
+    "sphinx_rtd_theme",
+    "sphinx.ext.graphviz",
 ]
 
 # Suppress specific warnings to reduce noise
@@ -72,7 +86,7 @@ highlight_language = "python3"
 
 # -- Options for extensions --------------------------------------------------
 
-# autodoc configuration
+# autodoc configuration for research-grade documentation
 autodoc_typehints = "description"
 autodoc_member_order = "bysource"
 autodoc_default_options = {
@@ -81,7 +95,14 @@ autodoc_default_options = {
     "show-inheritance": True,
     "special-members": "__init__",
     "exclude-members": "__weakref__",
+    "private-members": False,
 }
+
+# autosummary configuration
+autosummary_generate = True
+autosummary_generate_overwrite = True
+autosummary_imported_members = True
+autosummary_ignore_module_all = False
 
 # Optimize autodoc performance
 autodoc_class_signature = "mixed"

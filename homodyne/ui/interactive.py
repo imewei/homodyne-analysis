@@ -25,11 +25,8 @@ from typing import Any, Callable
 
 try:
     from rich.console import Console
-    from rich.layout import Layout
-    from rich.live import Live
     from rich.panel import Panel
-    from rich.progress import Progress, track
-    from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
+    from rich.prompt import Confirm, IntPrompt, Prompt
     from rich.table import Table
 
     RICH_AVAILABLE = True
@@ -39,14 +36,13 @@ except ImportError:
 
 try:
     import ipywidgets as widgets
-    from IPython.display import clear_output, display
+    from IPython.display import display
 
     JUPYTER_AVAILABLE = True
 except ImportError:
     JUPYTER_AVAILABLE = False
     widgets = None
     display = None
-    clear_output = None
 
 try:
     import streamlit as st
@@ -566,7 +562,7 @@ class InteractiveInterface:
 
         display(interface)
 
-    def _create_jupyter_config_panel(self) -> widgets.Widget:
+    def _create_jupyter_config_panel(self) -> "widgets.Widget":
         """Create Jupyter configuration panel."""
         config_file = widgets.Text(
             value="./homodyne_config.json",
@@ -614,7 +610,7 @@ class InteractiveInterface:
 
     def _create_jupyter_workflow_panel(
         self, session: AnalysisSession
-    ) -> widgets.Widget:
+    ) -> "widgets.Widget":
         """Create Jupyter workflow control panel."""
         workflow_select = widgets.Dropdown(
             options=list(self.workflows.keys()),
@@ -649,7 +645,7 @@ class InteractiveInterface:
             ]
         )
 
-    def _create_jupyter_results_panel(self) -> widgets.Widget:
+    def _create_jupyter_results_panel(self) -> "widgets.Widget":
         """Create Jupyter results display panel."""
         results_text = widgets.HTML(value="<p>No results yet</p>")
 

@@ -1,0 +1,310 @@
+Theoretical Framework
+=====================
+
+This section provides a comprehensive mathematical foundation for the homodyne scattering analysis
+implemented in the package, based on the theoretical framework developed by He et al. (2024).
+
+Mathematical Foundation
+-----------------------
+
+Nonequilibrium Correlation Functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The fundamental quantity analyzed is the time-dependent intensity correlation function for systems
+under flow conditions:
+
+.. math::
+
+   c_2(\vec{q}, t_1, t_2) = 1 + \beta\left[e^{-q^2\int_{t_1}^{t_2} J(t)dt}\right] \times
+   \text{sinc}^2\left[\frac{1}{2\pi} qh \int_{t_1}^{t_2}\dot{\gamma}(t)\cos(\phi(t))dt\right]
+
+where the correlation function captures both diffusive and advective contributions to the dynamics.
+
+Time-Dependent Transport Coefficients
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Diffusion Coefficient**
+
+The time-dependent diffusion coefficient follows a power-law parameterization:
+
+.. math::
+
+   D(t) = D_0 \cdot t^{\alpha} + D_{\text{offset}}
+
+where:
+  * :math:`D_0`: baseline diffusion coefficient [Å²/s]
+  * :math:`\alpha`: diffusion scaling exponent (dimensionless)
+  * :math:`D_{\text{offset}}`: additive offset [Å²/s]
+
+**Shear Rate**
+
+The time-dependent shear rate is parameterized as:
+
+.. math::
+
+   \dot{\gamma}(t) = \dot{\gamma}_0 \cdot t^{\beta} + \dot{\gamma}_{\text{offset}}
+
+where:
+  * :math:`\dot{\gamma}_0`: baseline shear rate [s⁻¹]
+  * :math:`\beta`: shear rate scaling exponent (dimensionless)
+  * :math:`\dot{\gamma}_{\text{offset}}`: additive offset [s⁻¹]
+
+Integral Functions
+~~~~~~~~~~~~~~~~~~
+
+**Diffusion Integral**
+
+.. math::
+
+   J(t_1, t_2) = \int_{t_1}^{t_2} D(t) dt = \frac{D_0}{1+\alpha}(t_2^{1+\alpha} - t_1^{1+\alpha}) + D_{\text{offset}}(t_2 - t_1)
+
+**Shear Integral**
+
+.. math::
+
+   \Gamma(t_1, t_2) = \int_{t_1}^{t_2} \dot{\gamma}(t) dt = \frac{\dot{\gamma}_0}{1+\beta}(t_2^{1+\beta} - t_1^{1+\beta}) + \dot{\gamma}_{\text{offset}}(t_2 - t_1)
+
+Physical Interpretation
+-----------------------
+
+Analysis Modes
+~~~~~~~~~~~~~~
+
+The package implements three distinct analysis modes based on the physical system:
+
+**1. Static Isotropic Mode (3 parameters)**
+
+For systems at equilibrium without flow or angular dependence:
+
+.. math::
+
+   c_2(\vec{q}, t_1, t_2) = 1 + \beta e^{-q^2 J(t_1, t_2)}
+
+Parameters: :math:`D_0, \alpha, D_{\text{offset}}`
+
+**2. Static Anisotropic Mode (3 parameters)**
+
+For static systems with angular dependence but no flow:
+
+.. math::
+
+   c_2(\vec{q}, \phi, t_1, t_2) = 1 + \beta e^{-q^2 J(t_1, t_2)} \cdot f(\phi)
+
+where :math:`f(\phi)` captures angular variations without flow contributions.
+
+Parameters: :math:`D_0, \alpha, D_{\text{offset}}`
+
+**3. Laminar Flow Mode (7 parameters)**
+
+For systems under flow with full nonequilibrium dynamics:
+
+.. math::
+
+   c_2(\vec{q}, \phi, t_1, t_2) = 1 + \beta e^{-q^2 J(t_1, t_2)} \times
+   \text{sinc}^2\left[\frac{qh}{2\pi} \Gamma(t_1, t_2) \cos(\phi - \phi_0)\right]
+
+Parameters: :math:`D_0, \alpha, D_{\text{offset}}, \dot{\gamma}_0, \beta, \dot{\gamma}_{\text{offset}}, \phi_0`
+
+Scattering Geometry
+~~~~~~~~~~~~~~~~~~~
+
+**Wavevector Definition**
+
+The scattering wavevector magnitude is related to the scattering angle:
+
+.. math::
+
+   q = \frac{4\pi}{\lambda} \sin\left(\frac{\theta}{2}\right)
+
+where :math:`\lambda` is the X-ray wavelength and :math:`\theta` is the scattering angle.
+
+**Angular Dependence**
+
+The angle :math:`\phi` represents the orientation between the flow direction and the
+scattering wavevector:
+
+.. math::
+
+   \phi(t) = \phi_0 + \omega t
+
+where :math:`\phi_0` is the initial flow direction and :math:`\omega` is the rotation frequency.
+
+Optimization Framework
+----------------------
+
+Parameter Estimation
+~~~~~~~~~~~~~~~~~~~~
+
+The optimal parameters are determined by minimizing the chi-squared objective function:
+
+.. math::
+
+   \chi^2(\boldsymbol{\theta}) = \sum_{i,j} \frac{[c_2^{\text{exp}}(\phi_i, t_j) - c_2^{\text{model}}(\phi_i, t_j; \boldsymbol{\theta})]^2}{\sigma_{ij}^2}
+
+where:
+  * :math:`\boldsymbol{\theta}` is the parameter vector
+  * :math:`c_2^{\text{exp}}` is the experimental correlation function
+  * :math:`c_2^{\text{model}}` is the theoretical model
+  * :math:`\sigma_{ij}` is the measurement uncertainty
+
+Robust Optimization
+~~~~~~~~~~~~~~~~~~~
+
+For noisy experimental data, robust optimization methods are employed:
+
+**Distributionally Robust Optimization (DRO)**
+
+.. math::
+
+   \min_{\boldsymbol{\theta}} \max_{\mathbb{P} \in \mathcal{U}} \mathbb{E}_{\mathbb{P}}[\chi^2(\boldsymbol{\theta}, \boldsymbol{\xi})]
+
+where :math:`\mathcal{U}` is the Wasserstein uncertainty set and :math:`\boldsymbol{\xi}` represents data uncertainty.
+
+**Scenario-Based Optimization**
+
+.. math::
+
+   \min_{\boldsymbol{\theta}} \max_{s \in S} \chi^2(\boldsymbol{\theta}, \boldsymbol{\xi}_s)
+
+where :math:`S` is a set of scenarios generated by bootstrap resampling.
+
+Boundary Conditions and Constraints
+-----------------------------------
+
+Physical Constraints
+~~~~~~~~~~~~~~~~~~~
+
+The optimization is subject to physically meaningful constraints:
+
+**Positivity Constraints**
+  * :math:`D_0 > 0`: positive baseline diffusion
+  * :math:`\dot{\gamma}_0 \geq 0`: non-negative baseline shear rate
+
+**Scaling Exponent Bounds**
+  * :math:`0.1 \leq \alpha \leq 2.0`: physically reasonable diffusion scaling
+  * :math:`0.1 \leq \beta \leq 2.0`: physically reasonable shear scaling
+
+**Angular Constraints**
+  * :math:`0° \leq \phi_0 < 360°`: flow direction angle
+
+**Offset Bounds**
+  * :math:`|D_{\text{offset}}| \leq 10^{-12}`: small diffusion corrections
+  * :math:`|\dot{\gamma}_{\text{offset}}| \leq 10^{-3}`: small shear corrections
+
+Numerical Implementation
+------------------------
+
+Computational Kernels
+~~~~~~~~~~~~~~~~~~~~~
+
+The package implements optimized computational kernels for:
+
+**1. Correlation Function Evaluation**
+
+.. code-block:: python
+
+   @numba.jit(nopython=True, fastmath=True)
+   def compute_g1_correlation_numba(phi_angles, time_points, params):
+       """Compute g1 correlation function with JIT compilation."""
+       # Vectorized computation of correlation functions
+       return correlation_values
+
+**2. Integral Computation**
+
+.. code-block:: python
+
+   @numba.jit(nopython=True, fastmath=True)
+   def create_time_integral_matrix_numba(time_points, D0, alpha, D_offset):
+       """Create diffusion integral matrix efficiently."""
+       # Optimized integral evaluation
+       return integral_matrix
+
+**3. Chi-Squared Calculation**
+
+.. code-block:: python
+
+   @numba.jit(nopython=True, fastmath=True)
+   def compute_chi_squared_fast(experimental_data, model_data, weights):
+       """Fast chi-squared computation with error weighting."""
+       # Vectorized chi-squared calculation
+       return chi_squared_value
+
+Performance Optimizations
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Memory Access Patterns**
+  * Contiguous array layouts for cache efficiency
+  * Vectorized operations to utilize SIMD instructions
+  * Memory pooling to reduce allocation overhead
+
+**Algorithmic Optimizations**
+  * Precomputed integral matrices for repeated evaluations
+  * Sparse matrix representations for angle filtering
+  * Adaptive step size control in optimization
+
+Error Analysis and Uncertainty Quantification
+---------------------------------------------
+
+Statistical Framework
+~~~~~~~~~~~~~~~~~~~~
+
+**Parameter Uncertainties**
+
+Confidence intervals are computed using:
+
+.. math::
+
+   \boldsymbol{\theta}_{\text{CI}} = \boldsymbol{\theta}_{\text{opt}} \pm t_{\alpha/2} \sqrt{\text{diag}(\mathbf{H}^{-1})}
+
+where :math:`\mathbf{H}` is the Hessian matrix and :math:`t_{\alpha/2}` is the critical t-value.
+
+**Goodness of Fit**
+
+The reduced chi-squared statistic assesses fit quality:
+
+.. math::
+
+   \chi^2_{\text{red}} = \frac{\chi^2}{N - p}
+
+where :math:`N` is the number of data points and :math:`p` is the number of parameters.
+
+**Residual Analysis**
+
+Systematic deviations are identified through residual analysis:
+
+.. math::
+
+   r_{ij} = \frac{c_2^{\text{exp}}(\phi_i, t_j) - c_2^{\text{model}}(\phi_i, t_j)}{\sigma_{ij}}
+
+Validation Protocols
+~~~~~~~~~~~~~~~~~~~
+
+**Cross-Validation**
+  * K-fold cross-validation for parameter stability assessment
+  * Leave-one-out validation for small datasets
+
+**Bootstrap Analysis**
+  * Non-parametric bootstrap for uncertainty quantification
+  * Parametric bootstrap for model validation
+
+**Sensitivity Analysis**
+  * Parameter perturbation studies
+  * Robustness assessment against data quality variations
+
+References
+----------
+
+.. [He2024] He, H., Liang, H., Chu, M., Jiang, Z., de Pablo, J.J., Tirrell, M.V.,
+           Narayanan, S., & Chen, W. "Transport coefficient approach for characterizing
+           nonequilibrium dynamics in soft matter." *Proceedings of the National Academy
+           of Sciences*, 121(31), e2401162121 (2024).
+           DOI: `10.1073/pnas.2401162121 <https://doi.org/10.1073/pnas.2401162121>`_
+
+.. [Berne1976] Berne, B.J. & Pecora, R. "Dynamic Light Scattering: With Applications
+              to Chemistry, Biology, and Physics." *Wiley*, New York (1976).
+
+.. [Brown1993] Brown, W. "Dynamic Light Scattering: The Method and Some Applications."
+              *Oxford University Press*, Oxford (1993).
+
+.. [Pusey1989] Pusey, P.N. & van Megen, W. "Dynamic light scattering by non-ergodic media."
+              *Physica A*, 157(2), 705-741 (1989).

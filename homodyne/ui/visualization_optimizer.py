@@ -33,7 +33,6 @@ except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
 try:
-    import plotly.express as px
     import plotly.graph_objects as go
     import plotly.io as pio
     from plotly.subplots import make_subplots
@@ -42,17 +41,12 @@ try:
 except ImportError:
     PLOTLY_AVAILABLE = False
     go = None
-    px = None
     make_subplots = None
     pio = None
 
 try:
-    from bokeh.layouts import gridplot
-    from bokeh.models import ColorBar, HoverTool
-    from bokeh.palettes import Viridis256
-    from bokeh.plotting import figure, output_file, save
-
-    BOKEH_AVAILABLE = True
+    # Bokeh imports removed - not used in current implementation
+    BOKEH_AVAILABLE = False
 except ImportError:
     BOKEH_AVAILABLE = False
 

@@ -1,48 +1,50 @@
 # Read the Docs configuration file for homodyne-analysis
+# Research-grade documentation configuration
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
 version: 2
 
-# Set the OS, Python version and other tools you might need
+# Build configuration
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.13"
+    python: "3.12"
   jobs:
-    post_create_environment:
-      # Install poetry if you're using it, or install requirements
+    post_checkout:
+      - git fetch --unshallow || true
+    pre_build:
       - pip install --upgrade pip setuptools wheel
-    post_install:
-      # Install package with documentation dependencies
       - pip install -e .[docs]
 
-# Build documentation in the "docs/" directory with Sphinx
-sphinx:
-  configuration: docs/conf.py
-  builder: html
-  fail_on_warning: false
-
-# Optionally build your docs in additional formats such as PDF and ePub
-formats:
-  - pdf
-  - epub
-
-# Optional but recommended, serve docs from a subdirectory
-# This is useful if you want to host multiple versions
+# Python configuration
 python:
   install:
+    - requirements: docs/requirements.txt
     - method: pip
       path: .
       extra_requirements:
         - docs
+        - performance
 
-# Specify which files/directories to include in the build
-# This helps reduce build time by excluding unnecessary files
+# Sphinx configuration
+sphinx:
+  configuration: docs/conf.py
+  fail_on_warning: false
+
+# Documentation formats
+formats:
+  - pdf
+  - epub
+  - htmlzip
+
+# Submodules configuration
 submodules:
+  include: []
   exclude: all
 
 # Search configuration
 search:
   ranking:
-    api/: -1
-    examples/: 1
+    api.rst: -1
+    tutorials.rst: 2
+    research.rst: 3

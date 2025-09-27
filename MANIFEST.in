@@ -13,9 +13,8 @@ recursive-include homodyne/typings *.pyi
 # Include configuration templates and data files
 recursive-include homodyne *.json
 
-# Include shell completion scripts
-include homodyne/completion_fast.py
-include homodyne/cli_completion.py
+# Include advanced completion system
+recursive-include homodyne/ui/completion *.py
 
 # Include documentation files
 recursive-include docs *.md
