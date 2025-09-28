@@ -39,73 +39,125 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-# Performance profiling utilities removed - functionality available via
-# core.config.performance_monitor
-from .analysis.core import HomodyneAnalysisCore
-from .core.config import ConfigManager, configure_logging, performance_monitor
-from .core.kernels import (
-    calculate_diffusion_coefficient_numba,
-    calculate_shear_rate_numba,
-    compute_g1_correlation_numba,
-    compute_sinc_squared_numba,
-    create_time_integral_matrix_numba,
-    memory_efficient_cache,
-)
+import importlib
 
-# Optional optimization modules with graceful degradation
-try:
+# Lazy loading implementation for performance optimization
+import sys
+from typing import TYPE_CHECKING, Any, Optional
+
+# Type checking imports (no runtime cost)
+if TYPE_CHECKING:
+    from .analysis.core import HomodyneAnalysisCore
+    from .config import TEMPLATE_FILES, get_config_dir, get_template_path
+    from .core.config import ConfigManager, performance_monitor
     from .optimization.classical import ClassicalOptimizer
-except ImportError as e:
-    ClassicalOptimizer = None  # type: ignore[assignment,misc]
-    import logging
-
-    logging.getLogger(__name__).warning(
-        f"Classical optimization not available - missing scipy: {e}"
-    )
-
-try:
     from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
-except ImportError as e:
-    RobustHomodyneOptimizer = None  # type: ignore[assignment,misc]
-    create_robust_optimizer = None  # type: ignore[assignment]
-    import logging
-
-    logging.getLogger(__name__).warning(
-        f"Robust optimization not available - missing CVXPY: {e}"
-    )
-
-# Backward compatibility imports for CLI functions
-try:
-    from .cli.create_config import main as create_config_main
-    from .cli.enhanced_runner import main as enhanced_runner_main
-    from .cli.run_homodyne import main as run_homodyne_main
-except ImportError:
-    run_homodyne_main = None
-    create_config_main = None
-    enhanced_runner_main = None
-
-# Backward compatibility imports for plotting functions
-try:
+    from .performance import PerformanceMonitor
     from .visualization.enhanced_plotting import EnhancedPlottingManager
     from .visualization.plotting import get_plot_config, plot_c2_heatmaps
-except ImportError:
-    plot_c2_heatmaps = None
-    get_plot_config = None
-    EnhancedPlottingManager = None
 
-# Backward compatibility imports for performance monitoring
-try:
-    from .performance import PerformanceMonitor
-except ImportError:
-    PerformanceMonitor = None
+# Essential imports only (fast loading)
+from .core.config import configure_logging
 
-# Backward compatibility imports for configuration utilities
-try:
-    from .config import TEMPLATE_FILES, get_config_dir, get_template_path
-except ImportError:
-    get_template_path = None
-    get_config_dir = None
-    TEMPLATE_FILES = None
+
+# Lazy loading class for deferred imports
+class _LazyLoader:
+    """Lazy loader for expensive imports."""
+
+    def __init__(self, module_name: str, class_name: str | None = None):
+        self.module_name = module_name
+        self.class_name = class_name
+        self._cached_object = None
+
+    def __call__(self, *args, **kwargs):
+        if self._cached_object is None:
+            self._load()
+        if self.class_name:
+            return self._cached_object(*args, **kwargs)
+        return self._cached_object
+
+    def __getattr__(self, name):
+        if self._cached_object is None:
+            self._load()
+        return getattr(self._cached_object, name)
+
+    def _load(self):
+        try:
+            # Handle relative imports properly
+            if self.module_name.startswith("."):
+                module = importlib.import_module(self.module_name, package="homodyne")
+            else:
+                module = importlib.import_module(self.module_name)
+
+            if self.class_name:
+                self._cached_object = getattr(module, self.class_name)
+            else:
+                self._cached_object = module
+        except ImportError as e:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                f"Failed to load {self.module_name}: {e}"
+            )
+            self._cached_object = None
+
+
+# Core functionality - lazy loaded
+HomodyneAnalysisCore = _LazyLoader(".analysis.core", "HomodyneAnalysisCore")
+ConfigManager = _LazyLoader(".core.config", "ConfigManager")
+performance_monitor = _LazyLoader(".core.config", "performance_monitor")
+
+# Kernels - lazy loaded for Numba compilation overhead
+_kernels_module = _LazyLoader(".core.kernels")
+calculate_diffusion_coefficient_numba = (
+    lambda *args, **kwargs: _kernels_module.calculate_diffusion_coefficient_numba(
+        *args, **kwargs
+    )
+)
+calculate_shear_rate_numba = (
+    lambda *args, **kwargs: _kernels_module.calculate_shear_rate_numba(*args, **kwargs)
+)
+compute_g1_correlation_numba = (
+    lambda *args, **kwargs: _kernels_module.compute_g1_correlation_numba(
+        *args, **kwargs
+    )
+)
+compute_sinc_squared_numba = (
+    lambda *args, **kwargs: _kernels_module.compute_sinc_squared_numba(*args, **kwargs)
+)
+create_time_integral_matrix_numba = (
+    lambda *args, **kwargs: _kernels_module.create_time_integral_matrix_numba(
+        *args, **kwargs
+    )
+)
+memory_efficient_cache = lambda *args, **kwargs: _kernels_module.memory_efficient_cache(
+    *args, **kwargs
+)
+
+# Optimization modules - expensive imports, lazy loaded
+ClassicalOptimizer = _LazyLoader(".optimization.classical", "ClassicalOptimizer")
+RobustHomodyneOptimizer = _LazyLoader(".optimization.robust", "RobustHomodyneOptimizer")
+create_robust_optimizer = _LazyLoader(".optimization.robust", "create_robust_optimizer")
+
+# CLI functions - lazy loaded
+run_homodyne_main = _LazyLoader(".cli.run_homodyne", "main")
+create_config_main = _LazyLoader(".cli.create_config", "main")
+enhanced_runner_main = _LazyLoader(".cli.enhanced_runner", "main")
+
+# Plotting functions - lazy loaded to avoid matplotlib import cost
+plot_c2_heatmaps = _LazyLoader(".visualization.plotting", "plot_c2_heatmaps")
+get_plot_config = _LazyLoader(".visualization.plotting", "get_plot_config")
+EnhancedPlottingManager = _LazyLoader(
+    ".visualization.enhanced_plotting", "EnhancedPlottingManager"
+)
+
+# Performance monitoring - lazy loaded
+PerformanceMonitor = _LazyLoader(".performance", "PerformanceMonitor")
+
+# Configuration utilities - lazy loaded
+get_template_path = _LazyLoader(".config", "get_template_path")
+get_config_dir = _LazyLoader(".config", "get_config_dir")
+TEMPLATE_FILES = _LazyLoader(".config", "TEMPLATE_FILES")
 
 
 __all__ = [

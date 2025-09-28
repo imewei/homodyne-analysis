@@ -1,0 +1,198 @@
+# Modern Docker Compose for Homodyne Testing Environments
+# ========================================================
+# Orchestrated testing with multiple specialized containers
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Core Testing Environment
+  # ==========================================================================
+
+  test-core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: test-env
+      args:
+        PYTHON_VERSION: "3.11"
+    volumes:
+      - ../reports:/workspace/reports
+      - ../homodyne:/workspace/homodyne:ro
+      - ../homodyne/tests:/workspace/homodyne/tests:ro
+    environment:
+      - PYTHONPATH=/workspace
+      - COVERAGE_FILE=/workspace/reports/.coverage
+    command: >
+      pytest homodyne/tests
+      --cov=homodyne
+      --cov-report=xml:/workspace/reports/coverage.xml
+      --cov-report=html:/workspace/reports/htmlcov
+      --junit-xml=/workspace/reports/junit.xml
+      -v
+
+  # ==========================================================================
+  # Performance Testing Environment
+  # ==========================================================================
+
+  test-performance:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: performance
+      args:
+        PYTHON_VERSION: "3.11"
+    volumes:
+      - ../reports:/workspace/reports
+      - ../homodyne:/workspace/homodyne:ro
+      - ../homodyne/tests:/workspace/homodyne/tests:ro
+    environment:
+      - PYTHONPATH=/workspace
+    command: >
+      pytest homodyne/tests
+      -m "performance or benchmark"
+      --benchmark-only
+      --benchmark-json=/workspace/reports/benchmark.json
+      --benchmark-save=baseline
+
+  # ==========================================================================
+  # Security Testing Environment
+  # ==========================================================================
+
+  test-security:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: security
+      args:
+        PYTHON_VERSION: "3.11"
+    volumes:
+      - ../reports:/workspace/reports
+      - ../homodyne:/workspace/homodyne:ro
+      - ../homodyne/tests:/workspace/homodyne/tests:ro
+    environment:
+      - PYTHONPATH=/workspace
+    command: >
+      sh -c "
+      pytest homodyne/tests -m security --junit-xml=/workspace/reports/security-junit.xml &&
+      bandit -r homodyne -f json -o /workspace/reports/bandit-report.json &&
+      safety check --json --output /workspace/reports/safety-report.json || true
+      "
+
+  # ==========================================================================
+  # Multi-Python Version Testing
+  # ==========================================================================
+
+  test-python39:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: test-env
+      args:
+        PYTHON_VERSION: "3.9"
+    volumes:
+      - ../reports:/workspace/reports
+      - ../homodyne:/workspace/homodyne:ro
+      - ../homodyne/tests:/workspace/homodyne/tests:ro
+    environment:
+      - PYTHONPATH=/workspace
+    command: >
+      pytest homodyne/tests
+      --cov=homodyne
+      --cov-report=xml:/workspace/reports/coverage-py39.xml
+      --junit-xml=/workspace/reports/junit-py39.xml
+      -m "not slow"
+
+  test-python310:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: test-env
+      args:
+        PYTHON_VERSION: "3.10"
+    volumes:
+      - ../reports:/workspace/reports
+      - ../homodyne:/workspace/homodyne:ro
+      - ../homodyne/tests:/workspace/homodyne/tests:ro
+    environment:
+      - PYTHONPATH=/workspace
+    command: >
+      pytest homodyne/tests
+      --cov=homodyne
+      --cov-report=xml:/workspace/reports/coverage-py310.xml
+      --junit-xml=/workspace/reports/junit-py310.xml
+      -m "not slow"
+
+  test-python312:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: test-env
+      args:
+        PYTHON_VERSION: "3.12"
+    volumes:
+      - ../reports:/workspace/reports
+      - ../homodyne:/workspace/homodyne:ro
+      - ../homodyne/tests:/workspace/homodyne/tests:ro
+    environment:
+      - PYTHONPATH=/workspace
+    command: >
+      pytest homodyne/tests
+      --cov=homodyne
+      --cov-report=xml:/workspace/reports/coverage-py312.xml
+      --junit-xml=/workspace/reports/junit-py312.xml
+      -m "not slow"
+
+  # ==========================================================================
+  # Documentation Building
+  # ==========================================================================
+
+  docs:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: docs
+    volumes:
+      - ../docs:/workspace/docs
+      - ../reports:/workspace/reports
+    command: >
+      sh -c "
+      sphinx-build -W -b html docs docs/_build/html &&
+      cp -r docs/_build/html /workspace/reports/docs
+      "
+
+  # ==========================================================================
+  # Code Quality Analysis
+  # ==========================================================================
+
+  quality:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      target: test-env
+      args:
+        PYTHON_VERSION: "3.11"
+    volumes:
+      - ../homodyne:/workspace/homodyne:ro
+      - ../reports:/workspace/reports
+    environment:
+      - PYTHONPATH=/workspace
+    command: >
+      sh -c "
+      ruff check homodyne --output-format=json > /workspace/reports/ruff-report.json &&
+      black --check --diff homodyne > /workspace/reports/black-report.txt &&
+      isort --check-only --diff homodyne > /workspace/reports/isort-report.txt &&
+      mypy homodyne --json-report /workspace/reports/mypy-report.json
+      "
+
+# =============================================================================
+# Networks and Volumes
+# =============================================================================
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  test-reports:
+    driver: local

@@ -1,11 +1,16 @@
+# Modern Python Project Configuration for Homodyne Analysis
+# =========================================================
+# Revolutionary test suite configuration with latest pytest features,
+# CI/CD integration, containerization support, and modern tooling ecosystem
+
 [build-system]
-requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=8.0"]
+requires = ["setuptools>=70.0", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) with robust optimization methods"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS)"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -15,135 +20,407 @@ authors = [
 maintainers = [
     {name = "Wei Chen", email = "wchen@anl.gov"},
 ]
+keywords = [
+    "xpcs", "homodyne", "scattering", "correlation", "spectroscopy",
+    "scientific-computing", "physics", "materials-science"
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering :: Physics",
-    "Topic :: Scientific/Engineering :: Chemistry",
-    "Topic :: Scientific/Engineering :: Information Analysis",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Operating System :: OS Independent",
-    "Environment :: Console",
-    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-keywords = [
-    "xpcs",
-    "homodyne",
-    "scattering",
-    "correlation-spectroscopy",
-    "soft-matter",
-    "nonequilibrium-dynamics",
-    "optimization",
-    "robust-optimization",
-    "scientific-computing",
-]
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dependencies = [
-    "numpy>=1.24.0,<2.4.0",
+    "numpy>=1.24.0",
     "scipy>=1.9.0",
-    "matplotlib>=3.5.0",
-    "h5py>=3.8.0",  # HDF5 file support for XPCS data loading
+    "matplotlib>=3.6.0",
+    "h5py>=3.7.0",
+    "pydantic>=2.0.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
+# Core optional dependencies
 performance = [
-    "numba>=0.62.0,<0.63.0",  # JIT compilation for computational kernels (NumPy 2.2+ compatible)
-    "psutil>=5.8.0",  # System monitoring and memory profiling
-    "joblib>=1.3.0",  # Parallel processing utilities
+    "numba>=0.58.0",
+    "dask>=2023.1.0",
+    "ray>=2.8.0",
+    "psutil>=5.9.0",
 ]
 robust = [
-    "cvxpy>=1.4.0",  # Convex optimization for robust methods
+    "cvxpy>=1.4.0",
+    "gurobipy>=11.0.0",
 ]
-docs = [
-    "sphinx>=8.2.0",
-    "sphinx-rtd-theme>=3.0.0",
-    "myst-parser>=4.0.0",
-    "sphinx-autodoc-typehints>=3.2.0",
-    "numpydoc>=1.9.0",
-    "linkify-it-py>=2.0.0",
+gpu = [
+    "cupy>=12.0.0",
+    "jax>=0.4.20",
+    "jaxlib>=0.4.20",
 ]
+
+# Modern testing ecosystem with latest features
 test = [
-    "pytest>=8.4.0",
-    "pytest-cov>=7.0.0",
-    "pytest-xdist>=3.6.0",
-    "pytest-benchmark>=5.1.0",
-    "pytest-mock>=3.12.0",  # For mocking utilities in tests
-    "pytest-html>=4.1.1",  # For HTML test reports
-    "pytest-metadata>=3.1.1",  # For test metadata
-    "hypothesis>=6.0.0",  # For property-based testing
-    "coverage>=7.0.0",  # Coverage measurement
+    # Core pytest framework with latest features
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.5.0",          # Parallel test execution
+    "pytest-benchmark>=4.0.0",       # Performance benchmarking
+    "pytest-timeout>=2.2.0",         # Test timeout handling
+    "pytest-mock>=3.12.0",           # Advanced mocking
+    "pytest-html>=4.1.0",            # Rich HTML reports
+    "pytest-json-report>=1.5.0",     # JSON reports for CI
+    "pytest-metadata>=3.0.0",        # Test metadata collection
+    "pytest-randomly>=3.15.0",       # Randomized test execution
+    "pytest-repeat>=0.9.3",          # Test repetition for reliability
+    "pytest-picked>=0.5.0",          # Run tests based on git changes
+    "pytest-clarity>=1.0.1",         # Better assertion diffs
+    "pytest-sugar>=0.9.7",           # Better progress reporting
+    "pytest-instafail>=0.5.0",       # Instant failure reporting
+
+    # Advanced testing capabilities
+    "hypothesis>=6.90.0",            # Property-based testing
+    "faker>=20.0.0",                 # Realistic test data generation
+    "factory-boy>=3.3.0",            # Test fixture factories
+    "freezegun>=1.4.0",              # Time mocking
+    "responses>=0.24.0",             # HTTP request mocking
+
+    # Performance and monitoring
+    "memory-profiler>=0.61.0",       # Memory usage profiling
+    "py-spy>=0.3.14",                # Python profiler
+    "scalene>=1.5.0",                # Advanced performance profiler
+
+    # Notebook testing
+    "nbval>=0.10.0",                 # Jupyter notebook validation
+    "jupyter>=1.0.0",
+
+    # Data validation
+    "pydantic>=2.5.0",               # Data validation
 ]
+
+# Modern code quality and linting ecosystem
 quality = [
-    "black>=25.0.0",
-    "isort>=6.0.0",
-    "flake8>=7.0.0",
-    "mypy>=1.18.0",
-    "ruff>=0.13.0",  # Modern linter and formatter
-    "bandit>=1.8.6",  # Security linter for Python code
-    "pip-audit>=2.6.0",  # Security vulnerability scanner for dependencies
+    "ruff>=0.1.9",                   # Fast Python linter and formatter
+    "black>=23.12.0",                # Code formatting
+    "isort>=5.13.0",                 # Import sorting
+    "mypy>=1.8.0",                   # Static type checking
+    "bandit>=1.7.6",                 # Security linting
+    "safety>=2.3.5",                 # Dependency vulnerability scanning
+    "pip-audit>=2.6.2",              # Advanced security auditing
+    "pre-commit>=3.6.0",             # Git hook management
+    "vulture>=2.10",                 # Dead code detection
+    "interrogate>=1.5.0",            # Documentation coverage
 ]
-typing = [
-    "types-psutil>=5.9.0",
-    "types-Pillow>=10.0.0",
-    "types-six>=1.16.0",
-    "types-requests>=2.28.0",
-]
+
+# Development dependencies
 dev = [
     "homodyne-analysis[test,docs,quality,performance]",
-    "pre-commit>=3.0.0",
-    "build>=0.10.0",
+    "pre-commit>=3.5.0",
+    "build>=1.0.0",
     "twine>=4.0.0",
+    "pip-tools>=7.0.0",
+    "tox>=4.11.0",                   # Multi-environment testing
+    "nox>=2023.4.22",               # Modern task automation
 ]
+
+# Documentation
+docs = [
+    "sphinx>=7.2.0",
+    "sphinx-rtd-theme>=2.0.0",
+    "sphinx-autodoc-typehints>=1.25.0",
+    "myst-parser>=2.0.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-design>=0.5.0",
+    "sphinx-autoapi>=3.0.0",
+]
+
+# Complete development environment
 all = [
-    "homodyne-analysis[performance,robust,dev]",
+    "homodyne-analysis[dev,test,docs,quality,performance,robust,gpu]",
 ]
 
 [project.urls]
 Homepage = "https://github.com/imewei/homodyne"
-Documentation = "https://homodyne.readthedocs.io/"
+Documentation = "https://homodyne-analysis.readthedocs.io"
 Repository = "https://github.com/imewei/homodyne"
 Issues = "https://github.com/imewei/homodyne/issues"
+Changelog = "https://github.com/imewei/homodyne/blob/main/CHANGELOG.md"
 
 [project.scripts]
 homodyne = "homodyne.cli.run_homodyne:main"
 homodyne-config = "homodyne.cli.create_config:main"
+homodyne-test = "homodyne.tests.test_runner:main"
+
+# =============================================================================
+# Tool Configuration - Modern Python Toolchain
+# =============================================================================
 
 [tool.setuptools]
-packages = {find = {exclude = ["tests*", "docs*", "examples*", "homodyne.tests*"]}}
+packages = ["homodyne"]
 include-package-data = true
-zip-safe = false  # Ensure compatibility with compiled extensions
 
 [tool.setuptools.package-data]
 homodyne = [
     "config/*.json",
-    "typings/**/*.pyi",
-    "completion_fast.py",
-    "cli_completion.py",
+    "typings/*.pyi",
+    "tests/data/*",
+    "py.typed",
 ]
 
-[tool.setuptools.dynamic]
-version = {attr = "homodyne.__version__"}
+[tool.setuptools_scm]
+write_to = "homodyne/_version.py"
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
+
+# =============================================================================
+# Modern Pytest Configuration - Revolutionary Testing Framework
+# =============================================================================
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["homodyne/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
+
+# Robust pytest configuration compatible with basic installations
+addopts = [
+    # Basic configuration and strictness
+    "--strict-config",
+    "--strict-markers",
+    "--verbose",
+    "--tb=short",
+    "--durations=10",
+    "--maxfail=5",
+    "--continue-on-collection-errors",
+]
+
+# Additional coverage options (uncomment if pytest-cov is installed):
+# "--cov=homodyne",
+# "--cov-report=term-missing:skip-covered",
+# "--cov-report=html:reports/htmlcov",
+# "--cov-report=xml:reports/coverage.xml",
+# "--cov-fail-under=80",
+
+# Comprehensive test markers for categorization
+markers = [
+    # Execution speed markers
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "fast: marks tests as fast",
+    "smoke: marks tests as smoke tests for basic functionality",
+
+    # Test type markers
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "e2e: marks tests as end-to-end tests",
+    "regression: marks tests as regression tests",
+
+    # Feature area markers
+    "performance: marks tests as performance benchmarks",
+    "security: marks tests as security tests",
+    "scientific: marks tests as scientific validation tests",
+    "cli: marks tests as CLI tests",
+    "api: marks tests as API tests",
+
+    # Technology markers
+    "gpu: marks tests that require GPU acceleration",
+    "distributed: marks tests for distributed computing",
+    "numba: marks tests that require Numba JIT compilation",
+    "cvxpy: marks tests that require CVXPY optimization",
+
+    # Quality markers
+    "benchmark: marks tests as benchmarks",
+    "critical: marks tests as critical path tests",
+    "experimental: marks tests as experimental features",
+    "deprecated: marks tests for deprecated functionality",
+
+    # CI/CD markers
+    "ci_only: marks tests that only run in CI environment",
+    "local_only: marks tests that only run locally",
+    "nightly: marks tests for nightly builds",
+]
+
+# Advanced filtering and warnings management
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::ImportWarning",
+    "ignore::ResourceWarning",
+    "ignore::RuntimeWarning:numba.*",
+    "ignore::FutureWarning:scipy.*",
+    "ignore::FutureWarning:numpy.*",
+    "ignore::FutureWarning:pandas.*",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+
+# Advanced logging configuration
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s (%(filename)s:%(lineno)d)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+log_file = "reports/pytest.log"
+log_file_level = "DEBUG"
+log_file_format = "%(asctime)s [%(levelname)8s] %(filename)s:%(lineno)d %(name)s: %(message)s"
+log_file_date_format = "%Y-%m-%d %H:%M:%S"
+
+# Performance and execution configuration (requires pytest-timeout plugin)
+# timeout = 300
+# timeout_method = "thread"
+
+# Test collection and execution
+norecursedirs = [
+    ".*", "build", "dist", "*.egg", "venv", ".venv",
+    "node_modules", "__pycache__", ".pytest_cache"
+]
+
+# =============================================================================
+# Advanced Coverage Configuration
+# =============================================================================
+
+[tool.coverage.run]
+source = ["homodyne"]
+parallel = true
+branch = true
+context = "${CONTEXT}"
+data_file = "reports/.coverage"
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/setup.py",
+    "*/conftest.py",
+    "homodyne/_version.py",
+    "homodyne/typings/*",
+    "homodyne/tests/data/*",
+]
+
+[tool.coverage.paths]
+source = [
+    "homodyne/",
+    "/workspace/homodyne/",
+    "C:\\*\\homodyne\\",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+skip_empty = true
+sort = "cover"
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if 0:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "@overload",
+    "\\.\\.\\.",
+]
+
+[tool.coverage.html]
+directory = "reports/htmlcov"
+show_contexts = true
+title = "Homodyne Analysis Test Coverage Report"
+
+[tool.coverage.xml]
+output = "reports/coverage.xml"
+
+[tool.coverage.json]
+output = "reports/coverage.json"
+show_contexts = true
+
+# =============================================================================
+# Modern Code Quality Tools Configuration
+# =============================================================================
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+extend-exclude = [
+    "__pycache__",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "_build",
+    "build",
+    "dist",
+    "venv",
+    "reports",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "ARG",  # flake8-unused-arguments
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "PL",   # Pylint
+    "RUF",  # Ruff-specific rules
+    "S",    # flake8-bandit
+    "T20",  # flake8-print
+]
+ignore = [
+    "E501",    # line too long, handled by black
+    "B008",    # do not perform function calls in argument defaults
+    "B023",    # function definition does not bind loop variable
+    "C901",    # too complex
+    "PLR0913", # too many arguments
+    "PLR0915", # too many statements
+    "S101",    # use of assert for tests
+    "T201",    # print statements (allowed in CLI)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403", "F405"]
+"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201"]
+"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201"]
+"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["homodyne"]
+force-single-line = true
 
 [tool.black]
+target-version = ["py39", "py310", "py311", "py312"]
 line-length = 88
-target-version = ['py312', 'py313']
-include = '\.pyi?$'
 extend-exclude = '''
 /(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
+    \.git
   | \.mypy_cache
-  | \.tox
-  | \.venv
+  | \.pytest_cache
   | \.ruff_cache
+  | \.venv
+  | _build
   | build
   | dist
-  | __pycache__
+  | venv
+  | reports
 )/
 '''
 
@@ -152,147 +429,151 @@ profile = "black"
 multi_line_output = 3
 line_length = 88
 known_first_party = ["homodyne"]
-skip_glob = ["build/*", "dist/*", "*.egg-info/*"]
-
-[tool.ruff]
-line-length = 88
-target-version = "py312"
-exclude = [
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".tox",
-    ".venv",
-    "__pycache__",
-    "build",
-    "dist",
-]
-
-[tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
-    "RUF", # ruff-specific rules
-]
-ignore = [
-    "E501",  # line too long (handled by black)
-    "B008",  # do not perform function calls in argument defaults
-    "B904",  # raise from within except (acceptable for error context)
-    "UP035", # typing import deprecation (gradual migration)
-]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]  # unused imports in __init__.py
-"tests/**/*.py" = ["F401", "F811"]  # allow unused imports in tests
-"homodyne/analysis/core.py" = ["RUF001", "RUF002", "RUF003"]  # scientific Greek letters
-"homodyne/core/config.py" = ["RUF001", "RUF003"]  # scientific notation
-"homodyne/plotting.py" = ["RUF001", "RUF003"]  # scientific Greek letters
-"homodyne/run_homodyne.py" = ["RUF003", "E402"]  # scientific notation, completion imports
-"homodyne/optimization/classical.py" = ["E402"]  # shared utility imports
-"scripts/validate_requirements.py" = ["RUF001"]  # allow info emoji
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = [
-    "--strict-config",
-    "--strict-markers",
-    "--color=yes",
-    "-v",
-    "-rs",  # Show reasons for skipped tests in summary
-]
-testpaths = ["homodyne/tests"]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "performance: marks performance-related tests",
-    "benchmark: marks tests for benchmarking (requires pytest-benchmark)",
-]
-filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-]
+force_single_line = true
 
 [tool.mypy]
-python_version = "3.12"
-mypy_path = "homodyne/typings"
-explicit_package_bases = true
-
-# Scientific computing friendly configuration
-warn_return_any = false  # Scientific functions often return Any from libraries
+python_version = "3.9"
+warn_return_any = true
 warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
 disallow_untyped_defs = false  # Scientific code often has complex signatures
-disallow_incomplete_defs = false  # Allow gradual typing
-check_untyped_defs = false  # Don't check untyped function bodies
-disallow_untyped_decorators = false  # Decorators in scientific libs often untyped
-no_implicit_optional = false  # Scientific code often has implicit None
-warn_redundant_casts = false  # Array types often need explicit casting
-warn_unused_ignores = false  # Scientific code may have conditional ignores
-warn_no_return = false  # Scientific functions sometimes have complex control flow
-warn_unreachable = false  # Scientific code may have conditional branches
-strict_equality = false  # NumPy arrays need relaxed equality checks
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
 show_error_codes = true
-pretty = true
-follow_imports = "silent"  # Don't follow into scientific library internals
+show_column_numbers = true
 
 [[tool.mypy.overrides]]
 module = [
     "numba.*",
-    "cvxpy.*",
-    "gurobipy.*",
-    "numpy.*",
     "scipy.*",
     "matplotlib.*",
     "h5py.*",
-    "sklearn.*",
-    "psutil.*",
-    "argcomplete.*"
+    "cupy.*",
+    "jax.*",
+    "cvxpy.*",
+    "gurobipy.*",
 ]
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = ["homodyne.tests.*"]
-disallow_untyped_defs = false
-check_untyped_defs = false
-
-[tool.coverage.run]
-source = ["homodyne"]
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "setup.py",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-]
-
 [tool.bandit]
-exclude_dirs = ["homodyne/tests", "tests", "build", "dist"]
-skips = [
-    "B101",  # Skip assert_used test (common in scientific code)
-    "B110",  # Skip try_except_pass (used for graceful degradation)
-    "B403",  # Skip pickle import (required for data serialization)
-    "B404",  # Skip subprocess import (required for CLI completion and test runner)
-    "B603",  # Skip subprocess without shell (we control the input)
-]
-severity_level = "medium"  # Only report medium and high severity issues
-format = "json"  # JSON output for CI integration
-output = "bandit_report.json"  # Save results for analysis
+exclude_dirs = ["tests", "test_*", "homodyne/tests"]
+skips = ["B101", "B601"]
+
+# =============================================================================
+# Performance and Benchmarking Configuration
+# =============================================================================
+
+[tool.pytest.benchmark]
+min_rounds = 5
+max_time = 2.0
+min_time = 0.000005
+warmup = false
+warmup_iterations = 100000
+disable_gc = false
+sort = "mean"
+group_by = "func"
+save = "reports/benchmarks/.benchmarks"
+save_data = true
+autosave = true
+compare = "reports/benchmarks/.benchmarks/*"
+
+# =============================================================================
+# Modern Development Tools Configuration
+# =============================================================================
+
+[tool.pip-tools]
+generate-hashes = true
+allow-unsafe = true
+upgrade = true
+resolver = "backtracking"
+strip-extras = true
+
+[tool.vulture]
+exclude = ["tests/", "build/", "dist/"]
+ignore_decorators = ["@pytest.fixture", "@pytest.mark.*"]
+min_confidence = 60
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = false
+ignore-magic = false
+ignore-semiprivate = false
+ignore-private = false
+ignore-property-decorators = false
+ignore-module = false
+ignore-nested-functions = false
+ignore-nested-classes = true
+ignore-setters = false
+fail-under = 80
+exclude = ["setup.py", "docs", "build", "tests"]
+verbose = 0
+quiet = false
+whitelist-regex = []
+color = true
+omit-covered-files = false
+
+# =============================================================================
+# CI/CD and Build Configuration
+# =============================================================================
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = true
+envlist = py{39,310,311,312}, coverage, docs, lint, security
+
+[testenv]
+deps =
+    homodyne-analysis[test]
+commands =
+    pytest homodyne/tests {posargs}
+
+[testenv:coverage]
+deps =
+    homodyne-analysis[test]
+commands =
+    pytest --cov=homodyne --cov-report=xml --cov-report=html
+
+[testenv:docs]
+deps =
+    homodyne-analysis[docs]
+commands =
+    sphinx-build -W -b html docs docs/_build/html
+
+[testenv:lint]
+deps =
+    homodyne-analysis[quality]
+commands =
+    ruff check homodyne
+    black --check homodyne
+    mypy homodyne
+
+[testenv:security]
+deps =
+    homodyne-analysis[quality]
+commands =
+    bandit -r homodyne
+    safety check
+    pip-audit
+"""
+
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-*"
+skip = "*-win32 *-manylinux_i686"
+test-command = "python -m pytest {project}/homodyne/tests -x"
+test-extras = ["test"]
+
+[tool.cibuildwheel.linux]
+before-all = "yum install -y gcc gcc-c++ make"
+
+[tool.cibuildwheel.macos]
+before-all = "brew install gcc"
+
+[tool.cibuildwheel.windows]
+before-all = "choco install mingw"

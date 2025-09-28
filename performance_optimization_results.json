@@ -1,0 +1,95 @@
+{
+  "numba_status": {
+    "available": true,
+    "version": "0.62.0"
+  },
+  "kernel_benchmarks": {
+    "size_100": {
+      "time_integral_matrix": 0.0002980232238769531,
+      "diffusion_calculation": 1.0967254638671875e-5,
+      "correlation_calculation": Infinity,
+      "total_time": Infinity
+    },
+    "size_1000": {
+      "time_integral_matrix": 0.0010039806365966797,
+      "diffusion_calculation": 1.0967254638671875e-5,
+      "correlation_calculation": Infinity,
+      "total_time": Infinity
+    },
+    "size_5000": {
+      "time_integral_matrix": 0.027515888214111328,
+      "diffusion_calculation": 5.698204040527344e-5,
+      "correlation_calculation": Infinity,
+      "total_time": Infinity
+    },
+    "scaling_analysis": {
+      "time_integral_matrix": {
+        "measured_ratio": 3.3688,
+        "expected_ratio": 100.0,
+        "scaling_efficiency": 29.684160531940158
+      },
+      "diffusion_calculation": {
+        "measured_ratio": 1.0,
+        "expected_ratio": 10.0,
+        "scaling_efficiency": 10.0
+      },
+      "correlation_calculation": {
+        "measured_ratio": NaN,
+        "expected_ratio": 10.0,
+        "scaling_efficiency": 0
+      }
+    }
+  },
+  "memory_analysis": {
+    "size_1000": {
+      "measured_mb": 7.640625,
+      "theoretical_mb": 7.62939453125,
+      "efficiency": 0.998530163599182,
+      "overhead_mb": 0.01123046875
+    },
+    "size_5000": {
+      "measured_mb": 190.75,
+      "theoretical_mb": 190.73486328125,
+      "efficiency": 0.9999206462975099,
+      "overhead_mb": 0.01513671875
+    },
+    "size_10000": {
+      "measured_mb": 762.953125,
+      "theoretical_mb": 762.939453125,
+      "efficiency": 0.9999820803211207,
+      "overhead_mb": 0.013671875
+    }
+  },
+  "vectorization_analysis": {
+    "vectorized_time": 0.0001289844512939453,
+    "loop_time": 0.0013501644134521484,
+    "speedup": 10.467652495378928,
+    "efficiency": "good"
+  },
+  "memory_optimization": {
+    "cache_optimization": {
+      "row_access_time": 0.00029015541076660156,
+      "column_access_time": 0.00017905235290527344,
+      "cache_efficiency": 1.6205059920106524,
+      "recommendation": "Current access optimal"
+    },
+    "memory_pooling": {
+      "average_allocation_time": 0.004353117942810058,
+      "allocation_variance": 4.0371819579831943e-7,
+      "pooling_recommended": "False"
+    },
+    "garbage_collection": {
+      "gc_collections_before": 97,
+      "gc_collections_after": 97,
+      "gc_impact": "minimal"
+    }
+  },
+  "numba_benchmark": {
+    "first_call_time": 2.193450927734375e-5,
+    "second_call_time": 1.0013580322265625e-5,
+    "compilation_overhead": 1.1920928955078125e-5,
+    "speedup_factor": 2.1904761904761907,
+    "results_match": true,
+    "numba_effectiveness": "good"
+  }
+}

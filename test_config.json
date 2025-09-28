@@ -1,0 +1,13 @@
+{
+  "analyzer_parameters": {
+    "q_magnitude": 0.001
+  },
+  "experimental_data": {
+    "data_file": "test.h5"
+  },
+  "optimization_config": {
+    "methods": [
+      "Nelder-Mead"
+    ]
+  }
+}
