@@ -13,23 +13,44 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-import numpy as np
+# Use lazy loading for heavy dependencies
+from .lazy_imports import scientific_deps
+
+# Lazy-loaded numpy and numba
+np = scientific_deps.get("numpy")
 
 # Import shared numba availability flag
 from .optimization_utils import NUMBA_AVAILABLE
 
-# Numba imports with fallbacks
-try:
-    from numba import float64, int64, jit, njit, prange, types
-
+# Lazy-loaded Numba with fallbacks
+if NUMBA_AVAILABLE:
     try:
-        from numba.types import Tuple  # type: ignore[attr-defined]
-    except (ImportError, AttributeError):
-        # Fallback for older numba versions or different import paths
-        Tuple = getattr(types, "Tuple", types.UniTuple)  # type: ignore[union-attr]
-except ImportError:
-    pass  # NUMBA_AVAILABLE already set from optimization_utils
+        # Use lazy loading for numba components
+        numba_module = scientific_deps.get("numba")
 
+        # Extract specific components
+        jit = getattr(numba_module, "jit")
+        njit = getattr(numba_module, "njit")
+        prange = getattr(numba_module, "prange")
+        float64 = getattr(numba_module, "float64")
+        int64 = getattr(numba_module, "int64")
+        types = getattr(numba_module, "types")
+
+        try:
+            Tuple = getattr(types, "Tuple")  # type: ignore[attr-defined]
+        except AttributeError:
+            # Fallback for older numba versions
+            Tuple = getattr(types, "UniTuple", types.Tuple)  # type: ignore[union-attr]
+
+    except Exception:
+        # If lazy loading fails, fall back to direct import
+        try:
+            from numba import float64, int64, jit, njit, prange, types
+            from numba.types import Tuple  # type: ignore[attr-defined]
+        except ImportError:
+            NUMBA_AVAILABLE = False
+
+if not NUMBA_AVAILABLE:
     # Fallback decorators when Numba is unavailable
     F = TypeVar("F", bound=Callable[..., Any])
 

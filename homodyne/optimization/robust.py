@@ -44,7 +44,11 @@ import logging
 import time
 from typing import Any
 
-import numpy as np
+# Use lazy loading for heavy dependencies
+from ..core.lazy_imports import scientific_deps
+
+# Lazy-loaded numpy
+np = scientific_deps.get("numpy")
 
 # Import revolutionary caching and optimization systems
 try:
@@ -205,7 +209,7 @@ class RobustHomodyneOptimizer:
         ----------
         analysis_core : HomodyneAnalysisCore
             Core analysis engine instance
-        config : Dict[str, Any]
+        config : dict[str, Any]
             Configuration dictionary containing optimization settings
         enable_caching : bool, default=True
             Enable advanced caching system for massive performance improvements
@@ -1209,7 +1213,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        List[np.ndarray]
+        list[np.ndarray]
             List of scenario datasets
         """
         # Compute initial residuals using 2D fitted correlation for bootstrap
@@ -1268,7 +1272,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray]
+        tuple[np.ndarray, np.ndarray]
             (fitted_correlation_function, jacobian_matrix)
         """
         # Disable caching for robust optimization to avoid shape mismatch issues
@@ -2046,7 +2050,7 @@ def create_robust_optimizer(
     ----------
     analysis_core : HomodyneAnalysisCore
         Core analysis engine instance
-    config : Dict[str, Any]
+    config : dict[str, Any]
         Configuration dictionary
     enable_caching : bool, default=True
         Enable advanced caching system for 10-100x performance improvements

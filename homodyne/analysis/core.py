@@ -113,7 +113,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+# Use lazy loading for heavy dependencies
+from ..core.lazy_imports import scientific_deps
+
+# Lazy-loaded numpy
+np = scientific_deps.get("numpy")
 
 # Import optional dependencies
 # pyxpcsviewer dependency removed - replaced with direct h5py usage
@@ -1262,7 +1266,54 @@ class HomodyneAnalysisCore:
         - Warning: 5.0 < reduced_chi2 ≤ 10.0
         - Poor/Critical: reduced_chi2 > 10.0
         """
-        # Parameter validation with caching
+        try:
+            # Step 1: Validate parameters and configuration
+            validation_result = self._validate_chi_squared_parameters(parameters, return_components)
+            if validation_result is not None:
+                return validation_result
+
+            # Step 2: Calculate theoretical correlation
+            c2_theory = self.calculate_c2_nonequilibrium_laminar_parallel(parameters, phi_angles)
+
+            # Step 3: Get optimization indices based on angle filtering
+            optimization_indices = self._get_optimization_indices(
+                phi_angles, filter_angles_for_optimization
+            )
+
+            # Step 4: Compute chi-squared values for all angles
+            chi_squared_results = self._compute_angle_chi_squared(
+                c2_theory, c2_experimental, parameters, phi_angles
+            )
+
+            # Step 5: Calculate final results and uncertainty
+            final_results = self._calculate_final_chi_squared_results(
+                chi_squared_results,
+                optimization_indices,
+                parameters,
+                phi_angles,
+                filter_angles_for_optimization,
+                method_name,
+                return_components,
+            )
+
+            return final_results
+
+        except Exception as e:
+            logger.warning(f"Chi-squared calculation failed: {e}")
+            logger.exception("Full traceback for chi-squared calculation failure:")
+            if return_components:
+                return {"chi_squared": np.inf, "valid": False, "error": str(e)}
+            else:
+                return np.inf
+
+    def _validate_chi_squared_parameters(
+        self, parameters: np.ndarray, return_components: bool
+    ) -> float | dict[str, Any] | None:
+        """
+        Validate chi-squared calculation parameters and configuration.
+
+        Returns None if validation passes, otherwise returns error result.
+        """
         if self.config is None:
             raise ValueError("Configuration not loaded: self.config is None.")
 
@@ -1327,415 +1378,463 @@ class HomodyneAnalysisCore:
                             }
                         )
 
-        try:
-            # Calculate theoretical correlation
-            c2_theory = self.calculate_c2_nonequilibrium_laminar_parallel(
-                parameters, phi_angles
+        return None  # Validation passed
+
+    def _get_optimization_indices(
+        self, phi_angles: np.ndarray, filter_angles_for_optimization: bool
+    ) -> list[int]:
+        """
+        Get indices of angles to use for optimization based on filtering settings.
+        """
+        if not filter_angles_for_optimization:
+            return list(range(len(phi_angles)))
+
+        # Get target angle ranges from ConfigManager if available
+        target_ranges = [
+            (-10.0, 10.0),
+            (170.0, 190.0),
+        ]  # Default ranges
+
+        if hasattr(self, "config_manager") and self.config_manager:
+            target_ranges = self.config_manager.get_target_angle_ranges()
+        elif hasattr(self, "config") and self.config:
+            angle_config = self.config.get("optimization_config", {}).get(
+                "angle_filtering", {}
+            )
+            config_ranges = angle_config.get("target_ranges", [])
+            if config_ranges:
+                target_ranges = [
+                    (
+                        r.get("min_angle", -10.0),
+                        r.get("max_angle", 10.0),
+                    )
+                    for r in config_ranges
+                ]
+
+        # Find indices of angles in target ranges using vectorized operations
+        phi_angles_array = np.asarray(phi_angles)
+        optimization_mask = np.zeros(len(phi_angles_array), dtype=bool)
+        # Vectorized range checking for all ranges at once
+        for min_angle, max_angle in target_ranges:
+            optimization_mask |= (phi_angles_array >= min_angle) & (
+                phi_angles_array <= max_angle
+            )
+        optimization_indices = np.flatnonzero(optimization_mask).tolist()
+
+        logger.debug(
+            f"Filtering angles for optimization: using {
+                len(optimization_indices)
+            }/{len(phi_angles)} angles"
+        )
+
+        if optimization_indices:
+            filtered_angles = phi_angles[optimization_indices]
+            logger.debug(f"Optimization angles: {filtered_angles.tolist()}")
+            return optimization_indices
+
+        # Handle case when no angles found in target ranges
+        should_fallback = True
+        if hasattr(self, "config_manager") and self.config_manager:
+            should_fallback = self.config_manager.should_fallback_to_all_angles()
+        elif hasattr(self, "config") and self.config:
+            angle_config = self.config.get("optimization_config", {}).get(
+                "angle_filtering", {}
+            )
+            should_fallback = angle_config.get("fallback_to_all_angles", True)
+
+        if should_fallback:
+            logger.warning(
+                f"No angles found in target optimization ranges {target_ranges}"
+            )
+            logger.warning("Falling back to using all angles for optimization")
+            return list(range(len(phi_angles)))  # Fall back to all angles
+        else:
+            raise ValueError(
+                f"No angles found in target optimization ranges {target_ranges} and fallback disabled"
             )
 
-            # Chi-squared calculation with caching
-            if not hasattr(self, "_cached_chi_config"):
-                self._cached_chi_config = self.config.get("advanced_settings", {}).get(
-                    "chi_squared_calculation", {}
-                )
-            chi_config = self._cached_chi_config
-            uncertainty_factor = chi_config.get("uncertainty_estimation_factor", 0.1)
-            min_sigma = chi_config.get("minimum_sigma", 1e-10)
+    def _compute_angle_chi_squared(
+        self,
+        c2_theory: np.ndarray,
+        c2_experimental: np.ndarray,
+        parameters: np.ndarray,
+        phi_angles: np.ndarray,
+    ) -> dict[str, Any]:
+        """
+        Compute chi-squared values for all angles using vectorized operations.
+        """
+        # Chi-squared calculation with caching
+        if not hasattr(self, "_cached_chi_config"):
+            self._cached_chi_config = self.config.get("advanced_settings", {}).get(
+                "chi_squared_calculation", {}
+            )
+        chi_config = self._cached_chi_config
+        uncertainty_factor = chi_config.get("uncertainty_estimation_factor", 0.1)
+        min_sigma = chi_config.get("minimum_sigma", 1e-10)
+        n_params = len(parameters)
 
-            # Calculate parameters for DOF calculation
-            n_params = len(parameters)
+        # Calculate chi-squared for all angles (for detailed results)
+        n_angles = len(phi_angles)
+        angle_chi2 = np.zeros(n_angles)
+        angle_chi2_reduced = np.zeros(n_angles)
 
-            # Angle filtering for optimization
-            if filter_angles_for_optimization:
-                # Get target angle ranges from ConfigManager if available
-                target_ranges = [
-                    (-10.0, 10.0),
-                    (170.0, 190.0),
-                ]  # Default ranges
-                if hasattr(self, "config_manager") and self.config_manager:
-                    target_ranges = self.config_manager.get_target_angle_ranges()
-                elif hasattr(self, "config") and self.config:
-                    angle_config = self.config.get("optimization_config", {}).get(
-                        "angle_filtering", {}
-                    )
-                    config_ranges = angle_config.get("target_ranges", [])
-                    if config_ranges:
-                        target_ranges = [
-                            (
-                                r.get("min_angle", -10.0),
-                                r.get("max_angle", 10.0),
-                            )
-                            for r in config_ranges
-                        ]
+        # Memory layout optimization for better cache performance
+        theory_flat, exp_flat, n_data_per_angle = self._optimize_memory_layout(
+            c2_theory, c2_experimental, n_angles
+        )
 
-                # Find indices of angles in target ranges using vectorized
-                # operations
-                phi_angles_array = np.asarray(phi_angles)
-                optimization_mask = np.zeros(len(phi_angles_array), dtype=bool)
-                # Vectorized range checking for all ranges at once
-                for min_angle, max_angle in target_ranges:
-                    optimization_mask |= (phi_angles_array >= min_angle) & (
-                        phi_angles_array <= max_angle
-                    )
-                optimization_indices = np.flatnonzero(optimization_mask).tolist()
+        angle_data_points = [n_data_per_angle] * n_angles
 
+        # Compute variance estimates and scaling solutions
+        exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
+        sigma_batch = np.maximum(exp_std_batch, min_sigma)
+
+        contrast_batch, offset_batch = self._solve_scaling_batch(
+            theory_flat, exp_flat, n_angles, n_data_per_angle
+        )
+
+        # Compute chi-squared values
+        chi2_raw_batch = self._compute_chi_squared_batch(
+            theory_flat, exp_flat, contrast_batch, offset_batch, n_angles
+        )
+
+        # Apply sigma normalization and DOF calculation (vectorized)
+        sigma_squared_batch = sigma_batch**2
+        dof_batch = np.maximum(n_data_per_angle - n_params, 1)
+
+        angle_chi2[:] = chi2_raw_batch / sigma_squared_batch
+        angle_chi2_reduced[:] = angle_chi2 / dof_batch
+
+        # Store scaling solutions using efficient array operations
+        scaling_solutions = np.column_stack([contrast_batch, offset_batch]).tolist()
+
+        return {
+            "angle_chi2": angle_chi2,
+            "angle_chi2_reduced": angle_chi2_reduced,
+            "angle_data_points": angle_data_points,
+            "scaling_solutions": scaling_solutions,
+        }
+
+    def _optimize_memory_layout(
+        self, c2_theory: np.ndarray, c2_experimental: np.ndarray, n_angles: int
+    ) -> tuple[np.ndarray, np.ndarray, int]:
+        """
+        Optimize memory layout for cache-friendly sequential access.
+        """
+        original_shape = c2_theory.shape
+
+        if len(original_shape) == 3:
+            # For 3D arrays, create cache-optimized flat arrays
+            n_data_per_angle = original_shape[1] * original_shape[2]
+            theory_flat = np.ascontiguousarray(
+                c2_theory.reshape(n_angles, n_data_per_angle), dtype=np.float64
+            )
+            exp_flat = np.ascontiguousarray(
+                c2_experimental.reshape(n_angles, n_data_per_angle),
+                dtype=np.float64,
+            )
+        else:
+            # For 2D arrays, ensure contiguous layout
+            theory_flat = np.ascontiguousarray(c2_theory, dtype=np.float64)
+            exp_flat = np.ascontiguousarray(c2_experimental, dtype=np.float64)
+            n_data_per_angle = theory_flat.shape[1]
+
+        return theory_flat, exp_flat, n_data_per_angle
+
+    def _solve_scaling_batch(
+        self,
+        theory_flat: np.ndarray,
+        exp_flat: np.ndarray,
+        n_angles: int,
+        n_data_per_angle: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Solve least squares scaling for all angles using vectorized operations.
+        """
+        try:
+            # Try Numba implementation first
+            return solve_least_squares_batch_numba(theory_flat, exp_flat)
+        except RuntimeError as e:
+            if "NUMBA_NUM_THREADS" in str(e):
                 logger.debug(
-                    f"Filtering angles for optimization: using {
-                        len(optimization_indices)
-                    }/{len(phi_angles)} angles"
+                    "Using fallback least squares due to NUMBA threading conflict"
                 )
-                if optimization_indices:
-                    filtered_angles = phi_angles[optimization_indices]
-                    logger.debug(f"Optimization angles: {filtered_angles.tolist()}")
-                else:
-                    # Check if fallback is enabled
-                    should_fallback = True
-                    if hasattr(self, "config_manager") and self.config_manager:
-                        should_fallback = (
-                            self.config_manager.should_fallback_to_all_angles()
-                        )
-                    elif hasattr(self, "config") and self.config:
-                        angle_config = self.config.get("optimization_config", {}).get(
-                            "angle_filtering", {}
-                        )
-                        should_fallback = angle_config.get(
-                            "fallback_to_all_angles", True
-                        )
-
-                    if should_fallback:
-                        logger.warning(
-                            f"No angles found in target optimization ranges {target_ranges}"
-                        )
-                        logger.warning(
-                            "Falling back to using all angles for optimization"
-                        )
-                        optimization_indices = list(
-                            range(len(phi_angles))
-                        )  # Fall back to all angles
-                    else:
-                        raise ValueError(
-                            f"No angles found in target optimization ranges {target_ranges} and fallback disabled"
-                        )
-            else:
-                optimization_indices = list(range(len(phi_angles)))
-
-            optimization_chi2_angles = []
-
-            # Calculate chi-squared for all angles (for detailed results)
-            n_angles = len(phi_angles)
-            angle_chi2 = np.zeros(n_angles)
-            angle_chi2_reduced = np.zeros(n_angles)
-            angle_data_points = []
-            scaling_solutions = []
-
-            # MEMORY LAYOUT OPTIMIZATION: Advanced cache-aligned memory patterns
-            # ================================================================
-            # Original: c2_theory.reshape(n_angles, -1) creates non-contiguous views
-            # Optimized: Ensure contiguous memory layout for CPU cache efficiency
-            #
-            # Performance Benefits:
-            # 1. Cache-friendly sequential memory access
-            # 2. Reduced memory fragmentation
-            # 3. Better CPU prefetching
-            # 4. SIMD vectorization opportunities
-            # 5. Reduced memory bandwidth utilization
-
-            # Get original shape to determine optimal memory layout
-            original_shape = c2_theory.shape
-
-            if len(original_shape) == 3:
-                # For 3D arrays (n_angles, n_rows, n_cols), create cache-optimized flat arrays
-                n_data_per_angle = original_shape[1] * original_shape[2]
-
-                # Create contiguous memory layout with proper alignment
-                theory_flat = np.ascontiguousarray(
-                    c2_theory.reshape(n_angles, n_data_per_angle), dtype=np.float64
-                )
-                exp_flat = np.ascontiguousarray(
-                    c2_experimental.reshape(n_angles, n_data_per_angle),
-                    dtype=np.float64,
+                return self._solve_scaling_fallback(
+                    theory_flat, exp_flat, n_angles, n_data_per_angle
                 )
             else:
-                # For 2D arrays, ensure contiguous layout
-                theory_flat = np.ascontiguousarray(c2_theory, dtype=np.float64)
-                exp_flat = np.ascontiguousarray(c2_experimental, dtype=np.float64)
+                raise
 
-            # SCALING OPTIMIZATION (ALWAYS ENABLED) - Vectorized implementation
-            # =====================================
-            # This performs least squares fitting to determine the optimal scaling relationship:
-            # g₂ = offset + contrast × g₁ where:
-            # - g₁ is the theoretical correlation function
-            # - g₂ is the experimental correlation function
-            # - contrast and offset are fitted scaling parameters
-            #
-            # WHY THIS IS ESSENTIAL:
-            # This scaling optimization is ALWAYS enabled because it is fundamental to proper
-            # chi-squared calculation. Without it, we would compare raw theoretical values
-            # directly to experimental data, which ignores systematic scaling factors and
-            # offsets that are physically present due to:
-            # - Instrumental response functions
-            # - Background signals
-            # - Detector gain variations
-            # - Normalization differences
-            #
-            # Mathematical implementation: solve A·x = b where A = [theory,
-            # ones], x = [contrast, offset]
+    def _solve_scaling_fallback(
+        self,
+        theory_flat: np.ndarray,
+        exp_flat: np.ndarray,
+        n_angles: int,
+        n_data_per_angle: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Fallback implementation for scaling solution using pure NumPy.
+        """
+        contrast_batch = np.zeros(n_angles, dtype=np.float64)
+        offset_batch = np.zeros(n_angles, dtype=np.float64)
 
-            # Vectorized least squares fitting for all angles
-            # Use optimized shape information from memory layout optimization
-            if len(original_shape) == 3:
-                n_data_per_angle = original_shape[1] * original_shape[2]
-            else:
-                n_data_per_angle = theory_flat.shape[1]
+        try:
+            # Vectorized batch least squares using einsum and broadcasting
+            ones_matrix = np.ones((n_angles, n_data_per_angle))
+            A_batch = np.stack(
+                [theory_flat, ones_matrix], axis=2
+            )  # (n_angles, n_data, 2)
 
-            angle_data_points = [n_data_per_angle] * n_angles
+            # Vectorized normal equations: AtA = A^T * A, Atb = A^T * b
+            AtA = np.einsum(
+                "ijk,ijl->ikl", A_batch, A_batch
+            )  # (n_angles, 2, 2)
+            Atb = np.einsum(
+                "ijk,ij->ik", A_batch, exp_flat
+            )  # (n_angles, 2)
 
-            # Phase 3: Vectorized batch processing with Numba optimization
-            # Pre-compute variance estimates for all angles (vectorized
-            # optimization)
-            exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
-            sigma_batch = np.maximum(exp_std_batch, min_sigma)
-
-            # Batch solve least squares for all angles using Numba with
-            # fallback
+            # Vectorized solve: x = (A^T * A)^(-1) * A^T * b
             try:
-                contrast_batch, offset_batch = solve_least_squares_batch_numba(
-                    theory_flat, exp_flat
-                )
-            except RuntimeError as e:
-                if "NUMBA_NUM_THREADS" in str(e):
-                    # Fallback to non-Numba implementation for threading
-                    # conflicts
-                    logger.debug(
-                        "Using fallback least squares due to NUMBA threading conflict"
-                    )
-                    contrast_batch = np.zeros(n_angles, dtype=np.float64)
-                    offset_batch = np.zeros(n_angles, dtype=np.float64)
-
-                    # VECTORIZED FALLBACK: Advanced NumPy broadcasting for batch least squares
-                    # =====================================================================
-                    # Original: Loop-based least squares solving for each angle
-                    # Optimized: Vectorized batch least squares using einsum and broadcasting
-                    #
-                    # Mathematical operation: Solve A*x = b for each angle where:
-                    # A = [theory_vec, ones], x = [contrast, offset], b = exp_vec
-                    #
-                    # Vectorization strategy:
-                    # 1. Create batch design matrices using broadcasting
-                    # 2. Use Einstein summation for efficient matrix operations
-                    # 3. Vectorized matrix inverse and multiplication
-                    # 4. Robust error handling with vectorized fallbacks
-
+                solutions = np.linalg.solve(AtA, Atb)  # (n_angles, 2)
+                contrast_batch = solutions[:, 0]
+                offset_batch = solutions[:, 1]
+            except np.linalg.LinAlgError:
+                # Individual angle fallback for numerical issues
+                for i in range(n_angles):
                     try:
-                        # Create batch design matrices: A[i] = [theory_flat[i], ones]
-                        ones_matrix = np.ones((n_angles, n_data_per_angle))
-                        A_batch = np.stack(
-                            [theory_flat, ones_matrix], axis=2
-                        )  # (n_angles, n_data, 2)
+                        A = np.column_stack(
+                            [theory_flat[i], np.ones(n_data_per_angle)]
+                        )
+                        x, _, _, _ = np.linalg.lstsq(
+                            A, exp_flat[i], rcond=None
+                        )
+                        contrast_batch[i] = x[0]
+                        offset_batch[i] = x[1]
+                    except np.linalg.LinAlgError:
+                        contrast_batch[i] = 0.5
+                        offset_batch[i] = 1.0
 
-                        # Vectorized normal equations: AtA = A^T * A, Atb = A^T * b
-                        AtA = np.einsum(
-                            "ijk,ijl->ikl", A_batch, A_batch
-                        )  # (n_angles, 2, 2)
-                        Atb = np.einsum(
-                            "ijk,ij->ik", A_batch, exp_flat
-                        )  # (n_angles, 2)
+        except Exception:
+            # Ultimate fallback to conservative values
+            contrast_batch[:] = 0.5
+            offset_batch[:] = 1.0
 
-                        # Vectorized solve: x = (A^T * A)^(-1) * A^T * b
-                        try:
-                            solutions = np.linalg.solve(AtA, Atb)  # (n_angles, 2)
-                            contrast_batch = solutions[:, 0]
-                            offset_batch = solutions[:, 1]
-                        except np.linalg.LinAlgError:
-                            # Individual angle fallback for numerical issues
-                            for i in range(n_angles):
-                                try:
-                                    A = np.column_stack(
-                                        [theory_flat[i], np.ones(n_data_per_angle)]
-                                    )
-                                    x, _, _, _ = np.linalg.lstsq(
-                                        A, exp_flat[i], rcond=None
-                                    )
-                                    contrast_batch[i] = x[0]
-                                    offset_batch[i] = x[1]
-                                except np.linalg.LinAlgError:
-                                    contrast_batch[i] = 0.5
-                                    offset_batch[i] = 1.0
+        return contrast_batch, offset_batch
 
-                    except Exception:
-                        # Ultimate fallback to conservative values
-                        contrast_batch[:] = 0.5
-                        offset_batch[:] = 1.0
-                else:
-                    raise
-
-            # Batch compute chi-squared values using Numba with fallback
-            try:
-                chi2_raw_batch = compute_chi_squared_batch_numba(
+    def _compute_chi_squared_batch(
+        self,
+        theory_flat: np.ndarray,
+        exp_flat: np.ndarray,
+        contrast_batch: np.ndarray,
+        offset_batch: np.ndarray,
+        n_angles: int,
+    ) -> np.ndarray:
+        """
+        Compute chi-squared values for all angles using vectorized operations.
+        """
+        try:
+            # Try Numba implementation first
+            return compute_chi_squared_batch_numba(
+                theory_flat, exp_flat, contrast_batch, offset_batch
+            )
+        except RuntimeError as e:
+            if "NUMBA_NUM_THREADS" in str(e):
+                logger.debug(
+                    "Using fallback chi-squared computation due to NUMBA threading conflict"
+                )
+                return self._compute_chi_squared_fallback(
                     theory_flat, exp_flat, contrast_batch, offset_batch
                 )
-            except RuntimeError as e:
-                if "NUMBA_NUM_THREADS" in str(e):
-                    # Fallback to non-Numba implementation for threading
-                    # conflicts
-                    logger.debug(
-                        "Using fallback chi-squared computation due to NUMBA threading conflict"
-                    )
-                    chi2_raw_batch = np.zeros(n_angles, dtype=np.float64)
-
-                    # VECTORIZED FALLBACK: Advanced broadcasting for batch chi-squared
-                    # ===============================================================
-                    # Original: Loop-based chi-squared computation for each angle
-                    # Optimized: Vectorized computation using broadcasting and element-wise operations
-                    #
-                    # Mathematical operation: chi2[i] = sum((exp[i] - fitted[i])^2)
-                    # where fitted[i] = contrast[i] * theory[i] + offset[i]
-                    #
-                    # Vectorization strategy:
-                    # 1. Broadcasting scalar operations across arrays
-                    # 2. Vectorized residual computation
-                    # 3. Vectorized sum reduction along appropriate axis
-
-                    # Vectorized fitted values computation using broadcasting
-                    # contrast_batch[:, np.newaxis] broadcasts to (n_angles, 1)
-                    # theory_flat is (n_angles, n_data_per_angle)
-                    # Result: (n_angles, n_data_per_angle)
-                    fitted_batch = (
-                        contrast_batch[:, np.newaxis] * theory_flat
-                        + offset_batch[:, np.newaxis]
-                    )
-
-                    # Vectorized residuals computation
-                    residuals_batch = exp_flat - fitted_batch
-
-                    # Vectorized chi-squared computation: sum along data points axis
-                    chi2_raw_batch = np.sum(residuals_batch**2, axis=1)
-                else:
-                    raise
-
-            # Apply sigma normalization and DOF calculation (vectorized)
-            sigma_squared_batch = sigma_batch**2
-            dof_batch = np.maximum(n_data_per_angle - n_params, 1)
-
-            angle_chi2[:] = chi2_raw_batch / sigma_squared_batch
-            angle_chi2_reduced[:] = angle_chi2 / dof_batch
-
-            # VECTORIZED: Store scaling solutions using advanced array operations
-            # Original: List comprehension with loop
-            # Optimized: NumPy column_stack for efficient array construction
-            scaling_solutions = np.column_stack([contrast_batch, offset_batch]).tolist()
-
-            # Collect chi2 values for optimization angles (for averaging)
-            if filter_angles_for_optimization:
-                optimization_chi2_angles = [
-                    angle_chi2_reduced[i] for i in optimization_indices
-                ]
             else:
-                optimization_chi2_angles = angle_chi2_reduced.tolist()
+                raise
 
-            # Calculate average reduced chi-squared from optimization angles
-            # with uncertainty
-            if optimization_chi2_angles:
-                reduced_chi2 = np.mean(optimization_chi2_angles)
-                n_optimization_angles = len(optimization_chi2_angles)
+    def _compute_chi_squared_fallback(
+        self,
+        theory_flat: np.ndarray,
+        exp_flat: np.ndarray,
+        contrast_batch: np.ndarray,
+        offset_batch: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Fallback implementation for chi-squared computation using pure NumPy.
+        """
+        # Vectorized fitted values computation using broadcasting
+        fitted_batch = (
+            contrast_batch[:, np.newaxis] * theory_flat
+            + offset_batch[:, np.newaxis]
+        )
 
-                # Calculate uncertainty in reduced chi-squared
-                if n_optimization_angles > 1:
-                    # Standard error of the mean
-                    reduced_chi2_std = np.std(optimization_chi2_angles, ddof=1)
-                    reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(
-                        n_optimization_angles
-                    )
-                else:
-                    # Single angle case
-                    reduced_chi2_std = 0.0
-                    reduced_chi2_uncertainty = 0.0
+        # Vectorized residuals computation
+        residuals_batch = exp_flat - fitted_batch
 
-                logger.debug(
-                    f"Using average of {
-                        n_optimization_angles
-                    } optimization angles: χ²_red = {reduced_chi2:.6e} ± {
-                        reduced_chi2_uncertainty:.6e}"
+        # Vectorized chi-squared computation: sum along data points axis
+        return np.sum(residuals_batch**2, axis=1)
+
+    def _calculate_final_chi_squared_results(
+        self,
+        chi_squared_results: dict[str, Any],
+        optimization_indices: list[int],
+        parameters: np.ndarray,
+        phi_angles: np.ndarray,
+        filter_angles_for_optimization: bool,
+        method_name: str,
+        return_components: bool,
+    ) -> float | dict[str, Any]:
+        """
+        Calculate final chi-squared results with uncertainty estimation and logging.
+        """
+        angle_chi2_reduced = chi_squared_results["angle_chi2_reduced"]
+        angle_chi2 = chi_squared_results["angle_chi2"]
+        angle_data_points = chi_squared_results["angle_data_points"]
+        scaling_solutions = chi_squared_results["scaling_solutions"]
+
+        # Collect chi2 values for optimization angles (for averaging)
+        if filter_angles_for_optimization:
+            optimization_chi2_angles = [
+                angle_chi2_reduced[i] for i in optimization_indices
+            ]
+        else:
+            optimization_chi2_angles = angle_chi2_reduced.tolist()
+
+        # Calculate average reduced chi-squared from optimization angles with uncertainty
+        if optimization_chi2_angles:
+            reduced_chi2 = np.mean(optimization_chi2_angles)
+            n_optimization_angles = len(optimization_chi2_angles)
+
+            # Calculate uncertainty in reduced chi-squared
+            if n_optimization_angles > 1:
+                # Standard error of the mean
+                reduced_chi2_std = np.std(optimization_chi2_angles, ddof=1)
+                reduced_chi2_uncertainty = reduced_chi2_std / np.sqrt(
+                    n_optimization_angles
                 )
             else:
-                # Fallback if no optimization angles (shouldn't happen)
-                reduced_chi2 = (
-                    np.mean(angle_chi2_reduced) if angle_chi2_reduced else 1e6
-                )
-                reduced_chi2_std = (
-                    np.std(angle_chi2_reduced, ddof=1)
-                    if len(angle_chi2_reduced) > 1
-                    else 0.0
-                )
-                reduced_chi2_uncertainty = (
-                    reduced_chi2_std / np.sqrt(len(angle_chi2_reduced))
-                    if len(angle_chi2_reduced) > 1
-                    else 0.0
-                )
-                logger.warning(
-                    "No optimization angles found, using average of all angles"
-                )
+                # Single angle case
+                reduced_chi2_std = 0.0
+                reduced_chi2_uncertainty = 0.0
 
-            # Logging
-            counter = increment_optimization_counter()
-            log_freq = self.config["performance_settings"].get(
-                "optimization_counter_log_frequency", 50
+            logger.debug(
+                f"Using average of {
+                    n_optimization_angles
+                } optimization angles: χ²_red = {reduced_chi2:.6e} ± {
+                    reduced_chi2_uncertainty:.6e}"
             )
-            if counter % log_freq == 0:
+        else:
+            # Fallback if no optimization angles (shouldn't happen)
+            reduced_chi2 = (
+                np.mean(angle_chi2_reduced) if len(angle_chi2_reduced) > 0 else 1e6
+            )
+            reduced_chi2_std = (
+                np.std(angle_chi2_reduced, ddof=1)
+                if len(angle_chi2_reduced) > 1
+                else 0.0
+            )
+            reduced_chi2_uncertainty = (
+                reduced_chi2_std / np.sqrt(len(angle_chi2_reduced))
+                if len(angle_chi2_reduced) > 1
+                else 0.0
+            )
+            logger.warning(
+                "No optimization angles found, using average of all angles"
+            )
+
+        # Logging
+        self._log_chi_squared_results(
+            method_name, reduced_chi2, reduced_chi2_uncertainty, phi_angles, angle_chi2_reduced
+        )
+
+        if return_components:
+            return self._build_detailed_results(
+                angle_chi2,
+                reduced_chi2,
+                reduced_chi2_uncertainty,
+                reduced_chi2_std,
+                optimization_chi2_angles,
+                optimization_indices,
+                angle_data_points,
+                parameters,
+                phi_angles,
+                scaling_solutions,
+                filter_angles_for_optimization,
+            )
+        else:
+            return float(reduced_chi2)
+
+    def _log_chi_squared_results(
+        self,
+        method_name: str,
+        reduced_chi2: float,
+        reduced_chi2_uncertainty: float,
+        phi_angles: np.ndarray,
+        angle_chi2_reduced: np.ndarray,
+    ) -> None:
+        """
+        Log chi-squared results at appropriate intervals.
+        """
+        counter = increment_optimization_counter()
+        log_freq = self.config["performance_settings"].get(
+            "optimization_counter_log_frequency", 50
+        )
+        if counter % log_freq == 0:
+            logger.info(
+                f"Iteration {counter:06d} [{method_name}]: χ²_red = {
+                    reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
+            )
+            # Log reduced chi-square per angle
+            for i, (phi, chi2_red_angle) in enumerate(
+                zip(phi_angles, angle_chi2_reduced, strict=False)
+            ):
                 logger.info(
-                    f"Iteration {counter:06d} [{method_name}]: χ²_red = {
-                        reduced_chi2:.6e} ± {reduced_chi2_uncertainty:.6e}"
-                )
-                # Log reduced chi-square per angle
-                for i, (phi, chi2_red_angle) in enumerate(
-                    zip(phi_angles, angle_chi2_reduced, strict=False)
-                ):
-                    logger.info(
-                        f"  Angle {i + 1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
-                    )
-
-            if return_components:
-                # Calculate total chi2 for compatibility (sum of optimization
-                # angles)
-                total_chi2_compat = (
-                    sum(angle_chi2[i] for i in optimization_indices)
-                    if filter_angles_for_optimization
-                    else sum(angle_chi2)
+                    f"  Angle {i + 1} (φ={phi:.1f}°): χ²_red = {chi2_red_angle:.6e}"
                 )
 
-                # Calculate degrees of freedom
-                total_data_points = (
-                    sum(angle_data_points[i] for i in optimization_indices)
-                    if filter_angles_for_optimization
-                    else sum(angle_data_points)
-                )
-                num_parameters = len(parameters)
-                degrees_of_freedom = max(1, total_data_points - num_parameters)
+    def _build_detailed_results(
+        self,
+        angle_chi2: np.ndarray,
+        reduced_chi2: float,
+        reduced_chi2_uncertainty: float,
+        reduced_chi2_std: float,
+        optimization_chi2_angles: list[float],
+        optimization_indices: list[int],
+        angle_data_points: list[int],
+        parameters: np.ndarray,
+        phi_angles: np.ndarray,
+        scaling_solutions: list[list[float]],
+        filter_angles_for_optimization: bool,
+    ) -> dict[str, Any]:
+        """
+        Build detailed results dictionary for component return mode.
+        """
+        # Calculate total chi2 for compatibility (sum of optimization angles)
+        total_chi2_compat = (
+            sum(angle_chi2[i] for i in optimization_indices)
+            if filter_angles_for_optimization
+            else sum(angle_chi2)
+        )
 
-                return {
-                    "chi_squared": total_chi2_compat,
-                    "reduced_chi_squared": float(reduced_chi2),
-                    "reduced_chi_squared_uncertainty": float(reduced_chi2_uncertainty),
-                    "reduced_chi_squared_std": float(reduced_chi2_std),
-                    "n_optimization_angles": len(optimization_chi2_angles),
-                    "degrees_of_freedom": degrees_of_freedom,
-                    "angle_chi_squared": angle_chi2,
-                    "angle_chi_squared_reduced": angle_chi2_reduced,
-                    "angle_data_points": angle_data_points,
-                    "phi_angles": phi_angles.tolist(),
-                    "scaling_solutions": scaling_solutions,
-                    "valid": True,
-                }
-            else:
-                return float(reduced_chi2)
+        # Calculate degrees of freedom
+        total_data_points = (
+            sum(angle_data_points[i] for i in optimization_indices)
+            if filter_angles_for_optimization
+            else sum(angle_data_points)
+        )
+        num_parameters = len(parameters)
+        degrees_of_freedom = max(1, total_data_points - num_parameters)
 
-        except Exception as e:
-            logger.warning(f"Chi-squared calculation failed: {e}")
-            logger.exception("Full traceback for chi-squared calculation failure:")
-            if return_components:
-                return {"chi_squared": np.inf, "valid": False, "error": str(e)}
-            else:
-                return np.inf
+        return {
+            "chi_squared": total_chi2_compat,
+            "reduced_chi_squared": float(reduced_chi2),
+            "reduced_chi_squared_uncertainty": float(reduced_chi2_uncertainty),
+            "reduced_chi_squared_std": float(reduced_chi2_std),
+            "n_optimization_angles": len(optimization_chi2_angles),
+            "degrees_of_freedom": degrees_of_freedom,
+            "angle_chi_squared": angle_chi2,
+            "angle_chi_squared_reduced": angle_chi2_reduced,
+            "angle_data_points": angle_data_points,
+            "phi_angles": phi_angles.tolist(),
+            "scaling_solutions": scaling_solutions,
+            "valid": True,
+        }
 
     def analyze_per_angle_chi_squared(
         self,
@@ -1770,7 +1869,7 @@ class HomodyneAnalysisCore:
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Comprehensive analysis results containing:
                 - method : str
                     Analysis method name
@@ -1811,20 +1910,31 @@ class HomodyneAnalysisCore:
         --------
         calculate_chi_squared_optimized : Underlying chi-squared calculation
         """
-        # Get detailed chi-squared components
-        chi_results = self.calculate_chi_squared_optimized(
-            parameters,
-            phi_angles,
-            c2_experimental,
-            method_name=method_name,
-            return_components=True,
-        )
+        try:
+            # Step 1: Get detailed chi-squared components
+            chi_results = self._get_chi_squared_components(
+                parameters, phi_angles, c2_experimental, method_name
+            )
+            if not chi_results.get("valid", False):
+                return chi_results
 
-        # Handle case where chi_results might be a float (when
-        # return_components=False fails)
-        if not isinstance(chi_results, dict) or not chi_results.get("valid", False):
-            logger.error("Chi-squared calculation failed for per-angle analysis")
-            return {"valid": False, "error": "Chi-squared calculation failed"}
+            # Step 2: Perform quality assessment analysis
+            quality_analysis = self._perform_quality_assessment(chi_results)
+
+            # Step 3: Generate comprehensive results
+            per_angle_results = self._build_per_angle_results(
+                chi_results, quality_analysis, method_name
+            )
+
+            # Step 4: Save results if requested
+            if save_to_file:
+                self._save_per_angle_results(per_angle_results, method_name, output_dir)
+
+            return per_angle_results
+
+        except Exception as e:
+            logger.error(f"Per-angle chi-squared analysis failed: {e}")
+            return {"valid": False, "error": str(e)}
 
         # Extract per-angle data
         angle_chi2_reduced = chi_results["angle_chi_squared_reduced"]
@@ -2145,6 +2255,368 @@ class HomodyneAnalysisCore:
 
         return per_angle_results
 
+    def _get_chi_squared_components(
+        self,
+        parameters: np.ndarray,
+        phi_angles: np.ndarray,
+        c2_experimental: np.ndarray,
+        method_name: str,
+    ) -> dict[str, Any]:
+        """
+        Get detailed chi-squared components for analysis.
+        """
+        chi_results = self.calculate_chi_squared_optimized(
+            parameters,
+            phi_angles,
+            c2_experimental,
+            method_name=method_name,
+            return_components=True,
+        )
+
+        # Handle case where chi_results might be a float (when return_components=False fails)
+        if not isinstance(chi_results, dict) or not chi_results.get("valid", False):
+            logger.error("Chi-squared calculation failed for per-angle analysis")
+            return {"valid": False, "error": "Chi-squared calculation failed"}
+
+        return chi_results
+
+    def _perform_quality_assessment(self, chi_results: dict[str, Any]) -> dict[str, Any]:
+        """
+        Perform comprehensive quality assessment of chi-squared results.
+        """
+        angle_chi2_reduced = chi_results["angle_chi_squared_reduced"]
+        angles = chi_results["phi_angles"]
+        overall_chi2 = chi_results["reduced_chi_squared"]
+
+        # Get statistics
+        stats = self._calculate_chi_squared_statistics(angle_chi2_reduced)
+
+        # Get thresholds
+        thresholds = self._get_quality_thresholds()
+
+        # Assess overall quality
+        overall_quality = self._assess_overall_quality(overall_chi2, thresholds["overall"])
+
+        # Categorize angles
+        angle_categories = self._categorize_angles(
+            angle_chi2_reduced, angles, thresholds["per_angle"], stats
+        )
+
+        # Detect quality issues
+        quality_issues = self._detect_quality_issues(
+            angle_categories, angles, thresholds["per_angle"]
+        )
+
+        # Determine combined quality
+        combined_quality = self._determine_combined_quality(
+            overall_quality, quality_issues, angle_categories
+        )
+
+        return {
+            "stats": stats,
+            "thresholds": thresholds,
+            "overall_quality": overall_quality,
+            "angle_categories": angle_categories,
+            "quality_issues": quality_issues,
+            "combined_quality": combined_quality,
+        }
+
+    def _calculate_chi_squared_statistics(self, angle_chi2_reduced: list) -> dict[str, float]:
+        """
+        Calculate statistical summary of chi-squared values.
+        """
+        return {
+            "mean": np.mean(angle_chi2_reduced),
+            "std": np.std(angle_chi2_reduced),
+            "min": np.min(angle_chi2_reduced),
+            "max": np.max(angle_chi2_reduced),
+            "percentiles": {
+                f"p{p}": np.percentile(angle_chi2_reduced, p)
+                for p in [25, 50, 75, 90, 95]
+            },
+        }
+
+    def _get_quality_thresholds(self) -> dict[str, dict[str, float]]:
+        """
+        Get quality assessment thresholds from configuration.
+        """
+        validation_config = (
+            self.config.get("validation_rules", {}) if self.config else {}
+        )
+        fit_quality_config = validation_config.get("fit_quality", {})
+        overall_config = fit_quality_config.get("overall_chi_squared", {})
+        per_angle_config = fit_quality_config.get("per_angle_chi_squared", {})
+
+        return {
+            "overall": {
+                "excellent": overall_config.get("excellent_threshold", 2.0),
+                "acceptable": overall_config.get("acceptable_threshold", 5.0),
+                "warning": overall_config.get("warning_threshold", 10.0),
+                "critical": overall_config.get("critical_threshold", 20.0),
+            },
+            "per_angle": {
+                "excellent": per_angle_config.get("excellent_threshold", 2.0),
+                "acceptable": per_angle_config.get("acceptable_threshold", 5.0),
+                "warning": per_angle_config.get("warning_threshold", 10.0),
+                "outlier_multiplier": per_angle_config.get("outlier_threshold_multiplier", 2.5),
+                "max_outlier_fraction": per_angle_config.get("max_outlier_fraction", 0.25),
+                "min_good_angles": per_angle_config.get("min_good_angles", 3),
+            },
+        }
+
+    def _assess_overall_quality(self, overall_chi2: float, thresholds: dict[str, float]) -> str:
+        """
+        Assess overall quality based on reduced chi-squared.
+        """
+        if overall_chi2 <= thresholds["excellent"]:
+            return "excellent"
+        elif overall_chi2 <= thresholds["acceptable"]:
+            return "acceptable"
+        elif overall_chi2 <= thresholds["warning"]:
+            return "warning"
+        elif overall_chi2 <= thresholds["critical"]:
+            return "poor"
+        else:
+            return "critical"
+
+    def _categorize_angles(
+        self,
+        angle_chi2_reduced: list,
+        angles: list,
+        thresholds: dict[str, float],
+        stats: dict[str, float],
+    ) -> dict[str, dict[str, Any]]:
+        """
+        Categorize angles by quality levels.
+        """
+        angle_chi2_array = np.array(angle_chi2_reduced)
+        n_angles = len(angles)
+
+        # Identify outliers
+        outlier_threshold = stats["mean"] + thresholds["outlier_multiplier"] * stats["std"]
+        outlier_indices = np.where(angle_chi2_array > outlier_threshold)[0]
+
+        # Categorize by quality levels
+        categories = {}
+        for level, threshold in [("excellent", "excellent"), ("acceptable", "acceptable"), ("warning", "warning")]:
+            if level == "warning":
+                indices = np.where(
+                    (angle_chi2_array > thresholds["acceptable"])
+                    & (angle_chi2_array <= thresholds["warning"])
+                )[0]
+            else:
+                indices = np.where(angle_chi2_array <= thresholds[threshold])[0]
+
+            categories[f"{level}_angles"] = {
+                "angles_deg": [angles[i] for i in indices],
+                "count": len(indices),
+                "fraction": len(indices) / n_angles,
+            }
+
+        # Poor angles
+        poor_indices = np.where(angle_chi2_array > thresholds["warning"])[0]
+        categories["poor_angles"] = {
+            "angles_deg": [angles[i] for i in poor_indices],
+            "chi2_reduced": [angle_chi2_reduced[i] for i in poor_indices],
+            "count": len(poor_indices),
+            "fraction": len(poor_indices) / n_angles,
+        }
+
+        # Good vs unacceptable (standard classification)
+        good_indices = np.where(angle_chi2_array <= thresholds["acceptable"])[0]
+        unacceptable_indices = np.where(angle_chi2_array > thresholds["acceptable"])[0]
+
+        categories["good_angles"] = {
+            "angles_deg": [angles[i] for i in good_indices],
+            "count": len(good_indices),
+            "fraction": len(good_indices) / n_angles,
+        }
+        categories["unacceptable_angles"] = {
+            "angles_deg": [angles[i] for i in unacceptable_indices],
+            "chi2_reduced": [angle_chi2_reduced[i] for i in unacceptable_indices],
+            "count": len(unacceptable_indices),
+            "fraction": len(unacceptable_indices) / n_angles,
+        }
+
+        # Statistical outliers
+        categories["statistical_outliers"] = {
+            "angles_deg": [angles[i] for i in outlier_indices],
+            "chi2_reduced": [angle_chi2_reduced[i] for i in outlier_indices],
+            "count": len(outlier_indices),
+            "fraction": len(outlier_indices) / n_angles,
+            "threshold": outlier_threshold,
+        }
+
+        return categories
+
+    def _detect_quality_issues(
+        self, angle_categories: dict, angles: list, thresholds: dict
+    ) -> list[str]:
+        """
+        Detect quality issues based on angle categorization.
+        """
+        quality_issues = []
+        n_angles = len(angles)
+
+        unacceptable_fraction = angle_categories["unacceptable_angles"]["fraction"]
+        num_good_angles = angle_categories["good_angles"]["count"]
+        outlier_fraction = angle_categories["statistical_outliers"]["fraction"]
+
+        if unacceptable_fraction > thresholds["max_outlier_fraction"]:
+            quality_issues.append("high_unacceptable_fraction")
+        if num_good_angles < thresholds["min_good_angles"]:
+            quality_issues.append("insufficient_good_angles")
+        if outlier_fraction > thresholds["max_outlier_fraction"]:
+            quality_issues.append("too_many_outliers")
+
+        return quality_issues
+
+    def _determine_combined_quality(
+        self, overall_quality: str, quality_issues: list, angle_categories: dict
+    ) -> str:
+        """
+        Determine combined quality assessment.
+        """
+        if overall_quality in ["critical", "poor"] or quality_issues:
+            return "poor"
+        elif overall_quality == "warning" or angle_categories["unacceptable_angles"]["fraction"] > 0.2:
+            return "warning"
+        elif overall_quality == "acceptable" and angle_categories["good_angles"]["count"] >= 3:
+            return "acceptable"
+        else:
+            return overall_quality  # "excellent"
+
+    def _build_per_angle_results(
+        self, chi_results: dict, quality_analysis: dict, method_name: str
+    ) -> dict[str, Any]:
+        """
+        Build comprehensive per-angle results dictionary.
+        """
+        # Generate recommendations
+        recommendations = self._generate_recommendations(
+            quality_analysis["quality_issues"], chi_results["reduced_chi_squared"]
+        )
+
+        # Build results structure
+        per_angle_results = {
+            "method": method_name,
+            "valid": True,
+            "overall_reduced_chi_squared": chi_results["reduced_chi_squared"],
+            "reduced_chi_squared_uncertainty": chi_results.get(
+                "reduced_chi_squared_uncertainty", 0.0
+            ),
+            "quality_assessment": {
+                "overall_quality": {
+                    "level": quality_analysis["overall_quality"],
+                    "reduced_chi_squared": chi_results["reduced_chi_squared"],
+                    "uncertainty": chi_results.get("reduced_chi_squared_uncertainty", 0.0),
+                    "thresholds": quality_analysis["thresholds"]["overall"],
+                },
+                "combined_assessment": {
+                    "quality_level": quality_analysis["combined_quality"],
+                    "quality_issues": quality_analysis["quality_issues"],
+                },
+            },
+            "angle_categorization": quality_analysis["angle_categories"],
+            "per_angle_analysis": {
+                "angles_deg": chi_results["phi_angles"],
+                "chi_squared_reduced": chi_results["angle_chi_squared_reduced"],
+                "chi_squared": chi_results["angle_chi_squared"],
+                "data_points_per_angle": chi_results["angle_data_points"],
+                "scaling_solutions": chi_results["scaling_solutions"],
+            },
+            "statistical_summary": {
+                **quality_analysis["stats"],
+                "n_angles": len(chi_results["phi_angles"]),
+                "degrees_of_freedom": chi_results["degrees_of_freedom"],
+            },
+            "recommendations": recommendations,
+        }
+
+        self._log_analysis_summary(per_angle_results, quality_analysis)
+        return per_angle_results
+
+    def _generate_recommendations(
+        self, quality_issues: list, overall_chi2: float
+    ) -> list[str]:
+        """
+        Generate recommendations based on quality issues.
+        """
+        recommendations = []
+        if "high_unacceptable_fraction" in quality_issues:
+            recommendations.append(
+                "Consider reviewing experimental data quality or model parameters"
+            )
+        if "insufficient_good_angles" in quality_issues:
+            recommendations.append(
+                "Insufficient number of well-fitting angles - check data or model"
+            )
+        if "too_many_outliers" in quality_issues:
+            recommendations.append(
+                "Statistical outliers detected - investigate systematic issues"
+            )
+        if overall_chi2 > 10.0:
+            recommendations.append(
+                "Overall chi-squared is high - optimization may need improvement"
+            )
+        return recommendations
+
+    def _save_per_angle_results(
+        self, results: dict, method_name: str, output_dir: str | None
+    ) -> None:
+        """
+        Save per-angle analysis results to file.
+        """
+        try:
+            self.save_per_angle_analysis(results, method_name, output_dir=output_dir)
+        except Exception as e:
+            logger.warning(f"Failed to save per-angle results: {e}")
+
+    def _log_analysis_summary(self, results: dict, quality_analysis: dict) -> None:
+        """
+        Log analysis summary information.
+        """
+        method_name = results["method"]
+        overall_chi2 = results["overall_reduced_chi_squared"]
+        combined_quality = quality_analysis["combined_quality"]
+        good_count = quality_analysis["angle_categories"]["good_angles"]["count"]
+        total_angles = results["statistical_summary"]["n_angles"]
+        unacceptable_count = quality_analysis["angle_categories"]["unacceptable_angles"]["count"]
+        outlier_count = quality_analysis["angle_categories"]["statistical_outliers"]["count"]
+
+        logger.info(f"Per-angle analysis for {method_name} method completed")
+        logger.info(
+            f"Overall reduced chi-squared: {overall_chi2:.4f} "
+            f"± {results.get('reduced_chi_squared_uncertainty', 0.0):.4f}"
+        )
+        logger.info(f"Quality: {combined_quality.upper()}")
+        logger.info(
+            f"Good angles: {good_count}/{total_angles} ({good_count/total_angles*100:.1f}%)"
+        )
+        logger.info(
+            f"Unacceptable angles: {unacceptable_count}/{total_angles} ({unacceptable_count/total_angles*100:.1f}%)"
+        )
+        if outlier_count > 0:
+            outlier_angles = quality_analysis["angle_categories"]["statistical_outliers"]["angles_deg"]
+            logger.info(f"Statistical outliers: {outlier_count} angles {outlier_angles}")
+
+        # Quality level logging
+        quality_messages = {
+            "critical": "❌ CRITICAL: Fit quality is critical - major optimization issues",
+            "poor": "⚠ POOR: Fit quality is poor - optimization may need improvement",
+            "warning": "⚠ WARNING: Some angles show poor fit - consider investigation",
+            "acceptable": "✓ ACCEPTABLE: Fit quality is acceptable with some limitations",
+            "excellent": "✅ EXCELLENT: Fit quality is excellent across all angles",
+        }
+
+        message = quality_messages.get(combined_quality, "Unknown quality level")
+        if combined_quality in ["critical", "poor"]:
+            logger.error(f"  {message}")
+        elif combined_quality == "warning":
+            logger.warning(f"  {message}")
+        else:
+            logger.info(f"  {message}")
+
     def save_results_with_config(
         self, results: dict[str, Any], output_dir: str | None = None
     ) -> None:
@@ -2156,7 +2628,7 @@ class HomodyneAnalysisCore:
 
         Parameters
         ----------
-        results : Dict[str, Any]
+        results : dict[str, Any]
             Results dictionary from optimization methods
         output_dir : str, optional
             Output directory for saving results file (default: current directory)
@@ -2439,9 +2911,9 @@ Validation:
 
         Parameters
         ----------
-        results : Dict[str, Any]
+        results : dict[str, Any]
             Results dictionary from optimization methods
-        output_data : Dict[str, Any]
+        output_data : dict[str, Any]
             Complete output data including configuration
         """
         logger = logging.getLogger(__name__)
@@ -2560,9 +3032,9 @@ Validation:
 
         Parameters
         ----------
-        results : Dict[str, Any]
+        results : dict[str, Any]
             Results dictionary from optimization methods
-        config : Dict[str, Any]
+        config : dict[str, Any]
             Configuration dictionary
 
         Returns
@@ -2757,91 +3229,8 @@ Validation:
                 return np.array([])
 
 
-def _get_chi2_interpretation(chi2_value: float) -> str:
-    """Provide interpretation of reduced chi-squared value with uncertainty context.
 
-    The reduced chi-squared uncertainty quantifies the reliability of the average:
-    - Small uncertainty (< 0.1 * χ²_red): Consistent fit quality across angles
-    - Moderate uncertainty (0.1-0.5 * χ²_red): Some angle variation, generally acceptable
-    - Large uncertainty (> 0.5 * χ²_red): High variability between angles, potential systematic issues
-
-    Parameters
-    ----------
-    chi2_value : float
-        Reduced chi-squared value
-
-    Returns
-    -------
-    str
-        Interpretation string with quality assessment and statistical meaning
-    """
-    if chi2_value <= 1.0:
-        return f"Excellent fit (χ²_red = {
-            chi2_value:.2f} ≤ 1.0): Model matches data within expected noise"
-    elif chi2_value <= 2.0:
-        return f"Very good fit (χ²_red = {
-            chi2_value:.2f}): Model captures main features with minor deviations"
-    elif chi2_value <= 5.0:
-        return f"Acceptable fit (χ²_red = {
-            chi2_value:.2f}): Model reasonable but some systematic deviations present"
-    elif chi2_value <= 10.0:
-        return f"Poor fit (χ²_red = {
-            chi2_value:.2f}): Significant deviations suggest model inadequacy or underestimated uncertainties"
-    else:
-        return f"Very poor fit (χ²_red = {
-            chi2_value:.2f}): Major systematic deviations, model likely inappropriate"
-
-
-def _get_quality_explanation(quality: str) -> str:
-    """Provide explanation of quality assessment."""
-    explanations = {
-        "excellent": "Model provides exceptional agreement with experimental data across all angles",
-        "acceptable": "Model provides reasonable agreement with experimental data for most angles",
-        "warning": "Model shows concerning deviations that may indicate systematic issues",
-        "poor": "Model shows significant inadequacies in describing the experimental data",
-        "critical": "Model is fundamentally inappropriate for this dataset",
-    }
-    return explanations.get(quality, "Unknown quality level")
-
-
-def _get_quality_recommendations(quality: str, issues: list) -> list:
-    """Provide actionable recommendations based on quality assessment."""
-    recommendations = []
-
-    if quality == "excellent":
-        recommendations.append("Results are reliable for publication")
-        recommendations.append("Consider this model for further analysis")
-    elif quality == "acceptable":
-        recommendations.append("Results may be suitable with appropriate caveats")
-        recommendations.append(
-            "Consider checking specific angles with higher chi-squared"
-        )
-    elif quality == "warning":
-        recommendations.append("Investigate systematic deviations before publication")
-        recommendations.append("Consider alternative models or parameter ranges")
-        recommendations.append("Check experimental uncertainties and data quality")
-    elif quality in ["poor", "critical"]:
-        recommendations.append("Do not use results for quantitative conclusions")
-        recommendations.append("Consider fundamental model revision")
-        recommendations.append("Check experimental setup and data processing")
-        recommendations.append("Investigate alternative theoretical approaches")
-
-    # Add issue-specific recommendations
-    for issue in issues:
-        if "outliers" in issue.lower():
-            recommendations.append(
-                "Investigate outlier angles for experimental artifacts"
-            )
-        if "good angles" in issue.lower():
-            recommendations.append(
-                "Consider focusing analysis on subset of reliable angles"
-            )
-
-    return recommendations
-
-
-# ============================================================================
-# PARAMETER MANAGEMENT AND RESULTS SAVING
-# ============================================================================
-
-# Note: Additional methods would be defined here if needed
+# Import helper functions from separate module
+from .helpers import get_chi2_interpretation as _get_chi2_interpretation
+from .helpers import get_quality_explanation as _get_quality_explanation
+from .helpers import get_quality_recommendations as _get_quality_recommendations

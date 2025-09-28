@@ -41,9 +41,14 @@ Institution: Argonne National Laboratory
 
 import importlib
 
-# Lazy loading implementation for performance optimization
-import sys
-from typing import TYPE_CHECKING, Any, Optional
+# Enhanced lazy loading implementation for performance optimization
+from typing import TYPE_CHECKING, Any
+
+# Import the advanced lazy loading system
+from .core.lazy_imports import HeavyDependencyLoader, scientific_deps
+
+# Import initialization optimizer for startup performance
+from .core.initialization_optimizer import get_initialization_optimizer
 
 # Type checking imports (no runtime cost)
 if TYPE_CHECKING:
@@ -57,49 +62,31 @@ if TYPE_CHECKING:
     from .visualization.plotting import get_plot_config, plot_c2_heatmaps
 
 # Essential imports only (fast loading)
-from .core.config import configure_logging
 
 
-# Lazy loading class for deferred imports
+# Enhanced lazy loading class for deferred imports
 class _LazyLoader:
-    """Lazy loader for expensive imports."""
+    """Enhanced lazy loader for expensive imports with performance monitoring."""
 
     def __init__(self, module_name: str, class_name: str | None = None):
         self.module_name = module_name
         self.class_name = class_name
-        self._cached_object = None
+        self._heavy_loader = HeavyDependencyLoader(
+            module_name=module_name,
+            attribute=class_name,
+            required=True  # Most package components are required
+        )
 
     def __call__(self, *args, **kwargs):
-        if self._cached_object is None:
-            self._load()
-        if self.class_name:
-            return self._cached_object(*args, **kwargs)
-        return self._cached_object
+        return self._heavy_loader(*args, **kwargs)
 
     def __getattr__(self, name):
-        if self._cached_object is None:
-            self._load()
-        return getattr(self._cached_object, name)
+        return getattr(self._heavy_loader, name)
 
-    def _load(self):
-        try:
-            # Handle relative imports properly
-            if self.module_name.startswith("."):
-                module = importlib.import_module(self.module_name, package="homodyne")
-            else:
-                module = importlib.import_module(self.module_name)
-
-            if self.class_name:
-                self._cached_object = getattr(module, self.class_name)
-            else:
-                self._cached_object = module
-        except ImportError as e:
-            import logging
-
-            logging.getLogger(__name__).warning(
-                f"Failed to load {self.module_name}: {e}"
-            )
-            self._cached_object = None
+    @property
+    def is_available(self) -> bool:
+        """Check if the module is available."""
+        return self._heavy_loader.is_available
 
 
 # Core functionality - lazy loaded
@@ -159,6 +146,156 @@ get_template_path = _LazyLoader(".config", "get_template_path")
 get_config_dir = _LazyLoader(".config", "get_config_dir")
 TEMPLATE_FILES = _LazyLoader(".config", "TEMPLATE_FILES")
 
+# Performance and monitoring utilities
+def get_import_performance_report() -> dict[str, Any]:
+    """
+    Get comprehensive performance report for package imports.
+
+    Returns
+    -------
+    dict[str, Any]
+        Performance metrics including load times and success rates
+    """
+    from .core.lazy_imports import get_import_performance_report
+    return get_import_performance_report()
+
+def preload_scientific_dependencies() -> None:
+    """
+    Preload critical scientific computing dependencies.
+
+    This can reduce latency for first-time usage of heavy computational modules.
+    """
+    from .core.lazy_imports import preload_critical_dependencies
+    preload_critical_dependencies()
+
+def configure_logging() -> None:
+    """Configure logging for the homodyne package."""
+    import logging
+    import os
+
+    # Set logging level from environment or default to INFO
+    log_level = os.environ.get("HOMODYNE_LOG_LEVEL", "INFO").upper()
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+def optimize_initialization() -> dict[str, Any]:
+    """
+    Optimize package initialization for better startup performance.
+
+    Returns
+    -------
+    dict[str, Any]
+        Optimization strategy and performance metrics
+    """
+    from .core.initialization_optimizer import optimize_package_initialization
+    strategy = optimize_package_initialization()
+    return {
+        "strategy": {
+            "core_modules": strategy.core_modules,
+            "lazy_modules": strategy.lazy_modules,
+            "deferred_modules": strategy.deferred_modules,
+            "preload_modules": strategy.preload_modules,
+            "optimization_level": strategy.optimization_level,
+        }
+    }
+
+def get_startup_performance_report() -> dict[str, Any]:
+    """
+    Get comprehensive startup performance report.
+
+    Returns
+    -------
+    dict[str, Any]
+        Startup performance metrics and analysis
+    """
+    from .core.initialization_optimizer import profile_startup_performance
+    return profile_startup_performance()
+
+def establish_performance_baseline(name: str,
+                                 target_import_time: float = 2.0) -> dict[str, Any]:
+    """
+    Establish a performance baseline for startup monitoring.
+
+    Parameters
+    ----------
+    name : str
+        Baseline name
+    target_import_time : float
+        Target import time in seconds
+
+    Returns
+    -------
+    dict[str, Any]
+        Created baseline information
+    """
+    from .performance.simple_monitoring import create_performance_baseline
+    return create_performance_baseline(name=name, target_time=target_import_time)
+
+def check_performance_health() -> dict[str, Any]:
+    """
+    Quick performance health check.
+
+    Returns
+    -------
+    dict[str, Any]
+        Performance health status
+    """
+    from .performance.simple_monitoring import quick_startup_check
+    return quick_startup_check()
+
+def monitor_startup_performance(iterations: int = 5) -> dict[str, Any]:
+    """
+    Monitor current startup performance.
+
+    Parameters
+    ----------
+    iterations : int
+        Number of measurement iterations
+
+    Returns
+    -------
+    dict[str, Any]
+        Startup performance metrics
+    """
+    from .performance.simple_monitoring import measure_current_startup_performance
+    return measure_current_startup_performance(iterations=iterations)
+
+def get_performance_trend_report(days: int = 30) -> dict[str, Any]:
+    """
+    Get performance trend analysis.
+
+    Parameters
+    ----------
+    days : int
+        Number of days to analyze
+
+    Returns
+    -------
+    dict[str, Any]
+        Performance trend report
+    """
+    from .performance.startup_monitoring import get_startup_monitor
+    monitor = get_startup_monitor()
+    return monitor.get_performance_trend(days=days)
+
+# Apply initialization optimizations automatically if enabled
+def _apply_startup_optimizations() -> None:
+    """Apply startup optimizations if enabled by environment variable."""
+    import os
+    if os.environ.get("HOMODYNE_OPTIMIZE_STARTUP", "true").lower() in ("true", "1", "yes"):
+        try:
+            optimizer = get_initialization_optimizer()
+            optimizer.optimize_initialization_order()
+            optimizer.apply_optimizations()
+        except Exception:
+            # Silently ignore optimization failures to prevent startup issues
+            pass
+
+# Apply optimizations during package import
+_apply_startup_optimizations()
+
 
 __all__ = [
     "TEMPLATE_FILES",
@@ -170,6 +307,7 @@ __all__ = [
     "RobustHomodyneOptimizer",
     "calculate_diffusion_coefficient_numba",
     "calculate_shear_rate_numba",
+    "check_performance_health",
     "compute_g1_correlation_numba",
     "compute_sinc_squared_numba",
     "configure_logging",
@@ -177,12 +315,19 @@ __all__ = [
     "create_robust_optimizer",
     "create_time_integral_matrix_numba",
     "enhanced_runner_main",
+    "establish_performance_baseline",
     "get_config_dir",
+    "get_import_performance_report",
+    "get_performance_trend_report",
     "get_plot_config",
+    "get_startup_performance_report",
     "get_template_path",
     "memory_efficient_cache",
+    "monitor_startup_performance",
+    "optimize_initialization",
     "performance_monitor",
     "plot_c2_heatmaps",
+    "preload_scientific_dependencies",
     "run_homodyne_main",
 ]
 
