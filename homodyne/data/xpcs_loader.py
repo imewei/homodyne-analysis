@@ -245,9 +245,7 @@ class XPCSDataLoader:
             "cache_filename_template", "cached_c2_frames_{start_frame}_{end_frame}.npz"
         )
 
-        cache_filename = cache_template.format(
-            start_frame=start_frame, end_frame=end_frame
-        )
+        cache_filename = f"{cache_template.replace('{start_frame}', str(start_frame)).replace('{end_frame}', str(end_frame))}" if '{' in cache_template else f"cached_c2_frames_{start_frame}_{end_frame}.npz"
         cache_path = os.path.join(cache_folder, cache_filename)
 
         # Check cache first

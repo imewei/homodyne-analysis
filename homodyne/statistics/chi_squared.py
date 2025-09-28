@@ -1025,7 +1025,8 @@ def validate_performance_claims(
     return success
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main function for chi-squared module validation."""
     # Quick validation when module is run directly
     print("🚀 Revolutionary BLAS-Optimized Chi-Squared Module")
     print("Phase β.1: Algorithmic Revolution")
@@ -1040,3 +1041,7 @@ if __name__ == "__main__":
         print(
             "\n⚠️  Performance target not met. Check BLAS availability and system configuration."
         )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,232 +1,533 @@
-# Consolidated CI/CD Pipeline for Homodyne Analysis Scientific Computing
-# DISABLED: Workflows consolidated and moved here for future re-enabling
-# To re-enable: Move to .github/workflows/ and update dependencies as needed
+# Modern CI/CD Pipeline for Homodyne Analysis Package
+# ===================================================
+# Revolutionary test automation with matrix testing, performance monitoring,
+# security scanning, and containerized environments
 
-name: Consolidated CI
+name: "🚀 CI/CD Pipeline"
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  schedule:
+    # Run nightly builds at 2 AM UTC
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
-      run_performance_tests:
-        description: "Run performance benchmarks"
+      test_level:
+        description: "Test execution level"
         required: false
-        default: "false"
-        type: boolean
+        default: "standard"
+        type: choice
+        options:
+          - "smoke"
+          - "standard"
+          - "comprehensive"
+          - "performance"
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_PYTHON_VERSION_WARNING: "1"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PYTHONDONTWRITEBYTECODE: 1
-  PYTHONUNBUFFERED: 1
-  FORCE_COLOR: 1
-  PIP_PROGRESS_BAR: off
-  PIP_DISABLE_PIP_VERSION_CHECK: 1
-
 jobs:
-  # ============================================================================
-  # Core Testing
-  # ============================================================================
-  test:
-    name: Test Python ${{ matrix.python-version }}
+  # ==========================================================================
+  # Pre-flight Checks
+  # ==========================================================================
+
+  pre-flight:
+    name: "🔍 Pre-flight Checks"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      test-level: ${{ steps.config.outputs.test-level }}
+      cache-key: ${{ steps.config.outputs.cache-key }}
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "🔧 Configure Test Parameters"
+        id: config
+        run: |
+          # Determine test level based on event and inputs
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            TEST_LEVEL="comprehensive"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TEST_LEVEL="${{ github.event.inputs.test_level }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TEST_LEVEL="standard"
+          else
+            TEST_LEVEL="standard"
+          fi
+
+          echo "test-level=${TEST_LEVEL}" >> $GITHUB_OUTPUT
+          echo "cache-key=ci-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
+
+          echo "::notice::Test Level: ${TEST_LEVEL}"
+
+  # ==========================================================================
+  # Code Quality and Security Scanning
+  # ==========================================================================
+
+  quality:
+    name: "✨ Code Quality"
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: pre-flight
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install -e .[quality]
+
+      - name: "🔍 Ruff Linting"
+        run: ruff check homodyne --output-format=github
+
+      - name: "🎨 Black Formatting Check"
+        run: black --check --diff homodyne
+
+      - name: "📄 Import Sorting Check"
+        run: isort --check-only --diff homodyne
+
+      - name: "🔒 Security Scan (Bandit)"
+        run: bandit -r homodyne -f json -o reports/bandit-report.json || true
+
+      - name: "🛡️ Dependency Security Scan"
+        run: |
+          safety check --json --output reports/safety-report.json || true
+          pip-audit --format=json --output=reports/pip-audit-report.json || true
+
+      - name: "💀 Dead Code Detection"
+        run: vulture homodyne --min-confidence 60
+
+      - name: "📝 Documentation Coverage"
+        run: interrogate homodyne --generate-badge reports/
+
+      - name: "📊 Upload Quality Reports"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-reports
+          path: reports/
+          retention-days: 30
+
+  # ==========================================================================
+  # Matrix Testing Across Platforms and Python Versions
+  # ==========================================================================
+
+  test-matrix:
+    name: "🧪 Test Matrix"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    needs: [pre-flight, quality]
+
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.12", "3.13"]
+        test-category: [unit, integration]
+        exclude:
+          # Reduce matrix size for efficiency - no exclusions needed for 3.12+
+          []
 
     steps:
-      - name: Checkout code
+      - name: "📥 Checkout Code"
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: "🐍 Setup Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
-      - name: Install dependencies
+      - name: "🔧 System Dependencies (Ubuntu)"
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-          pip install -e .
+          sudo apt-get update
+          sudo apt-get install -y build-essential
 
-      - name: Run core tests
+      - name: "🔧 System Dependencies (macOS)"
+        if: matrix.os == 'macos-latest'
         run: |
-          pytest homodyne/tests/ -v --tb=short --maxfail=5 \
-            --continue-on-collection-errors --disable-warnings
+          brew install gcc
 
-  # ============================================================================
-  # Code Quality (Non-blocking)
-  # ============================================================================
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
+      - name: "📦 Install Package and Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install -e .[test,performance]
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: "🧪 Run Tests - ${{ matrix.test-category }}"
+        run: |
+          pytest homodyne/tests \
+            -m "${{ matrix.test-category }}" \
+            --cov=homodyne \
+            --cov-report=xml:coverage-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}.xml \
+            --cov-report=json:coverage-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}.json \
+            --junit-xml=junit-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}.xml \
+            --maxfail=5 \
+            -n auto
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: "📊 Upload Coverage"
+        uses: codecov/codecov-action@v3
         with:
-          python-version: "3.12"
-          cache: "pip"
+          files: coverage-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}.xml
+          flags: ${{ matrix.test-category }},${{ matrix.os }},py${{ matrix.python-version }}
+          name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}
 
-      - name: Install quality tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install black flake8 isort mypy
-
-      - name: Run Black formatter check
-        continue-on-error: true
-        run: black --check --diff --color homodyne/
-
-      - name: Run flake8 (relaxed for scientific computing)
-        continue-on-error: true
-        run: |
-          flake8 homodyne/ --max-line-length=120 --max-complexity=15 \
-            --ignore=E203,W503,E501,C901 --statistics
-
-      - name: Check import sorting
-        continue-on-error: true
-        run: isort --check-only --diff --profile black --line-length=120 homodyne/
-
-      - name: Run mypy type checking
-        continue-on-error: true
-        run: mypy homodyne/ --ignore-missing-imports --show-error-codes
-
-  # ============================================================================
-  # Package Building
-  # ============================================================================
-  build:
-    name: Build Package
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install build dependencies
-        run: python -m pip install --upgrade pip build
-
-      - name: Build package
-        run: python -m build
-
-      - name: Test package installation
-        run: |
-          pip install dist/*.whl
-          python -c "import homodyne; print('Package installed successfully')"
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-packages
-          path: dist/
-
-  # ============================================================================
-  # Performance Tests (Optional)
-  # ============================================================================
-  performance:
-    name: Performance Benchmarks
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: github.event.inputs.run_performance_tests == 'true'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install dependencies with performance extras
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-optional.txt
-          pip install -e .
-
-      - name: Run performance benchmarks
-        run: |
-          pytest homodyne/tests/ -k "performance" --benchmark-only \
-            --benchmark-json=benchmark.json || echo "Performance tests completed"
-
-      - name: Upload benchmark results
+      - name: "📈 Upload Test Results"
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: benchmark-results
-          path: benchmark.json
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}
+          path: |
+            coverage-*.xml
+            coverage-*.json
+            junit-*.xml
+          retention-days: 30
 
-  # ============================================================================
-  # Security Scanning
-  # ============================================================================
-  security:
-    name: Security Scan
+  # ==========================================================================
+  # Performance and Benchmark Testing
+  # ==========================================================================
+
+  performance:
+    name: "⚡ Performance Tests"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
+    timeout-minutes: 30
+    needs: [pre-flight, quality]
+    if: needs.pre-flight.outputs.test-level == 'comprehensive' || needs.pre-flight.outputs.test-level == 'performance'
 
     steps:
-      - name: Checkout code
+      - name: "📥 Checkout Code"
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need history for performance comparison
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v4
         with:
           python-version: "3.12"
+          cache: "pip"
 
-      - name: Install security tools
+      - name: "📦 Install Dependencies"
         run: |
-          python -m pip install --upgrade pip
-          pip install bandit pip-audit
+          pip install --upgrade pip
+          pip install -e .[test,performance]
 
-      - name: Run bandit security scan
-        continue-on-error: true
-        run: bandit -r homodyne/ -f json -o bandit-report.json
+      - name: "⚡ Run Performance Tests"
+        run: |
+          pytest homodyne/tests \
+            -m "performance or benchmark" \
+            --benchmark-only \
+            --benchmark-json=benchmark-results.json \
+            --benchmark-save=benchmark-baseline \
+            --benchmark-autosave
 
-      - name: Run pip-audit
-        continue-on-error: true
-        run: pip-audit --format=json --output=pip-audit-report.json
+      - name: "📊 Performance Regression Check"
+        run: |
+          pytest homodyne/tests \
+            -m "performance" \
+            --benchmark-compare=benchmark-baseline \
+            --benchmark-compare-fail=mean:10% \
+            || echo "::warning::Performance regression detected"
 
-  # ============================================================================
-  # Summary
-  # ============================================================================
-  summary:
-    name: CI Summary
+      - name: "📈 Upload Benchmark Results"
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            benchmark-results.json
+            .benchmarks/
+          retention-days: 90
+
+  # ==========================================================================
+  # Scientific Computing Validation
+  # ==========================================================================
+
+  scientific:
+    name: "🔬 Scientific Validation"
     runs-on: ubuntu-latest
-    needs: [test, quality, build, security]
+    timeout-minutes: 30
+    needs: [pre-flight, quality]
+    if: needs.pre-flight.outputs.test-level == 'comprehensive'
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "📦 Install Scientific Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install -e .[test,performance,robust]
+
+      - name: "🔬 Run Scientific Validation Tests"
+        run: |
+          pytest homodyne/tests \
+            -m "scientific" \
+            --cov=homodyne \
+            --cov-report=xml:scientific-coverage.xml \
+            --junit-xml=scientific-junit.xml \
+            -v
+
+      - name: "📊 Upload Scientific Test Results"
+        uses: actions/upload-artifact@v4
+        with:
+          name: scientific-validation-results
+          path: |
+            scientific-coverage.xml
+            scientific-junit.xml
+          retention-days: 30
+
+  # ==========================================================================
+  # Security and Vulnerability Testing
+  # ==========================================================================
+
+  security:
+    name: "🔒 Security Testing"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: pre-flight
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install -e .[test,quality]
+
+      - name: "🔒 Run Security Tests"
+        run: |
+          pytest homodyne/tests \
+            -m "security" \
+            --junit-xml=security-junit.xml \
+            -v
+
+      - name: "🛡️ Advanced Security Scanning"
+        run: |
+          # Static security analysis
+          bandit -r homodyne -f json -o security-bandit.json
+
+          # Dependency vulnerability scanning
+          safety check --json --output security-safety.json || true
+          pip-audit --format=json --output=security-pip-audit.json || true
+
+      - name: "📊 Upload Security Reports"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            security-*.json
+            security-junit.xml
+          retention-days: 90
+
+  # ==========================================================================
+  # Container Testing
+  # ==========================================================================
+
+  container:
+    name: "🐳 Container Testing"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [pre-flight, quality]
+    if: needs.pre-flight.outputs.test-level == 'comprehensive'
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐳 Build Test Container"
+        run: |
+          docker build -t homodyne-test -f docker/Dockerfile.test .
+
+      - name: "🧪 Run Tests in Container"
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/reports:/workspace/reports \
+            homodyne-test \
+            pytest homodyne/tests \
+            --cov=homodyne \
+            --cov-report=xml:/workspace/reports/container-coverage.xml \
+            --junit-xml=/workspace/reports/container-junit.xml \
+            -m "not gpu" \
+            -n auto
+
+      - name: "📊 Upload Container Test Results"
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-test-results
+          path: reports/
+          retention-days: 30
+
+  # ==========================================================================
+  # Documentation Building and Testing
+  # ==========================================================================
+
+  docs:
+    name: "📚 Documentation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: pre-flight
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "📦 Install Documentation Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install -e .[docs]
+
+      - name: "📚 Build Documentation"
+        run: |
+          sphinx-build -W -b html docs docs/_build/html
+
+      - name: "📝 Test Documentation Examples"
+        run: |
+          sphinx-build -W -b doctest docs docs/_build/doctest
+
+      - name: "📊 Upload Documentation"
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/_build/html/
+          retention-days: 30
+
+  # ==========================================================================
+  # Integration and Summary
+  # ==========================================================================
+
+  integration:
+    name: "🎯 Integration Summary"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [test-matrix, quality]
     if: always()
 
     steps:
-      - name: Create summary
+      - name: "📥 Download All Artifacts"
+        uses: actions/download-artifact@v4
+
+      - name: "📊 Generate Test Summary"
         run: |
-          echo "## CI Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status | Note |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests | ${{ needs.test.result }} | Core functionality tests |" >> $GITHUB_STEP_SUMMARY
-          echo "| Quality | ${{ needs.quality.result }} | Code quality checks (non-blocking) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result }} | Package building |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security | ${{ needs.security.result }} | Security scanning (non-blocking) |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✨ **Consolidated workflow for scientific computing package**" >> $GITHUB_STEP_SUMMARY
-          echo "Quality and security checks are advisory and won't block CI." >> $GITHUB_STEP_SUMMARY
+          echo "# 🚀 CI/CD Pipeline Summary" > summary.md
+          echo "## Test Results" >> summary.md
+
+          # Check test results
+          if [[ "${{ needs.test-matrix.result }}" == "success" ]]; then
+            echo "✅ **Matrix Tests**: All tests passed across platforms and Python versions" >> summary.md
+          else
+            echo "❌ **Matrix Tests**: Some tests failed" >> summary.md
+          fi
+
+          if [[ "${{ needs.quality.result }}" == "success" ]]; then
+            echo "✅ **Code Quality**: All quality checks passed" >> summary.md
+          else
+            echo "❌ **Code Quality**: Quality issues detected" >> summary.md
+          fi
+
+          echo "## Coverage Summary" >> summary.md
+          # Process coverage reports here
+
+          cat summary.md
+
+      - name: "📝 Update PR Comment"
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+  # ==========================================================================
+  # Release Preparation (on main branch only)
+  # ==========================================================================
+
+  release-check:
+    name: "🚢 Release Preparation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [test-matrix, quality, performance, scientific, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "📦 Install Build Dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install build twine
+
+      - name: "🔨 Build Package"
+        run: |
+          python -m build
+          twine check dist/*
+
+      - name: "📊 Upload Build Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution
+          path: dist/
+          retention-days: 90
+
+      - name: "🏷️ Tag Release"
+        if: startsWith(github.event.head_commit.message, 'bump:')
+        run: |
+          # Extract version from setup
+          VERSION=$(python -c "import homodyne; print(homodyne.__version__)")
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"

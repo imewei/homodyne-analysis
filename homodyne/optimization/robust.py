@@ -525,7 +525,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        Tuple[Optional[np.ndarray], Dict[str, Any]]
+        tuple[np.ndarray | None, dict[str, Any]]
             (optimal_parameters, optimization_info_with_cache_metrics)
         """
         self.check_dependencies()
@@ -705,7 +705,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        Tuple[Optional[np.ndarray], Dict[str, Any]]
+        tuple[np.ndarray | None, dict[str, Any]]
             (optimal_parameters, optimization_info)
         """
         if uncertainty_radius is None:
@@ -877,7 +877,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        Tuple[Optional[np.ndarray], Dict[str, Any]]
+        tuple[np.ndarray | None, dict[str, Any]]
             (optimal_parameters, optimization_info)
         """
         if n_scenarios is None:
@@ -1050,7 +1050,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        Tuple[Optional[np.ndarray], Dict[str, Any]]
+        tuple[np.ndarray | None, dict[str, Any]]
             (optimal_parameters, optimization_info)
         """
         if gamma is None:
@@ -1606,7 +1606,7 @@ class RobustHomodyneOptimizer:
 
         Returns
         -------
-        Optional[List[Tuple[Optional[float], Optional[float]]]]
+        list[tuple[float | None, float | None]] | None
             List of (lower_bound, upper_bound) tuples
         """
         try:

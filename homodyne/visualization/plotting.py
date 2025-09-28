@@ -37,7 +37,7 @@ def get_plot_config(config: dict | None = None) -> dict[str, Any]:
     Extract plotting configuration from the main config dictionary.
 
     Args:
-        config (Optional[Dict]): Main configuration dictionary
+        config (dict | None):Main configuration dictionary
 
     Returns:
         Dict[str, Any]: Plotting configuration with defaults
@@ -120,8 +120,8 @@ def plot_c2_heatmaps(
         exp (np.ndarray): Experimental correlation data [n_angles, n_t2, n_t1]
         theory (np.ndarray): Theoretical correlation data [n_angles, n_t2, n_t1]
         phi_angles (np.ndarray): Array of phi angles in degrees
-        outdir (Union[str, Path]): Output directory for saved plots
-        config (Optional[Dict]): Configuration dictionary
+        outdir (str | Path): Output directory for saved plots
+        config (dict | None):Configuration dictionary
         t2 (Optional[np.ndarray]): Time lag values (t₂) for y-axis
         t1 (Optional[np.ndarray]): Delay time values (t₁) for x-axis
         method_name (Optional[str]): Optimization method name for filename prefix
@@ -394,8 +394,8 @@ def plot_diagnostic_summary(
 
     Args:
         results (Dict[str, Any]): Complete analysis results dictionary
-        outdir (Union[str, Path]): Output directory for saved plots
-        config (Optional[Dict]): Configuration dictionary
+        outdir (str | Path): Output directory for saved plots
+        config (dict | None):Configuration dictionary
         method_name (Optional[str]): Optimization method name for filename prefix
 
     Returns:
@@ -656,8 +656,8 @@ def create_all_plots(
 
     Args:
         results (Dict[str, Any]): Complete analysis results dictionary
-        outdir (Union[str, Path]): Output directory for saved plots
-        config (Optional[Dict]): Configuration dictionary
+        outdir (str | Path): Output directory for saved plots
+        config (dict | None):Configuration dictionary
 
     Returns:
         Dict[str, bool]: Success status for each plot type

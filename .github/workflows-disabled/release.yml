@@ -1,8 +1,6 @@
 name: Release
-
-# WORKFLOW DISABLED: Moved to workflows-disabled/ after MCMC removal
-# Automated release workflow for streamlined homodyne package (no MCMC)
-# To re-enable: Move to .github/workflows/ and update package dependencies
+# Automated release workflow for homodyne-analysis package
+# Supports Python 3.12+ with comprehensive testing and PyPI deployment
 
 "on":
   push:

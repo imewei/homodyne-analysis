@@ -562,7 +562,7 @@ class ClassicalOptimizer:
 
         Returns
         -------
-        Tuple[bool, Union[OptimizeResult, Exception]]
+        tuple[bool, OptimizeResult | Exception]
             (success, result_or_exception)
         """
         try:
@@ -635,7 +635,7 @@ class ClassicalOptimizer:
 
         Returns
         -------
-        Tuple[bool, Union[OptimizeResult, Exception]]
+        tuple[bool, OptimizeResult | Exception]
             (success, result_or_exception)
         """
         try:
@@ -921,7 +921,7 @@ class ClassicalOptimizer:
 
         Returns
         -------
-        Tuple[bool, Union[OptimizeResult, Exception]]
+        tuple[bool, OptimizeResult | Exception]
             (success, result_or_exception)
         """
         try:
@@ -1019,7 +1019,7 @@ class ClassicalOptimizer:
 
         Parameters
         ----------
-        results : List[Tuple[str, bool, Union[OptimizeResult, Exception]]]
+        results : list[tuple[str, bool, OptimizeResult | Exception]]
             List of (method_name, success, result_or_exception) tuples (typically one entry for Nelder-Mead)
 
         Returns
@@ -1140,7 +1140,7 @@ class ClassicalOptimizer:
 
         Parameters
         ----------
-        results : List[Tuple[str, Union[OptimizeResult, Exception]]]
+        results : list[tuple[str, OptimizeResult | Exception]]
             List of (method_name, result) tuples (typically one entry for Nelder-Mead)
 
         Returns

@@ -545,9 +545,7 @@ class HomodyneAnalysisCore:
         # Check for cached processed data
         cache_template = self.config["experimental_data"]["cache_filename_template"]
         cache_file_path = self.config["experimental_data"].get("cache_file_path", ".")
-        cache_filename = cache_template.format(
-            start_frame=self.start_frame, end_frame=self.end_frame
-        )
+        cache_filename = f"{cache_template.replace('{start_frame}', str(self.start_frame)).replace('{end_frame}', str(self.end_frame))}" if '{' in cache_template else f"cached_c2_frames_{self.start_frame}_{self.end_frame}.npz"
         cache_file = os.path.join(cache_file_path, cache_filename)
         logger.debug(f"Checking for cached data at: {cache_file}")
 
@@ -2569,7 +2567,7 @@ Validation:
 
         Returns
         -------
-        Optional[Dict[str, Any]]
+        dict[str, Any] | None
             Plot data dictionary or None if insufficient data
         """
         logger = logging.getLogger(__name__)

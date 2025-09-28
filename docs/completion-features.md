@@ -1,13 +1,12 @@
-# Advanced Completion System Features
+# Completion System Features
 
-## 🚀 Overview
+## Overview
 
-The homodyne advanced completion system provides intelligent, context-aware shell
-completions with enterprise-grade performance and extensibility.
+The homodyne completion system provides intelligent, context-aware shell completions with performance optimization and extensibility.
 
-## 🧠 Key Features
+## Key Features
 
-### 1. **Environment-Aware Isolation**
+### 1. Environment-Aware Isolation
 
 ```bash
 # Completions are isolated per virtual environment
@@ -15,13 +14,12 @@ conda activate my-project    # Gets project-specific completions
 conda activate other-project # Gets different completions
 ```
 
-**Benefits**:
-
+Benefits:
 - No completion pollution between projects
 - Project-specific config file suggestions
 - Environment-specific cache optimization
 
-### 2. **Project-Aware Context Detection**
+### 2. Project-Aware Context Detection
 
 ```bash
 # Automatically detects project structure
@@ -29,14 +27,13 @@ cd /my/homodyne/project
 homodyne --config <TAB>  # Prioritizes project config files
 ```
 
-**Detection Features**:
-
+Detection features:
 - Finds project root via `.git`, `pyproject.toml`, etc.
 - Scans `config/`, `configs/` directories
 - Prioritizes relevant configuration files
 - Adapts to project conventions
 
-### 3. **Intelligent Caching System**
+### 3. Intelligent Caching System
 
 ```bash
 # First completion: ~100ms (scans filesystem)
@@ -46,14 +43,13 @@ homodyne --config <TAB>
 homodyne --config <TAB>  # Instant response
 ```
 
-**Cache Features**:
+Cache features:
+- TTL-based expiration: 5 minutes for dynamic data
+- Smart invalidation: Updates when files change
+- Memory efficient: Automatic cleanup
+- Persistent storage: Survives shell restarts
 
-- **TTL-based expiration**: 5 minutes for dynamic data
-- **Smart invalidation**: Updates when files change
-- **Memory efficient**: Automatic cleanup
-- **Persistent storage**: Survives shell restarts
-
-### 4. **Advanced Method Completions**
+### 4. Method Completions
 
 ```bash
 # Updated method names for new system
@@ -61,13 +57,12 @@ homodyne --method <TAB>
 # Shows: vi, mcmc, hybrid (updated from classical/robust/all)
 ```
 
-**Smart Suggestions**:
-
+Smart suggestions:
 - Context-aware method filtering
 - Performance-based recommendations
 - Integration with config files
 
-### 5. **Plugin Architecture** (Ready for Extension)
+### 5. Plugin Architecture
 
 ```python
 # Future: Custom completion plugins
@@ -79,14 +74,13 @@ class CustomCompleter(CompletionPlugin):
         return ["custom", "completions"]
 ```
 
-**Plugin Capabilities**:
-
+Plugin capabilities:
 - Custom completion sources
 - Dynamic completion generation
 - Integration with external tools
 - Extensible completion types
 
-## 🔧 Advanced Installation Options
+## Installation Options
 
 ### Multi-Shell Installation
 
@@ -135,7 +129,7 @@ config = CacheConfig(
 cache = CompletionCache(config=config)
 ```
 
-## 📊 Performance Monitoring
+## Performance Monitoring
 
 ### Cache Statistics
 
@@ -173,7 +167,7 @@ print('Cache cleared')
 "
 ```
 
-## 🛠️ Advanced Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -198,7 +192,7 @@ installer = CompletionInstaller()
 installer.install_base = Path("/custom/completion/path")
 ```
 
-## 🔍 Debugging & Troubleshooting
+## Debugging & Troubleshooting
 
 ### Verbose Completion Testing
 
@@ -258,14 +252,14 @@ print(f'Results: {results}')
 "
 ```
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 ### Planned Features
 
-- **Smart Learning**: Adaptive completions based on usage patterns
-- **Cross-Shell Sync**: Synchronized completions across shell sessions
-- **Remote Completions**: Complete from remote data sources
-- **Semantic Search**: Natural language completion queries
+- Smart learning: Adaptive completions based on usage patterns
+- Cross-shell sync: Synchronized completions across shell sessions
+- Remote completions: Complete from remote data sources
+- Semantic search: Natural language completion queries
 
 ### Plugin Development
 
@@ -281,7 +275,6 @@ class AdvancedCompleter(CompletionPlugin):
         return []
 ```
 
-______________________________________________________________________
+## Performance Notes
 
-**💡 Pro Tip**: The completion system is designed to be invisible and fast. If you notice
-any completion taking longer than 100ms, please report it as a performance issue!
+The completion system is designed to be invisible and fast. If any completion takes longer than 100ms, it should be reported as a performance issue.

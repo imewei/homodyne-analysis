@@ -166,7 +166,7 @@ repos:
 
 # Global configuration
 default_language_version:
-  python: python3.13
+  python: python3.12
 
 # Performance optimization
 default_install_hook_types: [pre-commit, pre-push, commit-msg]
