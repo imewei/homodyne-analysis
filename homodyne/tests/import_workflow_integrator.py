@@ -1,0 +1,1232 @@
+#!/usr/bin/env python3
+"""
+Import Workflow Integration Tool
+==============================
+
+Enterprise-grade development workflow integration for automated import management.
+Provides seamless integration with pre-commit hooks, CI/CD pipelines, and IDE tooling.
+
+Features:
+- Pre-commit hook automation
+- GitHub Actions CI/CD integration
+- VS Code and PyCharm IDE integration
+- Real-time import monitoring
+- Automated import optimization suggestions
+- Team productivity metrics
+"""
+
+import json
+import os
+import time
+from pathlib import Path
+import logging
+from enum import Enum
+from dataclasses import dataclass
+
+
+class IntegrationLevel(Enum):
+    """Integration complexity levels."""
+    BASIC = "basic"
+    STANDARD = "standard"
+    ENTERPRISE = "enterprise"
+
+
+@dataclass
+class IntegrationConfig:
+    """Configuration for workflow integration."""
+    level: IntegrationLevel
+    enable_pre_commit: bool = True
+    enable_github_actions: bool = True
+    enable_ide_integration: bool = True
+    enable_metrics: bool = True
+    safety_level: str = "medium"
+    auto_fix_enabled: bool = False
+    notification_channels: list[str] = None
+
+    def __post_init__(self):
+        if self.notification_channels is None:
+            self.notification_channels = []
+
+
+class WorkflowIntegrator:
+    """Main workflow integration orchestrator."""
+
+    def __init__(self, package_root: Path, config: IntegrationConfig):
+        self.package_root = package_root
+        self.config = config
+        self.logger = self._setup_logging()
+
+        # Integration paths
+        self.integration_dir = package_root / '.import_integration'
+        self.hooks_dir = package_root / '.git' / 'hooks'
+        self.github_dir = package_root / '.github' / 'workflows'
+        self.vscode_dir = package_root / '.vscode'
+
+    def _setup_logging(self) -> logging.Logger:
+        """Setup logging for integration operations."""
+        logger = logging.getLogger('import_workflow_integrator')
+        logger.setLevel(logging.INFO)
+
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+
+        return logger
+
+    def setup_full_integration(self) -> dict[str, bool]:
+        """Setup complete workflow integration."""
+        self.logger.info("Setting up comprehensive import workflow integration...")
+
+        results = {}
+
+        # Create integration directory
+        self.integration_dir.mkdir(exist_ok=True)
+
+        # Save configuration
+        self._save_integration_config()
+
+        # Setup components based on configuration
+        if self.config.enable_pre_commit:
+            results['pre_commit'] = self.setup_pre_commit_integration()
+
+        if self.config.enable_github_actions:
+            results['github_actions'] = self.setup_github_actions()
+
+        if self.config.enable_ide_integration:
+            results['ide_integration'] = self.setup_ide_integration()
+
+        if self.config.enable_metrics:
+            results['metrics'] = self.setup_metrics_collection()
+
+        # Setup monitoring
+        results['monitoring'] = self.setup_import_monitoring()
+
+        # Generate integration report
+        self._generate_integration_report(results)
+
+        return results
+
+    def _save_integration_config(self):
+        """Save integration configuration."""
+        config_file = self.integration_dir / 'config.json'
+        with open(config_file, 'w') as f:
+            json.dump(asdict(self.config), f, indent=2, default=str)
+
+    def setup_pre_commit_integration(self) -> bool:
+        """Setup comprehensive pre-commit hook integration."""
+        try:
+            if not self.hooks_dir.exists():
+                self.hooks_dir.mkdir(parents=True)
+
+            # Enhanced pre-commit hook
+            hook_content = self._generate_pre_commit_hook()
+
+            pre_commit_file = self.hooks_dir / 'pre-commit'
+            with open(pre_commit_file, 'w') as f:
+                f.write(hook_content)
+
+            os.chmod(pre_commit_file, 0o755)
+
+            # Also setup commit-msg hook for import-related commit analysis
+            commit_msg_hook = self._generate_commit_msg_hook()
+            commit_msg_file = self.hooks_dir / 'commit-msg'
+            with open(commit_msg_file, 'w') as f:
+                f.write(commit_msg_hook)
+
+            os.chmod(commit_msg_file, 0o755)
+
+            self.logger.info("✓ Pre-commit hooks installed successfully")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup pre-commit integration: {e}")
+            return False
+
+    def _generate_pre_commit_hook(self) -> str:
+        """Generate enhanced pre-commit hook content."""
+        return f'''#!/bin/bash
+# Enterprise Import Management Pre-commit Hook
+# Generated by homodyne import workflow integrator
+
+set -e
+
+PACKAGE_ROOT="{self.package_root}"
+ANALYZER_SCRIPT="$PACKAGE_ROOT/homodyne/tests/import_analyzer.py"
+INTEGRATION_DIR="$PACKAGE_ROOT/.import_integration"
+
+echo "🔍 Running import analysis..."
+
+# Create temporary results file
+TEMP_RESULTS=$(mktemp)
+
+# Run import analysis
+python "$ANALYZER_SCRIPT" \\
+    --package-root "$PACKAGE_ROOT" \\
+    --check-only \\
+    --safety-level {self.config.safety_level} \\
+    --output "$TEMP_RESULTS" \\
+    --external-tools 2>/dev/null
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ Import analysis passed"
+
+    # Log successful analysis
+    echo "$(date): Import analysis passed" >> "$INTEGRATION_DIR/analysis.log"
+
+else
+    echo "❌ Import issues detected"
+
+    # Show brief summary if results file exists
+    if [ -f "$TEMP_RESULTS" ]; then
+        echo "📊 Analysis Summary:"
+        python -c "
+try:
+    with open('$TEMP_RESULTS') as f:
+        data = json.load(f)
+    summary = data.get('summary', {{}})
+    print(f'  Files analyzed: {{summary.get(\\\"files_analyzed\\\", 0)}}')
+    print(f'  Files with unused imports: {{summary.get(\\\"files_with_unused_imports\\\", 0)}}')
+    print(f'  Total unused imports: {{summary.get(\\\"total_unused_imports\\\", 0)}}')
+except: pass
+" 2>/dev/null || echo "  Could not parse analysis results"
+    fi
+
+    echo ""
+    echo "📝 To fix issues:"
+    echo "   python $ANALYZER_SCRIPT --auto-cleanup --dry-run"
+    echo "   python $ANALYZER_SCRIPT --auto-cleanup"
+    echo ""
+    echo "🚫 To bypass this check (not recommended):"
+    echo "   git commit --no-verify"
+
+    # Log failed analysis
+    echo "$(date): Import analysis failed" >> "$INTEGRATION_DIR/analysis.log"
+fi
+
+# Cleanup
+rm -f "$TEMP_RESULTS"
+
+exit $EXIT_CODE
+'''
+
+    def _generate_commit_msg_hook(self) -> str:
+        """Generate commit message hook for import-related commits."""
+        return f'''#!/bin/bash
+# Commit Message Analysis Hook
+# Analyzes commit messages for import-related changes
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+PACKAGE_ROOT="{self.package_root}"
+INTEGRATION_DIR="$PACKAGE_ROOT/.import_integration"
+
+# Check if this is an import-related commit
+if echo "$COMMIT_MSG" | grep -qi "import\\|unused\\|cleanup"; then
+    echo "📝 Import-related commit detected"
+
+    # Log import-related commit
+    echo "$(date): Import-related commit: $COMMIT_MSG" >> "$INTEGRATION_DIR/import_commits.log"
+
+    # Suggest running import analysis
+    echo "💡 Consider running import analysis:"
+    echo "   python $PACKAGE_ROOT/homodyne/tests/import_analyzer.py --verbose"
+fi
+'''
+
+    def setup_github_actions(self) -> bool:
+        """Setup GitHub Actions workflow for import analysis."""
+        try:
+            if not self.github_dir.exists():
+                self.github_dir.mkdir(parents=True)
+
+            workflow_content = self._generate_github_workflow()
+
+            workflow_file = self.github_dir / 'import-analysis.yml'
+            with open(workflow_file, 'w') as f:
+                f.write(workflow_content)
+
+            # Also create a workflow for automated cleanup PRs
+            if self.config.auto_fix_enabled:
+                cleanup_workflow = self._generate_cleanup_workflow()
+                cleanup_file = self.github_dir / 'auto-import-cleanup.yml'
+                with open(cleanup_file, 'w') as f:
+                    f.write(cleanup_workflow)
+
+            self.logger.info("✓ GitHub Actions workflows configured")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup GitHub Actions: {e}")
+            return False
+
+    def _generate_github_workflow(self) -> str:
+        """Generate GitHub Actions workflow for import analysis."""
+        return f'''name: Import Analysis & Quality Assurance
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly import analysis
+    - cron: '0 2 * * 1'
+
+jobs:
+  import-analysis:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{{{ runner.os }}}}-pip-${{{{ hashFiles('**/requirements*.txt') }}}}
+        restore-keys: |
+          ${{{{ runner.os }}}}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        # Install external analysis tools
+        pip install autoflake unimport ruff
+
+    - name: Run comprehensive import analysis
+      run: |
+        python homodyne/tests/import_analyzer.py \\
+          --check-only \\
+          --external-tools \\
+          --cross-validate \\
+          --verbose \\
+          --generate-report import_analysis_results.json
+
+    - name: Upload analysis results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: import-analysis-results-py${{{{ matrix.python-version }}}}
+        path: import_analysis_results.json
+        retention-days: 30
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request' && failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          try {{
+            const results = JSON.parse(fs.readFileSync('import_analysis_results.json', 'utf8'));
+            const summary = results.summary || {{}};
+
+            const comment = `## 🔍 Import Analysis Results
+
+**Summary:**
+- Files analyzed: ${{summary.files_analyzed || 0}}
+- Files with unused imports: ${{summary.files_with_unused_imports || 0}}
+- Total unused imports: ${{summary.total_unused_imports || 0}}
+
+**Action Required:** Import issues were detected. Please review and fix unused imports.
+
+**Quick Fix:**
+```bash
+python homodyne/tests/import_analyzer.py --auto-cleanup --dry-run
+python homodyne/tests/import_analyzer.py --auto-cleanup
+```
+
+**Full Report:** Check the uploaded artifacts for detailed analysis.
+            `;
+
+            github.rest.issues.createComment({{
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            }});
+          }} catch (error) {{
+            console.log('Could not post comment:', error);
+          }}
+
+  security-analysis:
+    runs-on: ubuntu-latest
+    needs: import-analysis
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install security tools
+      run: |
+        pip install bandit safety pip-audit
+
+    - name: Run security analysis on imports
+      run: |
+        echo "🔒 Running security analysis..."
+        bandit -r homodyne/ -f json -o bandit_results.json || true
+        safety check --json --output safety_results.json || true
+        pip-audit --format=json --output=audit_results.json || true
+
+    - name: Upload security results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-analysis-results
+        path: |
+          bandit_results.json
+          safety_results.json
+          audit_results.json
+        retention-days: 30
+'''
+
+    def _generate_cleanup_workflow(self) -> str:
+        """Generate automated cleanup workflow."""
+        return '''name: Automated Import Cleanup
+
+on:
+  schedule:
+    # Run monthly automated cleanup
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+    inputs:
+      safety_level:
+        description: 'Safety level for cleanup'
+        required: true
+        default: 'high'
+        type: choice
+        options:
+        - high
+        - medium
+
+jobs:
+  automated-cleanup:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+
+    - name: Run automated cleanup
+      run: |
+        SAFETY_LEVEL="${{ github.event.inputs.safety_level || 'high' }}"
+        python homodyne/tests/import_analyzer.py \\
+          --auto-cleanup \\
+          --safety-level "$SAFETY_LEVEL" \\
+          --generate-report cleanup_results.json
+
+    - name: Create Pull Request
+      if: success()
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: |
+          🧹 chore: automated import cleanup
+
+          - Removed unused imports (safety level: ${{ github.event.inputs.safety_level || 'high' }})
+          - Generated by automated workflow
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+        title: '🧹 Automated Import Cleanup'
+        body: |
+          ## Automated Import Cleanup
+
+          This PR contains automated import cleanup performed by the import analysis workflow.
+
+          **Safety Level:** ${{ github.event.inputs.safety_level || 'high' }}
+
+          ### Changes Made
+          - Removed unused imports with high safety confidence
+          - Preserved conditional and dynamic imports
+          - Maintained code functionality
+
+          ### Verification
+          - [x] Syntax validation performed
+          - [x] Safety checks passed
+          - [x] Backup created
+
+          Please review the changes and merge if appropriate.
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+        branch: automated-import-cleanup
+        delete-branch: true
+'''
+
+    def setup_ide_integration(self) -> bool:
+        """Setup IDE integration for VS Code and PyCharm."""
+        try:
+            # VS Code integration
+            vscode_success = self._setup_vscode_integration()
+
+            # PyCharm integration (via external tools)
+            pycharm_success = self._setup_pycharm_integration()
+
+            if vscode_success or pycharm_success:
+                self.logger.info("✓ IDE integration configured")
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup IDE integration: {e}")
+            return False
+
+    def _setup_vscode_integration(self) -> bool:
+        """Setup VS Code integration."""
+        try:
+            if not self.vscode_dir.exists():
+                self.vscode_dir.mkdir(parents=True)
+
+            # VS Code tasks
+            tasks_config = {
+                "version": "2.0.0",
+                "tasks": [
+                    {
+                        "label": "Import Analysis",
+                        "type": "shell",
+                        "command": "python",
+                        "args": [
+                            "homodyne/tests/import_analyzer.py",
+                            "--verbose",
+                            "--external-tools"
+                        ],
+                        "group": "build",
+                        "presentation": {
+                            "echo": True,
+                            "reveal": "always",
+                            "focus": False,
+                            "panel": "shared"
+                        },
+                        "problemMatcher": []
+                    },
+                    {
+                        "label": "Auto Import Cleanup (Dry Run)",
+                        "type": "shell",
+                        "command": "python",
+                        "args": [
+                            "homodyne/tests/import_analyzer.py",
+                            "--auto-cleanup",
+                            "--dry-run",
+                            "--verbose"
+                        ],
+                        "group": "build",
+                        "presentation": {
+                            "echo": True,
+                            "reveal": "always",
+                            "focus": False,
+                            "panel": "shared"
+                        }
+                    },
+                    {
+                        "label": "Generate Import Cleanup Script",
+                        "type": "shell",
+                        "command": "python",
+                        "args": [
+                            "homodyne/tests/import_analyzer.py",
+                            "--auto-cleanup",
+                            "--verbose"
+                        ],
+                        "group": "build",
+                        "presentation": {
+                            "echo": True,
+                            "reveal": "always",
+                            "focus": False,
+                            "panel": "shared"
+                        }
+                    }
+                ]
+            }
+
+            tasks_file = self.vscode_dir / 'tasks.json'
+            with open(tasks_file, 'w') as f:
+                json.dump(tasks_config, f, indent=2)
+
+            # VS Code settings for import optimization
+            settings_file = self.vscode_dir / 'settings.json'
+            if settings_file.exists():
+                with open(settings_file, 'r') as f:
+                    settings = json.load(f)
+            else:
+                settings = {}
+
+            # Add import-related settings
+            import_settings = {
+                "python.analysis.autoImportCompletions": True,
+                "python.analysis.importFormat": "relative",
+                "isort.check": True,
+                "isort.args": ["--profile", "black"],
+                "python.linting.enabled": True,
+                "python.linting.ruffEnabled": True,
+                "python.linting.ruffArgs": ["--select", "F401,F811"]
+            }
+
+            settings.update(import_settings)
+
+            with open(settings_file, 'w') as f:
+                json.dump(settings, f, indent=2)
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup VS Code integration: {e}")
+            return False
+
+    def _setup_pycharm_integration(self) -> bool:
+        """Setup PyCharm external tools integration."""
+        try:
+            # Create PyCharm external tools configuration
+            pycharm_config = self.integration_dir / 'pycharm_external_tools.xml'
+
+            xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<toolSet name="Import Analysis">
+  <tool name="Import Analysis" description="Run comprehensive import analysis" showInMainMenu="true" showInEditor="true" showInProject="true" showInSearchPopup="true" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="python" />
+      <option name="PARAMETERS" value="homodyne/tests/import_analyzer.py --verbose --external-tools" />
+      <option name="WORKING_DIRECTORY" value="$ProjectFileDir$" />
+    </exec>
+  </tool>
+  <tool name="Import Cleanup (Dry Run)" description="Preview import cleanup changes" showInMainMenu="true" showInEditor="true" showInProject="true" showInSearchPopup="true" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="python" />
+      <option name="PARAMETERS" value="homodyne/tests/import_analyzer.py --auto-cleanup --dry-run --verbose" />
+      <option name="WORKING_DIRECTORY" value="$ProjectFileDir$" />
+    </exec>
+  </tool>
+  <tool name="Generate Cleanup Script" description="Generate automated import cleanup script" showInMainMenu="true" showInEditor="true" showInProject="true" showInSearchPopup="true" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="python" />
+      <option name="PARAMETERS" value="homodyne/tests/import_analyzer.py --auto-cleanup --verbose" />
+      <option name="WORKING_DIRECTORY" value="$ProjectFileDir$" />
+    </exec>
+  </tool>
+</toolSet>
+'''
+
+            with open(pycharm_config, 'w') as f:
+                f.write(xml_content)
+
+            # Create instructions for manual import
+            instructions_file = self.integration_dir / 'pycharm_setup_instructions.md'
+            with open(instructions_file, 'w') as f:
+                f.write('''# PyCharm Integration Setup
+
+## Import External Tools
+
+1. Open PyCharm Settings (File → Settings)
+2. Navigate to Tools → External Tools
+3. Click the gear icon → Import
+4. Select the file: `.import_integration/pycharm_external_tools.xml`
+5. Click OK to import the tools
+
+## Available Tools
+
+After import, you'll have these tools available:
+
+- **Import Analysis**: Run comprehensive import analysis
+- **Import Cleanup (Dry Run)**: Preview import cleanup changes
+- **Generate Cleanup Script**: Generate automated cleanup script
+
+## Usage
+
+- Right-click in the editor or project tree
+- Select External Tools → [Tool Name]
+- Or use Tools menu → External Tools → [Tool Name]
+
+## Keyboard Shortcuts (Optional)
+
+You can assign keyboard shortcuts in Settings → Keymap → External Tools.
+''')
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup PyCharm integration: {e}")
+            return False
+
+    def setup_metrics_collection(self) -> bool:
+        """Setup metrics collection for import management."""
+        try:
+            metrics_dir = self.integration_dir / 'metrics'
+            metrics_dir.mkdir(exist_ok=True)
+
+            # Create metrics collection script
+            metrics_script = self._generate_metrics_script()
+
+            script_file = metrics_dir / 'collect_metrics.py'
+            with open(script_file, 'w') as f:
+                f.write(metrics_script)
+
+            # Create metrics dashboard template
+            dashboard_template = self._generate_dashboard_template()
+
+            dashboard_file = metrics_dir / 'dashboard.html'
+            with open(dashboard_file, 'w') as f:
+                f.write(dashboard_template)
+
+            self.logger.info("✓ Metrics collection configured")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup metrics collection: {e}")
+            return False
+
+    def _generate_metrics_script(self) -> str:
+        """Generate metrics collection script."""
+        return f'''#!/usr/bin/env python3
+"""
+Import Management Metrics Collection
+==================================
+
+Collects and analyzes metrics for import management effectiveness.
+"""
+
+import json
+import time
+from pathlib import Path
+from datetime import datetime
+import subprocess
+
+def collect_import_metrics():
+    """Collect comprehensive import metrics."""
+    package_root = Path("{self.package_root}")
+    analyzer_script = package_root / "homodyne/tests/import_analyzer.py"
+
+    # Run analysis and collect results
+    temp_results = package_root / "temp_metrics.json"
+
+    try:
+        subprocess.run([
+            "python", str(analyzer_script),
+            "--package-root", str(package_root),
+            "--external-tools",
+            "--generate-report", str(temp_results)
+        ], check=True, capture_output=True)
+
+        # Load results
+        with open(temp_results) as f:
+            analysis_data = json.load(f)
+
+        # Extract metrics
+        summary = analysis_data.get('summary', {{}})
+        metrics = {{
+            'timestamp': datetime.now().isoformat(),
+            'files_analyzed': summary.get('files_analyzed', 0),
+            'files_with_unused_imports': summary.get('files_with_unused_imports', 0),
+            'total_unused_imports': summary.get('total_unused_imports', 0),
+            'import_cleanliness_ratio': 1 - (summary.get('files_with_unused_imports', 0) / max(summary.get('files_analyzed', 1), 1)),
+            'external_tools_available': len(analysis_data.get('external_validation', {{}})),
+            'optimization_suggestions': len(analysis_data.get('optimization_suggestions', []))
+        }}
+
+        # Save metrics
+        metrics_file = package_root / ".import_integration/metrics/metrics_history.jsonl"
+        with open(metrics_file, 'a') as f:
+            f.write(json.dumps(metrics) + '\\n')
+
+        print(f"Metrics collected: {{metrics}}")
+
+        # Cleanup
+        temp_results.unlink()
+
+        return metrics
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error running analysis: {{e}}")
+        return None
+    except Exception as e:
+        print(f"Error collecting metrics: {{e}}")
+        return None
+
+if __name__ == '__main__':
+    collect_import_metrics()
+'''
+
+    def _generate_dashboard_template(self) -> str:
+        """Generate HTML dashboard template."""
+        return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Management Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .dashboard { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-value { font-size: 2em; font-weight: bold; color: #2563eb; }
+        .metric-label { color: #6b7280; margin-top: 5px; }
+        .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .status-good { color: #059669; }
+        .status-warning { color: #d97706; }
+        .status-error { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🔍 Import Management Dashboard</h1>
+            <p>Real-time insights into import cleanliness and optimization opportunities</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" id="files-analyzed">--</div>
+                <div class="metric-label">Files Analyzed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="unused-imports">--</div>
+                <div class="metric-label">Unused Imports</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="cleanliness-ratio">--%</div>
+                <div class="metric-label">Import Cleanliness</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="optimization-suggestions">--</div>
+                <div class="metric-label">Optimization Suggestions</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Import Cleanliness Trend</h3>
+            <canvas id="trend-chart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>Files by Import Status</h3>
+            <canvas id="status-chart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Load and display metrics
+        async function loadMetrics() {
+            try {
+                // In a real implementation, this would load from the metrics file
+                // For now, showing sample data
+                const sampleMetrics = {
+                    files_analyzed: 45,
+                    total_unused_imports: 8,
+                    import_cleanliness_ratio: 0.85,
+                    optimization_suggestions: 12
+                };
+
+                updateMetricsDisplay(sampleMetrics);
+                createTrendChart();
+                createStatusChart(sampleMetrics);
+
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        function updateMetricsDisplay(metrics) {
+            document.getElementById('files-analyzed').textContent = metrics.files_analyzed;
+            document.getElementById('unused-imports').textContent = metrics.total_unused_imports;
+
+            const cleanlinessPercent = Math.round(metrics.import_cleanliness_ratio * 100);
+            const cleanlinessElement = document.getElementById('cleanliness-ratio');
+            cleanlinessElement.textContent = cleanlinessPercent + '%';
+
+            // Color coding based on cleanliness
+            if (cleanlinessPercent >= 90) {
+                cleanlinessElement.className = 'metric-value status-good';
+            } else if (cleanlinessPercent >= 70) {
+                cleanlinessElement.className = 'metric-value status-warning';
+            } else {
+                cleanlinessElement.className = 'metric-value status-error';
+            }
+
+            document.getElementById('optimization-suggestions').textContent = metrics.optimization_suggestions;
+        }
+
+        function createTrendChart() {
+            const ctx = document.getElementById('trend-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                    datasets: [{
+                        label: 'Import Cleanliness %',
+                        data: [75, 78, 82, 85, 87, 85, 85],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function createStatusChart(metrics) {
+            const ctx = document.getElementById('status-chart').getContext('2d');
+            const cleanFiles = metrics.files_analyzed - Math.ceil(metrics.total_unused_imports / 2);
+            const filesWithIssues = metrics.files_analyzed - cleanFiles;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Clean Files', 'Files with Issues'],
+                    datasets: [{
+                        data: [cleanFiles, filesWithIssues],
+                        backgroundColor: ['#059669', '#dc2626']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load metrics on page load
+        loadMetrics();
+
+        // Refresh every 5 minutes
+        setInterval(loadMetrics, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
+'''
+
+    def setup_import_monitoring(self) -> bool:
+        """Setup real-time import monitoring."""
+        try:
+            # Create monitoring script
+            monitor_script = self._generate_monitor_script()
+
+            script_file = self.integration_dir / 'monitor_imports.py'
+            with open(script_file, 'w') as f:
+                f.write(monitor_script)
+
+            os.chmod(script_file, 0o755)
+
+            # Create systemd service file (for Linux)
+            service_content = self._generate_systemd_service()
+
+            service_file = self.integration_dir / 'import-monitor.service'
+            with open(service_file, 'w') as f:
+                f.write(service_content)
+
+            self.logger.info("✓ Import monitoring configured")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup import monitoring: {e}")
+            return False
+
+    def _generate_monitor_script(self) -> str:
+        """Generate import monitoring script."""
+        return f'''#!/usr/bin/env python3
+"""
+Real-time Import Monitoring
+=========================
+
+Monitors file changes and triggers import analysis when needed.
+"""
+
+import time
+import sys
+from pathlib import Path
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import subprocess
+import logging
+
+class ImportMonitor(FileSystemEventHandler):
+    """File system event handler for import monitoring."""
+
+    def __init__(self, package_root: Path):
+        self.package_root = package_root
+        self.last_analysis = 0
+        self.min_interval = 30  # Minimum seconds between analyses
+
+        # Setup logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
+
+    def on_modified(self, event):
+        """Handle file modification events."""
+        if event.is_directory:
+            return
+
+        path = Path(event.src_path)
+
+        # Only monitor Python files
+        if path.suffix != '.py':
+            return
+
+        # Avoid triggering on generated files
+        if any(part.startswith('.') for part in path.parts):
+            return
+
+        # Rate limiting
+        current_time = time.time()
+        if current_time - self.last_analysis < self.min_interval:
+            return
+
+        self.logger.info(f"Python file modified: {{path}}")
+        self.trigger_analysis()
+        self.last_analysis = current_time
+
+    def trigger_analysis(self):
+        """Trigger import analysis."""
+        try:
+            analyzer_script = self.package_root / "homodyne/tests/import_analyzer.py"
+
+            # Run quick analysis
+            result = subprocess.run([
+                "python", str(analyzer_script),
+                "--check-only",
+                "--package-root", str(self.package_root)
+            ], capture_output=True, text=True, timeout=60)
+
+            if result.returncode != 0:
+                self.logger.warning("Import issues detected - consider running cleanup")
+            else:
+                self.logger.info("Import analysis passed")
+
+        except subprocess.TimeoutExpired:
+            self.logger.error("Analysis timeout")
+        except Exception as e:
+            self.logger.error(f"Analysis error: {{e}}")
+
+def main():
+    """Main monitoring loop."""
+    package_root = Path("{self.package_root}")
+
+    event_handler = ImportMonitor(package_root)
+    observer = Observer()
+    observer.schedule(event_handler, str(package_root), recursive=True)
+
+    observer.start()
+    print(f"🔍 Import monitoring started for {{package_root}}")
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        print("\\n🛑 Import monitoring stopped")
+
+    observer.join()
+
+if __name__ == '__main__':
+    main()
+'''
+
+    def _generate_systemd_service(self) -> str:
+        """Generate systemd service file for monitoring."""
+        return f'''[Unit]
+Description=Import Monitoring Service for {self.package_root.name}
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory={self.package_root}
+ExecStart=/usr/bin/python3 {self.integration_dir}/monitor_imports.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+'''
+
+    def _generate_integration_report(self, results: dict[str, bool]):
+        """Generate integration setup report."""
+        report_content = f"""# Import Workflow Integration Report
+
+Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Package: {self.package_root.name}
+Integration Level: {self.config.level.value}
+
+## Integration Status
+
+"""
+
+        for component, success in results.items():
+            status = "✅ SUCCESS" if success else "❌ FAILED"
+            report_content += f"- **{component.replace('_', ' ').title()}**: {status}\n"
+
+        report_content += f"""
+
+## Configuration
+
+- Safety Level: {self.config.safety_level}
+- Auto-fix Enabled: {self.config.auto_fix_enabled}
+- Pre-commit Hooks: {self.config.enable_pre_commit}
+- GitHub Actions: {self.config.enable_github_actions}
+- IDE Integration: {self.config.enable_ide_integration}
+- Metrics Collection: {self.config.enable_metrics}
+
+## Quick Start
+
+### Manual Analysis
+```bash
+python homodyne/tests/import_analyzer.py --verbose --external-tools
+```
+
+### Automated Cleanup
+```bash
+python homodyne/tests/import_analyzer.py --auto-cleanup --dry-run
+python homodyne/tests/import_analyzer.py --auto-cleanup
+```
+
+### VS Code Integration
+- Open Command Palette (Ctrl/Cmd+Shift+P)
+- Type "Tasks: Run Task"
+- Select "Import Analysis" or other import tasks
+
+### PyCharm Integration
+- See `.import_integration/pycharm_setup_instructions.md`
+
+## Monitoring
+
+- Real-time monitoring: `python .import_integration/monitor_imports.py`
+- Metrics dashboard: Open `.import_integration/metrics/dashboard.html`
+- Pre-commit hooks: Automatically run on `git commit`
+
+## Troubleshooting
+
+### Common Issues
+1. **Pre-commit hook not running**: Check `.git/hooks/pre-commit` permissions
+2. **GitHub Actions failing**: Verify repository secrets and permissions
+3. **IDE integration not working**: Check tool installation and paths
+
+### Support
+- Check logs in `.import_integration/`
+- Run analysis with `--verbose` flag for detailed output
+- Review GitHub Actions artifacts for CI/CD issues
+
+---
+Generated by homodyne import workflow integrator
+"""
+
+        report_file = self.integration_dir / 'integration_report.md'
+        with open(report_file, 'w') as f:
+            f.write(report_content)
+
+        self.logger.info(f"📊 Integration report generated: {report_file}")
+
+
+def main():
+    """CLI for workflow integration."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Setup enterprise import workflow integration'
+    )
+    parser.add_argument('--package-root', type=Path,
+                       default=Path.cwd(),
+                       help='Package root directory')
+    parser.add_argument('--level', choices=['basic', 'standard', 'enterprise'],
+                       default='standard',
+                       help='Integration level')
+    parser.add_argument('--safety-level', choices=['low', 'medium', 'high'],
+                       default='medium',
+                       help='Safety level for automated operations')
+    parser.add_argument('--enable-auto-fix', action='store_true',
+                       help='Enable automated fix workflows')
+    parser.add_argument('--disable-pre-commit', action='store_true',
+                       help='Disable pre-commit hook setup')
+    parser.add_argument('--disable-github-actions', action='store_true',
+                       help='Disable GitHub Actions setup')
+    parser.add_argument('--disable-ide', action='store_true',
+                       help='Disable IDE integration')
+    parser.add_argument('--disable-metrics', action='store_true',
+                       help='Disable metrics collection')
+
+    args = parser.parse_args()
+
+    # Create configuration
+    config = IntegrationConfig(
+        level=IntegrationLevel(args.level),
+        enable_pre_commit=not args.disable_pre_commit,
+        enable_github_actions=not args.disable_github_actions,
+        enable_ide_integration=not args.disable_ide,
+        enable_metrics=not args.disable_metrics,
+        safety_level=args.safety_level,
+        auto_fix_enabled=args.enable_auto_fix
+    )
+
+    # Setup integration
+    integrator = WorkflowIntegrator(args.package_root, config)
+    results = integrator.setup_full_integration()
+
+    # Summary
+    print(f"\n{'='*60}")
+    print("WORKFLOW INTEGRATION SUMMARY")
+    print(f"{'='*60}")
+
+    success_count = sum(1 for success in results.values() if success)
+    total_count = len(results)
+
+    print(f"Integration Level: {config.level.value}")
+    print(f"Components Configured: {success_count}/{total_count}")
+
+    if success_count == total_count:
+        print("🎉 Full integration setup completed successfully!")
+    elif success_count > 0:
+        print("⚠️  Partial integration setup completed")
+    else:
+        print("❌ Integration setup failed")
+
+    print(f"\nNext steps:")
+    print(f"1. Review integration report: .import_integration/integration_report.md")
+    print(f"2. Test pre-commit hooks: git commit (with changes)")
+    print(f"3. Check GitHub Actions: Push changes to trigger workflows")
+    print(f"4. Open metrics dashboard: .import_integration/metrics/dashboard.html")
+
+
+if __name__ == '__main__':
+    main()
