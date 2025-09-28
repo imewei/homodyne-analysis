@@ -69,7 +69,7 @@ class OptimizationConfig:
         try:
             from homodyne.config import get_template_path
 
-            default_config_path = get_template_path("distributed_ml_config")
+            default_config_path = get_template_path("template")
             if default_config_path and Path(default_config_path).exists():
                 self.load_config(default_config_path)
                 return

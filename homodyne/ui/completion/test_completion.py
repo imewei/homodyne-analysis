@@ -32,10 +32,10 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from cache import CacheConfig, CompletionCache
-from core import CompletionContext, CompletionEngine, CompletionType, EnvironmentType
-from installer import CompletionInstaller, InstallationConfig
-from plugins import (
+from .cache import CacheConfig, CompletionCache
+from .core import CompletionContext, CompletionEngine, CompletionType, EnvironmentType
+from .installer import CompletionInstaller, InstallationConfig
+from .plugins import (
     AliasPlugin,
     HomodyneCommandPlugin,
     PluginManager,
@@ -202,7 +202,7 @@ class TestCompletionCache(unittest.TestCase):
         self.assertIsNone(result)
 
         # Test cache put and hit
-        from core import CompletionResult
+        from .core import CompletionResult
 
         test_results = [
             CompletionResult(
@@ -398,7 +398,7 @@ def print_status(message: str, level: str = "info") -> None:
     elif level == "success":
         print(f"✅ {message}")
     elif level == "info":
-        print(f"ℹ️  {message}")
+        print(f"i  {message}")
     else:
         print(message)
 

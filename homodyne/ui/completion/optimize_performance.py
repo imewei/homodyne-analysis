@@ -18,10 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 try:
-    from .cache import CacheConfig, CompletionCache
+    from .cache import CompletionCache
     from .core import CompletionContext, CompletionEngine
 except ImportError:
-    from cache import CacheConfig, CompletionCache
+    from cache import CompletionCache
     from core import CompletionContext, CompletionEngine
 
 
@@ -63,7 +63,7 @@ class PerformanceOptimizer:
         for context_args in test_contexts:
             context = CompletionContext.from_shell_args(context_args)
             start_time = time.time()
-            completions = self.engine.complete(context)
+            self.engine.complete(context)
             end_time = time.time()
             times.append(end_time - start_time)
 
@@ -235,15 +235,7 @@ class PerformanceOptimizer:
             pass
 
         # Optimization 2: Cache configuration tuning
-        cache_config = CacheConfig(
-            max_entries=15000,  # Increased from 10000
-            max_memory_mb=75,  # Increased from 50
-            default_ttl_seconds=600,  # Increased from 300 (10 minutes)
-            cleanup_interval_seconds=1800,  # Reduced from 3600 (30 minutes)
-            enable_compression=True,
-            isolate_by_environment=True,
-            isolate_by_project=True,
-        )
+        # Note: Cache configuration would be applied to actual cache instance
         optimizations_applied.append("cache_tuning")
 
         # Optimization 3: Memory usage optimization

@@ -430,7 +430,7 @@ class InteractiveInterface:
                 "workflow_execution", "Executing workflow", total_steps
             )
 
-            for i, step in enumerate(session.workflow_steps):
+            for step in session.workflow_steps:
                 # Check dependencies
                 if not self._check_step_dependencies(step, session.completed_steps):
                     self.console.print(

@@ -28,7 +28,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from installer import CompletionInstaller, InstallationConfig
+from .installer import CompletionInstaller, InstallationConfig
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -132,7 +132,7 @@ def print_status(message: str, level: str = "info", quiet: bool = False) -> None
     elif level == "success":
         print(f"✅ {message}")
     elif level == "info":
-        print(f"ℹ️  {message}")
+        print(f"i  {message}")
     else:
         print(message)
 

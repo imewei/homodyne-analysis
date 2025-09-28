@@ -565,14 +565,14 @@ class HomodyneAnalysisCore:
                 with np.load(cache_file) as data:
                     c2_experimental = data["c2_exp"].astype(np.float64)
 
-            # Validate cached data dimensions match expectations
+            # Validate cached data dimensions and auto-adjust if needed
             if (
                 c2_experimental.shape[1] != self.time_length
                 or c2_experimental.shape[2] != self.time_length
             ):
-                logger.warning(
+                logger.info(
                     f"Cached data time dimensions ({c2_experimental.shape[1]}, {c2_experimental.shape[2]}) "
-                    f"don't match expected time_length ({self.time_length})"
+                    f"differ from config time_length ({self.time_length}) - auto-adjusting"
                 )
                 # Update time_length to match cached data
                 self.time_length = c2_experimental.shape[1]
@@ -681,14 +681,14 @@ class HomodyneAnalysisCore:
             logger.debug(f"Loaded data shape: {c2_experimental.shape}")
             logger.debug(f"Phi angles loaded: {len(phi_angles_loaded)}")
 
-            # Validate loaded data dimensions match expectations
+            # Validate loaded data dimensions and auto-adjust if needed
             if (
                 c2_experimental.shape[1] != self.time_length
                 or c2_experimental.shape[2] != self.time_length
             ):
-                logger.warning(
+                logger.info(
                     f"Loaded data time dimensions ({c2_experimental.shape[1]}, {c2_experimental.shape[2]}) "
-                    f"don't match expected time_length ({self.time_length})"
+                    f"differ from config time_length ({self.time_length}) - auto-adjusting"
                 )
                 # Update time_length to match loaded data
                 self.time_length = c2_experimental.shape[1]
@@ -1430,9 +1430,37 @@ class HomodyneAnalysisCore:
             angle_data_points = []
             scaling_solutions = []
 
-            # Pre-flatten all arrays for better memory access patterns
-            theory_flat = c2_theory.reshape(n_angles, -1)
-            exp_flat = c2_experimental.reshape(n_angles, -1)
+            # MEMORY LAYOUT OPTIMIZATION: Advanced cache-aligned memory patterns
+            # ================================================================
+            # Original: c2_theory.reshape(n_angles, -1) creates non-contiguous views
+            # Optimized: Ensure contiguous memory layout for CPU cache efficiency
+            #
+            # Performance Benefits:
+            # 1. Cache-friendly sequential memory access
+            # 2. Reduced memory fragmentation
+            # 3. Better CPU prefetching
+            # 4. SIMD vectorization opportunities
+            # 5. Reduced memory bandwidth utilization
+
+            # Get original shape to determine optimal memory layout
+            original_shape = c2_theory.shape
+
+            if len(original_shape) == 3:
+                # For 3D arrays (n_angles, n_rows, n_cols), create cache-optimized flat arrays
+                n_data_per_angle = original_shape[1] * original_shape[2]
+
+                # Create contiguous memory layout with proper alignment
+                theory_flat = np.ascontiguousarray(
+                    c2_theory.reshape(n_angles, n_data_per_angle), dtype=np.float64
+                )
+                exp_flat = np.ascontiguousarray(
+                    c2_experimental.reshape(n_angles, n_data_per_angle),
+                    dtype=np.float64,
+                )
+            else:
+                # For 2D arrays, ensure contiguous layout
+                theory_flat = np.ascontiguousarray(c2_theory, dtype=np.float64)
+                exp_flat = np.ascontiguousarray(c2_experimental, dtype=np.float64)
 
             # SCALING OPTIMIZATION (ALWAYS ENABLED) - Vectorized implementation
             # =====================================
@@ -1456,7 +1484,12 @@ class HomodyneAnalysisCore:
             # ones], x = [contrast, offset]
 
             # Vectorized least squares fitting for all angles
-            n_data_per_angle = theory_flat.shape[1]
+            # Use optimized shape information from memory layout optimization
+            if len(original_shape) == 3:
+                n_data_per_angle = original_shape[1] * original_shape[2]
+            else:
+                n_data_per_angle = theory_flat.shape[1]
+
             angle_data_points = [n_data_per_angle] * n_angles
 
             # Phase 3: Vectorized batch processing with Numba optimization
@@ -1481,23 +1514,60 @@ class HomodyneAnalysisCore:
                     contrast_batch = np.zeros(n_angles, dtype=np.float64)
                     offset_batch = np.zeros(n_angles, dtype=np.float64)
 
-                    # Manual implementation of batch least squares
-                    for i in range(n_angles):
-                        theory_vec = theory_flat[i]
-                        exp_vec = exp_flat[i]
+                    # VECTORIZED FALLBACK: Advanced NumPy broadcasting for batch least squares
+                    # =====================================================================
+                    # Original: Loop-based least squares solving for each angle
+                    # Optimized: Vectorized batch least squares using einsum and broadcasting
+                    #
+                    # Mathematical operation: Solve A*x = b for each angle where:
+                    # A = [theory_vec, ones], x = [contrast, offset], b = exp_vec
+                    #
+                    # Vectorization strategy:
+                    # 1. Create batch design matrices using broadcasting
+                    # 2. Use Einstein summation for efficient matrix operations
+                    # 3. Vectorized matrix inverse and multiplication
+                    # 4. Robust error handling with vectorized fallbacks
 
-                        # Solve: min ||A*x - b||^2 where A = [theory, ones], x
-                        # = [contrast, offset]
-                        A = np.column_stack([theory_vec, np.ones(len(theory_vec))])
+                    try:
+                        # Create batch design matrices: A[i] = [theory_flat[i], ones]
+                        ones_matrix = np.ones((n_angles, n_data_per_angle))
+                        A_batch = np.stack(
+                            [theory_flat, ones_matrix], axis=2
+                        )  # (n_angles, n_data, 2)
+
+                        # Vectorized normal equations: AtA = A^T * A, Atb = A^T * b
+                        AtA = np.einsum(
+                            "ijk,ijl->ikl", A_batch, A_batch
+                        )  # (n_angles, 2, 2)
+                        Atb = np.einsum(
+                            "ijk,ij->ik", A_batch, exp_flat
+                        )  # (n_angles, 2)
+
+                        # Vectorized solve: x = (A^T * A)^(-1) * A^T * b
                         try:
-                            # Use least squares solver
-                            x, _, _, _ = np.linalg.lstsq(A, exp_vec, rcond=None)
-                            contrast_batch[i] = x[0]
-                            offset_batch[i] = x[1]
+                            solutions = np.linalg.solve(AtA, Atb)  # (n_angles, 2)
+                            contrast_batch = solutions[:, 0]
+                            offset_batch = solutions[:, 1]
                         except np.linalg.LinAlgError:
-                            # Fallback values if linear algebra fails
-                            contrast_batch[i] = 0.5
-                            offset_batch[i] = 1.0
+                            # Individual angle fallback for numerical issues
+                            for i in range(n_angles):
+                                try:
+                                    A = np.column_stack(
+                                        [theory_flat[i], np.ones(n_data_per_angle)]
+                                    )
+                                    x, _, _, _ = np.linalg.lstsq(
+                                        A, exp_flat[i], rcond=None
+                                    )
+                                    contrast_batch[i] = x[0]
+                                    offset_batch[i] = x[1]
+                                except np.linalg.LinAlgError:
+                                    contrast_batch[i] = 0.5
+                                    offset_batch[i] = 1.0
+
+                    except Exception:
+                        # Ultimate fallback to conservative values
+                        contrast_batch[:] = 0.5
+                        offset_batch[:] = 1.0
                 else:
                     raise
 
@@ -1515,17 +1585,33 @@ class HomodyneAnalysisCore:
                     )
                     chi2_raw_batch = np.zeros(n_angles, dtype=np.float64)
 
-                    # Manual implementation of batch chi-squared
-                    for i in range(n_angles):
-                        theory_vec = theory_flat[i]
-                        exp_vec = exp_flat[i]
-                        contrast = contrast_batch[i]
-                        offset = offset_batch[i]
+                    # VECTORIZED FALLBACK: Advanced broadcasting for batch chi-squared
+                    # ===============================================================
+                    # Original: Loop-based chi-squared computation for each angle
+                    # Optimized: Vectorized computation using broadcasting and element-wise operations
+                    #
+                    # Mathematical operation: chi2[i] = sum((exp[i] - fitted[i])^2)
+                    # where fitted[i] = contrast[i] * theory[i] + offset[i]
+                    #
+                    # Vectorization strategy:
+                    # 1. Broadcasting scalar operations across arrays
+                    # 2. Vectorized residual computation
+                    # 3. Vectorized sum reduction along appropriate axis
 
-                        # Compute fitted values and chi-squared
-                        fitted_vec = contrast * theory_vec + offset
-                        residuals = exp_vec - fitted_vec
-                        chi2_raw_batch[i] = np.sum(residuals**2)
+                    # Vectorized fitted values computation using broadcasting
+                    # contrast_batch[:, np.newaxis] broadcasts to (n_angles, 1)
+                    # theory_flat is (n_angles, n_data_per_angle)
+                    # Result: (n_angles, n_data_per_angle)
+                    fitted_batch = (
+                        contrast_batch[:, np.newaxis] * theory_flat
+                        + offset_batch[:, np.newaxis]
+                    )
+
+                    # Vectorized residuals computation
+                    residuals_batch = exp_flat - fitted_batch
+
+                    # Vectorized chi-squared computation: sum along data points axis
+                    chi2_raw_batch = np.sum(residuals_batch**2, axis=1)
                 else:
                     raise
 
@@ -1536,10 +1622,10 @@ class HomodyneAnalysisCore:
             angle_chi2[:] = chi2_raw_batch / sigma_squared_batch
             angle_chi2_reduced[:] = angle_chi2 / dof_batch
 
-            # Store scaling solutions for compatibility
-            scaling_solutions = [
-                [contrast_batch[i], offset_batch[i]] for i in range(n_angles)
-            ]
+            # VECTORIZED: Store scaling solutions using advanced array operations
+            # Original: List comprehension with loop
+            # Optimized: NumPy column_stack for efficient array construction
+            scaling_solutions = np.column_stack([contrast_batch, offset_batch]).tolist()
 
             # Collect chi2 values for optimization angles (for averaging)
             if filter_angles_for_optimization:
@@ -2234,7 +2320,23 @@ class HomodyneAnalysisCore:
                 max_val = np.max(angle_data)
                 diagonal = np.diag(angle_data)
                 diag_mean = np.mean(diagonal)
-                contrast = (max_val - min_val) / min_val
+
+                # Calculate contrast with proper handling of zero/near-zero min_val
+                if abs(min_val) < 1e-10:  # Near zero
+                    if abs(max_val) < 1e-10:  # Both near zero
+                        contrast = 0.0
+                    else:
+                        contrast = float("inf")  # Infinite contrast
+                else:
+                    contrast = (max_val - min_val) / min_val
+
+                # Format contrast value appropriately
+                if contrast == float("inf"):
+                    contrast_str = "∞"
+                elif contrast == 0.0:
+                    contrast_str = "0.000"
+                else:
+                    contrast_str = f"{contrast:.3f}"
 
                 stats_text = f"""Data Statistics (φ={phi_deg:.1f}°):
 
@@ -2247,7 +2349,7 @@ Min:  {min_val:.4f}
 Max:  {max_val:.4f}
 
 Diagonal mean: {diag_mean:.4f}
-Contrast: {contrast:.3f}
+Contrast: {contrast_str}
 
 Validation:
 {"✓" if 0.9 < mean_val < 1.2 else "✗"} Mean around 1.0
@@ -2304,7 +2406,21 @@ Validation:
                 else False
             )  # type: ignore
             if show_plots:
-                plt.show()
+                # Check if matplotlib is in interactive mode
+                import matplotlib
+
+                backend = matplotlib.get_backend().lower()
+                if (
+                    backend in ["agg", "svg", "pdf", "ps"]
+                    or not matplotlib.is_interactive()
+                ):
+                    # Non-interactive backend or interactive mode disabled
+                    logger.info(
+                        "Matplotlib in non-interactive mode - plot saved but not displayed"
+                    )
+                    plt.close(fig)  # Close figure to free memory
+                else:
+                    plt.show()
             else:
                 plt.close(fig)
 

@@ -1229,7 +1229,7 @@ class MLAcceleratedOptimizer:
     def _generate_experiment_id(self, conditions: dict[str, Any]) -> str:
         """Generate unique experiment ID based on conditions."""
         condition_str = json.dumps(conditions, sort_keys=True, default=str)
-        hash_obj = hashlib.md5(condition_str.encode())
+        hash_obj = hashlib.md5(condition_str.encode(), usedforsecurity=False)
         return f"exp_{hash_obj.hexdigest()[:8]}_{int(time.time())}"
 
     def _save_training_data(self) -> None:

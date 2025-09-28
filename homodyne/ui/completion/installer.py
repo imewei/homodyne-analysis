@@ -18,10 +18,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-try:
-    from .core import CompletionContext, EnvironmentType
-except ImportError:
-    from core import EnvironmentType
+# Import completion system components
+from .core import EnvironmentType
 
 
 class InstallationMode(Enum):
@@ -468,9 +466,9 @@ from pathlib import Path
 engine_dir = Path(__file__).parent / "engine"
 sys.path.insert(0, str(engine_dir))
 
-from core import CompletionEngine, CompletionContext
-from plugins import get_plugin_manager
-from cache import CompletionCache, CacheConfig
+from .core import CompletionEngine, CompletionContext
+from .plugins import get_plugin_manager
+from .cache import CompletionCache, CacheConfig
 
 def main():
     """Main completion handler."""
@@ -656,7 +654,7 @@ fi
     def _detect_environment(self) -> tuple[EnvironmentType, Path]:
         """Detect current environment type and path."""
         # Check conda/mamba
-        if conda_env := os.environ.get("CONDA_DEFAULT_ENV"):
+        if os.environ.get("CONDA_DEFAULT_ENV"):
             if os.environ.get("MAMBA_ROOT_PREFIX"):
                 return EnvironmentType.MAMBA, Path(sys.prefix)
             return EnvironmentType.CONDA, Path(sys.prefix)
@@ -762,10 +760,8 @@ fi
 
     def _restore_backups(self, backup_files: list[Path]) -> None:
         """Restore backup files."""
-        for backup_file in backup_files:
+        for _backup_file in backup_files:
             try:
-                # Determine original location
-                original_name = backup_file.name
                 # Restore to appropriate location based on file type
                 # This is a simplified restore - in production would need more logic
                 pass

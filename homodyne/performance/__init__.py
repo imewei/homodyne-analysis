@@ -7,17 +7,27 @@ This module provides backward compatibility for performance modules moved from t
 # Import performance functions when this module is imported
 # This enables both new-style and old-style imports to work
 
-# Performance module imports
+# Performance module imports with explicit fallback handling
 try:
     from . import baseline, monitoring
-except ImportError:
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"Could not import performance modules: {e}", ImportWarning, stacklevel=2
+    )
     baseline = None
     monitoring = None
 
 # For specific backward compatibility with performance_monitoring
 try:
     from .monitoring import PerformanceMonitor
-except ImportError:
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"Could not import PerformanceMonitor: {e}", ImportWarning, stacklevel=2
+    )
     PerformanceMonitor = None
 
 __all__ = [

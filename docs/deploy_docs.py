@@ -74,9 +74,9 @@ class ResearchDocumentationBuilder:
         """Validate the documentation build environment."""
         print("🔍 Validating documentation environment...")
 
-        # Check Python version
-        if sys.version_info < (3, 8):
-            print("❌ Python 3.8+ required for documentation building")
+        # Check Python version (requirement removed to avoid outdated version block)
+        if not hasattr(sys, "version_info"):
+            print("❌ Invalid Python installation")
             return False
 
         # Check for required directories
@@ -324,7 +324,7 @@ class ResearchDocumentationBuilder:
         ]
 
         try:
-            result = subprocess.run(
+            subprocess.run(
                 cmd, capture_output=True, text=True, cwd=self.project_root, timeout=300
             )
 

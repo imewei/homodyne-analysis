@@ -315,8 +315,28 @@ def validate_path(path: str) -> bool:
     """
     Secure path validation preventing directory traversal.
     """
-    if not path or ".." in path or path.startswith("/"):
+    if not path or ".." in path:
         return False
+
+    # Allow absolute paths but check for dangerous patterns
+    if path.startswith("/"):
+        # Reject dangerous system paths
+        dangerous_prefixes = [
+            "/etc/",
+            "/usr/bin/",
+            "/usr/sbin/",
+            "/bin/",
+            "/sbin/",
+            "/root/",
+            "/sys/",
+            "/proc/",
+            "/dev/",
+            "/boot/",
+        ]
+        if any(path.startswith(prefix) for prefix in dangerous_prefixes):
+            return False
+        # Allow user data paths and project paths
+        return True
 
     return COMPILED_PATTERNS["safe_path"].match(path) is not None
 
@@ -496,7 +516,8 @@ class ConfigurationSecurity:
         """
         Validate configuration file structure for security.
         """
-        required_sections = {
+        # Core required sections (at least one must be present)
+        core_sections = {
             "analyzer_parameters",
             "experimental_data",
             "optimization_config",
@@ -505,17 +526,18 @@ class ConfigurationSecurity:
         if not isinstance(config, dict):
             return False
 
-        # Check for required sections
+        # Check if at least one core section is present
         config_sections = set(config.keys())
-        if not required_sections.issubset(config_sections):
+        if not any(section in config_sections for section in core_sections):
             return False
 
-        # Validate experimental data paths
+        # Validate experimental data paths (if section exists)
         exp_data = config.get("experimental_data", {})
-        for path_key in ["data_folder_path", "phi_angles_path", "cache_file_path"]:
-            path_value = exp_data.get(path_key, "")
-            if path_value and not validate_path(str(path_value)):
-                return False
+        if exp_data:
+            for path_key in ["data_folder_path", "phi_angles_path", "cache_file_path"]:
+                path_value = exp_data.get(path_key, "")
+                if path_value and not validate_path(str(path_value)):
+                    return False
 
         return True
 

@@ -121,7 +121,7 @@ class CompletionContext:
     def _detect_environment() -> tuple[EnvironmentType, Path]:
         """Detect current virtual environment type and path."""
         # Check conda/mamba
-        if conda_env := os.environ.get("CONDA_DEFAULT_ENV"):
+        if os.environ.get("CONDA_DEFAULT_ENV"):
             if os.environ.get("MAMBA_ROOT_PREFIX"):
                 return EnvironmentType.MAMBA, Path(sys.prefix)
             return EnvironmentType.CONDA, Path(sys.prefix)

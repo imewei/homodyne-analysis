@@ -7,18 +7,28 @@ This module provides backward compatibility for plotting modules moved from the 
 # Import plotting functions when this module is imported
 # This enables both new-style and old-style imports to work
 
-# Visualization module imports
+# Visualization module imports with explicit fallback handling
 try:
     from . import enhanced_plotting, plotting
-except ImportError:
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"Could not import visualization modules: {e}", ImportWarning, stacklevel=2
+    )
     enhanced_plotting = None
     plotting = None
 
-# Specific backward compatibility functions
+# Specific backward compatibility functions with explicit error handling
 try:
     from .enhanced_plotting import EnhancedPlottingManager
     from .plotting import get_plot_config, plot_c2_heatmaps
-except ImportError:
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"Could not import visualization functions: {e}", ImportWarning, stacklevel=2
+    )
     plot_c2_heatmaps = None
     get_plot_config = None
     EnhancedPlottingManager = None

@@ -157,6 +157,9 @@ clean-test:
 	rm -rf .benchmarks/
 	rm -f bandit*.json
 	rm -rf node_modules/
+	rm -f test_data.json
+	rm -f test_config.json
+	rm -f test_array_data.npz
 
 clean-venv:
 	rm -rf venv/

@@ -91,6 +91,7 @@ class CompletionPlugin(ABC):
         """
         return True
 
+    @abstractmethod
     def cleanup(self) -> None:
         """Cleanup plugin resources. Called when plugin is unloaded."""
         pass

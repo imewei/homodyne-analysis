@@ -181,7 +181,7 @@ def plot_c2_heatmaps(
     # SCALING OPTIMIZATION FOR PLOTTING (ALWAYS ENABLED)
     # ==================================================
     # Calculate fitted values and residuals with proper scaling optimization.
-    # This determines the optimal scaling relationship g₂ = offset + contrast × g₁
+    # This determines the optimal scaling relationship g₂ = offset + contrast * g₁
     # for visualization purposes, ensuring plotted data is meaningful.
     fitted = np.zeros_like(theory)
 
@@ -191,7 +191,7 @@ def plot_c2_heatmaps(
     # 2. Systematic offsets need to be accounted for in visualization
     # 3. Residual plots (exp - fitted) are only meaningful with proper scaling
     # 4. Consistent with chi-squared calculation methodology used in analysis
-    # The relationship g₂ = offset + contrast × g₁ is fitted for each angle
+    # The relationship g₂ = offset + contrast * g₁ is fitted for each angle
     # independently.
 
     for i in range(exp.shape[0]):  # For each phi angle
@@ -383,7 +383,7 @@ def plot_diagnostic_summary(
     """
     Create a comprehensive diagnostic summary plot combining multiple visualizations.
 
-    Generates a 2×3 grid layout containing:
+    Generates a 2x3 grid layout containing:
     - Method comparison with chi-squared values
     - Parameter uncertainties visualization
     - Residuals distribution analysis with normal distribution overlay
@@ -480,7 +480,7 @@ def plot_diagnostic_summary(
                 # Set appropriate axis limits
                 if max(uncertainty_values) > 0:
                     ax2.set_xlim(0, max(uncertainty_values) * 1.1)
-                ax2.set_xlabel("Parameter Uncertainty (σ)")
+                ax2.set_xlabel("Parameter Uncertainty (sigma)")
                 ax2.set_title("Parameter Uncertainties")
                 ax2.grid(True, alpha=0.3)
         else:
@@ -578,7 +578,7 @@ def plot_diagnostic_summary(
                         * np.exp(-0.5 * ((x - mu) / sigma) ** 2),
                         "r-",
                         linewidth=2,
-                        label=f"Normal(μ={mu:.3e}, σ={sigma:.3e})",
+                        label=f"Normal(mu={mu:.3e}, sigma={sigma:.3e})",
                     )
                 else:
                     # If sigma is effectively zero, just show the mean as a
@@ -588,7 +588,7 @@ def plot_diagnostic_summary(
                         color="red",
                         linestyle="--",
                         linewidth=2,
-                        label=f"Mean={mu:.3e} (σ≈0)",
+                        label=f"Mean={mu:.3e} (sigma~0)",
                     )
                     logger.warning(
                         "Standard deviation is very small, showing mean line instead of normal distribution"

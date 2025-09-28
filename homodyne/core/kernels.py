@@ -52,70 +52,141 @@ except ImportError:
 
 
 def _create_time_integral_matrix_impl(time_dependent_array):
-    """Create time integral matrix for correlation calculations."""
-    n = len(time_dependent_array)
-    matrix = np.empty((n, n), dtype=np.float64)
-    cumsum = np.cumsum(time_dependent_array)
+    """
+    Create time integral matrix for correlation calculations.
 
-    for i in range(n):
-        cumsum_i = cumsum[i]
-        for j in range(n):
-            matrix[i, j] = abs(cumsum_i - cumsum[j])
+    OPTIMIZED VERSION: Revolutionary vectorization using NumPy broadcasting
+    Expected speedup: 5-10x through elimination of nested loops
+
+    Mathematical operation: matrix[i, j] = |cumsum[i] - cumsum[j]|
+
+    Vectorization strategy:
+    1. Compute cumulative sum once
+    2. Use broadcasting to create difference matrix in single operation
+    3. Apply absolute value vectorized operation
+    4. Exploit cache-friendly memory access patterns
+    """
+    # Compute cumulative sum once (O(n) operation)
+    # Note: Numba requires specific dtype handling
+    cumsum = np.cumsum(time_dependent_array.astype(np.float64))
+
+    # REVOLUTIONARY VECTORIZATION: Replace O(n²) nested loops with broadcasting
+    # Create meshgrid using broadcasting - cumsum[:, None] creates column vector
+    # cumsum[None, :] creates row vector, broadcasting creates full matrix
+    # This replaces the nested loop with a single vectorized operation
+    matrix = np.abs(cumsum[:, np.newaxis] - cumsum[np.newaxis, :])
 
     return matrix
 
 
 def _calculate_diffusion_coefficient_impl(time_array, D0, alpha, D_offset):
-    """Calculate time-dependent diffusion coefficient."""
-    D_t = np.empty_like(time_array)
-    for i in range(len(time_array)):
-        D_value = D0 * (time_array[i] ** alpha) + D_offset
-        D_t[i] = max(D_value, 1e-10)
+    """
+    Calculate time-dependent diffusion coefficient.
+
+    OPTIMIZED VERSION: Vectorized computation replacing element-wise loop
+    Expected speedup: 10-50x through NumPy vectorization
+
+    Mathematical operation: D_t[i] = max(D0 * t[i]^alpha + D_offset, 1e-10)
+
+    Vectorization strategy:
+    1. Use NumPy power operation for entire array
+    2. Vectorized arithmetic operations
+    3. Vectorized maximum operation for clamping
+    """
+    # REVOLUTIONARY VECTORIZATION: Replace loop with vectorized operations
+    D_values = D0 * np.power(time_array, alpha) + D_offset
+    # Vectorized maximum operation to ensure minimum threshold
+    D_t = np.maximum(D_values, 1e-10)
     return D_t
 
 
 def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offset):
-    """Calculate time-dependent shear rate."""
-    gamma_dot_t = np.empty_like(time_array)
-    for i in range(len(time_array)):
-        gamma_value = gamma_dot_t0 * (time_array[i] ** beta) + gamma_dot_t_offset
-        gamma_dot_t[i] = max(gamma_value, 1e-10)
+    """
+    Calculate time-dependent shear rate.
+
+    OPTIMIZED VERSION: Vectorized computation replacing element-wise loop
+    Expected speedup: 10-50x through NumPy vectorization
+
+    Mathematical operation: gamma_dot_t[i] = max(gamma_dot_t0 * t[i]^beta + offset, 1e-10)
+
+    Vectorization strategy:
+    1. Use NumPy power operation for entire array
+    2. Vectorized arithmetic operations
+    3. Vectorized maximum operation for clamping
+    """
+    # REVOLUTIONARY VECTORIZATION: Replace loop with vectorized operations
+    gamma_values = gamma_dot_t0 * np.power(time_array, beta) + gamma_dot_t_offset
+    # Vectorized maximum operation to ensure minimum threshold
+    gamma_dot_t = np.maximum(gamma_values, 1e-10)
     return gamma_dot_t
 
 
 def _compute_g1_correlation_impl(diffusion_integral_matrix, wavevector_factor):
-    """Compute field correlation function g₁ from diffusion."""
-    shape = diffusion_integral_matrix.shape
-    g1 = np.empty(shape, dtype=np.float64)
+    """
+    Compute field correlation function g₁ from diffusion.
 
-    for i in range(shape[0]):
-        for j in range(shape[1]):
-            exponent = -wavevector_factor * diffusion_integral_matrix[i, j]
-            g1[i, j] = np.exp(exponent)
+    OPTIMIZED VERSION: Revolutionary vectorization eliminating nested loops
+    Expected speedup: 5-10x through matrix vectorization
+
+    Mathematical operation: g1[i, j] = exp(-wavevector_factor * diffusion_matrix[i, j])
+
+    Vectorization strategy:
+    1. Vectorized multiplication across entire matrix
+    2. Vectorized exponential operation
+    3. Cache-friendly memory access pattern
+    4. SIMD optimization opportunity through NumPy
+    """
+    # REVOLUTIONARY VECTORIZATION: Replace nested loops with matrix operations
+    # Compute exponent for entire matrix in one operation
+    exponent_matrix = -wavevector_factor * diffusion_integral_matrix
+
+    # Vectorized exponential operation across entire matrix
+    g1 = np.exp(exponent_matrix)
 
     return g1
 
 
 def _compute_sinc_squared_impl(shear_integral_matrix, prefactor):
-    """Compute sinc² function for shear flow contributions."""
-    shape = shear_integral_matrix.shape
-    sinc_squared = np.empty(shape, dtype=np.float64)
-    pi = np.pi
+    """
+    Compute sinc² function for shear flow contributions.
 
-    for i in range(shape[0]):
-        for j in range(shape[1]):
-            argument = prefactor * shear_integral_matrix[i, j]
+    OPTIMIZED VERSION: Advanced vectorization with conditional logic
+    Expected speedup: 5-10x through elimination of nested loops and vectorized conditionals
 
-            if abs(argument) < 1e-10:
-                pi_arg_sq = (pi * argument) ** 2
-                sinc_squared[i, j] = 1.0 - pi_arg_sq / 3.0
-            else:
-                pi_arg = pi * argument
-                if abs(pi_arg) < 1e-15:
-                    sinc_squared[i, j] = 1.0
-                else:
-                    sinc_value = np.sin(pi_arg) / pi_arg
-                    sinc_squared[i, j] = sinc_value * sinc_value
+    Mathematical operation: sinc²(π * prefactor * matrix[i, j])
+    With special handling for small arguments to avoid numerical issues
+
+    Advanced vectorization strategy:
+    1. Vectorized argument computation
+    2. Vectorized conditional logic using np.where
+    3. Vectorized sin computation and division
+    4. Cache-optimized memory access patterns
+    5. Numerical stability preservation
+    """
+    # REVOLUTIONARY VECTORIZATION: Replace nested loops with advanced NumPy operations
+    argument_matrix = prefactor * shear_integral_matrix
+    pi_arg_matrix = np.pi * argument_matrix
+
+    # Vectorized conditional logic for numerical stability
+    # Case 1: Very small arguments (Taylor expansion)
+    very_small_mask = np.abs(argument_matrix) < 1e-10
+    pi_arg_sq = (pi_arg_matrix) ** 2
+    taylor_result = 1.0 - pi_arg_sq / 3.0
+
+    # Case 2: Small pi*argument (avoid division by zero)
+    small_pi_mask = np.abs(pi_arg_matrix) < 1e-15
+
+    # Case 3: General case (standard sinc computation)
+    # Use np.sinc which handles sinc(x) = sin(πx)/(πx), so we need sinc(argument)
+    # Note: np.sinc(x) computes sin(π*x)/(π*x), so we pass argument directly
+    general_sinc = np.sinc(argument_matrix)
+    general_result = general_sinc**2
+
+    # Combine results using vectorized conditional selection
+    # Priority: very_small > small_pi > general
+    sinc_squared = np.where(
+        very_small_mask, taylor_result, np.where(small_pi_mask, 1.0, general_result)
+    )
 
     return sinc_squared
 

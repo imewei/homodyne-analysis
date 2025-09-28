@@ -30,7 +30,7 @@ Examples:
 import argparse
 import sys
 
-from installer import (
+from .installer import (
     CompletionInstaller,
     InstallationConfig,
     InstallationMode,
@@ -224,7 +224,7 @@ def print_status(message: str, level: str = "info", quiet: bool = False) -> None
     elif level == "success":
         print(f"✅ {message}")
     elif level == "info":
-        print(f"ℹ️  {message}")
+        print(f"i  {message}")
     else:
         print(message)
 

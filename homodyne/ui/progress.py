@@ -37,7 +37,8 @@ try:
         TimeRemainingColumn,
         TransferSpeedColumn,
     )
-    from rich.text import Text
+
+    # from rich.text import Text  # Unused currently
 
     RICH_AVAILABLE = True
 except ImportError:

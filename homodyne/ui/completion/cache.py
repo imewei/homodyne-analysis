@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .core import CompletionContext, CompletionResult, EnvironmentType
+    from .core import CompletionContext, CompletionResult
 except ImportError:
     from core import CompletionContext, CompletionResult
 

@@ -42,7 +42,7 @@ from typing import Any
 import numpy as np
 import psutil
 
-# Import homodyne components for testing
+# Import homodyne components for testing with explicit error handling
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
     from homodyne.core.config import ConfigManager
@@ -50,24 +50,50 @@ try:
 
     HOMODYNE_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Could not import homodyne components: {e}")
+    import warnings
+
+    warnings.warn(
+        f"Homodyne components not available for baseline testing: {e}",
+        ImportWarning,
+        stacklevel=2,
+    )
     HOMODYNE_AVAILABLE = False
 
-# Check for robust optimization separately
+    # Explicit None assignments for missing components
+    HomodyneAnalysisCore = None
+    ConfigManager = None
+    ClassicalOptimizer = None
+
+# Check for robust optimization separately with explicit handling
 try:
     from homodyne.optimization.robust import CVXPY_AVAILABLE, RobustHomodyneOptimizer
 
     ROBUST_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"Robust optimization not available for baseline testing: {e}",
+        ImportWarning,
+        stacklevel=2,
+    )
     ROBUST_AVAILABLE = False
     CVXPY_AVAILABLE = False
+    RobustHomodyneOptimizer = None
 
-# Performance monitoring tools
+# Performance monitoring tools with explicit availability checking
 try:
     import numba  # noqa: F401
 
     NUMBA_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"Numba not available for performance optimization: {e}",
+        ImportWarning,
+        stacklevel=2,
+    )
     NUMBA_AVAILABLE = False
 
 # Configure logging

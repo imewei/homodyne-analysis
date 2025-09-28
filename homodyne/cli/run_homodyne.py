@@ -2626,14 +2626,14 @@ Examples:
   %(prog)s --plot-simulated-data --phi-angles "0,45,90,135"  # Plot with custom phi angles
   %(prog)s --plot-simulated-data --phi-angles "30,60,90" --contrast 1.2 --offset 0.05  # Custom angles with scaling
 
-  Distributed Computing (5-100x speedup):
+  Distributed Computing (2-5x speedup):
   %(prog)s --distributed                      # Auto-detect backend, use all cores
   %(prog)s --distributed --backend ray        # Use Ray for cluster computing
   %(prog)s --distributed --backend mpi --workers 8  # Use MPI with 8 processes
   %(prog)s --distributed --workers 4          # Limit to 4 workers (any backend)
   %(prog)s --distributed --laminar-flow       # Distributed optimization for complex 7-parameter analysis
 
-  ML Acceleration (5-50x faster convergence):
+  ML Acceleration (2-5x faster convergence):
   %(prog)s --ml-accelerated                   # Enable ML with auto training data collection
   %(prog)s --ml-accelerated --train-ml-model  # Train models before analysis
   %(prog)s --ml-accelerated --enable-transfer-learning  # Use transfer learning for similar conditions
@@ -2752,7 +2752,7 @@ Method Quality Assessment:
         description="""
 Enable distributed optimization across multiple nodes/processes for significantly faster analysis.
 Supports Ray (scalable clusters), MPI (HPC environments), Dask (data science workflows),
-and multiprocessing (local parallelization). Provides 5-100x speedup depending on problem size.
+and multiprocessing (local parallelization). Provides 2-5x speedup depending on problem size.
 
 Examples:
   --distributed                           # Auto-detect best backend, use all CPU cores
@@ -2767,7 +2767,7 @@ Examples:
         action="store_true",
         help="Enable distributed optimization across multiple nodes/processes. "
         "Automatically detects available backends and scales to available resources. "
-        "Can provide 5-100x speedup for large parameter sweeps and complex optimizations.",
+        "Can provide 2-5x speedup for large parameter sweeps and complex optimizations.",
     )
     distributed_group.add_argument(
         "--backend",
@@ -2801,7 +2801,7 @@ Examples:
     ml_group = parser.add_argument_group(
         "ML Acceleration Options",
         description="""
-Enable machine learning acceleration for 5-50x faster convergence through intelligent parameter
+Enable machine learning acceleration for 2-5x faster convergence through intelligent parameter
 initialization. Uses ensemble models (Random Forest, Gradient Boosting, Neural Networks, Gaussian
 Process) trained on previous optimization results to predict optimal starting points.
 
@@ -2819,7 +2819,7 @@ Examples:
         help="Enable ML-accelerated optimization with predictive parameter initialization. "
         "Uses ensemble models trained on previous optimization history to predict "
         "optimal starting points, reducing function evaluations by 70-90%% and "
-        "achieving 5-50x faster convergence for similar experimental conditions.",
+        "achieving 2-5x faster convergence for similar experimental conditions.",
     )
     ml_group.add_argument(
         "--ml-config",

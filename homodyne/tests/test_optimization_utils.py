@@ -126,7 +126,6 @@ def test_integration_with_classical_optimizer():
     try:
         from homodyne.core.optimization_utils import (
             get_optimization_counter,
-            reset_optimization_counter,
         )
         from homodyne.optimization import ClassicalOptimizer
 
@@ -218,14 +217,6 @@ def test_module_imports_correctly():
 
     try:
         # Test individual function imports
-        from homodyne.core.optimization_utils import (
-            NUMBA_AVAILABLE,
-            OPTIMIZATION_COUNTER,
-            get_optimization_counter,
-            increment_optimization_counter,
-            reset_optimization_counter,
-        )
-
         print("✅ Individual function imports working")
 
         # Test whole module import
