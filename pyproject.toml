@@ -347,7 +347,7 @@ show_contexts = true
 # =============================================================================
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py312"
 line-length = 88
 extend-exclude = [
     "__pycache__",
@@ -404,7 +404,7 @@ known-first-party = ["homodyne"]
 force-single-line = true
 
 [tool.black]
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py312", "py313"]
 line-length = 88
 extend-exclude = '''
 /(
@@ -429,7 +429,7 @@ known_first_party = ["homodyne"]
 force_single_line = true
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true
@@ -523,7 +523,7 @@ omit-covered-files = false
 legacy_tox_ini = """
 [tox]
 isolated_build = true
-envlist = py{39,310,311,312}, coverage, docs, lint, security
+envlist = py{312,313}, coverage, docs, lint, security
 
 [testenv]
 deps =
@@ -561,7 +561,7 @@ commands =
 """
 
 [tool.cibuildwheel]
-build = "cp39-* cp310-* cp311-* cp312-*"
+build = "cp312-* cp313-*"
 skip = "*-win32 *-manylinux_i686"
 test-command = "python -m pytest {project}/homodyne/tests -x"
 test-extras = ["test"]
