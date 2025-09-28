@@ -40,7 +40,7 @@ def get_plot_config(config: dict | None = None) -> dict[str, Any]:
         config (dict | None):Main configuration dictionary
 
     Returns:
-        Dict[str, Any]: Plotting configuration with defaults
+        dict[str, Any]: Plotting configuration with defaults
     """
     # Default plotting configuration
     default_plot_config = {
@@ -71,7 +71,7 @@ def setup_matplotlib_style(plot_config: dict[str, Any]) -> None:
     Configure matplotlib with publication-quality settings.
 
     Args:
-        plot_config (Dict[str, Any]): Plotting configuration
+        plot_config (dict[str, Any]): Plotting configuration
     """
     # Suppress matplotlib font debug messages to reduce log noise
     logging.getLogger("matplotlib.font_manager").setLevel(logging.WARNING)
@@ -122,9 +122,9 @@ def plot_c2_heatmaps(
         phi_angles (np.ndarray): Array of phi angles in degrees
         outdir (str | Path): Output directory for saved plots
         config (dict | None):Configuration dictionary
-        t2 (Optional[np.ndarray]): Time lag values (t₂) for y-axis
-        t1 (Optional[np.ndarray]): Delay time values (t₁) for x-axis
-        method_name (Optional[str]): Optimization method name for filename prefix
+        t2 (np.ndarray | None): Time lag values (t₂) for y-axis
+        t1 (np.ndarray | None): Delay time values (t₁) for x-axis
+        method_name (str | None): Optimization method name for filename prefix
 
     Returns:
         bool: True if plots were created successfully
@@ -393,10 +393,10 @@ def plot_diagnostic_summary(
     capabilities for quality assessment.
 
     Args:
-        results (Dict[str, Any]): Complete analysis results dictionary
+        results (dict[str, Any]): Complete analysis results dictionary
         outdir (str | Path): Output directory for saved plots
         config (dict | None):Configuration dictionary
-        method_name (Optional[str]): Optimization method name for filename prefix
+        method_name (str | None): Optimization method name for filename prefix
 
     Returns:
         bool: True if diagnostic plots were created successfully
@@ -655,12 +655,12 @@ def create_all_plots(
     For classical optimization results, creates method-specific plots.
 
     Args:
-        results (Dict[str, Any]): Complete analysis results dictionary
+        results (dict[str, Any]): Complete analysis results dictionary
         outdir (str | Path): Output directory for saved plots
         config (dict | None):Configuration dictionary
 
     Returns:
-        Dict[str, bool]: Success status for each plot type
+        dict[str, bool]: Success status for each plot type
     """
     logger.info("Creating all available plots")
 

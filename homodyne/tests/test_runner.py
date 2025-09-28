@@ -10,9 +10,6 @@ security validation, and scientific computing accuracy verification.
 import argparse
 import os
 import sys
-import time
-from pathlib import Path
-from typing import Dict, List, Optional
 
 import pytest
 
@@ -107,7 +104,7 @@ class TestRunner:
                      verbose: bool = False,
                      coverage: bool = True,
                      parallel: bool = False,
-                     markers: Optional[List[str]] = None) -> int:
+                     markers: list[str] | None = None) -> int:
         """Run comprehensive test suite."""
         print("🚀 Running Comprehensive Test Suite...")
 
@@ -192,7 +189,7 @@ class TestRunner:
 
         pytest.main(args)
 
-    def check_test_environment(self) -> Dict[str, bool]:
+    def check_test_environment(self) -> dict[str, bool]:
         """Check test environment and dependencies."""
         print("🔍 Checking Test Environment...")
 

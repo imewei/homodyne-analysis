@@ -58,12 +58,16 @@ try:
     from homodyne.core.config import ConfigManager
     from homodyne.optimization.classical import ClassicalOptimizer
     from homodyne.optimization.robust import CVXPY_AVAILABLE, RobustHomodyneOptimizer
+    from homodyne.core.cpu_optimization import CPUOptimizer, get_cpu_optimization_info
+    from homodyne.performance.cpu_profiling import CPUProfiler, get_cpu_performance_info
 
     HOMODYNE_AVAILABLE = True
+    CPU_OPTIMIZATION_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Homodyne components not available: {e}")
     HOMODYNE_AVAILABLE = False
     CVXPY_AVAILABLE = False
+    CPU_OPTIMIZATION_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(
@@ -151,6 +155,10 @@ class PerformanceMonitor:
             "enable_detailed_profiling": True,
             "enable_memory_tracking": True,
             "enable_cpu_profiling": True,
+            "cpu_only_mode": True,  # CPU-only optimization focus
+            "enable_cache_analysis": CPU_OPTIMIZATION_AVAILABLE,
+            "enable_vectorization_analysis": True,
+            "enable_multiprocess_benchmarks": True,
         }
 
     @contextmanager
@@ -330,15 +338,41 @@ class PerformanceMonitor:
         # Generate test data once
         test_data = self._generate_test_data(core, test_params, test_angles)
 
-        # Benchmark chi-squared calculation
+        # Benchmark chi-squared calculation (CPU-optimized)
         def chi_squared_benchmark():
             return core.calculate_chi_squared_optimized(
                 test_params, test_angles, test_data
             )
 
         results.append(
-            self.run_benchmark("chi_squared_calculation", chi_squared_benchmark)
+            self.run_benchmark("chi_squared_calculation_cpu", chi_squared_benchmark)
         )
+
+        # Benchmark CPU-specific optimizations if available
+        if CPU_OPTIMIZATION_AVAILABLE:
+            cpu_optimizer = CPUOptimizer()
+
+            # Cache-optimized matrix operations
+            def cache_optimized_benchmark():
+                test_matrix = np.random.randn(100, 100)
+                return cpu_optimizer.optimize_matrix_operations_cpu(
+                    test_matrix, operation="correlation"
+                )
+
+            results.append(
+                self.run_benchmark("cache_optimized_operations", cache_optimized_benchmark)
+            )
+
+            # Parallel chi-squared computation
+            def parallel_chi_squared_benchmark():
+                parameter_sets = [test_params + np.random.randn(3) * 0.1 for _ in range(10)]
+                return cpu_optimizer.parallel_chi_squared_cpu(
+                    parameter_sets, test_angles, test_data
+                )
+
+            results.append(
+                self.run_benchmark("parallel_chi_squared_cpu", parallel_chi_squared_benchmark)
+            )
 
         # Benchmark correlation calculation
         def correlation_benchmark():
@@ -462,7 +496,7 @@ class PerformanceMonitor:
 
         Returns
         -------
-        List[Dict[str, Any]]
+        list[dict[str, Any]]
             List of detected regressions
         """
         if baseline_file and Path(baseline_file).exists():
@@ -694,7 +728,7 @@ class PerformanceMonitor:
     # Helper methods
     def _get_system_info(self) -> dict[str, Any]:
         """Get comprehensive system information."""
-        return {
+        system_info = {
             "platform": {
                 "system": os.uname().sysname,
                 "release": os.uname().release,
@@ -711,7 +745,25 @@ class PerformanceMonitor:
                 "memory_rss": self.process.memory_info().rss,
                 "cpu_percent": self.process.cpu_percent(),
             },
+            "cpu_optimization": {
+                "available": CPU_OPTIMIZATION_AVAILABLE,
+                "mode": "cpu_only",  # Explicitly CPU-only
+            }
         }
+
+        # Add CPU optimization details if available
+        if CPU_OPTIMIZATION_AVAILABLE:
+            try:
+                cpu_info = get_cpu_optimization_info()
+                cpu_perf_info = get_cpu_performance_info()
+                system_info["cpu_optimization"].update({
+                    "optimization_info": cpu_info,
+                    "performance_info": cpu_perf_info,
+                })
+            except Exception as e:
+                logger.warning(f"Failed to get CPU optimization info: {e}")
+
+        return system_info
 
     def _create_test_config(self) -> dict[str, Any]:
         """Create test configuration for benchmarking."""
@@ -729,7 +781,10 @@ class PerformanceMonitor:
             },
             "performance_settings": {
                 "enable_parallel_processing": True,
-                "num_threads": 4,  # Limit for benchmarking
+                "num_threads": min(4, os.cpu_count()),  # CPU-optimized threading
+                "cpu_only_mode": True,
+                "enable_numba_jit": True,
+                "enable_vectorization": True,
             },
             "optimization_config": {
                 "classical_optimization": {

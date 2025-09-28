@@ -62,9 +62,7 @@ except ImportError:
 
 # Dask Backend
 try:
-    import dask
     import dask.distributed as dd
-    from dask.distributed import Client
 
     _BACKENDS_AVAILABLE["dask"] = True
 except ImportError:
@@ -1170,7 +1168,7 @@ class DistributedOptimizationCoordinator:
 
         Parameters
         ----------
-        backend_preference : List[str], optional
+        backend_preference : list[str], optional
             Preferred backend order (e.g., ['ray', 'mpi', 'dask', 'multiprocessing'])
 
         Returns
@@ -1258,18 +1256,18 @@ class DistributedOptimizationCoordinator:
 
         Parameters
         ----------
-        parameter_sets : List[np.ndarray]
+        parameter_sets : list[np.ndarray]
             Initial parameter sets for optimization
-        optimization_methods : List[str]
+        optimization_methods : list[str]
             Optimization methods to use for each parameter set
-        objective_configs : List[Dict[str, Any]]
+        objective_configs : list[dict[str, Any]]
             Configuration for objective function evaluation
-        bounds : List[Tuple[float, float]], optional
+        bounds : list[tuple[float, float]], optional
             Parameter bounds
 
         Returns
         -------
-        List[str]
+        list[str]
             Task IDs for submitted tasks
         """
         if not self.backend:
@@ -1311,7 +1309,7 @@ class DistributedOptimizationCoordinator:
 
         Returns
         -------
-        List[OptimizationResult]
+        list[OptimizationResult]
             Completed optimization results
         """
         if not self.backend:
@@ -1425,16 +1423,16 @@ class DistributedOptimizationCoordinator:
 
         Parameters
         ----------
-        parameter_ranges : Dict[str, Tuple[float, float, int]]
+        parameter_ranges : dict[str, tuple[float, float, int]]
             Parameter ranges as {param_name: (min, max, num_points)}
         optimization_method : str
             Optimization method to use
-        objective_config : Dict[str, Any], optional
+        objective_config : dict[str, Any], optional
             Objective function configuration
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Comprehensive parameter sweep results
         """
         if not self.backend:
@@ -1546,7 +1544,7 @@ class DistributedOptimizationCoordinator:
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Cluster status information
         """
         status = {
@@ -1664,9 +1662,9 @@ def create_distributed_optimizer(
 
     Parameters
     ----------
-    config : Dict[str, Any], optional
+    config : dict[str, Any], optional
         Configuration for distributed optimization
-    backend_preference : List[str], optional
+    backend_preference : list[str], optional
         Preferred backend order
 
     Returns
@@ -1688,7 +1686,7 @@ def get_available_backends() -> dict[str, bool]:
 
     Returns
     -------
-    Dict[str, bool]
+    dict[str, bool]
         Backend availability status
     """
     return _BACKENDS_AVAILABLE.copy()
@@ -1707,7 +1705,7 @@ def integrate_with_classical_optimizer(
     ----------
     classical_optimizer : ClassicalOptimizer
         Existing classical optimizer instance
-    distributed_config : Dict[str, Any], optional
+    distributed_config : dict[str, Any], optional
         Distributed optimization configuration
     """
     # Add distributed methods to classical optimizer
@@ -1742,7 +1740,7 @@ def integrate_with_robust_optimizer(
     ----------
     robust_optimizer : RobustHomodyneOptimizer
         Existing robust optimizer instance
-    distributed_config : Dict[str, Any], optional
+    distributed_config : dict[str, Any], optional
         Distributed optimization configuration
     """
     coordinator = create_distributed_optimizer(distributed_config)

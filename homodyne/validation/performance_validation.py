@@ -57,7 +57,7 @@ import psutil
 
 # Import the caching system components
 try:
-    from ..core.analysis import (
+    from ..optimization.blas_optimization import (
         BLASOptimizedChiSquared,
         create_optimized_chi_squared_engine,
     )

@@ -9,7 +9,6 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -23,7 +22,6 @@ except ImportError:
 
 try:
     from homodyne.core.config import ConfigManager
-    from homodyne.analysis.core import HomodyneAnalysisCore
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False

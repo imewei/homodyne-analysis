@@ -102,7 +102,7 @@ class EnhancedHomodyneRunner:
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Analysis results with metadata
         """
         try:

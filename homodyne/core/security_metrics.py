@@ -233,88 +233,6 @@ class SecurityMetricsCollector:
                 issues=issues,
             )
 
-    def _calculate_input_validation_score(
-        self, recent_events: list[SecurityEvent]
-    ) -> float:
-        """Calculate input validation security score."""
-        validation_events = [e for e in recent_events if "validation" in e.event_type]
-
-        if not validation_events:
-            return 100.0  # No events = perfect score
-
-        failed_validations = len(
-            [e for e in validation_events if e.severity in ["high", "critical"]]
-        )
-        total_validations = len(validation_events)
-
-        if total_validations == 0:
-            return 100.0
-
-        failure_rate = failed_validations / total_validations
-        return max(0.0, 100.0 - (failure_rate * 100.0))
-
-    def _calculate_file_security_score(
-        self, recent_events: list[SecurityEvent]
-    ) -> float:
-        """Calculate file security score."""
-        file_events = [
-            e for e in recent_events if "file" in e.event_type or "io" in e.event_type
-        ]
-
-        if not file_events:
-            return 100.0
-
-        security_issues = len(
-            [e for e in file_events if e.severity in ["medium", "high", "critical"]]
-        )
-        total_events = len(file_events)
-
-        if total_events == 0:
-            return 100.0
-
-        issue_rate = security_issues / total_events
-        return max(0.0, 100.0 - (issue_rate * 100.0))
-
-    def _calculate_memory_security_score(self) -> float:
-        """Calculate memory security score."""
-        if not PSUTIL_AVAILABLE:
-            return 90.0  # Can't monitor, assume good
-
-        try:
-            memory_percent = psutil.virtual_memory().percent
-
-            if memory_percent > 95:
-                return 20.0
-            elif memory_percent > 90:
-                return 50.0
-            elif memory_percent > 80:
-                return 75.0
-            else:
-                return 100.0
-
-        except Exception:
-            return 90.0  # Error getting memory, assume reasonable
-
-    def _calculate_rate_limiting_score(
-        self, recent_events: list[SecurityEvent]
-    ) -> float:
-        """Calculate rate limiting effectiveness score."""
-        rate_limit_events = [e for e in recent_events if "rate_limit" in e.event_type]
-
-        if not rate_limit_events:
-            return 100.0  # No rate limiting triggered = good
-
-        # More rate limiting events = lower score (but not zero, as it shows protection is working)
-        num_events = len(rate_limit_events)
-        if num_events > 100:
-            return 30.0  # Frequent rate limiting
-        elif num_events > 50:
-            return 60.0
-        elif num_events > 10:
-            return 80.0
-        else:
-            return 95.0  # Some rate limiting is normal
-
     def get_performance_summary(self) -> dict[str, Any]:
         """
         Get performance summary for security operations.
@@ -340,16 +258,6 @@ class SecurityMetricsCollector:
                     }
 
             return summary
-
-    def _percentile(self, data: list[float], percentile: float) -> float:
-        """Calculate percentile of data."""
-        if not data:
-            return 0.0
-
-        sorted_data = sorted(data)
-        index = int((percentile / 100.0) * len(sorted_data))
-        index = min(index, len(sorted_data) - 1)
-        return sorted_data[index]
 
     def get_recent_critical_events(self, hours: int = 24) -> list[SecurityEvent]:
         """

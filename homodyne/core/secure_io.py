@@ -50,12 +50,12 @@ from .security_performance import (
 # Import original io_utils for backward compatibility
 try:
     from .io_utils import (
+        save_pickle as _original_save_pickle,
         _json_serializer,
     )
     from .io_utils import ensure_dir as _original_ensure_dir
     from .io_utils import save_json as _original_save_json
     from .io_utils import save_numpy as _original_save_numpy
-    from .io_utils import save_pickle as _original_save_pickle
 except ImportError:
     logger.warning("Original io_utils not available, using fallback implementations")
     _original_ensure_dir = None
@@ -580,3 +580,4 @@ def cleanup_secure_io() -> None:
         secure_data_handler._integrity_cache.clear()
 
     logger.info("Secure I/O cleanup completed")
+    logger.warning("Original io_utils not available, using fallback implementations")

@@ -247,68 +247,6 @@ class CumulativePerformanceTracker:
             # Detect performance regressions
             self._detect_regression(metric_name, value)
 
-    def _update_cumulative_metrics(self):
-        """Update cumulative performance metrics across all phases."""
-        if not self.phases:
-            return
-
-        # Calculate cumulative speedup
-        cumulative_speedup = 1.0
-        total_baseline_time = 0.0
-        total_optimized_time = 0.0
-
-        for phase in self.phases.values():
-            if phase.active:
-                cumulative_speedup *= phase.speedup_factor
-                total_baseline_time += phase.baseline_time
-                total_optimized_time += phase.optimized_time
-
-        self.cumulative_metrics.update(
-            {
-                "cumulative_speedup": cumulative_speedup,
-                "total_baseline_time": total_baseline_time,
-                "total_optimized_time": total_optimized_time,
-                "active_phases": sum(1 for p in self.phases.values() if p.active),
-                "total_phases": len(self.phases),
-            }
-        )
-
-    def _check_performance_targets(self, phase_name: str, speedup_factor: float):
-        """Check if performance targets are being met."""
-        target_key = f"{phase_name.lower()}_target"
-        target_value = self.performance_targets.get(target_key)
-
-        if target_value and speedup_factor >= target_value:
-            self.stats["target_achievements"] += 1
-            logger.info(
-                f"🎯 Performance target achieved for {phase_name}: "
-                f"{speedup_factor:.1f}x >= {target_value:.1f}x"
-            )
-
-    def _detect_regression(self, metric_name: str, current_value: float):
-        """Detect performance regressions."""
-        history = self.metric_history[metric_name]
-
-        if len(history) < 10:  # Need sufficient history
-            return
-
-        # Get recent values
-        recent_values = [m.value for m in list(history)[-10:-1]]
-
-        if not recent_values:
-            return
-
-        recent_mean = statistics.mean(recent_values)
-
-        # Check for significant degradation (>10% drop for speedup metrics)
-        if metric_name.endswith("_speedup") or metric_name.endswith("_factor"):
-            if current_value < recent_mean * 0.9:
-                self.stats["performance_regressions"] += 1
-                logger.warning(
-                    f"⚠️ Performance regression detected in {metric_name}: "
-                    f"{current_value:.2f} < {recent_mean:.2f}"
-                )
-
     def get_cumulative_summary(self) -> dict[str, Any]:
         """
         Get comprehensive cumulative performance summary.
@@ -585,58 +523,6 @@ class CacheAnalyticsDashboard:
             # Check for alerts
             self._check_alerts()
 
-    def _record_metric(self, metric_name: str, value: float, timestamp: float):
-        """Record a metric with timestamp."""
-        self.cache_metrics[metric_name].append((timestamp, value))
-
-    def _check_alerts(self):
-        """Check for performance alerts based on thresholds."""
-        current_time = time.time()
-
-        # Clear old alerts (older than 5 minutes)
-        self.active_alerts = [
-            alert
-            for alert in self.active_alerts
-            if current_time - alert["timestamp"] < 300
-        ]
-
-        # Check hit rate alert
-        if (
-            self.real_time_stats["average_hit_rate"]
-            < self.alert_thresholds["low_hit_rate"]
-        ):
-            self._add_alert(
-                "low_hit_rate",
-                f"Cache hit rate below threshold: {self.real_time_stats['average_hit_rate']:.1%}",
-                "warning",
-            )
-
-        # Check memory usage (if available)
-        memory_usage = self.real_time_stats.get("memory_utilization", 0.0)
-        if memory_usage > self.alert_thresholds["high_memory_usage"]:
-            self._add_alert(
-                "high_memory_usage",
-                f"High memory usage: {memory_usage:.1%}",
-                "critical",
-            )
-
-    def _add_alert(self, alert_type: str, message: str, severity: str):
-        """Add a new alert if not already active."""
-        # Check if this alert type is already active
-        for alert in self.active_alerts:
-            if alert["type"] == alert_type:
-                return  # Already have this alert
-
-        alert = {
-            "type": alert_type,
-            "message": message,
-            "severity": severity,
-            "timestamp": time.time(),
-        }
-
-        self.active_alerts.append(alert)
-        logger.warning(f"Cache Alert [{severity.upper()}]: {message}")
-
     def get_dashboard_data(self) -> dict[str, Any]:
         """
         Get current dashboard data for visualization.
@@ -687,35 +573,6 @@ class CacheAnalyticsDashboard:
                     1
                 ]  # Get value from (timestamp, value) tuple
         return latest
-
-    def _calculate_trends(self) -> dict[str, str]:
-        """Calculate simple trends for key metrics."""
-        trends = {}
-
-        for metric_name in ["overall_hit_rate", "cache_efficiency", "memoizer_speedup"]:
-            history = self.cache_metrics.get(metric_name, deque())
-
-            if len(history) >= 10:
-                recent_values = [point[1] for point in list(history)[-10:]]
-                first_half = recent_values[:5]
-                second_half = recent_values[5:]
-
-                if first_half and second_half:
-                    first_avg = statistics.mean(first_half)
-                    second_avg = statistics.mean(second_half)
-
-                    if second_avg > first_avg * 1.05:
-                        trends[metric_name] = "improving"
-                    elif second_avg < first_avg * 0.95:
-                        trends[metric_name] = "declining"
-                    else:
-                        trends[metric_name] = "stable"
-                else:
-                    trends[metric_name] = "insufficient_data"
-            else:
-                trends[metric_name] = "insufficient_data"
-
-        return trends
 
     def generate_analytics_report(self) -> str:
         """

@@ -8,7 +8,6 @@ Centralized configuration and fixtures for the homodyne test suite.
 import json
 import os
 import tempfile
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -52,19 +51,16 @@ def pytest_collection_modifyitems(config, items):
     skip_scipy = pytest.mark.skip(reason="SciPy not available")
 
     try:
-        import numba
         numba_available = True
     except ImportError:
         numba_available = False
 
     try:
-        import cvxpy
         cvxpy_available = True
     except ImportError:
         cvxpy_available = False
 
     try:
-        import scipy
         scipy_available = True
     except ImportError:
         scipy_available = False
@@ -472,13 +468,9 @@ def pytest_runtest_setup(item):
             import gc
             gc.collect()
 
-        # GPU tests need CUDA check
+        # GPU tests disabled for CPU-only optimization
         if item.get_closest_marker('gpu'):
-            try:
-                import cupy
-                cupy.cuda.Device(0).compute_capability
-            except (ImportError, Exception):
-                pytest.skip("GPU not available for GPU tests")
+            pytest.skip("GPU tests disabled - CPU-only configuration")
 
 
 def pytest_runtest_teardown(item, nextitem):

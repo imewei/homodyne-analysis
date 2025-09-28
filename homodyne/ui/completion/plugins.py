@@ -27,8 +27,8 @@ class PluginInfo:
     description: str
     author: str
     priority: int = 50
-    supports_shells: list[str] = None
-    requires_packages: list[str] = None
+    supports_shells: list[str] | None = None
+    requires_packages: list[str] | None = None
     enabled: bool = True
 
     def __post_init__(self):

@@ -740,7 +740,7 @@ class ConfigManager:
 
         Returns
         -------
-        Optional[str]
+        str | None
             "isotropic", "anisotropic", or None if static mode is disabled
         """
         # Return None if static mode is not enabled
@@ -822,7 +822,7 @@ class ConfigManager:
 
         Returns
         -------
-        List[str]
+        list[str]
             List of parameter names to be optimized and displayed in plots.
             Falls back to all parameters if not specified in configuration.
         """
@@ -890,7 +890,7 @@ class ConfigManager:
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Analysis settings including static_mode flag and descriptions
         """
         analysis_settings = self.get("analysis_settings", default={})

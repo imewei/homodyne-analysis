@@ -52,8 +52,7 @@ scikit-learn>=1.2.0  # Machine learning utilities
 tensorflow>=2.11.0; python_version>="3.12"  # Deep learning (optional)
 torch>=1.13.0; python_version>="3.12"  # PyTorch (optional)
 
-# GPU acceleration (optional)
-cupy>=11.0.0; python_version>="3.12"  # GPU arrays (requires CUDA)
+# GPU acceleration removed for CPU-only optimization
 
 # Visualization for test validation
 matplotlib>=3.6.0

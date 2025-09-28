@@ -42,7 +42,6 @@ try:
         BLASOptimizedChiSquared,
         create_optimized_chi_squared_engine,
     )
-    from ..statistics.chi_squared import AdvancedChiSquaredAnalyzer, ChiSquaredResult
 
     BLAS_OPTIMIZATION_AVAILABLE = True
 except ImportError:
@@ -56,7 +55,6 @@ except ImportError:
 # Import existing optimization modules for compatibility
 try:
     from .classical import ClassicalOptimizer
-    from .robust import RobustOptimizer
 
     EXISTING_OPTIMIZERS_AVAILABLE = True
 except ImportError:
@@ -428,7 +426,6 @@ class BLASOptimizedParameterEstimator:
 
         if parallel_processing and n_datasets > 1:
             # Parallel processing implementation
-            import concurrent.futures
 
             def optimize_single_dataset(i):
                 weights_i = weights_batch[i] if weights_batch else None

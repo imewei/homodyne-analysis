@@ -10,7 +10,6 @@ codebase cleanup to consolidate duplicate functionality.
 """
 
 import sys
-import unittest.mock
 
 import pytest
 

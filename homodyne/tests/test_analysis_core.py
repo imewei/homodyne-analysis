@@ -14,7 +14,6 @@ import os
 
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
-    from homodyne.core.config import ConfigManager
     ANALYSIS_AVAILABLE = True
 except ImportError:
     ANALYSIS_AVAILABLE = False

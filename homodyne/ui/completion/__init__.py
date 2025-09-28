@@ -19,10 +19,6 @@ from .adapter import (
     setup_shell_completion,
     uninstall_shell_completion,
 )
-from .cache import CacheConfig, CompletionCache
-from .core import CompletionContext, CompletionEngine
-from .installer import CompletionInstaller, InstallationConfig
-from .plugins import CompletionPlugin, PluginManager
 
 __all__ = [
     "CacheConfig",

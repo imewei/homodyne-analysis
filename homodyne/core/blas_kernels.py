@@ -43,7 +43,7 @@ try:
         dnrm2,  # ||x||₂
         dscal,  # x ← αx
         dsymm,  # C ← αAB + βC (symmetric matrix multiply)
-        dsyrk,  # Level 1 BLAS (vector operations); Level 2 BLAS (matrix-vector operations); Level 3 BLAS (matrix-matrix operations); C ← αAAᵀ + βC (symmetric rank-k update)
+        dsyrk,  # C ← αAAᵀ + βC (symmetric rank-k update)
     )
     from scipy.linalg.lapack import (
         dgesvd,  # Singular Value Decomposition
@@ -657,3 +657,4 @@ if __name__ == "__main__":
         print("\n🎉 SIGNIFICANT PERFORMANCE IMPROVEMENT ACHIEVED!")
     else:
         print("\n⚠️  Performance improvement detected but below target.")
+        dgesvd,  # Singular Value Decomposition

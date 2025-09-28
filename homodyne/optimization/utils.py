@@ -22,7 +22,7 @@ import logging
 import platform
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from .distributed import DistributedOptimizationCoordinator
@@ -157,18 +157,9 @@ class SystemResourceDetector:
             "python_version": platform.python_version(),
         }
 
-        # GPU detection
-        try:
-            import GPUtil
-
-            gpus = GPUtil.getGPUs()
-            capabilities["gpu_count"] = len(gpus)
-            capabilities["gpu_memory_total_gb"] = (
-                sum(gpu.memoryTotal for gpu in gpus) / 1024
-            )
-        except ImportError:
-            capabilities["gpu_count"] = 0
-            capabilities["gpu_memory_total_gb"] = 0
+        # CPU-only configuration (GPU support removed)
+        capabilities["gpu_count"] = 0
+        capabilities["gpu_memory_total_gb"] = 0
 
         # Network detection for distributed computing
         capabilities["network_interfaces"] = len(psutil.net_if_addrs())
@@ -227,8 +218,8 @@ class SystemResourceDetector:
                             hp["neural_network"]["hidden_layer_sizes"] = [50, 25]
 
         logger.info(
-            f"Optimized configuration for system with {capabilities['cpu_count']} CPUs, "
-            f"{capabilities['memory_total_gb']:.1f}GB RAM, {capabilities['gpu_count']} GPUs"
+            f"Optimized CPU-only configuration for system with {capabilities['cpu_count']} CPUs, "
+            f"{capabilities['memory_total_gb']:.1f}GB RAM"
         )
 
         return optimized_config
@@ -493,7 +484,7 @@ class IntegrationHelper:
             Base optimizer class (ClassicalOptimizer or RobustHomodyneOptimizer)
         analysis_core : HomodyneAnalysisCore
             Analysis core instance
-        config_dict : Dict[str, Any]
+        config_dict : dict[str, Any]
             Configuration dictionary for the base optimizer
         optimization_config : OptimizationConfig, optional
             Configuration for distributed and ML enhancements
@@ -518,9 +509,9 @@ class IntegrationHelper:
 
         Parameters
         ----------
-        experimental_conditions : Dict[str, Any]
+        experimental_conditions : dict[str, Any]
             Current experimental conditions
-        system_constraints : Dict[str, Any], optional
+        system_constraints : dict[str, Any], optional
             System resource constraints
 
         Returns
@@ -604,12 +595,12 @@ def validate_configuration(config: dict[str, Any]) -> tuple[bool, list[str]]:
 
     Parameters
     ----------
-    config : Dict[str, Any]
+    config : dict[str, Any]
         Configuration to validate
 
     Returns
     -------
-    Tuple[bool, List[str]]
+    tuple[bool, list[str]]
         (is_valid, list_of_errors)
     """
     errors = []

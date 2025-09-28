@@ -8,10 +8,6 @@ and mathematical correctness of homodyne scattering analysis algorithms.
 
 import numpy as np
 import pytest
-from scipy import special, integrate
-from scipy.optimize import minimize
-from numpy.testing import assert_allclose, assert_array_less
-from unittest.mock import Mock, patch
 
 try:
     from homodyne.core.kernels import (
@@ -20,7 +16,6 @@ try:
         calculate_diffusion_coefficient_numba,
         calculate_shear_rate_numba
     )
-    from homodyne.analysis.core import HomodyneAnalysisCore
     SCIENTIFIC_MODULES_AVAILABLE = True
 except ImportError:
     SCIENTIFIC_MODULES_AVAILABLE = False

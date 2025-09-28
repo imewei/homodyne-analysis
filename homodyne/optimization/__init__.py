@@ -21,7 +21,6 @@ _available_exports: list[str] = []
 
 # Always try to import ClassicalOptimizer
 try:
-    from .classical import ClassicalOptimizer
 
     _available_exports.append("ClassicalOptimizer")
 except ImportError as e:

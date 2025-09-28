@@ -1,9 +1,0 @@
-{
-  "memory_stats": {
-    "avg_memory_mb": 38.4375,
-    "max_memory_mb": 41.578125,
-    "min_memory_mb": 33.3125,
-    "memory_std_mb": 3.3743669834596384,
-    "peak_memory_mb": 41.578125,
-    "avg_gc_objects": 24997.75,
-    "max_gc_objects": 

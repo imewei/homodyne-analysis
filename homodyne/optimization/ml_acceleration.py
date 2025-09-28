@@ -70,7 +70,6 @@ except ImportError:
 
 # LightGBM
 try:
-    import lightgbm as lgb
 
     _ML_BACKENDS_AVAILABLE["lightgbm"] = True
 except ImportError:
@@ -79,7 +78,6 @@ except ImportError:
 
 # Optuna for hyperparameter optimization
 try:
-    import optuna
 
     _ML_BACKENDS_AVAILABLE["optuna"] = True
 except ImportError:
@@ -89,8 +87,6 @@ except ImportError:
 # PyTorch for neural networks (optional)
 try:
     import torch
-    import torch.nn as nn
-    import torch.optim as torch_optim
 
     _ML_BACKENDS_AVAILABLE["pytorch"] = True
 except ImportError:
@@ -334,7 +330,7 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
 
         Parameters
         ----------
-        optimization_records : List[OptimizationRecord]
+        optimization_records : list[OptimizationRecord]
             Historical optimization data for training
         """
         if len(optimization_records) < 10:
@@ -434,7 +430,7 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
 
         Parameters
         ----------
-        experimental_conditions : Dict[str, Any]
+        experimental_conditions : dict[str, Any]
             Current experimental conditions
         initial_guess : np.ndarray, optional
             Current parameter guess for refinement
@@ -885,7 +881,7 @@ class MLAcceleratedOptimizer:
             Classical optimizer instance
         initial_parameters : np.ndarray
             Initial parameter guess
-        experimental_conditions : Dict[str, Any]
+        experimental_conditions : dict[str, Any]
             Current experimental conditions
         optimization_method : str
             Optimization method to use
@@ -894,7 +890,7 @@ class MLAcceleratedOptimizer:
 
         Returns
         -------
-        Tuple[np.ndarray, Dict[str, Any]]
+        tuple[np.ndarray, dict[str, Any]]
             (optimized_parameters, optimization_info)
         """
         start_time = time.time()
@@ -1083,12 +1079,12 @@ class MLAcceleratedOptimizer:
 
         Parameters
         ----------
-        additional_records : List[OptimizationRecord], optional
+        additional_records : list[OptimizationRecord], optional
             Additional training records
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Training results and model information
         """
         all_records = self.optimization_history.copy()
@@ -1308,7 +1304,7 @@ def create_ml_accelerated_optimizer(
 
     Parameters
     ----------
-    config : Dict[str, Any], optional
+    config : dict[str, Any], optional
         Configuration for ML acceleration
 
     Returns
@@ -1325,7 +1321,7 @@ def get_ml_backend_info() -> dict[str, Any]:
 
     Returns
     -------
-    Dict[str, Any]
+    dict[str, Any]
         Available ML libraries and their versions
     """
     backend_info = _ML_BACKENDS_AVAILABLE.copy()
@@ -1367,7 +1363,7 @@ def enhance_classical_optimizer_with_ml(
     ----------
     classical_optimizer : ClassicalOptimizer
         Existing classical optimizer
-    ml_config : Dict[str, Any], optional
+    ml_config : dict[str, Any], optional
         ML acceleration configuration
 
     Returns
@@ -1404,7 +1400,7 @@ def enhance_robust_optimizer_with_ml(
     ----------
     robust_optimizer : RobustHomodyneOptimizer
         Existing robust optimizer
-    ml_config : Dict[str, Any], optional
+    ml_config : dict[str, Any], optional
         ML acceleration configuration
 
     Returns

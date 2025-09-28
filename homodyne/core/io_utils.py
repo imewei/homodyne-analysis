@@ -62,7 +62,7 @@ def ensure_dir(path: str | Path, permissions: int = 0o755) -> Path:
     - Comprehensive error reporting
 
     Args:
-        path (Union[str, Path]): Directory path to create (absolute or relative)
+        path (str | Path): Directory path to create (absolute or relative)
         permissions (int): Unix-style permissions (default: 0o755 = rwxr-xr-x)
 
     Returns:
@@ -120,8 +120,8 @@ def timestamped_filename(
 
     Args:
         base_name (str): Base filename prefix (without extension)
-        chi2 (Optional[float]): Chi-squared value for quality indication
-        config (Optional[Dict]): Configuration with output_settings/file_naming
+        chi2 (float | None): Chi-squared value for quality indication
+        config (dict | None): Configuration with output_settings/file_naming
 
     Returns:
         str: Structured filename string ready for file operations
@@ -240,7 +240,7 @@ def save_json(data: Any, filepath: str | Path, **kwargs: Any) -> bool:
 
     Args:
         data: Data structure to save (dicts, lists, arrays, etc.)
-        filepath (Union[str, Path]): Output file path (directories created automatically)
+        filepath (str | Path): Output file path (directories created automatically)
         **kwargs: Additional json.dump() arguments (override defaults)
 
     Returns:
@@ -311,7 +311,7 @@ def save_numpy(
 
     Args:
         data (np.ndarray): NumPy array to save (any shape/dtype)
-        filepath (Union[str, Path]): Output file path (.npz recommended)
+        filepath (str | Path): Output file path (.npz recommended)
         compressed (bool): Enable compression (default: True for efficiency)
         **kwargs: Additional arguments for np.savez_compressed/np.save
 
@@ -365,7 +365,7 @@ def save_pickle(
 
     Args:
         data: Data to pickle
-        filepath (Union[str, Path]): Output file path
+        filepath (str | Path): Output file path
         protocol (int): Pickle protocol version (default: highest available)
         **kwargs: Additional arguments (reserved for future use)
 
@@ -413,9 +413,9 @@ def save_fig(
 
     Args:
         figure: Matplotlib figure object
-        filepath (Union[str, Path]): Output file path
+        filepath (str | Path): Output file path
         dpi (int): Resolution in dots per inch (default: 300)
-        format (Optional[str]): Figure format (inferred from extension if None)
+        format (str | None): Figure format (inferred from extension if None)
         **kwargs: Additional arguments passed to figure.savefig()
 
     Returns:
@@ -470,7 +470,7 @@ def get_output_directory(config: dict | None = None) -> Path:
     Get the output directory from configuration, creating it if necessary.
 
     Args:
-        config (Optional[Dict]): Configuration dictionary
+        config (dict | None): Configuration dictionary
 
     Returns:
         Path: Output directory path
@@ -509,11 +509,11 @@ def save_classical_optimization_results(
     Args:
         results (Dict): Main optimization results
         method_results (Dict): Method-specific results dictionary
-        config (Optional[Dict]): Configuration for output directory and naming
+        config (dict | None): Configuration for output directory and naming
         base_name (str): Base name for output files
 
     Returns:
-        Dict[str, bool]: Save status for each method and combined results
+        dict[str, bool]: Save status for each method and combined results
     """
     output_dir = get_output_directory(config) / "classical"
 
@@ -604,11 +604,11 @@ def save_analysis_results(
                        - Optimization results and parameters
                        - Correlation data arrays
                        - Configuration and metadata
-        config (Optional[Dict]): Configuration for output directory and naming
+        config (dict | None): Configuration for output directory and naming
         base_name (str): Prefix for all output files (default: "analysis_results")
 
     Returns:
-        Dict[str, bool]: Save status for each format:
+        dict[str, bool]: Save status for each format:
                         - "json": JSON save status
                         - "numpy": NumPy array save status (if applicable)
                         - "pickle": Pickle save status (if applicable)

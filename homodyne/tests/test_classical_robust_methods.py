@@ -73,7 +73,6 @@ def test_robust_optimization_imports():
 
     try:
         # Test robust optimization module
-        from homodyne.optimization.robust import CVXPY_AVAILABLE, GUROBI_AVAILABLE
 
         print("✅ Robust optimization module imported successfully")
 

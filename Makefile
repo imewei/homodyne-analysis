@@ -96,14 +96,14 @@ baseline-report:
 	pytest homodyne/tests/test_performance.py -v --tb=short --durations=0
 	@echo "✓ Performance report completed"
 
-# Comprehensive performance analysis
+# Performance analysis (integrated into test suite)
 performance-analysis:
-	@echo "🔍 Running comprehensive performance analysis..."
-	python scripts/run_performance_analysis.py --full-report
+	@echo "🔍 Running performance analysis via test suite..."
+	python -c "import pytest; pytest.main(['-v', '-m', 'benchmark', 'homodyne/tests/test_initialization_optimization.py::TestPerformanceBenchmarks::test_startup_time_benchmark'])"
 
 performance-analysis-quick:
-	@echo "⚡ Running quick performance analysis..."
-	python scripts/run_performance_analysis.py --quick
+	@echo "⚡ Running quick performance check..."
+	python -c "import time; start=time.time(); import homodyne; print(f'Import time: {time.time()-start:.4f}s')"
 
 # Code quality targets
 lint:

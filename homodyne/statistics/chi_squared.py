@@ -48,8 +48,6 @@ Institution: Argonne National Laboratory
 import time
 import warnings
 from dataclasses import dataclass
-from functools import lru_cache
-from typing import Any
 
 import numpy as np
 from scipy import stats
@@ -90,7 +88,6 @@ except ImportError:
 
 # Numba acceleration if available
 try:
-    from numba import njit, prange
 
     NUMBA_AVAILABLE = True
 except ImportError:
@@ -352,16 +349,6 @@ class BLASChiSquaredKernels:
 
         return chi_squared_batch
 
-    @lru_cache(maxsize=64)
-    def _compute_cholesky_factor(self, weights_hash: int) -> np.ndarray:
-        """
-        Cached Cholesky decomposition for weight matrices.
-
-        Uses LRU cache to avoid recomputing decompositions.
-        """
-        # This is a simplified version - in practice, we'd need to handle
-        # the weights matrix more carefully for caching
-        pass
 
     def get_operation_count(self) -> int:
         """Get the number of BLAS operations performed."""
