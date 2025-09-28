@@ -1,0 +1,24 @@
+PROFILE REPORT: array_operations
+============================================================
+Function                       Calls    Time(s)    Time/Call   
+------------------------------------------------------------
+sort                           1        0.0000     0.000003    
+<method 'sort' of 'numpy.ndar  1        0.0003     0.000270    
+wrapper                        2        0.0000     0.000001    
+wrapper                        2        0.0000     0.000002    
+__init__                       1        0.0000     0.000001    
+_init                          1        0.0000     0.000004    
+_get_ident                     1        0.0000     0.000001    
+create_time                    1        0.0000     0.000001    
+_get_kinfo_proc                1        0.0000     0.000002    
+<built-in method psutil._psut  1        0.0000     0.000022    
+memory_info                    1        0.0000     0.000000    
+__exit__                       1        0.0000     0.000001    
+memory_info                    1        0.0000     0.000001    
+<built-in method builtins.nex  1        0.0000     0.000000    
+<method 'disable' of '_lsprof  1        0.0000     0.000009    
+_get_pidtaskinfo               1        0.0000     0.000001    
+<built-in method psutil._psut  1        0.0000     0.000005    
+<method 'copy' of 'numpy.ndar  1        0.0000     0.000003    
+RLock                          1        0.0000     0.000001    
+<built-in method builtins.len  4        0.0000     0.000000    

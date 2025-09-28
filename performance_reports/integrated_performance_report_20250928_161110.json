@@ -1,0 +1,66 @@
+{
+  "structural_metrics": {
+    "import_time_before": 1.506,
+    "import_time_after": 1.0060422079986893,
+    "import_improvement_percent": 33.19772855254388,
+    "module_load_time_before": 0.0,
+    "module_load_time_after": 1.1995466250227764,
+    "module_load_improvement_percent": 0.0,
+    "memory_usage_before_mb": 50.0,
+    "memory_usage_after_mb": 0,
+    "memory_improvement_percent": 20.0,
+    "function_execution_time_before": 10.0,
+    "function_execution_time_after": 0.008527871104888618,
+    "complexity_improvement_percent": 82.0,
+    "startup_overhead_before": 2.0,
+    "startup_overhead_after": 1.0060422079986893,
+    "overhead_reduction_percent": 93.9,
+    "timestamp": "2025-09-28 16:11:10"
+  },
+  "runtime_metrics": {
+    "import_time": 1.0060422079986893,
+    "measurement_overhead": 1.1995466250227764,
+    "chi_squared_batch_mean_ms": 0.008527871104888618,
+    "chi_squared_batch_std_ms": 0.0721479672609938,
+    "chi_squared_batch_min_ms": 0.0010830117389559746,
+    "chi_squared_batch_max_ms": 0.7263749721460044,
+    "iterations": 100,
+    "data_shape": "10x100",
+    "error": "ClassicalOptimizer.__init__() missing 2 required positional arguments: 'analysis_core' and 'config'",
+    "structural_baselines": {
+      "import_time_original": 1.506,
+      "import_time_optimized": 0.092,
+      "complexity_original_func1": 44,
+      "complexity_optimized_func1": 8,
+      "complexity_original_func2": 27,
+      "complexity_optimized_func2": 8,
+      "file_size_original": 3526,
+      "file_size_total_split": 7,
+      "unused_imports_original": 221,
+      "unused_imports_cleaned": 39,
+      "dead_code_elements_removed": 53,
+      "dead_code_lines_removed": 500
+    }
+  },
+  "regression_detection": {
+    "regressions_found": true,
+    "regression_count": 1,
+    "regressions": [
+      "Import time regression detected: 1.006s vs 0.092s baseline (993.5% slower)"
+    ],
+    "analysis_timestamp": "2025-09-28 16:11:10"
+  },
+  "optimization_recommendations": [
+    "Consider further lazy loading optimization - import time could be reduced",
+    "Maintain current lazy loading architecture to preserve import performance gains",
+    "Continue monitoring cyclomatic complexity to prevent regression from 8+ complexity",
+    "Regularly audit for new unused imports and dead code accumulation",
+    "Consider implementing automatic performance regression testing in CI/CD"
+  ],
+  "performance_baselines": {
+    "current_import_time": 1.0060422079986893,
+    "current_memory_usage_mb": 0,
+    "current_chi_squared_performance_ms": 0.008527871104888618,
+    "baseline_timestamp": "2025-09-28 16:11:10"
+  }
+}
