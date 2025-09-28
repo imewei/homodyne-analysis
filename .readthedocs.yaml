@@ -6,15 +6,19 @@ version: 2
 
 # Build configuration
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.12"
+    python: "3.13"
+  apt_packages:
+    - graphviz
+    - pandoc
   jobs:
     post_checkout:
       - git fetch --unshallow || true
     pre_build:
-      - pip install --upgrade pip setuptools wheel
-      - pip install -e .[docs]
+      - pip install --upgrade pip setuptools wheel build
+      - pip install -e .[docs,performance]
+      - echo "Build environment ready for documentation generation"
 
 # Python configuration
 python:
@@ -30,12 +34,17 @@ python:
 sphinx:
   configuration: docs/conf.py
   fail_on_warning: false
+  builder: html
 
 # Documentation formats
 formats:
   - pdf
   - epub
   - htmlzip
+
+# Conda configuration (if needed for scientific dependencies)
+conda:
+  environment: docs/environment.yml
 
 # Submodules configuration
 submodules:
@@ -48,3 +57,7 @@ search:
     api.rst: -1
     tutorials.rst: 2
     research.rst: 3
+    performance.rst: 1
+
+# Build performance optimization
+# Note: Build configuration already specified above

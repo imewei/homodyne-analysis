@@ -4,7 +4,7 @@
 # CI/CD integration, containerization support, and modern tooling ecosystem
 
 [build-system]
-requires = ["setuptools>=70.0", "setuptools-scm>=8.0", "wheel"]
+requires = ["setuptools>=80.9.0", "setuptools-scm>=8.1.0", "wheel>=0.45.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -32,63 +32,72 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=1.24.0",
-    "scipy>=1.9.0",
-    "matplotlib>=3.6.0",
-    "h5py>=3.7.0",
-    "pydantic>=2.0.0",
-    "typer>=0.9.0",
-    "rich>=13.0.0",
+    "numpy>=2.1.0",
+    "scipy>=1.14.0",
+    "matplotlib>=3.9.0",
+    "h5py>=3.12.0",
+    "pydantic>=2.9.0",
+    "typer>=0.13.0",
+    "rich>=13.9.0",
+    "typing-extensions>=4.12.0; python_version<'3.13'",
 ]
 
 [project.optional-dependencies]
 # Core optional dependencies
 performance = [
-    "numba>=0.58.0",
-    "dask>=2023.1.0",
-    "ray>=2.8.0",
-    "psutil>=5.9.0",
+    "numba>=0.60.0",
+    "psutil>=6.0.0",
+    "numexpr>=2.10.0",
+    "bottleneck>=1.4.0",
+    "threadpoolctl>=3.5.0",
+    "py-cpuinfo>=9.0.0",
+    "cachetools>=5.5.0",
+    "joblib>=1.4.0",
 ]
 robust = [
-    "cvxpy>=1.4.0",
+    "cvxpy>=1.5.0",
     "gurobipy>=11.0.0",
+    "mosek>=10.2.0",
 ]
-gpu = [
-    "cupy>=12.0.0",
-    "jax>=0.4.20",
-    "jaxlib>=0.4.20",
-]
+# GPU dependencies removed for CPU-only optimization
+# Uncomment if GPU support is needed in the future
+# gpu = [
+#     "cupy>=12.0.0",
+#     "jax[cpu]>=0.4.25",  # CPU-only JAX if needed
+# ]
 
 # Modern testing ecosystem with latest features
 test = [
     # Core pytest framework with latest features
-    "pytest>=8.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-xdist>=3.5.0",          # Parallel test execution
-    "pytest-benchmark>=4.0.0",       # Performance benchmarking
-    "pytest-timeout>=2.2.0",         # Test timeout handling
-    "pytest-mock>=3.12.0",           # Advanced mocking
-    "pytest-html>=4.1.0",            # Rich HTML reports
+    "pytest>=8.4.0",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.8.0",          # Parallel test execution
+    "pytest-benchmark>=5.1.0",       # Performance benchmarking
+    "pytest-timeout>=2.3.0",         # Test timeout handling
+    "pytest-mock>=3.14.0",           # Advanced mocking
+    "pytest-html>=4.2.0",            # Rich HTML reports
     "pytest-json-report>=1.5.0",     # JSON reports for CI
-    "pytest-metadata>=3.0.0",        # Test metadata collection
-    "pytest-randomly>=3.15.0",       # Randomized test execution
+    "pytest-metadata>=3.1.0",        # Test metadata collection
+    "pytest-randomly>=3.16.0",       # Randomized test execution
     "pytest-repeat>=0.9.3",          # Test repetition for reliability
     "pytest-picked>=0.5.0",          # Run tests based on git changes
     "pytest-clarity>=1.0.1",         # Better assertion diffs
-    "pytest-sugar>=0.9.7",           # Better progress reporting
+    "pytest-sugar>=1.0.0",           # Better progress reporting
     "pytest-instafail>=0.5.0",       # Instant failure reporting
 
     # Advanced testing capabilities
-    "hypothesis>=6.90.0",            # Property-based testing
-    "faker>=20.0.0",                 # Realistic test data generation
+    "hypothesis>=6.112.0",           # Property-based testing
+    "faker>=30.0.0",                 # Realistic test data generation
     "factory-boy>=3.3.0",            # Test fixture factories
-    "freezegun>=1.4.0",              # Time mocking
-    "responses>=0.24.0",             # HTTP request mocking
+    "freezegun>=1.5.0",              # Time mocking
+    "responses>=0.25.0",             # HTTP request mocking
 
     # Performance and monitoring
     "memory-profiler>=0.61.0",       # Memory usage profiling
@@ -105,16 +114,16 @@ test = [
 
 # Modern code quality and linting ecosystem
 quality = [
-    "ruff>=0.1.9",                   # Fast Python linter and formatter
-    "black>=23.12.0",                # Code formatting
+    "ruff>=0.13.2",                  # Fast Python linter and formatter
+    "black>=25.9.0",                 # Code formatting
     "isort>=5.13.0",                 # Import sorting
-    "mypy>=1.8.0",                   # Static type checking
-    "bandit>=1.7.6",                 # Security linting
-    "safety>=2.3.5",                 # Dependency vulnerability scanning
-    "pip-audit>=2.6.2",              # Advanced security auditing
-    "pre-commit>=3.6.0",             # Git hook management
-    "vulture>=2.10",                 # Dead code detection
-    "interrogate>=1.5.0",            # Documentation coverage
+    "mypy>=1.18.2",                  # Static type checking
+    "bandit>=1.8.6",                 # Security linting
+    "safety>=3.6.2",                 # Dependency vulnerability scanning
+    "pip-audit>=2.7.0",              # Advanced security auditing
+    "pre-commit>=4.0.0",             # Git hook management
+    "vulture>=2.13",                 # Dead code detection
+    "interrogate>=1.7.0",            # Documentation coverage
 ]
 
 # Development dependencies
@@ -130,18 +139,28 @@ dev = [
 
 # Documentation
 docs = [
-    "sphinx>=7.2.0",
-    "sphinx-rtd-theme>=2.0.0",
-    "sphinx-autodoc-typehints>=1.25.0",
-    "myst-parser>=2.0.0",
-    "sphinx-copybutton>=0.5.2",
-    "sphinx-design>=0.5.0",
-    "sphinx-autoapi>=3.0.0",
+    "sphinx>=8.2.0",
+    "sphinx-rtd-theme>=3.0.0",
+    "sphinx-autodoc-typehints>=2.5.0",
+    "myst-parser>=4.0.0",
+    "sphinx-copybutton>=0.5.3",
+    "sphinx-design>=0.6.0",
+    "sphinx-autoapi>=3.4.0",
+    "numpydoc>=1.8.0",
+    "sphinx-gallery>=0.18.0",
 ]
 
-# Complete development environment
+# Complete development environment (CPU-only)
 all = [
-    "homodyne-analysis[dev,test,docs,quality,performance,robust,gpu]",
+    "homodyne-analysis[dev,test,docs,quality,performance,robust]",
+]
+
+# CPU-optimized performance stack
+cpu_optimized = [
+    "homodyne-analysis[performance]",
+    "cachetools>=5.3.0",
+    "joblib>=1.3.0",
+    "multiprocessing-logging>=0.3.4",
 ]
 
 [project.urls]
@@ -155,6 +174,9 @@ Changelog = "https://github.com/imewei/homodyne/blob/main/CHANGELOG.md"
 homodyne = "homodyne.cli.run_homodyne:main"
 homodyne-config = "homodyne.cli.create_config:main"
 homodyne-test = "homodyne.tests.test_runner:main"
+homodyne-imports = "homodyne.cli.import_manager:main"
+homodyne-import-analyzer = "homodyne.tests.import_analyzer:main"
+homodyne-workflow-setup = "homodyne.tests.import_workflow_integrator:main"
 
 # =============================================================================
 # Tool Configuration - Modern Python Toolchain
@@ -381,6 +403,17 @@ select = [
     "RUF",  # Ruff-specific rules
     "S",    # flake8-bandit
     "T20",  # flake8-print
+    "PIE",  # flake8-pie (unnecessary code)
+    "TID",  # flake8-tidy-imports
+    "ICN",  # flake8-import-conventions
+    "RET",  # flake8-return
+    "SLF",  # flake8-self
+    "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "FLY",  # flynt (string formatting)
+    "PERF", # perflint (performance)
+    "FURB", # refurb (code modernization)
+    "LOG",  # flake8-logging
 ]
 ignore = [
     "E501",    # line too long, handled by black
@@ -391,7 +424,26 @@ ignore = [
     "PLR0915", # too many statements
     "S101",    # use of assert for tests
     "T201",    # print statements (allowed in CLI)
+    "PLR0912", # too many branches
+    "PLR0911", # too many return statements
+    "SLF001",  # private member access (needed for internal testing)
 ]
+
+# Additional configuration for dead code prevention
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true
+
+[tool.ruff.lint.flake8-pie]
+# PIE rules help detect unnecessary code patterns
+
+[tool.ruff.lint.pylint]
+max-args = 12  # Allow up to 12 arguments for scientific functions
+max-branches = 15  # Allow complex scientific logic
+max-returns = 8   # Allow multiple return paths for error handling
+max-statements = 60  # Allow longer functions for scientific computations
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15  # Reasonable complexity for scientific code
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "F405"]

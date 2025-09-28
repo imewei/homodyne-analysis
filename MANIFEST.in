@@ -16,8 +16,10 @@ recursive-include homodyne *.json
 # Include advanced completion system
 recursive-include homodyne/ui/completion *.py
 
-# Include developer and CI scripts
-recursive-include scripts *.py
+# Include performance analysis scripts (integrated into package)
+recursive-include homodyne/performance *.py
+
+# Developer and CI scripts were consolidated into main package
 
 # Include documentation files
 recursive-include docs *.md
@@ -30,6 +32,10 @@ recursive-include docs/api-reference *
 recursive-include docs/dev *
 recursive-include docs/developer-guide *
 recursive-include docs/user-guide *
+
+# Include essential data files
+recursive-include homodyne/data *.json
+recursive-include homodyne/data *.npz
 
 # Exclude test files from the package
 recursive-exclude homodyne/tests *
@@ -71,6 +77,13 @@ include .pre-commit-config.yaml
 exclude benchmark_performance.py
 exclude my_config*.json
 exclude bandit_report.json
+exclude bandit_security_report.json
+
+# Exclude performance and analysis artifacts
+exclude *.json
+recursive-exclude performance_* *
+recursive-exclude *_results *
+recursive-exclude reports *
 
 # Exclude editor and IDE files
 exclude .vscode
