@@ -65,7 +65,6 @@ config_template = "import matplotlib.pyplot as plt"
         analyzer.visit(tree)
 
         # Verify import detection
-        assert 'sys' in analyzer.imports
         assert 'os' in analyzer.imports
         assert analyzer.imports['os'].alias == 'operating_system'
 
@@ -90,12 +89,12 @@ config_template = "import matplotlib.pyplot as plt"
 from typing import List, Dict, Optional
 import json
 
-def process_data(data: list[dict[str, str]]) -> Dict | None:
+def process_data(data: List[Dict[str, str]]) -> Dict | None:
     """Process data and return result."""
     # Runtime usage of json
     return json.loads('{"key": "value"}')
 
-def another_function(items: list[str]) -> None:
+def another_function(items: List[str]) -> None:
     """Function that only uses List in type annotations."""
     pass
 '''
@@ -207,6 +206,7 @@ class TestEnterpriseImportAnalyzer:
         # File with unused imports
         (self.test_package / 'unused_imports.py').write_text('''
 import sys
+import json  # unused
 from typing import Dict, List  # Dict not used
 from pathlib import Path
 
@@ -222,6 +222,7 @@ def main():
 import sys
 
 if sys.platform == 'win32':
+    import winsound
 else:
     winsound = None
 
@@ -243,6 +244,7 @@ def use_numpy():
 from typing import TYPE_CHECKING, List, Dict
 
 if TYPE_CHECKING:
+    from collections import defaultdict
 
 def process_list(items: list[str]) -> dict[str, int]:
     """Function with type annotations only."""

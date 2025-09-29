@@ -19,8 +19,25 @@ Institution: Argonne National Laboratory
 
 import time
 import numpy as np
-from numba import jit, njit
 import json
+
+# Conditional numba import
+try:
+    from numba import jit, njit
+    NUMBA_AVAILABLE = True
+except ImportError:
+    # Mock decorators if numba not available
+    def jit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator if args else decorator
+
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator if args else decorator
+
+    NUMBA_AVAILABLE = False
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Callable
 import warnings

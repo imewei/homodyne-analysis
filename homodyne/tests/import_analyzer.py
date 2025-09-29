@@ -25,6 +25,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, NamedTuple, Union, Any
+from collections import defaultdict
 import hashlib
 import logging
 
@@ -447,17 +448,25 @@ class EnterpriseImportAnalyzer:
         }
 
         for path in self.package_root.rglob("*.py"):
+            # Debug logging
+            self.logger.debug(f"Checking file: {path}")
+
             # Skip if any part matches exclusion patterns
             if any(part in exclude_patterns or part.startswith('.')
                   for part in path.parts):
+                self.logger.debug(f"Skipping {path}: matches exclusion pattern")
                 continue
 
             # Skip test files for production analysis
-            if any(part.startswith('test_') for part in path.parts):
+            # Only skip files that are themselves test files, not files in test directories
+            if path.name.startswith('test_') and path.suffix == '.py':
+                self.logger.debug(f"Skipping {path}: test file")
                 continue
 
+            self.logger.debug(f"Including file: {path}")
             files.append(path)
 
+        self.logger.info(f"Found {len(files)} Python files")
         return files
 
     def _get_file_hash(self, file_path: Path) -> str:
@@ -757,7 +766,8 @@ class EnterpriseImportAnalyzer:
                             'file': file_path,
                             'module': module_name,
                             'attributes': list(attributes),
-                            'suggestion': f"Consider 'from {module_name} import {', '.join(attributes)}'"
+                            'suggestion': f"Consider 'from {module_name} import {', '.join(attributes)}'",
+                            'impact_score': min(len(attributes) * 10, 50)  # Score based on number of attributes
                         })
 
         return suggestions
@@ -834,6 +844,34 @@ class EnterpriseImportAnalyzer:
             tools_results['unimport'] = result.stdout.splitlines()
         except (subprocess.TimeoutExpired, FileNotFoundError):
             tools_results['unimport'] = ['Tool not available or timeout']
+
+        return tools_results
+
+    def run_external_validation(self) -> Dict[str, Any]:
+        """Run external validation tools and return results."""
+        tools_results = {}
+
+        # Check each tool and format results as expected by tests
+        tools = ['autoflake', 'unimport', 'isort', 'ruff']
+
+        for tool in tools:
+            try:
+                result = subprocess.run([
+                    tool, '--check', str(self.package_root)
+                ], capture_output=True, text=True, timeout=30)
+
+                tools_results[tool] = {
+                    'available': True,
+                    'exit_code': result.returncode,
+                    'stdout': result.stdout,
+                    'issues_found': result.returncode != 0
+                }
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                tools_results[tool] = {
+                    'available': False,
+                    'error': f'{tool} not available or timeout',
+                    'issues_found': 0
+                }
 
         return tools_results
 

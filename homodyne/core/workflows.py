@@ -16,11 +16,13 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
+from __future__ import annotations
 
 import numpy as np
 from pathlib import Path
 from dataclasses import dataclass
 import logging
+from typing import Dict, List, Any, Optional
 
 from .composition import Result, Pipeline, ConfigurablePipeline, pipe, compose, curry
 

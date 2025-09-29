@@ -16,12 +16,13 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
+from __future__ import annotations
 
 import functools
 import inspect
 from dataclasses import dataclass
 import logging
-from typing import TypeVar
+from typing import Generic, TypeVar
 
 logger = logging.getLogger(__name__)
 

@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 import logging
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 class IntegrationLevel(Enum):
@@ -680,6 +680,9 @@ You can assign keyboard shortcuts in Settings → Keymap → External Tools.
     def setup_metrics_collection(self) -> bool:
         """Setup metrics collection for import management."""
         try:
+            # Ensure integration directory exists first
+            self.integration_dir.mkdir(exist_ok=True)
+
             metrics_dir = self.integration_dir / 'metrics'
             metrics_dir.mkdir(exist_ok=True)
 

@@ -14,6 +14,7 @@ Institution: Argonne National Laboratory
 
 import pytest
 import numpy as np
+from unittest.mock import patch
 
 # Import our composition framework
 from homodyne.core.composition import (
