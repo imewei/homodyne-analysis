@@ -312,7 +312,7 @@ norecursedirs = [
 source = ["homodyne"]
 parallel = true
 branch = true
-context = "${CONTEXT}"
+# context = "${CONTEXT}"  # Disabled: no contexts being measured
 data_file = "reports/.coverage"
 omit = [
     "*/tests/*",
@@ -355,7 +355,7 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "reports/htmlcov"
-show_contexts = true
+# show_contexts = true  # Disabled: no contexts being measured
 title = "Homodyne Analysis Test Coverage Report"
 
 [tool.coverage.xml]
@@ -363,7 +363,7 @@ output = "reports/coverage.xml"
 
 [tool.coverage.json]
 output = "reports/coverage.json"
-show_contexts = true
+# show_contexts = true  # Disabled: no contexts being measured
 
 # =============================================================================
 # Modern Code Quality Tools Configuration

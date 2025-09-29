@@ -19,6 +19,7 @@ from unittest.mock import patch
 
 import pytest
 
+import homodyne.performance.startup_monitoring as startup_monitoring_module
 from homodyne.performance.startup_monitoring import PerformanceBaseline
 from homodyne.performance.startup_monitoring import RegressionAlert
 from homodyne.performance.startup_monitoring import StartupMetrics
@@ -412,56 +413,59 @@ class TestGlobalFunctions:
     @pytest.mark.slow
     def test_establish_default_baselines(self):
         """Test establishment of default baselines."""
-        # Mock at the instance level, not class level
-        with patch(
-            "homodyne.performance.startup_monitoring.get_startup_monitor"
-        ) as mock_get_monitor:
-            mock_monitor = Mock()
-            mock_baseline = PerformanceBaseline(
-                name="test",
-                target_import_time=2.0,
-                max_memory_usage_mb=150.0,
-                acceptable_variance_percent=10.0,
-                measurement_count=5,
-                environment_tags=[],
-                created_at=datetime.now(UTC).isoformat(),
-                updated_at=datetime.now(UTC).isoformat(),
-            )
-            mock_monitor.establish_baseline.return_value = mock_baseline
-            mock_get_monitor.return_value = mock_monitor
+        # Create mock objects
+        mock_monitor = Mock()
+        mock_baseline = PerformanceBaseline(
+            name="test",
+            target_import_time=2.0,
+            max_memory_usage_mb=150.0,
+            acceptable_variance_percent=10.0,
+            measurement_count=5,
+            environment_tags=[],
+            created_at=datetime.now(UTC).isoformat(),
+            updated_at=datetime.now(UTC).isoformat(),
+        )
+        mock_monitor.establish_baseline.return_value = mock_baseline
 
+        # Inject mock directly into singleton cache
+        startup_monitoring_module._global_monitor = mock_monitor
+
+        try:
             baselines = establish_default_baselines()
 
             # The function creates 3 baselines: development, production, and CI
             assert len(baselines) >= 1
             assert mock_monitor.establish_baseline.call_count >= 1
+        finally:
+            # Clean up: reset singleton for other tests
+            startup_monitoring_module._global_monitor = None
 
     def test_check_startup_health(self):
         """Test startup health check function."""
-        # Mock at the monitor instance level to ensure mock is used
-        with patch(
-            "homodyne.performance.startup_monitoring.get_startup_monitor"
-        ) as mock_get_monitor:
-            mock_monitor = Mock()
-            expected_import_time = 1.5
-            mock_metrics = StartupMetrics(
-                timestamp=datetime.now(UTC).isoformat(),
-                import_time=expected_import_time,  # Good performance
-                memory_usage_mb=100.0,  # Good memory usage
-                python_version="3.12.0",
-                package_version="0.7.1",
-                platform="Test Platform",
-                cpu_count=4,
-                optimization_enabled=True,
-                import_errors=[],  # No errors
-                dependency_load_times={},
-                total_modules_loaded=50,
-                lazy_modules_count=10,
-                immediate_modules_count=40,
-            )
-            mock_monitor.measure_startup_performance.return_value = mock_metrics
-            mock_get_monitor.return_value = mock_monitor
+        # Create mock objects
+        mock_monitor = Mock()
+        expected_import_time = 1.5
+        mock_metrics = StartupMetrics(
+            timestamp=datetime.now(UTC).isoformat(),
+            import_time=expected_import_time,  # Good performance
+            memory_usage_mb=100.0,  # Good memory usage
+            python_version="3.12.0",
+            package_version="0.7.1",
+            platform="Test Platform",
+            cpu_count=4,
+            optimization_enabled=True,
+            import_errors=[],  # No errors
+            dependency_load_times={},
+            total_modules_loaded=50,
+            lazy_modules_count=10,
+            immediate_modules_count=40,
+        )
+        mock_monitor.measure_startup_performance.return_value = mock_metrics
 
+        # Inject mock directly into singleton cache
+        startup_monitoring_module._global_monitor = mock_monitor
+
+        try:
             health = check_startup_health()
 
             assert "status" in health
@@ -469,36 +473,42 @@ class TestGlobalFunctions:
             assert "import_time" in health
             # Check that it returns the mocked value
             assert health["import_time"] == expected_import_time
+        finally:
+            # Clean up: reset singleton for other tests
+            startup_monitoring_module._global_monitor = None
 
     def test_check_startup_health_unhealthy(self):
         """Test startup health check with poor performance."""
-        # Mock at the monitor instance level to ensure mock is used
-        with patch(
-            "homodyne.performance.startup_monitoring.get_startup_monitor"
-        ) as mock_get_monitor:
-            mock_monitor = Mock()
-            mock_metrics = StartupMetrics(
-                timestamp=datetime.now(UTC).isoformat(),
-                import_time=5.0,  # Poor performance (>3.0 threshold)
-                memory_usage_mb=400.0,  # High memory usage (>300 threshold)
-                python_version="3.12.0",
-                package_version="0.7.1",
-                platform="Test Platform",
-                cpu_count=4,
-                optimization_enabled=True,
-                import_errors=["Some import error"],  # Has errors
-                dependency_load_times={},
-                total_modules_loaded=50,
-                lazy_modules_count=10,
-                immediate_modules_count=40,
-            )
-            mock_monitor.measure_startup_performance.return_value = mock_metrics
-            mock_get_monitor.return_value = mock_monitor
+        # Create mock objects
+        mock_monitor = Mock()
+        mock_metrics = StartupMetrics(
+            timestamp=datetime.now(UTC).isoformat(),
+            import_time=5.0,  # Poor performance (>3.0 threshold)
+            memory_usage_mb=400.0,  # High memory usage (>300 threshold)
+            python_version="3.12.0",
+            package_version="0.7.1",
+            platform="Test Platform",
+            cpu_count=4,
+            optimization_enabled=True,
+            import_errors=["Some import error"],  # Has errors
+            dependency_load_times={},
+            total_modules_loaded=50,
+            lazy_modules_count=10,
+            immediate_modules_count=40,
+        )
+        mock_monitor.measure_startup_performance.return_value = mock_metrics
 
+        # Inject mock directly into singleton cache
+        startup_monitoring_module._global_monitor = mock_monitor
+
+        try:
             health = check_startup_health()
 
             assert health["status"] == "unhealthy"
             assert len(health["issues"]) >= 1
+        finally:
+            # Clean up: reset singleton for other tests
+            startup_monitoring_module._global_monitor = None
 
 
 class TestIntegrationWithMainPackage:
@@ -602,7 +612,9 @@ class TestPerformanceBenchmarks:
 
         # Measure overhead of monitoring system initialization
         start_time = time.perf_counter()
-        monitor = StartupPerformanceMonitor(baseline_dir=Path(tempfile.mkdtemp()))
+        _monitor = StartupPerformanceMonitor(
+            baseline_dir=Path(tempfile.mkdtemp())
+        )
         end_time = time.perf_counter()
 
         initialization_time = end_time - start_time
