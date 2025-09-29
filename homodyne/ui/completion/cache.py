@@ -17,12 +17,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from .core import CompletionContext
-    from .core import CompletionResult
-except ImportError:
-    from core import CompletionContext
-    from core import CompletionResult
+from .core import CompletionContext
+from .core import CompletionResult
 
 
 @dataclass

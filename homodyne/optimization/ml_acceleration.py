@@ -493,7 +493,9 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
             raise RuntimeError("Model must be fitted before making predictions")
 
         # Convert experimental conditions to feature vector
-        features = self._conditions_to_features(experimental_conditions, initial_guess)
+        # Note: We don't include initial_guess in features to match training behavior
+        # where features are extracted from experimental_conditions only
+        features = self._conditions_to_features(experimental_conditions, None)
         features = features.reshape(1, -1)
 
         # Get predictions from all models
@@ -802,13 +804,14 @@ class TransferLearningPredictor(OptimizationPredictor):
 
         if similar_domain and similar_domain in self.domain_adapters:
             # Use domain-specific adapter
+            # Note: initial_guess is not used in feature extraction to match training
             adapter_result = self.domain_adapters[similar_domain].predict(
-                experimental_conditions, initial_guess
+                experimental_conditions
             )
 
             # Combine with base prediction
             base_result = self.base_predictor.predict(
-                experimental_conditions, initial_guess
+                experimental_conditions
             )
 
             # Weighted combination based on domain similarity
@@ -835,7 +838,7 @@ class TransferLearningPredictor(OptimizationPredictor):
                 feature_importance=adapter_result.feature_importance,
             )
         # Fall back to base predictor
-        return self.base_predictor.predict(experimental_conditions, initial_guess)
+        return self.base_predictor.predict(experimental_conditions)
 
     def update(self, new_record: OptimizationRecord) -> None:
         """Update base model and relevant domain adapters."""

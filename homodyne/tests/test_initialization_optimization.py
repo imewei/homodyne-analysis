@@ -17,6 +17,7 @@ import pytest
 
 from homodyne.core.initialization_optimizer import DependencyAnalyzer
 from homodyne.core.initialization_optimizer import InitializationOptimizer
+from homodyne.core.initialization_optimizer import InitializationStrategy
 from homodyne.core.initialization_optimizer import get_initialization_optimizer
 from homodyne.core.initialization_optimizer import optimize_package_initialization
 from homodyne.core.initialization_optimizer import profile_startup_performance
@@ -211,8 +212,6 @@ class TestGlobalFunctions:
     def test_optimize_package_initialization(self):
         """Test package initialization optimization."""
         # Test that the function returns a valid strategy
-        from homodyne.core.initialization_optimizer import InitializationStrategy
-
         strategy = optimize_package_initialization()
 
         # Verify we got a strategy back

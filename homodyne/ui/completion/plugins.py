@@ -13,14 +13,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-try:
-    from .core import CompletionContext
-    from .core import CompletionResult
-    from .core import CompletionType
-except ImportError:
-    from core import CompletionContext
-    from core import CompletionResult
-    from core import CompletionType
+from .core import CompletionContext
+from .core import CompletionResult
+from .core import CompletionType
 
 
 @dataclass

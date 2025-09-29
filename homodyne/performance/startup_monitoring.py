@@ -155,8 +155,14 @@ class StartupPerformanceMonitor:
                 memory_measurements.append(metrics["memory_usage"])
 
                 # Aggregate dependency times
-                for dep, time_val in metrics.get("dependency_times", {}).items():
-                    dependency_times[dep].append(time_val)
+                # Note: dependency_times is a dict with structure {module: {"load_time": float, "success": bool}}
+                for dep, time_data in metrics.get("dependency_times", {}).items():
+                    # Extract the numeric load_time from the dict
+                    if isinstance(time_data, dict):
+                        dependency_times[dep].append(time_data.get("load_time", 0.0))
+                    else:
+                        # Fallback for unexpected data structure
+                        dependency_times[dep].append(float(time_data))
 
                 import_errors.extend(metrics.get("import_errors", []))
 

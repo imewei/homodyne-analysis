@@ -13,6 +13,7 @@ reports/
 test_report.txt
 cache_*.npz
 performance_results/
+ml_optimization_data/
 nonexistent_template
 static_isotropic
 test_*.npz

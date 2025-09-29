@@ -53,7 +53,6 @@ np = scientific_deps.get("numpy")
 # Import revolutionary caching and optimization systems
 try:
     from ..core.caching import create_cached_analysis_engine
-    from ..core.caching import intelligent_cache
     from ..core.mathematical_optimization import create_complexity_reducer
 
     CACHING_AVAILABLE = True
@@ -536,14 +535,12 @@ class RobustHomodyneOptimizer:
         has_mocks = False
         try:
             # Quick check if we're in a test environment with mocks
-            import unittest.mock
-
             if any(
-                isinstance(obj, unittest.mock.Mock)
+                hasattr(obj, "_mock_name")
                 for obj in [self.core, phi_angles, c2_experimental]
             ):
                 has_mocks = True
-        except (ImportError, AttributeError):
+        except AttributeError:
             pass
 
         if (
@@ -2039,9 +2036,7 @@ class RobustHomodyneOptimizer:
 
         # Check if _solve_robust_optimization is mocked (for tests)
         try:
-            import unittest.mock
-
-            if isinstance(self._solve_robust_optimization, unittest.mock.Mock):
+            if hasattr(self._solve_robust_optimization, "_mock_name"):
                 # Method is mocked, call it directly and format result
                 mock_result = self._solve_robust_optimization(
                     initial_params, phi_angles, c2_experimental, method=method, **kwargs
@@ -2062,7 +2057,7 @@ class RobustHomodyneOptimizer:
                         "method": method,
                     }
                     return result_dict
-        except (ImportError, AttributeError):
+        except AttributeError:
             pass
 
         params, info = self.run_robust_optimization(

@@ -17,14 +17,9 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    from .cache import CompletionCache
-    from .core import CompletionContext
-    from .core import CompletionEngine
-except ImportError:
-    from cache import CompletionCache
-    from core import CompletionContext
-    from core import CompletionEngine
+from .cache import CompletionCache
+from .core import CompletionContext
+from .core import CompletionEngine
 
 
 @dataclass
