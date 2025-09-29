@@ -61,14 +61,15 @@ repos:
   # ═══════════════════════════════════════════════════════════════════
 
   # Unused imports and variables detection
-  - repo: https://github.com/hakancelik96/unimport
-    rev: 1.2.1
-    hooks:
-      - id: unimport
-        name: detect-unused-imports
-        args: [--remove-all, --check, --diff]
-        description: "Detect and remove unused imports and variables"
-        exclude: ^(homodyne/tests/|tests/|.*test.*\.py$|__init__\.py$)
+  # TODO: Re-enable when unimport supports Python 3.13 (currently requires <3.13,>=3.8)
+  # - repo: https://github.com/hakancelik96/unimport
+  #   rev: 1.2.1
+  #   hooks:
+  #     - id: unimport
+  #       name: detect-unused-imports
+  #       args: [--remove-all, --check, --diff]
+  #       description: "Detect and remove unused imports and variables"
+  #       exclude: ^(homodyne/tests/|tests/|.*test.*\.py$|__init__\.py$)
 
   # Dead code detection with vulture
   - repo: https://github.com/jendrikseipp/vulture
