@@ -412,9 +412,11 @@ class TestGlobalFunctions:
     @pytest.mark.slow
     def test_establish_default_baselines(self):
         """Test establishment of default baselines."""
+        # Mock at the instance level, not class level
         with patch(
-            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.establish_baseline"
-        ) as mock_establish:
+            "homodyne.performance.startup_monitoring.get_startup_monitor"
+        ) as mock_get_monitor:
+            mock_monitor = Mock()
             mock_baseline = PerformanceBaseline(
                 name="test",
                 target_import_time=2.0,
@@ -425,21 +427,26 @@ class TestGlobalFunctions:
                 created_at=datetime.now(UTC).isoformat(),
                 updated_at=datetime.now(UTC).isoformat(),
             )
-            mock_establish.return_value = mock_baseline
+            mock_monitor.establish_baseline.return_value = mock_baseline
+            mock_get_monitor.return_value = mock_monitor
 
             baselines = establish_default_baselines()
 
+            # The function creates 3 baselines: development, production, and CI
             assert len(baselines) >= 1
-            assert mock_establish.call_count >= 1
+            assert mock_monitor.establish_baseline.call_count >= 1
 
     def test_check_startup_health(self):
         """Test startup health check function."""
+        # Mock at the monitor instance level to ensure mock is used
         with patch(
-            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.measure_startup_performance"
-        ) as mock_measure:
+            "homodyne.performance.startup_monitoring.get_startup_monitor"
+        ) as mock_get_monitor:
+            mock_monitor = Mock()
+            expected_import_time = 1.5
             mock_metrics = StartupMetrics(
                 timestamp=datetime.now(UTC).isoformat(),
-                import_time=1.5,  # Good performance
+                import_time=expected_import_time,  # Good performance
                 memory_usage_mb=100.0,  # Good memory usage
                 python_version="3.12.0",
                 package_version="0.7.1",
@@ -452,24 +459,28 @@ class TestGlobalFunctions:
                 lazy_modules_count=10,
                 immediate_modules_count=40,
             )
-            mock_measure.return_value = mock_metrics
+            mock_monitor.measure_startup_performance.return_value = mock_metrics
+            mock_get_monitor.return_value = mock_monitor
 
             health = check_startup_health()
 
             assert "status" in health
             assert health["status"] == "healthy"
             assert "import_time" in health
-            assert health["import_time"] == 1.5
+            # Check that it returns the mocked value
+            assert health["import_time"] == expected_import_time
 
     def test_check_startup_health_unhealthy(self):
         """Test startup health check with poor performance."""
+        # Mock at the monitor instance level to ensure mock is used
         with patch(
-            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.measure_startup_performance"
-        ) as mock_measure:
+            "homodyne.performance.startup_monitoring.get_startup_monitor"
+        ) as mock_get_monitor:
+            mock_monitor = Mock()
             mock_metrics = StartupMetrics(
                 timestamp=datetime.now(UTC).isoformat(),
-                import_time=5.0,  # Poor performance
-                memory_usage_mb=400.0,  # High memory usage
+                import_time=5.0,  # Poor performance (>3.0 threshold)
+                memory_usage_mb=400.0,  # High memory usage (>300 threshold)
                 python_version="3.12.0",
                 package_version="0.7.1",
                 platform="Test Platform",
@@ -481,7 +492,8 @@ class TestGlobalFunctions:
                 lazy_modules_count=10,
                 immediate_modules_count=40,
             )
-            mock_measure.return_value = mock_metrics
+            mock_monitor.measure_startup_performance.return_value = mock_metrics
+            mock_get_monitor.return_value = mock_monitor
 
             health = check_startup_health()
 
