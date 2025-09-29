@@ -84,7 +84,15 @@
     "parameter_names": "MODE_DEPENDENT: See _parameter_definitions below",
     "_parameter_definitions": {
       "static_modes": ["D0", "alpha", "D_offset"],
-      "laminar_flow": ["D0", "alpha", "D_offset", "gamma0", "beta", "gamma_offset", "phi0"]
+      "laminar_flow": [
+        "D0",
+        "alpha",
+        "D_offset",
+        "gamma0",
+        "beta",
+        "gamma_offset",
+        "phi0"
+      ]
     },
     "units": "MODE_DEPENDENT: [Å²/s,dimensionless,Å²/s] for static, [Å²/s,dimensionless,Å²/s,s⁻¹,dimensionless,s⁻¹,degrees] for laminar_flow",
     "physical_meaning": {

@@ -58,6 +58,5 @@ search:
     tutorials.rst: 2
     research.rst: 3
     performance.rst: 1
-
 # Build performance optimization
 # Note: Build configuration already specified above

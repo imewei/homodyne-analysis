@@ -253,6 +253,7 @@ repos:
         description: "Format YAML and JSON files"
         args: [--write, --tab-width=2, --print-width=88]
         types_or: [yaml, json]
+        language_version: system # Use system Node.js
 
   # ═══════════════════════════════════════════════════════════════════
   # PHASE 10: JUPYTER NOTEBOOK PROCESSING
@@ -281,11 +282,11 @@ repos:
 # Language versions
 default_language_version:
   python: python3.13
-  node: "18"
+  node: system # Use system Node.js installation (v24.8.0)
 
 # Performance and behavior optimization
 default_install_hook_types: [pre-commit, pre-push, commit-msg]
-fail_fast: false                    # Run all hooks for comprehensive checking
+fail_fast: false # Run all hooks for comprehensive checking
 minimum_pre_commit_version: "3.0.0"
 
 # CI/CD Integration
@@ -295,13 +296,13 @@ ci:
   autoupdate_schedule: "monthly"
   autoupdate_commit_msg: "⬆️ Update: pre-commit hooks autoupdate"
   skip: [
-    # Skip expensive hooks in CI (run manually)
-    vulture-deadcode,
-    dead-functions,
-    homodyne-deadcode-detection,
-    complexity-check,
-    security-scan
-  ]
+      # Skip expensive hooks in CI (run manually)
+      vulture-deadcode,
+      dead-functions,
+      homodyne-deadcode-detection,
+      complexity-check,
+      security-scan,
+    ]
 
 # Global exclusions for performance
 exclude: |
