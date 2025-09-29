@@ -10,15 +10,16 @@ import os
 import subprocess
 import sys
 import tempfile
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
 try:
-    from homodyne.cli.run_homodyne import main as run_homodyne_main
     from homodyne.cli.create_config import main as create_config_main
     from homodyne.cli.enhanced_runner import main as enhanced_runner_main
+    from homodyne.cli.run_homodyne import main as run_homodyne_main
     CLI_AVAILABLE = True
 except ImportError:
     CLI_AVAILABLE = False

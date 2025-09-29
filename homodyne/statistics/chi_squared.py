@@ -56,27 +56,23 @@ from scipy.optimize import minimize
 
 # Import BLAS/LAPACK with fallbacks
 try:
-    from scipy.linalg.blas import (
-        daxpy,
-        ddot,
-        dgemm,
-        dgemv,
-        dger,
-        dnrm2,  # Level 1 BLAS
-        dscal,
-        dsymm,
-        dsymv,  # Level 2 BLAS
-        dsyrk,  # Level 3 BLAS
-    )
-    from scipy.linalg.lapack import (
-        dgesvd,  # SVD
-        dgetrf,
-        dgetrs,  # LU operations
-        dpotrf,
-        dpotri,  # Cholesky operations
-        dpotrs,
-        dsygv,  # Generalized eigenvalue
-    )
+    from scipy.linalg.blas import daxpy
+    from scipy.linalg.blas import ddot
+    from scipy.linalg.blas import dgemm
+    from scipy.linalg.blas import dgemv
+    from scipy.linalg.blas import dger
+    from scipy.linalg.blas import dnrm2  # Level 1 BLAS
+    from scipy.linalg.blas import dscal
+    from scipy.linalg.blas import dsymm
+    from scipy.linalg.blas import dsymv  # Level 2 BLAS
+    from scipy.linalg.blas import dsyrk  # Level 3 BLAS
+    from scipy.linalg.lapack import dgesvd  # SVD
+    from scipy.linalg.lapack import dgetrf
+    from scipy.linalg.lapack import dgetrs  # LU operations
+    from scipy.linalg.lapack import dpotrf
+    from scipy.linalg.lapack import dpotri  # Cholesky operations
+    from scipy.linalg.lapack import dpotrs
+    from scipy.linalg.lapack import dsygv  # Generalized eigenvalue
 
     ADVANCED_BLAS_AVAILABLE = True
 except ImportError:

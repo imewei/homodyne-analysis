@@ -22,7 +22,8 @@ import time
 import warnings
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import numpy as np
 import psutil

@@ -12,13 +12,15 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
-import numpy as np
-import tempfile
 import json
 import os
+import tempfile
 import warnings
-from unittest.mock import patch, Mock
+from unittest.mock import Mock
+from unittest.mock import patch
+
+import numpy as np
+import pytest
 
 # Suppress warnings for cleaner test output
 warnings.filterwarnings("ignore")
@@ -96,7 +98,9 @@ class TestRefactoredCalculateChiSquared:
                 config_path = f.name
 
             try:
-                from unittest.mock import patch, Mock
+                from unittest.mock import Mock
+                from unittest.mock import patch
+
                 # Mock the analyzer core components that we can't easily test
                 with patch('homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data') as mock_load:
                     # Mock data loading
@@ -157,7 +161,8 @@ class TestRefactoredCalculateChiSquared:
                 config_path = f.name
 
             try:
-                from unittest.mock import patch, Mock
+                from unittest.mock import Mock
+                from unittest.mock import patch
                 with patch('homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data'):
                     analyzer = HomodyneAnalysisCore(config_path)
 
@@ -294,7 +299,9 @@ class TestRefactoredOptimization:
     def test_gurobi_options_refactored(self):
         """Test the refactored Gurobi options setup."""
         try:
-            from unittest.mock import patch, Mock
+            from unittest.mock import Mock
+            from unittest.mock import patch
+
             from homodyne.optimization.classical import ClassicalOptimizer
 
             # Create mock optimizer
@@ -320,7 +327,9 @@ class TestRefactoredOptimization:
     def test_gradient_estimation_refactored(self):
         """Test the refactored gradient estimation."""
         try:
-            from unittest.mock import patch, Mock
+            from unittest.mock import Mock
+            from unittest.mock import patch
+
             from homodyne.optimization.classical import ClassicalOptimizer
 
             # Create mock optimizer
@@ -354,7 +363,9 @@ class TestCompositionFramework:
     def test_result_monad_operations(self):
         """Test Result monad operations."""
         try:
-            from homodyne.core.composition import Result, safe_divide, safe_sqrt
+            from homodyne.core.composition import Result
+            from homodyne.core.composition import safe_divide
+            from homodyne.core.composition import safe_sqrt
 
             # Test successful chain
             result = (Result.success(16)
@@ -408,7 +419,8 @@ class TestCompositionFramework:
     def test_workflow_components(self):
         """Test workflow components."""
         try:
-            from homodyne.core.workflows import ParameterValidator, DataProcessor
+            from homodyne.core.workflows import DataProcessor
+            from homodyne.core.workflows import ParameterValidator
 
             # Test parameter validator
             validator = (ParameterValidator()

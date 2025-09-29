@@ -82,9 +82,7 @@ def test_robust_optimization_imports():
         # Test robust optimization class if available
         if CVXPY_AVAILABLE:
             try:
-                from homodyne.optimization.robust import (
-                    RobustHomodyneOptimizer,
-                )
+                from homodyne.optimization.robust import RobustHomodyneOptimizer
 
                 # Test that we can create an instance
                 _ = RobustHomodyneOptimizer

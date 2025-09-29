@@ -31,17 +31,16 @@ Institution: Argonne National Laboratory
 import time
 import warnings
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import numpy as np
 from scipy.optimize import minimize
 
 # Import the revolutionary BLAS optimization
 try:
-    from ..core.analysis import (
-        BLASOptimizedChiSquared,
-        create_optimized_chi_squared_engine,
-    )
+    from ..core.analysis import BLASOptimizedChiSquared
+    from ..core.analysis import create_optimized_chi_squared_engine
 
     BLAS_OPTIMIZATION_AVAILABLE = True
 except ImportError:

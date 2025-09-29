@@ -8,28 +8,29 @@ This module provides backward compatibility for CLI tools moved from the root di
 # This enables both new-style and old-style imports to work
 
 try:
+    from .core import initialize_analysis_engine
+    from .core import load_and_validate_data
+    from .core import main as core_main
+    from .core import run_analysis
     from .create_config import main as create_config_main
     from .enhanced_runner import main as enhanced_runner_main
-    from .run_homodyne import main as run_homodyne_main
-    from .core import (
-        main as core_main,
-        run_analysis,
-        initialize_analysis_engine,
-        load_and_validate_data
-    )
 
     # Import key functions from modular structure
-    from .optimization import run_classical_optimization, run_robust_optimization, run_all_methods
-    from .simulation import plot_simulated_data
-    from .visualization import (
-        generate_classical_plots,
-        generate_robust_plots,
-        generate_comparison_plots,
-        save_individual_method_results,
-        generate_c2_heatmap_plots
-    )
-    from .utils import setup_logging, print_banner, MockResult, print_method_documentation
+    from .optimization import run_all_methods
+    from .optimization import run_classical_optimization
+    from .optimization import run_robust_optimization
     from .parser import create_argument_parser
+    from .run_homodyne import main as run_homodyne_main
+    from .simulation import plot_simulated_data
+    from .utils import MockResult
+    from .utils import print_banner
+    from .utils import print_method_documentation
+    from .utils import setup_logging
+    from .visualization import generate_c2_heatmap_plots
+    from .visualization import generate_classical_plots
+    from .visualization import generate_comparison_plots
+    from .visualization import generate_robust_plots
+    from .visualization import save_individual_method_results
 
 except ImportError as e:
     # Graceful degradation if files haven't been moved yet

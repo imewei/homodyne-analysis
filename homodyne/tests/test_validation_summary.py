@@ -15,10 +15,11 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import numpy as np
 import json
 import tempfile
 import warnings
+
+import numpy as np
 
 warnings.filterwarnings("ignore")
 
@@ -130,7 +131,10 @@ def test_function_composition_integrity():
     print("-" * 40)
 
     try:
-        from homodyne.core.composition import Result, Pipeline, compose, pipe
+        from homodyne.core.composition import Pipeline
+        from homodyne.core.composition import Result
+        from homodyne.core.composition import compose
+        from homodyne.core.composition import pipe
 
         # Test Result monad
         success_result = Result.success(10)
@@ -180,7 +184,8 @@ def test_workflow_components():
     print("-" * 40)
 
     try:
-        from homodyne.core.workflows import ParameterValidator, DataProcessor
+        from homodyne.core.workflows import DataProcessor
+        from homodyne.core.workflows import ParameterValidator
 
         # Test ParameterValidator
         validator = ParameterValidator().add_positivity_check("D0")
@@ -224,6 +229,7 @@ def test_refactored_functions_exist():
     # Test analysis core refactored functions
     try:
         from homodyne.analysis.core import HomodyneAnalysisCore
+
         # Create a temporary instance to check methods
         config = {
             "analyzer_parameters": {"temporal": {}, "angular": {}},
@@ -255,8 +261,9 @@ def test_refactored_functions_exist():
 
     # Test optimization refactored functions
     try:
-        from homodyne.optimization.classical import ClassicalOptimizer
         from unittest.mock import Mock
+
+        from homodyne.optimization.classical import ClassicalOptimizer
 
         optimizer = ClassicalOptimizer(Mock(), {})
         if hasattr(optimizer, '_initialize_gurobi_options'):

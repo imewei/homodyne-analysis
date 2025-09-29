@@ -12,13 +12,21 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .cache import CacheConfig, CompletionCache
-    from .core import CompletionContext, CompletionEngine
-    from .installer import CompletionInstaller, InstallationConfig, InstallationMode
+    from .cache import CacheConfig
+    from .cache import CompletionCache
+    from .core import CompletionContext
+    from .core import CompletionEngine
+    from .installer import CompletionInstaller
+    from .installer import InstallationConfig
+    from .installer import InstallationMode
 except ImportError:
-    from cache import CacheConfig, CompletionCache
-    from core import CompletionContext, CompletionEngine
-    from installer import CompletionInstaller, InstallationConfig, InstallationMode
+    from cache import CacheConfig
+    from cache import CompletionCache
+    from core import CompletionContext
+    from core import CompletionEngine
+    from installer import CompletionInstaller
+    from installer import InstallationConfig
+    from installer import InstallationMode
 
 
 class LegacyCompletionAdapter:

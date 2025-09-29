@@ -9,14 +9,15 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
-import psutil
-import numpy as np
-import json
 import gc
-from pathlib import Path
-from dataclasses import dataclass
+import json
+import time
 import warnings
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import psutil
 
 warnings.filterwarnings("ignore")
 

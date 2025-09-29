@@ -44,9 +44,11 @@ import sys
 import time
 import tracemalloc
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -56,10 +58,13 @@ import psutil
 try:
     from homodyne.analysis.core import HomodyneAnalysisCore
     from homodyne.core.config import ConfigManager
+    from homodyne.core.cpu_optimization import CPUOptimizer
+    from homodyne.core.cpu_optimization import get_cpu_optimization_info
     from homodyne.optimization.classical import ClassicalOptimizer
-    from homodyne.optimization.robust import CVXPY_AVAILABLE, RobustHomodyneOptimizer
-    from homodyne.core.cpu_optimization import CPUOptimizer, get_cpu_optimization_info
-    from homodyne.performance.cpu_profiling import CPUProfiler, get_cpu_performance_info
+    from homodyne.optimization.robust import CVXPY_AVAILABLE
+    from homodyne.optimization.robust import RobustHomodyneOptimizer
+    from homodyne.performance.cpu_profiling import CPUProfiler
+    from homodyne.performance.cpu_profiling import get_cpu_performance_info
 
     HOMODYNE_AVAILABLE = True
     CPU_OPTIMIZATION_AVAILABLE = True

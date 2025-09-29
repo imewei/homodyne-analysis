@@ -17,8 +17,9 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import numpy as np
 import warnings
+
+import numpy as np
 
 # Suppress warnings for cleaner test output
 warnings.filterwarnings("ignore", category=DeprecationWarning)

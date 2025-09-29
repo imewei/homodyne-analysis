@@ -16,18 +16,25 @@ Features:
 
 import argparse
 import ast
+import hashlib
 import json
+import logging
 import os
 import re
 import shutil
 import subprocess
 import sys
 import time
-from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional, NamedTuple, Union, Any
 from collections import defaultdict
-import hashlib
-import logging
+from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import NamedTuple
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Union
 
 
 class ImportInfo(NamedTuple):

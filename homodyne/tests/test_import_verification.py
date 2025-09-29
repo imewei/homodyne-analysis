@@ -12,7 +12,10 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict
+from typing import List
+from typing import Set
+from typing import Tuple
 from unittest.mock import patch
 
 import pytest
@@ -662,6 +665,7 @@ class TestImportVerification:
         # Time import with immediate access to lazy-loaded items
         with PerformanceTimer("Import with lazy access") as timer:
             import homodyne
+
             # Access lazy-loaded items
             _ = homodyne.HomodyneAnalysisCore
             _ = homodyne.ClassicalOptimizer

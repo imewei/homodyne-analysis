@@ -19,14 +19,16 @@ Institution: Argonne National Laboratory
 import multiprocessing as mp
 import platform
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import as_completed
 from typing import Any
 
 import numpy as np
 import psutil
 
 try:
-    from numba import jit, prange
+    from numba import jit
+    from numba import prange
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False

@@ -13,10 +13,12 @@ Institution: Argonne National Laboratory
 """
 
 import ast
-from pathlib import Path
-from typing import Dict, List, Tuple
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 
 @dataclass

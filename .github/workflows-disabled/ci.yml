@@ -92,12 +92,12 @@ jobs:
       - name: "🐍 Setup Python"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: "📦 Install Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .[quality]
 
       - name: "🔍 Ruff Linting"
@@ -174,7 +174,7 @@ jobs:
 
       - name: "📦 Install Package and Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .[test,performance]
 
       - name: "🧪 Run Tests - ${{ matrix.test-category }}"
@@ -226,12 +226,12 @@ jobs:
       - name: "🐍 Setup Python"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: "📦 Install Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .[test,performance]
 
       - name: "⚡ Run Performance Tests"
@@ -278,12 +278,12 @@ jobs:
       - name: "🐍 Setup Python"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: "📦 Install Scientific Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .[test,performance,robust]
 
       - name: "🔬 Run Scientific Validation Tests"
@@ -321,12 +321,12 @@ jobs:
       - name: "🐍 Setup Python"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: "📦 Install Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .[test,quality]
 
       - name: "🔒 Run Security Tests"
@@ -410,12 +410,12 @@ jobs:
       - name: "🐍 Setup Python"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: "📦 Install Documentation Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .[docs]
 
       - name: "📚 Build Documentation"
@@ -504,12 +504,12 @@ jobs:
       - name: "🐍 Setup Python"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: "📦 Install Build Dependencies"
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install build twine
 
       - name: "🔨 Build Package"

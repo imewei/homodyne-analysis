@@ -21,12 +21,15 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 try:
     from rich.console import Console
     from rich.panel import Panel
-    from rich.prompt import Confirm, IntPrompt, Prompt
+    from rich.prompt import Confirm
+    from rich.prompt import IntPrompt
+    from rich.prompt import Prompt
     from rich.table import Table
 
     RICH_AVAILABLE = True
@@ -54,7 +57,8 @@ except ImportError:
 
 from .cli_enhancer import CLIEnhancer
 from .error_reporter import create_error_reporter
-from .progress import ProgressContext, get_progress_tracker
+from .progress import ProgressContext
+from .progress import get_progress_tracker
 
 
 @dataclass

@@ -57,24 +57,14 @@ import psutil
 
 # Import the caching system components
 try:
-    from ..optimization.blas_optimization import (
-        BLASOptimizedChiSquared,
-        create_optimized_chi_squared_engine,
-    )
-    from ..core.caching import (
-        intelligent_cache,
-    )
-    from ..core.mathematical_optimization import (
-        create_complexity_reducer,
-    )
-    from ..core.performance_analytics import (
-        CumulativePerformanceTracker,
-    )
-    from ..core.result_memoization import (
-        ContentAddressableStore,
-        ScientificMemoizer,
-        scientific_memoize,
-    )
+    from ..core.caching import intelligent_cache
+    from ..core.mathematical_optimization import create_complexity_reducer
+    from ..core.performance_analytics import CumulativePerformanceTracker
+    from ..core.result_memoization import ContentAddressableStore
+    from ..core.result_memoization import ScientificMemoizer
+    from ..core.result_memoization import scientific_memoize
+    from ..optimization.blas_optimization import BLASOptimizedChiSquared
+    from ..optimization.blas_optimization import create_optimized_chi_squared_engine
 
     CACHING_AVAILABLE = True
 except ImportError:

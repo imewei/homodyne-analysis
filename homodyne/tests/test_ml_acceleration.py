@@ -27,19 +27,17 @@ except ImportError:
     SKLEARN_AVAILABLE = False
 
 # Import the modules we're testing
-from homodyne.optimization.ml_acceleration import (
-    EnsembleOptimizationPredictor,
-    MLAcceleratedOptimizer,
-    MLModelConfig,
-    OptimizationRecord,
-    PredictionResult,
-    TransferLearningPredictor,
-    create_ml_accelerated_optimizer,
-    enhance_classical_optimizer_with_ml,
-    get_ml_backend_info,
-    save_optimization_data_securely,
-    load_optimization_data_securely,
-)
+from homodyne.optimization.ml_acceleration import EnsembleOptimizationPredictor
+from homodyne.optimization.ml_acceleration import MLAcceleratedOptimizer
+from homodyne.optimization.ml_acceleration import MLModelConfig
+from homodyne.optimization.ml_acceleration import OptimizationRecord
+from homodyne.optimization.ml_acceleration import PredictionResult
+from homodyne.optimization.ml_acceleration import TransferLearningPredictor
+from homodyne.optimization.ml_acceleration import create_ml_accelerated_optimizer
+from homodyne.optimization.ml_acceleration import enhance_classical_optimizer_with_ml
+from homodyne.optimization.ml_acceleration import get_ml_backend_info
+from homodyne.optimization.ml_acceleration import load_optimization_data_securely
+from homodyne.optimization.ml_acceleration import save_optimization_data_securely
 
 
 class TestOptimizationRecord:

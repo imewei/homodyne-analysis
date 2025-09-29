@@ -32,11 +32,9 @@ except ImportError:
 
 # Import advanced completion system
 try:
-    from ..ui.completion.adapter import (
-        install_shell_completion,
-        setup_shell_completion,
-        uninstall_shell_completion,
-    )
+    from ..ui.completion.adapter import install_shell_completion
+    from ..ui.completion.adapter import setup_shell_completion
+    from ..ui.completion.adapter import uninstall_shell_completion
 
     COMPLETION_SYSTEM = "advanced"
 except ImportError:
@@ -54,12 +52,15 @@ except ImportError:
 
 # Import existing core components
 from ..core.config import ConfigManager
-from ..ui.cli_enhancer import CLIEnhancer, create_enhanced_cli
+from ..ui.cli_enhancer import CLIEnhancer
+from ..ui.cli_enhancer import create_enhanced_cli
 from ..ui.error_reporter import create_error_reporter
 from ..ui.interactive import create_interactive_interface
 
 # Import UI components
-from ..ui.progress import ProgressContext, get_progress_tracker, track_analysis_progress
+from ..ui.progress import ProgressContext
+from ..ui.progress import get_progress_tracker
+from ..ui.progress import track_analysis_progress
 from ..ui.visualization_optimizer import create_optimized_visualizer
 
 

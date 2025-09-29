@@ -14,10 +14,18 @@ import ast
 import logging
 import re
 from collections import defaultdict
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from dataclasses import field
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-from dataclasses import dataclass, field
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Union
 
 import pytest
 

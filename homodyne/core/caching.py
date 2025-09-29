@@ -34,10 +34,12 @@ import logging
 import pickle
 import threading
 import time
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import numpy as np
 

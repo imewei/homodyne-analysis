@@ -11,7 +11,8 @@ Institution: Argonne National Laboratory
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any
+from typing import TypeVar
 
 # Use lazy loading for heavy dependencies
 from .lazy_imports import scientific_deps
@@ -20,7 +21,8 @@ from .lazy_imports import scientific_deps
 np = scientific_deps.get("numpy")
 
 # Import shared numba availability flag and detection function
-from .optimization_utils import NUMBA_AVAILABLE, _check_numba_availability
+from .optimization_utils import NUMBA_AVAILABLE
+from .optimization_utils import _check_numba_availability
 
 # Lazy-loaded Numba with fallbacks
 if NUMBA_AVAILABLE:
@@ -45,7 +47,12 @@ if NUMBA_AVAILABLE:
     except Exception:
         # If lazy loading fails, fall back to direct import
         try:
-            from numba import float64, int64, jit, njit, prange, types
+            from numba import float64
+            from numba import int64
+            from numba import jit
+            from numba import njit
+            from numba import prange
+            from numba import types
             from numba.types import Tuple  # type: ignore[attr-defined]
         except ImportError:
             NUMBA_AVAILABLE = False

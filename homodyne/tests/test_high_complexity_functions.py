@@ -21,7 +21,8 @@ import logging
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -150,9 +151,9 @@ class TestHighComplexityFunctions:
     def test_run_gurobi_optimization_interface(self):
         """Test _run_gurobi_optimization() function (complexity: 25) - interface compliance."""
         try:
-            from homodyne.optimization.classical import ClassicalOptimizer
-
             from unittest.mock import Mock
+
+            from homodyne.optimization.classical import ClassicalOptimizer
             optimizer = ClassicalOptimizer(Mock(), {})
 
             # Test with mock parameters
@@ -420,7 +421,8 @@ class TestHighComplexityFunctions:
     def test_security_and_io_functions_safety(self):
         """Test security and I/O functions - safety properties."""
         try:
-            from homodyne.core.secure_io import load_numpy_secure, save_numpy_secure
+            from homodyne.core.secure_io import load_numpy_secure
+            from homodyne.core.secure_io import save_numpy_secure
 
             if not self.numpy_available:
                 pytest.skip("NumPy not available for I/O tests")

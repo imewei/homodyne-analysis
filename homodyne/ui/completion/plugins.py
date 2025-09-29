@@ -8,14 +8,19 @@ Supports dynamic loading, plugin priorities, and context-aware completions.
 
 import threading
 import time
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
 try:
-    from .core import CompletionContext, CompletionResult, CompletionType
+    from .core import CompletionContext
+    from .core import CompletionResult
+    from .core import CompletionType
 except ImportError:
-    from core import CompletionContext, CompletionResult, CompletionType
+    from core import CompletionContext
+    from core import CompletionResult
+    from core import CompletionType
 
 
 @dataclass

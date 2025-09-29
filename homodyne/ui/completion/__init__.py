@@ -14,11 +14,9 @@ Features:
 - Atomic installation/uninstallation
 """
 
-from .adapter import (
-    install_shell_completion,
-    setup_shell_completion,
-    uninstall_shell_completion,
-)
+from .adapter import install_shell_completion
+from .adapter import setup_shell_completion
+from .adapter import uninstall_shell_completion
 
 __all__ = [
     "CacheConfig",

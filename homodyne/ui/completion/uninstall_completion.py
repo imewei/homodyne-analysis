@@ -28,7 +28,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from .installer import CompletionInstaller, InstallationConfig
+from .installer import CompletionInstaller
+from .installer import InstallationConfig
 
 
 def create_parser() -> argparse.ArgumentParser:

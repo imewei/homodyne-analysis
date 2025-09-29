@@ -18,13 +18,22 @@ Institution: Argonne National Laboratory
 
 from __future__ import annotations
 
-import numpy as np
-from pathlib import Path
-from dataclasses import dataclass
 import logging
-from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
-from .composition import Result, Pipeline, ConfigurablePipeline, pipe, compose, curry
+import numpy as np
+
+from .composition import ConfigurablePipeline
+from .composition import Pipeline
+from .composition import Result
+from .composition import compose
+from .composition import curry
+from .composition import pipe
 
 logger = logging.getLogger(__name__)
 

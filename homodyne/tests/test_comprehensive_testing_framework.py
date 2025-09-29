@@ -9,13 +9,17 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
 import json
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass
+import time
 import warnings
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+
+import numpy as np
 
 warnings.filterwarnings("ignore")
 
@@ -336,8 +340,9 @@ class ComprehensiveTestFramework:
     def _test_memory_management(self) -> bool:
         """Test memory management and cleanup."""
         import gc
-        import psutil
         import os
+
+        import psutil
 
         # Get initial memory usage
         process = psutil.Process(os.getpid())
@@ -731,8 +736,9 @@ class ComprehensiveTestFramework:
 
     def _test_memory_efficiency(self) -> Dict[str, Any]:
         """Test memory efficiency."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024

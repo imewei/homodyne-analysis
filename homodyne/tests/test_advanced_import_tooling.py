@@ -18,22 +18,25 @@ import ast
 import json
 import os
 import shutil
-from dataclasses import dataclass
 import subprocess
 import tempfile
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict
+from typing import List
+from typing import Set
 
 import pytest
 
-from homodyne.tests.import_analyzer import (
-    AdvancedImportAnalyzer, EnterpriseImportAnalyzer, SafetyChecker,
-    ImportInfo, UsageContext
-)
-from homodyne.tests.import_workflow_integrator import (
-    WorkflowIntegrator, IntegrationConfig, IntegrationLevel
-)
+from homodyne.tests.import_analyzer import AdvancedImportAnalyzer
+from homodyne.tests.import_analyzer import EnterpriseImportAnalyzer
+from homodyne.tests.import_analyzer import ImportInfo
+from homodyne.tests.import_analyzer import SafetyChecker
+from homodyne.tests.import_analyzer import UsageContext
+from homodyne.tests.import_workflow_integrator import IntegrationConfig
+from homodyne.tests.import_workflow_integrator import IntegrationLevel
+from homodyne.tests.import_workflow_integrator import WorkflowIntegrator
 
 
 class TestAdvancedImportAnalyzer:
@@ -809,6 +812,7 @@ if __name__ == '__main__':
         # Handle both string and Path returns
         if isinstance(cleanup_script_path, str):
             from pathlib import Path
+
             # Check if it's a file path or script content
             if cleanup_script_path.startswith('#!') or 'def ' in cleanup_script_path:
                 # It's script content, not a path - write it to a temporary file

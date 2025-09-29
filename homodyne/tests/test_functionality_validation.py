@@ -9,9 +9,10 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
 import subprocess
 import sys
+
+import pytest
 
 # Test imports to ensure they still work
 import homodyne
@@ -386,8 +387,6 @@ class TestRealWorldUsage:
     def test_repeated_imports(self):
         """Test repeated imports don't cause issues."""
         # This should not cause issues with lazy loading
-        import homodyne
-
         # Re-import should be fine
         import homodyne
 

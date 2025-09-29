@@ -11,9 +11,10 @@ validation.
 
 import argparse
 import logging
-import numpy as np
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 from .utils import MockResult
 

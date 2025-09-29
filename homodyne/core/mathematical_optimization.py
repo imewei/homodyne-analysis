@@ -31,16 +31,15 @@ Institution: Argonne National Laboratory
 
 import logging
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import numpy as np
 
-from .caching import (
-    ContentAddressableHash,
-    IntelligentCacheManager,
-    get_global_cache,
-    intelligent_cache,
-)
+from .caching import ContentAddressableHash
+from .caching import IntelligentCacheManager
+from .caching import get_global_cache
+from .caching import intelligent_cache
 
 logger = logging.getLogger(__name__)
 

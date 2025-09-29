@@ -12,6 +12,7 @@ numba detection utilities.
 
 from typing import Any
 
+
 # Numba availability detection
 def _check_numba_availability() -> bool:
     """Check if Numba is truly available and functional.
@@ -123,8 +124,10 @@ def _check_cpu_optimization_availability() -> bool:
     global CPU_OPTIMIZATION_AVAILABLE
     if CPU_OPTIMIZATION_AVAILABLE is None:
         try:
-            from .cpu_optimization import CPUOptimizer, get_cpu_optimization_info  # noqa: F401
-            from ..performance.cpu_profiling import CPUProfiler, profile_homodyne_function  # noqa: F401
+            from ..performance.cpu_profiling import CPUProfiler  # noqa: F401
+            from ..performance.cpu_profiling import profile_homodyne_function
+            from .cpu_optimization import CPUOptimizer  # noqa: F401
+            from .cpu_optimization import get_cpu_optimization_info
             CPU_OPTIMIZATION_AVAILABLE = True
         except ImportError:
             CPU_OPTIMIZATION_AVAILABLE = False

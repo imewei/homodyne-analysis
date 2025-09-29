@@ -82,7 +82,7 @@ test = [
     "pytest-benchmark>=5.1.0",       # Performance benchmarking
     "pytest-timeout>=2.3.0",         # Test timeout handling
     "pytest-mock>=3.14.0",           # Advanced mocking
-    "pytest-html>=4.2.0",            # Rich HTML reports
+    "pytest-html>=4.1.1",            # Rich HTML reports
     "pytest-json-report>=1.5.0",     # JSON reports for CI
     "pytest-metadata>=3.1.0",        # Test metadata collection
     "pytest-randomly>=3.16.0",       # Randomized test execution
@@ -116,7 +116,7 @@ test = [
 quality = [
     "ruff>=0.13.2",                  # Fast Python linter and formatter
     "black>=25.9.0",                 # Code formatting
-    "isort>=5.13.0",                 # Import sorting
+    "isort>=6.0.1",                  # Import sorting (updated to match pre-commit)
     "mypy>=1.18.2",                  # Static type checking
     "bandit>=1.8.6",                 # Security linting
     "safety>=3.6.2",                 # Dependency vulnerability scanning
@@ -124,6 +124,7 @@ quality = [
     "pre-commit>=4.0.0",             # Git hook management
     "vulture>=2.13",                 # Dead code detection
     "interrogate>=1.7.0",            # Documentation coverage
+    "flake8>=7.3.0",                 # Traditional linting (matches pre-commit)
 ]
 
 # Development dependencies

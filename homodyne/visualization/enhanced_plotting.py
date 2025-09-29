@@ -19,14 +19,14 @@ import numpy as np
 from ..ui.error_reporter import create_error_reporter
 
 # Import UI enhancements
-from ..ui.progress import ProgressContext, get_progress_tracker, track_io_progress
+from ..ui.progress import ProgressContext
+from ..ui.progress import get_progress_tracker
+from ..ui.progress import track_io_progress
 from ..ui.visualization_optimizer import create_optimized_visualizer
 
 # Import original plotting functions
 from .plotting import create_all_plots as original_create_all_plots
-from .plotting import (
-    get_plot_config,
-)
+from .plotting import get_plot_config
 from .plotting import plot_c2_heatmaps as original_plot_c2_heatmaps
 from .plotting import plot_diagnostic_summary as original_plot_diagnostic_summary
 

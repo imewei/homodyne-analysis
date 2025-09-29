@@ -30,12 +30,10 @@ Examples:
 import argparse
 import sys
 
-from .installer import (
-    CompletionInstaller,
-    InstallationConfig,
-    InstallationMode,
-    ShellType,
-)
+from .installer import CompletionInstaller
+from .installer import InstallationConfig
+from .installer import InstallationMode
+from .installer import ShellType
 
 
 def create_parser() -> argparse.ArgumentParser:

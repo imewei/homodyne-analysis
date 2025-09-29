@@ -21,7 +21,8 @@ _available_exports: list[str] = []
 
 # Always try to import ClassicalOptimizer
 try:
-    from .classical import ClassicalOptimizer, run_classical_optimization_optimized
+    from .classical import ClassicalOptimizer
+    from .classical import run_classical_optimization_optimized
     _available_exports.extend(["ClassicalOptimizer", "run_classical_optimization_optimized"])
 except ImportError as e:
     ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc,no-redef]
@@ -32,7 +33,8 @@ except ImportError as e:
 
 # Try to import RobustHomodyneOptimizer
 try:
-    from .robust import RobustHomodyneOptimizer, run_robust_optimization
+    from .robust import RobustHomodyneOptimizer
+    from .robust import run_robust_optimization
     _available_exports.extend(["RobustHomodyneOptimizer", "run_robust_optimization"])
 except ImportError as e:
     RobustHomodyneOptimizer: type[Any] | None = None  # type: ignore[misc,no-redef]

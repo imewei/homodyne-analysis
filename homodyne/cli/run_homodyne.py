@@ -50,7 +50,6 @@ __credits__ = "Argonne National Laboratory"
 import os
 import sys
 
-
 # Call fast completion handler immediately - before any heavy imports
 try:
     from ..ui.completion.fast_handler import handle_fast_completion
@@ -73,14 +72,22 @@ from .core import main
 
 # Re-export key functions and classes for backward compatibility
 try:
-    from .optimization import run_classical_optimization, run_robust_optimization, run_all_methods
-    from .simulation import plot_simulated_data
-    from .visualization import generate_classical_plots, generate_robust_plots, generate_comparison_plots
-    from .utils import setup_logging, print_banner, MockResult, print_method_documentation
-    from .parser import create_argument_parser
-
     # For backward compatibility, also expose some internal functions
-    from .core import run_analysis, initialize_analysis_engine, load_and_validate_data
+    from .core import initialize_analysis_engine
+    from .core import load_and_validate_data
+    from .core import run_analysis
+    from .optimization import run_all_methods
+    from .optimization import run_classical_optimization
+    from .optimization import run_robust_optimization
+    from .parser import create_argument_parser
+    from .simulation import plot_simulated_data
+    from .utils import MockResult
+    from .utils import print_banner
+    from .utils import print_method_documentation
+    from .utils import setup_logging
+    from .visualization import generate_classical_plots
+    from .visualization import generate_comparison_plots
+    from .visualization import generate_robust_plots
 
     # Add perform_analysis as an alias to run_analysis for test compatibility
     perform_analysis = run_analysis

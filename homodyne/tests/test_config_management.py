@@ -13,8 +13,12 @@ from pathlib import Path
 import pytest
 
 try:
-    from homodyne.core.config import ConfigManager, configure_logging, performance_monitor
-    from homodyne.config import TEMPLATE_FILES, get_config_dir, get_template_path
+    from homodyne.config import TEMPLATE_FILES
+    from homodyne.config import get_config_dir
+    from homodyne.config import get_template_path
+    from homodyne.core.config import ConfigManager
+    from homodyne.core.config import configure_logging
+    from homodyne.core.config import performance_monitor
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False

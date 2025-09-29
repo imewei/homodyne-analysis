@@ -25,12 +25,19 @@ import subprocess
 import sys
 import time
 import warnings
-from collections import defaultdict, deque
+from collections import defaultdict
+from collections import deque
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from dataclasses import asdict
+from dataclasses import dataclass
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -200,8 +207,9 @@ class StartupPerformanceMonitor:
 
     def _single_startup_measurement(self, detailed: bool = False) -> Dict[str, Any]:
         """Perform a single startup time measurement."""
-        import psutil
         import subprocess
+
+        import psutil
 
         # Prepare measurement script
         measurement_script = f'''

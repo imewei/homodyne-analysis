@@ -9,19 +9,18 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
-import time
 import threading
+import time
 
-from homodyne.core.lazy_imports import (
-    HeavyDependencyLoader,
-    BatchDependencyLoader,
-    scientific_deps,
-    get_import_performance_report,
-    clear_import_cache,
-    preload_critical_dependencies,
-    LazyImportError,
-)
+import pytest
+
+from homodyne.core.lazy_imports import BatchDependencyLoader
+from homodyne.core.lazy_imports import HeavyDependencyLoader
+from homodyne.core.lazy_imports import LazyImportError
+from homodyne.core.lazy_imports import clear_import_cache
+from homodyne.core.lazy_imports import get_import_performance_report
+from homodyne.core.lazy_imports import preload_critical_dependencies
+from homodyne.core.lazy_imports import scientific_deps
 
 
 class TestHeavyDependencyLoader:

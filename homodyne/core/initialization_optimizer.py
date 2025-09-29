@@ -19,11 +19,16 @@ Institution: Argonne National Laboratory
 import importlib
 import logging
 import time
-from collections import defaultdict, deque
+from collections import defaultdict
+from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Set
 
 logger = logging.getLogger(__name__)
 

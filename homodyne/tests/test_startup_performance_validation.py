@@ -9,13 +9,14 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
+import os
+import statistics
 import subprocess
 import sys
-import time
-import statistics
-import os
 import tempfile
+import time
+
+import pytest
 
 
 class TestStartupTimeValidation:
@@ -450,10 +451,9 @@ print(f"WARNINGS_TIME:{end - start:.6f}")
     @pytest.mark.performance
     def test_import_from_different_directories(self):
         """Test import performance from different working directories."""
-        import tempfile
-
         # Get current sys.path to ensure homodyne is importable
         import json
+        import tempfile
         current_sys_path = json.dumps(sys.path)
 
         with tempfile.TemporaryDirectory() as temp_dir:

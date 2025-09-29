@@ -13,22 +13,21 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 # Import the modules we're testing
 try:
-    from homodyne.optimization.utils import (
-        OptimizationBenchmark,
-        OptimizationConfig,
-        SystemResourceDetector,
-        create_comprehensive_benchmark_suite,
-        quick_setup_distributed_optimization,
-        quick_setup_ml_acceleration,
-        setup_logging_for_optimization,
-        validate_configuration,
-    )
+    from homodyne.optimization.utils import OptimizationBenchmark
+    from homodyne.optimization.utils import OptimizationConfig
+    from homodyne.optimization.utils import SystemResourceDetector
+    from homodyne.optimization.utils import create_comprehensive_benchmark_suite
+    from homodyne.optimization.utils import quick_setup_distributed_optimization
+    from homodyne.optimization.utils import quick_setup_ml_acceleration
+    from homodyne.optimization.utils import setup_logging_for_optimization
+    from homodyne.optimization.utils import validate_configuration
 
     UTILS_AVAILABLE = True
 except ImportError:
@@ -543,11 +542,9 @@ class TestUtilityEdgeCases:
 def test_advanced_utils_basic_imports():
     """Test that advanced utils can be imported without errors."""
     try:
-        from homodyne.optimization.utils import (
-            OptimizationBenchmark,
-            OptimizationConfig,
-            SystemResourceDetector,
-        )
+        from homodyne.optimization.utils import OptimizationBenchmark
+        from homodyne.optimization.utils import OptimizationConfig
+        from homodyne.optimization.utils import SystemResourceDetector
 
         # Use imports to avoid F401
         _ = OptimizationBenchmark

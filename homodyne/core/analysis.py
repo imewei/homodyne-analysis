@@ -58,13 +58,9 @@ from scipy import linalg
 
 # Import revolutionary caching and optimization systems
 try:
-    from .caching import (
-        create_cached_analysis_engine,
-        intelligent_cache,
-    )
-    from .mathematical_optimization import (
-        create_complexity_reducer,
-    )
+    from .caching import create_cached_analysis_engine
+    from .caching import intelligent_cache
+    from .mathematical_optimization import create_complexity_reducer
 
     CACHING_AVAILABLE = True
 except ImportError:
@@ -81,14 +77,10 @@ except ImportError:
 BLAS_AVAILABLE = True
 try:
     # Direct BLAS imports for maximum performance
-    from scipy.linalg.blas import (
-        daxpy,  # Level 1: y ← alpha*x + y
-        ddot,  # Level 1: x^T*y
-    )
-    from scipy.linalg.lapack import (
-        dpotrf,  # Cholesky decomposition
-        dpotrs,  # Solve using Cholesky factors
-    )
+    from scipy.linalg.blas import daxpy  # Level 1: y ← alpha*x + y
+    from scipy.linalg.blas import ddot  # Level 1: x^T*y
+    from scipy.linalg.lapack import dpotrf  # Cholesky decomposition
+    from scipy.linalg.lapack import dpotrs  # Solve using Cholesky factors
 except ImportError:
     BLAS_AVAILABLE = False
     warnings.warn(

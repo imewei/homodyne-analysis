@@ -9,15 +9,21 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
 import json
 import statistics
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+import time
 import warnings
-from datetime import datetime, timedelta
-from enum import Enum
 from dataclasses import dataclass
+from datetime import datetime
+from datetime import timedelta
+from enum import Enum
+from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
 
 warnings.filterwarnings("ignore")

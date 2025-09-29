@@ -6,7 +6,8 @@ Performance benchmarking and regression tests for classical and robust optimizat
 """
 
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -67,6 +68,7 @@ class PerformanceBenchmark:
 def create_mock_analysis_core():
     """Create a properly configured mock analysis core for testing."""
     from unittest.mock import Mock
+
     import numpy as np
 
     mock_core = Mock()
@@ -276,8 +278,9 @@ class TestClassicalOptimizationPerformance:
 
     def test_memory_efficiency(self):
         """Test memory efficiency of optimization algorithms."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
@@ -575,8 +578,9 @@ class TestOptimizationMemoryProfiling:
     def test_memory_leak_detection(self):
         """Test for memory leaks in optimization loops."""
         import gc
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
 
@@ -630,8 +634,9 @@ class TestOptimizationMemoryProfiling:
 
     def test_large_data_memory_handling(self):
         """Test memory handling with large datasets."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB

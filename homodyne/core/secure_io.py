@@ -32,30 +32,27 @@ import stat
 import threading
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
+from typing import Generator
 
 import numpy as np
 
-from .security_performance import (
-    SecureFileManager,
-    ValidationError,
-    logger,
-    secure_cache,
-    secure_scientific_computation,
-    validate_array_dimensions,
-    validate_filename,
-    validate_path,
-)
+from .security_performance import SecureFileManager
+from .security_performance import ValidationError
+from .security_performance import logger
+from .security_performance import secure_cache
+from .security_performance import secure_scientific_computation
+from .security_performance import validate_array_dimensions
+from .security_performance import validate_filename
+from .security_performance import validate_path
 
 # Import original io_utils for backward compatibility
 try:
-    from .io_utils import (
-        save_pickle as _original_save_pickle,
-        _json_serializer,
-    )
+    from .io_utils import _json_serializer
     from .io_utils import ensure_dir as _original_ensure_dir
     from .io_utils import save_json as _original_save_json
     from .io_utils import save_numpy as _original_save_numpy
+    from .io_utils import save_pickle as _original_save_pickle
 except ImportError:
     logger.warning("Original io_utils not available, using fallback implementations")
     _original_ensure_dir = None

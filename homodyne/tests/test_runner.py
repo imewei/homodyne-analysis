@@ -275,8 +275,9 @@ class TestRunner:
         print("🧠 Running Tests with Memory Monitoring...")
 
         try:
-            import psutil
             import os
+
+            import psutil
 
             process = psutil.Process(os.getpid())
             initial_memory = process.memory_info().rss / 1024 / 1024  # MB

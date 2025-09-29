@@ -16,15 +16,21 @@ Institution: Argonne National Laboratory
 """
 
 
-import numpy as np
-from pathlib import Path
 import logging
+from pathlib import Path
 
-from .composition import Result, Pipeline, pipe, compose
-from .workflows import (
-    AnalysisConfig, ExperimentalData, OptimizationResult,
-    ParameterValidator, DataProcessor, OptimizationWorkflow
-)
+import numpy as np
+
+from .composition import Pipeline
+from .composition import Result
+from .composition import compose
+from .composition import pipe
+from .workflows import AnalysisConfig
+from .workflows import DataProcessor
+from .workflows import ExperimentalData
+from .workflows import OptimizationResult
+from .workflows import OptimizationWorkflow
+from .workflows import ParameterValidator
 
 logger = logging.getLogger(__name__)
 

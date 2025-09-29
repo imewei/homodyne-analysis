@@ -25,28 +25,34 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress
+from rich.progress import SpinnerColumn
+from rich.progress import TextColumn
 from rich.syntax import Syntax
+from rich.table import Table
 
 # Import our advanced tooling
 try:
     from homodyne.tests.import_analyzer import EnterpriseImportAnalyzer
-    from homodyne.tests.import_workflow_integrator import (
-        WorkflowIntegrator, IntegrationConfig, IntegrationLevel
-    )
+    from homodyne.tests.import_workflow_integrator import IntegrationConfig
+    from homodyne.tests.import_workflow_integrator import IntegrationLevel
+    from homodyne.tests.import_workflow_integrator import WorkflowIntegrator
 except ImportError:
     # Fallback for development/testing
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tests'))
     from import_analyzer import EnterpriseImportAnalyzer
-    from import_workflow_integrator import WorkflowIntegrator, IntegrationConfig, IntegrationLevel
+    from import_workflow_integrator import IntegrationConfig
+    from import_workflow_integrator import IntegrationLevel
+    from import_workflow_integrator import WorkflowIntegrator
 
 
 app = typer.Typer(

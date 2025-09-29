@@ -8,19 +8,18 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
 import subprocess
 import sys
 import time
 from unittest.mock import patch
 
-from homodyne.core.initialization_optimizer import (
-    DependencyAnalyzer,
-    InitializationOptimizer,
-    get_initialization_optimizer,
-    optimize_package_initialization,
-    profile_startup_performance,
-)
+import pytest
+
+from homodyne.core.initialization_optimizer import DependencyAnalyzer
+from homodyne.core.initialization_optimizer import InitializationOptimizer
+from homodyne.core.initialization_optimizer import get_initialization_optimizer
+from homodyne.core.initialization_optimizer import optimize_package_initialization
+from homodyne.core.initialization_optimizer import profile_startup_performance
 
 
 class TestDependencyAnalyzer:
@@ -324,9 +323,9 @@ class TestPerformanceBenchmarks:
     @pytest.mark.slow
     def test_startup_time_benchmark(self):
         """Benchmark startup time with and without optimization."""
+        import statistics
         import subprocess
         import sys
-        import statistics
 
         # Measure startup time multiple times
         startup_times = []

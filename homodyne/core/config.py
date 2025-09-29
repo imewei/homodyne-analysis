@@ -34,14 +34,15 @@ import multiprocessing as mp
 import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any
+from typing import NotRequired
+from typing import TypedDict
+from typing import cast
 
 # Import security features
 try:
-    from .security_performance import (
-        ValidationError,
-        secure_config_loader,
-    )
+    from .security_performance import ValidationError
+    from .security_performance import secure_config_loader
 
     SECURITY_AVAILABLE = True
 except ImportError:
@@ -1191,9 +1192,9 @@ class ConfigManager:
         dict[str, Any]
             Configuration with environment variables substituted
         """
+        import copy
         import os
         import re
-        import copy
 
         def substitute_env_vars(obj):
             if isinstance(obj, str):

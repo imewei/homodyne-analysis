@@ -34,8 +34,10 @@ import json
 import logging
 import time
 import warnings
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from abc import ABC
+from abc import abstractmethod
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 from typing import Any
 
@@ -47,13 +49,17 @@ _ML_BACKENDS_AVAILABLE = {}
 
 # Scikit-learn (always try to have this)
 try:
-    from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.ensemble import RandomForestRegressor
     from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, WhiteKernel
-    from sklearn.metrics import mean_squared_error, r2_score
+    from sklearn.gaussian_process.kernels import RBF
+    from sklearn.gaussian_process.kernels import WhiteKernel
+    from sklearn.metrics import mean_squared_error
+    from sklearn.metrics import r2_score
     from sklearn.model_selection import train_test_split
     from sklearn.neural_network import MLPRegressor
-    from sklearn.preprocessing import MinMaxScaler, StandardScaler
+    from sklearn.preprocessing import MinMaxScaler
+    from sklearn.preprocessing import StandardScaler
 
     _ML_BACKENDS_AVAILABLE["sklearn"] = True
 except ImportError:

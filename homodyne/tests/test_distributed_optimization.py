@@ -13,21 +13,20 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
 # Import the modules we're testing
-from homodyne.optimization.distributed import (
-    DistributedOptimizationCoordinator,
-    MultiprocessingBackend,
-    OptimizationResult,
-    OptimizationTask,
-    create_distributed_optimizer,
-    get_available_backends,
-    integrate_with_classical_optimizer,
-)
+from homodyne.optimization.distributed import DistributedOptimizationCoordinator
+from homodyne.optimization.distributed import MultiprocessingBackend
+from homodyne.optimization.distributed import OptimizationResult
+from homodyne.optimization.distributed import OptimizationTask
+from homodyne.optimization.distributed import create_distributed_optimizer
+from homodyne.optimization.distributed import get_available_backends
+from homodyne.optimization.distributed import integrate_with_classical_optimizer
 
 
 class TestDistributedBackends:

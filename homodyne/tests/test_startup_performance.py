@@ -8,14 +8,17 @@ Tracks import overhead, memory usage, and performance regression detection.
 
 import gc
 import importlib
-import psutil
 import sys
 import time
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from unittest.mock import patch
 from contextlib import contextmanager
+from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from unittest.mock import patch
 
+import psutil
 import pytest
 
 from homodyne.tests.conftest import PerformanceTimer
@@ -181,6 +184,7 @@ class StartupBenchmarkSuite:
             with PerformanceTimer("Import with lazy access") as timer:
                 try:
                     import homodyne
+
                     # Access lazy-loaded objects
                     _ = homodyne.HomodyneAnalysisCore
                     _ = homodyne.ClassicalOptimizer

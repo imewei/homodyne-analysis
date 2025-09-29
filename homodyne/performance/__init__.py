@@ -34,8 +34,10 @@ except ImportError as e:
 
 # Integrated monitoring system imports
 try:
-    from .integrated_monitoring import IntegratedPerformanceMonitor, StructuralOptimizationMetrics
-    from .regression_prevention import PerformanceRegressionPreventor, PerformanceBudget
+    from .integrated_monitoring import IntegratedPerformanceMonitor
+    from .integrated_monitoring import StructuralOptimizationMetrics
+    from .regression_prevention import PerformanceBudget
+    from .regression_prevention import PerformanceRegressionPreventor
 except ImportError as e:
     import warnings
 

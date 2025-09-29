@@ -15,13 +15,11 @@ Authors: Wei Chen, Hongrui He, Claude (Anthropic)
 Institution: Argonne National Laboratory
 """
 
-from .chi_squared import (
-    AdvancedChiSquaredAnalyzer,
-    BLASChiSquaredKernels,
-    ChiSquaredBenchmark,
-    batch_chi_squared_analysis,
-    optimize_chi_squared_parameters,
-)
+from .chi_squared import AdvancedChiSquaredAnalyzer
+from .chi_squared import BLASChiSquaredKernels
+from .chi_squared import ChiSquaredBenchmark
+from .chi_squared import batch_chi_squared_analysis
+from .chi_squared import optimize_chi_squared_parameters
 
 __all__ = [
     "AdvancedChiSquaredAnalyzer",

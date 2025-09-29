@@ -52,13 +52,9 @@ np = scientific_deps.get("numpy")
 
 # Import revolutionary caching and optimization systems
 try:
-    from ..core.caching import (
-        create_cached_analysis_engine,
-        intelligent_cache,
-    )
-    from ..core.mathematical_optimization import (
-        create_complexity_reducer,
-    )
+    from ..core.caching import create_cached_analysis_engine
+    from ..core.caching import intelligent_cache
+    from ..core.mathematical_optimization import create_complexity_reducer
 
     CACHING_AVAILABLE = True
 except ImportError:
@@ -74,13 +70,11 @@ except ImportError:
 
 # Import security features with explicit fallback
 try:
-    from ..core.security_performance import (
-        MemoryLimitError,
-        ValidationError,
-        monitor_memory,
-        secure_scientific_computation,
-        validate_array_dimensions,
-    )
+    from ..core.security_performance import MemoryLimitError
+    from ..core.security_performance import ValidationError
+    from ..core.security_performance import monitor_memory
+    from ..core.security_performance import secure_scientific_computation
+    from ..core.security_performance import validate_array_dimensions
 
     SECURITY_AVAILABLE = True
 except ImportError as e:

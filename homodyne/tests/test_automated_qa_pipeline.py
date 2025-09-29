@@ -9,15 +9,19 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
+import ast
 import json
 import os
-import ast
 import re
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+import time
 import warnings
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 warnings.filterwarnings("ignore")
 
@@ -651,8 +655,9 @@ class ValidationPipeline:
 
     def _test_memory_efficiency(self) -> Dict[str, Any]:
         """Test memory efficiency."""
-        import psutil
         import gc
+
+        import psutil
 
         metrics = []
         issues = []
@@ -698,8 +703,9 @@ class ValidationPipeline:
 
         # Simulate module import time
         start_time = time.perf_counter()
-        import numpy as np
         import json
+
+        import numpy as np
         import_time = time.perf_counter() - start_time
 
         # Import time threshold

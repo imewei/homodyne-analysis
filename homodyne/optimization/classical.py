@@ -42,10 +42,8 @@ if scipy_optimize is None or not hasattr(scipy_optimize, 'OptimizeResult'):
         scipy_optimize = None
 
 # Import shared optimization utilities
-from ..core.optimization_utils import (
-    get_optimization_counter,
-    reset_optimization_counter,
-)
+from ..core.optimization_utils import get_optimization_counter
+from ..core.optimization_utils import reset_optimization_counter
 
 try:
     import gurobipy as gp
@@ -60,10 +58,8 @@ except ImportError:
 
 # Import robust optimization with graceful degradation
 try:
-    from .robust import (
-        RobustHomodyneOptimizer,  # type: ignore
-        create_robust_optimizer,
-    )
+    from .robust import RobustHomodyneOptimizer  # type: ignore
+    from .robust import create_robust_optimizer
 
     ROBUST_OPTIMIZATION_AVAILABLE = True
 except ImportError:

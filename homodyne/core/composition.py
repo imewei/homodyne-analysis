@@ -20,9 +20,10 @@ from __future__ import annotations
 
 import functools
 import inspect
-from dataclasses import dataclass
 import logging
-from typing import Generic, TypeVar
+from dataclasses import dataclass
+from typing import Generic
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 

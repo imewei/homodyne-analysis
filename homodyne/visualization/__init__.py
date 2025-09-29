@@ -25,7 +25,8 @@ except ImportError as e:
 # Specific backward compatibility functions with explicit error handling
 try:
     from .enhanced_plotting import EnhancedPlottingManager
-    from .plotting import get_plot_config, plot_c2_heatmaps
+    from .plotting import get_plot_config
+    from .plotting import plot_c2_heatmaps
 except ImportError as e:
     import warnings
 

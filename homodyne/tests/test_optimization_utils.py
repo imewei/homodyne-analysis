@@ -22,11 +22,9 @@ def test_optimization_counter_functionality():
 
     # Import after mocking to avoid numba dependency issues in tests
     sys.modules["numba"] = None
-    from homodyne.core.optimization_utils import (
-        get_optimization_counter,
-        increment_optimization_counter,
-        reset_optimization_counter,
-    )
+    from homodyne.core.optimization_utils import get_optimization_counter
+    from homodyne.core.optimization_utils import increment_optimization_counter
+    from homodyne.core.optimization_utils import reset_optimization_counter
 
     # Test initial state
     reset_optimization_counter()
@@ -136,9 +134,7 @@ def test_integration_with_classical_optimizer():
     sys.modules["corner"] = None
 
     try:
-        from homodyne.core.optimization_utils import (
-            get_optimization_counter,
-        )
+        from homodyne.core.optimization_utils import get_optimization_counter
         from homodyne.optimization import ClassicalOptimizer
 
         # Create mock core and config for testing

@@ -108,8 +108,10 @@ import logging
 import multiprocessing as mp
 import os
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from datetime import UTC, datetime
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -124,7 +126,9 @@ np = scientific_deps.get("numpy")
 
 # Import performance optimization dependencies
 try:
-    from numba import jit, njit, prange
+    from numba import jit
+    from numba import njit
+    from numba import prange
 except ImportError:
     # Fallback decorators when Numba is unavailable
     def jit(*args, **kwargs):
@@ -137,17 +141,17 @@ except ImportError:
 
 # Import core dependencies from the main module
 from ..core.config import ConfigManager
-from ..core.kernels import (
-    calculate_diffusion_coefficient_numba,
-    calculate_shear_rate_numba,
-    compute_chi_squared_batch_numba,
-    compute_g1_correlation_numba,
-    compute_sinc_squared_numba,
-    create_time_integral_matrix_numba,
-    memory_efficient_cache,
-    solve_least_squares_batch_numba,
-)
-from ..core.optimization_utils import NUMBA_AVAILABLE, increment_optimization_counter, _check_numba_availability
+from ..core.kernels import calculate_diffusion_coefficient_numba
+from ..core.kernels import calculate_shear_rate_numba
+from ..core.kernels import compute_chi_squared_batch_numba
+from ..core.kernels import compute_g1_correlation_numba
+from ..core.kernels import compute_sinc_squared_numba
+from ..core.kernels import create_time_integral_matrix_numba
+from ..core.kernels import memory_efficient_cache
+from ..core.kernels import solve_least_squares_batch_numba
+from ..core.optimization_utils import NUMBA_AVAILABLE
+from ..core.optimization_utils import _check_numba_availability
+from ..core.optimization_utils import increment_optimization_counter
 
 logger = logging.getLogger(__name__)
 
@@ -317,13 +321,11 @@ class HomodyneAnalysisCore:
             refresh_kernel_functions()
 
             # Import the kernel functions (they may be JIT or fallback depending on availability)
-            from ..core.kernels import (
-                create_time_integral_matrix_numba,
-                calculate_diffusion_coefficient_numba,
-                calculate_shear_rate_numba,
-                compute_g1_correlation_numba,
-                compute_sinc_squared_numba,
-            )
+            from ..core.kernels import calculate_diffusion_coefficient_numba
+            from ..core.kernels import calculate_shear_rate_numba
+            from ..core.kernels import compute_g1_correlation_numba
+            from ..core.kernels import compute_sinc_squared_numba
+            from ..core.kernels import create_time_integral_matrix_numba
 
             # Warm up low-level Numba functions
             create_time_integral_matrix_numba(test_array)
@@ -3022,7 +3024,8 @@ Validation:
 
         try:
             # Import plotting module
-            from homodyne.plotting import plot_c2_heatmaps, plot_diagnostic_summary
+            from homodyne.plotting import plot_c2_heatmaps
+            from homodyne.plotting import plot_diagnostic_summary
 
             # Extract output directory from output_data if available
             output_dir = output_data.get("output_dir")

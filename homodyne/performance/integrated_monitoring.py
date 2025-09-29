@@ -31,9 +31,14 @@ import sys
 import time
 import tracemalloc
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import psutil
 
@@ -62,9 +67,9 @@ except ImportError:
 
 # Import optimized components to monitor
 from ..analysis.core import HomodyneAnalysisCore
+from ..core.kernels import compute_chi_squared_batch_numba
 from ..optimization.classical import ClassicalOptimizer
 from ..optimization.robust import RobustHomodyneOptimizer
-from ..core.kernels import compute_chi_squared_batch_numba
 
 
 @dataclass

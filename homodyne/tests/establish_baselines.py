@@ -11,8 +11,8 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any
-
+from typing import Any
+from typing import Dict
 
 
 def create_comprehensive_baselines() -> Dict[str, Any]:

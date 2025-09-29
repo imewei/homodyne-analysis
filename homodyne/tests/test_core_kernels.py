@@ -10,16 +10,14 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from homodyne.core.kernels import (
-    NUMBA_AVAILABLE,
-    calculate_diffusion_coefficient_numba,
-    calculate_shear_rate_numba,
-    compute_g1_correlation_numba,
-    compute_sinc_squared_numba,
-    create_time_integral_matrix_numba,
-    memory_efficient_cache,
-    _compute_sinc_squared_single,
-)
+from homodyne.core.kernels import NUMBA_AVAILABLE
+from homodyne.core.kernels import _compute_sinc_squared_single
+from homodyne.core.kernels import calculate_diffusion_coefficient_numba
+from homodyne.core.kernels import calculate_shear_rate_numba
+from homodyne.core.kernels import compute_g1_correlation_numba
+from homodyne.core.kernels import compute_sinc_squared_numba
+from homodyne.core.kernels import create_time_integral_matrix_numba
+from homodyne.core.kernels import memory_efficient_cache
 
 
 class TestNumbaCoreKernels:
@@ -108,4 +106,3 @@ class TestNumbaCoreKernels:
 
 class TestKernelIntegration:
     """Integration tests for kernel combinations."""
-

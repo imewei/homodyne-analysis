@@ -12,16 +12,25 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 import numpy as np
 
-from .utils import setup_logging, print_banner, validate_and_load_config, create_config_override
-from .utils import validate_advanced_optimization_args, validate_scaling_args
+from .optimization import run_all_methods
+from .optimization import run_classical_optimization
+from .optimization import run_robust_optimization
 from .parser import create_argument_parser
-from .optimization import run_classical_optimization, run_robust_optimization, run_all_methods
 from .simulation import plot_simulated_data
-from .visualization import generate_comparison_plots, save_individual_method_results
+from .utils import create_config_override
+from .utils import print_banner
+from .utils import setup_logging
+from .utils import validate_advanced_optimization_args
+from .utils import validate_and_load_config
+from .utils import validate_scaling_args
+from .visualization import generate_comparison_plots
+from .visualization import save_individual_method_results
 
 # Module-level logger
 logger = logging.getLogger(__name__)
@@ -43,7 +52,8 @@ except ImportError as e:
 
 # Import advanced optimization features with graceful degradation
 try:
-    from ..optimization.distributed import create_distributed_optimizer, get_available_backends
+    from ..optimization.distributed import create_distributed_optimizer
+    from ..optimization.distributed import get_available_backends
     DISTRIBUTED_AVAILABLE = True
 except ImportError:
     DISTRIBUTED_AVAILABLE = False
@@ -51,7 +61,8 @@ except ImportError:
     get_available_backends = None
 
 try:
-    from ..optimization.ml_acceleration import create_ml_accelerated_optimizer, get_ml_backend_info
+    from ..optimization.ml_acceleration import create_ml_accelerated_optimizer
+    from ..optimization.ml_acceleration import get_ml_backend_info
     ML_ACCELERATION_AVAILABLE = True
 except ImportError:
     ML_ACCELERATION_AVAILABLE = False
@@ -60,15 +71,13 @@ except ImportError:
 
 # Check for advanced optimization utilities
 try:
-    from ..optimization.utils import (
-        IntegrationHelper,
-        OptimizationBenchmark,
-        OptimizationConfig,
-        SystemResourceDetector,
-        quick_setup_distributed_optimization,
-        quick_setup_ml_acceleration,
-        setup_logging_for_optimization,
-    )
+    from ..optimization.utils import IntegrationHelper
+    from ..optimization.utils import OptimizationBenchmark
+    from ..optimization.utils import OptimizationConfig
+    from ..optimization.utils import SystemResourceDetector
+    from ..optimization.utils import quick_setup_distributed_optimization
+    from ..optimization.utils import quick_setup_ml_acceleration
+    from ..optimization.utils import setup_logging_for_optimization
     OPTIMIZATION_UTILS_AVAILABLE = True
 except ImportError:
     OPTIMIZATION_UTILS_AVAILABLE = False

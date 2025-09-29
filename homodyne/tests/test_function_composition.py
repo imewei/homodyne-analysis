@@ -12,21 +12,29 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import pytest
-import numpy as np
 from unittest.mock import patch
 
-# Import our composition framework
-from homodyne.core.composition import (
-    Result, Pipeline, ConfigurablePipeline,
-    compose, pipe, curry, memoize, retry_on_failure,
-    create_validation_chain, safe_divide, safe_sqrt
-)
+import numpy as np
+import pytest
 
-from homodyne.core.workflows import (
-    ParameterValidator, DataProcessor, OptimizationWorkflow,
-    SimulationWorkflow, AnalysisConfig, ExperimentalData
-)
+# Import our composition framework
+from homodyne.core.composition import ConfigurablePipeline
+from homodyne.core.composition import Pipeline
+from homodyne.core.composition import Result
+from homodyne.core.composition import compose
+from homodyne.core.composition import create_validation_chain
+from homodyne.core.composition import curry
+from homodyne.core.composition import memoize
+from homodyne.core.composition import pipe
+from homodyne.core.composition import retry_on_failure
+from homodyne.core.composition import safe_divide
+from homodyne.core.composition import safe_sqrt
+from homodyne.core.workflows import AnalysisConfig
+from homodyne.core.workflows import DataProcessor
+from homodyne.core.workflows import ExperimentalData
+from homodyne.core.workflows import OptimizationWorkflow
+from homodyne.core.workflows import ParameterValidator
+from homodyne.core.workflows import SimulationWorkflow
 
 
 class TestCompositionFramework:

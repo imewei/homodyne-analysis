@@ -11,7 +11,10 @@ for both simulated and experimental data analysis results.
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Optional, Dict, List
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import numpy as np
 

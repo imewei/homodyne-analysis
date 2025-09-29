@@ -22,20 +22,14 @@ import pytest
 # Import the modules we're testing
 try:
     from homodyne.optimization.classical import ClassicalOptimizer
-    from homodyne.optimization.distributed import (
-        DistributedOptimizationCoordinator,
-        OptimizationResult,
-        OptimizationTask,
-    )
-    from homodyne.optimization.ml_acceleration import (
-        MLAcceleratedOptimizer,
-    )
-    from homodyne.optimization.utils import (
-        OptimizationConfig,
-        SystemResourceDetector,
-        quick_setup_distributed_optimization,
-        quick_setup_ml_acceleration,
-    )
+    from homodyne.optimization.distributed import DistributedOptimizationCoordinator
+    from homodyne.optimization.distributed import OptimizationResult
+    from homodyne.optimization.distributed import OptimizationTask
+    from homodyne.optimization.ml_acceleration import MLAcceleratedOptimizer
+    from homodyne.optimization.utils import OptimizationConfig
+    from homodyne.optimization.utils import SystemResourceDetector
+    from homodyne.optimization.utils import quick_setup_distributed_optimization
+    from homodyne.optimization.utils import quick_setup_ml_acceleration
 
     INTEGRATION_AVAILABLE = True
 except ImportError as e:

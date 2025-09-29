@@ -37,26 +37,24 @@ import pytest
 
 # Import security modules
 try:
-    from homodyne.core.security_performance import (
-        ConfigurationSecurity,
-        MemoryLimitError,
-        RateLimitError,
-        SecureCache,
-        SecureFileManager,
-        ValidationError,
-        cleanup_security_resources,
-        monitor_memory,
-        rate_limit,
-        secure_cache,
-        secure_file_manager,
-        secure_scientific_computation,
-        validate_angle_range,
-        validate_array_dimensions,
-        validate_filename,
-        validate_numeric_value,
-        validate_parameter_name,
-        validate_path,
-    )
+    from homodyne.core.security_performance import ConfigurationSecurity
+    from homodyne.core.security_performance import MemoryLimitError
+    from homodyne.core.security_performance import RateLimitError
+    from homodyne.core.security_performance import SecureCache
+    from homodyne.core.security_performance import SecureFileManager
+    from homodyne.core.security_performance import ValidationError
+    from homodyne.core.security_performance import cleanup_security_resources
+    from homodyne.core.security_performance import monitor_memory
+    from homodyne.core.security_performance import rate_limit
+    from homodyne.core.security_performance import secure_cache
+    from homodyne.core.security_performance import secure_file_manager
+    from homodyne.core.security_performance import secure_scientific_computation
+    from homodyne.core.security_performance import validate_angle_range
+    from homodyne.core.security_performance import validate_array_dimensions
+    from homodyne.core.security_performance import validate_filename
+    from homodyne.core.security_performance import validate_numeric_value
+    from homodyne.core.security_performance import validate_parameter_name
+    from homodyne.core.security_performance import validate_path
 
     SECURITY_AVAILABLE = True
 except ImportError:
@@ -64,13 +62,11 @@ except ImportError:
     pytest.skip("Security performance module not available", allow_module_level=True)
 
 try:
-    from homodyne.core.secure_io import (
-        cleanup_secure_io,
-        ensure_dir_secure,
-        load_numpy_secure,
-        save_json_secure,
-        save_numpy_secure,
-    )
+    from homodyne.core.secure_io import cleanup_secure_io
+    from homodyne.core.secure_io import ensure_dir_secure
+    from homodyne.core.secure_io import load_numpy_secure
+    from homodyne.core.secure_io import save_json_secure
+    from homodyne.core.secure_io import save_numpy_secure
 
     SECURE_IO_AVAILABLE = True
 except ImportError:

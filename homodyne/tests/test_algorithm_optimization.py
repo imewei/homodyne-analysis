@@ -17,13 +17,15 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-import time
-import numpy as np
 import json
+import time
+
+import numpy as np
 
 # Conditional numba import
 try:
-    from numba import jit, njit
+    from numba import jit
+    from numba import njit
     NUMBA_AVAILABLE = True
 except ImportError:
     # Mock decorators if numba not available
@@ -38,10 +40,14 @@ except ImportError:
         return decorator if args else decorator
 
     NUMBA_AVAILABLE = False
-from pathlib import Path
-from typing import Dict, List, Tuple, Any, Callable
 import warnings
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 warnings.filterwarnings("ignore")
 

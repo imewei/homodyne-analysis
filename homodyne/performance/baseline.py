@@ -66,7 +66,8 @@ except ImportError as e:
 
 # Check for robust optimization separately with explicit handling
 try:
-    from homodyne.optimization.robust import CVXPY_AVAILABLE, RobustHomodyneOptimizer
+    from homodyne.optimization.robust import CVXPY_AVAILABLE
+    from homodyne.optimization.robust import RobustHomodyneOptimizer
 
     ROBUST_AVAILABLE = True
 except ImportError as e:

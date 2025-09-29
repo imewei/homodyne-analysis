@@ -23,7 +23,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 
-from homodyne.core.io_utils import ensure_dir, save_fig
+from homodyne.core.io_utils import ensure_dir
+from homodyne.core.io_utils import save_fig
 
 # Set up logging
 logger = logging.getLogger(__name__)

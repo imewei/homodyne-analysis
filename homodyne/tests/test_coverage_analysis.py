@@ -14,9 +14,14 @@ Institution: Argonne National Laboratory
 """
 
 import ast
-from pathlib import Path
-from typing import Dict, List, Set, Tuple, Any, Optional
 import warnings
+from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
 
 # Try to import coverage if available
 try:
@@ -359,6 +364,7 @@ class CoverageBasedAnalyzer:
             # Import and run basic package functionality
             try:
                 import homodyne
+
                 # Try to exercise basic functionality
                 health = homodyne.check_performance_health()
                 config_manager = homodyne.ConfigManager

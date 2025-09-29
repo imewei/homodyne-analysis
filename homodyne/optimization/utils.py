@@ -22,7 +22,12 @@ import logging
 import platform
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 
 if TYPE_CHECKING:
     from .distributed import DistributedOptimizationCoordinator
@@ -427,10 +432,8 @@ class IntegrationHelper:
         # Add distributed capabilities
         if enable_distributed and config.is_distributed_enabled():
             try:
-                from .distributed import (
-                    integrate_with_classical_optimizer,
-                    integrate_with_robust_optimizer,
-                )
+                from .distributed import integrate_with_classical_optimizer
+                from .distributed import integrate_with_robust_optimizer
 
                 if hasattr(optimizer, "run_classical_optimization_optimized"):
                     enhanced_optimizer = integrate_with_classical_optimizer(
@@ -448,10 +451,8 @@ class IntegrationHelper:
         # Add ML acceleration
         if enable_ml and config.is_ml_enabled():
             try:
-                from .ml_acceleration import (
-                    enhance_classical_optimizer_with_ml,
-                    enhance_robust_optimizer_with_ml,
-                )
+                from .ml_acceleration import enhance_classical_optimizer_with_ml
+                from .ml_acceleration import enhance_robust_optimizer_with_ml
 
                 if hasattr(optimizer, "run_classical_optimization_optimized"):
                     enhanced_optimizer = enhance_classical_optimizer_with_ml(

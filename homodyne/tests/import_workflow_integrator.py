@@ -16,12 +16,13 @@ Features:
 """
 
 import json
+import logging
 import os
 import time
-from pathlib import Path
-import logging
+from dataclasses import asdict
+from dataclasses import dataclass
 from enum import Enum
-from dataclasses import dataclass, asdict
+from pathlib import Path
 
 
 class IntegrationLevel(Enum):

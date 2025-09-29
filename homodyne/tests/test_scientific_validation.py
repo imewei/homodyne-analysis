@@ -12,12 +12,10 @@ from numpy.testing import assert_allclose
 from scipy import integrate
 
 try:
-    from homodyne.core.kernels import (
-        compute_g1_correlation_numba,
-        compute_sinc_squared_numba,
-        calculate_diffusion_coefficient_numba,
-        calculate_shear_rate_numba
-    )
+    from homodyne.core.kernels import calculate_diffusion_coefficient_numba
+    from homodyne.core.kernels import calculate_shear_rate_numba
+    from homodyne.core.kernels import compute_g1_correlation_numba
+    from homodyne.core.kernels import compute_sinc_squared_numba
     SCIENTIFIC_MODULES_AVAILABLE = True
 except ImportError:
     SCIENTIFIC_MODULES_AVAILABLE = False

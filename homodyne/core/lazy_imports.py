@@ -16,7 +16,9 @@ import importlib
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Any, Callable, TypeVar
+from typing import Any
+from typing import Callable
+from typing import TypeVar
 
 # Thread-safe lazy loading
 _IMPORT_LOCK = threading.RLock()
@@ -130,8 +132,8 @@ class HeavyDependencyLoader:
         self._load_attempted = True
 
         try:
-            import time
             import sys
+            import time
             start_time = time.perf_counter()
 
             logger.debug(f"Loading heavy dependency: {self.module_name}")

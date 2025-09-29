@@ -33,23 +33,21 @@ import numpy as np
 
 # Direct BLAS/LAPACK imports for maximum performance
 try:
-    from scipy.linalg.blas import (
-        daxpy,  # y ← αx + y
-        dcopy,  # y ← x
-        ddot,  # x·y
-        dgemm,  # C ← αAB + βC
-        dgemv,  # y ← αAx + βy
-        dger,  # A ← αxyᵀ + A
-        dnrm2,  # ||x||₂
-        dscal,  # x ← αx
-        dsymm,  # C ← αAB + βC (symmetric matrix multiply)
-        dsyrk,  # C ← αAAᵀ + βC (symmetric rank-k update)
-    )
+    from scipy.linalg.blas import daxpy  # y ← αx + y
+    from scipy.linalg.blas import dcopy  # y ← x
+    from scipy.linalg.blas import ddot  # x·y
+    from scipy.linalg.blas import dgemm  # C ← αAB + βC
+    from scipy.linalg.blas import dgemv  # y ← αAx + βy
+    from scipy.linalg.blas import dger  # A ← αxyᵀ + A
+    from scipy.linalg.blas import dnrm2  # ||x||₂
+    from scipy.linalg.blas import dscal  # x ← αx
+    from scipy.linalg.blas import dsymm  # C ← αAB + βC (symmetric matrix multiply)
+    from scipy.linalg.blas import dsyrk  # C ← αAAᵀ + βC (symmetric rank-k update)
+    from scipy.linalg.lapack import dgesvd  # Singular Value Decomposition
+    from scipy.linalg.lapack import dgetrf  # LU decomposition with pivoting
+    from scipy.linalg.lapack import dgetrs  # Solve using LU factors
+    from scipy.linalg.lapack import dpotrf  # Cholesky decomposition
     from scipy.linalg.lapack import (
-        dgesvd,  # Singular Value Decomposition
-        dgetrf,  # LU decomposition with pivoting
-        dgetrs,  # Solve using LU factors
-        dpotrf,  # Cholesky decomposition
         dpotrs,  # Decomposition routines; Solve using Cholesky factors
     )
 
@@ -64,10 +62,8 @@ except ImportError:
 
 # Import existing kernels for comparison
 try:
-    from .kernels import (
-        compute_chi_squared_batch_numba,
-        solve_least_squares_batch_numba,
-    )
+    from .kernels import compute_chi_squared_batch_numba
+    from .kernels import solve_least_squares_batch_numba
 
     EXISTING_KERNELS_AVAILABLE = True
 except ImportError:

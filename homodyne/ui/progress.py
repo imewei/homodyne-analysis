@@ -19,24 +19,23 @@ import sys
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from typing import Any
 
 try:
     from rich.console import Console
     from rich.live import Live
-    from rich.progress import (
-        BarColumn,
-        MofNCompleteColumn,
-        Progress,
-        SpinnerColumn,
-        TaskID,
-        TextColumn,
-        TimeElapsedColumn,
-        TimeRemainingColumn,
-        TransferSpeedColumn,
-    )
+    from rich.progress import BarColumn
+    from rich.progress import MofNCompleteColumn
+    from rich.progress import Progress
+    from rich.progress import SpinnerColumn
+    from rich.progress import TaskID
+    from rich.progress import TextColumn
+    from rich.progress import TimeElapsedColumn
+    from rich.progress import TimeRemainingColumn
+    from rich.progress import TransferSpeedColumn
 
     # from rich.text import Text  # Unused currently
 

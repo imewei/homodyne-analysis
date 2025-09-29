@@ -31,12 +31,18 @@ import subprocess
 import sys
 import time
 import warnings
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 # Import existing monitoring components
-from .integrated_monitoring import IntegratedPerformanceMonitor, StructuralOptimizationMetrics
+from .integrated_monitoring import IntegratedPerformanceMonitor
+from .integrated_monitoring import StructuralOptimizationMetrics
 
 
 @dataclass

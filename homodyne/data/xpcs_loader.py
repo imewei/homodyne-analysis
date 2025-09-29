@@ -169,6 +169,7 @@ class XPCSDataLoader:
         # Check for numpy (should always be available, but validate version)
         try:
             import numpy as np
+
             # Check minimum numpy version for scientific computing
             np_version = tuple(map(int, np.__version__.split('.')[:2]))
             if np_version < (1, 20):

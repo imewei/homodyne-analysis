@@ -12,14 +12,17 @@ import pickle
 import sqlite3
 import threading
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 try:
-    from .core import CompletionContext, CompletionResult
+    from .core import CompletionContext
+    from .core import CompletionResult
 except ImportError:
-    from core import CompletionContext, CompletionResult
+    from core import CompletionContext
+    from core import CompletionResult
 
 
 @dataclass
