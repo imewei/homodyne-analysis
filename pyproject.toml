@@ -433,8 +433,6 @@ ignore = [
 [tool.ruff.lint.flake8-unused-arguments]
 ignore-variadic-names = true
 
-[tool.ruff.lint.flake8-pie]
-# PIE rules help detect unnecessary code patterns
 
 [tool.ruff.lint.pylint]
 max-args = 12  # Allow up to 12 arguments for scientific functions

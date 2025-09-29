@@ -110,7 +110,7 @@ repos:
       - id: black
         name: format-python-code
         description: "Format Python code with Black"
-        args: [--line-length=88, --target-version=py312]
+        args: [--line-length=88, --target-version=py313]
         types_or: [python, pyi]
         require_serial: true
 
@@ -279,7 +279,7 @@ repos:
 
 # Language versions
 default_language_version:
-  python: python3.12
+  python: python3.13
   node: "18"
 
 # Performance and behavior optimization

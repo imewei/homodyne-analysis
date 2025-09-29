@@ -42,24 +42,31 @@ Institution: Argonne National Laboratory
 import importlib
 
 # Enhanced lazy loading implementation for performance optimization
-from typing import TYPE_CHECKING, Any
-
-# Import the advanced lazy loading system
-from .core.lazy_imports import HeavyDependencyLoader, scientific_deps
+from typing import TYPE_CHECKING
+from typing import Any
 
 # Import initialization optimizer for startup performance
 from .core.initialization_optimizer import get_initialization_optimizer
 
+# Import the advanced lazy loading system
+from .core.lazy_imports import HeavyDependencyLoader
+from .core.lazy_imports import scientific_deps
+
 # Type checking imports (no runtime cost)
 if TYPE_CHECKING:
     from .analysis.core import HomodyneAnalysisCore
-    from .config import TEMPLATE_FILES, get_config_dir, get_template_path
-    from .core.config import ConfigManager, performance_monitor
+    from .config import TEMPLATE_FILES
+    from .config import get_config_dir
+    from .config import get_template_path
+    from .core.config import ConfigManager
+    from .core.config import performance_monitor
     from .optimization.classical import ClassicalOptimizer
-    from .optimization.robust import RobustHomodyneOptimizer, create_robust_optimizer
+    from .optimization.robust import RobustHomodyneOptimizer
+    from .optimization.robust import create_robust_optimizer
     from .performance import PerformanceMonitor
     from .visualization.enhanced_plotting import EnhancedPlottingManager
-    from .visualization.plotting import get_plot_config, plot_c2_heatmaps
+    from .visualization.plotting import get_plot_config
+    from .visualization.plotting import plot_c2_heatmaps
 
 # Essential imports only (fast loading)
 
