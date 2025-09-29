@@ -9,14 +9,7 @@ of classical and robust optimization methods, including result processing and
 validation.
 """
 
-import argparse
 import logging
-from pathlib import Path
-from typing import Any
-
-import numpy as np
-
-from .utils import MockResult
 
 # Module-level logger
 logger = logging.getLogger(__name__)
@@ -113,13 +106,15 @@ def run_classical_optimization(
             logger.error("❌ Classical optimization failed to find parameters")
             return None
 
-        logger.info(f"✓ Classical optimization completed successfully")
+        logger.info("✓ Classical optimization completed successfully")
         logger.info(f"✓ Final chi-squared: {result.fun:.6f}")
         logger.info(f"✓ Optimization success: {result.success}")
 
         # Log parameters
-        param_names = analyzer.config.get("parameter_names", [f"p{i}" for i in range(len(result.x))])
-        for i, (name, value) in enumerate(zip(param_names, result.x)):
+        param_names = analyzer.config.get(
+            "parameter_names", [f"p{i}" for i in range(len(result.x))]
+        )
+        for i, (name, value) in enumerate(zip(param_names, result.x, strict=False)):
             logger.info(f"✓ {name}: {value:.6f}")
 
         return {
@@ -133,6 +128,7 @@ def run_classical_optimization(
     except Exception as e:
         logger.error(f"❌ Classical optimization failed: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         return None
 
@@ -248,11 +244,17 @@ def run_robust_optimization(
             logger.error("❌ Robust optimization failed to find parameters")
             return None
 
-        logger.info(f"✓ Final chi-squared: {chi_squared:.6f}" if chi_squared else "✓ Optimization completed")
+        logger.info(
+            f"✓ Final chi-squared: {chi_squared:.6f}"
+            if chi_squared
+            else "✓ Optimization completed"
+        )
 
         # Log parameters
-        param_names = analyzer.config.get("parameter_names", [f"p{i}" for i in range(len(parameters))])
-        for i, (name, value) in enumerate(zip(param_names, parameters)):
+        param_names = analyzer.config.get(
+            "parameter_names", [f"p{i}" for i in range(len(parameters))]
+        )
+        for i, (name, value) in enumerate(zip(param_names, parameters, strict=False)):
             logger.info(f"✓ {name}: {value:.6f}")
 
         return {
@@ -266,6 +268,7 @@ def run_robust_optimization(
     except Exception as e:
         logger.error(f"❌ Robust optimization failed: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
         return None
 

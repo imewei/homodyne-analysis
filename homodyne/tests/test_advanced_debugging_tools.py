@@ -16,15 +16,12 @@ import sys
 import time
 import traceback
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import numpy as np
 import psutil
@@ -35,26 +32,28 @@ warnings.filterwarnings("ignore")
 @dataclass
 class DebugEvent:
     """Debug event data structure."""
+
     timestamp: float
     event_type: str
     function_name: str
     line_number: int
     filename: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     memory_usage: float
-    execution_time: Optional[float] = None
-    error_info: Optional[str] = None
+    execution_time: float | None = None
+    error_info: str | None = None
 
 
 @dataclass
 class DiagnosticReport:
     """Diagnostic analysis report."""
+
     report_type: str
     severity: str
     description: str
-    affected_components: List[str]
-    recommendations: List[str]
-    debugging_info: Dict[str, Any]
+    affected_components: list[str]
+    recommendations: list[str]
+    debugging_info: dict[str, Any]
 
 
 class AdvancedDebugger:
@@ -81,16 +80,16 @@ class AdvancedDebugger:
     def _trace_calls(self, frame, event, arg):
         """Trace function calls and returns."""
         if not self.trace_enabled:
-            return
+            return None
 
-        if event in ['call', 'return', 'exception']:
+        if event in ["call", "return", "exception"]:
             filename = frame.f_code.co_filename
             function_name = frame.f_code.co_name
             line_number = frame.f_lineno
 
             # Skip internal Python files
-            if '/lib/python' in filename or '/site-packages/' in filename:
-                return
+            if "/lib/python" in filename or "/site-packages/" in filename:
+                return None
 
             # Get current memory usage
             process = psutil.Process()
@@ -100,14 +99,18 @@ class AdvancedDebugger:
             variables = {}
             try:
                 local_vars = frame.f_locals
-                for key, value in list(local_vars.items())[:10]:  # Limit to 10 variables
+                for key, value in list(local_vars.items())[
+                    :10
+                ]:  # Limit to 10 variables
                     try:
                         # Convert to JSON-serializable format
                         if isinstance(value, (int, float, str, bool, type(None))):
                             variables[key] = value
                         elif isinstance(value, (list, tuple)) and len(value) < 10:
-                            variables[key] = str(value)[:100]  # Truncate long representations
-                        elif hasattr(value, '__class__'):
+                            variables[key] = str(value)[
+                                :100
+                            ]  # Truncate long representations
+                        elif hasattr(value, "__class__"):
                             variables[key] = f"<{value.__class__.__name__}>"
                         else:
                             variables[key] = str(type(value))
@@ -117,7 +120,7 @@ class AdvancedDebugger:
                 variables = {}
 
             error_info = None
-            if event == 'exception' and arg:
+            if event == "exception" and arg:
                 error_info = f"{arg[0].__name__}: {arg[1]}"
 
             debug_event = DebugEvent(
@@ -128,7 +131,7 @@ class AdvancedDebugger:
                 filename=filename,
                 variables=variables,
                 memory_usage=memory_usage,
-                error_info=error_info
+                error_info=error_info,
             )
 
             self.debug_events.append(debug_event)
@@ -145,6 +148,7 @@ class AdvancedDebugger:
 
     def debug_decorator(self, func_name: str = None):
         """Decorator for debugging specific functions."""
+
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -159,7 +163,7 @@ class AdvancedDebugger:
                     line_number=func.__code__.co_firstlineno,
                     filename=func.__code__.co_filename,
                     variables={"args": str(args)[:100], "kwargs": str(kwargs)[:100]},
-                    memory_usage=psutil.Process().memory_info().rss / 1024 / 1024
+                    memory_usage=psutil.Process().memory_info().rss / 1024 / 1024,
                 )
                 self.debug_events.append(entry_event)
 
@@ -176,7 +180,7 @@ class AdvancedDebugger:
                         filename=func.__code__.co_filename,
                         variables={"result_type": str(type(result))},
                         memory_usage=psutil.Process().memory_info().rss / 1024 / 1024,
-                        execution_time=execution_time
+                        execution_time=execution_time,
                     )
                     self.debug_events.append(exit_event)
 
@@ -195,23 +199,30 @@ class AdvancedDebugger:
                         variables={"exception": str(e)},
                         memory_usage=psutil.Process().memory_info().rss / 1024 / 1024,
                         execution_time=execution_time,
-                        error_info=str(e)
+                        error_info=str(e),
                     )
                     self.debug_events.append(error_event)
 
                     raise
 
             return wrapper
+
         return decorator
 
-    def get_debug_summary(self) -> Dict[str, Any]:
+    def get_debug_summary(self) -> dict[str, Any]:
         """Get debugging session summary."""
         if not self.debug_events:
             return {"message": "No debug events recorded"}
 
         # Analyze events
-        function_calls = [e for e in self.debug_events if e.event_type in ['call', 'function_entry']]
-        exceptions = [e for e in self.debug_events if e.event_type in ['exception', 'function_exception']]
+        function_calls = [
+            e for e in self.debug_events if e.event_type in ["call", "function_entry"]
+        ]
+        exceptions = [
+            e
+            for e in self.debug_events
+            if e.event_type in ["exception", "function_exception"]
+        ]
 
         # Memory usage analysis
         memory_usage = [e.memory_usage for e in self.debug_events]
@@ -228,18 +239,17 @@ class AdvancedDebugger:
                         "call_count": 0,
                         "total_time": 0,
                         "avg_time": 0,
-                        "max_time": 0
+                        "max_time": 0,
                     }
 
                 function_stats[func_name]["call_count"] += 1
                 function_stats[func_name]["total_time"] += event.execution_time
                 function_stats[func_name]["max_time"] = max(
-                    function_stats[func_name]["max_time"],
-                    event.execution_time
+                    function_stats[func_name]["max_time"], event.execution_time
                 )
                 function_stats[func_name]["avg_time"] = (
-                    function_stats[func_name]["total_time"] /
-                    function_stats[func_name]["call_count"]
+                    function_stats[func_name]["total_time"]
+                    / function_stats[func_name]["call_count"]
                 )
 
         return {
@@ -249,17 +259,17 @@ class AdvancedDebugger:
             "memory_usage": {
                 "max_mb": max_memory,
                 "min_mb": min_memory,
-                "range_mb": max_memory - min_memory
+                "range_mb": max_memory - min_memory,
             },
             "function_performance": function_stats,
             "recent_exceptions": [
                 {
                     "function": e.function_name,
                     "error": e.error_info,
-                    "timestamp": e.timestamp
+                    "timestamp": e.timestamp,
                 }
                 for e in exceptions[-5:]  # Last 5 exceptions
-            ]
+            ],
         }
 
 
@@ -270,7 +280,7 @@ class DiagnosticAnalyzer:
         self.diagnostic_reports = []
         self.system_metrics = {}
 
-    def analyze_performance_bottlenecks(self) -> List[DiagnosticReport]:
+    def analyze_performance_bottlenecks(self) -> list[DiagnosticReport]:
         """Analyze performance bottlenecks."""
         reports = []
 
@@ -279,7 +289,7 @@ class DiagnosticAnalyzer:
             self._test_cpu_intensive_operations,
             self._test_memory_intensive_operations,
             self._test_io_operations,
-            self._test_algorithm_complexity
+            self._test_algorithm_complexity,
         ]
 
         for test_func in bottleneck_tests:
@@ -292,7 +302,7 @@ class DiagnosticAnalyzer:
                         description=test_result["description"],
                         affected_components=test_result["components"],
                         recommendations=test_result["recommendations"],
-                        debugging_info=test_result["debug_info"]
+                        debugging_info=test_result["debug_info"],
                     )
                     reports.append(report)
             except Exception as e:
@@ -302,13 +312,13 @@ class DiagnosticAnalyzer:
                     description=f"Failed to run diagnostic test: {e}",
                     affected_components=["diagnostic_system"],
                     recommendations=["Review diagnostic test implementation"],
-                    debugging_info={"error": str(e)}
+                    debugging_info={"error": str(e)},
                 )
                 reports.append(error_report)
 
         return reports
 
-    def _test_cpu_intensive_operations(self) -> Dict[str, Any]:
+    def _test_cpu_intensive_operations(self) -> dict[str, Any]:
         """Test CPU-intensive operations."""
         import numpy as np
 
@@ -325,26 +335,32 @@ class DiagnosticAnalyzer:
         max_time = 1.0  # 1 second for 300x300 matrix multiplication
 
         issues = execution_time > max_time
-        severity = "high" if execution_time > max_time * 2 else "medium" if issues else "low"
+        severity = (
+            "high" if execution_time > max_time * 2 else "medium" if issues else "low"
+        )
 
         return {
             "issues": issues,
             "severity": severity,
             "description": f"Matrix multiplication took {execution_time:.3f}s (threshold: {max_time}s)",
             "components": ["numpy", "linear_algebra"],
-            "recommendations": [
-                "Use optimized BLAS libraries",
-                "Consider using smaller matrix sizes",
-                "Implement chunked processing for large matrices"
-            ] if issues else [],
+            "recommendations": (
+                [
+                    "Use optimized BLAS libraries",
+                    "Consider using smaller matrix sizes",
+                    "Implement chunked processing for large matrices",
+                ]
+                if issues
+                else []
+            ),
             "debug_info": {
                 "execution_time": execution_time,
                 "matrix_size": size,
-                "threshold": max_time
-            }
+                "threshold": max_time,
+            },
         }
 
-    def _test_memory_intensive_operations(self) -> Dict[str, Any]:
+    def _test_memory_intensive_operations(self) -> dict[str, Any]:
         """Test memory-intensive operations."""
         process = psutil.Process()
         initial_memory = process.memory_info().rss / 1024 / 1024
@@ -366,7 +382,9 @@ class DiagnosticAnalyzer:
 
         # Memory efficiency threshold
         efficiency_threshold = 0.7
-        memory_efficiency = memory_released / memory_increase if memory_increase > 0 else 1.0
+        memory_efficiency = (
+            memory_released / memory_increase if memory_increase > 0 else 1.0
+        )
 
         issues = memory_efficiency < efficiency_threshold
         severity = "high" if memory_efficiency < 0.5 else "medium" if issues else "low"
@@ -376,69 +394,83 @@ class DiagnosticAnalyzer:
             "severity": severity,
             "description": f"Memory efficiency: {memory_efficiency:.2f} (threshold: {efficiency_threshold})",
             "components": ["memory_management", "garbage_collection"],
-            "recommendations": [
-                "Review memory allocation patterns",
-                "Implement explicit memory cleanup",
-                "Use memory pooling for large objects"
-            ] if issues else [],
+            "recommendations": (
+                [
+                    "Review memory allocation patterns",
+                    "Implement explicit memory cleanup",
+                    "Use memory pooling for large objects",
+                ]
+                if issues
+                else []
+            ),
             "debug_info": {
                 "initial_memory_mb": initial_memory,
                 "peak_memory_mb": peak_memory,
                 "final_memory_mb": final_memory,
-                "memory_efficiency": memory_efficiency
-            }
+                "memory_efficiency": memory_efficiency,
+            },
         }
 
-    def _test_io_operations(self) -> Dict[str, Any]:
+    def _test_io_operations(self) -> dict[str, Any]:
         """Test I/O operations."""
         import tempfile
 
         # Test file I/O performance
         data = "test data " * 10000  # ~90KB of data
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             temp_filename = f.name
 
         try:
             # Write test
             start_time = time.perf_counter()
-            with open(temp_filename, 'w') as f:
+            with open(temp_filename, "w") as f:
                 f.write(data)
             write_time = time.perf_counter() - start_time
 
             # Read test
             start_time = time.perf_counter()
-            with open(temp_filename, 'r') as f:
+            with open(temp_filename) as f:
                 read_data = f.read()
             read_time = time.perf_counter() - start_time
 
             # Performance thresholds
             max_write_time = 0.1  # 100ms
-            max_read_time = 0.1   # 100ms
+            max_read_time = 0.1  # 100ms
 
             write_issues = write_time > max_write_time
             read_issues = read_time > max_read_time
             issues = write_issues or read_issues
 
-            severity = "high" if (write_time > max_write_time * 2 or read_time > max_read_time * 2) else "medium" if issues else "low"
+            severity = (
+                "high"
+                if (write_time > max_write_time * 2 or read_time > max_read_time * 2)
+                else "medium"
+                if issues
+                else "low"
+            )
 
             return {
                 "issues": issues,
                 "severity": severity,
                 "description": f"I/O performance - Write: {write_time:.3f}s, Read: {read_time:.3f}s",
                 "components": ["file_io", "disk_operations"],
-                "recommendations": [
-                    "Use buffered I/O for large files",
-                    "Consider asynchronous I/O operations",
-                    "Implement file caching strategies"
-                ] if issues else [],
+                "recommendations": (
+                    [
+                        "Use buffered I/O for large files",
+                        "Consider asynchronous I/O operations",
+                        "Implement file caching strategies",
+                    ]
+                    if issues
+                    else []
+                ),
                 "debug_info": {
                     "write_time": write_time,
                     "read_time": read_time,
                     "data_size": len(data),
                     "write_threshold": max_write_time,
-                    "read_threshold": max_read_time
-                }
+                    "read_threshold": max_read_time,
+                },
             }
 
         finally:
@@ -448,7 +480,7 @@ class DiagnosticAnalyzer:
             except:
                 pass
 
-    def _test_algorithm_complexity(self) -> Dict[str, Any]:
+    def _test_algorithm_complexity(self) -> dict[str, Any]:
         """Test algorithm complexity."""
         # Test sorting algorithm performance
         import random
@@ -465,37 +497,51 @@ class DiagnosticAnalyzer:
             times.append(execution_time)
 
         # Check scaling (should be roughly O(n log n) for good sorting)
-        scaling_factor = times[-1] / times[0] if times[0] > 0 else float('inf')
+        scaling_factor = times[-1] / times[0] if times[0] > 0 else float("inf")
         expected_scaling = (sizes[-1] / sizes[0]) * np.log(sizes[-1] / sizes[0])
 
-        complexity_efficiency = scaling_factor / expected_scaling if expected_scaling > 0 else float('inf')
+        complexity_efficiency = (
+            scaling_factor / expected_scaling if expected_scaling > 0 else float("inf")
+        )
 
         # Complexity threshold
         max_complexity_ratio = 2.0
         issues = complexity_efficiency > max_complexity_ratio
 
-        severity = "high" if complexity_efficiency > max_complexity_ratio * 2 else "medium" if issues else "low"
+        severity = (
+            "high"
+            if complexity_efficiency > max_complexity_ratio * 2
+            else "medium"
+            if issues
+            else "low"
+        )
 
         return {
             "issues": issues,
             "severity": severity,
             "description": f"Algorithm complexity ratio: {complexity_efficiency:.2f} (threshold: {max_complexity_ratio})",
             "components": ["sorting_algorithms", "algorithm_complexity"],
-            "recommendations": [
-                "Review algorithm choices for better complexity",
-                "Consider using specialized data structures",
-                "Implement algorithmic optimizations"
-            ] if issues else [],
+            "recommendations": (
+                [
+                    "Review algorithm choices for better complexity",
+                    "Consider using specialized data structures",
+                    "Implement algorithmic optimizations",
+                ]
+                if issues
+                else []
+            ),
             "debug_info": {
                 "scaling_factor": scaling_factor,
                 "expected_scaling": expected_scaling,
                 "complexity_efficiency": complexity_efficiency,
                 "execution_times": times,
-                "data_sizes": sizes
-            }
+                "data_sizes": sizes,
+            },
         }
 
-    def analyze_error_patterns(self, debug_events: List[DebugEvent]) -> List[DiagnosticReport]:
+    def analyze_error_patterns(
+        self, debug_events: list[DebugEvent]
+    ) -> list[DiagnosticReport]:
         """Analyze error patterns from debug events."""
         reports = []
 
@@ -508,7 +554,11 @@ class DiagnosticAnalyzer:
         # Group exceptions by type
         exception_groups = {}
         for event in exceptions:
-            error_type = event.error_info.split(":")[0] if ":" in event.error_info else event.error_info
+            error_type = (
+                event.error_info.split(":")[0]
+                if ":" in event.error_info
+                else event.error_info
+            )
             if error_type not in exception_groups:
                 exception_groups[error_type] = []
             exception_groups[error_type].append(event)
@@ -526,20 +576,22 @@ class DiagnosticAnalyzer:
                     recommendations=[
                         f"Review error handling for {error_type}",
                         "Add input validation",
-                        "Implement graceful error recovery"
+                        "Implement graceful error recovery",
                     ],
                     debugging_info={
                         "error_type": error_type,
                         "occurrence_count": len(events),
                         "affected_functions": affected_functions,
-                        "timestamps": [e.timestamp for e in events]
-                    }
+                        "timestamps": [e.timestamp for e in events],
+                    },
                 )
                 reports.append(report)
 
         return reports
 
-    def analyze_memory_leaks(self, debug_events: List[DebugEvent]) -> List[DiagnosticReport]:
+    def analyze_memory_leaks(
+        self, debug_events: list[DebugEvent]
+    ) -> list[DiagnosticReport]:
         """Analyze potential memory leaks."""
         reports = []
 
@@ -558,7 +610,11 @@ class DiagnosticAnalyzer:
         sum_x2 = sum(x[i] ** 2 for i in range(n))
 
         # Calculate slope (memory growth rate)
-        slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2) if (n * sum_x2 - sum_x ** 2) != 0 else 0
+        slope = (
+            (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x**2)
+            if (n * sum_x2 - sum_x**2) != 0
+            else 0
+        )
 
         # Memory leak threshold (MB per event)
         leak_threshold = 0.1
@@ -573,15 +629,15 @@ class DiagnosticAnalyzer:
                     "Review object lifecycle management",
                     "Check for circular references",
                     "Implement explicit cleanup procedures",
-                    "Use memory profiling tools for detailed analysis"
+                    "Use memory profiling tools for detailed analysis",
                 ],
                 debugging_info={
                     "memory_growth_rate": slope,
                     "initial_memory": memory_usage[0],
                     "final_memory": memory_usage[-1],
                     "total_growth": memory_usage[-1] - memory_usage[0],
-                    "event_count": len(debug_events)
-                }
+                    "event_count": len(debug_events),
+                },
             )
             reports.append(report)
 
@@ -627,12 +683,12 @@ class ErrorTracker:
             "error_message": str(error),
             "traceback": traceback.format_exc(),
             "execution_time": time.time() - start_time,
-            "memory_usage": psutil.Process().memory_info().rss / 1024 / 1024
+            "memory_usage": psutil.Process().memory_info().rss / 1024 / 1024,
         }
 
         self.error_log.append(error_info)
 
-    def get_error_analysis(self) -> Dict[str, Any]:
+    def get_error_analysis(self) -> dict[str, Any]:
         """Get comprehensive error analysis."""
         if not self.error_log:
             return {"message": "No errors logged"}
@@ -651,16 +707,12 @@ class ErrorTracker:
 
         # Find most common errors
         common_errors = sorted(
-            error_types.items(),
-            key=lambda x: len(x[1]),
-            reverse=True
+            error_types.items(), key=lambda x: len(x[1]), reverse=True
         )[:5]
 
         # Recent errors
         recent_errors = sorted(
-            self.error_log,
-            key=lambda x: x["timestamp"],
-            reverse=True
+            self.error_log, key=lambda x: x["timestamp"], reverse=True
         )[:10]
 
         return {
@@ -670,7 +722,7 @@ class ErrorTracker:
                 {
                     "error_type": error_type,
                     "count": len(errors),
-                    "percentage": (len(errors) / total_errors) * 100
+                    "percentage": (len(errors) / total_errors) * 100,
                 }
                 for error_type, errors in common_errors
             ],
@@ -679,11 +731,11 @@ class ErrorTracker:
                     "timestamp": error["timestamp"],
                     "context": error["context"],
                     "error_type": error["error_type"],
-                    "message": error["error_message"][:100]  # Truncate long messages
+                    "message": error["error_message"][:100],  # Truncate long messages
                 }
                 for error in recent_errors
             ],
-            "error_contexts": list(set(error["context"] for error in self.error_log))
+            "error_contexts": list(set(error["context"] for error in self.error_log)),
         }
 
 
@@ -705,12 +757,13 @@ def run_advanced_debugging_tools():
         """Sample function for debugging."""
         if x < 0:
             raise ValueError("x must be non-negative")
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     @debugger.debug_decorator("matrix_operation")
     def matrix_operation():
         """Sample matrix operation."""
         import numpy as np
+
         A = np.random.rand(100, 100)
         B = np.random.rand(100, 100)
         return A @ B
@@ -747,22 +800,34 @@ def run_advanced_debugging_tools():
         "debugging_summary": debug_summary,
         "error_analysis": error_analysis,
         "diagnostic_reports": {
-            "performance_bottlenecks": [asdict(report) for report in performance_reports],
+            "performance_bottlenecks": [
+                asdict(report) for report in performance_reports
+            ],
             "error_patterns": [asdict(report) for report in error_pattern_reports],
-            "memory_leaks": [asdict(report) for report in memory_leak_reports]
+            "memory_leaks": [asdict(report) for report in memory_leak_reports],
         },
         "summary_statistics": {
             "total_debug_events": len(debugger.debug_events),
-            "total_diagnostic_reports": len(performance_reports) + len(error_pattern_reports) + len(memory_leak_reports),
-            "high_severity_issues": len([r for r in performance_reports + error_pattern_reports + memory_leak_reports if r.severity == "high"]),
-            "total_errors_tracked": len(error_tracker.error_log)
+            "total_diagnostic_reports": len(performance_reports)
+            + len(error_pattern_reports)
+            + len(memory_leak_reports),
+            "high_severity_issues": len(
+                [
+                    r
+                    for r in performance_reports
+                    + error_pattern_reports
+                    + memory_leak_reports
+                    if r.severity == "high"
+                ]
+            ),
+            "total_errors_tracked": len(error_tracker.error_log),
         },
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     # Display summary
     stats = comprehensive_report["summary_statistics"]
-    print(f"\nDEBUGGING AND DIAGNOSTIC SUMMARY:")
+    print("\nDEBUGGING AND DIAGNOSTIC SUMMARY:")
     print(f"  Debug Events Captured: {stats['total_debug_events']}")
     print(f"  Diagnostic Reports Generated: {stats['total_diagnostic_reports']}")
     print(f"  High Severity Issues: {stats['high_severity_issues']}")
@@ -770,17 +835,17 @@ def run_advanced_debugging_tools():
 
     # Display diagnostic results
     if performance_reports:
-        print(f"\nPERFORMANCE BOTTLENECKS:")
+        print("\nPERFORMANCE BOTTLENECKS:")
         for report in performance_reports:
             print(f"  • {report.description} (Severity: {report.severity})")
 
     if error_pattern_reports:
-        print(f"\nERROR PATTERNS:")
+        print("\nERROR PATTERNS:")
         for report in error_pattern_reports:
             print(f"  • {report.description} (Severity: {report.severity})")
 
     if memory_leak_reports:
-        print(f"\nMEMORY ISSUES:")
+        print("\nMEMORY ISSUES:")
         for report in memory_leak_reports:
             print(f"  • {report.description} (Severity: {report.severity})")
 
@@ -789,11 +854,11 @@ def run_advanced_debugging_tools():
     results_dir.mkdir(exist_ok=True)
 
     results_file = results_dir / "task_5_3_advanced_debugging_report.json"
-    with open(results_file, 'w') as f:
+    with open(results_file, "w") as f:
         json.dump(comprehensive_report, f, indent=2)
 
     print(f"\n📄 Debugging report saved to: {results_file}")
-    print(f"✅ Task 5.3 Advanced Debugging Tools Complete!")
+    print("✅ Task 5.3 Advanced Debugging Tools Complete!")
     print(f"🔍 {stats['total_debug_events']} debug events captured")
     print(f"📋 {stats['total_diagnostic_reports']} diagnostic reports generated")
     print(f"⚠️  {stats['high_severity_issues']} high severity issues identified")

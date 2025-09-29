@@ -1,12 +1,14 @@
 # Import Verification and Startup Performance Test Infrastructure
 
-This directory contains comprehensive test infrastructure for validating import usage and monitoring startup performance in the homodyne package.
+This directory contains comprehensive test infrastructure for validating import usage
+and monitoring startup performance in the homodyne package.
 
 ## 📁 Files Overview
 
 ### Core Test Files
 
 1. **`test_import_verification.py`**
+
    - Comprehensive import verification tests
    - Detects unused imports across the entire codebase
    - Validates import dependency chains
@@ -14,6 +16,7 @@ This directory contains comprehensive test infrastructure for validating import 
    - Tests import structure consistency
 
 2. **`test_startup_performance.py`**
+
    - Startup timing benchmarks and regression tests
    - Memory usage monitoring during imports
    - Lazy loading effectiveness tests
@@ -23,12 +26,14 @@ This directory contains comprehensive test infrastructure for validating import 
 ### Utility Scripts
 
 3. **`import_analyzer.py`** *(executable)*
+
    - Standalone import analysis utility
    - Can be run independently for import cleanup
    - Generates automated cleanup scripts
    - Supports external tool integration (autoflake, unimport)
 
 4. **`establish_baselines.py`** *(executable)*
+
    - Creates performance baselines for regression testing
    - Measures current import performance
    - Compares with historical baselines
@@ -37,6 +42,7 @@ This directory contains comprehensive test infrastructure for validating import 
 ## 🚀 Quick Start
 
 ### Run All Import Verification Tests
+
 ```bash
 # Run import verification tests
 python -m pytest homodyne/tests/test_import_verification.py -v
@@ -46,6 +52,7 @@ python -m pytest homodyne/tests/test_import_verification.py::TestImportVerificat
 ```
 
 ### Run Startup Performance Tests
+
 ```bash
 # Run all startup performance tests
 python -m pytest homodyne/tests/test_startup_performance.py -m performance -v
@@ -55,6 +62,7 @@ python -m pytest homodyne/tests/test_startup_performance.py::TestStartupPerforma
 ```
 
 ### Analyze Imports with Standalone Utility
+
 ```bash
 # Quick analysis (check only)
 python homodyne/tests/import_analyzer.py --check-only
@@ -70,6 +78,7 @@ python homodyne/tests/import_analyzer.py --output import_analysis.json
 ```
 
 ### Establish Performance Baselines
+
 ```bash
 # Create initial baselines
 python homodyne/tests/establish_baselines.py
@@ -125,21 +134,18 @@ python -m pytest -k "import" -v
 
 Current performance expectations:
 
-| Metric | Threshold | Description |
-|--------|-----------|-------------|
-| Basic import time | < 2.0s | `import homodyne` |
-| Warm import time | < 0.01s | Already loaded modules |
-| Memory usage | < 50MB | Basic import memory delta |
-| Lazy loading overhead | < 5x | Accessing lazy objects vs basic import |
-| Stage import time | < 3.0s | Each progressive loading stage |
+| Metric | Threshold | Description | |--------|-----------|-------------| | Basic import
+time | < 2.0s | `import homodyne` | | Warm import time | < 0.01s | Already loaded
+modules | | Memory usage | < 50MB | Basic import memory delta | | Lazy loading overhead
+| < 5x | Accessing lazy objects vs basic import | | Stage import time | < 3.0s | Each
+progressive loading stage |
 
 ### Memory Usage Limits
 
-| Component | Memory Limit | Description |
-|-----------|-------------|-------------|
-| Basic import | 50MB | Memory delta for `import homodyne` |
-| Core modules | 25MB | Individual core module imports |
-| Total peak | 500MB | Maximum process memory during tests |
+| Component | Memory Limit | Description | |-----------|-------------|-------------| |
+Basic import | 50MB | Memory delta for `import homodyne` | | Core modules | 25MB |
+Individual core module imports | | Total peak | 500MB | Maximum process memory during
+tests |
 
 ## 📈 Baseline Management
 
@@ -263,16 +269,19 @@ python homodyne/tests/establish_baselines.py
 ### Common Issues
 
 1. **Import test failures**:
+
    - Check for recently added unused imports
    - Verify all imports are actually needed
    - Consider if imports are used in ways the AST parser doesn't detect
 
 2. **Performance test failures**:
+
    - Run on a quiet system (no background processes)
    - Check if new dependencies were added
    - Verify test environment is consistent
 
 3. **False positives in unused imports**:
+
    - Some imports may be needed for side effects
    - Type checking imports may appear unused
    - Add to allowed exceptions in test configuration
@@ -335,7 +344,7 @@ When adding new tests:
 3. Add documentation for new test capabilities
 4. Update baseline establishment script if needed
 
----
+______________________________________________________________________
 
 ## 🏆 Success Criteria
 
@@ -349,4 +358,5 @@ This test infrastructure ensures:
 - ✅ **No circular dependencies** in import chains
 - ✅ **Consistent import structure** across the package
 
-This infrastructure provides the foundation for maintaining clean, efficient import structure and fast startup performance in the homodyne package.
+This infrastructure provides the foundation for maintaining clean, efficient import
+structure and fast startup performance in the homodyne package.

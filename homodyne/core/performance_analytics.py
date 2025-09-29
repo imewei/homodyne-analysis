@@ -47,7 +47,6 @@ Institution: Argonne National Laboratory
 
 import json
 import logging
-import statistics
 import threading
 import time
 from collections import defaultdict

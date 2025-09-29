@@ -42,12 +42,12 @@ class TestCalculateChiSquaredEquivalence:
             "analyzer_parameters": {
                 "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 11},
                 "angular": {"phi_angles": "0,45,90,135"},
-                "experimental": {"data_path": "/mock/path"}
+                "experimental": {"data_path": "/mock/path"},
             },
             "initial_parameters": {
                 "parameter_names": ["D0", "alpha", "beta", "gamma_dot_t0", "phi0"],
-                "values": [1e-11, 0.5, -0.3, 0.01, 2.0]
-            }
+                "values": [1e-11, 0.5, -0.3, 0.01, 2.0],
+            },
         }
 
         # Mock the configuration manager
@@ -57,7 +57,9 @@ class TestCalculateChiSquaredEquivalence:
 
         # Mock analysis methods
         analyzer.is_static_mode.return_value = False
-        analyzer.calculate_c2_single_angle_optimized.return_value = np.random.rand(10, 10)
+        analyzer.calculate_c2_single_angle_optimized.return_value = np.random.rand(
+            10, 10
+        )
 
         return analyzer
 
@@ -83,12 +85,7 @@ class TestCalculateChiSquaredEquivalence:
     def test_angle_processing_equivalence(self, mock_analyzer):
         """Test that angle processing produces consistent results."""
         # Test different angle configurations
-        angle_configs = [
-            "0,45,90,135",
-            "0,30,60,90,120,150",
-            "custom",
-            None
-        ]
+        angle_configs = ["0,45,90,135", "0,30,60,90,120,150", "custom", None]
 
         for angles in angle_configs:
             if angles == "custom":
@@ -155,10 +152,10 @@ class TestCalculateChiSquaredEquivalence:
         # Test various error conditions
         error_cases = [
             (None, "phi_angles", "c2_exp"),  # None parameters
-            ("params", None, "c2_exp"),      # None phi_angles
+            ("params", None, "c2_exp"),  # None phi_angles
             ("params", "phi_angles", None),  # None c2_exp
             (np.array([]), "phi_angles", "c2_exp"),  # Empty parameters
-            ("params", np.array([]), "c2_exp"),      # Empty phi_angles
+            ("params", np.array([]), "c2_exp"),  # Empty phi_angles
             (np.array([np.inf]), "phi_angles", "c2_exp"),  # Non-finite parameters
         ]
 
@@ -168,18 +165,14 @@ class TestCalculateChiSquaredEquivalence:
 
             try:
                 # Simulate error detection logic
-                if params is None or phi_angles is None or c2_exp is None:
-                    error_detected = True
-                elif hasattr(params, '__len__') and len(params) == 0:
-                    error_detected = True
-                elif hasattr(phi_angles, '__len__') and len(phi_angles) == 0:
-                    error_detected = True
-                elif hasattr(params, 'dtype') and not np.all(np.isfinite(params)):
+                if params is None or phi_angles is None or c2_exp is None or (hasattr(params, "__len__") and len(params) == 0) or (hasattr(phi_angles, "__len__") and len(phi_angles) == 0) or (hasattr(params, "dtype") and not np.all(np.isfinite(params))):
                     error_detected = True
             except Exception:
                 error_detected = True
 
-            assert error_detected, f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
+            assert error_detected, (
+                f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
+            )
 
         print("✓ Error handling equivalence verified")
 
@@ -194,19 +187,16 @@ class TestRunAnalysisEquivalence:
             "analyzer_parameters": {
                 "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 11},
                 "angular": {"phi_angles": "0,45,90,135"},
-                "experimental": {"data_path": "/mock/path"}
+                "experimental": {"data_path": "/mock/path"},
             },
             "initial_parameters": {
                 "parameter_names": ["D0", "alpha", "beta"],
-                "values": [1e-11, 0.5, -0.3]
+                "values": [1e-11, 0.5, -0.3],
             },
-            "output": {
-                "base_filename": "test_output",
-                "save_results": True
-            }
+            "output": {"base_filename": "test_output", "save_results": True},
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             return f.name
 
@@ -216,7 +206,7 @@ class TestRunAnalysisEquivalence:
         config_path = Path(temp_config_file)
         assert config_path.exists()
 
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             config = json.load(f)
 
         # Verify required sections exist
@@ -237,14 +227,12 @@ class TestRunAnalysisEquivalence:
         base_config = {
             "analyzer_parameters": {
                 "temporal": {"dt": 0.1},
-                "angular": {"phi_angles": "0,45,90,135"}
+                "angular": {"phi_angles": "0,45,90,135"},
             }
         }
 
         override_config = {
-            "analyzer_parameters": {
-                "temporal": {"dt": 0.05}  # Override dt
-            }
+            "analyzer_parameters": {"temporal": {"dt": 0.05}}  # Override dt
         }
 
         # Test override logic
@@ -263,7 +251,10 @@ class TestRunAnalysisEquivalence:
 
         # Verify override worked
         assert merged_config["analyzer_parameters"]["temporal"]["dt"] == 0.05
-        assert merged_config["analyzer_parameters"]["angular"]["phi_angles"] == "0,45,90,135"
+        assert (
+            merged_config["analyzer_parameters"]["angular"]["phi_angles"]
+            == "0,45,90,135"
+        )
 
         print("✓ Configuration override equivalence verified")
 
@@ -275,7 +266,7 @@ class TestRunAnalysisEquivalence:
         initialization_params = [
             {"method": "classical", "static_isotropic": False},
             {"method": "robust", "static_isotropic": True},
-            {"method": "all", "laminar_flow": True}
+            {"method": "all", "laminar_flow": True},
         ]
 
         for params in initialization_params:
@@ -304,7 +295,7 @@ class TestPlotSimulatedDataEquivalence:
             "phi_angles": np.array([0, 45, 90, 135]),
             "t1": np.linspace(0, 1, n_time),
             "t2": np.linspace(0, 1, n_time),
-            "parameters": np.array([1e-11, 0.5, -0.3])
+            "parameters": np.array([1e-11, 0.5, -0.3]),
         }
 
     def test_data_validation_equivalence(self, mock_plot_data):
@@ -379,7 +370,7 @@ class TestGurobiOptimizationEquivalence:
             "initial_params": np.array([1.0, 2.0, 3.0]),
             "bounds": [(-10, 10), (-10, 10), (-10, 10)],
             "tolerance": 1e-6,
-            "max_iterations": 100
+            "max_iterations": 100,
         }
 
     def test_gurobi_options_equivalence(self, mock_optimization_data):
@@ -389,11 +380,11 @@ class TestGurobiOptimizationEquivalence:
         # Test option configuration
         gurobi_options = {
             "OutputFlag": 0,  # Suppress output
-            "Method": 2,      # Barrier method
-            "Threads": 1,     # Single thread
-            "NumericFocus": 3, # High numeric focus
+            "Method": 2,  # Barrier method
+            "Threads": 1,  # Single thread
+            "NumericFocus": 3,  # High numeric focus
             "FeasibilityTol": data["tolerance"],
-            "OptimalityTol": data["tolerance"]
+            "OptimalityTol": data["tolerance"],
         }
 
         # Verify option consistency
@@ -420,7 +411,9 @@ class TestGurobiOptimizationEquivalence:
             x_plus[i] += eps
             x_minus[i] -= eps
 
-            grad_numerical[i] = (objective_func(x_plus) - objective_func(x_minus)) / (2 * eps)
+            grad_numerical[i] = (objective_func(x_plus) - objective_func(x_minus)) / (
+                2 * eps
+            )
 
         # Analytical gradient for f(x) = sum(x^2) is 2*x
         grad_analytical = 2 * x
@@ -471,12 +464,12 @@ class TestNumericalAccuracyValidation:
         # Test various precision scenarios
         test_values = [
             1e-15,  # Very small positive
-            1e15,   # Very large positive
-            -1e-15, # Very small negative
+            1e15,  # Very large positive
+            -1e-15,  # Very small negative
             -1e15,  # Very large negative
             np.pi,  # Irrational number
-            np.e,   # Another irrational
-            1.0/3.0,  # Repeating decimal
+            np.e,  # Another irrational
+            1.0 / 3.0,  # Repeating decimal
         ]
 
         for value in test_values:
@@ -510,7 +503,9 @@ class TestNumericalAccuracyValidation:
             identity_test = A @ A_inv
             expected_identity = np.eye(n)
 
-            np.testing.assert_allclose(identity_test, expected_identity, rtol=1e-10, atol=1e-14)
+            np.testing.assert_allclose(
+                identity_test, expected_identity, rtol=1e-10, atol=1e-14
+            )
 
         print("✓ Matrix operation accuracy verified")
 
@@ -528,7 +523,7 @@ class TestNumericalAccuracyValidation:
 
         # Test variance calculation consistency
         var1 = np.var(data, ddof=0)
-        var2 = np.mean((data - mean1)**2)
+        var2 = np.mean((data - mean1) ** 2)
 
         np.testing.assert_allclose(var1, var2, rtol=1e-12)
 
@@ -542,9 +537,9 @@ class TestNumericalAccuracyValidation:
 
         # Manual trapezoidal integration
         integral_manual = 0.5 * (y[0] + y[-1])
-        for i in range(1, len(y)-1):
+        for i in range(1, len(y) - 1):
             integral_manual += y[i]
-        integral_manual *= (x[1] - x[0])
+        integral_manual *= x[1] - x[0]
 
         # NumPy trapezoidal integration
         integral_numpy = np.trapz(y, x)
@@ -569,7 +564,7 @@ def run_behavioral_equivalence_validation():
         TestRunAnalysisEquivalence,
         TestPlotSimulatedDataEquivalence,
         TestGurobiOptimizationEquivalence,
-        TestNumericalAccuracyValidation
+        TestNumericalAccuracyValidation,
     ]
 
     total_tests = 0
@@ -580,15 +575,16 @@ def run_behavioral_equivalence_validation():
         test_instance = test_class()
 
         # Get all test methods
-        test_methods = [method for method in dir(test_instance)
-                       if method.startswith('test_')]
+        test_methods = [
+            method for method in dir(test_instance) if method.startswith("test_")
+        ]
 
         for method_name in test_methods:
             try:
                 test_method = getattr(test_instance, method_name)
 
                 # Handle fixtures
-                if hasattr(test_class, method_name.replace('test_', '') + '_fixture'):
+                if hasattr(test_class, method_name.replace("test_", "") + "_fixture"):
                     # Skip methods that require pytest fixtures
                     continue
 

@@ -15,9 +15,9 @@ Institution: Argonne National Laboratory
 import importlib
 import logging
 import threading
+from collections.abc import Callable
 from contextlib import contextmanager
 from typing import Any
-from typing import Callable
 from typing import TypeVar
 
 # Thread-safe lazy loading
@@ -35,7 +35,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 class LazyImportError(ImportError):
     """Custom exception for lazy import failures."""
-    pass
+
 
 
 class HeavyDependencyLoader:
@@ -50,8 +50,13 @@ class HeavyDependencyLoader:
     - Startup overhead minimization
     """
 
-    def __init__(self, module_name: str, attribute: str | None = None,
-                 fallback: Any = None, required: bool = True):
+    def __init__(
+        self,
+        module_name: str,
+        attribute: str | None = None,
+        fallback: Any = None,
+        required: bool = True,
+    ):
         """
         Initialize heavy dependency loader.
 
@@ -101,7 +106,9 @@ class HeavyDependencyLoader:
                 )
             if hasattr(self.fallback, name):
                 return getattr(self.fallback, name)
-            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+            raise AttributeError(
+                f"'{self.__class__.__name__}' has no attribute '{name}'"
+            )
 
         return getattr(obj, name)
 
@@ -134,15 +141,20 @@ class HeavyDependencyLoader:
         try:
             import sys
             import time
+
             start_time = time.perf_counter()
 
             logger.debug(f"Loading heavy dependency: {self.module_name}")
 
             # Special handling for test environments where modules are disabled
             # Check if module is explicitly disabled (common pattern: sys.modules['module'] = None)
-            if (self.module_name in sys.modules and
-                sys.modules[self.module_name] is None):
-                raise ImportError(f"Module '{self.module_name}' is disabled in test environment")
+            if (
+                self.module_name in sys.modules
+                and sys.modules[self.module_name] is None
+            ):
+                raise ImportError(
+                    f"Module '{self.module_name}' is disabled in test environment"
+                )
 
             # Import the module
             if self.module_name.startswith("."):
@@ -163,7 +175,9 @@ class HeavyDependencyLoader:
 
             # Final check: ensure the object is not None
             if obj is None and self.fallback is None:
-                raise ImportError(f"Attribute '{self.attribute}' in '{self.module_name}' is None")
+                raise ImportError(
+                    f"Attribute '{self.attribute}' in '{self.module_name}' is None"
+                )
 
             # Cache the result
             self._cached_object = obj
@@ -181,11 +195,16 @@ class HeavyDependencyLoader:
             _IMPORT_SUCCESS[self._cache_key] = False
 
             if self.required:
-                logger.error(f"Failed to load required dependency '{self.module_name}': {e}")
-                raise LazyImportError(f"Required dependency '{self.module_name}' failed to load") from e
-            else:
-                logger.warning(f"Optional dependency '{self.module_name}' not available: {e}")
-                self._cached_object = self.fallback
+                logger.error(
+                    f"Failed to load required dependency '{self.module_name}': {e}"
+                )
+                raise LazyImportError(
+                    f"Required dependency '{self.module_name}' failed to load"
+                ) from e
+            logger.warning(
+                f"Optional dependency '{self.module_name}' not available: {e}"
+            )
+            self._cached_object = self.fallback
 
         except Exception as e:
             _IMPORT_SUCCESS[self._cache_key] = False
@@ -193,8 +212,7 @@ class HeavyDependencyLoader:
 
             if self.required:
                 raise LazyImportError(f"Failed to load '{self.module_name}'") from e
-            else:
-                self._cached_object = self.fallback
+            self._cached_object = self.fallback
 
     @property
     def is_available(self) -> bool:
@@ -204,8 +222,8 @@ class HeavyDependencyLoader:
 
         # Special handling for test environments where modules are disabled
         import sys
-        if (self.module_name in sys.modules and
-            sys.modules[self.module_name] is None):
+
+        if self.module_name in sys.modules and sys.modules[self.module_name] is None:
             return False
 
         # Quick availability check without full import
@@ -331,6 +349,7 @@ cvxpy = scientific_deps.get("cvxpy")
 def import_timing():
     """Context manager for timing import operations."""
     import time
+
     start_time = time.perf_counter()
     try:
         yield
@@ -357,9 +376,13 @@ def get_import_performance_report() -> dict[str, Any]:
             "total_imports": total_imports,
             "successful_imports": successful_imports,
             "failed_imports": total_imports - successful_imports,
-            "success_rate": successful_imports / total_imports if total_imports > 0 else 0.0,
+            "success_rate": (
+                successful_imports / total_imports if total_imports > 0 else 0.0
+            ),
             "total_load_time": total_load_time,
-            "average_load_time": total_load_time / total_imports if total_imports > 0 else 0.0,
+            "average_load_time": (
+                total_load_time / total_imports if total_imports > 0 else 0.0
+            ),
         },
         "individual_imports": {
             key: {
@@ -369,9 +392,7 @@ def get_import_performance_report() -> dict[str, Any]:
             for key in set(_IMPORT_TIMES.keys()) | set(_IMPORT_SUCCESS.keys())
         },
         "slowest_imports": sorted(
-            _IMPORT_TIMES.items(),
-            key=lambda x: x[1],
-            reverse=True
+            _IMPORT_TIMES.items(), key=lambda x: x[1], reverse=True
         )[:5],
     }
 

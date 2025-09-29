@@ -24,6 +24,7 @@ warnings.filterwarnings("ignore")
 @dataclass
 class OptimizationResult:
     """Results of optimization."""
+
     method: str
     execution_time: float
     speedup_factor: float
@@ -60,7 +61,7 @@ class VectorizationOptimizer:
         return {
             "means": np.mean(data_batch, axis=-1),
             "stds": np.std(data_batch, axis=-1),
-            "vars": np.var(data_batch, axis=-1)
+            "vars": np.var(data_batch, axis=-1),
         }
 
     @staticmethod
@@ -73,7 +74,7 @@ class VectorizationOptimizer:
         return {
             "products": products,
             "traces": np.trace(matrices, axis1=1, axis2=2),
-            "determinants": np.linalg.det(matrices)
+            "determinants": np.linalg.det(matrices),
         }
 
 
@@ -87,7 +88,7 @@ class ThreadingOptimizer:
         """Parallel chi-squared calculation using threads."""
         with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
             futures = []
-            for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list):
+            for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list, strict=False):
                 future = executor.submit(compute_chi_squared_single, c2_exp, c2_theo)
                 futures.append(future)
 
@@ -126,7 +127,7 @@ class PerformanceBenchmarker:
         # Loop-based calculation
         start_time = time.perf_counter()
         loop_results = []
-        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list):
+        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list, strict=False):
             chi2 = compute_chi_squared_single(c2_exp, c2_theo)
             loop_results.append(chi2)
         loop_time = time.perf_counter() - start_time
@@ -147,7 +148,9 @@ class PerformanceBenchmarker:
             "loop_time": loop_time,
             "vectorized_time": vectorized_time,
             "speedup": speedup,
-            "accuracy_preserved": np.allclose(loop_results, vectorized_results, rtol=1e-10)
+            "accuracy_preserved": np.allclose(
+                loop_results, vectorized_results, rtol=1e-10
+            ),
         }
 
     def benchmark_threading_speedup(self):
@@ -162,7 +165,7 @@ class PerformanceBenchmarker:
         # Serial execution
         start_time = time.perf_counter()
         serial_results = []
-        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list):
+        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list, strict=False):
             result = compute_chi_squared_single(c2_exp, c2_theo)
             serial_results.append(result)
         serial_time = time.perf_counter() - start_time
@@ -173,7 +176,9 @@ class PerformanceBenchmarker:
             threading_optimizer = ThreadingOptimizer(num_threads)
 
             start_time = time.perf_counter()
-            threaded_results = threading_optimizer.parallel_chi_squared(c2_exp_list, c2_theo_list)
+            threaded_results = threading_optimizer.parallel_chi_squared(
+                c2_exp_list, c2_theo_list
+            )
             threaded_time = time.perf_counter() - start_time
 
             speedup = serial_time / threaded_time if threaded_time > 0 else 0
@@ -183,7 +188,9 @@ class PerformanceBenchmarker:
                 "time": threaded_time,
                 "speedup": speedup,
                 "efficiency": efficiency,
-                "accuracy_preserved": np.allclose(serial_results, threaded_results, rtol=1e-10)
+                "accuracy_preserved": np.allclose(
+                    serial_results, threaded_results, rtol=1e-10
+                ),
             }
 
         return thread_results
@@ -201,11 +208,7 @@ class PerformanceBenchmarker:
         start_time = time.perf_counter()
         loop_stats = []
         for data in data_list:
-            stats = {
-                "mean": np.mean(data),
-                "std": np.std(data),
-                "var": np.var(data)
-            }
+            stats = {"mean": np.mean(data), "std": np.std(data), "var": np.var(data)}
             loop_stats.append(stats)
         loop_time = time.perf_counter() - start_time
 
@@ -213,7 +216,9 @@ class PerformanceBenchmarker:
         data_batch = np.array(data_list)
 
         start_time = time.perf_counter()
-        vectorized_stats = VectorizationOptimizer.vectorized_statistical_operations(data_batch)
+        vectorized_stats = VectorizationOptimizer.vectorized_statistical_operations(
+            data_batch
+        )
         vectorized_time = time.perf_counter() - start_time
 
         speedup = loop_time / vectorized_time if vectorized_time > 0 else 0
@@ -226,7 +231,7 @@ class PerformanceBenchmarker:
             "loop_time": loop_time,
             "vectorized_time": vectorized_time,
             "speedup": speedup,
-            "accuracy_preserved": accuracy
+            "accuracy_preserved": accuracy,
         }
 
     def benchmark_matrix_operations(self):
@@ -246,14 +251,16 @@ class PerformanceBenchmarker:
             result = {
                 "product": matrix @ matrix.T,
                 "trace": np.trace(matrix),
-                "determinant": np.linalg.det(matrix)
+                "determinant": np.linalg.det(matrix),
             }
             loop_results.append(result)
         loop_time = time.perf_counter() - start_time
 
         # Vectorized matrix operations
         start_time = time.perf_counter()
-        vectorized_results = VectorizationOptimizer.vectorized_matrix_operations(matrices)
+        vectorized_results = VectorizationOptimizer.vectorized_matrix_operations(
+            matrices
+        )
         vectorized_time = time.perf_counter() - start_time
 
         speedup = loop_time / vectorized_time if vectorized_time > 0 else 0
@@ -266,7 +273,7 @@ class PerformanceBenchmarker:
             "loop_time": loop_time,
             "vectorized_time": vectorized_time,
             "speedup": speedup,
-            "accuracy_preserved": accuracy
+            "accuracy_preserved": accuracy,
         }
 
     def run_comprehensive_benchmark(self):
@@ -300,15 +307,17 @@ def generate_optimization_report(results):
     # Vectorization results
     if "vectorization" in results:
         vec_data = results["vectorization"]
-        report_lines.append(f"\nVECTORIZATION OPTIMIZATION:")
+        report_lines.append("\nVECTORIZATION OPTIMIZATION:")
         report_lines.append(f"  Speedup: {vec_data['speedup']:.2f}x")
         report_lines.append(f"  Loop time: {vec_data['loop_time']:.4f}s")
         report_lines.append(f"  Vectorized time: {vec_data['vectorized_time']:.4f}s")
-        report_lines.append(f"  Accuracy preserved: {'✓' if vec_data['accuracy_preserved'] else '✗'}")
+        report_lines.append(
+            f"  Accuracy preserved: {'✓' if vec_data['accuracy_preserved'] else '✗'}"
+        )
 
     # Threading results
     if "threading" in results:
-        report_lines.append(f"\nTHREADING OPTIMIZATION:")
+        report_lines.append("\nTHREADING OPTIMIZATION:")
         for thread_config, data in results["threading"].items():
             num_threads = thread_config.split("_")[1]
             report_lines.append(f"  {num_threads} threads:")
@@ -319,16 +328,20 @@ def generate_optimization_report(results):
     # Statistical operations
     if "statistical" in results:
         stats_data = results["statistical"]
-        report_lines.append(f"\nSTATISTICAL OPERATIONS:")
+        report_lines.append("\nSTATISTICAL OPERATIONS:")
         report_lines.append(f"  Speedup: {stats_data['speedup']:.2f}x")
-        report_lines.append(f"  Accuracy preserved: {'✓' if stats_data['accuracy_preserved'] else '✗'}")
+        report_lines.append(
+            f"  Accuracy preserved: {'✓' if stats_data['accuracy_preserved'] else '✗'}"
+        )
 
     # Matrix operations
     if "matrix_operations" in results:
         matrix_data = results["matrix_operations"]
-        report_lines.append(f"\nMATRIX OPERATIONS:")
+        report_lines.append("\nMATRIX OPERATIONS:")
         report_lines.append(f"  Speedup: {matrix_data['speedup']:.2f}x")
-        report_lines.append(f"  Accuracy preserved: {'✓' if matrix_data['accuracy_preserved'] else '✗'}")
+        report_lines.append(
+            f"  Accuracy preserved: {'✓' if matrix_data['accuracy_preserved'] else '✗'}"
+        )
 
     # Calculate overall statistics
     speedups = []
@@ -342,7 +355,7 @@ def generate_optimization_report(results):
     if speedups:
         avg_speedup = np.mean(speedups)
         max_speedup = np.max(speedups)
-        report_lines.append(f"\nOVERALL PERFORMANCE:")
+        report_lines.append("\nOVERALL PERFORMANCE:")
         report_lines.append(f"  Average speedup: {avg_speedup:.2f}x")
         report_lines.append(f"  Maximum speedup: {max_speedup:.2f}x")
 
@@ -368,19 +381,23 @@ def run_simple_vectorization_suite():
 
     # Save JSON results
     json_file = results_dir / "task_4_5_simple_vectorization_results.json"
-    with open(json_file, 'w') as f:
-        json.dump({
-            "optimization_results": results,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "summary": {
-                "techniques_tested": list(results.keys()),
-                "total_benchmarks": len(results)
-            }
-        }, f, indent=2)
+    with open(json_file, "w") as f:
+        json.dump(
+            {
+                "optimization_results": results,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "summary": {
+                    "techniques_tested": list(results.keys()),
+                    "total_benchmarks": len(results),
+                },
+            },
+            f,
+            indent=2,
+        )
 
     # Save text report
     report_file = results_dir / "task_4_5_simple_vectorization_report.txt"
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         f.write(report)
 
     print(f"\n📄 Results saved to: {json_file}")
@@ -398,7 +415,7 @@ def run_simple_vectorization_suite():
     avg_speedup = np.mean(speedups) if speedups else 0
     max_speedup = np.max(speedups) if speedups else 0
 
-    print(f"\n✅ Task 4.5 Vectorization and Threading Complete!")
+    print("\n✅ Task 4.5 Vectorization and Threading Complete!")
     print(f"🚀 Average speedup achieved: {avg_speedup:.2f}x")
     print(f"🎯 Maximum speedup achieved: {max_speedup:.2f}x")
     print(f"⚡ {len(results)} optimization techniques tested")

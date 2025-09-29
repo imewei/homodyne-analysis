@@ -49,10 +49,10 @@ import pickle
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
 from typing import Any
-from typing import Callable
 
 import numpy as np
 

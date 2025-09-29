@@ -59,7 +59,6 @@ class CompletionPlugin(ABC):
     @abstractmethod
     def info(self) -> PluginInfo:
         """Plugin information and metadata."""
-        pass
 
     @abstractmethod
     def can_complete(self, context: CompletionContext) -> bool:
@@ -72,7 +71,6 @@ class CompletionPlugin(ABC):
         Returns:
             True if plugin can provide completions, False otherwise
         """
-        pass
 
     @abstractmethod
     def complete(self, context: CompletionContext) -> list[CompletionResult]:
@@ -85,7 +83,6 @@ class CompletionPlugin(ABC):
         Returns:
             List of completion results
         """
-        pass
 
     def initialize(self) -> bool:
         """
@@ -99,7 +96,6 @@ class CompletionPlugin(ABC):
     @abstractmethod
     def cleanup(self) -> None:
         """Cleanup plugin resources. Called when plugin is unloaded."""
-        pass
 
     @property
     def enabled(self) -> bool:
@@ -133,9 +129,9 @@ class HomodyneCommandPlugin(CompletionPlugin):
         """Complete homodyne commands."""
         if context.command == "homodyne":
             return self._complete_homodyne(context)
-        elif context.command == "homodyne-config":
+        if context.command == "homodyne-config":
             return self._complete_homodyne_config(context)
-        elif context.command == "homodyne-gpu":
+        if context.command == "homodyne-gpu":
             return self._complete_homodyne_gpu(context)
         return []
 
@@ -294,7 +290,7 @@ class HomodyneCommandPlugin(CompletionPlugin):
             mode = context.homodyne_config.get("mode", "").lower()
             if "static" in mode:
                 return ["vi", "hybrid"]  # VI better for static cases
-            elif "laminar" in mode:
+            if "laminar" in mode:
                 return ["mcmc", "hybrid"]  # MCMC better for dynamic cases
 
         return default_methods

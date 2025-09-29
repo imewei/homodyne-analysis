@@ -31,15 +31,15 @@ if NUMBA_AVAILABLE:
         numba_module = scientific_deps.get("numba")
 
         # Extract specific components
-        jit = getattr(numba_module, "jit")
-        njit = getattr(numba_module, "njit")
-        prange = getattr(numba_module, "prange")
-        float64 = getattr(numba_module, "float64")
-        int64 = getattr(numba_module, "int64")
-        types = getattr(numba_module, "types")
+        jit = numba_module.jit
+        njit = numba_module.njit
+        prange = numba_module.prange
+        float64 = numba_module.float64
+        int64 = numba_module.int64
+        types = numba_module.types
 
         try:
-            Tuple = getattr(types, "Tuple")  # type: ignore[attr-defined]
+            Tuple = types.Tuple  # type: ignore[attr-defined]
         except AttributeError:
             # Fallback for older numba versions
             Tuple = getattr(types, "UniTuple", types.Tuple)  # type: ignore[union-attr]
@@ -239,7 +239,7 @@ def _compute_sinc_squared_single(x):
     # Use np.sinc which computes the normalized sinc: sin(πx)/(πx)
     # This matches the matrix version implementation and test expectations
     sinc_val = np.sinc(x)
-    return sinc_val ** 2
+    return sinc_val**2
 
 
 def memory_efficient_cache(maxsize=128):
@@ -310,7 +310,7 @@ def memory_efficient_cache(maxsize=128):
             result = func(*args, **kwargs)
 
             # Manage cache size
-            if len(cache) >= maxsize and maxsize > 0:
+            if len(cache) >= maxsize > 0:
                 # Remove 25% of least-accessed items
                 items_to_remove = maxsize // 4
                 sorted_items = sorted(access_count.items(), key=lambda x: x[1])
@@ -358,9 +358,8 @@ def memory_efficient_cache(maxsize=128):
                 """Support instance methods by implementing descriptor protocol."""
                 if instance is None:
                     return self
-                else:
-                    # Return a bound method
-                    return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
+                # Return a bound method
+                return lambda *args, **kwargs: self._func(instance, *args, **kwargs)
 
         return CachedFunction(wrapper)
 
@@ -579,7 +578,12 @@ def refresh_kernel_functions():
     bool
         True if Numba kernels are now available, False if using fallback functions
     """
-    global create_time_integral_matrix_numba, calculate_diffusion_coefficient_numba, calculate_shear_rate_numba, compute_g1_correlation_numba, compute_sinc_squared_numba
+    global \
+        create_time_integral_matrix_numba, \
+        calculate_diffusion_coefficient_numba, \
+        calculate_shear_rate_numba, \
+        compute_g1_correlation_numba, \
+        compute_sinc_squared_numba
 
     # Re-check numba availability
     current_numba_available = _check_numba_availability()
@@ -590,9 +594,9 @@ def refresh_kernel_functions():
             numba_module = scientific_deps.get("numba")
 
             # Extract specific components
-            jit = getattr(numba_module, "jit")
-            njit = getattr(numba_module, "njit")
-            float64 = getattr(numba_module, "float64")
+            jit = numba_module.jit
+            njit = numba_module.njit
+            float64 = numba_module.float64
 
             # Recreate JIT-compiled functions
             create_time_integral_matrix_numba = njit(
@@ -658,7 +662,9 @@ def refresh_kernel_functions():
     return False
 
 
-def compute_g1_correlation_legacy(t1, t2, phi, q, D0, alpha, D_offset, gamma0, beta, gamma_offset, phi0):
+def compute_g1_correlation_legacy(
+    t1, t2, phi, q, D0, alpha, D_offset, gamma0, beta, gamma_offset, phi0
+):
     """
     Legacy compatibility wrapper for compute_g1_correlation_numba.
 
@@ -699,10 +705,14 @@ def compute_g1_correlation_legacy(t1, t2, phi, q, D0, alpha, D_offset, gamma0, b
 
     if abs(alpha - (-1.0)) < 1e-10:
         # Special case for alpha = -1 (logarithmic)
-        diffusion_integral = D0 * (np.log(t_max) - np.log(t_min)) + D_offset * (t_max - t_min)
+        diffusion_integral = D0 * (np.log(t_max) - np.log(t_min)) + D_offset * (
+            t_max - t_min
+        )
     else:
         # General case
-        diffusion_integral = (D0 / (alpha + 1)) * (t_max**(alpha + 1) - t_min**(alpha + 1)) + D_offset * (t_max - t_min)
+        diffusion_integral = (D0 / (alpha + 1)) * (
+            t_max ** (alpha + 1) - t_min ** (alpha + 1)
+        ) + D_offset * (t_max - t_min)
 
     # Diffusion contribution: g1_diff = exp(-q²/2 * diffusion_integral)
     g1_diff = np.exp(-0.5 * q**2 * diffusion_integral)
@@ -714,10 +724,14 @@ def compute_g1_correlation_legacy(t1, t2, phi, q, D0, alpha, D_offset, gamma0, b
 
         if abs(beta - (-1.0)) < 1e-10:
             # Special case for beta = -1 (logarithmic)
-            shear_integral = gamma0 * (np.log(t_max) - np.log(t_min)) + gamma_offset * (t_max - t_min)
+            shear_integral = gamma0 * (np.log(t_max) - np.log(t_min)) + gamma_offset * (
+                t_max - t_min
+            )
         else:
             # General case
-            shear_integral = (gamma0 / (beta + 1)) * (t_max**(beta + 1) - t_min**(beta + 1)) + gamma_offset * (t_max - t_min)
+            shear_integral = (gamma0 / (beta + 1)) * (
+                t_max ** (beta + 1) - t_min ** (beta + 1)
+            ) + gamma_offset * (t_max - t_min)
 
         # Characteristic length L
         # For XPCS experiments, typical gap sizes are 10-100 μm
@@ -744,6 +758,7 @@ def compute_g1_correlation_legacy(t1, t2, phi, q, D0, alpha, D_offset, gamma0, b
 # Save the matrix version of compute_sinc_squared for internal use
 _compute_sinc_squared_matrix_numba = compute_sinc_squared_numba
 
+
 # Create a flexible wrapper that handles both single values and matrices
 def compute_sinc_squared_numba_flexible(x, prefactor=None):
     """
@@ -761,14 +776,14 @@ def compute_sinc_squared_numba_flexible(x, prefactor=None):
     float or np.ndarray
         sinc²(x) result
     """
-    if prefactor is not None or isinstance(x, np.ndarray) and x.ndim > 0:
+    if prefactor is not None or (isinstance(x, np.ndarray) and x.ndim > 0):
         # Matrix version: compute_sinc_squared_numba(matrix, prefactor)
         if prefactor is None:
             prefactor = 1.0
         return _compute_sinc_squared_matrix_numba(x, prefactor)
-    else:
-        # Single value version
-        return _compute_sinc_squared_single(x)
+    # Single value version
+    return _compute_sinc_squared_single(x)
+
 
 # Export the legacy function as the main API function for g1
 compute_g1_correlation_numba = compute_g1_correlation_legacy
@@ -797,7 +812,7 @@ def calculate_diffusion_coefficient_numba(t, D0, alpha, D_offset):
     float
         D(t) = D0 * t^alpha + D_offset
     """
-    D_t = D0 * (t ** alpha) + D_offset
+    D_t = D0 * (t**alpha) + D_offset
     return max(D_t, 1e-10)  # Ensure minimum value for physical validity
 
 
@@ -821,7 +836,7 @@ def calculate_shear_rate_numba(t, gamma0, beta, gamma_offset):
     float
         gamma_dot(t) = gamma0 * t^beta + gamma_offset
     """
-    gamma_t = gamma0 * (t ** beta) + gamma_offset
+    gamma_t = gamma0 * (t**beta) + gamma_offset
     return max(gamma_t, 0.0)  # Shear rate must be non-negative
 
 
@@ -848,12 +863,18 @@ def get_kernel_info() -> dict[str, Any]:
     }
 
     # Add signature information if available
-    if hasattr(create_time_integral_matrix_numba, 'signatures'):
+    if hasattr(create_time_integral_matrix_numba, "signatures"):
         info["function_signatures"] = {
-            "create_time_integral_matrix_numba": len(create_time_integral_matrix_numba.signatures),
-            "calculate_diffusion_coefficient_numba": len(calculate_diffusion_coefficient_numba.signatures),
+            "create_time_integral_matrix_numba": len(
+                create_time_integral_matrix_numba.signatures
+            ),
+            "calculate_diffusion_coefficient_numba": len(
+                calculate_diffusion_coefficient_numba.signatures
+            ),
             "calculate_shear_rate_numba": len(calculate_shear_rate_numba.signatures),
-            "compute_g1_correlation_numba": len(compute_g1_correlation_numba.signatures),
+            "compute_g1_correlation_numba": len(
+                compute_g1_correlation_numba.signatures
+            ),
             "compute_sinc_squared_numba": len(compute_sinc_squared_numba.signatures),
         }
 

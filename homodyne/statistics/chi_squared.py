@@ -85,7 +85,6 @@ except ImportError:
 
 # Numba acceleration if available
 try:
-
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
@@ -345,7 +344,6 @@ class BLASChiSquaredKernels:
                     chi_squared_batch[i] = residual_i @ weights_i @ residual_i
 
         return chi_squared_batch
-
 
     def get_operation_count(self) -> int:
         """Get the number of BLAS operations performed."""

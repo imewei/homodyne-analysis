@@ -14,12 +14,14 @@ import pytest
 
 try:
     from homodyne.optimization.classical import ClassicalOptimizer
+
     CLASSICAL_AVAILABLE = True
 except ImportError:
     CLASSICAL_AVAILABLE = False
 
 try:
     from homodyne.optimization.robust import RobustHomodyneOptimizer
+
     ROBUST_AVAILABLE = True
 except ImportError:
     ROBUST_AVAILABLE = False
@@ -57,11 +59,11 @@ class PerformanceBenchmark:
             return {}
 
         return {
-            'mean_time': np.mean(self.times),
-            'std_time': np.std(self.times),
-            'min_time': np.min(self.times),
-            'max_time': np.max(self.times),
-            'total_runs': len(self.times)
+            "mean_time": np.mean(self.times),
+            "std_time": np.std(self.times),
+            "min_time": np.min(self.times),
+            "max_time": np.max(self.times),
+            "total_runs": len(self.times),
         }
 
 
@@ -84,12 +86,16 @@ def create_mock_analysis_core():
     # Mock the load_experimental_data method to return a proper tuple
     c2_experimental = np.random.rand(3, 10, 10)
     phi_angles = np.array([0, 45, 90])
-    mock_core.load_experimental_data = Mock(return_value=(c2_experimental, 1.0, phi_angles, 3))
+    mock_core.load_experimental_data = Mock(
+        return_value=(c2_experimental, 1.0, phi_angles, 3)
+    )
 
     return mock_core
 
 
-@pytest.mark.skipif(not CLASSICAL_AVAILABLE, reason="Classical optimization not available")
+@pytest.mark.skipif(
+    not CLASSICAL_AVAILABLE, reason="Classical optimization not available"
+)
 class TestClassicalOptimizationPerformance:
     """Performance tests for classical optimization methods."""
 
@@ -102,13 +108,13 @@ class TestClassicalOptimizationPerformance:
             "experimental_parameters": {
                 "q_value": 0.1,
                 "contrast": 0.95,
-                "offset": 1.0
+                "offset": 1.0,
             },
             "analysis_parameters": {
                 "mode": "laminar_flow",
                 "method": "classical",
                 "max_iterations": 1000,
-                "tolerance": 1e-6
+                "tolerance": 1e-6,
             },
             "parameter_bounds": {
                 "D0": [1e-6, 1e-1],
@@ -117,8 +123,8 @@ class TestClassicalOptimizationPerformance:
                 "gamma0": [1e-4, 1.0],
                 "beta": [0.1, 2.0],
                 "gamma_offset": [1e-6, 1e-1],
-                "phi0": [-180, 180]
-            }
+                "phi0": [-180, 180],
+            },
         }
 
         # Create synthetic test data
@@ -128,15 +134,15 @@ class TestClassicalOptimizationPerformance:
         """Create synthetic test data for performance testing."""
         # Different data sizes for scalability testing
         self.data_sizes = {
-            'small': (8, 5, 5),      # 8 angles, 5x5 time grid
-            'medium': (16, 10, 10),  # 16 angles, 10x10 time grid
-            'large': (32, 20, 20),   # 32 angles, 20x20 time grid
+            "small": (8, 5, 5),  # 8 angles, 5x5 time grid
+            "medium": (16, 10, 10),  # 16 angles, 10x10 time grid
+            "large": (32, 20, 20),  # 32 angles, 20x20 time grid
         }
 
         self.test_datasets = {}
 
         for size_name, (n_angles, n_t1, n_t2) in self.data_sizes.items():
-            angles = np.linspace(0, 2*np.pi, n_angles, endpoint=False)
+            angles = np.linspace(0, 2 * np.pi, n_angles, endpoint=False)
             t1_array = np.linspace(0.1, 5.0, n_t1)
             t2_array = np.linspace(0.2, 5.1, n_t2)
 
@@ -149,15 +155,17 @@ class TestClassicalOptimizationPerformance:
                     for k, t2 in enumerate(t2_array):
                         dt = abs(t2 - t1)
                         # Realistic correlation with noise
-                        correlation = 0.9 * np.exp(-0.05 * dt) * (1 + 0.1 * np.cos(2*angle))
+                        correlation = (
+                            0.9 * np.exp(-0.05 * dt) * (1 + 0.1 * np.cos(2 * angle))
+                        )
                         noise = 0.01 * np.random.randn()
                         c2_data[i, j, k] = 1.0 + correlation + noise
 
             self.test_datasets[size_name] = {
-                'c2_data': c2_data,
-                'angles': angles,
-                't1_array': t1_array,
-                't2_array': t2_array
+                "c2_data": c2_data,
+                "angles": angles,
+                "t1_array": t1_array,
+                "t2_array": t2_array,
             }
 
     def test_optimization_scalability(self):
@@ -168,7 +176,7 @@ class TestClassicalOptimizationPerformance:
 
         for size_name, data in self.test_datasets.items():
             # Mock the actual optimization to focus on data handling performance
-            with patch.object(optimizer, '_run_scipy_optimization') as mock_opt:
+            with patch.object(optimizer, "_run_scipy_optimization") as mock_opt:
                 mock_result = Mock()
                 mock_result.x = [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
                 mock_result.fun = 0.5
@@ -180,39 +188,41 @@ class TestClassicalOptimizationPerformance:
                 result, exec_time = self.benchmark.measure_time(
                     optimizer.run_optimization,
                     initial_params,
-                    data['angles'],
-                    data['c2_data']
+                    data["angles"],
+                    data["c2_data"],
                 )
 
                 scalability_results[size_name] = {
-                    'time': exec_time,
-                    'data_size': np.prod(data['c2_data'].shape),
-                    'success': result.get('success', False)
+                    "time": exec_time,
+                    "data_size": np.prod(data["c2_data"].shape),
+                    "success": result.get("success", False),
                 }
 
         # Verify scalability characteristics
-        small_time = scalability_results['small']['time']
-        medium_time = scalability_results['medium']['time']
-        large_time = scalability_results['large']['time']
+        small_time = scalability_results["small"]["time"]
+        medium_time = scalability_results["medium"]["time"]
+        large_time = scalability_results["large"]["time"]
 
         # Time should scale roughly with data size (allow some overhead)
-        small_size = scalability_results['small']['data_size']
-        medium_size = scalability_results['medium']['data_size']
-        large_size = scalability_results['large']['data_size']
+        small_size = scalability_results["small"]["data_size"]
+        medium_size = scalability_results["medium"]["data_size"]
+        large_size = scalability_results["large"]["data_size"]
 
         # Check that performance scales reasonably
         medium_ratio = medium_time / small_time
         size_ratio = medium_size / small_size
 
         # Performance should not degrade more than 2x the data size ratio
-        assert medium_ratio < 2 * size_ratio, f"Performance degradation too severe: {medium_ratio} vs {size_ratio}"
+        assert medium_ratio < 2 * size_ratio, (
+            f"Performance degradation too severe: {medium_ratio} vs {size_ratio}"
+        )
 
     def test_chi_squared_calculation_performance(self):
         """Test chi-squared calculation performance."""
         optimizer = ClassicalOptimizer(create_mock_analysis_core(), self.config)
 
         # Test with medium dataset
-        data = self.test_datasets['medium']
+        data = self.test_datasets["medium"]
 
         # Test parameters
         params = np.array([1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0])
@@ -270,11 +280,13 @@ class TestClassicalOptimizationPerformance:
         optimized_time = (end_optimized - start_optimized) / n_runs
 
         # Optimized calls should be much faster than compilation
-        speedup = compile_time / optimized_time if optimized_time > 0 else float('inf')
+        speedup = compile_time / optimized_time if optimized_time > 0 else float("inf")
         assert speedup > 10, f"Numba speedup insufficient: {speedup:.1f}x"
 
         # Individual optimized calls should be very fast
-        assert optimized_time < 1e-4, f"Numba optimized call too slow: {optimized_time:.6f}s"
+        assert optimized_time < 1e-4, (
+            f"Numba optimized call too slow: {optimized_time:.6f}s"
+        )
 
     def test_memory_efficiency(self):
         """Test memory efficiency of optimization algorithms."""
@@ -288,10 +300,10 @@ class TestClassicalOptimizationPerformance:
         optimizer = ClassicalOptimizer(create_mock_analysis_core(), self.config)
 
         # Process large dataset
-        large_data = self.test_datasets['large']
+        large_data = self.test_datasets["large"]
 
         # Mock optimization to focus on memory usage
-        with patch.object(optimizer, '_run_scipy_optimization') as mock_opt:
+        with patch.object(optimizer, "_run_scipy_optimization") as mock_opt:
             mock_result = Mock()
             mock_result.x = [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
             mock_result.fun = 0.5
@@ -300,22 +312,24 @@ class TestClassicalOptimizationPerformance:
 
             # Run optimization
             result = optimizer.optimize(
-                large_data['c2_data'],
-                large_data['angles'],
-                large_data['t1_array'],
-                large_data['t2_array']
+                large_data["c2_data"],
+                large_data["angles"],
+                large_data["t1_array"],
+                large_data["t2_array"],
             )
 
             peak_memory = process.memory_info().rss / 1024 / 1024  # MB
             memory_increase = peak_memory - initial_memory
 
             # Memory increase should be reasonable (< 500 MB for large dataset)
-            assert memory_increase < 500, f"Memory usage too high: {memory_increase:.1f} MB"
+            assert memory_increase < 500, (
+                f"Memory usage too high: {memory_increase:.1f} MB"
+            )
 
     def test_convergence_performance(self):
         """Test optimization convergence performance."""
         optimizer = ClassicalOptimizer(create_mock_analysis_core(), self.config)
-        data = self.test_datasets['small']  # Use small data for faster testing
+        data = self.test_datasets["small"]  # Use small data for faster testing
 
         # Test with different tolerance levels
         tolerances = [1e-3, 1e-4, 1e-5, 1e-6]
@@ -324,48 +338,53 @@ class TestClassicalOptimizationPerformance:
         for tol in tolerances:
             # Update tolerance in config
             test_config = self.config.copy()
-            test_config['analysis_parameters']['tolerance'] = tol
+            test_config["analysis_parameters"]["tolerance"] = tol
 
             optimizer_tol = ClassicalOptimizer(create_mock_analysis_core(), test_config)
 
-            with patch.object(optimizer_tol, '_run_scipy_optimization') as mock_opt:
+            with patch.object(optimizer_tol, "_run_scipy_optimization") as mock_opt:
                 # Simulate different convergence times based on tolerance
                 def mock_optimization(*args, **kwargs):
                     # Simulate longer optimization for tighter tolerance
-                    time.sleep(0.001 / tol)  # Artificial delay proportional to tolerance
+                    time.sleep(
+                        0.001 / tol
+                    )  # Artificial delay proportional to tolerance
 
                     result = Mock()
                     result.x = [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
                     result.fun = tol * 10  # Better fit for tighter tolerance
                     result.success = True
-                    result.nit = int(1000 * (1e-6 / tol))  # More iterations for tighter tolerance
+                    result.nit = int(
+                        1000 * (1e-6 / tol)
+                    )  # More iterations for tighter tolerance
                     return result
 
                 mock_opt.side_effect = mock_optimization
 
                 start_time = time.perf_counter()
                 result = optimizer_tol.optimize(
-                    data['c2_data'],
-                    data['angles'],
-                    data['t1_array'],
-                    data['t2_array']
+                    data["c2_data"], data["angles"], data["t1_array"], data["t2_array"]
                 )
                 end_time = time.perf_counter()
 
                 convergence_results[tol] = {
-                    'time': end_time - start_time,
-                    'chi_squared': result.get('chi_squared', 0),
-                    'success': result.get('success', False)
+                    "time": end_time - start_time,
+                    "chi_squared": result.get("chi_squared", 0),
+                    "success": result.get("success", False),
                 }
 
         # Verify that tighter tolerances give better fits (lower chi-squared)
-        chi_squared_values = [convergence_results[tol]['chi_squared'] for tol in tolerances]
+        chi_squared_values = [
+            convergence_results[tol]["chi_squared"] for tol in tolerances
+        ]
 
         # Chi-squared should generally decrease with tighter tolerance
         # (allowing some noise in the mock results)
         for i in range(len(chi_squared_values) - 1):
-            ratio = chi_squared_values[i+1] / chi_squared_values[i]
-            assert ratio < 2.0, f"Chi-squared not improving with tighter tolerance: {ratio}"
+            ratio = chi_squared_values[i + 1] / chi_squared_values[i]
+            assert ratio < 2.0, (
+                f"Chi-squared not improving with tighter tolerance: {ratio}"
+            )
 
 
 @pytest.mark.skipif(not ROBUST_AVAILABLE, reason="Robust optimization not available")
@@ -380,14 +399,14 @@ class TestRobustOptimizationPerformance:
             "experimental_parameters": {
                 "q_value": 0.1,
                 "contrast": 0.95,
-                "offset": 1.0
+                "offset": 1.0,
             },
             "analysis_parameters": {
                 "mode": "laminar_flow",
                 "method": "robust",
                 "robust_method": "wasserstein_dro",
                 "uncertainty_budget": 0.1,
-                "max_iterations": 100  # Reduced for testing
+                "max_iterations": 100,  # Reduced for testing
             },
             "parameter_bounds": {
                 "D0": [1e-6, 1e-1],
@@ -396,8 +415,8 @@ class TestRobustOptimizationPerformance:
                 "gamma0": [1e-4, 1.0],
                 "beta": [0.1, 2.0],
                 "gamma_offset": [1e-6, 1e-1],
-                "phi0": [-180, 180]
-            }
+                "phi0": [-180, 180],
+            },
         }
 
         # Create test data with outliers
@@ -405,7 +424,7 @@ class TestRobustOptimizationPerformance:
 
     def create_noisy_test_data(self):
         """Create test data with outliers for robust optimization testing."""
-        angles = np.linspace(0, 2*np.pi, 8, endpoint=False)
+        angles = np.linspace(0, 2 * np.pi, 8, endpoint=False)
         t1_array = np.linspace(0.1, 3.0, 8)
         t2_array = np.linspace(0.2, 3.1, 8)
 
@@ -416,7 +435,9 @@ class TestRobustOptimizationPerformance:
             for j, t1 in enumerate(t1_array):
                 for k, t2 in enumerate(t2_array):
                     dt = abs(t2 - t1)
-                    correlation = 0.9 * np.exp(-0.1 * dt) * (1 + 0.1 * np.cos(2*angle))
+                    correlation = (
+                        0.9 * np.exp(-0.1 * dt) * (1 + 0.1 * np.cos(2 * angle))
+                    )
 
                     # Add noise and occasional outliers
                     noise = 0.02 * np.random.randn()
@@ -426,22 +447,26 @@ class TestRobustOptimizationPerformance:
                     c2_data[i, j, k] = 1.0 + correlation + noise
 
         self.noisy_data = {
-            'c2_data': c2_data,
-            'angles': angles,
-            't1_array': t1_array,
-            't2_array': t2_array
+            "c2_data": c2_data,
+            "angles": angles,
+            "t1_array": t1_array,
+            "t2_array": t2_array,
         }
 
     def test_robust_vs_classical_performance(self):
         """Compare performance of robust vs classical optimization."""
         # Test classical optimization
         classical_config = self.config.copy()
-        classical_config['analysis_parameters']['method'] = 'classical'
+        classical_config["analysis_parameters"]["method"] = "classical"
 
         try:
-            classical_optimizer = ClassicalOptimizer(create_mock_analysis_core(), classical_config)
+            classical_optimizer = ClassicalOptimizer(
+                create_mock_analysis_core(), classical_config
+            )
 
-            with patch.object(classical_optimizer, '_run_scipy_optimization') as mock_classical:
+            with patch.object(
+                classical_optimizer, "_run_scipy_optimization"
+            ) as mock_classical:
                 mock_result = Mock()
                 mock_result.x = [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
                 mock_result.fun = 0.5
@@ -450,20 +475,24 @@ class TestRobustOptimizationPerformance:
 
                 classical_result, classical_time = self.benchmark.measure_time(
                     classical_optimizer.optimize,
-                    self.noisy_data['c2_data'],
-                    self.noisy_data['angles'],
-                    self.noisy_data['t1_array'],
-                    self.noisy_data['t2_array']
+                    self.noisy_data["c2_data"],
+                    self.noisy_data["angles"],
+                    self.noisy_data["t1_array"],
+                    self.noisy_data["t2_array"],
                 )
 
         except ImportError:
             classical_time = 0.1  # Fallback for comparison
-            classical_result = {'success': True}
+            classical_result = {"success": True}
 
         # Test robust optimization
-        robust_optimizer = RobustHomodyneOptimizer(create_mock_analysis_core(), config=self.config)
+        robust_optimizer = RobustHomodyneOptimizer(
+            create_mock_analysis_core(), config=self.config
+        )
 
-        with patch.object(robust_optimizer, '_solve_robust_optimization') as mock_robust:
+        with patch.object(
+            robust_optimizer, "_solve_robust_optimization"
+        ) as mock_robust:
             mock_result = Mock()
             mock_result.x = [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
             mock_result.fun = 0.3  # Better fit due to robustness
@@ -472,21 +501,23 @@ class TestRobustOptimizationPerformance:
 
             robust_result, robust_time = self.benchmark.measure_time(
                 robust_optimizer.optimize,
-                self.noisy_data['c2_data'],
-                self.noisy_data['angles'],
-                self.noisy_data['t1_array'],
-                self.noisy_data['t2_array']
+                self.noisy_data["c2_data"],
+                self.noisy_data["angles"],
+                self.noisy_data["t1_array"],
+                self.noisy_data["t2_array"],
             )
 
         # Robust optimization may be slower but should be more robust to outliers
         if classical_time > 0:
             time_ratio = robust_time / classical_time
             # Allow robust optimization to be up to 10x slower (due to complexity)
-            assert time_ratio < 10, f"Robust optimization too slow: {time_ratio:.1f}x classical"
+            assert time_ratio < 10, (
+                f"Robust optimization too slow: {time_ratio:.1f}x classical"
+            )
 
         # Both should succeed
-        assert classical_result.get('success', False)
-        assert robust_result.get('success', False)
+        assert classical_result.get("success", False)
+        assert robust_result.get("success", False)
 
     def test_uncertainty_budget_performance(self):
         """Test performance with different uncertainty budgets."""
@@ -495,11 +526,13 @@ class TestRobustOptimizationPerformance:
 
         for budget in uncertainty_budgets:
             test_config = self.config.copy()
-            test_config['analysis_parameters']['uncertainty_budget'] = budget
+            test_config["analysis_parameters"]["uncertainty_budget"] = budget
 
-            optimizer = RobustHomodyneOptimizer(create_mock_analysis_core(), config=test_config)
+            optimizer = RobustHomodyneOptimizer(
+                create_mock_analysis_core(), config=test_config
+            )
 
-            with patch.object(optimizer, '_solve_robust_optimization') as mock_opt:
+            with patch.object(optimizer, "_solve_robust_optimization") as mock_opt:
                 # Simulate longer solving time for larger uncertainty budgets
                 def mock_solve(*args, **kwargs):
                     time.sleep(0.001 * budget * 10)  # Artificial delay
@@ -514,30 +547,34 @@ class TestRobustOptimizationPerformance:
 
                 result, exec_time = self.benchmark.measure_time(
                     optimizer.optimize,
-                    self.noisy_data['c2_data'],
-                    self.noisy_data['angles'],
-                    self.noisy_data['t1_array'],
-                    self.noisy_data['t2_array']
+                    self.noisy_data["c2_data"],
+                    self.noisy_data["angles"],
+                    self.noisy_data["t1_array"],
+                    self.noisy_data["t2_array"],
                 )
 
                 performance_results[budget] = {
-                    'time': exec_time,
-                    'chi_squared': result.get('chi_squared', 0),
-                    'success': result.get('success', False)
+                    "time": exec_time,
+                    "chi_squared": result.get("chi_squared", 0),
+                    "success": result.get("success", False),
                 }
 
         # Performance should scale reasonably with uncertainty budget
-        times = [performance_results[budget]['time'] for budget in uncertainty_budgets]
+        times = [performance_results[budget]["time"] for budget in uncertainty_budgets]
 
         # Times should generally increase with uncertainty budget
         # (allowing some variance in the mock timing)
         for i in range(len(times) - 1):
-            ratio = times[i+1] / times[i] if times[i] > 0 else 1
-            assert ratio < 5.0, f"Performance degradation too severe with uncertainty budget"
+            ratio = times[i + 1] / times[i] if times[i] > 0 else 1
+            assert ratio < 5.0, (
+                "Performance degradation too severe with uncertainty budget"
+            )
 
     def test_scenario_generation_performance(self):
         """Test performance of scenario generation for robust optimization."""
-        optimizer = RobustHomodyneOptimizer(create_mock_analysis_core(), config=self.config)
+        optimizer = RobustHomodyneOptimizer(
+            create_mock_analysis_core(), config=self.config
+        )
 
         # Test scenario generation with different numbers of scenarios
         scenario_counts = [10, 50, 100, 200]
@@ -550,7 +587,9 @@ class TestRobustOptimizationPerformance:
             # Simulate scenario generation time
             scenarios = []
             for _ in range(n_scenarios):
-                scenario = self.noisy_data['c2_data'] + 0.01 * np.random.randn(*self.noisy_data['c2_data'].shape)
+                scenario = self.noisy_data["c2_data"] + 0.01 * np.random.randn(
+                    *self.noisy_data["c2_data"].shape
+                )
                 scenarios.append(scenario)
 
             end_time = time.perf_counter()
@@ -560,7 +599,7 @@ class TestRobustOptimizationPerformance:
             # Verify scenarios are reasonable
             assert len(scenarios) == n_scenarios
             for scenario in scenarios[:3]:  # Check first few
-                assert scenario.shape == self.noisy_data['c2_data'].shape
+                assert scenario.shape == self.noisy_data["c2_data"].shape
                 assert np.all(scenario >= 1.0)  # g2 should be >= 1
 
         # Generation time should scale roughly linearly with number of scenarios
@@ -569,7 +608,9 @@ class TestRobustOptimizationPerformance:
             scenario_ratio = scenario_counts[-1] / scenario_counts[0]
 
             # Allow some overhead, but should be roughly linear
-            assert time_ratio < 2 * scenario_ratio, f"Scenario generation scaling poor: {time_ratio} vs {scenario_ratio}"
+            assert time_ratio < 2 * scenario_ratio, (
+                f"Scenario generation scaling poor: {time_ratio} vs {scenario_ratio}"
+            )
 
 
 class TestOptimizationMemoryProfiling:
@@ -592,7 +633,7 @@ class TestOptimizationMemoryProfiling:
         n_cycles = 10
         for i in range(n_cycles):
             # Create temporary data
-            angles = np.linspace(0, 2*np.pi, 4, endpoint=False)
+            angles = np.linspace(0, 2 * np.pi, 4, endpoint=False)
             t1_array = np.array([1.0, 2.0])
             t2_array = np.array([1.5, 2.5])
             c2_data = 1.0 + 0.1 * np.random.random((4, 2, 2))
@@ -600,14 +641,25 @@ class TestOptimizationMemoryProfiling:
             # Simulate optimization
             if CLASSICAL_AVAILABLE:
                 config = {
-                    "experimental_parameters": {"q_value": 0.1, "contrast": 0.95, "offset": 1.0},
-                    "analysis_parameters": {"mode": "static_isotropic", "method": "classical"},
-                    "parameter_bounds": {"D0": [1e-6, 1e-1], "alpha": [0.1, 2.0], "D_offset": [1e-8, 1e-3]}
+                    "experimental_parameters": {
+                        "q_value": 0.1,
+                        "contrast": 0.95,
+                        "offset": 1.0,
+                    },
+                    "analysis_parameters": {
+                        "mode": "static_isotropic",
+                        "method": "classical",
+                    },
+                    "parameter_bounds": {
+                        "D0": [1e-6, 1e-1],
+                        "alpha": [0.1, 2.0],
+                        "D_offset": [1e-8, 1e-3],
+                    },
                 }
 
                 optimizer = ClassicalOptimizer(create_mock_analysis_core(), config)
 
-                with patch.object(optimizer, '_run_scipy_optimization') as mock_opt:
+                with patch.object(optimizer, "_run_scipy_optimization") as mock_opt:
                     mock_result = Mock()
                     mock_result.x = [1e-3, 0.9, 1e-4]
                     mock_result.fun = 0.1
@@ -618,9 +670,9 @@ class TestOptimizationMemoryProfiling:
 
             # Clear references
             del c2_data, angles, t1_array, t2_array
-            if 'optimizer' in locals():
+            if "optimizer" in locals():
                 del optimizer
-            if 'result' in locals():
+            if "result" in locals():
                 del result
 
             # Force garbage collection
@@ -630,7 +682,9 @@ class TestOptimizationMemoryProfiling:
         memory_increase = final_memory - initial_memory
 
         # Memory increase should be minimal (< 50 MB after 10 cycles)
-        assert memory_increase < 50, f"Potential memory leak detected: {memory_increase:.1f} MB increase"
+        assert memory_increase < 50, (
+            f"Potential memory leak detected: {memory_increase:.1f} MB increase"
+        )
 
     def test_large_data_memory_handling(self):
         """Test memory handling with large datasets."""
@@ -642,7 +696,7 @@ class TestOptimizationMemoryProfiling:
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
 
         # Create very large dataset
-        large_angles = np.linspace(0, 2*np.pi, 64, endpoint=False)
+        large_angles = np.linspace(0, 2 * np.pi, 64, endpoint=False)
         large_t1 = np.linspace(0.1, 10.0, 50)
         large_t2 = np.linspace(0.2, 10.1, 50)
 
@@ -655,19 +709,27 @@ class TestOptimizationMemoryProfiling:
         # Should handle large data without excessive memory overhead
         if CLASSICAL_AVAILABLE:
             config = {
-                "experimental_parameters": {"q_value": 0.1, "contrast": 0.95, "offset": 1.0},
+                "experimental_parameters": {
+                    "q_value": 0.1,
+                    "contrast": 0.95,
+                    "offset": 1.0,
+                },
                 "analysis_parameters": {"mode": "laminar_flow", "method": "classical"},
                 "parameter_bounds": {
-                    "D0": [1e-6, 1e-1], "alpha": [0.1, 2.0], "D_offset": [1e-8, 1e-3],
-                    "gamma0": [1e-4, 1.0], "beta": [0.1, 2.0], "gamma_offset": [1e-6, 1e-1],
-                    "phi0": [-180, 180]
-                }
+                    "D0": [1e-6, 1e-1],
+                    "alpha": [0.1, 2.0],
+                    "D_offset": [1e-8, 1e-3],
+                    "gamma0": [1e-4, 1.0],
+                    "beta": [0.1, 2.0],
+                    "gamma_offset": [1e-6, 1e-1],
+                    "phi0": [-180, 180],
+                },
             }
 
             optimizer = ClassicalOptimizer(create_mock_analysis_core(), config)
 
             # Just test data setup (mock actual optimization)
-            with patch.object(optimizer, '_run_scipy_optimization') as mock_opt:
+            with patch.object(optimizer, "_run_scipy_optimization") as mock_opt:
                 mock_result = Mock()
                 mock_result.x = [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
                 mock_result.fun = 0.5
@@ -675,12 +737,16 @@ class TestOptimizationMemoryProfiling:
                 mock_opt.return_value = mock_result
 
                 try:
-                    result = optimizer.optimize(large_c2_data, large_angles, large_t1, large_t2)
+                    result = optimizer.optimize(
+                        large_c2_data, large_angles, large_t1, large_t2
+                    )
                     optimization_memory = process.memory_info().rss / 1024 / 1024  # MB
 
                     # Memory overhead should be reasonable (< 2x data size)
                     overhead = optimization_memory - initial_memory - memory_for_data
-                    assert overhead < 2 * memory_for_data, f"Memory overhead too high: {overhead:.1f} MB"
+                    assert overhead < 2 * memory_for_data, (
+                        f"Memory overhead too high: {overhead:.1f} MB"
+                    )
 
                 except MemoryError:
                     pytest.skip("Insufficient memory for large data test")
@@ -693,11 +759,11 @@ class TestPerformanceRegression:
         """Setup performance regression tests."""
         # Load or create performance baselines
         self.performance_baselines = {
-            'small_data_optimization': 0.1,     # seconds
-            'medium_data_optimization': 0.5,    # seconds
-            'chi_squared_calculation': 0.01,    # seconds
-            'g1_correlation_single': 1e-5,      # seconds
-            'memory_usage_mb': 100               # MB
+            "small_data_optimization": 0.1,  # seconds
+            "medium_data_optimization": 0.5,  # seconds
+            "chi_squared_calculation": 0.01,  # seconds
+            "g1_correlation_single": 1e-5,  # seconds
+            "memory_usage_mb": 100,  # MB
         }
 
     def test_small_data_performance_regression(self):
@@ -706,20 +772,28 @@ class TestPerformanceRegression:
             pytest.skip("Classical optimization not available")
 
         # Create small test dataset
-        angles = np.linspace(0, 2*np.pi, 4, endpoint=False)
+        angles = np.linspace(0, 2 * np.pi, 4, endpoint=False)
         t1_array = np.array([1.0, 2.0])
         t2_array = np.array([1.5, 2.5])
         c2_data = 1.0 + 0.1 * np.random.random((4, 2, 2))
 
         config = {
-            "experimental_parameters": {"q_value": 0.1, "contrast": 0.95, "offset": 1.0},
+            "experimental_parameters": {
+                "q_value": 0.1,
+                "contrast": 0.95,
+                "offset": 1.0,
+            },
             "analysis_parameters": {"mode": "static_isotropic", "method": "classical"},
-            "parameter_bounds": {"D0": [1e-6, 1e-1], "alpha": [0.1, 2.0], "D_offset": [1e-8, 1e-3]}
+            "parameter_bounds": {
+                "D0": [1e-6, 1e-1],
+                "alpha": [0.1, 2.0],
+                "D_offset": [1e-8, 1e-3],
+            },
         }
 
         optimizer = ClassicalOptimizer(create_mock_analysis_core(), config)
 
-        with patch.object(optimizer, '_run_scipy_optimization') as mock_opt:
+        with patch.object(optimizer, "_run_scipy_optimization") as mock_opt:
             mock_result = Mock()
             mock_result.x = [1e-3, 0.9, 1e-4]
             mock_result.fun = 0.1
@@ -731,11 +805,12 @@ class TestPerformanceRegression:
             end_time = time.perf_counter()
 
             execution_time = end_time - start_time
-            baseline = self.performance_baselines['small_data_optimization']
+            baseline = self.performance_baselines["small_data_optimization"]
 
             # Allow 50% performance degradation before flagging regression
-            assert execution_time < 1.5 * baseline, \
+            assert execution_time < 1.5 * baseline, (
                 f"Performance regression detected: {execution_time:.3f}s vs baseline {baseline:.3f}s"
+            )
 
     @pytest.mark.skipif(not NUMBA_AVAILABLE, reason="Numba not available")
     def test_kernel_performance_regression(self):
@@ -743,23 +818,28 @@ class TestPerformanceRegression:
         from homodyne.core.kernels import compute_g1_correlation_numba
 
         # Warm up JIT compilation
-        compute_g1_correlation_numba(1.0, 2.0, 0.0, 0.1, 1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0)
+        compute_g1_correlation_numba(
+            1.0, 2.0, 0.0, 0.1, 1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0
+        )
 
         # Benchmark single call
         n_calls = 1000
         start_time = time.perf_counter()
 
         for _ in range(n_calls):
-            result = compute_g1_correlation_numba(1.0, 2.0, 0.0, 0.1, 1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0)
+            result = compute_g1_correlation_numba(
+                1.0, 2.0, 0.0, 0.1, 1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0
+            )
 
         end_time = time.perf_counter()
 
         avg_time = (end_time - start_time) / n_calls
-        baseline = self.performance_baselines['g1_correlation_single']
+        baseline = self.performance_baselines["g1_correlation_single"]
 
         # Allow 2x performance degradation for kernel functions
-        assert avg_time < 2.0 * baseline, \
+        assert avg_time < 2.0 * baseline, (
             f"Kernel performance regression: {avg_time:.6f}s vs baseline {baseline:.6f}s"
+        )
 
     def save_performance_baseline(self, test_name: str, execution_time: float):
         """Save performance baseline for future regression testing."""

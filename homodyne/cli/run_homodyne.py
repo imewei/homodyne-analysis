@@ -53,6 +53,7 @@ import sys
 # Call fast completion handler immediately - before any heavy imports
 try:
     from ..ui.completion.fast_handler import handle_fast_completion
+
     handle_fast_completion()
 except ImportError:
     # Fallback to minimal fast completion if advanced system not available
@@ -95,6 +96,7 @@ try:
 except ImportError as e:
     # Handle cases where modular imports fail
     import logging
+
     logger = logging.getLogger(__name__)
     logger.warning(f"Some modular imports failed: {e}")
     logger.warning("Falling back to basic functionality")

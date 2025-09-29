@@ -16,15 +16,10 @@ import logging
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
 
 import pytest
 
@@ -34,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CodeQualityMetrics:
     """Comprehensive code quality metrics."""
+
     timestamp: str
     package_name: str
 
@@ -84,12 +80,13 @@ class CodeQualityMetrics:
 @dataclass
 class CodeQualityBaseline:
     """Code quality baseline for tracking improvements."""
+
     name: str
     created_at: str
     package_version: str
     metrics: CodeQualityMetrics
-    targets: Dict[str, float] = field(default_factory=dict)
-    thresholds: Dict[str, float] = field(default_factory=dict)
+    targets: dict[str, float] = field(default_factory=dict)
+    thresholds: dict[str, float] = field(default_factory=dict)
 
 
 class ComplexityAnalyzer:
@@ -98,14 +95,14 @@ class ComplexityAnalyzer:
     def __init__(self, package_root: Path):
         self.package_root = package_root
 
-    def analyze_complexity(self) -> Dict[str, Any]:
+    def analyze_complexity(self) -> dict[str, Any]:
         """Analyze cyclomatic complexity for all Python files."""
         complexity_results = {
             "total_functions": 0,
             "max_complexity": 0,
             "complexities": [],
             "high_complexity_functions": [],
-            "file_complexities": {}
+            "file_complexities": {},
         }
 
         for py_file in self.package_root.rglob("*.py"):
@@ -121,23 +118,24 @@ class ComplexityAnalyzer:
                     complexity_results["complexities"].append(complexity)
                     complexity_results["total_functions"] += 1
 
-                    if complexity > complexity_results["max_complexity"]:
-                        complexity_results["max_complexity"] = complexity
+                    complexity_results["max_complexity"] = max(complexity_results["max_complexity"], complexity)
 
                     if complexity > 10:  # High complexity threshold
-                        complexity_results["high_complexity_functions"].append({
-                            "file": str(py_file),
-                            "function": func_data["name"],
-                            "complexity": complexity,
-                            "line": func_data["line"]
-                        })
+                        complexity_results["high_complexity_functions"].append(
+                            {
+                                "file": str(py_file),
+                                "function": func_data["name"],
+                                "complexity": complexity,
+                                "line": func_data["line"],
+                            }
+                        )
 
         return complexity_results
 
-    def _analyze_file_complexity(self, file_path: Path) -> Optional[Dict[str, Any]]:
+    def _analyze_file_complexity(self, file_path: Path) -> dict[str, Any] | None:
         """Analyze complexity for a single file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -145,9 +143,11 @@ class ComplexityAnalyzer:
             analyzer.visit(tree)
 
             return {
-                "total_complexity": sum(func["complexity"] for func in analyzer.functions),
+                "total_complexity": sum(
+                    func["complexity"] for func in analyzer.functions
+                ),
                 "function_count": len(analyzer.functions),
-                "functions": analyzer.functions
+                "functions": analyzer.functions,
             }
         except Exception as e:
             logger.warning(f"Failed to analyze complexity for {file_path}: {e}")
@@ -156,8 +156,14 @@ class ComplexityAnalyzer:
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if file should be skipped."""
         skip_patterns = {
-            "__pycache__", ".git", "build", "dist",
-            ".pytest_cache", ".mypy_cache", "venv", ".venv"
+            "__pycache__",
+            ".git",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            "venv",
+            ".venv",
         }
         return any(pattern in str(file_path) for pattern in skip_patterns)
 
@@ -180,11 +186,13 @@ class ComplexityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-        self.functions.append({
-            "name": node.name,
-            "line": node.lineno,
-            "complexity": self.current_complexity
-        })
+        self.functions.append(
+            {
+                "name": node.name,
+                "line": node.lineno,
+                "complexity": self.current_complexity,
+            }
+        )
 
         self.current_complexity = old_complexity
         self.current_function = old_function
@@ -235,14 +243,14 @@ class LineCountAnalyzer:
     def __init__(self, package_root: Path):
         self.package_root = package_root
 
-    def analyze_lines(self) -> Dict[str, int]:
+    def analyze_lines(self) -> dict[str, int]:
         """Analyze line counts for the package."""
         totals = {
             "total_lines": 0,
             "code_lines": 0,
             "comment_lines": 0,
             "blank_lines": 0,
-            "files_analyzed": 0
+            "files_analyzed": 0,
         }
 
         for py_file in self.package_root.rglob("*.py"):
@@ -258,24 +266,24 @@ class LineCountAnalyzer:
 
         return totals
 
-    def _analyze_file_lines(self, file_path: Path) -> Optional[Dict[str, int]]:
+    def _analyze_file_lines(self, file_path: Path) -> dict[str, int] | None:
         """Analyze lines for a single file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 lines = f.readlines()
 
             stats = {
                 "total_lines": len(lines),
                 "code_lines": 0,
                 "comment_lines": 0,
-                "blank_lines": 0
+                "blank_lines": 0,
             }
 
             for line in lines:
                 stripped = line.strip()
                 if not stripped:
                     stats["blank_lines"] += 1
-                elif stripped.startswith('#'):
+                elif stripped.startswith("#"):
                     stats["comment_lines"] += 1
                 elif '"""' in stripped or "'''" in stripped:
                     # Simple docstring detection - could be improved
@@ -291,8 +299,14 @@ class LineCountAnalyzer:
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if file should be skipped."""
         skip_patterns = {
-            "__pycache__", ".git", "build", "dist",
-            ".pytest_cache", ".mypy_cache", "venv", ".venv"
+            "__pycache__",
+            ".git",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            "venv",
+            ".venv",
         }
         return any(pattern in str(file_path) for pattern in skip_patterns)
 
@@ -303,14 +317,14 @@ class TypeHintAnalyzer:
     def __init__(self, package_root: Path):
         self.package_root = package_root
 
-    def analyze_type_hints(self) -> Dict[str, Any]:
+    def analyze_type_hints(self) -> dict[str, Any]:
         """Analyze type hint coverage."""
         results = {
             "total_functions": 0,
             "functions_with_type_hints": 0,
             "functions_missing_type_hints": 0,
             "coverage_percentage": 0.0,
-            "missing_hints": []
+            "missing_hints": [],
         }
 
         for py_file in self.package_root.rglob("*.py"):
@@ -320,7 +334,9 @@ class TypeHintAnalyzer:
             file_results = self._analyze_file_type_hints(py_file)
             if file_results:
                 results["total_functions"] += file_results["total_functions"]
-                results["functions_with_type_hints"] += file_results["functions_with_type_hints"]
+                results["functions_with_type_hints"] += file_results[
+                    "functions_with_type_hints"
+                ]
                 results["missing_hints"].extend(file_results["missing_hints"])
 
         results["functions_missing_type_hints"] = (
@@ -334,10 +350,10 @@ class TypeHintAnalyzer:
 
         return results
 
-    def _analyze_file_type_hints(self, file_path: Path) -> Optional[Dict[str, Any]]:
+    def _analyze_file_type_hints(self, file_path: Path) -> dict[str, Any] | None:
         """Analyze type hints for a single file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -347,7 +363,7 @@ class TypeHintAnalyzer:
             return {
                 "total_functions": visitor.total_functions,
                 "functions_with_type_hints": visitor.functions_with_type_hints,
-                "missing_hints": visitor.missing_hints
+                "missing_hints": visitor.missing_hints,
             }
         except Exception as e:
             logger.warning(f"Failed to analyze type hints for {file_path}: {e}")
@@ -356,8 +372,14 @@ class TypeHintAnalyzer:
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if file should be skipped."""
         skip_patterns = {
-            "__pycache__", ".git", "build", "dist",
-            ".pytest_cache", ".mypy_cache", "venv", ".venv"
+            "__pycache__",
+            ".git",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            "venv",
+            ".venv",
         }
         return any(pattern in str(file_path) for pattern in skip_patterns)
 
@@ -391,11 +413,9 @@ class TypeHintVisitor(ast.NodeVisitor):
         if has_type_hints:
             self.functions_with_type_hints += 1
         else:
-            self.missing_hints.append({
-                "file": self.file_path,
-                "function": node.name,
-                "line": node.lineno
-            })
+            self.missing_hints.append(
+                {"file": self.file_path, "function": node.name, "line": node.lineno}
+            )
 
         self.generic_visit(node)
 
@@ -407,14 +427,14 @@ class TypeHintVisitor(ast.NodeVisitor):
 class CodeQualityTracker:
     """Main code quality tracking system."""
 
-    def __init__(self, package_root: Path, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, package_root: Path, config: dict[str, Any] | None = None):
         self.package_root = package_root
         self.config = config or self._get_default_config()
         self.complexity_analyzer = ComplexityAnalyzer(package_root)
         self.line_analyzer = LineCountAnalyzer(package_root)
         self.type_hint_analyzer = TypeHintAnalyzer(package_root)
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Get default configuration."""
         return {
             "complexity_threshold": 10,
@@ -439,8 +459,10 @@ class CodeQualityTracker:
 
         # Calculate derived metrics
         avg_complexity = (
-            sum(complexity_stats["complexities"]) / len(complexity_stats["complexities"])
-            if complexity_stats["complexities"] else 0
+            sum(complexity_stats["complexities"])
+            / len(complexity_stats["complexities"])
+            if complexity_stats["complexities"]
+            else 0
         )
 
         # Calculate maintainability index (simplified)
@@ -451,53 +473,47 @@ class CodeQualityTracker:
         # Get package version
         try:
             import importlib.metadata
+
             package_version = importlib.metadata.version("homodyne")
         except Exception:
             package_version = "unknown"
 
         metrics = CodeQualityMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             package_name="homodyne",
-
             # Basic metrics
             total_lines=line_stats["total_lines"],
             code_lines=line_stats["code_lines"],
             comment_lines=line_stats["comment_lines"],
             blank_lines=line_stats["blank_lines"],
-
             # Complexity metrics
             cyclomatic_complexity=avg_complexity,
             max_complexity=complexity_stats["max_complexity"],
             avg_complexity=avg_complexity,
-            high_complexity_functions=len(complexity_stats["high_complexity_functions"]),
-
+            high_complexity_functions=len(
+                complexity_stats["high_complexity_functions"]
+            ),
             # Dead code metrics (placeholder - would integrate with dead code detector)
             unused_imports=0,  # From previous analysis
             unused_functions=0,  # From previous analysis
             unused_classes=0,  # From previous analysis
             unused_variables=0,  # From previous analysis
-
             # Maintainability metrics
             maintainability_index=maintainability_index,
             technical_debt_ratio=self._calculate_technical_debt_ratio(complexity_stats),
             code_duplication=0.0,  # Would need duplication detector
-
             # Type hint coverage
             type_hint_coverage=type_hint_stats["coverage_percentage"],
             missing_type_hints=type_hint_stats["functions_missing_type_hints"],
-
             # Documentation coverage (placeholder)
             docstring_coverage=0.0,  # Would need docstring analyzer
             missing_docstrings=0,
-
             # Test coverage (placeholder)
             test_coverage=0.0,  # Would integrate with pytest-cov
             untested_functions=0,
-
             # Security metrics (placeholder)
             security_issues=0,  # Would integrate with bandit
             high_severity_issues=0,
-
             # Performance metrics (placeholder)
             performance_hotspots=0,  # Would integrate with profiler
             memory_inefficiencies=0,
@@ -506,8 +522,9 @@ class CodeQualityTracker:
         logger.info(f"Collected metrics for {line_stats['files_analyzed']} files")
         return metrics
 
-    def _calculate_maintainability_index(self, line_stats: Dict[str, int],
-                                       complexity_stats: Dict[str, Any]) -> float:
+    def _calculate_maintainability_index(
+        self, line_stats: dict[str, int], complexity_stats: dict[str, Any]
+    ) -> float:
         """Calculate maintainability index."""
         # Simplified maintainability index calculation
         # Real implementation would use Halstead metrics
@@ -522,7 +539,9 @@ class CodeQualityTracker:
         maintainability = max(0, 100 - complexity_penalty + comment_ratio)
         return min(100.0, maintainability)
 
-    def _calculate_technical_debt_ratio(self, complexity_stats: Dict[str, Any]) -> float:
+    def _calculate_technical_debt_ratio(
+        self, complexity_stats: dict[str, Any]
+    ) -> float:
         """Calculate technical debt ratio."""
         total_functions = complexity_stats["total_functions"]
         if total_functions == 0:
@@ -557,24 +576,24 @@ class CodeQualityTracker:
             package_version="0.7.1",  # Current version
             metrics=metrics,
             targets=targets,
-            thresholds=thresholds
+            thresholds=thresholds,
         )
 
         # Save baseline
         baseline_path = Path(f"code_quality_baseline_{name}.json")
-        with open(baseline_path, 'w') as f:
+        with open(baseline_path, "w") as f:
             json.dump(asdict(baseline), f, indent=2)
 
         logger.info(f"Established baseline '{name}' - saved to {baseline_path}")
         return baseline
 
-    def compare_to_baseline(self, baseline_name: str) -> Dict[str, Any]:
+    def compare_to_baseline(self, baseline_name: str) -> dict[str, Any]:
         """Compare current metrics to baseline."""
         baseline_path = Path(f"code_quality_baseline_{baseline_name}.json")
         if not baseline_path.exists():
             raise FileNotFoundError(f"Baseline '{baseline_name}' not found")
 
-        with open(baseline_path, 'r') as f:
+        with open(baseline_path) as f:
             baseline_data = json.load(f)
 
         current_metrics = self.collect_metrics()
@@ -588,13 +607,16 @@ class CodeQualityTracker:
             "regressions": {},
             "targets_met": {},
             "thresholds_passed": {},
-            "overall_score": 0.0
+            "overall_score": 0.0,
         }
 
         # Compare key metrics
         key_metrics = [
-            "maintainability_index", "type_hint_coverage", "technical_debt_ratio",
-            "avg_complexity", "high_complexity_functions"
+            "maintainability_index",
+            "type_hint_coverage",
+            "technical_debt_ratio",
+            "avg_complexity",
+            "high_complexity_functions",
         ]
 
         total_score = 0
@@ -606,13 +628,13 @@ class CodeQualityTracker:
                 comparison["improvements"][metric] = {
                     "current": current_value,
                     "baseline": baseline_value,
-                    "improvement": current_value - baseline_value
+                    "improvement": current_value - baseline_value,
                 }
             elif current_value < baseline_value:
                 comparison["regressions"][metric] = {
                     "current": current_value,
                     "baseline": baseline_value,
-                    "regression": baseline_value - current_value
+                    "regression": baseline_value - current_value,
                 }
 
             # Check targets
@@ -633,12 +655,14 @@ class CodeQualityTracker:
 
         return comparison
 
-    def generate_quality_report(self, baseline_name: Optional[str] = None) -> Dict[str, Any]:
+    def generate_quality_report(
+        self, baseline_name: str | None = None
+    ) -> dict[str, Any]:
         """Generate comprehensive quality report."""
         current_metrics = self.collect_metrics()
 
         report = {
-            "report_generated_at": datetime.now(timezone.utc).isoformat(),
+            "report_generated_at": datetime.now(UTC).isoformat(),
             "package_name": "homodyne",
             "current_metrics": asdict(current_metrics),
             "summary": {
@@ -646,7 +670,7 @@ class CodeQualityTracker:
                 "code_quality_score": current_metrics.maintainability_index,
                 "complexity_score": 100 - current_metrics.technical_debt_ratio,
                 "type_coverage_score": current_metrics.type_hint_coverage,
-            }
+            },
         }
 
         if baseline_name:
@@ -654,13 +678,17 @@ class CodeQualityTracker:
                 comparison = self.compare_to_baseline(baseline_name)
                 report["baseline_comparison"] = comparison
             except FileNotFoundError:
-                report["baseline_comparison"] = {"error": f"Baseline '{baseline_name}' not found"}
+                report["baseline_comparison"] = {
+                    "error": f"Baseline '{baseline_name}' not found"
+                }
 
         # Add recommendations
         recommendations = []
 
         if current_metrics.maintainability_index < 70:
-            recommendations.append("Improve code maintainability by reducing complexity")
+            recommendations.append(
+                "Improve code maintainability by reducing complexity"
+            )
 
         if current_metrics.type_hint_coverage < 80:
             recommendations.append("Add type hints to improve code clarity")
@@ -750,7 +778,7 @@ class TestCodeQualityMetrics:
         assert baseline.metrics.total_lines > 0
 
         # Clean up
-        baseline_path = Path(f"code_quality_baseline_test_baseline.json")
+        baseline_path = Path("code_quality_baseline_test_baseline.json")
         if baseline_path.exists():
             baseline_path.unlink()
 
@@ -786,7 +814,7 @@ if __name__ == "__main__":
 
         # Save report
         report_path = Path("code_quality_report.json")
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             json.dump(report, f, indent=2)
 
         print(f"Quality report saved to {report_path}")

@@ -30,7 +30,7 @@ def _check_numba_availability() -> bool:
 
         # First check if numba is disabled in test environment
         # (common pattern: sys.modules['numba'] = None)
-        if 'numba' in sys.modules and sys.modules['numba'] is None:
+        if "numba" in sys.modules and sys.modules["numba"] is None:
             return False
 
         # Try to import numba normally
@@ -41,11 +41,12 @@ def _check_numba_availability() -> bool:
             return False
 
         # Check if numba has the required JIT functionality
-        if not hasattr(numba, 'jit'):
+        if not hasattr(numba, "jit"):
             return False
 
         # Test that Numba actually works by trying to compile a simple function
         try:
+
             @numba.jit(nopython=True, cache=True, nogil=True)
             def _test_numba_function(x):
                 return x + 1.0
@@ -60,6 +61,7 @@ def _check_numba_availability() -> bool:
 
     except (ImportError, AttributeError, ModuleNotFoundError):
         return False
+
 
 # Initialize the global flag
 NUMBA_AVAILABLE = _check_numba_availability()
@@ -79,6 +81,7 @@ def refresh_numba_availability() -> bool:
     global NUMBA_AVAILABLE
     NUMBA_AVAILABLE = _check_numba_availability()
     return NUMBA_AVAILABLE
+
 
 # Global optimization counter for tracking iterations across all methods
 OPTIMIZATION_COUNTER = 0
@@ -128,6 +131,7 @@ def _check_cpu_optimization_availability() -> bool:
             from ..performance.cpu_profiling import profile_homodyne_function
             from .cpu_optimization import CPUOptimizer  # noqa: F401
             from .cpu_optimization import get_cpu_optimization_info
+
             CPU_OPTIMIZATION_AVAILABLE = True
         except ImportError:
             CPU_OPTIMIZATION_AVAILABLE = False
@@ -183,6 +187,7 @@ def create_optimized_configuration() -> dict[str, Any]:
     if _check_cpu_optimization_availability():
         try:
             from .cpu_optimization import get_cpu_optimization_info
+
             cpu_info = get_cpu_optimization_info()
             config["cpu_specific"] = {
                 "max_threads": cpu_info.get("recommended_threads", 1),
@@ -220,6 +225,7 @@ def get_performance_recommendations() -> list[str]:
     if capabilities["cpu_optimization"] and _check_cpu_optimization_availability():
         try:
             from .cpu_optimization import get_cpu_optimization_info
+
             cpu_info = get_cpu_optimization_info()
             if not any(cpu_info.get("simd_support", {}).values()):
                 recommendations.append(
@@ -242,12 +248,14 @@ def get_performance_recommendations() -> list[str]:
 # Late import utility functions to provide access to CPU optimization components
 # These functions use lazy loading to avoid circular import issues
 
+
 def get_cpu_optimizer():
     """Get CPUOptimizer class (late import to avoid circular dependency)."""
     if not _check_cpu_optimization_availability():
         return None
     try:
         from .cpu_optimization import CPUOptimizer
+
         return CPUOptimizer
     except ImportError:
         return None
@@ -259,6 +267,7 @@ def get_cpu_profiler():
         return None
     try:
         from ..performance.cpu_profiling import CPUProfiler
+
         return CPUProfiler
     except ImportError:
         return None
@@ -270,6 +279,7 @@ def get_profile_homodyne_function():
         return None
     try:
         from ..performance.cpu_profiling import profile_homodyne_function
+
         return profile_homodyne_function
     except ImportError:
         return None
@@ -281,6 +291,7 @@ def get_cpu_optimization_info_func():
         return None
     try:
         from .cpu_optimization import get_cpu_optimization_info
+
         return get_cpu_optimization_info
     except ImportError:
         return None

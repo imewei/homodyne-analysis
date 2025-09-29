@@ -17,8 +17,6 @@ import time
 import warnings
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
 
 warnings.filterwarnings("ignore")
 
@@ -37,9 +35,9 @@ class StartupOptimizer:
             end_time = time.perf_counter()
             return end_time - start_time
         except ImportError:
-            return float('inf')
+            return float("inf")
 
-    def analyze_import_performance(self) -> Dict[str, float]:
+    def analyze_import_performance(self) -> dict[str, float]:
         """Analyze import performance for key modules."""
         modules_to_test = [
             "numpy",
@@ -51,7 +49,7 @@ class StartupOptimizer:
             "sys",
             "multiprocessing",
             "threading",
-            "concurrent.futures"
+            "concurrent.futures",
         ]
 
         results = {}
@@ -67,13 +65,13 @@ class StartupOptimizer:
 
         start_time = time.perf_counter()
         try:
-            subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=10)
             end_time = time.perf_counter()
             return end_time - start_time
         except subprocess.TimeoutExpired:
-            return float('inf')
+            return float("inf")
 
-    def optimize_imports(self) -> Dict[str, Any]:
+    def optimize_imports(self) -> dict[str, Any]:
         """Provide import optimization recommendations."""
         import_times = self.analyze_import_performance()
 
@@ -88,7 +86,7 @@ class StartupOptimizer:
         return {
             "import_times": import_times,
             "slow_imports": slow_imports,
-            "recommendations": recommendations
+            "recommendations": recommendations,
         }
 
 
@@ -138,7 +136,9 @@ def run_startup_optimization():
 
     print("\nIMPORT PERFORMANCE:")
     for module, import_time in optimization_results["import_times"].items():
-        time_str = f"{import_time*1000:.2f} ms" if import_time != float('inf') else "FAILED"
+        time_str = (
+            f"{import_time * 1000:.2f} ms" if import_time != float("inf") else "FAILED"
+        )
         status = "SLOW" if import_time > 0.1 else "FAST"
         print(f"  {module:<20} {time_str:<12} {status}")
 
@@ -146,10 +146,10 @@ def run_startup_optimization():
     if optimization_results["slow_imports"]:
         print(f"\nSLOW IMPORTS DETECTED ({len(optimization_results['slow_imports'])}):")
         for module, import_time in optimization_results["slow_imports"].items():
-            print(f"  {module}: {import_time*1000:.2f} ms")
+            print(f"  {module}: {import_time * 1000:.2f} ms")
 
     # Recommendations
-    print(f"\nOPTIMIZATION RECOMMENDATIONS:")
+    print("\nOPTIMIZATION RECOMMENDATIONS:")
     for rec in optimization_results["recommendations"]:
         print(f"  • {rec}")
 
@@ -157,22 +157,24 @@ def run_startup_optimization():
     create_lazy_import_example()
 
     # Calculate total import time
-    total_import_time = sum(t for t in optimization_results["import_times"].values() if t != float('inf'))
+    total_import_time = sum(
+        t for t in optimization_results["import_times"].values() if t != float("inf")
+    )
 
     # Save results
     results = {
         "cold_startup_time": cold_startup,
         "total_import_time": total_import_time,
         "optimization_analysis": optimization_results,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     results_file = Path("startup_optimization_results.json")
-    with open(results_file, 'w') as f:
+    with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
 
     print(f"\n📄 Results saved to: {results_file}")
-    print(f"⚡ Total import time: {total_import_time*1000:.2f} ms")
+    print(f"⚡ Total import time: {total_import_time * 1000:.2f} ms")
     print(f"🚀 Cold startup time: {cold_startup:.3f} seconds")
     print("✅ Task 4.7 Startup Optimization Complete!")
 

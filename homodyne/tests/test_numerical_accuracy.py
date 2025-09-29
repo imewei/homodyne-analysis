@@ -33,59 +33,71 @@ class TestChiSquaredAccuracy:
         """Test mathematical correctness of chi-squared calculation."""
         # Create known test data
         n_angles, n_time = 3, 5
-        c2_exp = np.array([
-            [[1.0, 2.0, 3.0, 4.0, 5.0],
-             [2.0, 3.0, 4.0, 5.0, 6.0],
-             [3.0, 4.0, 5.0, 6.0, 7.0],
-             [4.0, 5.0, 6.0, 7.0, 8.0],
-             [5.0, 6.0, 7.0, 8.0, 9.0]],
+        c2_exp = np.array(
+            [
+                [
+                    [1.0, 2.0, 3.0, 4.0, 5.0],
+                    [2.0, 3.0, 4.0, 5.0, 6.0],
+                    [3.0, 4.0, 5.0, 6.0, 7.0],
+                    [4.0, 5.0, 6.0, 7.0, 8.0],
+                    [5.0, 6.0, 7.0, 8.0, 9.0],
+                ],
+                [
+                    [2.0, 3.0, 4.0, 5.0, 6.0],
+                    [3.0, 4.0, 5.0, 6.0, 7.0],
+                    [4.0, 5.0, 6.0, 7.0, 8.0],
+                    [5.0, 6.0, 7.0, 8.0, 9.0],
+                    [6.0, 7.0, 8.0, 9.0, 10.0],
+                ],
+                [
+                    [3.0, 4.0, 5.0, 6.0, 7.0],
+                    [4.0, 5.0, 6.0, 7.0, 8.0],
+                    [5.0, 6.0, 7.0, 8.0, 9.0],
+                    [6.0, 7.0, 8.0, 9.0, 10.0],
+                    [7.0, 8.0, 9.0, 10.0, 11.0],
+                ],
+            ]
+        )
 
-            [[2.0, 3.0, 4.0, 5.0, 6.0],
-             [3.0, 4.0, 5.0, 6.0, 7.0],
-             [4.0, 5.0, 6.0, 7.0, 8.0],
-             [5.0, 6.0, 7.0, 8.0, 9.0],
-             [6.0, 7.0, 8.0, 9.0, 10.0]],
-
-            [[3.0, 4.0, 5.0, 6.0, 7.0],
-             [4.0, 5.0, 6.0, 7.0, 8.0],
-             [5.0, 6.0, 7.0, 8.0, 9.0],
-             [6.0, 7.0, 8.0, 9.0, 10.0],
-             [7.0, 8.0, 9.0, 10.0, 11.0]]
-        ])
-
-        c2_theo = np.array([
-            [[1.1, 2.1, 3.1, 4.1, 5.1],
-             [2.1, 3.1, 4.1, 5.1, 6.1],
-             [3.1, 4.1, 5.1, 6.1, 7.1],
-             [4.1, 5.1, 6.1, 7.1, 8.1],
-             [5.1, 6.1, 7.1, 8.1, 9.1]],
-
-            [[2.1, 3.1, 4.1, 5.1, 6.1],
-             [3.1, 4.1, 5.1, 6.1, 7.1],
-             [4.1, 5.1, 6.1, 7.1, 8.1],
-             [5.1, 6.1, 7.1, 8.1, 9.1],
-             [6.1, 7.1, 8.1, 9.1, 10.1]],
-
-            [[3.1, 4.1, 5.1, 6.1, 7.1],
-             [4.1, 5.1, 6.1, 7.1, 8.1],
-             [5.1, 6.1, 7.1, 8.1, 9.1],
-             [6.1, 7.1, 8.1, 9.1, 10.1],
-             [7.1, 8.1, 9.1, 10.1, 11.1]]
-        ])
+        c2_theo = np.array(
+            [
+                [
+                    [1.1, 2.1, 3.1, 4.1, 5.1],
+                    [2.1, 3.1, 4.1, 5.1, 6.1],
+                    [3.1, 4.1, 5.1, 6.1, 7.1],
+                    [4.1, 5.1, 6.1, 7.1, 8.1],
+                    [5.1, 6.1, 7.1, 8.1, 9.1],
+                ],
+                [
+                    [2.1, 3.1, 4.1, 5.1, 6.1],
+                    [3.1, 4.1, 5.1, 6.1, 7.1],
+                    [4.1, 5.1, 6.1, 7.1, 8.1],
+                    [5.1, 6.1, 7.1, 8.1, 9.1],
+                    [6.1, 7.1, 8.1, 9.1, 10.1],
+                ],
+                [
+                    [3.1, 4.1, 5.1, 6.1, 7.1],
+                    [4.1, 5.1, 6.1, 7.1, 8.1],
+                    [5.1, 6.1, 7.1, 8.1, 9.1],
+                    [6.1, 7.1, 8.1, 9.1, 10.1],
+                    [7.1, 8.1, 9.1, 10.1, 11.1],
+                ],
+            ]
+        )
 
         # Calculate chi-squared manually
         diff = c2_exp - c2_theo
         chi2_expected = np.sum(diff**2)
 
         # Vectorized calculation (as in refactored code)
-        chi2_vectorized = np.sum((c2_exp - c2_theo)**2)
+        chi2_vectorized = np.sum((c2_exp - c2_theo) ** 2)
 
         # Element-wise calculation for verification
         chi2_manual = 0.0
         for i in range(n_angles):
             for j in range(n_time):
                 for k in range(n_time):
-                    chi2_manual += (c2_exp[i, j, k] - c2_theo[i, j, k])**2
+                    chi2_manual += (c2_exp[i, j, k] - c2_theo[i, j, k]) ** 2
 
         # All methods should give identical results
         np.testing.assert_allclose(chi2_vectorized, chi2_expected, rtol=1e-14)
@@ -101,21 +113,21 @@ class TestChiSquaredAccuracy:
         """Test chi-squared calculation edge cases."""
         # Test case 1: Identical arrays (chi-squared should be 0)
         c2_identical = np.ones((2, 3, 3))
-        chi2_zero = np.sum((c2_identical - c2_identical)**2)
+        chi2_zero = np.sum((c2_identical - c2_identical) ** 2)
         assert chi2_zero == 0.0
 
         # Test case 2: Large values
         c2_large = np.ones((2, 3, 3)) * 1e10
         c2_large_offset = c2_large + 1.0
-        chi2_large = np.sum((c2_large - c2_large_offset)**2)
+        chi2_large = np.sum((c2_large - c2_large_offset) ** 2)
         expected_large = 2 * 3 * 3 * 1.0  # 18.0
         np.testing.assert_allclose(chi2_large, expected_large, rtol=1e-10)
 
         # Test case 3: Small values
         c2_small = np.ones((2, 3, 3)) * 1e-10
         c2_small_offset = c2_small + 1e-15
-        chi2_small = np.sum((c2_small - c2_small_offset)**2)
-        expected_small = 2 * 3 * 3 * (1e-15)**2
+        chi2_small = np.sum((c2_small - c2_small_offset) ** 2)
+        expected_small = 2 * 3 * 3 * (1e-15) ** 2
         np.testing.assert_allclose(chi2_small, expected_small, rtol=1e-5)
 
         print("✓ Chi-squared edge cases verified")
@@ -132,7 +144,7 @@ class TestChiSquaredAccuracy:
             c2_exp = np.array([[[1.0, 2.0], [3.0, 4.0]]], dtype=dtype)
             c2_theo = np.array([[[1.1, 2.1], [3.1, 4.1]]], dtype=dtype)
 
-            chi2_result = np.sum((c2_exp - c2_theo)**2)
+            chi2_result = np.sum((c2_exp - c2_theo) ** 2)
 
             # Expected: (0.1)^2 + (0.1)^2 + (0.1)^2 + (0.1)^2 = 4 * 0.01 = 0.04
             expected = 0.04
@@ -148,21 +160,27 @@ class TestMatrixOperationAccuracy:
         """Test matrix multiplication accuracy preservation."""
         # Create test matrices with known properties
         n = 5
-        A = np.array([
-            [1, 2, 3, 4, 5],
-            [2, 3, 4, 5, 6],
-            [3, 4, 5, 6, 7],
-            [4, 5, 6, 7, 8],
-            [5, 6, 7, 8, 9]
-        ], dtype=np.float64)
+        A = np.array(
+            [
+                [1, 2, 3, 4, 5],
+                [2, 3, 4, 5, 6],
+                [3, 4, 5, 6, 7],
+                [4, 5, 6, 7, 8],
+                [5, 6, 7, 8, 9],
+            ],
+            dtype=np.float64,
+        )
 
-        B = np.array([
-            [2, 0, 0, 0, 0],
-            [0, 2, 0, 0, 0],
-            [0, 0, 2, 0, 0],
-            [0, 0, 0, 2, 0],
-            [0, 0, 0, 0, 2]
-        ], dtype=np.float64)
+        B = np.array(
+            [
+                [2, 0, 0, 0, 0],
+                [0, 2, 0, 0, 0],
+                [0, 0, 2, 0, 0],
+                [0, 0, 0, 2, 0],
+                [0, 0, 0, 0, 2],
+            ],
+            dtype=np.float64,
+        )
 
         # A @ B should be 2 * A
         result = A @ B
@@ -200,10 +218,7 @@ class TestMatrixOperationAccuracy:
     def test_eigenvalue_accuracy(self):
         """Test eigenvalue calculation accuracy."""
         # Create a matrix with known eigenvalues
-        A = np.array([
-            [3, 1],
-            [1, 3]
-        ], dtype=np.float64)
+        A = np.array([[3, 1], [1, 3]], dtype=np.float64)
 
         eigenvals, eigenvecs = np.linalg.eig(A)
 
@@ -215,7 +230,7 @@ class TestMatrixOperationAccuracy:
         np.testing.assert_allclose(computed_eigenvals, expected_eigenvals, rtol=1e-12)
 
         # Test eigenvalue equation: A @ v = λ @ v
-        for i, (eigenval, eigenvec) in enumerate(zip(eigenvals, eigenvecs.T)):
+        for i, (eigenval, eigenvec) in enumerate(zip(eigenvals, eigenvecs.T, strict=False)):
             lhs = A @ eigenvec
             rhs = eigenval * eigenvec
 
@@ -307,10 +322,11 @@ class TestOptimizationAccuracy:
 
     def test_quadratic_optimization_accuracy(self):
         """Test optimization accuracy for quadratic functions."""
+
         # Quadratic function: f(x) = (x-2)^2 + 1
         # Minimum at x = 2, f_min = 1
         def quadratic_func(x):
-            return (x - 2)**2 + 1
+            return (x - 2) ** 2 + 1
 
         # Test gradient calculation
         def quadratic_grad(x):
@@ -319,7 +335,9 @@ class TestOptimizationAccuracy:
         # Numerical gradient estimation
         x_test = 3.0
         eps = 1e-8
-        grad_numerical = (quadratic_func(x_test + eps) - quadratic_func(x_test - eps)) / (2 * eps)
+        grad_numerical = (
+            quadratic_func(x_test + eps) - quadratic_func(x_test - eps)
+        ) / (2 * eps)
         grad_analytical = quadratic_grad(x_test)
 
         np.testing.assert_allclose(grad_numerical, grad_analytical, rtol=1e-6)
@@ -332,9 +350,10 @@ class TestOptimizationAccuracy:
 
     def test_multivariate_optimization_accuracy(self):
         """Test multivariate optimization accuracy."""
+
         # Rosenbrock function minimum at (1, 1)
         def rosenbrock(x):
-            return 100 * (x[1] - x[0]**2)**2 + (1 - x[0])**2
+            return 100 * (x[1] - x[0] ** 2) ** 2 + (1 - x[0]) ** 2
 
         # Test function value at minimum
         minimum_point = np.array([1.0, 1.0])
@@ -372,7 +391,9 @@ class TestOptimizationAccuracy:
         f_opt = x_opt**2 + y_opt**2
 
         np.testing.assert_allclose(f_opt, 0.5, rtol=1e-15)
-        np.testing.assert_allclose(x_opt + y_opt, 1.0, rtol=1e-15)  # Constraint satisfied
+        np.testing.assert_allclose(
+            x_opt + y_opt, 1.0, rtol=1e-15
+        )  # Constraint satisfied
 
         print("✓ Constraint optimization accuracy verified")
 
@@ -397,7 +418,7 @@ class TestNumericalIntegrationAccuracy:
         y_poly = x_poly**2
 
         integral_poly = np.trapz(y_poly, x_poly)
-        np.testing.assert_allclose(integral_poly, 1.0/3.0, rtol=1e-6)
+        np.testing.assert_allclose(integral_poly, 1.0 / 3.0, rtol=1e-6)
 
         print("✓ Trapezoidal integration accuracy verified")
 
@@ -434,7 +455,7 @@ def run_numerical_accuracy_tests():
         TestMatrixOperationAccuracy,
         TestStatisticalAccuracy,
         TestOptimizationAccuracy,
-        TestNumericalIntegrationAccuracy
+        TestNumericalIntegrationAccuracy,
     ]
 
     total_tests = 0
@@ -444,8 +465,11 @@ def run_numerical_accuracy_tests():
         print(f"\n{test_class.__name__}:")
         test_instance = test_class()
 
-        test_methods = [method for method in dir(test_instance)
-                       if method.startswith('test_') and callable(getattr(test_instance, method))]
+        test_methods = [
+            method
+            for method in dir(test_instance)
+            if method.startswith("test_") and callable(getattr(test_instance, method))
+        ]
 
         for method_name in test_methods:
             try:

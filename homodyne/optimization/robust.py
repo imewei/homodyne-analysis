@@ -98,7 +98,6 @@ except ImportError as e:
 
     def validate_array_dimensions(*args, **kwargs):
         """Fallback array validation when security features are unavailable."""
-        pass
 
     # Explicit exception aliases for fallback
     ValidationError = ValueError
@@ -323,8 +322,7 @@ class RobustHomodyneOptimizer:
             if weights is not None:
                 if weights.ndim == 1:
                     return np.sum(weights * residuals**2)
-                else:
-                    return np.dot(residuals, np.dot(weights, residuals))
+                return np.dot(residuals, np.dot(weights, residuals))
             return np.sum(residuals**2)
 
         # Register computations with incremental engine
@@ -539,12 +537,21 @@ class RobustHomodyneOptimizer:
         try:
             # Quick check if we're in a test environment with mocks
             import unittest.mock
-            if any(isinstance(obj, unittest.mock.Mock) for obj in [self.core, phi_angles, c2_experimental]):
+
+            if any(
+                isinstance(obj, unittest.mock.Mock)
+                for obj in [self.core, phi_angles, c2_experimental]
+            ):
                 has_mocks = True
         except (ImportError, AttributeError):
             pass
 
-        if self.enable_caching and self.complexity_reducer and enable_incremental and not has_mocks:
+        if (
+            self.enable_caching
+            and self.complexity_reducer
+            and enable_incremental
+            and not has_mocks
+        ):
             logger.info(
                 f"Starting cache-aware robust optimization with method: {method}"
             )
@@ -842,12 +849,11 @@ class RobustHomodyneOptimizer:
                 }
 
                 return optimal_params, info
-            else:
-                logger.error(f"DRO optimization failed with status: {problem.status}")
-                return None, {
-                    "status": problem.status,
-                    "method": "distributionally_robust",
-                }
+            logger.error(f"DRO optimization failed with status: {problem.status}")
+            return None, {
+                "status": problem.status,
+                "method": "distributionally_robust",
+            }
 
         except Exception as e:
             logger.error(f"DRO optimization error: {e}")
@@ -1014,14 +1020,13 @@ class RobustHomodyneOptimizer:
                 }
 
                 return optimal_params, info
-            else:
-                logger.error(
-                    f"Scenario optimization failed with status: {problem.status}"
-                )
-                return None, {
-                    "status": problem.status,
-                    "method": "scenario_robust",
-                }
+            logger.error(
+                f"Scenario optimization failed with status: {problem.status}"
+            )
+            return None, {
+                "status": problem.status,
+                "method": "scenario_robust",
+            }
 
         except Exception as e:
             logger.error(f"Scenario optimization error: {e}")
@@ -1177,14 +1182,13 @@ class RobustHomodyneOptimizer:
                 }
 
                 return optimal_params, info
-            else:
-                logger.error(
-                    f"Ellipsoidal optimization failed with status: {problem.status}"
-                )
-                return None, {
-                    "status": problem.status,
-                    "method": "ellipsoidal_robust",
-                }
+            logger.error(
+                f"Ellipsoidal optimization failed with status: {problem.status}"
+            )
+            return None, {
+                "status": problem.status,
+                "method": "ellipsoidal_robust",
+            }
 
         except Exception as e:
             logger.error(f"Ellipsoidal optimization error: {e}")
@@ -1560,9 +1564,8 @@ class RobustHomodyneOptimizer:
                     c2_fitted_2d[i] = contrast * theory_i + offset
 
                 return c2_fitted_2d
-            else:
-                # Fallback: use experimental data shape
-                return np.ones_like(c2_experimental)
+            # Fallback: use experimental data shape
+            return np.ones_like(c2_experimental)
 
         except Exception as e:
             logger.error(f"Error computing 2D fitted correlation: {e}")
@@ -1980,7 +1983,7 @@ class RobustHomodyneOptimizer:
         t2_array: np.ndarray | None = None,
         initial_params: np.ndarray | None = None,
         method: str = "wasserstein",
-        **kwargs
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Backward compatibility wrapper for optimize() method.
@@ -2017,12 +2020,12 @@ class RobustHomodyneOptimizer:
         """
         # Get initial parameters from kwargs or generate defaults
         if initial_params is None:
-            initial_params = kwargs.get('initial_parameters', None)
+            initial_params = kwargs.get("initial_parameters")
 
         if initial_params is None:
             # Create default initial parameters
             n_params = 7  # Default to laminar flow
-            if hasattr(self.core, 'get_effective_parameter_count'):
+            if hasattr(self.core, "get_effective_parameter_count"):
                 try:
                     n_params = int(self.core.get_effective_parameter_count())
                 except (TypeError, ValueError, AttributeError):
@@ -2037,17 +2040,26 @@ class RobustHomodyneOptimizer:
         # Check if _solve_robust_optimization is mocked (for tests)
         try:
             import unittest.mock
+
             if isinstance(self._solve_robust_optimization, unittest.mock.Mock):
                 # Method is mocked, call it directly and format result
-                mock_result = self._solve_robust_optimization(initial_params, phi_angles, c2_experimental, method=method, **kwargs)
-                if hasattr(mock_result, 'x') and hasattr(mock_result, 'fun'):
+                mock_result = self._solve_robust_optimization(
+                    initial_params, phi_angles, c2_experimental, method=method, **kwargs
+                )
+                if hasattr(mock_result, "x") and hasattr(mock_result, "fun"):
                     # Mock returned a scipy.optimize-style result
                     result_dict = {
-                        'success': getattr(mock_result, 'success', True),
-                        'parameters': np.array(mock_result.x) if hasattr(mock_result, 'x') else initial_params,
-                        'chi_squared': mock_result.fun if hasattr(mock_result, 'fun') else 0.0,
-                        'initial_parameters': initial_params,
-                        'method': method,
+                        "success": getattr(mock_result, "success", True),
+                        "parameters": (
+                            np.array(mock_result.x)
+                            if hasattr(mock_result, "x")
+                            else initial_params
+                        ),
+                        "chi_squared": (
+                            mock_result.fun if hasattr(mock_result, "fun") else 0.0
+                        ),
+                        "initial_parameters": initial_params,
+                        "method": method,
                     }
                     return result_dict
         except (ImportError, AttributeError):
@@ -2058,15 +2070,15 @@ class RobustHomodyneOptimizer:
             phi_angles=phi_angles,
             c2_experimental=c2_experimental,
             method=method,
-            **kwargs
+            **kwargs,
         )
 
         # Convert to dict format expected by tests
         result_dict = {
-            'success': params is not None,
-            'parameters': params,
-            'chi_squared': info.get('final_chi_squared', float('inf')),
-            'initial_parameters': initial_params,
+            "success": params is not None,
+            "parameters": params,
+            "chi_squared": info.get("final_chi_squared", float("inf")),
+            "initial_parameters": initial_params,
         }
 
         # Add all other fields from info dict
@@ -2080,7 +2092,7 @@ class RobustHomodyneOptimizer:
         phi_angles: np.ndarray,
         c2_experimental: np.ndarray,
         method: str = "wasserstein",
-        **kwargs
+        **kwargs,
     ) -> tuple[np.ndarray | None, dict[str, Any]]:
         """
         Backward compatibility wrapper for _solve_robust_optimization() method.
@@ -2113,7 +2125,7 @@ class RobustHomodyneOptimizer:
             phi_angles=phi_angles,
             c2_experimental=c2_experimental,
             method=method,
-            **kwargs
+            **kwargs,
         )
 
         return params, info
@@ -2138,12 +2150,13 @@ class RobustHomodyneOptimizer:
         if initial_parameters.ndim == 1:
             # This is a parameter vector
             if initial_parameters.size == 0 or initial_parameters.size > 50:
-                raise ValidationError(f"Invalid parameter count: {initial_parameters.size}")
-        else:
-            # This might be experimental data passed as initial_parameters
-            # Just check it's not empty
-            if initial_parameters.size == 0:
-                raise ValidationError("Initial parameters array is empty")
+                raise ValidationError(
+                    f"Invalid parameter count: {initial_parameters.size}"
+                )
+        # This might be experimental data passed as initial_parameters
+        # Just check it's not empty
+        elif initial_parameters.size == 0:
+            raise ValidationError("Initial parameters array is empty")
 
         # Check for invalid values
         if np.any(np.isnan(initial_parameters)) or np.any(np.isinf(initial_parameters)):
@@ -2222,11 +2235,7 @@ def create_robust_optimizer(
 
 # Module-level wrapper function for CLI and test compatibility
 def run_robust_optimization(
-    analyzer,
-    initial_params,
-    phi_angles=None,
-    c2_experimental=None,
-    **kwargs
+    analyzer, initial_params, phi_angles=None, c2_experimental=None, **kwargs
 ):
     """Module-level wrapper for robust optimization.
 
@@ -2253,7 +2262,7 @@ def run_robust_optimization(
     """
     try:
         # Create default config if not provided
-        config = kwargs.get('config', {})
+        config = kwargs.get("config", {})
         if not config:
             config = {"optimization_settings": {"robust": {"method": "wasserstein"}}}
 
@@ -2262,10 +2271,7 @@ def run_robust_optimization(
 
         # Run optimization
         return optimizer.run_robust_optimization(
-            initial_params,
-            phi_angles,
-            c2_experimental,
-            **kwargs
+            initial_params, phi_angles, c2_experimental, **kwargs
         )
     except Exception as e:
         # Return None for failed optimization (test compatibility)

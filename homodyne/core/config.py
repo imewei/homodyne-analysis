@@ -150,7 +150,9 @@ class ExperimentalDataConfig(TypedDict, total=False):
     cache_filename_template: str
 
 
-def configure_logging(cfg: dict[str, Any] = None, *, level: Any = None, log_file: str = None) -> logging.Logger:
+def configure_logging(
+    cfg: dict[str, Any] = None, *, level: Any = None, log_file: str = None
+) -> logging.Logger:
     """
     Configure centralized logging system with hierarchy and handlers.
 
@@ -189,23 +191,23 @@ def configure_logging(cfg: dict[str, Any] = None, *, level: Any = None, log_file
         if isinstance(level, int):
             # Convert logging level constant to string
             level_names = {
-                logging.DEBUG: 'DEBUG',
-                logging.INFO: 'INFO',
-                logging.WARNING: 'WARNING',
-                logging.ERROR: 'ERROR',
-                logging.CRITICAL: 'CRITICAL'
+                logging.DEBUG: "DEBUG",
+                logging.INFO: "INFO",
+                logging.WARNING: "WARNING",
+                logging.ERROR: "ERROR",
+                logging.CRITICAL: "CRITICAL",
             }
-            cfg['level'] = level_names.get(level, 'INFO')
+            cfg["level"] = level_names.get(level, "INFO")
         else:
-            cfg['level'] = str(level)
+            cfg["level"] = str(level)
 
     if log_file is not None:
-        cfg['log_to_file'] = True
-        cfg['log_filename'] = log_file
+        cfg["log_to_file"] = True
+        cfg["log_filename"] = log_file
 
     # Set defaults for backward compatibility
-    if 'log_to_console' not in cfg:
-        cfg['log_to_console'] = True
+    if "log_to_console" not in cfg:
+        cfg["log_to_console"] = True
     # Clear any existing handlers to avoid conflicts
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
@@ -323,7 +325,11 @@ class ConfigManager:
         angle_ranges = config_manager.get_target_angle_ranges()
     """
 
-    def __init__(self, config_file: str = "homodyne_config.json", config: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        config_file: str = "homodyne_config.json",
+        config: dict[str, Any] | None = None,
+    ):
         """
         Initialize configuration manager.
 
@@ -375,7 +381,9 @@ class ConfigManager:
         - Timing instrumentation for performance monitoring
         """
         # Use provided config_file parameter or fall back to instance variable
-        actual_config_file = config_file if config_file is not None else self.config_file
+        actual_config_file = (
+            config_file if config_file is not None else self.config_file
+        )
 
         with performance_monitor.time_function("config_loading"):
             try:
@@ -425,9 +433,11 @@ class ConfigManager:
                     from homodyne.config import get_template_path
 
                     template_path = get_template_path("template")
-                    with open(template_path, 'r') as f:
+                    with open(template_path) as f:
                         self.config = json.load(f)
-                    logger.info(f"Loaded default template configuration from: {template_path}")
+                    logger.info(
+                        f"Loaded default template configuration from: {template_path}"
+                    )
                 except Exception as template_error:
                     logger.warning(f"Failed to load default template: {template_error}")
                     logger.info("Using built-in default configuration...")
@@ -606,10 +616,9 @@ class ConfigManager:
             return False
 
         # Try multiple locations for parameter bounds (backwards compatibility)
-        bounds = (
-            self.config.get("parameter_bounds", {}) or
-            self.config.get("optimization_config", {}).get("parameter_bounds", {})
-        )
+        bounds = self.config.get("parameter_bounds", {}) or self.config.get(
+            "optimization_config", {}
+        ).get("parameter_bounds", {})
 
         if not bounds:
             # If no bounds configured, assume validation passes
@@ -653,7 +662,7 @@ class ConfigManager:
         if not self.config:
             if default is not None:
                 return default
-            raise KeyError(f"Configuration not loaded")
+            raise KeyError("Configuration not loaded")
 
         if section not in self.config:
             if default is not None:
@@ -742,7 +751,7 @@ class ConfigManager:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         # Save configuration with proper formatting
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(self.config, f, indent=2, default=str)
 
     def _deep_merge_dicts(self, base: dict, update: dict) -> dict:
@@ -764,7 +773,11 @@ class ConfigManager:
         result = base.copy()
 
         for key, value in update.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
+            ):
                 result[key] = self._deep_merge_dicts(result[key], value)
             else:
                 result[key] = value
@@ -1065,8 +1078,7 @@ class ConfigManager:
         submode = self.get_static_submode()
         if submode == "isotropic":
             return "static_isotropic"
-        else:
-            return "static_anisotropic"
+        return "static_anisotropic"
 
     def get_active_parameters(self) -> list[str]:
         """
@@ -1079,11 +1091,11 @@ class ConfigManager:
             Falls back to all parameters if not specified in configuration.
         """
         initial_params = self.get("initial_parameters", default={})
-        active_params = cast(list[str], initial_params.get("active_parameters", []))
+        active_params = cast("list[str]", initial_params.get("active_parameters", []))
 
         # If no active_parameters specified, use all parameter names
         if not active_params:
-            param_names = cast(list[str], initial_params.get("parameter_names", []))
+            param_names = cast("list[str]", initial_params.get("parameter_names", []))
             if param_names:
                 active_params = param_names
             else:
@@ -1146,6 +1158,7 @@ class ConfigManager:
             List of available template names
         """
         from homodyne.config import TEMPLATE_FILES
+
         return list(TEMPLATE_FILES.keys())
 
     def load_template(self, template_name: str) -> dict[str, Any]:
@@ -1173,7 +1186,7 @@ class ConfigManager:
 
         try:
             template_path = get_template_path(template_name)
-            with open(template_path, 'r') as f:
+            with open(template_path) as f:
                 return json.load(f)
         except Exception as e:
             raise FileNotFoundError(f"Failed to load template '{template_name}': {e}")
@@ -1199,17 +1212,18 @@ class ConfigManager:
         def substitute_env_vars(obj):
             if isinstance(obj, str):
                 # Replace ${VAR_NAME} or $VAR_NAME patterns
-                pattern = r'\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)'
+                pattern = r"\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)"
+
                 def replacer(match):
                     var_name = match.group(1) or match.group(2)
                     return os.environ.get(var_name, match.group(0))
+
                 return re.sub(pattern, replacer, obj)
-            elif isinstance(obj, dict):
+            if isinstance(obj, dict):
                 return {key: substitute_env_vars(value) for key, value in obj.items()}
-            elif isinstance(obj, list):
+            if isinstance(obj, list):
                 return [substitute_env_vars(item) for item in obj]
-            else:
-                return obj
+            return obj
 
         return substitute_env_vars(copy.deepcopy(config))
 
@@ -1231,6 +1245,7 @@ class ConfigManager:
             raise ValueError("No configuration loaded to backup")
 
         import copy
+
         return copy.deepcopy(self.config)
 
     def restore_from_backup(self, backup: dict[str, Any]) -> None:
@@ -1243,6 +1258,7 @@ class ConfigManager:
             Configuration backup to restore
         """
         import copy
+
         self.config = copy.deepcopy(backup)
 
     def get_config_differences(self, other_config: dict[str, Any]) -> dict[str, Any]:
@@ -1272,14 +1288,13 @@ class ConfigManager:
                 if key not in config2:
                     differences[key] = {"missing_in_other": config1[key]}
                 elif isinstance(config1[key], dict) and isinstance(config2[key], dict):
-                    nested_diff = find_differences(config1[key], config2[key], current_path)
+                    nested_diff = find_differences(
+                        config1[key], config2[key], current_path
+                    )
                     if nested_diff:
                         differences[key] = nested_diff
                 elif config1[key] != config2[key]:
-                    differences[key] = {
-                        "current": config1[key],
-                        "other": config2[key]
-                    }
+                    differences[key] = {"current": config1[key], "other": config2[key]}
 
             # Check for keys only in config2
             for key in config2:
@@ -1504,7 +1519,9 @@ class PerformanceMonitor:
         """
         return self.time_function(operation_name)
 
-    def start(self, operation_name: str = "default_operation") -> "PerformanceMonitor._TimingContext":
+    def start(
+        self, operation_name: str = "default_operation"
+    ) -> "PerformanceMonitor._TimingContext":
         """
         Start monitoring an operation.
 

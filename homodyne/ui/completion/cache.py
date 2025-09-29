@@ -183,9 +183,7 @@ class CompletionCache:
                     entry.last_access = current_time
                     self._stats["hits"] += 1
                     return entry.results
-                else:
-                    # Expired, will be cleaned up later
-                    pass
+                # Expired, will be cleaned up later
 
         # Try persistent cache
         if self.config.enable_persistence:

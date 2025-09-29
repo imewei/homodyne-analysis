@@ -20,10 +20,10 @@ Institution: Argonne National Laboratory
 import gc
 import time
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
-from typing import Callable
 
 import numpy as np
 import psutil
@@ -31,6 +31,7 @@ import psutil
 try:
     import cProfile
     import pstats
+
     CPROFILE_AVAILABLE = True
 except ImportError:
     CPROFILE_AVAILABLE = False
@@ -45,6 +46,7 @@ except ImportError:
 @dataclass
 class CPUProfileResult:
     """Results from CPU performance profiling."""
+
     function_name: str
     total_time: float
     cpu_time: float
@@ -58,6 +60,7 @@ class CPUProfileResult:
 @dataclass
 class PerformanceMetrics:
     """Comprehensive performance metrics for CPU analysis."""
+
     execution_time: float
     cpu_utilization: float
     memory_usage_mb: float
@@ -99,7 +102,12 @@ class CPUProfiler:
                 "ctx_switches": self.process.num_ctx_switches().total,
             }
         except Exception:
-            return {"cpu_percent": 0, "memory_mb": 0, "thread_count": 1, "ctx_switches": 0}
+            return {
+                "cpu_percent": 0,
+                "memory_mb": 0,
+                "thread_count": 1,
+                "ctx_switches": 0,
+            }
 
     @contextmanager
     def profile_function(self, function_name: str = "unknown"):
@@ -144,8 +152,12 @@ class CPUProfiler:
 
             # Calculate deltas and efficiency metrics
             result = self._calculate_profile_result(
-                function_name, start_time, end_time,
-                start_metrics, end_metrics, profile_stats
+                function_name,
+                start_time,
+                end_time,
+                start_metrics,
+                end_metrics,
+                profile_stats,
             )
 
     def _get_current_metrics(self) -> dict[str, float]:
@@ -163,13 +175,17 @@ class CPUProfiler:
                 "cpu_system_time": cpu_times.system,
                 "thread_count": self.process.num_threads(),
                 "ctx_switches": self.process.num_ctx_switches().total,
-                "io_counters": self.process.io_counters()._asdict() if hasattr(self.process, 'io_counters') else {},
+                "io_counters": (
+                    self.process.io_counters()._asdict()
+                    if hasattr(self.process, "io_counters")
+                    else {}
+                ),
             }
         except Exception as e:
             warnings.warn(f"Failed to get metrics: {e}")
             return {"timestamp": time.perf_counter()}
 
-    def _extract_profile_stats(self, stats: 'pstats.Stats') -> dict[str, Any]:
+    def _extract_profile_stats(self, stats: "pstats.Stats") -> dict[str, Any]:
         """Extract key statistics from cProfile results."""
         try:
             # Get stats as structured data
@@ -186,15 +202,17 @@ class CPUProfiler:
 
             # Sort by total time and get top functions
             sorted_funcs = sorted(
-                stats_data.items(),
-                key=lambda x: x[1]["total_time"],
-                reverse=True
+                stats_data.items(), key=lambda x: x[1]["total_time"], reverse=True
             )
 
             return {
-                "total_calls": sum(data["cumulative_calls"] for _, data in sorted_funcs),
+                "total_calls": sum(
+                    data["cumulative_calls"] for _, data in sorted_funcs
+                ),
                 "total_time": sum(data["total_time"] for _, data in sorted_funcs),
-                "top_functions": dict(sorted_funcs[:10]),  # Top 10 time-consuming functions
+                "top_functions": dict(
+                    sorted_funcs[:10]
+                ),  # Top 10 time-consuming functions
             }
         except Exception as e:
             warnings.warn(f"Failed to extract profile stats: {e}")
@@ -207,7 +225,7 @@ class CPUProfiler:
         end_time: float,
         start_metrics: dict[str, float],
         end_metrics: dict[str, float],
-        profile_stats: dict[str, Any]
+        profile_stats: dict[str, Any],
     ) -> CPUProfileResult:
         """Calculate comprehensive profiling results."""
         total_time = end_time - start_time
@@ -215,8 +233,8 @@ class CPUProfiler:
         # Calculate CPU utilization and memory deltas
         cpu_time = 0.0
         memory_peak_mb = end_metrics.get("memory_rss_mb", 0)
-        memory_delta_mb = (
-            end_metrics.get("memory_rss_mb", 0) - start_metrics.get("memory_rss_mb", 0)
+        memory_delta_mb = end_metrics.get("memory_rss_mb", 0) - start_metrics.get(
+            "memory_rss_mb", 0
         )
 
         # Estimate cache efficiency (simplified heuristic)
@@ -236,14 +254,11 @@ class CPUProfiler:
             memory_delta_mb=memory_delta_mb,
             cache_efficiency=cache_efficiency,
             thread_utilization=thread_utilization,
-            profile_stats=profile_stats
+            profile_stats=profile_stats,
         )
 
     def _estimate_cache_efficiency(
-        self,
-        execution_time: float,
-        memory_delta: float,
-        profile_stats: dict[str, Any]
+        self, execution_time: float, memory_delta: float, profile_stats: dict[str, Any]
     ) -> float:
         """
         Estimate cache efficiency based on execution patterns.
@@ -257,8 +272,7 @@ class CPUProfiler:
                 # Normalize based on typical cache-friendly vs cache-unfriendly patterns
                 efficiency_score = 1.0 / (1.0 + memory_delta / execution_time)
                 return min(1.0, max(0.0, efficiency_score))
-            else:
-                return 0.5  # Neutral efficiency
+            return 0.5  # Neutral efficiency
         except Exception:
             return 0.5
 
@@ -268,7 +282,7 @@ class CPUProfiler:
         *args,
         iterations: int = 10,
         warmup_iterations: int = 3,
-        **kwargs
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Comprehensive benchmarking of a function.
@@ -314,9 +328,7 @@ class CPUProfiler:
         return self._calculate_benchmark_stats(results, total_end - total_start)
 
     def _calculate_benchmark_stats(
-        self,
-        results: list[Any],
-        total_time: float
+        self, results: list[Any], total_time: float
     ) -> dict[str, Any]:
         """Calculate benchmark statistics."""
         if not results:
@@ -334,7 +346,9 @@ class CPUProfiler:
             "max_time": np.max(times),
             "median_time": np.median(times),
             "throughput": len(results) / total_time,
-            "coefficient_of_variation": np.std(times) / np.mean(times) if np.mean(times) > 0 else 0,
+            "coefficient_of_variation": (
+                np.std(times) / np.mean(times) if np.mean(times) > 0 else 0
+            ),
         }
 
 
@@ -385,22 +399,32 @@ class MemoryOptimizer:
 
             # Check for optimization opportunities
             if not arr.flags.c_contiguous:
-                arr_info["suggestions"].append("Make array C-contiguous for better cache performance")
+                arr_info["suggestions"].append(
+                    "Make array C-contiguous for better cache performance"
+                )
 
             if arr.dtype == np.float64:
-                arr_info["suggestions"].append("Consider float32 if precision allows (50% memory reduction)")
+                arr_info["suggestions"].append(
+                    "Consider float32 if precision allows (50% memory reduction)"
+                )
 
             if arr.size > 1000000:  # Large arrays
-                arr_info["suggestions"].append("Consider chunked processing for large arrays")
+                arr_info["suggestions"].append(
+                    "Consider chunked processing for large arrays"
+                )
 
             optimization_results[f"array_{i}"] = arr_info
 
         # Overall recommendations
         if optimization_results["memory_pressure"] > 0.8:
-            optimization_results["recommendations"].append("High memory pressure - consider chunked processing")
+            optimization_results["recommendations"].append(
+                "High memory pressure - consider chunked processing"
+            )
 
         if optimization_results["memory_pressure"] > 0.5:
-            optimization_results["recommendations"].append("Monitor memory usage - approaching limits")
+            optimization_results["recommendations"].append(
+                "Monitor memory usage - approaching limits"
+            )
 
         return optimization_results
 
@@ -453,8 +477,7 @@ class MemoryOptimizer:
                 "memory_growth_mb": rss_values[-1] - rss_values[0],
                 "measurements": measurements,
             }
-        else:
-            return {"error": "No measurements collected"}
+        return {"error": "No measurements collected"}
 
 
 def profile_homodyne_function(func: Callable) -> Callable:
@@ -471,6 +494,7 @@ def profile_homodyne_function(func: Callable) -> Callable:
     Callable
         Wrapped function with profiling
     """
+
     def wrapper(*args, **kwargs):
         profiler = CPUProfiler()
 
@@ -507,14 +531,18 @@ def get_cpu_performance_info() -> dict[str, Any]:
         "memory_total_gb": psutil.virtual_memory().total / 1024**3,
         "memory_available_gb": psutil.virtual_memory().available / 1024**3,
         "platform": {
-            "system": psutil.Platform.system if hasattr(psutil, 'Platform') else "unknown",
-            "machine": psutil.Platform.machine if hasattr(psutil, 'Platform') else "unknown",
+            "system": (
+                psutil.Platform.system if hasattr(psutil, "Platform") else "unknown"
+            ),
+            "machine": (
+                psutil.Platform.machine if hasattr(psutil, "Platform") else "unknown"
+            ),
         },
         "profiling_capabilities": {
             "cprofile_available": CPROFILE_AVAILABLE,
             "memory_profiler_available": MEMORY_PROFILER_AVAILABLE,
             "detailed_profiling": profiler.enable_detailed,
-        }
+        },
     }
 
     return system_info

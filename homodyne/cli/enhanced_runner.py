@@ -373,12 +373,11 @@ class EnhancedHomodyneRunner:
         """Determine which methods to run based on choice."""
         if method_choice == "classical":
             return ["nelder_mead", "gurobi"]
-        elif method_choice == "robust":
+        if method_choice == "robust":
             return ["wasserstein", "scenario", "ellipsoidal"]
-        elif method_choice == "all":
+        if method_choice == "all":
             return ["nelder_mead", "gurobi", "wasserstein", "scenario", "ellipsoidal"]
-        else:
-            return [method_choice]
+        return [method_choice]
 
     def _estimate_total_steps(
         self, methods: list[str], config_manager: ConfigManager
@@ -604,10 +603,9 @@ def main() -> int:
         status = results.get("status", "success")
         if status in ["error", "invalid"]:
             return 1
-        elif status == "interrupted":
+        if status == "interrupted":
             return 2
-        else:
-            return 0
+        return 0
 
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)

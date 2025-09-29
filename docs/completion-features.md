@@ -2,7 +2,8 @@
 
 ## Overview
 
-The homodyne completion system provides intelligent, context-aware shell completions with performance optimization and extensibility.
+The homodyne completion system provides intelligent, context-aware shell completions
+with performance optimization and extensibility.
 
 ## Key Features
 
@@ -15,6 +16,7 @@ conda activate other-project # Gets different completions
 ```
 
 Benefits:
+
 - No completion pollution between projects
 - Project-specific config file suggestions
 - Environment-specific cache optimization
@@ -28,6 +30,7 @@ homodyne --config <TAB>  # Prioritizes project config files
 ```
 
 Detection features:
+
 - Finds project root via `.git`, `pyproject.toml`, etc.
 - Scans `config/`, `configs/` directories
 - Prioritizes relevant configuration files
@@ -44,6 +47,7 @@ homodyne --config <TAB>  # Instant response
 ```
 
 Cache features:
+
 - TTL-based expiration: 5 minutes for dynamic data
 - Smart invalidation: Updates when files change
 - Memory efficient: Automatic cleanup
@@ -58,6 +62,7 @@ homodyne --method <TAB>
 ```
 
 Smart suggestions:
+
 - Context-aware method filtering
 - Performance-based recommendations
 - Integration with config files
@@ -75,6 +80,7 @@ class CustomCompleter(CompletionPlugin):
 ```
 
 Plugin capabilities:
+
 - Custom completion sources
 - Dynamic completion generation
 - Integration with external tools
@@ -277,4 +283,5 @@ class AdvancedCompleter(CompletionPlugin):
 
 ## Performance Notes
 
-The completion system is designed to be invisible and fast. If any completion takes longer than 100ms, it should be reported as a performance issue.
+The completion system is designed to be invisible and fast. If any completion takes
+longer than 100ms, it should be reported as a performance issue.

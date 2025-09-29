@@ -45,19 +45,16 @@ logger = logging.getLogger(__name__)
 class XPCSDataFormatError(Exception):
     """Raised when XPCS data format is not recognized or invalid."""
 
-    pass
 
 
 class XPCSDependencyError(Exception):
     """Raised when required dependencies are not available."""
 
-    pass
 
 
 class XPCSConfigurationError(Exception):
     """Raised when configuration is invalid or missing required parameters."""
 
-    pass
 
 
 def load_xpcs_config(config_path: str | Path) -> dict[str, Any]:
@@ -84,11 +81,10 @@ def load_xpcs_config(config_path: str | Path) -> dict[str, Any]:
                 config = json.load(f)
             logger.info(f"Loaded JSON configuration: {config_path}")
             return config
-        else:
-            raise XPCSConfigurationError(
-                f"Unsupported configuration format: {config_path.suffix}. "
-                f"Supported formats: .json"
-            )
+        raise XPCSConfigurationError(
+            f"Unsupported configuration format: {config_path.suffix}. "
+            f"Supported formats: .json"
+        )
 
     except json.JSONDecodeError as e:
         raise XPCSConfigurationError(
@@ -171,7 +167,7 @@ class XPCSDataLoader:
             import numpy as np
 
             # Check minimum numpy version for scientific computing
-            np_version = tuple(map(int, np.__version__.split('.')[:2]))
+            np_version = tuple(map(int, np.__version__.split(".")[:2]))
             if np_version < (1, 20):
                 raise XPCSDependencyError(
                     f"NumPy version {np.__version__} is too old. "
@@ -191,9 +187,8 @@ class XPCSDataLoader:
         if "temporal" in self.analyzer_config:
             temporal_config = self.analyzer_config["temporal"]
             return temporal_config.get(param_name, default_value)
-        else:
-            # Fallback to flat structure (old format)
-            return self.analyzer_config.get(param_name, default_value)
+        # Fallback to flat structure (old format)
+        return self.analyzer_config.get(param_name, default_value)
 
     def _validate_configuration(self) -> None:
         """Validate configuration parameters."""
@@ -261,7 +256,11 @@ class XPCSDataLoader:
             "cache_filename_template", "cached_c2_frames_{start_frame}_{end_frame}.npz"
         )
 
-        cache_filename = f"{cache_template.replace('{start_frame}', str(start_frame)).replace('{end_frame}', str(end_frame))}" if '{' in cache_template else f"cached_c2_frames_{start_frame}_{end_frame}.npz"
+        cache_filename = (
+            f"{cache_template.replace('{start_frame}', str(start_frame)).replace('{end_frame}', str(end_frame))}"
+            if "{" in cache_template
+            else f"cached_c2_frames_{start_frame}_{end_frame}.npz"
+        )
         cache_path = os.path.join(cache_folder, cache_filename)
 
         # Check cache first
@@ -279,9 +278,9 @@ class XPCSDataLoader:
             logger.info(f"Loading raw data from: {data_path}")
 
             # Detect file format and load accordingly
-            if data_file.lower().endswith('.npz'):
+            if data_file.lower().endswith(".npz"):
                 data = self._load_from_npz(data_path)
-            elif data_file.lower().endswith(('.h5', '.hdf5')):
+            elif data_file.lower().endswith((".h5", ".hdf5")):
                 data = self._load_from_hdf(data_path)
             else:
                 # Try HDF5 format as default
@@ -307,7 +306,9 @@ class XPCSDataLoader:
         self._validate_loaded_data(c2_experimental, data["phi_angles_list"])
 
         # Get shape info for logging
-        phi_shape = getattr(data['phi_angles_list'], 'shape', f"list[{len(data['phi_angles_list'])}]")
+        phi_shape = getattr(
+            data["phi_angles_list"], "shape", f"list[{len(data['phi_angles_list'])}]"
+        )
         logger.info(
             f"Data loaded successfully - shapes: phi{phi_shape}, "
             f"c2{c2_experimental.shape}"
@@ -329,10 +330,9 @@ class XPCSDataLoader:
         # Load based on format
         if format_type == "aps_old":
             return self._load_aps_old_format(hdf_path)
-        elif format_type == "aps_u":
+        if format_type == "aps_u":
             return self._load_aps_u_format(hdf_path)
-        else:
-            raise XPCSDataFormatError(f"Unsupported format: {format_type}")
+        raise XPCSDataFormatError(f"Unsupported format: {format_type}")
 
     def _detect_format(self, hdf_path: str) -> str:
         """Detect whether HDF5 file is APS old or APS-U new format."""
@@ -348,7 +348,7 @@ class XPCSDataLoader:
                 return "aps_u"
 
             # Check for APS old format keys
-            elif (
+            if (
                 "xpcs" in f
                 and "dqlist" in f["xpcs"]
                 and "dphilist" in f["xpcs"]
@@ -357,12 +357,11 @@ class XPCSDataLoader:
             ):
                 return "aps_old"
 
-            else:
-                available_keys = list(f.keys())
-                raise XPCSDataFormatError(
-                    f"Cannot determine HDF5 format - missing expected keys. "
-                    f"Available root keys: {available_keys}"
-                )
+            available_keys = list(f.keys())
+            raise XPCSDataFormatError(
+                f"Cannot determine HDF5 format - missing expected keys. "
+                f"Available root keys: {available_keys}"
+            )
 
     def _load_aps_u_format(self, hdf_path: str) -> dict[str, Any]:
         """Load data from APS-U new format HDF5 file using processed_bins mapping."""
@@ -532,10 +531,10 @@ class XPCSDataLoader:
             data = np.load(npz_path)
 
             # Extract data arrays
-            c2_data = data['c2_data']
-            angles = data['angles']
-            t1_array = data['t1_array'] if 't1_array' in data else None
-            t2_array = data['t2_array'] if 't2_array' in data else None
+            c2_data = data["c2_data"]
+            angles = data["angles"]
+            t1_array = data["t1_array"] if "t1_array" in data else None
+            t2_array = data["t2_array"] if "t2_array" in data else None
 
             logger.debug(f"NPZ data shape: {c2_data.shape}")
             logger.debug(f"Angles: {len(angles)}")
@@ -547,7 +546,9 @@ class XPCSDataLoader:
 
             time_length = c2_data.shape[1] if len(c2_data.shape) > 1 else 1
 
-            logger.info(f"✓ Loaded NPZ data: {len(c2_list)} angles, time_length={time_length}")
+            logger.info(
+                f"✓ Loaded NPZ data: {len(c2_list)} angles, time_length={time_length}"
+            )
 
             return {
                 "c2_exp": c2_list,
@@ -568,10 +569,10 @@ class XPCSDataLoader:
             data = np.load(cache_path, allow_pickle=True)
 
             return {
-                "c2_exp": data['c2_exp'].tolist(),
-                "phi_angles_list": data['phi_angles_list'].tolist(),
-                "time_length": int(data['time_length']),
-                "num_angles": int(data['num_angles']),
+                "c2_exp": data["c2_exp"].tolist(),
+                "phi_angles_list": data["phi_angles_list"].tolist(),
+                "time_length": int(data["time_length"]),
+                "num_angles": int(data["num_angles"]),
             }
         except Exception as e:
             logger.error(f"Failed to load cache file: {e}")
@@ -587,10 +588,10 @@ class XPCSDataLoader:
 
             np.savez_compressed(
                 cache_path,
-                c2_exp=np.array(data['c2_exp'], dtype=object),
-                phi_angles_list=np.array(data['phi_angles_list'], dtype=object),
-                time_length=data['time_length'],
-                num_angles=data['num_angles']
+                c2_exp=np.array(data["c2_exp"], dtype=object),
+                phi_angles_list=np.array(data["phi_angles_list"], dtype=object),
+                time_length=data["time_length"],
+                num_angles=data["num_angles"],
             )
             logger.debug(f"✓ Cached data saved to: {cache_path}")
         except Exception as e:

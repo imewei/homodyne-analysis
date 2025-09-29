@@ -25,15 +25,11 @@ import tempfile
 import time
 import tracemalloc
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import psutil
@@ -45,32 +41,34 @@ warnings.filterwarnings("ignore")
 @dataclass
 class PerformanceMetrics:
     """Container for performance measurement results."""
+
     operation_name: str
     execution_time: float  # seconds
-    memory_peak: float     # MB
+    memory_peak: float  # MB
     memory_current: float  # MB
-    cpu_percent: float     # percentage
-    data_size: int         # input size
-    iterations: int        # number of iterations
-    timestamp: str         # ISO timestamp
-    system_info: Dict[str, Any]  # system information
+    cpu_percent: float  # percentage
+    data_size: int  # input size
+    iterations: int  # number of iterations
+    timestamp: str  # ISO timestamp
+    system_info: dict[str, Any]  # system information
 
 
 @dataclass
 class PerformanceBaseline:
     """Performance baseline data structure."""
+
     baseline_id: str
     creation_date: str
-    system_info: Dict[str, Any]
-    metrics: Dict[str, PerformanceMetrics]
-    summary_statistics: Dict[str, float]
+    system_info: dict[str, Any]
+    metrics: dict[str, PerformanceMetrics]
+    summary_statistics: dict[str, float]
 
 
 class SystemProfiler:
     """System information and resource monitoring."""
 
     @staticmethod
-    def get_system_info() -> Dict[str, Any]:
+    def get_system_info() -> dict[str, Any]:
         """Get comprehensive system information."""
         try:
             cpu_info = {
@@ -85,14 +83,14 @@ class SystemProfiler:
                 "cpu": cpu_info,
                 "memory": memory_info,
                 "python_version": f"{__import__('sys').version_info.major}.{__import__('sys').version_info.minor}.{__import__('sys').version_info.micro}",
-                "platform": __import__('platform').platform(),
-                "architecture": __import__('platform').architecture(),
+                "platform": __import__("platform").platform(),
+                "architecture": __import__("platform").architecture(),
             }
         except Exception:
             return {"error": "Could not gather system information"}
 
     @staticmethod
-    def get_memory_usage() -> Tuple[float, float]:
+    def get_memory_usage() -> tuple[float, float]:
         """Get current and peak memory usage in MB."""
         process = psutil.Process()
         memory_info = process.memory_info()
@@ -121,7 +119,9 @@ class PerformanceBenchmarker:
         self.baseline_dir.mkdir(exist_ok=True)
 
     @contextmanager
-    def measure_performance(self, operation_name: str, data_size: int = 0, iterations: int = 1):
+    def measure_performance(
+        self, operation_name: str, data_size: int = 0, iterations: int = 1
+    ):
         """Context manager for measuring operation performance."""
         # Start memory tracking
         tracemalloc.start()
@@ -157,18 +157,24 @@ class PerformanceBenchmarker:
                 data_size=data_size,
                 iterations=iterations,
                 timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-                system_info=self.profiler.get_system_info()
+                system_info=self.profiler.get_system_info(),
             )
 
             # Store metrics for later retrieval
             self._last_metrics = metrics
 
-    def get_last_metrics(self) -> Optional[PerformanceMetrics]:
+    def get_last_metrics(self) -> PerformanceMetrics | None:
         """Get the last measured performance metrics."""
-        return getattr(self, '_last_metrics', None)
+        return getattr(self, "_last_metrics", None)
 
-    def benchmark_function(self, func: Callable, args: Tuple = (), kwargs: Dict = None,
-                          iterations: int = 10, warmup: int = 3) -> PerformanceMetrics:
+    def benchmark_function(
+        self,
+        func: Callable,
+        args: tuple = (),
+        kwargs: dict = None,
+        iterations: int = 10,
+        warmup: int = 3,
+    ) -> PerformanceMetrics:
         """Benchmark a function with multiple iterations."""
         if kwargs is None:
             kwargs = {}
@@ -185,11 +191,13 @@ class PerformanceBenchmarker:
         memories = []
 
         for i in range(iterations):
-            with self.measure_performance(func.__name__, data_size=len(args), iterations=1):
+            with self.measure_performance(
+                func.__name__, data_size=len(args), iterations=1
+            ):
                 try:
                     result = func(*args, **kwargs)
                 except Exception as e:
-                    print(f"Benchmark iteration {i+1} failed: {e}")
+                    print(f"Benchmark iteration {i + 1} failed: {e}")
                     continue
 
             metrics = self.get_last_metrics()
@@ -201,14 +209,14 @@ class PerformanceBenchmarker:
             # Fallback metrics if all iterations failed
             return PerformanceMetrics(
                 operation_name=func.__name__,
-                execution_time=float('inf'),
+                execution_time=float("inf"),
                 memory_peak=0.0,
                 memory_current=0.0,
                 cpu_percent=0.0,
                 data_size=len(args),
                 iterations=iterations,
                 timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-                system_info=self.profiler.get_system_info()
+                system_info=self.profiler.get_system_info(),
             )
 
         # Calculate statistics
@@ -226,7 +234,7 @@ class PerformanceBenchmarker:
             data_size=len(args),
             iterations=iterations,
             timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-            system_info=self.profiler.get_system_info()
+            system_info=self.profiler.get_system_info(),
         )
 
 
@@ -236,7 +244,7 @@ class CoreAlgorithmBenchmarks:
     def __init__(self):
         self.benchmarker = PerformanceBenchmarker()
 
-    def benchmark_chi_squared_calculation(self) -> Dict[str, PerformanceMetrics]:
+    def benchmark_chi_squared_calculation(self) -> dict[str, PerformanceMetrics]:
         """Benchmark chi-squared calculation with different data sizes."""
         results = {}
 
@@ -249,7 +257,7 @@ class CoreAlgorithmBenchmarks:
             c2_theo = np.random.rand(n_angles, n_time1, n_time2)
 
             def chi_squared_calc():
-                return np.sum((c2_exp - c2_theo)**2)
+                return np.sum((c2_exp - c2_theo) ** 2)
 
             size_key = f"chi_squared_{n_angles}x{n_time1}x{n_time2}"
             results[size_key] = self.benchmarker.benchmark_function(
@@ -258,7 +266,7 @@ class CoreAlgorithmBenchmarks:
 
         return results
 
-    def benchmark_matrix_operations(self) -> Dict[str, PerformanceMetrics]:
+    def benchmark_matrix_operations(self) -> dict[str, PerformanceMetrics]:
         """Benchmark core matrix operations."""
         results = {}
 
@@ -273,21 +281,21 @@ class CoreAlgorithmBenchmarks:
             def matrix_multiply():
                 return A @ B
 
-            results[f"matrix_multiply_{size}x{size}"] = self.benchmarker.benchmark_function(
-                matrix_multiply, iterations=10
+            results[f"matrix_multiply_{size}x{size}"] = (
+                self.benchmarker.benchmark_function(matrix_multiply, iterations=10)
             )
 
             # Eigenvalue decomposition benchmark
             def eigenvalue_decomp():
                 return np.linalg.eig(A)
 
-            results[f"eigenvalue_decomp_{size}x{size}"] = self.benchmarker.benchmark_function(
-                eigenvalue_decomp, iterations=5
+            results[f"eigenvalue_decomp_{size}x{size}"] = (
+                self.benchmarker.benchmark_function(eigenvalue_decomp, iterations=5)
             )
 
         return results
 
-    def benchmark_array_operations(self) -> Dict[str, PerformanceMetrics]:
+    def benchmark_array_operations(self) -> dict[str, PerformanceMetrics]:
         """Benchmark NumPy array operations."""
         results = {}
 
@@ -326,7 +334,7 @@ class IOBenchmarks:
     def __init__(self):
         self.benchmarker = PerformanceBenchmarker()
 
-    def benchmark_file_operations(self) -> Dict[str, PerformanceMetrics]:
+    def benchmark_file_operations(self) -> dict[str, PerformanceMetrics]:
         """Benchmark file I/O operations."""
         results = {}
 
@@ -353,7 +361,7 @@ class IOBenchmarks:
                 np.save(tmp_path, test_data)  # Ensure file exists
 
                 def numpy_load():
-                    return np.load(tmp_path + '.npy')
+                    return np.load(tmp_path + ".npy")
 
                 results[f"numpy_load_{size}"] = self.benchmarker.benchmark_function(
                     numpy_load, iterations=10
@@ -361,7 +369,7 @@ class IOBenchmarks:
 
             finally:
                 # Clean up
-                for ext in ['', '.npy']:
+                for ext in ["", ".npy"]:
                     try:
                         os.unlink(tmp_path + ext)
                     except FileNotFoundError:
@@ -369,7 +377,7 @@ class IOBenchmarks:
 
         return results
 
-    def benchmark_json_operations(self) -> Dict[str, PerformanceMetrics]:
+    def benchmark_json_operations(self) -> dict[str, PerformanceMetrics]:
         """Benchmark JSON I/O operations."""
         results = {}
 
@@ -377,13 +385,15 @@ class IOBenchmarks:
         for size in [100, 1000, 10000]:
             test_data = {f"key_{i}": f"value_{i}" for i in range(size)}
 
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as tmp_file:
+            with tempfile.NamedTemporaryFile(
+                mode="w", delete=False, suffix=".json"
+            ) as tmp_file:
                 tmp_path = tmp_file.name
 
             try:
                 # JSON write benchmark
                 def json_write():
-                    with open(tmp_path, 'w') as f:
+                    with open(tmp_path, "w") as f:
                         json.dump(test_data, f)
 
                 results[f"json_write_{size}"] = self.benchmarker.benchmark_function(
@@ -391,11 +401,11 @@ class IOBenchmarks:
                 )
 
                 # JSON read benchmark
-                with open(tmp_path, 'w') as f:
+                with open(tmp_path, "w") as f:
                     json.dump(test_data, f)
 
                 def json_read():
-                    with open(tmp_path, 'r') as f:
+                    with open(tmp_path) as f:
                         return json.load(f)
 
                 results[f"json_read_{size}"] = self.benchmarker.benchmark_function(
@@ -414,7 +424,7 @@ class StartupBenchmarks:
     def __init__(self):
         self.benchmarker = PerformanceBenchmarker()
 
-    def benchmark_import_times(self) -> Dict[str, PerformanceMetrics]:
+    def benchmark_import_times(self) -> dict[str, PerformanceMetrics]:
         """Benchmark import times for major modules."""
         results = {}
 
@@ -431,13 +441,17 @@ class StartupBenchmarks:
             homodyne_imports = [
                 ("homodyne_core", "from homodyne.core import composition"),
                 ("homodyne_analysis", "from homodyne.analysis import core"),
-                ("homodyne_optimization", "from homodyne.optimization import classical"),
+                (
+                    "homodyne_optimization",
+                    "from homodyne.optimization import classical",
+                ),
             ]
             import_tests.extend(homodyne_imports)
         except ImportError:
             pass
 
         for module_name, import_statement in import_tests:
+
             def import_module():
                 exec(import_statement)
 
@@ -491,13 +505,21 @@ class PerformanceBaselineManager:
         all_metrics.update(import_results)
 
         # Calculate summary statistics
-        execution_times = [m.execution_time for m in all_metrics.values() if m.execution_time != float('inf')]
-        memory_peaks = [m.memory_peak for m in all_metrics.values() if m.memory_peak > 0]
+        execution_times = [
+            m.execution_time
+            for m in all_metrics.values()
+            if m.execution_time != float("inf")
+        ]
+        memory_peaks = [
+            m.memory_peak for m in all_metrics.values() if m.memory_peak > 0
+        ]
 
         summary_stats = {
             "total_operations": len(all_metrics),
             "avg_execution_time": np.mean(execution_times) if execution_times else 0.0,
-            "median_execution_time": np.median(execution_times) if execution_times else 0.0,
+            "median_execution_time": (
+                np.median(execution_times) if execution_times else 0.0
+            ),
             "max_execution_time": np.max(execution_times) if execution_times else 0.0,
             "avg_memory_peak": np.mean(memory_peaks) if memory_peaks else 0.0,
             "max_memory_peak": np.max(memory_peaks) if memory_peaks else 0.0,
@@ -509,7 +531,7 @@ class PerformanceBaselineManager:
             creation_date=time.strftime("%Y-%m-%d %H:%M:%S"),
             system_info=SystemProfiler.get_system_info(),
             metrics=all_metrics,
-            summary_statistics=summary_stats
+            summary_statistics=summary_stats,
         )
 
         # Save baseline
@@ -531,12 +553,12 @@ class PerformanceBaselineManager:
             metrics_dict[key] = asdict(metrics)
         baseline_dict["metrics"] = metrics_dict
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(baseline_dict, f, indent=2)
 
         print(f"Baseline saved to: {filepath}")
 
-    def load_baseline(self, baseline_id: str) -> Optional[PerformanceBaseline]:
+    def load_baseline(self, baseline_id: str) -> PerformanceBaseline | None:
         """Load performance baseline from disk."""
         filename = f"performance_baseline_{baseline_id}.json"
         filepath = self.baseline_dir / filename
@@ -544,7 +566,7 @@ class PerformanceBaselineManager:
         if not filepath.exists():
             return None
 
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             baseline_dict = json.load(f)
 
         # Convert metrics back to PerformanceMetrics objects
@@ -565,28 +587,53 @@ class PerformanceBaselineManager:
 
         report.append(f"\nCreation Date: {baseline.creation_date}")
         report.append(f"System Info: {baseline.system_info.get('platform', 'Unknown')}")
-        report.append(f"CPU Cores: {baseline.system_info.get('cpu', {}).get('cpu_count', 'Unknown')}")
-        report.append(f"Memory: {baseline.system_info.get('memory', {}).get('total', 0) / (1024**3):.1f} GB")
+        report.append(
+            f"CPU Cores: {baseline.system_info.get('cpu', {}).get('cpu_count', 'Unknown')}"
+        )
+        report.append(
+            f"Memory: {baseline.system_info.get('memory', {}).get('total', 0) / (1024**3):.1f} GB"
+        )
 
-        report.append(f"\nSUMMARY STATISTICS:")
-        report.append(f"  Total Operations: {baseline.summary_statistics['total_operations']}")
-        report.append(f"  Average Execution Time: {baseline.summary_statistics['avg_execution_time']:.4f} seconds")
-        report.append(f"  Median Execution Time: {baseline.summary_statistics['median_execution_time']:.4f} seconds")
-        report.append(f"  Maximum Execution Time: {baseline.summary_statistics['max_execution_time']:.4f} seconds")
-        report.append(f"  Average Memory Peak: {baseline.summary_statistics['avg_memory_peak']:.2f} MB")
-        report.append(f"  Maximum Memory Peak: {baseline.summary_statistics['max_memory_peak']:.2f} MB")
+        report.append("\nSUMMARY STATISTICS:")
+        report.append(
+            f"  Total Operations: {baseline.summary_statistics['total_operations']}"
+        )
+        report.append(
+            f"  Average Execution Time: {baseline.summary_statistics['avg_execution_time']:.4f} seconds"
+        )
+        report.append(
+            f"  Median Execution Time: {baseline.summary_statistics['median_execution_time']:.4f} seconds"
+        )
+        report.append(
+            f"  Maximum Execution Time: {baseline.summary_statistics['max_execution_time']:.4f} seconds"
+        )
+        report.append(
+            f"  Average Memory Peak: {baseline.summary_statistics['avg_memory_peak']:.2f} MB"
+        )
+        report.append(
+            f"  Maximum Memory Peak: {baseline.summary_statistics['max_memory_peak']:.2f} MB"
+        )
 
-        report.append(f"\nDETAILED METRICS:")
-        report.append(f"{'Operation':<30} {'Time (s)':<12} {'Memory (MB)':<12} {'Data Size':<12}")
+        report.append("\nDETAILED METRICS:")
+        report.append(
+            f"{'Operation':<30} {'Time (s)':<12} {'Memory (MB)':<12} {'Data Size':<12}"
+        )
         report.append("-" * 66)
 
         # Sort by execution time (descending)
-        sorted_metrics = sorted(baseline.metrics.items(),
-                              key=lambda x: x[1].execution_time, reverse=True)
+        sorted_metrics = sorted(
+            baseline.metrics.items(), key=lambda x: x[1].execution_time, reverse=True
+        )
 
         for op_name, metrics in sorted_metrics:
-            time_str = f"{metrics.execution_time:.4f}" if metrics.execution_time != float('inf') else "FAILED"
-            report.append(f"{op_name:<30} {time_str:<12} {metrics.memory_peak:<12.2f} {metrics.data_size:<12}")
+            time_str = (
+                f"{metrics.execution_time:.4f}"
+                if metrics.execution_time != float("inf")
+                else "FAILED"
+            )
+            report.append(
+                f"{op_name:<30} {time_str:<12} {metrics.memory_peak:<12.2f} {metrics.data_size:<12}"
+            )
 
         return "\n".join(report)
 
@@ -608,7 +655,7 @@ def run_performance_baseline_creation():
 
     # Save report to file
     report_file = f"performance_baseline_report_{baseline_id}.txt"
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         f.write(report)
 
     print(f"\n📄 Detailed report saved to: {report_file}")

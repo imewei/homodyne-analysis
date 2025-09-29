@@ -31,10 +31,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import numpy as np
 import psutil
@@ -45,6 +41,7 @@ warnings.filterwarnings("ignore")
 @dataclass
 class ProfileData:
     """Container for profiling data."""
+
     function_name: str
     total_time: float
     cumulative_time: float
@@ -57,6 +54,7 @@ class ProfileData:
 @dataclass
 class MemoryProfile:
     """Memory profiling data."""
+
     timestamp: float
     current_mb: float
     peak_mb: float
@@ -68,6 +66,7 @@ class MemoryProfile:
 @dataclass
 class PerformanceAlert:
     """Performance alert data."""
+
     timestamp: str
     alert_type: str
     metric_name: str
@@ -104,7 +103,7 @@ class FunctionProfiler:
         # Create string buffer for stats
         stats_buffer = io.StringIO()
         stats = pstats.Stats(self.profiler, stream=stats_buffer)
-        stats.sort_stats('cumulative')
+        stats.sort_stats("cumulative")
 
         # Extract top functions
         profile_list = []
@@ -116,7 +115,9 @@ class FunctionProfiler:
                 call_count, reccall_count, total_time, cumulative_time = func_stats
             elif len(func_stats) == 6:
                 # Newer format has additional fields
-                call_count, reccall_count, total_time, cumulative_time, _, _ = func_stats
+                call_count, reccall_count, total_time, cumulative_time, _, _ = (
+                    func_stats
+                )
             else:
                 # Fallback for unknown format
                 call_count = func_stats[0] if len(func_stats) > 0 else 0
@@ -124,26 +125,28 @@ class FunctionProfiler:
                 cumulative_time = func_stats[3] if len(func_stats) > 3 else 0
 
             # Skip built-in functions and profiler overhead
-            if filename.startswith('<') or 'profiling' in filename.lower():
+            if filename.startswith("<") or "profiling" in filename.lower():
                 continue
 
             time_per_call = total_time / call_count if call_count > 0 else 0
 
-            profile_list.append(ProfileData(
-                function_name=function_name,
-                total_time=total_time,
-                cumulative_time=cumulative_time,
-                call_count=call_count,
-                time_per_call=time_per_call,
-                filename=filename,
-                line_number=line_number
-            ))
+            profile_list.append(
+                ProfileData(
+                    function_name=function_name,
+                    total_time=total_time,
+                    cumulative_time=cumulative_time,
+                    call_count=call_count,
+                    time_per_call=time_per_call,
+                    filename=filename,
+                    line_number=line_number,
+                )
+            )
 
         # Sort by cumulative time
         profile_list.sort(key=lambda x: x.cumulative_time, reverse=True)
         self.profile_data[operation_name] = profile_list[:20]  # Top 20 functions
 
-    def get_top_functions(self, operation_name: str, n: int = 10) -> List[ProfileData]:
+    def get_top_functions(self, operation_name: str, n: int = 10) -> list[ProfileData]:
         """Get top N functions by execution time."""
         if operation_name not in self.profile_data:
             return []
@@ -157,12 +160,16 @@ class FunctionProfiler:
         report = []
         report.append(f"PROFILE REPORT: {operation_name}")
         report.append("=" * 60)
-        report.append(f"{'Function':<30} {'Calls':<8} {'Time(s)':<10} {'Time/Call':<12}")
+        report.append(
+            f"{'Function':<30} {'Calls':<8} {'Time(s)':<10} {'Time/Call':<12}"
+        )
         report.append("-" * 60)
 
         for profile in self.profile_data[operation_name]:
-            report.append(f"{profile.function_name[:29]:<30} {profile.call_count:<8} "
-                         f"{profile.total_time:<10.4f} {profile.time_per_call:<12.6f}")
+            report.append(
+                f"{profile.function_name[:29]:<30} {profile.call_count:<8} "
+                f"{profile.total_time:<10.4f} {profile.time_per_call:<12.6f}"
+            )
 
         return "\n".join(report)
 
@@ -207,7 +214,7 @@ class MemoryProfiler:
             current_mb = memory_info.rss / 1024 / 1024
 
             # Peak memory (approximate)
-            peak_mb = getattr(memory_info, 'peak_wss', memory_info.rss) / 1024 / 1024
+            peak_mb = getattr(memory_info, "peak_wss", memory_info.rss) / 1024 / 1024
 
             # Tracemalloc memory
             try:
@@ -227,7 +234,7 @@ class MemoryProfiler:
                 peak_mb=peak_mb,
                 tracemalloc_current=tracemalloc_current_mb,
                 tracemalloc_peak=tracemalloc_peak_mb,
-                gc_objects=gc_objects
+                gc_objects=gc_objects,
             )
 
             self.memory_snapshots.append(snapshot)
@@ -239,7 +246,7 @@ class MemoryProfiler:
         except Exception:
             pass  # Ignore monitoring errors
 
-    def get_memory_stats(self) -> Dict[str, float]:
+    def get_memory_stats(self) -> dict[str, float]:
         """Get memory statistics."""
         if not self.memory_snapshots:
             return {}
@@ -257,10 +264,10 @@ class MemoryProfiler:
             "memory_std_mb": np.std(current_memory),
             "peak_memory_mb": np.max(peak_memory),
             "avg_gc_objects": np.mean(gc_objects),
-            "max_gc_objects": np.max(gc_objects)
+            "max_gc_objects": np.max(gc_objects),
         }
 
-    def detect_memory_leaks(self, threshold_mb: float = 10.0) -> List[str]:
+    def detect_memory_leaks(self, threshold_mb: float = 10.0) -> list[str]:
         """Detect potential memory leaks."""
         if len(self.memory_snapshots) < 100:
             return []
@@ -282,14 +289,18 @@ class MemoryProfiler:
 
         alerts = []
         if memory_increase > threshold_mb:
-            alerts.append(f"Memory increased by {memory_increase:.2f} MB over recent period")
+            alerts.append(
+                f"Memory increased by {memory_increase:.2f} MB over recent period"
+            )
 
         # Check for sudden spikes
         max_memory = np.max(recent_memory)
         avg_memory = np.mean(recent_memory)
 
         if max_memory - avg_memory > threshold_mb:
-            alerts.append(f"Memory spike detected: {max_memory:.2f} MB peak vs {avg_memory:.2f} MB average")
+            alerts.append(
+                f"Memory spike detected: {max_memory:.2f} MB peak vs {avg_memory:.2f} MB average"
+            )
 
         return alerts
 
@@ -303,12 +314,13 @@ class PerformanceMonitor:
         self.alerts = []
         self.thresholds = {
             "max_execution_time": 10.0,  # seconds
-            "max_memory_mb": 1000.0,     # MB
-            "max_cpu_percent": 80.0,     # percent
+            "max_memory_mb": 1000.0,  # MB
+            "max_cpu_percent": 80.0,  # percent
         }
 
     def profile_function(self, func_name: str = None):
         """Decorator for profiling functions."""
+
         def decorator(func):
             name = func_name or f"{func.__module__}.{func.__name__}"
 
@@ -323,7 +335,9 @@ class PerformanceMonitor:
                     self._check_performance_thresholds(name, execution_time)
 
                 return result
+
             return wrapper
+
         return decorator
 
     def _check_performance_thresholds(self, function_name: str, execution_time: float):
@@ -336,7 +350,7 @@ class PerformanceMonitor:
                 current_value=execution_time,
                 threshold=self.thresholds["max_execution_time"],
                 severity="WARNING",
-                message=f"Function {function_name} exceeded execution time threshold"
+                message=f"Function {function_name} exceeded execution time threshold",
             )
             self.alerts.append(alert)
 
@@ -351,7 +365,7 @@ class PerformanceMonitor:
                     current_value=memory_mb,
                     threshold=self.thresholds["max_memory_mb"],
                     severity="WARNING",
-                    message=f"Memory usage exceeded threshold: {memory_mb:.2f} MB"
+                    message=f"Memory usage exceeded threshold: {memory_mb:.2f} MB",
                 )
                 self.alerts.append(alert)
         except Exception:
@@ -365,7 +379,7 @@ class PerformanceMonitor:
         """Stop all monitoring."""
         self.memory_profiler.stop_monitoring()
 
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get comprehensive performance summary."""
         memory_stats = self.memory_profiler.get_memory_stats()
         memory_leaks = self.memory_profiler.detect_memory_leaks()
@@ -373,9 +387,11 @@ class PerformanceMonitor:
         return {
             "memory_statistics": memory_stats,
             "memory_leak_alerts": memory_leaks,
-            "performance_alerts": [asdict(alert) for alert in self.alerts[-10:]],  # Recent alerts
+            "performance_alerts": [
+                asdict(alert) for alert in self.alerts[-10:]
+            ],  # Recent alerts
             "profiled_functions": list(self.function_profiler.profile_data.keys()),
-            "monitoring_active": self.memory_profiler.monitoring
+            "monitoring_active": self.memory_profiler.monitoring,
         }
 
     def generate_monitoring_report(self) -> str:
@@ -388,9 +404,15 @@ class PerformanceMonitor:
         memory_stats = self.memory_profiler.get_memory_stats()
         if memory_stats:
             report.append("\nMEMORY STATISTICS:")
-            report.append(f"  Average Memory: {memory_stats.get('avg_memory_mb', 0):.2f} MB")
-            report.append(f"  Peak Memory: {memory_stats.get('peak_memory_mb', 0):.2f} MB")
-            report.append(f"  Memory Std Dev: {memory_stats.get('memory_std_mb', 0):.2f} MB")
+            report.append(
+                f"  Average Memory: {memory_stats.get('avg_memory_mb', 0):.2f} MB"
+            )
+            report.append(
+                f"  Peak Memory: {memory_stats.get('peak_memory_mb', 0):.2f} MB"
+            )
+            report.append(
+                f"  Memory Std Dev: {memory_stats.get('memory_std_mb', 0):.2f} MB"
+            )
             report.append(f"  GC Objects: {memory_stats.get('avg_gc_objects', 0):.0f}")
 
         # Memory leaks
@@ -441,8 +463,12 @@ class PerformanceTestSuite:
         result2 = array_test()
 
         # Get profile reports
-        matrix_report = self.monitor.function_profiler.generate_profile_report("matrix_operations")
-        array_report = self.monitor.function_profiler.generate_profile_report("array_operations")
+        matrix_report = self.monitor.function_profiler.generate_profile_report(
+            "matrix_operations"
+        )
+        array_report = self.monitor.function_profiler.generate_profile_report(
+            "array_operations"
+        )
 
         print("✓ Function profiling test completed")
         return matrix_report, array_report
@@ -515,8 +541,12 @@ class PerformanceTestSuite:
         summary_report = self.monitor.generate_monitoring_report()
 
         print("\nSUMMARY:")
-        print(f"  Functions profiled: {len(self.monitor.function_profiler.profile_data)}")
-        print(f"  Memory snapshots: {len(self.monitor.memory_profiler.memory_snapshots)}")
+        print(
+            f"  Functions profiled: {len(self.monitor.function_profiler.profile_data)}"
+        )
+        print(
+            f"  Memory snapshots: {len(self.monitor.memory_profiler.memory_snapshots)}"
+        )
         print(f"  Performance alerts: {len(alerts)}")
 
         # Save detailed reports
@@ -524,26 +554,28 @@ class PerformanceTestSuite:
         reports_dir.mkdir(exist_ok=True)
 
         # Save matrix profiling report
-        with open(reports_dir / "matrix_profiling_report.txt", 'w') as f:
+        with open(reports_dir / "matrix_profiling_report.txt", "w") as f:
             f.write(matrix_report)
 
         # Save array profiling report
-        with open(reports_dir / "array_profiling_report.txt", 'w') as f:
+        with open(reports_dir / "array_profiling_report.txt", "w") as f:
             f.write(array_report)
 
         # Save monitoring summary
-        with open(reports_dir / "monitoring_summary.txt", 'w') as f:
+        with open(reports_dir / "monitoring_summary.txt", "w") as f:
             f.write(summary_report)
 
         # Save performance data as JSON
         performance_data = {
             "memory_stats": memory_stats,
             "alerts": [asdict(alert) for alert in alerts],
-            "profiled_functions": list(self.monitor.function_profiler.profile_data.keys()),
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            "profiled_functions": list(
+                self.monitor.function_profiler.profile_data.keys()
+            ),
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        with open(reports_dir / "performance_data.json", 'w') as f:
+        with open(reports_dir / "performance_data.json", "w") as f:
             json.dump(performance_data, f, indent=2)
 
         print(f"\n📄 Detailed reports saved to: {reports_dir}")

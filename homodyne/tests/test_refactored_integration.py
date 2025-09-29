@@ -16,8 +16,6 @@ import json
 import os
 import tempfile
 import warnings
-from unittest.mock import Mock
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -28,10 +26,11 @@ warnings.filterwarnings("ignore")
 # Skip tests that require optional dependencies
 try:
     import sys
-    sys.modules['numba'] = None
-    sys.modules['pymc'] = None
-    sys.modules['arviz'] = None
-    sys.modules['corner'] = None
+
+    sys.modules["numba"] = None
+    sys.modules["pymc"] = None
+    sys.modules["arviz"] = None
+    sys.modules["corner"] = None
 except ImportError:
     pass
 
@@ -47,24 +46,16 @@ class TestRefactoredCalculateChiSquared:
             # Create mock configuration matching expected structure
             config = {
                 "analyzer_parameters": {
-                    "temporal": {
-                        "dt": 0.1,
-                        "start_frame": 1,
-                        "end_frame": 11
-                    },
-                    "scattering": {
-                        "wavevector_q": 0.005
-                    },
-                    "geometry": {
-                        "stator_rotor_gap": 2000000
-                    },
+                    "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 11},
+                    "scattering": {"wavevector_q": 0.005},
+                    "geometry": {"stator_rotor_gap": 2000000},
                     "contrast": 0.95,
-                    "offset": 1.0
+                    "offset": 1.0,
                 },
                 "experimental_data": {
                     "data_file": "/tmp/mock/data.h5",
                     "cache_enabled": False,
-                    "preload_data": False
+                    "preload_data": False,
                 },
                 "optimization_config": {
                     "mode": "static_isotropic",
@@ -73,27 +64,25 @@ class TestRefactoredCalculateChiSquared:
                     "parameter_bounds": {
                         "D0": [1e-12, 1e-10],
                         "alpha": [0.1, 2.0],
-                        "beta": [-2.0, 2.0]
+                        "beta": [-2.0, 2.0],
                     },
-                    "initial_guesses": {
-                        "D0": 1e-11,
-                        "alpha": 0.5,
-                        "beta": -0.3
-                    }
+                    "initial_guesses": {"D0": 1e-11, "alpha": 0.5, "beta": -0.3},
                 },
                 "initial_parameters": {
                     "parameter_names": ["D0", "alpha", "beta"],
-                    "values": [1e-11, 0.5, -0.3]
+                    "values": [1e-11, 0.5, -0.3],
                 },
                 "output_settings": {
                     "save_plots": False,
                     "save_results": False,
-                    "output_directory": "/tmp/mock"
-                }
+                    "output_directory": "/tmp/mock",
+                },
             }
 
             # Create temporary config file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False
+            ) as f:
                 json.dump(config, f)
                 config_path = f.name
 
@@ -102,14 +91,23 @@ class TestRefactoredCalculateChiSquared:
                 from unittest.mock import patch
 
                 # Mock the analyzer core components that we can't easily test
-                with patch('homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data') as mock_load:
+                with patch(
+                    "homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data"
+                ) as mock_load:
                     # Mock data loading
                     n_angles, n_time = 4, 10
                     mock_c2_exp = np.random.rand(n_angles, n_time, n_time)
                     mock_phi_angles = np.array([0, 45, 90, 135])
-                    mock_load.return_value = (mock_c2_exp, 1.0, mock_phi_angles, n_angles)
+                    mock_load.return_value = (
+                        mock_c2_exp,
+                        1.0,
+                        mock_phi_angles,
+                        n_angles,
+                    )
 
-                    with patch('homodyne.analysis.core.HomodyneAnalysisCore.calculate_c2_single_angle_optimized') as mock_c2:
+                    with patch(
+                        "homodyne.analysis.core.HomodyneAnalysisCore.calculate_c2_single_angle_optimized"
+                    ) as mock_c2:
                         # Mock C2 calculation
                         mock_c2.return_value = np.random.rand(n_time, n_time)
 
@@ -141,35 +139,34 @@ class TestRefactoredCalculateChiSquared:
             # Create mock analyzer
             config = {
                 "analyzer_parameters": {
-                    "temporal": {
-                        "dt": 0.1,
-                        "start_frame": 1,
-                        "end_frame": 11
-                    },
-                    "scattering": {
-                        "wavevector_q": 0.005
-                    },
-                    "geometry": {
-                        "stator_rotor_gap": 2000000
-                    },
-                    "angular": {"phi_angles": "0,45,90,135"}
+                    "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 11},
+                    "scattering": {"wavevector_q": 0.005},
+                    "geometry": {"stator_rotor_gap": 2000000},
+                    "angular": {"phi_angles": "0,45,90,135"},
                 }
             }
 
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False
+            ) as f:
                 json.dump(config, f)
                 config_path = f.name
 
             try:
                 from unittest.mock import Mock
                 from unittest.mock import patch
-                with patch('homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data'):
+
+                with patch(
+                    "homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data"
+                ):
                     analyzer = HomodyneAnalysisCore(config_path)
 
                     # Test angle processing (renamed method)
                     phi_angles = np.array([0, 45, 90, 135])
                     # _get_optimization_indices takes (phi_angles, filter_angles_for_optimization)
-                    angle_indices = analyzer._get_optimization_indices(phi_angles, filter_angles_for_optimization=False)
+                    angle_indices = analyzer._get_optimization_indices(
+                        phi_angles, filter_angles_for_optimization=False
+                    )
 
                     # Should return valid indices
                     assert len(angle_indices) <= len(phi_angles)
@@ -197,15 +194,17 @@ class TestRefactoredRunAnalysis:
             config = {
                 "analyzer_parameters": {
                     "temporal": {"dt": 0.1},
-                    "angular": {"phi_angles": "0,45,90,135"}
+                    "angular": {"phi_angles": "0,45,90,135"},
                 },
                 "initial_parameters": {
                     "parameter_names": ["D0", "alpha"],
-                    "values": [1e-11, 0.5]
-                }
+                    "values": [1e-11, 0.5],
+                },
             }
 
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False
+            ) as f:
                 json.dump(config, f)
                 config_path = f.name
 
@@ -233,9 +232,7 @@ class TestRefactoredRunAnalysis:
 
             # Test override creation
             override = _create_config_override(
-                static_isotropic=True,
-                laminar_flow=False,
-                method="classical"
+                static_isotropic=True, laminar_flow=False, method="classical"
             )
 
             # Should create proper override structure
@@ -311,7 +308,7 @@ class TestRefactoredOptimization:
             optimizer = ClassicalOptimizer(mock_analyzer, mock_config)
 
             # Test Gurobi options creation (if method exists)
-            if hasattr(optimizer, '_initialize_gurobi_options'):
+            if hasattr(optimizer, "_initialize_gurobi_options"):
                 options = optimizer._initialize_gurobi_options(1e-6)
 
                 # Should be a dictionary with expected keys
@@ -339,7 +336,8 @@ class TestRefactoredOptimization:
             optimizer = ClassicalOptimizer(mock_analyzer, mock_config)
 
             # Test gradient estimation (if method exists)
-            if hasattr(optimizer, '_estimate_gradient'):
+            if hasattr(optimizer, "_estimate_gradient"):
+
                 def test_func(x):
                     return np.sum(x**2)
 
@@ -350,7 +348,9 @@ class TestRefactoredOptimization:
                 assert gradient.shape == x.shape
                 print("✓ Refactored gradient estimation working")
             else:
-                print("ℹ Gradient estimation method not found (expected if not refactored)")
+                print(
+                    "ℹ Gradient estimation method not found (expected if not refactored)"
+                )
 
         except ImportError as e:
             print(f"Skipping gradient estimation test: {e}")
@@ -368,18 +368,22 @@ class TestCompositionFramework:
             from homodyne.core.composition import safe_sqrt
 
             # Test successful chain
-            result = (Result.success(16)
-                     .flat_map(safe_sqrt)  # sqrt(16) = 4
-                     .flat_map(lambda x: safe_divide(x, 2))  # 4/2 = 2
-                     .map(lambda x: x * 3))  # 2*3 = 6
+            result = (
+                Result.success(16)
+                .flat_map(safe_sqrt)  # sqrt(16) = 4
+                .flat_map(lambda x: safe_divide(x, 2))  # 4/2 = 2
+                .map(lambda x: x * 3)
+            )  # 2*3 = 6
 
             assert result.is_success
             assert result.value == 6.0
 
             # Test error propagation
-            error_result = (Result.success(-16)
-                           .flat_map(safe_sqrt)  # This should fail
-                           .map(lambda x: x * 2))  # This shouldn't execute
+            error_result = (
+                Result.success(-16)
+                .flat_map(safe_sqrt)  # This should fail
+                .map(lambda x: x * 2)
+            )  # This shouldn't execute
 
             assert error_result.is_failure
             assert "negative" in str(error_result.error)
@@ -396,10 +400,12 @@ class TestCompositionFramework:
             from homodyne.core.composition import Pipeline
 
             # Create and test pipeline
-            pipeline = (Pipeline()
-                       .add_validation(lambda x: x > 0, "Must be positive")
-                       .add_transform(lambda x: x * 2)
-                       .add_transform(lambda x: x + 1))
+            pipeline = (
+                Pipeline()
+                .add_validation(lambda x: x > 0, "Must be positive")
+                .add_transform(lambda x: x * 2)
+                .add_transform(lambda x: x + 1)
+            )
 
             # Test successful execution
             result = pipeline.execute(5)
@@ -423,9 +429,11 @@ class TestCompositionFramework:
             from homodyne.core.workflows import ParameterValidator
 
             # Test parameter validator
-            validator = (ParameterValidator()
-                        .add_positivity_check("D0")
-                        .add_range_check("alpha", -2.0, 2.0))
+            validator = (
+                ParameterValidator()
+                .add_positivity_check("D0")
+                .add_range_check("alpha", -2.0, 2.0)
+            )
 
             # Test valid parameters
             valid_params = {"D0": 1e-11, "alpha": 0.5}
@@ -459,7 +467,7 @@ def run_integration_tests():
         TestRefactoredRunAnalysis,
         TestRefactoredPlotting,
         TestRefactoredOptimization,
-        TestCompositionFramework
+        TestCompositionFramework,
     ]
 
     total_tests = 0
@@ -469,8 +477,11 @@ def run_integration_tests():
         print(f"\n{test_class.__name__}:")
         test_instance = test_class()
 
-        test_methods = [method for method in dir(test_instance)
-                       if method.startswith('test_') and callable(getattr(test_instance, method))]
+        test_methods = [
+            method
+            for method in dir(test_instance)
+            if method.startswith("test_") and callable(getattr(test_instance, method))
+        ]
 
         for method_name in test_methods:
             try:

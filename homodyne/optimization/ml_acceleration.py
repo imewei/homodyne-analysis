@@ -76,7 +76,6 @@ except ImportError:
 
 # LightGBM
 try:
-
     _ML_BACKENDS_AVAILABLE["lightgbm"] = True
 except ImportError:
     _ML_BACKENDS_AVAILABLE["lightgbm"] = False
@@ -84,7 +83,6 @@ except ImportError:
 
 # Optuna for hyperparameter optimization
 try:
-
     _ML_BACKENDS_AVAILABLE["optuna"] = True
 except ImportError:
     _ML_BACKENDS_AVAILABLE["optuna"] = False
@@ -110,11 +108,11 @@ class SecureOptimizationDataEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return {"__numpy_array__": obj.tolist(), "dtype": str(obj.dtype)}
-        elif isinstance(obj, np.integer):
+        if isinstance(obj, np.integer):
             return int(obj)
-        elif isinstance(obj, np.floating):
+        if isinstance(obj, np.floating):
             return float(obj)
-        elif hasattr(obj, "__dict__"):
+        if hasattr(obj, "__dict__"):
             # Handle dataclass objects
             return obj.__dict__
         return super().default(obj)
@@ -231,7 +229,6 @@ class OptimizationPredictor(ABC):
     @abstractmethod
     def fit(self, optimization_records: list[OptimizationRecord]) -> None:
         """Train the predictor on optimization history."""
-        pass
 
     @abstractmethod
     def predict(
@@ -240,17 +237,14 @@ class OptimizationPredictor(ABC):
         initial_guess: np.ndarray | None = None,
     ) -> PredictionResult:
         """Predict optimal parameters for given experimental conditions."""
-        pass
 
     @abstractmethod
     def update(self, new_record: OptimizationRecord) -> None:
         """Update model with new optimization record."""
-        pass
 
     @abstractmethod
     def get_model_info(self) -> dict[str, Any]:
         """Get information about the trained model."""
-        pass
 
 
 class EnsembleOptimizationPredictor(OptimizationPredictor):
@@ -273,7 +267,7 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
                 feature_scaling="standard",
                 validation_split=0.2,
                 cv_folds=5,
-                enable_hyperparameter_tuning=True
+                enable_hyperparameter_tuning=True,
             )
         self.config = config
         self.models: dict[str, Any] = {}
@@ -289,7 +283,9 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
     def _initialize_models(self) -> None:
         """Initialize ensemble of ML models."""
         if not _ML_BACKENDS_AVAILABLE["sklearn"]:
-            logger.warning("Scikit-learn is not available. ML acceleration features will be disabled.")
+            logger.warning(
+                "Scikit-learn is not available. ML acceleration features will be disabled."
+            )
             return
 
         # Random Forest - excellent for feature importance and robustness
@@ -407,7 +403,9 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
                         model.fit(X_train_scaled, y_train)
                 elif model_name in ["gradient_boosting"]:
                     # Skip models that don't support multi-target regression
-                    logger.debug(f"Skipping {model_name}: does not support multi-target regression")
+                    logger.debug(
+                        f"Skipping {model_name}: does not support multi-target regression"
+                    )
                     failed_models.append(model_name)
                     continue
                 else:
@@ -546,7 +544,7 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
         weights = {}
         total_weight = 0
 
-        for model_name in predictions.keys():
+        for model_name in predictions:
             # Weight by inverse uncertainty and model performance
             model_score = self.training_history[-1]["model_scores"].get(model_name, {})
             r2 = model_score.get("r2_score", 0.5)
@@ -577,7 +575,9 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
         if np.any(np.isnan(ensemble_prediction)):
             logger.warning("NaN detected in ensemble prediction, using fallback")
             # Return mean of all predictions as fallback
-            valid_preds = [pred for pred in predictions.values() if not np.any(np.isnan(pred))]
+            valid_preds = [
+                pred for pred in predictions.values() if not np.any(np.isnan(pred))
+            ]
             if valid_preds:
                 ensemble_prediction = np.mean(valid_preds, axis=0)
             else:
@@ -629,7 +629,10 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
     def get_model_info(self) -> dict[str, Any]:
         """Get comprehensive model information."""
         if not _ML_BACKENDS_AVAILABLE["sklearn"]:
-            return {"status": "sklearn_not_available", "available_backends": _ML_BACKENDS_AVAILABLE}
+            return {
+                "status": "sklearn_not_available",
+                "available_backends": _ML_BACKENDS_AVAILABLE,
+            }
 
         if not self.is_fitted:
             return {"status": "not_fitted"}
@@ -745,7 +748,7 @@ class EnsembleOptimizationPredictor(OptimizationPredictor):
 
         # Weighted uncertainty
         weighted_uncertainty = sum(
-            weights[name] * uncertainties[name] for name in weights.keys()
+            weights[name] * uncertainties[name] for name in weights
         )
         # Check for NaN in weighted uncertainty
         if np.isnan(weighted_uncertainty) or np.isinf(weighted_uncertainty):
@@ -831,9 +834,8 @@ class TransferLearningPredictor(OptimizationPredictor):
                 model_performance=adapter_result.model_performance,
                 feature_importance=adapter_result.feature_importance,
             )
-        else:
-            # Fall back to base predictor
-            return self.base_predictor.predict(experimental_conditions, initial_guess)
+        # Fall back to base predictor
+        return self.base_predictor.predict(experimental_conditions, initial_guess)
 
     def update(self, new_record: OptimizationRecord) -> None:
         """Update base model and relevant domain adapters."""
@@ -997,7 +999,11 @@ class MLAcceleratedOptimizer:
         ml_enhanced_initial = initial_parameters.copy()
         ml_prediction_info: dict[str, Any] = {}
 
-        if self.predictor and (_ML_BACKENDS_AVAILABLE["sklearn"] and hasattr(self.predictor, 'is_fitted') and self.predictor.is_fitted):
+        if self.predictor and (
+            _ML_BACKENDS_AVAILABLE["sklearn"]
+            and hasattr(self.predictor, "is_fitted")
+            and self.predictor.is_fitted
+        ):
             try:
                 prediction = self.predictor.predict(
                     experimental_conditions, initial_parameters
@@ -1028,7 +1034,10 @@ class MLAcceleratedOptimizer:
                 logger.warning(f"ML prediction failed: {e}")
                 ml_prediction_info = {"ml_initialization_used": False, "error": str(e)}
         else:
-            ml_prediction_info = {"ml_initialization_used": False, "reason": "No trained model available"}
+            ml_prediction_info = {
+                "ml_initialization_used": False,
+                "reason": "No trained model available",
+            }
 
         # Run optimization with enhanced initialization and error recovery
         optimization_start = time.time()
@@ -1395,7 +1404,9 @@ class MLAcceleratedOptimizer:
         # Return False to propagate any exception that occurred in the with block
         return False
 
-    def update_training_data(self, training_results: list[OptimizationRecord | dict[str, Any]]) -> None:
+    def update_training_data(
+        self, training_results: list[OptimizationRecord | dict[str, Any]]
+    ) -> None:
         """
         Update training data with new optimization records.
 
@@ -1414,18 +1425,33 @@ class MLAcceleratedOptimizer:
                 # Convert dictionary to OptimizationRecord
                 try:
                     record = OptimizationRecord(
-                        experiment_id=result.get("experiment_id", f"exp_{len(self.optimization_history)}_{int(time.time())}"),
-                        initial_parameters=np.array(result.get("initial_parameters", result.get("initial_params", []))),
-                        final_parameters=np.array(result.get("final_parameters", result.get("optimal_parameters", []))),
+                        experiment_id=result.get(
+                            "experiment_id",
+                            f"exp_{len(self.optimization_history)}_{int(time.time())}",
+                        ),
+                        initial_parameters=np.array(
+                            result.get(
+                                "initial_parameters", result.get("initial_params", [])
+                            )
+                        ),
+                        final_parameters=np.array(
+                            result.get(
+                                "final_parameters", result.get("optimal_parameters", [])
+                            )
+                        ),
                         objective_value=float(result.get("objective_value", 0.0)),
                         convergence_time=float(result.get("convergence_time", 1.0)),
                         method=result.get("method", "Unknown"),
-                        experimental_conditions=result.get("experimental_conditions", {}),
+                        experimental_conditions=result.get(
+                            "experimental_conditions", {}
+                        ),
                         metadata=result.get("metadata", {}),
-                        timestamp=result.get("timestamp", time.time())
+                        timestamp=result.get("timestamp", time.time()),
                     )
                     processed_results.append(record)
-                    logger.debug(f"Converted dict to OptimizationRecord: {record.experiment_id}")
+                    logger.debug(
+                        f"Converted dict to OptimizationRecord: {record.experiment_id}"
+                    )
                 except Exception as e:
                     logger.warning(f"Failed to convert dict to OptimizationRecord: {e}")
                     continue
@@ -1439,9 +1465,13 @@ class MLAcceleratedOptimizer:
         if len(self.optimization_history) >= 5:
             try:
                 self.train_predictor()
-                logger.info(f"Updated training data with {len(training_results)} new records")
+                logger.info(
+                    f"Updated training data with {len(training_results)} new records"
+                )
             except Exception as e:
-                logger.warning(f"Failed to retrain predictor after updating training data: {e}")
+                logger.warning(
+                    f"Failed to retrain predictor after updating training data: {e}"
+                )
 
     def optimize(
         self,
@@ -1450,7 +1480,7 @@ class MLAcceleratedOptimizer:
         classical_optimizer=None,
         objective_function=None,
         bounds=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Run ML-accelerated optimization.
@@ -1492,10 +1522,16 @@ class MLAcceleratedOptimizer:
             # Use scipy.optimize directly for testing scenarios
             try:
                 # Create a simple wrapper that handles optimization
-                method = kwargs.get("optimization_method", kwargs.get("method", "Nelder-Mead"))
+                method = kwargs.get(
+                    "optimization_method", kwargs.get("method", "Nelder-Mead")
+                )
 
                 # Use ML prediction if available
-                if self.predictor and hasattr(self.predictor, 'is_fitted') and self.predictor.is_fitted:
+                if (
+                    self.predictor
+                    and hasattr(self.predictor, "is_fitted")
+                    and self.predictor.is_fitted
+                ):
                     try:
                         prediction = self.predictor.predict(experimental_conditions)
                         if prediction.confidence_score > 0.6:
@@ -1504,7 +1540,7 @@ class MLAcceleratedOptimizer:
                         logger.debug(f"ML prediction not used: {e}")
 
                 # Run optimization with sensible defaults
-                default_options = {'maxfev': 1000, 'maxiter': 1000}
+                default_options = {"maxfev": 1000, "maxiter": 1000}
                 options = kwargs.get("options", {})
                 # Merge with defaults, allowing user overrides
                 for key, value in default_options.items():
@@ -1516,25 +1552,30 @@ class MLAcceleratedOptimizer:
                     initial_parameters,
                     method=method,
                     bounds=bounds,
-                    options=options
+                    options=options,
                 )
 
                 # Post-process result: if we hit max iterations but have a reasonable solution,
                 # mark as success. This handles noisy objective functions.
-                if not result.success and result.fun is not None and result.fun < np.inf:
+                if (
+                    not result.success
+                    and result.fun is not None
+                    and result.fun < np.inf
+                ):
                     # Check if function value is reasonable (not extremely high)
                     # and we did make progress (iterations > 0)
-                    if result.get('nit', 0) > 0 and abs(result.fun) < 1000:
+                    if result.get("nit", 0) > 0 and abs(result.fun) < 1000:
                         # Create a modified result that reports success
                         from scipy.optimize import OptimizeResult
+
                         result = OptimizeResult(
                             x=result.x,
                             success=True,  # Override to True for reasonable solutions
                             message=f"Acceptable solution found (original: {result.message})",
                             fun=result.fun,
-                            nfev=result.get('nfev', 0),
-                            nit=result.get('nit', 0),
-                            status=0
+                            nfev=result.get("nfev", 0),
+                            nit=result.get("nit", 0),
+                            status=0,
                         )
 
                 return result
@@ -1543,12 +1584,13 @@ class MLAcceleratedOptimizer:
                 logger.error(f"Optimization failed: {e}")
                 # Return a failed result object
                 from scipy.optimize import OptimizeResult
+
                 return OptimizeResult(
                     x=initial_parameters,
                     success=False,
                     message=str(e),
-                    fun=float('inf'),
-                    nfev=0
+                    fun=float("inf"),
+                    nfev=0,
                 )
         elif classical_optimizer is not None:
             # Use the provided classical optimizer
@@ -1556,29 +1598,47 @@ class MLAcceleratedOptimizer:
                 classical_optimizer,
                 initial_parameters,
                 experimental_conditions,
-                **kwargs
+                **kwargs,
             )
 
             # Wrap result as OptimizeResult for compatibility
             from scipy.optimize import OptimizeResult
+
             original_result = info.get("original_result", {})
 
             return OptimizeResult(
                 x=params,
-                success=original_result.get("success", True) if isinstance(original_result, dict) else getattr(original_result, "success", True),
-                message=original_result.get("message", "Optimization completed") if isinstance(original_result, dict) else getattr(original_result, "message", "Optimization completed"),
-                fun=original_result.get("fun", 0.0) if isinstance(original_result, dict) else getattr(original_result, "fun", 0.0),
-                nfev=original_result.get("nfev", 0) if isinstance(original_result, dict) else getattr(original_result, "nfev", 0)
+                success=(
+                    original_result.get("success", True)
+                    if isinstance(original_result, dict)
+                    else getattr(original_result, "success", True)
+                ),
+                message=(
+                    original_result.get("message", "Optimization completed")
+                    if isinstance(original_result, dict)
+                    else getattr(original_result, "message", "Optimization completed")
+                ),
+                fun=(
+                    original_result.get("fun", 0.0)
+                    if isinstance(original_result, dict)
+                    else getattr(original_result, "fun", 0.0)
+                ),
+                nfev=(
+                    original_result.get("nfev", 0)
+                    if isinstance(original_result, dict)
+                    else getattr(original_result, "nfev", 0)
+                ),
             )
         else:
             # No optimizer or objective provided - return error
             from scipy.optimize import OptimizeResult
+
             return OptimizeResult(
                 x=initial_parameters,
                 success=False,
                 message="No optimizer or objective function provided",
-                fun=float('inf'),
-                nfev=0
+                fun=float("inf"),
+                nfev=0,
             )
 
     def train_models(self) -> bool:
@@ -1596,14 +1656,17 @@ class MLAcceleratedOptimizer:
             if len(self.optimization_history) >= 5:
                 result = self.train_predictor()
                 return result.get("success", False)
-            else:
-                logger.warning(f"Insufficient training data: {len(self.optimization_history)} records (minimum 5 required)")
-                return False
+            logger.warning(
+                f"Insufficient training data: {len(self.optimization_history)} records (minimum 5 required)"
+            )
+            return False
         except Exception as e:
             logger.error(f"Model training failed: {e}")
             return False
 
-    def predict_optimization_start(self, experimental_conditions: dict[str, Any], **kwargs) -> dict[str, Any]:
+    def predict_optimization_start(
+        self, experimental_conditions: dict[str, Any], **kwargs
+    ) -> dict[str, Any]:
         """
         Predict optimal starting parameters for optimization.
 
@@ -1622,31 +1685,39 @@ class MLAcceleratedOptimizer:
             Prediction results with parameters and confidence
         """
         try:
-            if self.predictor and hasattr(self.predictor, 'is_fitted') and self.predictor.is_fitted:
+            if (
+                self.predictor
+                and hasattr(self.predictor, "is_fitted")
+                and self.predictor.is_fitted
+            ):
                 # Use the predictor to make a prediction
                 prediction = self.predictor.predict(experimental_conditions)
 
                 # Get ensemble predictions for transparency
                 ensemble_predictions = {}
-                if hasattr(self.predictor, 'models'):
+                if hasattr(self.predictor, "models"):
                     # Direct access for EnsembleOptimizationPredictor
                     predictor_obj = self.predictor
-                elif hasattr(self.predictor, 'base_predictor'):
+                elif hasattr(self.predictor, "base_predictor"):
                     # Access through TransferLearningPredictor
                     predictor_obj = self.predictor.base_predictor
                 else:
                     predictor_obj = None
 
-                if predictor_obj and hasattr(predictor_obj, 'models'):
+                if predictor_obj and hasattr(predictor_obj, "models"):
                     # Get individual model predictions
-                    features = predictor_obj._conditions_to_features(experimental_conditions, None)
+                    features = predictor_obj._conditions_to_features(
+                        experimental_conditions, None
+                    )
                     features = features.reshape(1, -1)
 
                     for model_name, model in predictor_obj.models.items():
                         try:
                             # Apply scaling
                             if predictor_obj.scalers[model_name] is not None:
-                                features_scaled = predictor_obj.scalers[model_name].transform(features)
+                                features_scaled = predictor_obj.scalers[
+                                    model_name
+                                ].transform(features)
                             else:
                                 features_scaled = features
 
@@ -1662,18 +1733,17 @@ class MLAcceleratedOptimizer:
                     "confidence_score": prediction.confidence_score,
                     "prediction_uncertainty": prediction.prediction_uncertainty,
                     "ensemble_predictions": ensemble_predictions,
-                    "success": True
+                    "success": True,
                 }
-            else:
-                # Return default fallback prediction
-                return {
-                    "predicted_parameters": np.array([1.0, 1.0, 1.0]),
-                    "confidence_score": 0.0,
-                    "prediction_uncertainty": np.array([1.0, 1.0, 1.0]),
-                    "ensemble_predictions": {},
-                    "success": False,
-                    "reason": "No trained model available"
-                }
+            # Return default fallback prediction
+            return {
+                "predicted_parameters": np.array([1.0, 1.0, 1.0]),
+                "confidence_score": 0.0,
+                "prediction_uncertainty": np.array([1.0, 1.0, 1.0]),
+                "ensemble_predictions": {},
+                "success": False,
+                "reason": "No trained model available",
+            }
         except Exception as e:
             logger.error(f"Prediction failed: {e}")
             return {
@@ -1682,7 +1752,7 @@ class MLAcceleratedOptimizer:
                 "prediction_uncertainty": np.array([1.0, 1.0, 1.0]),
                 "ensemble_predictions": {},
                 "success": False,
-                "error": str(e)
+                "error": str(e),
             }
 
 
@@ -1815,11 +1885,10 @@ def enhance_robust_optimizer_with_ml(
                 "confidence": prediction.confidence_score,
                 "uncertainty": prediction.prediction_uncertainty,
             }
-        else:
-            return initial_parameters, {
-                "ml_prediction": False,
-                "reason": "No trained model available",
-            }
+        return initial_parameters, {
+            "ml_prediction": False,
+            "reason": "No trained model available",
+        }
 
     # Monkey patch the method
     robust_optimizer.run_ml_accelerated_robust_optimization = (

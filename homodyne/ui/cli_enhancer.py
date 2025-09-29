@@ -320,17 +320,16 @@ class CLIEnhancer:
         """Confirm user action with yes/no prompt."""
         if self.enable_rich and self.console:
             return Confirm.ask(message, default=default)
-        else:
-            default_text = "Y/n" if default else "y/N"
-            while True:
-                answer = input(f"{message} [{default_text}]: ").strip().lower()
-                if not answer:
-                    return default
-                if answer in ["y", "yes"]:
-                    return True
-                elif answer in ["n", "no"]:
-                    return False
-                print("Please answer with 'y' or 'n'")
+        default_text = "Y/n" if default else "y/N"
+        while True:
+            answer = input(f"{message} [{default_text}]: ").strip().lower()
+            if not answer:
+                return default
+            if answer in ["y", "yes"]:
+                return True
+            if answer in ["n", "no"]:
+                return False
+            print("Please answer with 'y' or 'n'")
 
     def print_performance_summary(
         self, execution_time: float, memory_usage: float | None = None

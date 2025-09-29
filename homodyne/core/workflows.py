@@ -22,16 +22,12 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import numpy as np
 
 from .composition import ConfigurablePipeline
 from .composition import Pipeline
 from .composition import Result
-from .composition import compose
 from .composition import curry
 from .composition import pipe
 
@@ -41,6 +37,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AnalysisConfig:
     """Configuration container for analysis workflows."""
+
     config_path: Path
     output_dir: Path
     method: str = "classical"
@@ -53,6 +50,7 @@ class AnalysisConfig:
 @dataclass
 class ExperimentalData:
     """Container for experimental data with validation."""
+
     c2_exp: np.ndarray
     phi_angles: np.ndarray
     time_length: float
@@ -68,7 +66,9 @@ class ExperimentalData:
             raise ValueError("Experimental data and phi angles cannot be None")
 
         if len(self.phi_angles) != self.num_angles:
-            raise ValueError(f"Expected {self.num_angles} angles, got {len(self.phi_angles)}")
+            raise ValueError(
+                f"Expected {self.num_angles} angles, got {len(self.phi_angles)}"
+            )
 
         if not np.all(np.isfinite(self.c2_exp)):
             raise ValueError("Experimental data contains non-finite values")
@@ -80,6 +80,7 @@ class ExperimentalData:
 @dataclass
 class OptimizationResult:
     """Container for optimization results with metadata."""
+
     parameters: np.ndarray
     chi_squared: float
     success: bool
@@ -87,7 +88,7 @@ class OptimizationResult:
     iterations: int
     function_evaluations: int
     message: str
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self):
         if self.metadata is None:
@@ -105,8 +106,11 @@ class ParameterValidator:
     def __init__(self):
         self.validators = []
 
-    def add_range_check(self, param_name: str, min_val: float, max_val: float) -> ParameterValidator:
+    def add_range_check(
+        self, param_name: str, min_val: float, max_val: float
+    ) -> ParameterValidator:
         """Add range validation for a parameter."""
+
         def range_validator(params: dict) -> bool:
             if param_name not in params:
                 return False
@@ -118,6 +122,7 @@ class ParameterValidator:
 
     def add_positivity_check(self, param_name: str) -> ParameterValidator:
         """Add positivity validation for a parameter."""
+
         def positivity_validator(params: dict) -> bool:
             if param_name not in params:
                 return False
@@ -128,6 +133,7 @@ class ParameterValidator:
 
     def add_finite_check(self, param_name: str) -> ParameterValidator:
         """Add finite value validation for a parameter."""
+
         def finite_validator(params: dict) -> bool:
             if param_name not in params:
                 return False
@@ -136,7 +142,9 @@ class ParameterValidator:
         self.validators.append((f"{param_name}_finite", finite_validator))
         return self
 
-    def add_custom_check(self, name: str, validator: Callable[[dict], bool]) -> ParameterValidator:
+    def add_custom_check(
+        self, name: str, validator: Callable[[dict], bool]
+    ) -> ParameterValidator:
         """Add custom validation function."""
         self.validators.append((name, validator))
         return self
@@ -146,9 +154,13 @@ class ParameterValidator:
         for name, validator in self.validators:
             try:
                 if not validator(params):
-                    return Result.failure(ValueError(f"Parameter validation failed: {name}"))
+                    return Result.failure(
+                        ValueError(f"Parameter validation failed: {name}")
+                    )
             except Exception as e:
-                return Result.failure(ValueError(f"Parameter validation error in {name}: {e}"))
+                return Result.failure(
+                    ValueError(f"Parameter validation error in {name}: {e}")
+                )
 
         return Result.success(params)
 
@@ -191,14 +203,18 @@ class DataProcessor:
             return Result.failure(e)
 
     @staticmethod
-    def filter_angles_by_range(phi_angles: np.ndarray, min_angle: float, max_angle: float) -> Result[np.ndarray]:
+    def filter_angles_by_range(
+        phi_angles: np.ndarray, min_angle: float, max_angle: float
+    ) -> Result[np.ndarray]:
         """Filter phi angles to specified range."""
         try:
             mask = (phi_angles >= min_angle) & (phi_angles <= max_angle)
             filtered_angles = phi_angles[mask]
 
             if len(filtered_angles) == 0:
-                return Result.failure(ValueError(f"No angles found in range [{min_angle}, {max_angle}]"))
+                return Result.failure(
+                    ValueError(f"No angles found in range [{min_angle}, {max_angle}]")
+                )
 
             return Result.success(filtered_angles)
 
@@ -206,16 +222,16 @@ class DataProcessor:
             return Result.failure(e)
 
     @staticmethod
-    def calculate_angle_statistics(phi_angles: np.ndarray) -> Result[Dict[str, float]]:
+    def calculate_angle_statistics(phi_angles: np.ndarray) -> Result[dict[str, float]]:
         """Calculate statistical properties of angle distribution."""
         try:
             stats = {
-                'mean': float(np.mean(phi_angles)),
-                'std': float(np.std(phi_angles)),
-                'min': float(np.min(phi_angles)),
-                'max': float(np.max(phi_angles)),
-                'range': float(np.max(phi_angles) - np.min(phi_angles)),
-                'count': len(phi_angles)
+                "mean": float(np.mean(phi_angles)),
+                "std": float(np.std(phi_angles)),
+                "min": float(np.min(phi_angles)),
+                "max": float(np.max(phi_angles)),
+                "range": float(np.max(phi_angles) - np.min(phi_angles)),
+                "count": len(phi_angles),
             }
             return Result.success(stats)
 
@@ -223,7 +239,9 @@ class DataProcessor:
             return Result.failure(e)
 
     @staticmethod
-    def apply_scaling_transformation(data: np.ndarray, contrast: float, offset: float) -> Result[np.ndarray]:
+    def apply_scaling_transformation(
+        data: np.ndarray, contrast: float, offset: float
+    ) -> Result[np.ndarray]:
         """Apply linear scaling transformation: scaled = contrast * data + offset."""
         try:
             if not np.isfinite(contrast) or not np.isfinite(offset):
@@ -252,26 +270,31 @@ class OptimizationWorkflow:
         validator = ParameterValidator()
 
         # Common validations for all modes
-        validator = (validator
-                    .add_positivity_check("D0")
-                    .add_finite_check("D0")
-                    .add_range_check("alpha", -2.0, 2.0)
-                    .add_finite_check("alpha"))
+        validator = (
+            validator.add_positivity_check("D0")
+            .add_finite_check("D0")
+            .add_range_check("alpha", -2.0, 2.0)
+            .add_finite_check("alpha")
+        )
 
         # Mode-specific validations
         if analysis_mode == "laminar_flow":
-            validator = (validator
-                        .add_positivity_check("gamma_dot_t0")
-                        .add_range_check("beta", -2.0, 2.0)
-                        .add_range_check("phi0", -15.0, 15.0))
+            validator = (
+                validator.add_positivity_check("gamma_dot_t0")
+                .add_range_check("beta", -2.0, 2.0)
+                .add_range_check("phi0", -15.0, 15.0)
+            )
 
         return validator.build_pipeline()
 
     def create_data_preprocessing_pipeline(self) -> Pipeline:
         """Create data preprocessing pipeline."""
+
         def log_data_info(data):
             logger.info(f"Processing experimental data with shape: {data.c2_exp.shape}")
-            logger.info(f"Phi angles range: {data.phi_angles.min():.1f}° to {data.phi_angles.max():.1f}°")
+            logger.info(
+                f"Phi angles range: {data.phi_angles.min():.1f}° to {data.phi_angles.max():.1f}°"
+            )
             return data
 
         def validate_data_integrity(data):
@@ -279,41 +302,52 @@ class OptimizationWorkflow:
                 raise ValueError("Expected ExperimentalData object")
             return data
 
-        return (Pipeline()
-                .add_validation(lambda x: x is not None, "Data cannot be None")
-                .add_step(validate_data_integrity)
-                .add_side_effect(log_data_info))
+        return (
+            Pipeline()
+            .add_validation(lambda x: x is not None, "Data cannot be None")
+            .add_step(validate_data_integrity)
+            .add_side_effect(log_data_info)
+        )
 
     def create_optimization_pipeline(self, method: str) -> Pipeline:
         """Create optimization execution pipeline."""
+
         def select_optimizer(config):
             if method == "classical":
                 from ..optimization.classical import ClassicalOptimizer
+
                 return ClassicalOptimizer(self.analyzer, config)
-            elif method == "robust":
+            if method == "robust":
                 from ..optimization.robust import create_robust_optimizer
+
                 return create_robust_optimizer(self.analyzer, config)
-            else:
-                raise ValueError(f"Unknown optimization method: {method}")
+            raise ValueError(f"Unknown optimization method: {method}")
 
         def log_optimization_start(optimizer):
-            logger.info(f"Starting {method} optimization with {type(optimizer).__name__}")
+            logger.info(
+                f"Starting {method} optimization with {type(optimizer).__name__}"
+            )
             return optimizer
 
-        return (Pipeline()
-                .add_transform(select_optimizer)
-                .add_side_effect(log_optimization_start))
+        return (
+            Pipeline()
+            .add_transform(select_optimizer)
+            .add_side_effect(log_optimization_start)
+        )
 
     def create_results_processing_pipeline(self) -> Pipeline:
         """Create results processing and validation pipeline."""
+
         def validate_optimization_result(result):
-            if not hasattr(result, 'x') or not hasattr(result, 'fun'):
+            if not hasattr(result, "x") or not hasattr(result, "fun"):
                 raise ValueError("Invalid optimization result format")
             return result
 
         def log_results(result):
             logger.info(f"Optimization completed: χ² = {result.fun:.6e}")
-            logger.info(f"Success: {result.success}, Iterations: {getattr(result, 'nit', 'N/A')}")
+            logger.info(
+                f"Success: {result.success}, Iterations: {getattr(result, 'nit', 'N/A')}"
+            )
             return result
 
         def create_result_object(result):
@@ -321,16 +355,18 @@ class OptimizationWorkflow:
                 parameters=result.x,
                 chi_squared=result.fun,
                 success=result.success,
-                method=getattr(result, 'method', 'unknown'),
-                iterations=getattr(result, 'nit', 0),
-                function_evaluations=getattr(result, 'nfev', 0),
-                message=getattr(result, 'message', '')
+                method=getattr(result, "method", "unknown"),
+                iterations=getattr(result, "nit", 0),
+                function_evaluations=getattr(result, "nfev", 0),
+                message=getattr(result, "message", ""),
             )
 
-        return (Pipeline()
-                .add_step(validate_optimization_result)
-                .add_side_effect(log_results)
-                .add_transform(create_result_object))
+        return (
+            Pipeline()
+            .add_step(validate_optimization_result)
+            .add_side_effect(log_results)
+            .add_transform(create_result_object)
+        )
 
 
 class SimulationWorkflow:
@@ -342,19 +378,21 @@ class SimulationWorkflow:
     """
 
     @staticmethod
-    def create_phi_angles_pipeline(custom_angles: Optional[str] = None) -> Pipeline:
+    def create_phi_angles_pipeline(custom_angles: str | None = None) -> Pipeline:
         """Create phi angles generation/parsing pipeline."""
+
         def parse_custom_angles(angles_str):
             if angles_str is None:
                 # Generate default angles
                 return np.linspace(0, 180, 5, endpoint=False)
-            else:
-                # Parse custom angles
-                try:
-                    angles_list = [float(angle.strip()) for angle in angles_str.split(",")]
-                    return np.array(angles_list)
-                except ValueError as e:
-                    raise ValueError(f"Failed to parse phi angles: {e}")
+            # Parse custom angles
+            try:
+                angles_list = [
+                    float(angle.strip()) for angle in angles_str.split(",")
+                ]
+                return np.array(angles_list)
+            except ValueError as e:
+                raise ValueError(f"Failed to parse phi angles: {e}")
 
         def validate_angles(angles):
             if len(angles) == 0:
@@ -369,14 +407,17 @@ class SimulationWorkflow:
             logger.info(f"Using {len(angles)} phi angles: {angles}")
             return angles
 
-        return (Pipeline()
-                .add_transform(parse_custom_angles)
-                .add_step(validate_angles)
-                .add_side_effect(log_angles))
+        return (
+            Pipeline()
+            .add_transform(parse_custom_angles)
+            .add_step(validate_angles)
+            .add_side_effect(log_angles)
+        )
 
     @staticmethod
     def create_time_arrays_pipeline(config: dict) -> Pipeline:
         """Create time arrays generation pipeline."""
+
         def extract_temporal_config(config):
             temporal_config = config.get("analyzer_parameters", {}).get("temporal", {})
             dt = temporal_config.get("dt", 0.1)
@@ -401,14 +442,17 @@ class SimulationWorkflow:
             logger.info(f"Created time arrays: {n_time} points, dt={dt}")
             return time_data
 
-        return (Pipeline()
-                .add_transform(extract_temporal_config)
-                .add_step(create_time_arrays)
-                .add_side_effect(log_time_info))
+        return (
+            Pipeline()
+            .add_transform(extract_temporal_config)
+            .add_step(create_time_arrays)
+            .add_side_effect(log_time_info)
+        )
 
     @staticmethod
     def create_c2_generation_pipeline(core, initial_params: np.ndarray) -> Pipeline:
         """Create C2 correlation function generation pipeline."""
+
         def validate_parameters(params):
             if params is None or len(params) == 0:
                 raise ValueError("Initial parameters cannot be None or empty")
@@ -432,14 +476,24 @@ class SimulationWorkflow:
             logger.info(f"Generated C2 data with shape: {c2_data.shape}")
             return c2_data
 
-        return (Pipeline()
-                .add_step(lambda phi_angles: (validate_parameters(initial_params), phi_angles[0], phi_angles[1]))
-                .add_transform(generate_c2_for_angles)
-                .add_side_effect(log_generation_complete))
+        return (
+            Pipeline()
+            .add_step(
+                lambda phi_angles: (
+                    validate_parameters(initial_params),
+                    phi_angles[0],
+                    phi_angles[1],
+                )
+            )
+            .add_transform(generate_c2_for_angles)
+            .add_side_effect(log_generation_complete)
+        )
 
 
 # Higher-order functions for workflow composition
-def create_analysis_workflow(config: AnalysisConfig) -> Callable[[Any], Result[OptimizationResult]]:
+def create_analysis_workflow(
+    config: AnalysisConfig,
+) -> Callable[[Any], Result[OptimizationResult]]:
     """
     Create a complete analysis workflow as a composed function.
 
@@ -456,6 +510,7 @@ def create_analysis_workflow(config: AnalysisConfig) -> Callable[[Any], Result[O
     Callable[[Any], Result[OptimizationResult]]
         Composed analysis workflow function
     """
+
     # Create individual pipeline components
     def load_and_validate_config(analyzer_class):
         # Initialize analyzer with config
@@ -471,9 +526,11 @@ def create_analysis_workflow(config: AnalysisConfig) -> Callable[[Any], Result[O
         workflow = OptimizationWorkflow(analyzer)
 
         # Create optimization pipeline
-        opt_pipeline = (workflow.create_parameter_validation_pipeline("static")
-                       .add_step(lambda x: workflow.create_optimization_pipeline(config.method))
-                       .add_step(lambda x: workflow.create_results_processing_pipeline()))
+        opt_pipeline = (
+            workflow.create_parameter_validation_pipeline("static")
+            .add_step(lambda x: workflow.create_optimization_pipeline(config.method))
+            .add_step(lambda x: workflow.create_results_processing_pipeline())
+        )
 
         return opt_pipeline.execute(data)
 
@@ -481,11 +538,13 @@ def create_analysis_workflow(config: AnalysisConfig) -> Callable[[Any], Result[O
     return pipe(
         load_and_validate_config,
         lambda analyzer: (analyzer, load_experimental_data(analyzer)),
-        run_optimization
+        run_optimization,
     )
 
 
-def create_simulation_workflow(config: AnalysisConfig, phi_angles_str: Optional[str] = None) -> Callable:
+def create_simulation_workflow(
+    config: AnalysisConfig, phi_angles_str: str | None = None
+) -> Callable:
     """
     Create a complete simulation workflow as a composed function.
 
@@ -525,7 +584,9 @@ def create_simulation_workflow(config: AnalysisConfig, phi_angles_str: Optional[
         phi_angles = phi_result.value
         t1, t2, n_time = time_result.value
 
-        c2_pipeline = SimulationWorkflow.create_c2_generation_pipeline(analyzer, initial_params)
+        c2_pipeline = SimulationWorkflow.create_c2_generation_pipeline(
+            analyzer, initial_params
+        )
         c2_result = c2_pipeline.execute((phi_angles, n_time))
 
         return c2_result
@@ -546,10 +607,12 @@ def demonstrate_workflow_composition():
 
     # 1. Parameter validation demonstration
     print("\n1. Parameter Validation Chain:")
-    validator = (ParameterValidator()
-                .add_positivity_check("D0")
-                .add_range_check("alpha", -2.0, 2.0)
-                .add_finite_check("gamma_dot_t0"))
+    validator = (
+        ParameterValidator()
+        .add_positivity_check("D0")
+        .add_range_check("alpha", -2.0, 2.0)
+        .add_finite_check("gamma_dot_t0")
+    )
 
     test_params = {"D0": 1e-11, "alpha": 0.5, "gamma_dot_t0": 0.01}
     validation_result = validator.validate(test_params)
@@ -563,11 +626,13 @@ def demonstrate_workflow_composition():
     print("\n2. Data Processing Pipeline:")
     test_data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 
-    processing_pipeline = (Pipeline()
-                          .add_validation(lambda x: x.size > 0, "Data cannot be empty")
-                          .add_transform(lambda x: x * 2)  # Scale by 2
-                          .add_transform(np.mean)  # Calculate mean
-                          .add_side_effect(lambda x: print(f"Processed result: {x}")))
+    processing_pipeline = (
+        Pipeline()
+        .add_validation(lambda x: x.size > 0, "Data cannot be empty")
+        .add_transform(lambda x: x * 2)  # Scale by 2
+        .add_transform(np.mean)  # Calculate mean
+        .add_side_effect(lambda x: print(f"Processed result: {x}"))
+    )
 
     result = processing_pipeline.execute(test_data)
     if result.is_success:
@@ -576,20 +641,14 @@ def demonstrate_workflow_composition():
     # 3. Configurable pipeline demonstration
     print("\n3. Configurable Pipeline:")
     config = {
-        'steps': [
+        "steps": [
             {
-                'type': 'validation',
-                'function': 'is_not_empty',
-                'error_message': 'Data cannot be empty'
+                "type": "validation",
+                "function": "is_not_empty",
+                "error_message": "Data cannot be empty",
             },
-            {
-                'type': 'transform',
-                'function': 'mean'
-            },
-            {
-                'type': 'transform',
-                'function': 'sqrt'
-            }
+            {"type": "transform", "function": "mean"},
+            {"type": "transform", "function": "sqrt"},
         ]
     }
 

@@ -25,10 +25,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Set
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +32,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ModuleMetrics:
     """Metrics for module initialization."""
+
     name: str
     load_time: float
     memory_usage_mb: float
@@ -46,10 +43,11 @@ class ModuleMetrics:
 @dataclass
 class InitializationStrategy:
     """Strategy for module initialization optimization."""
-    core_modules: List[str]
-    lazy_modules: List[str]
-    deferred_modules: List[str]
-    preload_modules: List[str]
+
+    core_modules: list[str]
+    lazy_modules: list[str]
+    deferred_modules: list[str]
+    preload_modules: list[str]
     optimization_level: str = "aggressive"
 
 
@@ -63,12 +61,12 @@ class DependencyAnalyzer:
 
     def __init__(self, package_name: str = "homodyne"):
         self.package_name = package_name
-        self.dependency_graph: Dict[str, Set[str]] = defaultdict(set)
-        self.load_times: Dict[str, float] = {}
-        self.memory_usage: Dict[str, float] = {}
-        self.critical_modules: Set[str] = set()
+        self.dependency_graph: dict[str, set[str]] = defaultdict(set)
+        self.load_times: dict[str, float] = {}
+        self.memory_usage: dict[str, float] = {}
+        self.critical_modules: set[str] = set()
 
-    def analyze_dependencies(self) -> Dict[str, Any]:
+    def analyze_dependencies(self) -> dict[str, Any]:
         """
         Analyze package dependencies and return optimization recommendations.
 
@@ -113,7 +111,8 @@ class DependencyAnalyzer:
 
                 # Filter for internal dependencies
                 internal_deps = {
-                    dep for dep in dependencies
+                    dep
+                    for dep in dependencies
                     if dep.startswith(f"{self.package_name}.")
                 }
 
@@ -130,35 +129,39 @@ class DependencyAnalyzer:
         if relative_path.stem != "__init__":
             module_parts.append(relative_path.stem)
 
-        return f"{self.package_name}.{'.'.join(module_parts)}" if module_parts else self.package_name
+        return (
+            f"{self.package_name}.{'.'.join(module_parts)}"
+            if module_parts
+            else self.package_name
+        )
 
-    def _extract_dependencies(self, py_file: Path) -> Set[str]:
+    def _extract_dependencies(self, py_file: Path) -> set[str]:
         """Extract import dependencies from Python file."""
         dependencies = set()
 
         try:
-            with open(py_file, 'r', encoding='utf-8') as f:
+            with open(py_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Simple regex-based extraction (could be enhanced with AST)
             import re
 
             # Match relative imports
-            relative_imports = re.findall(r'from\s+(\.+\S+)', content)
+            relative_imports = re.findall(r"from\s+(\.+\S+)", content)
             for imp in relative_imports:
                 # Convert relative to absolute
-                if imp.startswith('.'):
-                    level = len(imp) - len(imp.lstrip('.'))
-                    module_part = imp.lstrip('.')
+                if imp.startswith("."):
+                    level = len(imp) - len(imp.lstrip("."))
+                    module_part = imp.lstrip(".")
                     # Simplified relative import resolution
                     if module_part:
                         dependencies.add(f"{self.package_name}.{module_part}")
 
             # Match absolute imports within package
-            abs_imports = re.findall(rf'from\s+({self.package_name}\.\S+)', content)
+            abs_imports = re.findall(rf"from\s+({self.package_name}\.\S+)", content)
             dependencies.update(abs_imports)
 
-            abs_imports = re.findall(rf'import\s+({self.package_name}\.\S+)', content)
+            abs_imports = re.findall(rf"import\s+({self.package_name}\.\S+)", content)
             dependencies.update(abs_imports)
 
         except Exception as e:
@@ -166,7 +169,7 @@ class DependencyAnalyzer:
 
         return dependencies
 
-    def _find_critical_path(self) -> List[str]:
+    def _find_critical_path(self) -> list[str]:
         """Find critical path in dependency graph."""
         # Topological sort to find longest path
         in_degree = defaultdict(int)
@@ -230,7 +233,7 @@ class DependencyAnalyzer:
             preload_modules=preload_modules,
         )
 
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate optimization recommendations."""
         recommendations = []
 
@@ -241,11 +244,15 @@ class DependencyAnalyzer:
         # Check for heavy imports in core modules
         heavy_imports = self._find_heavy_imports()
         if heavy_imports:
-            recommendations.append(f"Move heavy imports to lazy loading: {', '.join(heavy_imports)}")
+            recommendations.append(
+                f"Move heavy imports to lazy loading: {', '.join(heavy_imports)}"
+            )
 
         # Check module organization
         if len(self.dependency_graph) > 50:
-            recommendations.append("Consider splitting large modules for better modularity")
+            recommendations.append(
+                "Consider splitting large modules for better modularity"
+            )
 
         return recommendations
 
@@ -275,7 +282,7 @@ class DependencyAnalyzer:
 
         return False
 
-    def _find_heavy_imports(self) -> List[str]:
+    def _find_heavy_imports(self) -> list[str]:
         """Find modules that import heavy dependencies."""
         heavy_dependencies = {"numpy", "scipy", "matplotlib", "numba", "cvxpy"}
         heavy_modules = []
@@ -299,7 +306,7 @@ class InitializationOptimizer:
     def __init__(self, package_name: str = "homodyne"):
         self.package_name = package_name
         self.analyzer = DependencyAnalyzer(package_name)
-        self.metrics: List[ModuleMetrics] = []
+        self.metrics: list[ModuleMetrics] = []
         self.optimization_strategy: InitializationStrategy | None = None
 
     @contextmanager
@@ -377,7 +384,9 @@ class InitializationOptimizer:
             return
 
         # This would integrate with the lazy loading system
-        logger.debug(f"Configured lazy loading for {len(self.optimization_strategy.lazy_modules)} modules")
+        logger.debug(
+            f"Configured lazy loading for {len(self.optimization_strategy.lazy_modules)} modules"
+        )
 
     def _defer_heavy_modules(self) -> None:
         """Defer loading of heavy modules until needed."""
@@ -385,18 +394,21 @@ class InitializationOptimizer:
             return
 
         # This would mark modules for deferred loading
-        logger.debug(f"Deferred {len(self.optimization_strategy.deferred_modules)} heavy modules")
+        logger.debug(
+            f"Deferred {len(self.optimization_strategy.deferred_modules)} heavy modules"
+        )
 
     def _get_memory_usage(self) -> float:
         """Get current memory usage in MB."""
         try:
             import psutil
+
             process = psutil.Process()
             return process.memory_info().rss / 1024 / 1024
         except ImportError:
             return 0.0
 
-    def _log_optimization_results(self, analysis: Dict[str, Any]) -> None:
+    def _log_optimization_results(self, analysis: dict[str, Any]) -> None:
         """Log optimization analysis results."""
         logger.info("Initialization Optimization Results:")
         logger.info(f"  Total modules analyzed: {len(analysis['dependency_graph'])}")
@@ -406,7 +418,7 @@ class InitializationOptimizer:
         for rec in analysis["recommendations"]:
             logger.info(f"    - {rec}")
 
-    def get_performance_report(self) -> Dict[str, Any]:
+    def get_performance_report(self) -> dict[str, Any]:
         """
         Get comprehensive performance report.
 
@@ -426,12 +438,32 @@ class InitializationOptimizer:
                 }
                 for metric in self.metrics
             ],
-            "optimization_strategy": {
-                "core_modules": self.optimization_strategy.core_modules if self.optimization_strategy else [],
-                "lazy_modules": self.optimization_strategy.lazy_modules if self.optimization_strategy else [],
-                "deferred_modules": self.optimization_strategy.deferred_modules if self.optimization_strategy else [],
-                "preload_modules": self.optimization_strategy.preload_modules if self.optimization_strategy else [],
-            } if self.optimization_strategy else None,
+            "optimization_strategy": (
+                {
+                    "core_modules": (
+                        self.optimization_strategy.core_modules
+                        if self.optimization_strategy
+                        else []
+                    ),
+                    "lazy_modules": (
+                        self.optimization_strategy.lazy_modules
+                        if self.optimization_strategy
+                        else []
+                    ),
+                    "deferred_modules": (
+                        self.optimization_strategy.deferred_modules
+                        if self.optimization_strategy
+                        else []
+                    ),
+                    "preload_modules": (
+                        self.optimization_strategy.preload_modules
+                        if self.optimization_strategy
+                        else []
+                    ),
+                }
+                if self.optimization_strategy
+                else None
+            ),
             "total_modules": len(self.metrics),
             "optimization_applied": self.optimization_strategy is not None,
         }
@@ -464,7 +496,7 @@ def optimize_package_initialization() -> InitializationStrategy:
     return strategy
 
 
-def profile_startup_performance() -> Dict[str, Any]:
+def profile_startup_performance() -> dict[str, Any]:
     """
     Profile startup performance and return metrics.
 
@@ -479,6 +511,7 @@ def profile_startup_performance() -> Dict[str, Any]:
         # Simulate package initialization
         try:
             import homodyne
+
             _ = homodyne.__version__
         except Exception as e:
             logger.warning(f"Failed to profile startup: {e}")

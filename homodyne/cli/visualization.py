@@ -12,9 +12,6 @@ import argparse
 import logging
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import numpy as np
 
@@ -29,7 +26,7 @@ def generate_c2_heatmap_plots(
     t2: np.ndarray,
     data_type: str,
     args: argparse.Namespace,
-    simulated_dir: Path
+    simulated_dir: Path,
 ) -> int:
     """
     Generate C2 heatmap plots for all phi angles.
@@ -130,6 +127,7 @@ def generate_c2_heatmap_plots(
     except Exception as e:
         logger.error(f"❌ Error generating heatmap plots: {e}")
         import traceback
+
         logger.debug(f"Full traceback: {traceback.format_exc()}")
 
     logger.info(f"✓ Generated {success_count} out of {len(phi_angles)} heatmap plots")
@@ -138,10 +136,10 @@ def generate_c2_heatmap_plots(
 
 def generate_classical_plots(
     analyzer,
-    result_dict: Dict[str, Any],
+    result_dict: dict[str, Any],
     phi_angles: np.ndarray,
     c2_exp: np.ndarray,
-    output_dir: Path
+    output_dir: Path,
 ) -> None:
     """
     Generate plots for classical optimization results.
@@ -187,25 +185,27 @@ def generate_classical_plots(
             fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
 
             # Plot experimental data
-            im1 = ax1.imshow(c2_exp[i], cmap='viridis', aspect='equal', origin='lower')
-            ax1.set_title(f'Experimental C₂ (φ={phi:.1f}°)')
-            ax1.set_xlabel('t₁')
-            ax1.set_ylabel('t₂')
+            im1 = ax1.imshow(c2_exp[i], cmap="viridis", aspect="equal", origin="lower")
+            ax1.set_title(f"Experimental C₂ (φ={phi:.1f}°)")
+            ax1.set_xlabel("t₁")
+            ax1.set_ylabel("t₂")
             plt.colorbar(im1, ax=ax1)
 
             # Plot theoretical fit
-            im2 = ax2.imshow(c2_theoretical[i], cmap='viridis', aspect='equal', origin='lower')
-            ax2.set_title(f'Classical Fit (φ={phi:.1f}°)')
-            ax2.set_xlabel('t₁')
-            ax2.set_ylabel('t₂')
+            im2 = ax2.imshow(
+                c2_theoretical[i], cmap="viridis", aspect="equal", origin="lower"
+            )
+            ax2.set_title(f"Classical Fit (φ={phi:.1f}°)")
+            ax2.set_xlabel("t₁")
+            ax2.set_ylabel("t₂")
             plt.colorbar(im2, ax=ax2)
 
             # Plot residuals
             residuals = c2_exp[i] - c2_theoretical[i]
-            im3 = ax3.imshow(residuals, cmap='RdBu_r', aspect='equal', origin='lower')
-            ax3.set_title(f'Residuals (φ={phi:.1f}°)')
-            ax3.set_xlabel('t₁')
-            ax3.set_ylabel('t₂')
+            im3 = ax3.imshow(residuals, cmap="RdBu_r", aspect="equal", origin="lower")
+            ax3.set_title(f"Residuals (φ={phi:.1f}°)")
+            ax3.set_xlabel("t₁")
+            ax3.set_ylabel("t₂")
             plt.colorbar(im3, ax=ax3)
 
             plt.tight_layout()
@@ -221,10 +221,10 @@ def generate_classical_plots(
 
 def generate_robust_plots(
     analyzer,
-    result_dict: Dict[str, Any],
+    result_dict: dict[str, Any],
     phi_angles: np.ndarray,
     c2_exp: np.ndarray,
-    output_dir: Path
+    output_dir: Path,
 ) -> None:
     """
     Generate plots for robust optimization results.
@@ -270,25 +270,27 @@ def generate_robust_plots(
             fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
 
             # Plot experimental data
-            im1 = ax1.imshow(c2_exp[i], cmap='viridis', aspect='equal', origin='lower')
-            ax1.set_title(f'Experimental C₂ (φ={phi:.1f}°)')
-            ax1.set_xlabel('t₁')
-            ax1.set_ylabel('t₂')
+            im1 = ax1.imshow(c2_exp[i], cmap="viridis", aspect="equal", origin="lower")
+            ax1.set_title(f"Experimental C₂ (φ={phi:.1f}°)")
+            ax1.set_xlabel("t₁")
+            ax1.set_ylabel("t₂")
             plt.colorbar(im1, ax=ax1)
 
             # Plot theoretical fit
-            im2 = ax2.imshow(c2_theoretical[i], cmap='viridis', aspect='equal', origin='lower')
-            ax2.set_title(f'Robust Fit (φ={phi:.1f}°)')
-            ax2.set_xlabel('t₁')
-            ax2.set_ylabel('t₂')
+            im2 = ax2.imshow(
+                c2_theoretical[i], cmap="viridis", aspect="equal", origin="lower"
+            )
+            ax2.set_title(f"Robust Fit (φ={phi:.1f}°)")
+            ax2.set_xlabel("t₁")
+            ax2.set_ylabel("t₂")
             plt.colorbar(im2, ax=ax2)
 
             # Plot residuals
             residuals = c2_exp[i] - c2_theoretical[i]
-            im3 = ax3.imshow(residuals, cmap='RdBu_r', aspect='equal', origin='lower')
-            ax3.set_title(f'Residuals (φ={phi:.1f}°)')
-            ax3.set_xlabel('t₁')
-            ax3.set_ylabel('t₂')
+            im3 = ax3.imshow(residuals, cmap="RdBu_r", aspect="equal", origin="lower")
+            ax3.set_title(f"Residuals (φ={phi:.1f}°)")
+            ax3.set_xlabel("t₁")
+            ax3.set_ylabel("t₂")
             plt.colorbar(im3, ax=ax3)
 
             plt.tight_layout()
@@ -304,11 +306,11 @@ def generate_robust_plots(
 
 def generate_comparison_plots(
     analyzer,
-    classical_result: Optional[Dict[str, Any]],
-    robust_result: Optional[Dict[str, Any]],
+    classical_result: dict[str, Any] | None,
+    robust_result: dict[str, Any] | None,
     phi_angles: np.ndarray,
     c2_exp: np.ndarray,
-    output_dir: Path
+    output_dir: Path,
 ) -> None:
     """
     Generate comparison plots between classical and robust optimization results.
@@ -329,7 +331,9 @@ def generate_comparison_plots(
         Directory for saving plots
     """
     if not classical_result or not robust_result:
-        logger.info("⚠️  Skipping comparison plots - need both classical and robust results")
+        logger.info(
+            "⚠️  Skipping comparison plots - need both classical and robust results"
+        )
         return
 
     try:
@@ -350,7 +354,9 @@ def generate_comparison_plots(
         robust_params = robust_result["parameters"]
 
         # Calculate theoretical C2 for both methods
-        c2_classical = analyzer.calculate_correlation_function(classical_params, phi_angles)
+        c2_classical = analyzer.calculate_correlation_function(
+            classical_params, phi_angles
+        )
         c2_robust = analyzer.calculate_correlation_function(robust_params, phi_angles)
 
         # Create comparison plots for each phi angle
@@ -358,36 +364,48 @@ def generate_comparison_plots(
             fig, axes = plt.subplots(2, 3, figsize=(18, 12))
 
             # Row 1: Classical results
-            im1 = axes[0, 0].imshow(c2_exp[i], cmap='viridis', aspect='equal', origin='lower')
-            axes[0, 0].set_title(f'Experimental C₂ (φ={phi:.1f}°)')
+            im1 = axes[0, 0].imshow(
+                c2_exp[i], cmap="viridis", aspect="equal", origin="lower"
+            )
+            axes[0, 0].set_title(f"Experimental C₂ (φ={phi:.1f}°)")
             plt.colorbar(im1, ax=axes[0, 0])
 
-            im2 = axes[0, 1].imshow(c2_classical[i], cmap='viridis', aspect='equal', origin='lower')
-            axes[0, 1].set_title(f'Classical Fit (χ²={classical_result["chi_squared"]:.4f})')
+            im2 = axes[0, 1].imshow(
+                c2_classical[i], cmap="viridis", aspect="equal", origin="lower"
+            )
+            axes[0, 1].set_title(
+                f"Classical Fit (χ²={classical_result['chi_squared']:.4f})"
+            )
             plt.colorbar(im2, ax=axes[0, 1])
 
             residuals_classical = c2_exp[i] - c2_classical[i]
-            im3 = axes[0, 2].imshow(residuals_classical, cmap='RdBu_r', aspect='equal', origin='lower')
-            axes[0, 2].set_title('Classical Residuals')
+            im3 = axes[0, 2].imshow(
+                residuals_classical, cmap="RdBu_r", aspect="equal", origin="lower"
+            )
+            axes[0, 2].set_title("Classical Residuals")
             plt.colorbar(im3, ax=axes[0, 2])
 
             # Row 2: Robust results
-            axes[1, 0].imshow(c2_exp[i], cmap='viridis', aspect='equal', origin='lower')
-            axes[1, 0].set_title(f'Experimental C₂ (φ={phi:.1f}°)')
+            axes[1, 0].imshow(c2_exp[i], cmap="viridis", aspect="equal", origin="lower")
+            axes[1, 0].set_title(f"Experimental C₂ (φ={phi:.1f}°)")
 
-            im5 = axes[1, 1].imshow(c2_robust[i], cmap='viridis', aspect='equal', origin='lower')
-            axes[1, 1].set_title(f'Robust Fit (χ²={robust_result["chi_squared"]:.4f})')
+            im5 = axes[1, 1].imshow(
+                c2_robust[i], cmap="viridis", aspect="equal", origin="lower"
+            )
+            axes[1, 1].set_title(f"Robust Fit (χ²={robust_result['chi_squared']:.4f})")
             plt.colorbar(im5, ax=axes[1, 1])
 
             residuals_robust = c2_exp[i] - c2_robust[i]
-            im6 = axes[1, 2].imshow(residuals_robust, cmap='RdBu_r', aspect='equal', origin='lower')
-            axes[1, 2].set_title('Robust Residuals')
+            im6 = axes[1, 2].imshow(
+                residuals_robust, cmap="RdBu_r", aspect="equal", origin="lower"
+            )
+            axes[1, 2].set_title("Robust Residuals")
             plt.colorbar(im6, ax=axes[1, 2])
 
             # Set common axis labels
             for ax in axes.flat:
-                ax.set_xlabel('t₁')
-                ax.set_ylabel('t₂')
+                ax.set_xlabel("t₁")
+                ax.set_ylabel("t₂")
 
             plt.tight_layout()
             plot_file = plots_dir / f"method_comparison_phi_{phi:.1f}deg.png"
@@ -396,17 +414,19 @@ def generate_comparison_plots(
 
         # Create parameter comparison plot
         fig, ax = plt.subplots(figsize=(10, 6))
-        param_names = analyzer.config.get("parameter_names", [f"p{i}" for i in range(len(classical_params))])
+        param_names = analyzer.config.get(
+            "parameter_names", [f"p{i}" for i in range(len(classical_params))]
+        )
 
         x = np.arange(len(param_names))
         width = 0.35
 
-        ax.bar(x - width/2, classical_params, width, label='Classical', alpha=0.8)
-        ax.bar(x + width/2, robust_params, width, label='Robust', alpha=0.8)
+        ax.bar(x - width / 2, classical_params, width, label="Classical", alpha=0.8)
+        ax.bar(x + width / 2, robust_params, width, label="Robust", alpha=0.8)
 
-        ax.set_xlabel('Parameters')
-        ax.set_ylabel('Parameter Values')
-        ax.set_title('Parameter Comparison: Classical vs Robust')
+        ax.set_xlabel("Parameters")
+        ax.set_ylabel("Parameter Values")
+        ax.set_title("Parameter Comparison: Classical vs Robust")
         ax.set_xticks(x)
         ax.set_xticklabels(param_names, rotation=45)
         ax.legend()
@@ -423,12 +443,12 @@ def generate_comparison_plots(
 
 
 def save_individual_method_results(
-    results: Dict[str, Any],
+    results: dict[str, Any],
     method_name: str,
     analyzer,
     phi_angles: np.ndarray,
     c2_exp: np.ndarray,
-    output_dir: Path
+    output_dir: Path,
 ) -> None:
     """
     Save individual method results with plots and data files.

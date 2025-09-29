@@ -36,10 +36,10 @@ import threading
 import time
 from collections import OrderedDict
 from collections import defaultdict
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from typing import Any
-from typing import Callable
 
 import numpy as np
 
@@ -973,16 +973,15 @@ class CachePerformanceAnalyzer:
 
         if hit_rate >= 0.95:
             return "A+"
-        elif hit_rate >= 0.9:
+        if hit_rate >= 0.9:
             return "A"
-        elif hit_rate >= 0.8:
+        if hit_rate >= 0.8:
             return "B"
-        elif hit_rate >= 0.7:
+        if hit_rate >= 0.7:
             return "C"
-        elif hit_rate >= 0.6:
+        if hit_rate >= 0.6:
             return "D"
-        else:
-            return "F"
+        return "F"
 
     def generate_report(self) -> str:
         """Generate comprehensive performance report."""

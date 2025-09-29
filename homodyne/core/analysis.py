@@ -220,10 +220,9 @@ class BLASOptimizedChiSquared:
         def compute_weighted_residuals(residuals, weights, **kwargs):
             if weights is None:
                 return residuals
-            elif weights.ndim == 1:
+            if weights.ndim == 1:
                 return residuals * np.sqrt(weights)
-            else:
-                return np.dot(np.linalg.cholesky(weights), residuals)
+            return np.dot(np.linalg.cholesky(weights), residuals)
 
         def compute_chi_squared_from_residuals(weighted_residuals, **kwargs):
             return np.dot(weighted_residuals, weighted_residuals)
@@ -446,17 +445,16 @@ class BLASOptimizedChiSquared:
                 else:
                     residual = experimental - theory
                     chi_squared = np.dot(residual * weights, residual)
+            # Full weight matrix - use advanced BLAS
+            elif BLAS_AVAILABLE and use_cholesky:
+                # Cholesky decomposition for numerical stability
+                chi_squared = self._compute_weighted_chi_squared_cholesky(
+                    theory, experimental, weights
+                )
             else:
-                # Full weight matrix - use advanced BLAS
-                if BLAS_AVAILABLE and use_cholesky:
-                    # Cholesky decomposition for numerical stability
-                    chi_squared = self._compute_weighted_chi_squared_cholesky(
-                        theory, experimental, weights
-                    )
-                else:
-                    # Standard weighted computation
-                    residual = experimental - theory
-                    chi_squared = np.dot(residual, np.dot(weights, residual))
+                # Standard weighted computation
+                residual = experimental - theory
+                chi_squared = np.dot(residual, np.dot(weights, residual))
 
         # Compute statistics
         dof = n - 1  # Simplified DOF calculation
@@ -979,44 +977,41 @@ class HomodyneAnalysisCore:
                     "degrees_of_freedom": result["degrees_of_freedom"],
                     "condition_number": result["condition_number"],
                 }
-            else:
-                return result["reduced_chi_squared"]
-        else:
-            # Batch case
-            n_measurements = experimental_data.shape[0]
-            theory_batch = np.array(
-                [
-                    self._compute_theory_values(
-                        parameters, phi_angles, experimental_data[i]
-                    )
-                    for i in range(n_measurements)
-                ]
-            )
+            return result["reduced_chi_squared"]
+        # Batch case
+        n_measurements = experimental_data.shape[0]
+        theory_batch = np.array(
+            [
+                self._compute_theory_values(
+                    parameters, phi_angles, experimental_data[i]
+                )
+                for i in range(n_measurements)
+            ]
+        )
 
-            batch_result = self.blas_engine.compute_chi_squared_batch(
-                theory_batch, experimental_data
-            )
+        batch_result = self.blas_engine.compute_chi_squared_batch(
+            theory_batch, experimental_data
+        )
 
-            if return_components:
-                return {
-                    "chi_squared": np.sum(batch_result["chi_squared_batch"]),
-                    "reduced_chi_squared": np.mean(
-                        batch_result["reduced_chi_squared_batch"]
-                    ),
-                    "reduced_chi_squared_uncertainty": np.std(
-                        batch_result["reduced_chi_squared_batch"]
-                    )
-                    / np.sqrt(n_measurements),
-                    "reduced_chi_squared_std": np.std(
-                        batch_result["reduced_chi_squared_batch"]
-                    ),
-                    "degrees_of_freedom": np.sum(
-                        batch_result["degrees_of_freedom_batch"]
-                    ),
-                    "batch_processing_time": batch_result["processing_time"],
-                }
-            else:
-                return np.mean(batch_result["reduced_chi_squared_batch"])
+        if return_components:
+            return {
+                "chi_squared": np.sum(batch_result["chi_squared_batch"]),
+                "reduced_chi_squared": np.mean(
+                    batch_result["reduced_chi_squared_batch"]
+                ),
+                "reduced_chi_squared_uncertainty": np.std(
+                    batch_result["reduced_chi_squared_batch"]
+                )
+                / np.sqrt(n_measurements),
+                "reduced_chi_squared_std": np.std(
+                    batch_result["reduced_chi_squared_batch"]
+                ),
+                "degrees_of_freedom": np.sum(
+                    batch_result["degrees_of_freedom_batch"]
+                ),
+                "batch_processing_time": batch_result["processing_time"],
+            }
+        return np.mean(batch_result["reduced_chi_squared_batch"])
 
     def _compute_theory_values(
         self,

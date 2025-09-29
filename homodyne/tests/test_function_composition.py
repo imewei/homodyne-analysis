@@ -29,10 +29,8 @@ from homodyne.core.composition import pipe
 from homodyne.core.composition import retry_on_failure
 from homodyne.core.composition import safe_divide
 from homodyne.core.composition import safe_sqrt
-from homodyne.core.workflows import AnalysisConfig
 from homodyne.core.workflows import DataProcessor
 from homodyne.core.workflows import ExperimentalData
-from homodyne.core.workflows import OptimizationWorkflow
 from homodyne.core.workflows import ParameterValidator
 from homodyne.core.workflows import SimulationWorkflow
 
@@ -79,18 +77,20 @@ class TestCompositionFramework:
 
     def test_result_flat_map_operation(self):
         """Test Result flat_map operation for chaining."""
-        result = (Result.success(16)
-                 .flat_map(safe_sqrt)
-                 .flat_map(lambda x: safe_divide(x, 2)))
+        result = (
+            Result.success(16).flat_map(safe_sqrt).flat_map(lambda x: safe_divide(x, 2))
+        )
 
         assert result.is_success
         assert result.value == 2.0
 
     def test_result_flat_map_with_error(self):
         """Test Result flat_map operation with error propagation."""
-        result = (Result.success(-16)
-                 .flat_map(safe_sqrt)
-                 .flat_map(lambda x: safe_divide(x, 2)))
+        result = (
+            Result.success(-16)
+            .flat_map(safe_sqrt)
+            .flat_map(lambda x: safe_divide(x, 2))
+        )
 
         assert result.is_failure
         assert isinstance(result.error, ValueError)
@@ -133,6 +133,7 @@ class TestCompositionFramework:
 
     def test_curry_function(self):
         """Test function currying."""
+
         def add_three(x, y, z):
             return x + y + z
 
@@ -189,9 +190,7 @@ class TestPipelineFramework:
 
     def test_pipeline_basic_execution(self):
         """Test basic pipeline execution."""
-        pipeline = (Pipeline()
-                   .add_step(lambda x: x * 2)
-                   .add_step(lambda x: x + 1))
+        pipeline = Pipeline().add_step(lambda x: x * 2).add_step(lambda x: x + 1)
 
         result = pipeline.execute(5)
         assert result.is_success
@@ -199,10 +198,12 @@ class TestPipelineFramework:
 
     def test_pipeline_with_validation(self):
         """Test pipeline with validation steps."""
-        pipeline = (Pipeline()
-                   .add_validation(lambda x: x > 0, "Value must be positive")
-                   .add_transform(lambda x: x * 2)
-                   .add_validation(lambda x: x < 20, "Value too large"))
+        pipeline = (
+            Pipeline()
+            .add_validation(lambda x: x > 0, "Value must be positive")
+            .add_transform(lambda x: x * 2)
+            .add_validation(lambda x: x < 20, "Value too large")
+        )
 
         # Test successful execution
         result = pipeline.execute(5)
@@ -218,10 +219,12 @@ class TestPipelineFramework:
         """Test pipeline with side effects."""
         logged_values = []
 
-        pipeline = (Pipeline()
-                   .add_transform(lambda x: x * 2)
-                   .add_side_effect(lambda x: logged_values.append(x))
-                   .add_transform(lambda x: x + 1))
+        pipeline = (
+            Pipeline()
+            .add_transform(lambda x: x * 2)
+            .add_side_effect(lambda x: logged_values.append(x))
+            .add_transform(lambda x: x + 1)
+        )
 
         result = pipeline.execute(5)
         assert result.is_success
@@ -230,12 +233,15 @@ class TestPipelineFramework:
 
     def test_pipeline_error_handling(self):
         """Test pipeline error handling."""
+
         def error_handler(error):
             return f"Handled: {error}"
 
-        pipeline = (Pipeline()
-                   .add_transform(lambda x: x / 0)  # This will raise ZeroDivisionError
-                   .with_error_handler(error_handler))
+        pipeline = (
+            Pipeline()
+            .add_transform(lambda x: x / 0)  # This will raise ZeroDivisionError
+            .with_error_handler(error_handler)
+        )
 
         result = pipeline.execute(5)
         assert result.is_success
@@ -244,21 +250,14 @@ class TestPipelineFramework:
     def test_configurable_pipeline(self):
         """Test configurable pipeline creation."""
         config = {
-            'steps': [
+            "steps": [
                 {
-                    'type': 'validation',
-                    'function': 'is_positive',
-                    'error_message': 'Value must be positive'
+                    "type": "validation",
+                    "function": "is_positive",
+                    "error_message": "Value must be positive",
                 },
-                {
-                    'type': 'transform',
-                    'function': 'sqrt'
-                },
-                {
-                    'type': 'transform',
-                    'function': 'multiply',
-                    'args': [2]
-                }
+                {"type": "transform", "function": "sqrt"},
+                {"type": "transform", "function": "multiply", "args": [2]},
             ]
         }
 
@@ -274,7 +273,7 @@ class TestPipelineFramework:
         validators = [
             lambda x: isinstance(x, (int, float)),
             lambda x: x > 0,
-            lambda x: x < 100
+            lambda x: x < 100,
         ]
 
         validation_chain = create_validation_chain(*validators)
@@ -294,10 +293,12 @@ class TestWorkflowComponents:
 
     def test_parameter_validator(self):
         """Test ParameterValidator functionality."""
-        validator = (ParameterValidator()
-                    .add_positivity_check("D0")
-                    .add_range_check("alpha", -2.0, 2.0)
-                    .add_finite_check("gamma_dot_t0"))
+        validator = (
+            ParameterValidator()
+            .add_positivity_check("D0")
+            .add_range_check("alpha", -2.0, 2.0)
+            .add_finite_check("gamma_dot_t0")
+        )
 
         # Test valid parameters
         valid_params = {"D0": 1e-11, "alpha": 0.5, "gamma_dot_t0": 0.01}
@@ -337,10 +338,10 @@ class TestWorkflowComponents:
 
         assert result.is_success
         stats = result.value
-        assert stats['mean'] == 135.0
-        assert stats['min'] == 0.0
-        assert stats['max'] == 270.0
-        assert stats['count'] == 4
+        assert stats["mean"] == 135.0
+        assert stats["min"] == 0.0
+        assert stats["max"] == 270.0
+        assert stats["count"] == 4
 
     def test_data_processor_scaling(self):
         """Test DataProcessor scaling transformation."""
@@ -352,7 +353,7 @@ class TestWorkflowComponents:
         expected = np.array([3, 5, 7, 9, 11])  # 2 * [1,2,3,4,5] + 1
         np.testing.assert_array_equal(scaled, expected)
 
-    @patch('homodyne.core.workflows.logger')
+    @patch("homodyne.core.workflows.logger")
     def test_simulation_workflow_phi_angles(self, mock_logger):
         """Test SimulationWorkflow phi angles creation."""
         # Test custom angles
@@ -368,11 +369,7 @@ class TestWorkflowComponents:
         """Test SimulationWorkflow time arrays creation."""
         config = {
             "analyzer_parameters": {
-                "temporal": {
-                    "dt": 0.1,
-                    "start_frame": 1,
-                    "end_frame": 11
-                }
+                "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 11}
             }
         }
 
@@ -441,10 +438,12 @@ class TestComposedFunctionBenefits:
         # All composed functions use Result type for consistent error handling
 
         # Test error propagation through multiple steps
-        result = (Result.success(-16)
-                 .flat_map(safe_sqrt)  # This will fail
-                 .map(lambda x: x * 2)  # This won't execute
-                 .map(lambda x: x + 1))  # This won't execute either
+        result = (
+            Result.success(-16)
+            .flat_map(safe_sqrt)  # This will fail
+            .map(lambda x: x * 2)  # This won't execute
+            .map(lambda x: x + 1)
+        )  # This won't execute either
 
         assert result.is_failure
         assert isinstance(result.error, ValueError)
@@ -458,8 +457,8 @@ class TestComposedFunctionBenefits:
         base_pipeline = Pipeline().add_validation(lambda x: x > 0, "Must be positive")
 
         # Add different transformations for different use cases
-        sqrt_pipeline = base_pipeline.add_transform(lambda x: x ** 0.5)
-        square_pipeline = base_pipeline.add_transform(lambda x: x ** 2)
+        sqrt_pipeline = base_pipeline.add_transform(lambda x: x**0.5)
+        square_pipeline = base_pipeline.add_transform(lambda x: x**2)
 
         # Test different pipelines with same base validation
         sqrt_result = sqrt_pipeline.execute(16)
@@ -477,17 +476,13 @@ class TestComposedFunctionBenefits:
         compared to imperative style.
         """
         # Functional style (composed)
-        functional_workflow = pipe(
-            lambda x: x * 2,
-            lambda x: x + 1,
-            lambda x: x ** 0.5
-        )
+        functional_workflow = pipe(lambda x: x * 2, lambda x: x + 1, lambda x: x**0.5)
 
         # Imperative style (traditional)
         def imperative_workflow(x):
             step1 = x * 2
             step2 = step1 + 1
-            step3 = step2 ** 0.5
+            step3 = step2**0.5
             return step3
 
         # Both produce the same result

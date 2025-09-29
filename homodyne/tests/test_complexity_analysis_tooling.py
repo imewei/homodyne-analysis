@@ -16,15 +16,10 @@ import logging
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
 
 import pytest
 
@@ -34,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ComplexityMetrics:
     """Detailed complexity metrics for a function."""
+
     name: str
     file_path: str
     line_number: int
@@ -46,12 +42,13 @@ class ComplexityMetrics:
     loop_count: int
     try_except_count: int
     return_count: int
-    class_name: Optional[str] = None
+    class_name: str | None = None
 
 
 @dataclass
 class ComplexityBaseline:
     """Complexity baseline for tracking improvements."""
+
     name: str
     created_at: str
     package_version: str
@@ -59,8 +56,8 @@ class ComplexityBaseline:
     high_complexity_count: int
     max_complexity: int
     average_complexity: float
-    complexity_distribution: Dict[str, int]
-    function_metrics: List[ComplexityMetrics] = field(default_factory=list)
+    complexity_distribution: dict[str, int]
+    function_metrics: list[ComplexityMetrics] = field(default_factory=list)
 
 
 class AdvancedComplexityAnalyzer:
@@ -69,8 +66,9 @@ class AdvancedComplexityAnalyzer:
     def __init__(self, package_root: Path):
         self.package_root = package_root
 
-    def analyze_function_complexity(self, node: ast.FunctionDef, file_path: str,
-                                  class_name: Optional[str] = None) -> ComplexityMetrics:
+    def analyze_function_complexity(
+        self, node: ast.FunctionDef, file_path: str, class_name: str | None = None
+    ) -> ComplexityMetrics:
         """Analyze complexity metrics for a single function."""
         visitor = ComplexityVisitor()
         visitor.visit(node)
@@ -88,10 +86,10 @@ class AdvancedComplexityAnalyzer:
             loop_count=visitor.loop_count,
             try_except_count=visitor.try_except_count,
             return_count=visitor.return_count,
-            class_name=class_name
+            class_name=class_name,
         )
 
-    def analyze_package_complexity(self) -> Dict[str, Any]:
+    def analyze_package_complexity(self) -> dict[str, Any]:
         """Analyze complexity across the entire package."""
         logger.info("Starting comprehensive complexity analysis")
 
@@ -114,25 +112,43 @@ class AdvancedComplexityAnalyzer:
             "total_functions": len(all_metrics),
             "files_analyzed": file_count,
             "max_cyclomatic_complexity": max(complexities) if complexities else 0,
-            "max_cognitive_complexity": max(cognitive_complexities) if cognitive_complexities else 0,
-            "average_cyclomatic_complexity": sum(complexities) / len(complexities) if complexities else 0,
-            "average_cognitive_complexity": sum(cognitive_complexities) / len(cognitive_complexities) if cognitive_complexities else 0,
-            "high_complexity_functions": [m for m in all_metrics if m.cyclomatic_complexity > 10],
-            "very_high_complexity_functions": [m for m in all_metrics if m.cyclomatic_complexity > 20],
-            "extremely_high_complexity_functions": [m for m in all_metrics if m.cyclomatic_complexity > 40],
+            "max_cognitive_complexity": (
+                max(cognitive_complexities) if cognitive_complexities else 0
+            ),
+            "average_cyclomatic_complexity": (
+                sum(complexities) / len(complexities) if complexities else 0
+            ),
+            "average_cognitive_complexity": (
+                sum(cognitive_complexities) / len(cognitive_complexities)
+                if cognitive_complexities
+                else 0
+            ),
+            "high_complexity_functions": [
+                m for m in all_metrics if m.cyclomatic_complexity > 10
+            ],
+            "very_high_complexity_functions": [
+                m for m in all_metrics if m.cyclomatic_complexity > 20
+            ],
+            "extremely_high_complexity_functions": [
+                m for m in all_metrics if m.cyclomatic_complexity > 40
+            ],
             "all_metrics": all_metrics,
-            "complexity_distribution": self._calculate_complexity_distribution(complexities),
-            "cognitive_complexity_distribution": self._calculate_complexity_distribution(cognitive_complexities),
-            "analysis_timestamp": datetime.now(timezone.utc).isoformat()
+            "complexity_distribution": self._calculate_complexity_distribution(
+                complexities
+            ),
+            "cognitive_complexity_distribution": self._calculate_complexity_distribution(
+                cognitive_complexities
+            ),
+            "analysis_timestamp": datetime.now(UTC).isoformat(),
         }
 
         logger.info(f"Analyzed {len(all_metrics)} functions across {file_count} files")
         return results
 
-    def _analyze_file_complexity(self, file_path: Path) -> List[ComplexityMetrics]:
+    def _analyze_file_complexity(self, file_path: Path) -> list[ComplexityMetrics]:
         """Analyze complexity for all functions in a file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -149,7 +165,11 @@ class AdvancedComplexityAnalyzer:
                                     class_name = parent.name
                                     break
 
-                    metrics.append(self.analyze_function_complexity(node, str(file_path), class_name))
+                    metrics.append(
+                        self.analyze_function_complexity(
+                            node, str(file_path), class_name
+                        )
+                    )
 
             return metrics
 
@@ -160,19 +180,27 @@ class AdvancedComplexityAnalyzer:
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if file should be skipped."""
         skip_patterns = {
-            "__pycache__", ".git", "build", "dist",
-            ".pytest_cache", ".mypy_cache", "venv", ".venv"
+            "__pycache__",
+            ".git",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            "venv",
+            ".venv",
         }
         return any(pattern in str(file_path) for pattern in skip_patterns)
 
-    def _calculate_complexity_distribution(self, complexities: List[int]) -> Dict[str, int]:
+    def _calculate_complexity_distribution(
+        self, complexities: list[int]
+    ) -> dict[str, int]:
         """Calculate complexity distribution buckets."""
         distribution = {
             "low (1-5)": 0,
             "moderate (6-10)": 0,
             "high (11-20)": 0,
             "very_high (21-40)": 0,
-            "extreme (>40)": 0
+            "extreme (>40)": 0,
         }
 
         for complexity in complexities:
@@ -206,7 +234,7 @@ class ComplexityVisitor(ast.NodeVisitor):
     def visit_If(self, node: ast.If) -> None:
         """Visit if statement."""
         self.cyclomatic_complexity += 1
-        self.cognitive_complexity += (1 + self.nesting_level)
+        self.cognitive_complexity += 1 + self.nesting_level
         self.branch_count += 1
 
         self.nesting_level += 1
@@ -217,7 +245,7 @@ class ComplexityVisitor(ast.NodeVisitor):
     def visit_While(self, node: ast.While) -> None:
         """Visit while loop."""
         self.cyclomatic_complexity += 1
-        self.cognitive_complexity += (1 + self.nesting_level)
+        self.cognitive_complexity += 1 + self.nesting_level
         self.loop_count += 1
 
         self.nesting_level += 1
@@ -228,7 +256,7 @@ class ComplexityVisitor(ast.NodeVisitor):
     def visit_For(self, node: ast.For) -> None:
         """Visit for loop."""
         self.cyclomatic_complexity += 1
-        self.cognitive_complexity += (1 + self.nesting_level)
+        self.cognitive_complexity += 1 + self.nesting_level
         self.loop_count += 1
 
         self.nesting_level += 1
@@ -243,7 +271,7 @@ class ComplexityVisitor(ast.NodeVisitor):
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         """Visit except handler."""
         self.cyclomatic_complexity += 1
-        self.cognitive_complexity += (1 + self.nesting_level)
+        self.cognitive_complexity += 1 + self.nesting_level
         self.try_except_count += 1
 
         self.nesting_level += 1
@@ -291,7 +319,9 @@ class ComplexityBaselineManager:
         self.package_root = package_root
         self.analyzer = AdvancedComplexityAnalyzer(package_root)
 
-    def establish_baseline(self, name: str, description: str = "") -> ComplexityBaseline:
+    def establish_baseline(
+        self, name: str, description: str = ""
+    ) -> ComplexityBaseline:
         """Establish a new complexity baseline."""
         logger.info(f"Establishing complexity baseline: {name}")
 
@@ -300,41 +330,48 @@ class ComplexityBaselineManager:
         # Get package version
         try:
             import importlib.metadata
+
             package_version = importlib.metadata.version("homodyne")
         except Exception:
             package_version = "unknown"
 
         baseline = ComplexityBaseline(
             name=name,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             package_version=package_version,
             total_functions=analysis_results["total_functions"],
             high_complexity_count=len(analysis_results["high_complexity_functions"]),
             max_complexity=analysis_results["max_cyclomatic_complexity"],
             average_complexity=analysis_results["average_cyclomatic_complexity"],
             complexity_distribution=analysis_results["complexity_distribution"],
-            function_metrics=[asdict(m) for m in analysis_results["all_metrics"]]
+            function_metrics=[asdict(m) for m in analysis_results["all_metrics"]],
         )
 
         # Save baseline
         baseline_path = self.package_root.parent / f"complexity_baseline_{name}.json"
-        with open(baseline_path, 'w') as f:
+        with open(baseline_path, "w") as f:
             json.dump(asdict(baseline), f, indent=2)
 
         logger.info(f"Baseline saved to {baseline_path}")
         return baseline
 
-    def compare_to_baseline(self, baseline_name: str) -> Dict[str, Any]:
+    def compare_to_baseline(self, baseline_name: str) -> dict[str, Any]:
         """Compare current complexity to a baseline."""
-        baseline_path = self.package_root.parent / f"complexity_baseline_{baseline_name}.json"
+        baseline_path = (
+            self.package_root.parent / f"complexity_baseline_{baseline_name}.json"
+        )
 
         if not baseline_path.exists():
-            raise FileNotFoundError(f"Baseline '{baseline_name}' not found at {baseline_path}")
+            raise FileNotFoundError(
+                f"Baseline '{baseline_name}' not found at {baseline_path}"
+            )
 
-        with open(baseline_path, 'r') as f:
+        with open(baseline_path) as f:
             baseline_data = json.load(f)
 
-        baseline = ComplexityBaseline(**{k: v for k, v in baseline_data.items() if k != 'function_metrics'})
+        baseline = ComplexityBaseline(
+            **{k: v for k, v in baseline_data.items() if k != "function_metrics"}
+        )
 
         # Get current analysis
         current_analysis = self.analyzer.analyze_package_complexity()
@@ -345,15 +382,27 @@ class ComplexityBaselineManager:
             "current_date": current_analysis["analysis_timestamp"],
             "improvements": {},
             "regressions": {},
-            "summary": {}
+            "summary": {},
         }
 
         # Compare key metrics
         metrics_comparison = {
-            "total_functions": (baseline.total_functions, current_analysis["total_functions"]),
-            "high_complexity_count": (baseline.high_complexity_count, len(current_analysis["high_complexity_functions"])),
-            "max_complexity": (baseline.max_complexity, current_analysis["max_cyclomatic_complexity"]),
-            "average_complexity": (baseline.average_complexity, current_analysis["average_cyclomatic_complexity"])
+            "total_functions": (
+                baseline.total_functions,
+                current_analysis["total_functions"],
+            ),
+            "high_complexity_count": (
+                baseline.high_complexity_count,
+                len(current_analysis["high_complexity_functions"]),
+            ),
+            "max_complexity": (
+                baseline.max_complexity,
+                current_analysis["max_cyclomatic_complexity"],
+            ),
+            "average_complexity": (
+                baseline.average_complexity,
+                current_analysis["average_cyclomatic_complexity"],
+            ),
         }
 
         for metric, (baseline_value, current_value) in metrics_comparison.items():
@@ -362,14 +411,22 @@ class ComplexityBaselineManager:
                     "baseline": baseline_value,
                     "current": current_value,
                     "improvement": baseline_value - current_value,
-                    "percentage": ((baseline_value - current_value) / baseline_value * 100) if baseline_value > 0 else 0
+                    "percentage": (
+                        ((baseline_value - current_value) / baseline_value * 100)
+                        if baseline_value > 0
+                        else 0
+                    ),
                 }
             elif current_value > baseline_value:
                 comparison["regressions"][metric] = {
                     "baseline": baseline_value,
                     "current": current_value,
                     "regression": current_value - baseline_value,
-                    "percentage": ((current_value - baseline_value) / baseline_value * 100) if baseline_value > 0 else 0
+                    "percentage": (
+                        ((current_value - baseline_value) / baseline_value * 100)
+                        if baseline_value > 0
+                        else 0
+                    ),
                 }
 
         # Overall assessment
@@ -388,26 +445,30 @@ class ComplexityBaselineManager:
             "improvements_count": improvement_count,
             "regressions_count": regression_count,
             "target_high_complexity_functions": 10,
-            "current_high_complexity_functions": len(current_analysis["high_complexity_functions"]),
-            "target_met": len(current_analysis["high_complexity_functions"]) <= 10
+            "current_high_complexity_functions": len(
+                current_analysis["high_complexity_functions"]
+            ),
+            "target_met": len(current_analysis["high_complexity_functions"]) <= 10,
         }
 
         return comparison
 
-    def generate_complexity_report(self, baseline_name: Optional[str] = None) -> Dict[str, Any]:
+    def generate_complexity_report(
+        self, baseline_name: str | None = None
+    ) -> dict[str, Any]:
         """Generate comprehensive complexity report."""
         current_analysis = self.analyzer.analyze_package_complexity()
 
         report = {
-            "report_timestamp": datetime.now(timezone.utc).isoformat(),
+            "report_timestamp": datetime.now(UTC).isoformat(),
             "package_path": str(self.package_root),
             "current_analysis": current_analysis,
             "top_complex_functions": sorted(
                 current_analysis["high_complexity_functions"],
                 key=lambda x: x.cyclomatic_complexity,
-                reverse=True
+                reverse=True,
             )[:20],
-            "recommendations": self._generate_recommendations(current_analysis)
+            "recommendations": self._generate_recommendations(current_analysis),
         }
 
         if baseline_name:
@@ -415,11 +476,13 @@ class ComplexityBaselineManager:
                 comparison = self.compare_to_baseline(baseline_name)
                 report["baseline_comparison"] = comparison
             except FileNotFoundError:
-                report["baseline_comparison"] = {"error": f"Baseline '{baseline_name}' not found"}
+                report["baseline_comparison"] = {
+                    "error": f"Baseline '{baseline_name}' not found"
+                }
 
         return report
 
-    def _generate_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
+    def _generate_recommendations(self, analysis: dict[str, Any]) -> list[str]:
         """Generate recommendations based on complexity analysis."""
         recommendations = []
 
@@ -428,25 +491,39 @@ class ComplexityBaselineManager:
         extreme_count = len(analysis["extremely_high_complexity_functions"])
 
         if extreme_count > 0:
-            recommendations.append(f"URGENT: {extreme_count} functions have extreme complexity (>40). Immediate refactoring needed.")
+            recommendations.append(
+                f"URGENT: {extreme_count} functions have extreme complexity (>40). Immediate refactoring needed."
+            )
 
         if very_high_count > 5:
-            recommendations.append(f"HIGH PRIORITY: {very_high_count} functions have very high complexity (>20). Plan refactoring.")
+            recommendations.append(
+                f"HIGH PRIORITY: {very_high_count} functions have very high complexity (>20). Plan refactoring."
+            )
 
         if high_complexity_count > 20:
-            recommendations.append(f"MEDIUM PRIORITY: {high_complexity_count} functions have high complexity (>10). Gradual refactoring recommended.")
+            recommendations.append(
+                f"MEDIUM PRIORITY: {high_complexity_count} functions have high complexity (>10). Gradual refactoring recommended."
+            )
 
         if analysis["max_cyclomatic_complexity"] > 50:
-            recommendations.append("Consider breaking down the most complex function using extract method pattern.")
+            recommendations.append(
+                "Consider breaking down the most complex function using extract method pattern."
+            )
 
         if analysis["average_cyclomatic_complexity"] > 8:
-            recommendations.append("Average complexity is high. Focus on reducing overall complexity.")
+            recommendations.append(
+                "Average complexity is high. Focus on reducing overall complexity."
+            )
 
         # Specific recommendations for top complex functions
-        top_functions = sorted(analysis["all_metrics"], key=lambda x: x.cyclomatic_complexity, reverse=True)[:5]
+        top_functions = sorted(
+            analysis["all_metrics"], key=lambda x: x.cyclomatic_complexity, reverse=True
+        )[:5]
         for func in top_functions:
             if func.cyclomatic_complexity > 30:
-                recommendations.append(f"Refactor {func.name} (complexity: {func.cyclomatic_complexity}) in {func.file_path}")
+                recommendations.append(
+                    f"Refactor {func.name} (complexity: {func.cyclomatic_complexity}) in {func.file_path}"
+                )
 
         return recommendations
 
@@ -454,47 +531,65 @@ class ComplexityBaselineManager:
 class ComplexityRefactoringPlanner:
     """Plans refactoring strategies based on complexity analysis."""
 
-    def __init__(self, complexity_report: Dict[str, Any]):
+    def __init__(self, complexity_report: dict[str, Any]):
         self.report = complexity_report
 
-    def generate_refactoring_plan(self) -> Dict[str, Any]:
+    def generate_refactoring_plan(self) -> dict[str, Any]:
         """Generate a prioritized refactoring plan."""
-        high_complexity_functions = self.report["current_analysis"]["high_complexity_functions"]
+        high_complexity_functions = self.report["current_analysis"][
+            "high_complexity_functions"
+        ]
 
         # Group by priority
-        critical_functions = [f for f in high_complexity_functions if f.cyclomatic_complexity > 40]
-        high_priority_functions = [f for f in high_complexity_functions if 20 < f.cyclomatic_complexity <= 40]
-        medium_priority_functions = [f for f in high_complexity_functions if 10 < f.cyclomatic_complexity <= 20]
+        critical_functions = [
+            f for f in high_complexity_functions if f.cyclomatic_complexity > 40
+        ]
+        high_priority_functions = [
+            f for f in high_complexity_functions if 20 < f.cyclomatic_complexity <= 40
+        ]
+        medium_priority_functions = [
+            f for f in high_complexity_functions if 10 < f.cyclomatic_complexity <= 20
+        ]
 
         plan = {
-            "plan_created": datetime.now(timezone.utc).isoformat(),
+            "plan_created": datetime.now(UTC).isoformat(),
             "total_functions_to_refactor": len(high_complexity_functions),
             "critical_priority": {
                 "count": len(critical_functions),
-                "functions": [self._create_refactoring_task(f) for f in critical_functions],
+                "functions": [
+                    self._create_refactoring_task(f) for f in critical_functions
+                ],
                 "estimated_effort": len(critical_functions) * 8,  # hours
-                "recommended_approach": "Extract method and class patterns"
+                "recommended_approach": "Extract method and class patterns",
             },
             "high_priority": {
                 "count": len(high_priority_functions),
-                "functions": [self._create_refactoring_task(f) for f in high_priority_functions],
+                "functions": [
+                    self._create_refactoring_task(f) for f in high_priority_functions
+                ],
                 "estimated_effort": len(high_priority_functions) * 4,  # hours
-                "recommended_approach": "Extract method pattern"
+                "recommended_approach": "Extract method pattern",
             },
             "medium_priority": {
                 "count": len(medium_priority_functions),
-                "functions": [self._create_refactoring_task(f) for f in medium_priority_functions],
+                "functions": [
+                    self._create_refactoring_task(f) for f in medium_priority_functions
+                ],
                 "estimated_effort": len(medium_priority_functions) * 2,  # hours
-                "recommended_approach": "Simplify conditionals and loops"
+                "recommended_approach": "Simplify conditionals and loops",
             },
-            "total_estimated_effort": (len(critical_functions) * 8 +
-                                     len(high_priority_functions) * 4 +
-                                     len(medium_priority_functions) * 2)
+            "total_estimated_effort": (
+                len(critical_functions) * 8
+                + len(high_priority_functions) * 4
+                + len(medium_priority_functions) * 2
+            ),
         }
 
         return plan
 
-    def _create_refactoring_task(self, func_metrics: ComplexityMetrics) -> Dict[str, Any]:
+    def _create_refactoring_task(
+        self, func_metrics: ComplexityMetrics
+    ) -> dict[str, Any]:
         """Create a refactoring task for a function."""
         return {
             "function_name": func_metrics.name,
@@ -503,10 +598,12 @@ class ComplexityRefactoringPlanner:
             "current_complexity": func_metrics.cyclomatic_complexity,
             "target_complexity": min(10, func_metrics.cyclomatic_complexity // 2),
             "estimated_effort_hours": max(2, func_metrics.cyclomatic_complexity // 10),
-            "suggested_techniques": self._suggest_refactoring_techniques(func_metrics)
+            "suggested_techniques": self._suggest_refactoring_techniques(func_metrics),
         }
 
-    def _suggest_refactoring_techniques(self, func_metrics: ComplexityMetrics) -> List[str]:
+    def _suggest_refactoring_techniques(
+        self, func_metrics: ComplexityMetrics
+    ) -> list[str]:
         """Suggest specific refactoring techniques."""
         techniques = []
 
@@ -618,7 +715,9 @@ def complex_function(x, y):
         assert baseline.max_complexity > 0
 
         # Clean up
-        baseline_path = package_root.parent / f"complexity_baseline_test_baseline_task_3_2.json"
+        baseline_path = (
+            package_root.parent / "complexity_baseline_test_baseline_task_3_2.json"
+        )
         if baseline_path.exists():
             baseline_path.unlink()
 
@@ -665,7 +764,7 @@ if __name__ == "__main__":
         manager = ComplexityBaselineManager(package_root)
         baseline = manager.establish_baseline(
             "task_3_2_initial_baseline",
-            "Initial complexity baseline before Task 3 refactoring"
+            "Initial complexity baseline before Task 3 refactoring",
         )
 
         print(f"Established baseline: {baseline.name}")
@@ -679,7 +778,7 @@ if __name__ == "__main__":
 
         # Save report
         report_path = Path("complexity_analysis_report.json")
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             json.dump(report, f, indent=2)
 
         print(f"\nComplexity report saved to {report_path}")
@@ -689,7 +788,7 @@ if __name__ == "__main__":
         plan = planner.generate_refactoring_plan()
 
         plan_path = Path("refactoring_plan.json")
-        with open(plan_path, 'w') as f:
+        with open(plan_path, "w") as f:
             json.dump(plan, f, indent=2)
 
         print(f"Refactoring plan saved to {plan_path}")

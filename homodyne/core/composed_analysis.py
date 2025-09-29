@@ -15,7 +15,6 @@ Authors: Wei Chen, Hongrui He
 Institution: Argonne National Laboratory
 """
 
-
 import logging
 from pathlib import Path
 
@@ -23,13 +22,8 @@ import numpy as np
 
 from .composition import Pipeline
 from .composition import Result
-from .composition import compose
-from .composition import pipe
-from .workflows import AnalysisConfig
-from .workflows import DataProcessor
 from .workflows import ExperimentalData
 from .workflows import OptimizationResult
-from .workflows import OptimizationWorkflow
 from .workflows import ParameterValidator
 
 logger = logging.getLogger(__name__)
@@ -54,6 +48,7 @@ class ComposedHomodyneAnalysis:
         """Initialize the underlying analysis core."""
         try:
             from ..analysis.core import HomodyneAnalysisCore
+
             self.analyzer = HomodyneAnalysisCore(str(self.config_path))
             self.config = self.analyzer.config
             logger.info("✓ Composed analysis engine initialized successfully")
@@ -61,7 +56,9 @@ class ComposedHomodyneAnalysis:
             logger.error(f"Failed to initialize analysis core: {e}")
             raise
 
-    def create_parameter_validation_workflow(self) -> Callable[[np.ndarray], Result[np.ndarray]]:
+    def create_parameter_validation_workflow(
+        self,
+    ) -> Callable[[np.ndarray], Result[np.ndarray]]:
         """
         Create a composable parameter validation workflow.
 
@@ -78,32 +75,35 @@ class ComposedHomodyneAnalysis:
         validator = ParameterValidator()
 
         # Common validations
-        validator = (validator
-                    .add_positivity_check("D0")
-                    .add_finite_check("D0")
-                    .add_range_check("alpha", -2.0, 2.0))
+        validator = (
+            validator.add_positivity_check("D0")
+            .add_finite_check("D0")
+            .add_range_check("alpha", -2.0, 2.0)
+        )
 
         # Mode-specific validations
         if not is_static:  # Laminar flow mode
-            validator = (validator
-                        .add_positivity_check("gamma_dot_t0")
-                        .add_range_check("beta", -2.0, 2.0)
-                        .add_range_check("phi0", -15.0, 15.0))
+            validator = (
+                validator.add_positivity_check("gamma_dot_t0")
+                .add_range_check("beta", -2.0, 2.0)
+                .add_range_check("phi0", -15.0, 15.0)
+            )
 
         def validate_parameters(params: np.ndarray) -> Result[np.ndarray]:
             """Convert array to dict and validate."""
             try:
-                param_names = self.config.get("initial_parameters", {}).get("parameter_names", [])
+                param_names = self.config.get("initial_parameters", {}).get(
+                    "parameter_names", []
+                )
                 if len(param_names) != len(params):
                     return Result.failure(ValueError("Parameter count mismatch"))
 
-                param_dict = dict(zip(param_names, params))
+                param_dict = dict(zip(param_names, params, strict=False))
                 validation_result = validator.validate(param_dict)
 
                 if validation_result.is_success:
                     return Result.success(params)
-                else:
-                    return Result.failure(validation_result.error)
+                return Result.failure(validation_result.error)
 
             except Exception as e:
                 return Result.failure(e)
@@ -119,15 +119,20 @@ class ComposedHomodyneAnalysis:
         Callable[[], Result[ExperimentalData]]
             Data loading workflow function
         """
+
         def load_experimental_data() -> Result[ExperimentalData]:
             """Load and validate experimental data."""
             try:
                 logger.info("Loading experimental data...")
-                c2_exp, time_length, phi_angles, num_angles = self.analyzer.load_experimental_data()
+                c2_exp, time_length, phi_angles, num_angles = (
+                    self.analyzer.load_experimental_data()
+                )
 
                 # Create data container with built-in validation
                 data = ExperimentalData(c2_exp, phi_angles, time_length, num_angles)
-                logger.info(f"✓ Loaded data: {num_angles} angles, time_length={time_length}")
+                logger.info(
+                    f"✓ Loaded data: {num_angles} angles, time_length={time_length}"
+                )
 
                 return Result.success(data)
 
@@ -137,7 +142,9 @@ class ComposedHomodyneAnalysis:
 
         return load_experimental_data
 
-    def create_chi_squared_calculation_workflow(self) -> Callable[[np.ndarray, np.ndarray, np.ndarray], Result[float]]:
+    def create_chi_squared_calculation_workflow(
+        self,
+    ) -> Callable[[np.ndarray, np.ndarray, np.ndarray], Result[float]]:
         """
         Create a composable chi-squared calculation workflow.
 
@@ -146,18 +153,32 @@ class ComposedHomodyneAnalysis:
         Callable[[np.ndarray, np.ndarray, np.ndarray], Result[float]]
             Chi-squared calculation workflow function
         """
+
         # Create validation pipeline
-        def validate_inputs(params: np.ndarray, phi_angles: np.ndarray, c2_exp: np.ndarray) -> Result[Tuple]:
+        def validate_inputs(
+            params: np.ndarray, phi_angles: np.ndarray, c2_exp: np.ndarray
+        ) -> Result[Tuple]:
             """Validate inputs for chi-squared calculation."""
-            validation_pipeline = (Pipeline()
-                                  .add_validation(lambda x: x[0] is not None, "Parameters cannot be None")
-                                  .add_validation(lambda x: x[1] is not None, "Phi angles cannot be None")
-                                  .add_validation(lambda x: x[2] is not None, "Experimental data cannot be None")
-                                  .add_validation(lambda x: len(x[0]) > 0, "Parameters cannot be empty")
-                                  .add_validation(lambda x: len(x[1]) > 0, "Phi angles cannot be empty")
-                                  .add_validation(lambda x: np.all(np.isfinite(x[0])), "Parameters must be finite")
-                                  .add_validation(lambda x: np.all(np.isfinite(x[1])), "Phi angles must be finite")
-                                  .add_validation(lambda x: np.all(np.isfinite(x[2])), "Experimental data must be finite"))
+            validation_pipeline = (
+                Pipeline()
+                .add_validation(lambda x: x[0] is not None, "Parameters cannot be None")
+                .add_validation(lambda x: x[1] is not None, "Phi angles cannot be None")
+                .add_validation(
+                    lambda x: x[2] is not None, "Experimental data cannot be None"
+                )
+                .add_validation(lambda x: len(x[0]) > 0, "Parameters cannot be empty")
+                .add_validation(lambda x: len(x[1]) > 0, "Phi angles cannot be empty")
+                .add_validation(
+                    lambda x: np.all(np.isfinite(x[0])), "Parameters must be finite"
+                )
+                .add_validation(
+                    lambda x: np.all(np.isfinite(x[1])), "Phi angles must be finite"
+                )
+                .add_validation(
+                    lambda x: np.all(np.isfinite(x[2])),
+                    "Experimental data must be finite",
+                )
+            )
 
             return validation_pipeline.execute((params, phi_angles, c2_exp))
 
@@ -172,7 +193,9 @@ class ComposedHomodyneAnalysis:
                 )
 
                 if not np.isfinite(chi2_value):
-                    return Result.failure(ValueError("Chi-squared calculation returned non-finite value"))
+                    return Result.failure(
+                        ValueError("Chi-squared calculation returned non-finite value")
+                    )
 
                 return Result.success(float(chi2_value))
 
@@ -181,11 +204,12 @@ class ComposedHomodyneAnalysis:
 
         # Compose the complete workflow
         return lambda params, phi_angles, c2_exp: (
-            validate_inputs(params, phi_angles, c2_exp)
-            .flat_map(calculate_chi_squared)
+            validate_inputs(params, phi_angles, c2_exp).flat_map(calculate_chi_squared)
         )
 
-    def create_optimization_workflow(self, method: str = "classical") -> Callable[[np.ndarray, ExperimentalData], Result[OptimizationResult]]:
+    def create_optimization_workflow(
+        self, method: str = "classical"
+    ) -> Callable[[np.ndarray, ExperimentalData], Result[OptimizationResult]]:
         """
         Create a composable optimization workflow.
 
@@ -199,7 +223,10 @@ class ComposedHomodyneAnalysis:
         Callable[[np.ndarray, ExperimentalData], Result[OptimizationResult]]
             Optimization workflow function
         """
-        def run_optimization(initial_params: np.ndarray, data: ExperimentalData) -> Result[OptimizationResult]:
+
+        def run_optimization(
+            initial_params: np.ndarray, data: ExperimentalData
+        ) -> Result[OptimizationResult]:
             """Execute optimization using functional composition."""
             try:
                 # Create chi-squared objective function
@@ -209,48 +236,56 @@ class ComposedHomodyneAnalysis:
                     result = chi2_workflow(params, data.phi_angles, data.c2_exp)
                     if result.is_success:
                         return result.value
-                    else:
-                        logger.warning(f"Chi-squared calculation failed: {result.error}")
-                        return np.inf
+                    logger.warning(
+                        f"Chi-squared calculation failed: {result.error}"
+                    )
+                    return np.inf
 
                 # Select and run optimizer
                 if method == "classical":
                     from ..optimization.classical import ClassicalOptimizer
+
                     optimizer = ClassicalOptimizer(self.analyzer, self.config)
                     success, opt_result = optimizer.optimize(
                         objective_function, initial_params
                     )
                 elif method == "robust":
                     from ..optimization.robust import create_robust_optimizer
+
                     optimizer = create_robust_optimizer(self.analyzer, self.config)
                     success, opt_result = optimizer.optimize(
                         objective_function, initial_params
                     )
                 else:
-                    return Result.failure(ValueError(f"Unknown optimization method: {method}"))
+                    return Result.failure(
+                        ValueError(f"Unknown optimization method: {method}")
+                    )
 
                 # Process results
-                if success and hasattr(opt_result, 'x'):
+                if success and hasattr(opt_result, "x"):
                     result = OptimizationResult(
                         parameters=opt_result.x,
                         chi_squared=opt_result.fun,
                         success=opt_result.success,
                         method=method,
-                        iterations=getattr(opt_result, 'nit', 0),
-                        function_evaluations=getattr(opt_result, 'nfev', 0),
-                        message=getattr(opt_result, 'message', '')
+                        iterations=getattr(opt_result, "nit", 0),
+                        function_evaluations=getattr(opt_result, "nfev", 0),
+                        message=getattr(opt_result, "message", ""),
                     )
                     return Result.success(result)
-                else:
-                    error_msg = str(opt_result) if not success else "Optimization failed"
-                    return Result.failure(RuntimeError(error_msg))
+                error_msg = (
+                    str(opt_result) if not success else "Optimization failed"
+                )
+                return Result.failure(RuntimeError(error_msg))
 
             except Exception as e:
                 return Result.failure(e)
 
         return run_optimization
 
-    def create_complete_analysis_workflow(self, method: str = "classical") -> Callable[[], Result[OptimizationResult]]:
+    def create_complete_analysis_workflow(
+        self, method: str = "classical"
+    ) -> Callable[[], Result[OptimizationResult]]:
         """
         Create a complete analysis workflow using function composition.
 
@@ -287,7 +322,9 @@ class ComposedHomodyneAnalysis:
             try:
                 initial_params = np.array(self.config["initial_parameters"]["values"])
             except (KeyError, TypeError) as e:
-                return Result.failure(ValueError(f"Failed to get initial parameters: {e}"))
+                return Result.failure(
+                    ValueError(f"Failed to get initial parameters: {e}")
+                )
 
             param_validation_result = param_validation_workflow(initial_params)
             if param_validation_result.is_failure:
@@ -307,7 +344,9 @@ class ComposedHomodyneAnalysis:
 
         return complete_analysis
 
-    def create_simulation_workflow(self, phi_angles: Optional[np.ndarray] = None) -> Callable[[np.ndarray], Result[Dict[str, np.ndarray]]]:
+    def create_simulation_workflow(
+        self, phi_angles: Optional[np.ndarray] = None
+    ) -> Callable[[np.ndarray], Result[Dict[str, np.ndarray]]]:
         """
         Create a composable simulation workflow.
 
@@ -321,6 +360,7 @@ class ComposedHomodyneAnalysis:
         Callable[[np.ndarray], Result[Dict[str, np.ndarray]]]
             Simulation workflow function
         """
+
         def run_simulation(parameters: np.ndarray) -> Result[Dict[str, np.ndarray]]:
             """Execute simulation using functional composition."""
             try:
@@ -337,10 +377,16 @@ class ComposedHomodyneAnalysis:
                     angles = phi_angles
 
                 # Create simulation pipeline
-                simulation_pipeline = (Pipeline()
-                                     .add_validation(lambda x: len(x) > 0, "Parameters cannot be empty")
-                                     .add_side_effect(lambda x: logger.info(f"Simulating with {len(angles)} angles"))
-                                     .add_transform(lambda params: self._generate_theoretical_data(params, angles)))
+                simulation_pipeline = (
+                    Pipeline()
+                    .add_validation(lambda x: len(x) > 0, "Parameters cannot be empty")
+                    .add_side_effect(
+                        lambda x: logger.info(f"Simulating with {len(angles)} angles")
+                    )
+                    .add_transform(
+                        lambda params: self._generate_theoretical_data(params, angles)
+                    )
+                )
 
                 simulation_result = simulation_pipeline.execute(parameters)
                 return simulation_result
@@ -350,7 +396,9 @@ class ComposedHomodyneAnalysis:
 
         return run_simulation
 
-    def _generate_theoretical_data(self, parameters: np.ndarray, phi_angles: np.ndarray) -> Dict[str, np.ndarray]:
+    def _generate_theoretical_data(
+        self, parameters: np.ndarray, phi_angles: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         """Generate theoretical C2 data for simulation."""
         n_angles = len(phi_angles)
 
@@ -380,7 +428,7 @@ class ComposedHomodyneAnalysis:
             "phi_angles": phi_angles,
             "t1": t1,
             "t2": t2,
-            "parameters": parameters
+            "parameters": parameters,
         }
 
     # Convenience methods that use the composed workflows
@@ -401,8 +449,11 @@ class ComposedHomodyneAnalysis:
         workflow = self.create_complete_analysis_workflow(method)
         return workflow()
 
-    def run_simulation(self, parameters: Optional[np.ndarray] = None,
-                      phi_angles: Optional[np.ndarray] = None) -> Result[Dict[str, np.ndarray]]:
+    def run_simulation(
+        self,
+        parameters: Optional[np.ndarray] = None,
+        phi_angles: Optional[np.ndarray] = None,
+    ) -> Result[Dict[str, np.ndarray]]:
         """
         Run simulation using composed workflows.
 

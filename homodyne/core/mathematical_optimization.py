@@ -30,9 +30,9 @@ Institution: Argonne National Laboratory
 """
 
 import logging
+from collections.abc import Callable
 from functools import wraps
 from typing import Any
-from typing import Callable
 
 import numpy as np
 

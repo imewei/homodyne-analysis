@@ -30,14 +30,10 @@ from collections import deque
 from contextlib import contextmanager
 from dataclasses import asdict
 from dataclasses import dataclass
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +41,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class StartupMetrics:
     """Comprehensive startup performance metrics."""
+
     timestamp: str
     import_time: float
     memory_usage_mb: float
@@ -53,8 +50,8 @@ class StartupMetrics:
     platform: str
     cpu_count: int
     optimization_enabled: bool
-    import_errors: List[str]
-    dependency_load_times: Dict[str, float]
+    import_errors: list[str]
+    dependency_load_times: dict[str, float]
     total_modules_loaded: int
     lazy_modules_count: int
     immediate_modules_count: int
@@ -63,12 +60,13 @@ class StartupMetrics:
 @dataclass
 class PerformanceBaseline:
     """Performance baseline configuration."""
+
     name: str
     target_import_time: float
     max_memory_usage_mb: float
     acceptable_variance_percent: float
     measurement_count: int
-    environment_tags: List[str]
+    environment_tags: list[str]
     created_at: str
     updated_at: str
 
@@ -76,6 +74,7 @@ class PerformanceBaseline:
 @dataclass
 class RegressionAlert:
     """Performance regression alert."""
+
     alert_id: str
     metric_name: str
     current_value: float
@@ -83,7 +82,7 @@ class RegressionAlert:
     degradation_percent: float
     severity: str  # 'warning', 'critical'
     timestamp: str
-    recommendations: List[str]
+    recommendations: list[str]
 
 
 class StartupPerformanceMonitor:
@@ -94,8 +93,9 @@ class StartupPerformanceMonitor:
     baseline management, regression detection, and historical tracking.
     """
 
-    def __init__(self, package_name: str = "homodyne",
-                 baseline_dir: Optional[Path] = None):
+    def __init__(
+        self, package_name: str = "homodyne", baseline_dir: Path | None = None
+    ):
         """
         Initialize startup performance monitor.
 
@@ -114,13 +114,13 @@ class StartupPerformanceMonitor:
         self.metrics_file = self.baseline_dir / "startup_metrics.jsonl"
         self.alerts_file = self.baseline_dir / "performance_alerts.json"
 
-        self.baselines: Dict[str, PerformanceBaseline] = {}
+        self.baselines: dict[str, PerformanceBaseline] = {}
         self.recent_metrics: deque = deque(maxlen=100)  # Keep last 100 measurements
         self.load_baselines()
 
-    def measure_startup_performance(self,
-                                  iterations: int = 5,
-                                  warmup_iterations: int = 2) -> StartupMetrics:
+    def measure_startup_performance(
+        self, iterations: int = 5, warmup_iterations: int = 2
+    ) -> StartupMetrics:
         """
         Measure comprehensive startup performance.
 
@@ -151,14 +151,14 @@ class StartupPerformanceMonitor:
         for i in range(iterations):
             try:
                 metrics = self._single_startup_measurement(detailed=True)
-                measurements.append(metrics['import_time'])
-                memory_measurements.append(metrics['memory_usage'])
+                measurements.append(metrics["import_time"])
+                memory_measurements.append(metrics["memory_usage"])
 
                 # Aggregate dependency times
-                for dep, time_val in metrics.get('dependency_times', {}).items():
+                for dep, time_val in metrics.get("dependency_times", {}).items():
                     dependency_times[dep].append(time_val)
 
-                import_errors.extend(metrics.get('import_errors', []))
+                import_errors.extend(metrics.get("import_errors", []))
 
             except Exception as e:
                 logger.warning(f"Measurement iteration {i} failed: {e}")
@@ -173,29 +173,28 @@ class StartupPerformanceMonitor:
 
         # Average dependency times
         avg_dependency_times = {
-            dep: statistics.mean(times)
-            for dep, times in dependency_times.items()
+            dep: statistics.mean(times) for dep, times in dependency_times.items()
         }
 
         # System information
-        import platform
+
         system_info = self._get_system_info()
 
         # Create comprehensive metrics
         metrics = StartupMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             import_time=avg_import_time,
             memory_usage_mb=avg_memory,
-            python_version=system_info['python_version'],
-            package_version=system_info['package_version'],
-            platform=system_info['platform'],
-            cpu_count=system_info['cpu_count'],
-            optimization_enabled=system_info['optimization_enabled'],
+            python_version=system_info["python_version"],
+            package_version=system_info["package_version"],
+            platform=system_info["platform"],
+            cpu_count=system_info["cpu_count"],
+            optimization_enabled=system_info["optimization_enabled"],
             import_errors=list(set(import_errors)),  # Remove duplicates
             dependency_load_times=avg_dependency_times,
-            total_modules_loaded=system_info.get('total_modules', 0),
-            lazy_modules_count=system_info.get('lazy_modules', 0),
-            immediate_modules_count=system_info.get('immediate_modules', 0),
+            total_modules_loaded=system_info.get("total_modules", 0),
+            lazy_modules_count=system_info.get("lazy_modules", 0),
+            immediate_modules_count=system_info.get("immediate_modules", 0),
         )
 
         # Store metrics
@@ -205,14 +204,13 @@ class StartupPerformanceMonitor:
         logger.info(f"Startup performance: {avg_import_time:.3f}s, {avg_memory:.1f}MB")
         return metrics
 
-    def _single_startup_measurement(self, detailed: bool = False) -> Dict[str, Any]:
+    def _single_startup_measurement(self, detailed: bool = False) -> dict[str, Any]:
         """Perform a single startup time measurement."""
-        import subprocess
 
         import psutil
 
         # Prepare measurement script
-        measurement_script = f'''
+        measurement_script = f"""
 import time
 import sys
 import os
@@ -253,7 +251,7 @@ try:
 except Exception as e:
     print(f"IMPORT_ERROR: {{e}}")
     sys.exit(1)
-'''
+"""
 
         # Measure memory before subprocess
         process = psutil.Process()
@@ -263,9 +261,9 @@ except Exception as e:
         start_time = time.perf_counter()
         result = subprocess.run(
             [sys.executable, "-c", measurement_script],
-            capture_output=True,
+            check=False, capture_output=True,
             text=True,
-            timeout=30  # 30-second timeout
+            timeout=30,  # 30-second timeout
         )
         end_time = time.perf_counter()
 
@@ -273,7 +271,7 @@ except Exception as e:
             raise RuntimeError(f"Import failed: {result.stderr}")
 
         # Parse results
-        output_lines = result.stdout.strip().split('\n')
+        output_lines = result.stdout.strip().split("\n")
         import_time = None
         detailed_metrics = {}
         import_errors = []
@@ -281,15 +279,15 @@ except Exception as e:
         for line in output_lines:
             if line.startswith("IMPORT_TIME:"):
                 import_time = float(line.split(":", 1)[1].strip())
-            elif line.startswith("IMPORT_ERROR:"):
-                import_errors.append(line.split(":", 1)[1].strip())
-            elif line.startswith("DETAILED_ERROR:"):
+            elif line.startswith("IMPORT_ERROR:") or line.startswith("DETAILED_ERROR:"):
                 import_errors.append(line.split(":", 1)[1].strip())
 
         # Parse detailed metrics if available
         if detailed and "DETAILED_METRICS_START" in result.stdout:
             try:
-                start_idx = result.stdout.find("DETAILED_METRICS_START") + len("DETAILED_METRICS_START\n")
+                start_idx = result.stdout.find("DETAILED_METRICS_START") + len(
+                    "DETAILED_METRICS_START\n"
+                )
                 end_idx = result.stdout.find("DETAILED_METRICS_END")
                 detailed_json = result.stdout[start_idx:end_idx].strip()
                 detailed_metrics = json.loads(detailed_json)
@@ -306,24 +304,29 @@ except Exception as e:
         return {
             "import_time": import_time,
             "memory_usage": memory_usage,
-            "dependency_times": detailed_metrics.get("import_report", {}).get("individual_imports", {}),
+            "dependency_times": detailed_metrics.get("import_report", {}).get(
+                "individual_imports", {}
+            ),
             "import_errors": import_errors,
             "detailed_metrics": detailed_metrics,
         }
 
-    def _get_system_info(self) -> Dict[str, Any]:
+    def _get_system_info(self) -> dict[str, Any]:
         """Get system information for metrics."""
         import platform
 
         try:
             # Get package version
             import importlib.metadata
+
             package_version = importlib.metadata.version(self.package_name)
         except Exception:
             package_version = "unknown"
 
         # Check if optimization is enabled
-        optimization_enabled = os.environ.get("HOMODYNE_OPTIMIZE_STARTUP", "true").lower() in ("true", "1", "yes")
+        optimization_enabled = os.environ.get(
+            "HOMODYNE_OPTIMIZE_STARTUP", "true"
+        ).lower() in ("true", "1", "yes")
 
         return {
             "python_version": platform.python_version(),
@@ -336,13 +339,15 @@ except Exception as e:
             "immediate_modules": 0,  # Would need actual count
         }
 
-    def establish_baseline(self,
-                          name: str,
-                          target_import_time: float,
-                          max_memory_usage_mb: float,
-                          acceptable_variance_percent: float = 10.0,
-                          measurement_count: int = 10,
-                          environment_tags: Optional[List[str]] = None) -> PerformanceBaseline:
+    def establish_baseline(
+        self,
+        name: str,
+        target_import_time: float,
+        max_memory_usage_mb: float,
+        acceptable_variance_percent: float = 10.0,
+        measurement_count: int = 10,
+        environment_tags: list[str] | None = None,
+    ) -> PerformanceBaseline:
         """
         Establish a new performance baseline.
 
@@ -371,7 +376,9 @@ except Exception as e:
         # Validate current performance against targets
         current_metrics = self.measure_startup_performance(iterations=measurement_count)
 
-        if current_metrics.import_time > target_import_time * (1 + acceptable_variance_percent / 100):
+        if current_metrics.import_time > target_import_time * (
+            1 + acceptable_variance_percent / 100
+        ):
             warnings.warn(
                 f"Current import time ({current_metrics.import_time:.3f}s) exceeds target "
                 f"({target_import_time:.3f}s) by more than acceptable variance"
@@ -391,8 +398,8 @@ except Exception as e:
             acceptable_variance_percent=acceptable_variance_percent,
             measurement_count=measurement_count,
             environment_tags=environment_tags or [],
-            created_at=datetime.now(timezone.utc).isoformat(),
-            updated_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
+            updated_at=datetime.now(UTC).isoformat(),
         )
 
         # Store baseline
@@ -402,9 +409,9 @@ except Exception as e:
         logger.info(f"Baseline '{name}' established successfully")
         return baseline
 
-    def check_performance_regression(self,
-                                   baseline_name: str,
-                                   current_metrics: Optional[StartupMetrics] = None) -> List[RegressionAlert]:
+    def check_performance_regression(
+        self, baseline_name: str, current_metrics: StartupMetrics | None = None
+    ) -> list[RegressionAlert]:
         """
         Check for performance regressions against baseline.
 
@@ -431,47 +438,63 @@ except Exception as e:
         alerts = []
 
         # Check import time regression
-        import_time_threshold = baseline.target_import_time * (1 + baseline.acceptable_variance_percent / 100)
+        import_time_threshold = baseline.target_import_time * (
+            1 + baseline.acceptable_variance_percent / 100
+        )
         if current_metrics.import_time > import_time_threshold:
-            degradation = ((current_metrics.import_time - baseline.target_import_time) / baseline.target_import_time) * 100
-            severity = "critical" if degradation > baseline.acceptable_variance_percent * 2 else "warning"
+            degradation = (
+                (current_metrics.import_time - baseline.target_import_time)
+                / baseline.target_import_time
+            ) * 100
+            severity = (
+                "critical"
+                if degradation > baseline.acceptable_variance_percent * 2
+                else "warning"
+            )
 
-            alerts.append(RegressionAlert(
-                alert_id=f"import_time_{int(time.time())}",
-                metric_name="import_time",
-                current_value=current_metrics.import_time,
-                baseline_value=baseline.target_import_time,
-                degradation_percent=degradation,
-                severity=severity,
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                recommendations=[
-                    "Review recent changes to import structure",
-                    "Check for new heavy dependencies",
-                    "Verify lazy loading is working correctly",
-                    "Consider profiling import bottlenecks",
-                ]
-            ))
+            alerts.append(
+                RegressionAlert(
+                    alert_id=f"import_time_{int(time.time())}",
+                    metric_name="import_time",
+                    current_value=current_metrics.import_time,
+                    baseline_value=baseline.target_import_time,
+                    degradation_percent=degradation,
+                    severity=severity,
+                    timestamp=datetime.now(UTC).isoformat(),
+                    recommendations=[
+                        "Review recent changes to import structure",
+                        "Check for new heavy dependencies",
+                        "Verify lazy loading is working correctly",
+                        "Consider profiling import bottlenecks",
+                    ],
+                )
+            )
 
         # Check memory usage regression
         if current_metrics.memory_usage_mb > baseline.max_memory_usage_mb:
-            degradation = ((current_metrics.memory_usage_mb - baseline.max_memory_usage_mb) / baseline.max_memory_usage_mb) * 100
+            degradation = (
+                (current_metrics.memory_usage_mb - baseline.max_memory_usage_mb)
+                / baseline.max_memory_usage_mb
+            ) * 100
             severity = "critical" if degradation > 50 else "warning"
 
-            alerts.append(RegressionAlert(
-                alert_id=f"memory_usage_{int(time.time())}",
-                metric_name="memory_usage",
-                current_value=current_metrics.memory_usage_mb,
-                baseline_value=baseline.max_memory_usage_mb,
-                degradation_percent=degradation,
-                severity=severity,
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                recommendations=[
-                    "Review memory-intensive imports",
-                    "Check for memory leaks in initialization",
-                    "Optimize large data structures",
-                    "Consider more aggressive lazy loading",
-                ]
-            ))
+            alerts.append(
+                RegressionAlert(
+                    alert_id=f"memory_usage_{int(time.time())}",
+                    metric_name="memory_usage",
+                    current_value=current_metrics.memory_usage_mb,
+                    baseline_value=baseline.max_memory_usage_mb,
+                    degradation_percent=degradation,
+                    severity=severity,
+                    timestamp=datetime.now(UTC).isoformat(),
+                    recommendations=[
+                        "Review memory-intensive imports",
+                        "Check for memory leaks in initialization",
+                        "Optimize large data structures",
+                        "Consider more aggressive lazy loading",
+                    ],
+                )
+            )
 
         # Store alerts if any
         if alerts:
@@ -480,7 +503,7 @@ except Exception as e:
 
         return alerts
 
-    def get_performance_trend(self, days: int = 30) -> Dict[str, Any]:
+    def get_performance_trend(self, days: int = 30) -> dict[str, Any]:
         """
         Get performance trend over specified time period.
 
@@ -503,7 +526,10 @@ except Exception as e:
         # Analyze trends
         import_times = [m.import_time for m in historical_metrics]
         memory_usage = [m.memory_usage_mb for m in historical_metrics]
-        timestamps = [datetime.fromisoformat(m.timestamp.replace('Z', '+00:00')) for m in historical_metrics]
+        timestamps = [
+            datetime.fromisoformat(m.timestamp.replace("Z", "+00:00"))
+            for m in historical_metrics
+        ]
 
         # Calculate trend statistics
         trend_analysis = {
@@ -514,18 +540,26 @@ except Exception as e:
                 "max": max(import_times),
                 "mean": statistics.mean(import_times),
                 "median": statistics.median(import_times),
-                "std_dev": statistics.stdev(import_times) if len(import_times) > 1 else 0,
+                "std_dev": (
+                    statistics.stdev(import_times) if len(import_times) > 1 else 0
+                ),
                 "latest": import_times[-1],
-                "trend_direction": "improving" if import_times[-1] < import_times[0] else "degrading",
+                "trend_direction": (
+                    "improving" if import_times[-1] < import_times[0] else "degrading"
+                ),
             },
             "memory_usage_trend": {
                 "min": min(memory_usage),
                 "max": max(memory_usage),
                 "mean": statistics.mean(memory_usage),
                 "median": statistics.median(memory_usage),
-                "std_dev": statistics.stdev(memory_usage) if len(memory_usage) > 1 else 0,
+                "std_dev": (
+                    statistics.stdev(memory_usage) if len(memory_usage) > 1 else 0
+                ),
                 "latest": memory_usage[-1],
-                "trend_direction": "improving" if memory_usage[-1] < memory_usage[0] else "degrading",
+                "trend_direction": (
+                    "improving" if memory_usage[-1] < memory_usage[0] else "degrading"
+                ),
             },
             "measurements_per_day": len(historical_metrics) / days,
             "first_measurement": timestamps[0].isoformat(),
@@ -534,7 +568,7 @@ except Exception as e:
 
         return trend_analysis
 
-    def generate_performance_report(self) -> Dict[str, Any]:
+    def generate_performance_report(self) -> dict[str, Any]:
         """
         Generate comprehensive performance report.
 
@@ -551,7 +585,9 @@ except Exception as e:
 
         for baseline_name in self.baselines:
             try:
-                alerts = self.check_performance_regression(baseline_name, current_metrics)
+                alerts = self.check_performance_regression(
+                    baseline_name, current_metrics
+                )
                 all_alerts.extend(alerts)
                 baseline_status[baseline_name] = {
                     "status": "failed" if alerts else "passed",
@@ -568,56 +604,69 @@ except Exception as e:
 
         # Create comprehensive report
         report = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "package_name": self.package_name,
             "current_metrics": asdict(current_metrics),
             "baseline_status": baseline_status,
             "alerts": [asdict(alert) for alert in all_alerts],
             "trend_analysis": trend_analysis,
-            "baselines": {name: asdict(baseline) for name, baseline in self.baselines.items()},
+            "baselines": {
+                name: asdict(baseline) for name, baseline in self.baselines.items()
+            },
             "summary": {
                 "total_baselines": len(self.baselines),
-                "passing_baselines": sum(1 for status in baseline_status.values() if status.get("status") == "passed"),
-                "failing_baselines": sum(1 for status in baseline_status.values() if status.get("status") == "failed"),
+                "passing_baselines": sum(
+                    1
+                    for status in baseline_status.values()
+                    if status.get("status") == "passed"
+                ),
+                "failing_baselines": sum(
+                    1
+                    for status in baseline_status.values()
+                    if status.get("status") == "failed"
+                ),
                 "total_alerts": len(all_alerts),
-                "critical_alerts": sum(1 for alert in all_alerts if alert.severity == "critical"),
-                "current_performance_rating": self._calculate_performance_rating(current_metrics, all_alerts),
-            }
+                "critical_alerts": sum(
+                    1 for alert in all_alerts if alert.severity == "critical"
+                ),
+                "current_performance_rating": self._calculate_performance_rating(
+                    current_metrics, all_alerts
+                ),
+            },
         }
 
         return report
 
-    def _calculate_performance_rating(self,
-                                    metrics: StartupMetrics,
-                                    alerts: List[RegressionAlert]) -> str:
+    def _calculate_performance_rating(
+        self, metrics: StartupMetrics, alerts: list[RegressionAlert]
+    ) -> str:
         """Calculate overall performance rating."""
         if any(alert.severity == "critical" for alert in alerts):
             return "poor"
-        elif any(alert.severity == "warning" for alert in alerts):
+        if any(alert.severity == "warning" for alert in alerts):
             return "fair"
-        elif metrics.import_time < 1.0 and metrics.memory_usage_mb < 100:
+        if metrics.import_time < 1.0 and metrics.memory_usage_mb < 100:
             return "excellent"
-        elif metrics.import_time < 2.0 and metrics.memory_usage_mb < 200:
+        if metrics.import_time < 2.0 and metrics.memory_usage_mb < 200:
             return "good"
-        else:
-            return "fair"
+        return "fair"
 
     def _store_metrics(self, metrics: StartupMetrics) -> None:
         """Store metrics to persistent storage."""
         try:
-            with open(self.metrics_file, 'a', encoding='utf-8') as f:
+            with open(self.metrics_file, "a", encoding="utf-8") as f:
                 json.dump(asdict(metrics), f)
-                f.write('\n')
+                f.write("\n")
         except Exception as e:
             logger.warning(f"Failed to store metrics: {e}")
 
-    def _store_alerts(self, alerts: List[RegressionAlert]) -> None:
+    def _store_alerts(self, alerts: list[RegressionAlert]) -> None:
         """Store alerts to persistent storage."""
         try:
             # Load existing alerts
             existing_alerts = []
             if self.alerts_file.exists():
-                with open(self.alerts_file, 'r', encoding='utf-8') as f:
+                with open(self.alerts_file, encoding="utf-8") as f:
                     existing_alerts = json.load(f)
 
             # Add new alerts
@@ -627,26 +676,28 @@ except Exception as e:
             existing_alerts = existing_alerts[-1000:]
 
             # Save back
-            with open(self.alerts_file, 'w', encoding='utf-8') as f:
+            with open(self.alerts_file, "w", encoding="utf-8") as f:
                 json.dump(existing_alerts, f, indent=2)
 
         except Exception as e:
             logger.warning(f"Failed to store alerts: {e}")
 
-    def _load_historical_metrics(self, days: int) -> List[StartupMetrics]:
+    def _load_historical_metrics(self, days: int) -> list[StartupMetrics]:
         """Load historical metrics from storage."""
         try:
             if not self.metrics_file.exists():
                 return []
 
-            cutoff_time = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
+            cutoff_time = datetime.now(UTC).timestamp() - (days * 24 * 3600)
             metrics = []
 
-            with open(self.metrics_file, 'r', encoding='utf-8') as f:
+            with open(self.metrics_file, encoding="utf-8") as f:
                 for line in f:
                     try:
                         data = json.loads(line.strip())
-                        timestamp = datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
+                        timestamp = datetime.fromisoformat(
+                            data["timestamp"].replace("Z", "+00:00")
+                        )
 
                         if timestamp.timestamp() >= cutoff_time:
                             metrics.append(StartupMetrics(**data))
@@ -663,7 +714,7 @@ except Exception as e:
         """Load baselines from persistent storage."""
         try:
             if self.baseline_file.exists():
-                with open(self.baseline_file, 'r', encoding='utf-8') as f:
+                with open(self.baseline_file, encoding="utf-8") as f:
                     data = json.load(f)
                     self.baselines = {
                         name: PerformanceBaseline(**baseline_data)
@@ -677,7 +728,7 @@ except Exception as e:
         """Save baselines to persistent storage."""
         try:
             data = {name: asdict(baseline) for name, baseline in self.baselines.items()}
-            with open(self.baseline_file, 'w', encoding='utf-8') as f:
+            with open(self.baseline_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             logger.warning(f"Failed to save baselines: {e}")
@@ -708,7 +759,7 @@ def monitor_startup_performance():
         logger.info(f"Startup monitoring completed in {end_time - start_time:.3f}s")
 
 
-def establish_default_baselines() -> Dict[str, PerformanceBaseline]:
+def establish_default_baselines() -> dict[str, PerformanceBaseline]:
     """
     Establish default performance baselines.
 
@@ -729,7 +780,7 @@ def establish_default_baselines() -> Dict[str, PerformanceBaseline]:
         max_memory_usage_mb=200.0,
         acceptable_variance_percent=20.0,
         measurement_count=5,
-        environment_tags=["development", "local"]
+        environment_tags=["development", "local"],
     )
 
     # Production baseline (strict)
@@ -739,7 +790,7 @@ def establish_default_baselines() -> Dict[str, PerformanceBaseline]:
         max_memory_usage_mb=150.0,
         acceptable_variance_percent=10.0,
         measurement_count=10,
-        environment_tags=["production", "optimized"]
+        environment_tags=["production", "optimized"],
     )
 
     # CI/CD baseline (for automated testing)
@@ -749,14 +800,14 @@ def establish_default_baselines() -> Dict[str, PerformanceBaseline]:
         max_memory_usage_mb=250.0,
         acceptable_variance_percent=25.0,
         measurement_count=3,
-        environment_tags=["ci", "automated"]
+        environment_tags=["ci", "automated"],
     )
 
     logger.info(f"Established {len(baselines)} default baselines")
     return baselines
 
 
-def check_startup_health() -> Dict[str, Any]:
+def check_startup_health() -> dict[str, Any]:
     """
     Quick startup health check.
 
@@ -801,7 +852,7 @@ def check_startup_health() -> Dict[str, Any]:
         return {
             "status": "error",
             "error": str(e),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 

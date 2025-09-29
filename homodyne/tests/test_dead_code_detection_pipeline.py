@@ -19,16 +19,10 @@ from collections import defaultdict
 from collections import deque
 from dataclasses import asdict
 from dataclasses import dataclass
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
-from typing import Union
 
 import pytest
 
@@ -38,13 +32,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DeadCodeCandidate:
     """Dead code candidate with analysis details."""
+
     name: str
     type: str  # 'function', 'class', 'method'
     file_path: str
     line_number: int
     confidence: float  # 0.0 to 1.0
-    reasons: List[str]
-    dependencies: List[str]
+    reasons: list[str]
+    dependencies: list[str]
     test_only: bool
     safe_to_remove: bool
     analysis_timestamp: str
@@ -53,14 +48,15 @@ class DeadCodeCandidate:
 @dataclass
 class CallGraphNode:
     """Node in the call graph representing a callable."""
+
     name: str
     file_path: str
     line_number: int
     node_type: str  # 'function', 'method', 'class'
     is_public: bool
     is_test: bool
-    calls: Set[str]  # Names of functions/methods this node calls
-    called_by: Set[str]  # Names of functions/methods that call this node
+    calls: set[str]  # Names of functions/methods this node calls
+    called_by: set[str]  # Names of functions/methods that call this node
 
 
 class ASTCallGraphBuilder:
@@ -68,11 +64,11 @@ class ASTCallGraphBuilder:
 
     def __init__(self, package_root: Path):
         self.package_root = package_root
-        self.call_graph: Dict[str, CallGraphNode] = {}
-        self.imports: Dict[str, Set[str]] = defaultdict(set)
-        self.definitions: Dict[str, Tuple[str, int]] = {}  # name -> (file, line)
+        self.call_graph: dict[str, CallGraphNode] = {}
+        self.imports: dict[str, set[str]] = defaultdict(set)
+        self.definitions: dict[str, tuple[str, int]] = {}  # name -> (file, line)
 
-    def build_call_graph(self) -> Dict[str, CallGraphNode]:
+    def build_call_graph(self) -> dict[str, CallGraphNode]:
         """Build comprehensive call graph for the package."""
         logger.info("Building call graph for package")
 
@@ -106,7 +102,7 @@ class ASTCallGraphBuilder:
     def _collect_definitions(self, file_path: Path) -> None:
         """Collect function and class definitions from file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -127,7 +123,7 @@ class ASTCallGraphBuilder:
                         is_public=not node.name.startswith("_"),
                         is_test=is_test_file or node.name.startswith("test_"),
                         calls=set(),
-                        called_by=set()
+                        called_by=set(),
                     )
 
                 elif isinstance(node, ast.ClassDef):
@@ -144,14 +140,19 @@ class ASTCallGraphBuilder:
                         is_public=not node.name.startswith("_"),
                         is_test=is_test_file,
                         calls=set(),
-                        called_by=set()
+                        called_by=set(),
                     )
 
                     # Collect methods
                     for method in node.body:
                         if isinstance(method, ast.FunctionDef):
-                            method_full_name = f"{file_path.stem}.{node.name}.{method.name}"
-                            self.definitions[method_full_name] = (str(file_path), method.lineno)
+                            method_full_name = (
+                                f"{file_path.stem}.{node.name}.{method.name}"
+                            )
+                            self.definitions[method_full_name] = (
+                                str(file_path),
+                                method.lineno,
+                            )
 
                             self.call_graph[method_full_name] = CallGraphNode(
                                 name=method.name,
@@ -161,7 +162,7 @@ class ASTCallGraphBuilder:
                                 is_public=not method.name.startswith("_"),
                                 is_test=is_test_file or method.name.startswith("test_"),
                                 calls=set(),
-                                called_by=set()
+                                called_by=set(),
                             )
 
         except Exception as e:
@@ -170,7 +171,7 @@ class ASTCallGraphBuilder:
     def _build_calls(self, file_path: Path) -> None:
         """Build call relationships from file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -184,8 +185,12 @@ class ASTCallGraphBuilder:
 class CallVisitor(ast.NodeVisitor):
     """AST visitor to collect function and method calls."""
 
-    def __init__(self, call_graph: Dict[str, CallGraphNode],
-                 definitions: Dict[str, Tuple[str, int]], file_path: str):
+    def __init__(
+        self,
+        call_graph: dict[str, CallGraphNode],
+        definitions: dict[str, tuple[str, int]],
+        file_path: str,
+    ):
         self.call_graph = call_graph
         self.definitions = definitions
         self.file_path = file_path
@@ -226,17 +231,17 @@ class CallVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _extract_call_name(self, node: ast.Call) -> Optional[str]:
+    def _extract_call_name(self, node: ast.Call) -> str | None:
         """Extract the name of the called function/method."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             if isinstance(node.func.value, ast.Name):
                 return f"{node.func.value.id}.{node.func.attr}"
             return node.func.attr
         return None
 
-    def _resolve_call_name(self, call_name: str) -> Optional[str]:
+    def _resolve_call_name(self, call_name: str) -> str | None:
         """Resolve call name to full qualified name."""
         # Try exact match first
         if call_name in self.call_graph:
@@ -259,7 +264,7 @@ class CallVisitor(ast.NodeVisitor):
 class DeadCodeDetectionPipeline:
     """Comprehensive dead code detection pipeline."""
 
-    def __init__(self, package_root: Path, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, package_root: Path, config: dict[str, Any] | None = None):
         self.package_root = package_root
         # Merge user config with defaults
         default_config = self._get_default_config()
@@ -267,9 +272,9 @@ class DeadCodeDetectionPipeline:
             default_config.update(config)
         self.config = default_config
         self.call_graph_builder = ASTCallGraphBuilder(package_root)
-        self.analysis_results: Dict[str, Any] = {}
+        self.analysis_results: dict[str, Any] = {}
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Get default configuration for dead code detection."""
         return {
             "min_confidence": 0.8,
@@ -290,10 +295,10 @@ class DeadCodeDetectionPipeline:
                 "__init__.py",
                 "setup.py",
                 "conftest.py",
-            ]
+            ],
         }
 
-    def run_pipeline(self) -> Dict[str, Any]:
+    def run_pipeline(self) -> dict[str, Any]:
         """Run the complete dead code detection pipeline."""
         logger.info("Starting dead code detection pipeline")
         start_time = time.time()
@@ -319,7 +324,7 @@ class DeadCodeDetectionPipeline:
 
             self.analysis_results = {
                 "pipeline_version": "1.0.0",
-                "analysis_timestamp": datetime.now(timezone.utc).isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
                 "package_root": str(self.package_root),
                 "config": self.config,
                 "statistics": {
@@ -328,8 +333,12 @@ class DeadCodeDetectionPipeline:
                     "reachable_nodes": len(reachable_nodes),
                     "dead_code_candidates": len(candidates),
                     "filtered_candidates": len(filtered_candidates),
-                    "high_confidence_candidates": len([c for c in filtered_candidates if c.confidence > 0.9]),
-                    "safe_removal_candidates": len([c for c in filtered_candidates if c.safe_to_remove]),
+                    "high_confidence_candidates": len(
+                        [c for c in filtered_candidates if c.confidence > 0.9]
+                    ),
+                    "safe_removal_candidates": len(
+                        [c for c in filtered_candidates if c.safe_to_remove]
+                    ),
                     "analysis_time_seconds": time.time() - start_time,
                 },
                 "entry_points": list(entry_points),
@@ -346,7 +355,7 @@ class DeadCodeDetectionPipeline:
             logger.error(f"Pipeline failed: {e}")
             raise
 
-    def _identify_entry_points(self, call_graph: Dict[str, CallGraphNode]) -> Set[str]:
+    def _identify_entry_points(self, call_graph: dict[str, CallGraphNode]) -> set[str]:
         """Identify entry points (functions that should not be removed)."""
         entry_points = set()
 
@@ -374,8 +383,9 @@ class DeadCodeDetectionPipeline:
         logger.info(f"Identified {len(entry_points)} entry points")
         return entry_points
 
-    def _reachability_analysis(self, call_graph: Dict[str, CallGraphNode],
-                              entry_points: Set[str]) -> Set[str]:
+    def _reachability_analysis(
+        self, call_graph: dict[str, CallGraphNode], entry_points: set[str]
+    ) -> set[str]:
         """Perform reachability analysis from entry points."""
         reachable = set()
         queue = deque(entry_points)
@@ -396,8 +406,9 @@ class DeadCodeDetectionPipeline:
         logger.info(f"Found {len(reachable)} reachable nodes")
         return reachable
 
-    def _find_dead_code_candidates(self, call_graph: Dict[str, CallGraphNode],
-                                  reachable_nodes: Set[str]) -> List[DeadCodeCandidate]:
+    def _find_dead_code_candidates(
+        self, call_graph: dict[str, CallGraphNode], reachable_nodes: set[str]
+    ) -> list[DeadCodeCandidate]:
         """Find dead code candidates (unreachable nodes)."""
         candidates = []
 
@@ -428,9 +439,9 @@ class DeadCodeDetectionPipeline:
 
                 # Determine if it's safe to remove
                 safe_to_remove = (
-                    confidence >= self.config["min_confidence"] and
-                    not node.name.startswith("__") and
-                    node.name not in ["setup", "teardown", "main"]
+                    confidence >= self.config["min_confidence"]
+                    and not node.name.startswith("__")
+                    and node.name not in ["setup", "teardown", "main"]
                 )
 
                 candidate = DeadCodeCandidate(
@@ -443,7 +454,7 @@ class DeadCodeDetectionPipeline:
                     dependencies=list(node.calls),
                     test_only=test_only,
                     safe_to_remove=safe_to_remove,
-                    analysis_timestamp=datetime.now(timezone.utc).isoformat()
+                    analysis_timestamp=datetime.now(UTC).isoformat(),
                 )
 
                 candidates.append(candidate)
@@ -451,13 +462,16 @@ class DeadCodeDetectionPipeline:
         logger.info(f"Found {len(candidates)} initial dead code candidates")
         return candidates
 
-    def _filter_and_score_candidates(self, candidates: List[DeadCodeCandidate]) -> List[DeadCodeCandidate]:
+    def _filter_and_score_candidates(
+        self, candidates: list[DeadCodeCandidate]
+    ) -> list[DeadCodeCandidate]:
         """Filter and score dead code candidates."""
         filtered = []
 
         for candidate in candidates:
             # Apply whitelist patterns
             import re
+
             skip = False
             for pattern in self.config["whitelist_patterns"]:
                 if re.match(pattern, candidate.name):
@@ -468,7 +482,9 @@ class DeadCodeDetectionPipeline:
                 continue
 
             # Apply configuration filters
-            if self.config["exclude_private_functions"] and candidate.name.startswith("_"):
+            if self.config["exclude_private_functions"] and candidate.name.startswith(
+                "_"
+            ):
                 continue
 
             if self.config["exclude_magic_methods"] and candidate.name.startswith("__"):
@@ -489,36 +505,37 @@ class DeadCodeDetectionPipeline:
         logger.info(f"Filtered to {len(filtered)} candidates")
         return filtered
 
-    def _generate_recommendations(self, candidates: List[DeadCodeCandidate]) -> Dict[str, Any]:
+    def _generate_recommendations(
+        self, candidates: list[DeadCodeCandidate]
+    ) -> dict[str, Any]:
         """Generate recommendations for dead code removal."""
         recommendations = {
             "summary": {
                 "total_candidates": len(candidates),
                 "high_confidence": len([c for c in candidates if c.confidence > 0.9]),
                 "safe_removal": len([c for c in candidates if c.safe_to_remove]),
-                "estimated_lines_saved": sum(self._estimate_lines(c) for c in candidates)
+                "estimated_lines_saved": sum(
+                    self._estimate_lines(c) for c in candidates
+                ),
             },
             "removal_plan": {
                 "immediate_removal": [
-                    asdict(c) for c in candidates
+                    asdict(c)
+                    for c in candidates
                     if c.confidence > 0.95 and c.safe_to_remove
                 ],
                 "review_required": [
-                    asdict(c) for c in candidates
-                    if 0.8 <= c.confidence <= 0.95
+                    asdict(c) for c in candidates if 0.8 <= c.confidence <= 0.95
                 ],
-                "low_confidence": [
-                    asdict(c) for c in candidates
-                    if c.confidence < 0.8
-                ]
+                "low_confidence": [asdict(c) for c in candidates if c.confidence < 0.8],
             },
             "file_summary": self._group_by_file(candidates),
             "next_steps": [
                 "Review high-confidence candidates for immediate removal",
                 "Manually verify medium-confidence candidates",
                 "Run comprehensive tests after removal",
-                "Update documentation if needed"
-            ]
+                "Update documentation if needed",
+            ],
         }
 
         return recommendations
@@ -526,21 +543,23 @@ class DeadCodeDetectionPipeline:
     def _estimate_lines(self, candidate: DeadCodeCandidate) -> int:
         """Estimate number of lines for a dead code candidate."""
         try:
-            with open(candidate.file_path, 'r') as f:
+            with open(candidate.file_path) as f:
                 lines = f.readlines()
 
             # Simple heuristic: function likely spans 10-20 lines
             if candidate.type == "function":
                 return 15
-            elif candidate.type == "method":
+            if candidate.type == "method":
                 return 10
-            elif candidate.type == "class":
+            if candidate.type == "class":
                 return 30
             return 5
         except:
             return 10  # Default estimate
 
-    def _group_by_file(self, candidates: List[DeadCodeCandidate]) -> Dict[str, Dict[str, Any]]:
+    def _group_by_file(
+        self, candidates: list[DeadCodeCandidate]
+    ) -> dict[str, dict[str, Any]]:
         """Group candidates by file for easier review."""
         file_groups = defaultdict(list)
 
@@ -551,9 +570,11 @@ class DeadCodeDetectionPipeline:
         for file_path, file_candidates in file_groups.items():
             summary[file_path] = {
                 "total_candidates": len(file_candidates),
-                "high_confidence": len([c for c in file_candidates if c.confidence > 0.9]),
+                "high_confidence": len(
+                    [c for c in file_candidates if c.confidence > 0.9]
+                ),
                 "safe_removal": len([c for c in file_candidates if c.safe_to_remove]),
-                "candidates": [c.name for c in file_candidates]
+                "candidates": [c.name for c in file_candidates],
             }
 
         return summary
@@ -563,7 +584,7 @@ class DeadCodeDetectionPipeline:
         if not self.analysis_results:
             raise ValueError("No analysis results to save. Run pipeline first.")
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(self.analysis_results, f, indent=2)
 
         logger.info(f"Analysis report saved to {output_path}")
@@ -574,7 +595,8 @@ class DeadCodeDetectionPipeline:
             raise ValueError("No analysis results available. Run pipeline first.")
 
         safe_candidates = [
-            c for c in self.analysis_results["candidates"]
+            c
+            for c in self.analysis_results["candidates"]
             if c["safe_to_remove"] and c["confidence"] > 0.95
         ]
 
@@ -605,11 +627,7 @@ class DeadCodeDetectionPipeline:
                 f"{candidate['line_number']}, '{candidate['name']}')"
             )
 
-        script_lines.extend([
-            "",
-            "if __name__ == '__main__':",
-            "    main()"
-        ])
+        script_lines.extend(["", "if __name__ == '__main__':", "    main()"])
 
         return "\n".join(script_lines)
 
@@ -686,7 +704,7 @@ class TestDeadCodeDetectionPipeline:
         assert len(entry_points) > 0
 
         # Should include main functions and public API
-        entry_point_names = {name.split('.')[-1] for name in entry_points}
+        entry_point_names = {name.split(".")[-1] for name in entry_points}
 
         # Common entry points that should be preserved
         expected_patterns = ["main", "test_", "__init__"]
@@ -727,7 +745,7 @@ class TestDeadCodeDetectionPipeline:
                 dependencies=[],
                 test_only=False,
                 safe_to_remove=True,
-                analysis_timestamp="2024-01-01T00:00:00Z"
+                analysis_timestamp="2024-01-01T00:00:00Z",
             ),
             DeadCodeCandidate(
                 name="__private_function",
@@ -739,7 +757,7 @@ class TestDeadCodeDetectionPipeline:
                 dependencies=[],
                 test_only=False,
                 safe_to_remove=True,
-                analysis_timestamp="2024-01-01T00:00:00Z"
+                analysis_timestamp="2024-01-01T00:00:00Z",
             ),
             DeadCodeCandidate(
                 name="low_confidence_function",
@@ -751,8 +769,8 @@ class TestDeadCodeDetectionPipeline:
                 dependencies=[],
                 test_only=False,
                 safe_to_remove=False,
-                analysis_timestamp="2024-01-01T00:00:00Z"
-            )
+                analysis_timestamp="2024-01-01T00:00:00Z",
+            ),
         ]
 
         package_root = Path("homodyne")
@@ -779,25 +797,27 @@ class TestDeadCodeDetectionPipeline:
                     "confidence": 0.9,
                     "safe_to_remove": True,
                     "file_path": "/test/file.py",
-                    "line_number": 10
+                    "line_number": 10,
                 }
             ]
         }
 
-        recommendations = pipeline._generate_recommendations([
-            DeadCodeCandidate(
-                name="mock_function",
-                type="function",
-                file_path="/test/file.py",
-                line_number=10,
-                confidence=0.9,
-                reasons=["Mock"],
-                dependencies=[],
-                test_only=False,
-                safe_to_remove=True,
-                analysis_timestamp="2024-01-01T00:00:00Z"
-            )
-        ])
+        recommendations = pipeline._generate_recommendations(
+            [
+                DeadCodeCandidate(
+                    name="mock_function",
+                    type="function",
+                    file_path="/test/file.py",
+                    line_number=10,
+                    confidence=0.9,
+                    reasons=["Mock"],
+                    dependencies=[],
+                    test_only=False,
+                    safe_to_remove=True,
+                    analysis_timestamp="2024-01-01T00:00:00Z",
+                )
+            ]
+        )
 
         assert isinstance(recommendations, dict)
         assert "summary" in recommendations
@@ -817,7 +837,7 @@ class TestDeadCodeDetectionPipeline:
                     "confidence": 0.96,
                     "safe_to_remove": True,
                     "file_path": "/test/file.py",
-                    "line_number": 10
+                    "line_number": 10,
                 }
             ]
         }
@@ -840,11 +860,14 @@ class TestIntegrationWithHomodynePackage:
         if not package_root.exists():
             pytest.skip("Homodyne package directory not found")
 
-        pipeline = DeadCodeDetectionPipeline(package_root, config={
-            "min_confidence": 0.8,
-            "safe_removal_only": True,
-            "analysis_timeout": 120,
-        })
+        pipeline = DeadCodeDetectionPipeline(
+            package_root,
+            config={
+                "min_confidence": 0.8,
+                "safe_removal_only": True,
+                "analysis_timeout": 120,
+            },
+        )
 
         results = pipeline.run_pipeline()
 
@@ -858,14 +881,16 @@ class TestIntegrationWithHomodynePackage:
         # Log results for manual review
         logger.info(f"Found {len(results['candidates'])} dead code candidates")
         for candidate in results["candidates"][:5]:  # Show first 5
-            logger.info(f"  - {candidate['name']} (confidence: {candidate['confidence']:.2f})")
+            logger.info(
+                f"  - {candidate['name']} (confidence: {candidate['confidence']:.2f})"
+            )
 
     def test_specific_files_analysis(self):
         """Test analysis of specific files mentioned in requirements."""
         target_files = [
             "homodyne/core/security_metrics.py",
             "homodyne/ui/cli_enhancer.py",
-            "homodyne/core/config.py"
+            "homodyne/core/config.py",
         ]
 
         found_files = []
@@ -882,7 +907,8 @@ class TestIntegrationWithHomodynePackage:
 
         # Check if any candidates are from target files
         target_candidates = [
-            c for c in results["candidates"]
+            c
+            for c in results["candidates"]
             if any(target in c["file_path"] for target in found_files)
         ]
 
@@ -908,7 +934,7 @@ if __name__ == "__main__":
         # Generate removal script
         script = pipeline.get_removal_script()
         script_path = Path("dead_code_removal_script.py")
-        with open(script_path, 'w') as f:
+        with open(script_path, "w") as f:
             f.write(script)
         print(f"Removal script generated: {script_path}")
     else:

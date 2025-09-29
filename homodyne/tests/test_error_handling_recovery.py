@@ -18,16 +18,12 @@ import tempfile
 import time
 import traceback
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
 
 import numpy as np
 
@@ -36,6 +32,7 @@ warnings.filterwarnings("ignore")
 
 class ErrorSeverity(Enum):
     """Error severity levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -44,6 +41,7 @@ class ErrorSeverity(Enum):
 
 class RecoveryStrategy(Enum):
     """Recovery strategy types."""
+
     RETRY = "retry"
     FALLBACK = "fallback"
     GRACEFUL_DEGRADATION = "graceful_degradation"
@@ -54,6 +52,7 @@ class RecoveryStrategy(Enum):
 @dataclass
 class ErrorContext:
     """Error context information."""
+
     error_id: str
     timestamp: float
     error_type: str
@@ -63,18 +62,19 @@ class ErrorContext:
     function_name: str
     recovery_attempted: bool = False
     recovery_successful: bool = False
-    recovery_strategy: Optional[RecoveryStrategy] = None
+    recovery_strategy: RecoveryStrategy | None = None
 
 
 @dataclass
 class RecoveryResult:
     """Recovery operation result."""
+
     success: bool
     strategy_used: RecoveryStrategy
     attempts_made: int
     execution_time: float
     error_resolved: bool
-    fallback_data: Optional[Any] = None
+    fallback_data: Any | None = None
 
 
 class ErrorHandler:
@@ -87,23 +87,33 @@ class ErrorHandler:
         self.circuit_breakers = {}
         self.checkpoints = {}
 
-    def register_error_handler(self, error_type: type, handler: Callable, severity: ErrorSeverity = ErrorSeverity.MEDIUM):
+    def register_error_handler(
+        self,
+        error_type: type,
+        handler: Callable,
+        severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+    ):
         """Register custom error handler."""
         self.error_registry[error_type] = {
             "handler": handler,
             "severity": severity,
             "call_count": 0,
-            "success_count": 0
+            "success_count": 0,
         }
 
-    def register_recovery_strategy(self, error_type: type, strategy: RecoveryStrategy,
-                                 recovery_func: Callable, max_attempts: int = 3):
+    def register_recovery_strategy(
+        self,
+        error_type: type,
+        strategy: RecoveryStrategy,
+        recovery_func: Callable,
+        max_attempts: int = 3,
+    ):
         """Register recovery strategy for specific error type."""
         self.recovery_strategies[error_type] = {
             "strategy": strategy,
             "recovery_func": recovery_func,
             "max_attempts": max_attempts,
-            "circuit_breaker_threshold": 5
+            "circuit_breaker_threshold": 5,
         }
 
     def handle_error(self, error: Exception, context: str = "") -> ErrorContext:
@@ -130,7 +140,7 @@ class ErrorHandler:
             error_message=str(error),
             severity=severity,
             traceback_info=traceback.format_exc(),
-            function_name=context
+            function_name=context,
         )
 
         # Add to history
@@ -151,7 +161,9 @@ class ErrorHandler:
 
         return error_context
 
-    def _attempt_recovery(self, error: Exception, error_type: type, error_context: ErrorContext) -> RecoveryResult:
+    def _attempt_recovery(
+        self, error: Exception, error_type: type, error_context: ErrorContext
+    ) -> RecoveryResult:
         """Attempt error recovery using registered strategy."""
         strategy_info = self.recovery_strategies[error_type]
         strategy = strategy_info["strategy"]
@@ -169,7 +181,7 @@ class ErrorHandler:
                 strategy_used=RecoveryStrategy.CIRCUIT_BREAKER,
                 attempts_made=0,
                 execution_time=time.perf_counter() - start_time,
-                error_resolved=False
+                error_resolved=False,
             )
 
         # Attempt recovery based on strategy
@@ -199,10 +211,12 @@ class ErrorHandler:
             strategy_used=strategy,
             attempts_made=attempts,
             execution_time=execution_time,
-            error_resolved=success
+            error_resolved=success,
         )
 
-    def _retry_recovery(self, recovery_func: Callable, max_attempts: int, error: Exception) -> bool:
+    def _retry_recovery(
+        self, recovery_func: Callable, max_attempts: int, error: Exception
+    ) -> bool:
         """Implement retry recovery strategy."""
         for attempt in range(max_attempts):
             try:
@@ -211,7 +225,7 @@ class ErrorHandler:
             except Exception:
                 if attempt == max_attempts - 1:
                     return False
-                time.sleep(0.1 * (2 ** attempt))  # Exponential backoff
+                time.sleep(0.1 * (2**attempt))  # Exponential backoff
         return False
 
     def _fallback_recovery(self, recovery_func: Callable, error: Exception) -> tuple:
@@ -222,7 +236,9 @@ class ErrorHandler:
         except Exception:
             return False, None
 
-    def _graceful_degradation_recovery(self, recovery_func: Callable, error: Exception) -> bool:
+    def _graceful_degradation_recovery(
+        self, recovery_func: Callable, error: Exception
+    ) -> bool:
         """Implement graceful degradation recovery strategy."""
         try:
             recovery_func(error)
@@ -230,7 +246,9 @@ class ErrorHandler:
         except Exception:
             return False
 
-    def _checkpoint_restore_recovery(self, recovery_func: Callable, error: Exception) -> bool:
+    def _checkpoint_restore_recovery(
+        self, recovery_func: Callable, error: Exception
+    ) -> bool:
         """Implement checkpoint restore recovery strategy."""
         try:
             recovery_func(error)
@@ -244,7 +262,7 @@ class ErrorHandler:
             self.circuit_breakers[error_type] = {
                 "failure_count": 0,
                 "last_failure_time": 0,
-                "state": "closed"  # closed, open, half_open
+                "state": "closed",  # closed, open, half_open
             }
 
         breaker = self.circuit_breakers[error_type]
@@ -257,7 +275,10 @@ class ErrorHandler:
             return True
 
         # Check if breaker should transition to half-open
-        if breaker["state"] == "open" and time.time() - breaker["last_failure_time"] > 60:
+        if (
+            breaker["state"] == "open"
+            and time.time() - breaker["last_failure_time"] > 60
+        ):
             breaker["state"] = "half_open"
 
         return breaker["state"] == "open"
@@ -282,16 +303,16 @@ class ErrorHandler:
         self.checkpoints[checkpoint_name] = {
             "timestamp": time.time(),
             "data": data,
-            "size": sys.getsizeof(data) if data is not None else 0
+            "size": sys.getsizeof(data) if data is not None else 0,
         }
 
-    def restore_checkpoint(self, checkpoint_name: str) -> Optional[Any]:
+    def restore_checkpoint(self, checkpoint_name: str) -> Any | None:
         """Restore from checkpoint."""
         if checkpoint_name in self.checkpoints:
             return self.checkpoints[checkpoint_name]["data"]
         return None
 
-    def get_error_statistics(self) -> Dict[str, Any]:
+    def get_error_statistics(self) -> dict[str, Any]:
         """Get comprehensive error statistics."""
         if not self.error_history:
             return {"message": "No errors recorded"}
@@ -305,7 +326,7 @@ class ErrorHandler:
                     "count": 0,
                     "recoveries_attempted": 0,
                     "recoveries_successful": 0,
-                    "severities": []
+                    "severities": [],
                 }
 
             error_types[error_type]["count"] += 1
@@ -318,7 +339,9 @@ class ErrorHandler:
         # Calculate recovery rates
         for error_type, stats in error_types.items():
             if stats["recoveries_attempted"] > 0:
-                stats["recovery_rate"] = (stats["recoveries_successful"] / stats["recoveries_attempted"]) * 100
+                stats["recovery_rate"] = (
+                    stats["recoveries_successful"] / stats["recoveries_attempted"]
+                ) * 100
             else:
                 stats["recovery_rate"] = 0
 
@@ -326,16 +349,22 @@ class ErrorHandler:
             "total_errors": len(self.error_history),
             "error_types": error_types,
             "recovery_strategies_registered": len(self.recovery_strategies),
-            "active_circuit_breakers": len([cb for cb in self.circuit_breakers.values() if cb["state"] != "closed"]),
-            "checkpoints_available": len(self.checkpoints)
+            "active_circuit_breakers": len(
+                [cb for cb in self.circuit_breakers.values() if cb["state"] != "closed"]
+            ),
+            "checkpoints_available": len(self.checkpoints),
         }
 
 
 class ResilientFunction:
     """Decorator for making functions resilient to errors."""
 
-    def __init__(self, error_handler: ErrorHandler, max_retries: int = 3,
-                 fallback_func: Optional[Callable] = None):
+    def __init__(
+        self,
+        error_handler: ErrorHandler,
+        max_retries: int = 3,
+        fallback_func: Callable | None = None,
+    ):
         self.error_handler = error_handler
         self.max_retries = max_retries
         self.fallback_func = fallback_func
@@ -354,7 +383,7 @@ class ResilientFunction:
                     error_context = self.error_handler.handle_error(e, func.__name__)
 
                     if attempt < self.max_retries:
-                        time.sleep(0.1 * (2 ** attempt))  # Exponential backoff
+                        time.sleep(0.1 * (2**attempt))  # Exponential backoff
                     else:
                         break
 
@@ -363,7 +392,9 @@ class ResilientFunction:
                 try:
                     return self.fallback_func(*args, **kwargs)
                 except Exception as fallback_error:
-                    self.error_handler.handle_error(fallback_error, f"{func.__name__}_fallback")
+                    self.error_handler.handle_error(
+                        fallback_error, f"{func.__name__}_fallback"
+                    )
 
             # If all else fails, raise the last error
             raise last_error
@@ -383,21 +414,15 @@ class FaultTolerantSystem:
 
         # Register common error handlers
         self.error_handler.register_error_handler(
-            ValueError,
-            self._handle_value_error,
-            ErrorSeverity.HIGH
+            ValueError, self._handle_value_error, ErrorSeverity.HIGH
         )
 
         self.error_handler.register_error_handler(
-            MemoryError,
-            self._handle_memory_error,
-            ErrorSeverity.CRITICAL
+            MemoryError, self._handle_memory_error, ErrorSeverity.CRITICAL
         )
 
         self.error_handler.register_error_handler(
-            FileNotFoundError,
-            self._handle_file_not_found,
-            ErrorSeverity.MEDIUM
+            FileNotFoundError, self._handle_file_not_found, ErrorSeverity.MEDIUM
         )
 
         # Register recovery strategies
@@ -405,21 +430,21 @@ class FaultTolerantSystem:
             ValueError,
             RecoveryStrategy.RETRY,
             self._retry_with_validation,
-            max_attempts=3
+            max_attempts=3,
         )
 
         self.error_handler.register_recovery_strategy(
             MemoryError,
             RecoveryStrategy.GRACEFUL_DEGRADATION,
             self._reduce_memory_usage,
-            max_attempts=1
+            max_attempts=1,
         )
 
         self.error_handler.register_recovery_strategy(
             FileNotFoundError,
             RecoveryStrategy.FALLBACK,
             self._provide_default_file,
-            max_attempts=1
+            max_attempts=1,
         )
 
     def _handle_value_error(self, error: ValueError):
@@ -429,6 +454,7 @@ class FaultTolerantSystem:
     def _handle_memory_error(self, error: MemoryError):
         """Handle MemoryError with memory cleanup."""
         import gc
+
         gc.collect()
         logging.critical(f"MemoryError handled: {error}")
 
@@ -439,17 +465,17 @@ class FaultTolerantSystem:
     def _retry_with_validation(self, error: ValueError):
         """Recovery strategy for ValueError."""
         # This would implement input validation and correction
-        pass
 
     def _reduce_memory_usage(self, error: MemoryError):
         """Recovery strategy for MemoryError."""
         import gc
+
         gc.collect()
 
     def _provide_default_file(self, error: FileNotFoundError) -> str:
         """Recovery strategy for FileNotFoundError."""
         # Create a temporary default file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write('{"default": true}')
             return f.name
 
@@ -461,7 +487,9 @@ class FaultTolerantSystem:
 
         try:
             # Create checkpoint before operation
-            self.error_handler.create_checkpoint(checkpoint_name, {"operation": operation_name, "start_time": start_time})
+            self.error_handler.create_checkpoint(
+                checkpoint_name, {"operation": operation_name, "start_time": start_time}
+            )
             yield
         except Exception as e:
             # Handle error and attempt recovery
@@ -479,16 +507,18 @@ class FaultTolerantSystem:
             if checkpoint_name in self.error_handler.checkpoints:
                 del self.error_handler.checkpoints[checkpoint_name]
 
-    def resilient_function(self, max_retries: int = 3, fallback_func: Optional[Callable] = None):
+    def resilient_function(
+        self, max_retries: int = 3, fallback_func: Callable | None = None
+    ):
         """Decorator for making functions resilient."""
         return ResilientFunction(self.error_handler, max_retries, fallback_func)
 
-    def run_diagnostic_tests(self) -> Dict[str, Any]:
+    def run_diagnostic_tests(self) -> dict[str, Any]:
         """Run diagnostic tests for error handling system."""
         test_results = {
             "error_handling_tests": [],
             "recovery_tests": [],
-            "fault_tolerance_tests": []
+            "fault_tolerance_tests": [],
         }
 
         # Test error handling
@@ -502,7 +532,7 @@ class FaultTolerantSystem:
 
         return test_results
 
-    def _test_error_handling(self) -> List[Dict[str, Any]]:
+    def _test_error_handling(self) -> list[dict[str, Any]]:
         """Test error handling capabilities."""
         tests = []
 
@@ -511,34 +541,36 @@ class FaultTolerantSystem:
             raise ValueError("Test value error")
         except ValueError as e:
             error_context = self.error_handler.handle_error(e, "test_value_error")
-            tests.append({
-                "test_name": "ValueError handling",
-                "success": error_context is not None,
-                "error_id": error_context.error_id,
-                "severity": error_context.severity.value
-            })
+            tests.append(
+                {
+                    "test_name": "ValueError handling",
+                    "success": error_context is not None,
+                    "error_id": error_context.error_id,
+                    "severity": error_context.severity.value,
+                }
+            )
 
         # Test MemoryError handling (simulated)
         try:
             # Simulate memory error
             error = MemoryError("Simulated memory error")
             error_context = self.error_handler.handle_error(error, "test_memory_error")
-            tests.append({
-                "test_name": "MemoryError handling",
-                "success": error_context is not None,
-                "error_id": error_context.error_id,
-                "severity": error_context.severity.value
-            })
+            tests.append(
+                {
+                    "test_name": "MemoryError handling",
+                    "success": error_context is not None,
+                    "error_id": error_context.error_id,
+                    "severity": error_context.severity.value,
+                }
+            )
         except Exception as e:
-            tests.append({
-                "test_name": "MemoryError handling",
-                "success": False,
-                "error": str(e)
-            })
+            tests.append(
+                {"test_name": "MemoryError handling", "success": False, "error": str(e)}
+            )
 
         return tests
 
-    def _test_recovery_mechanisms(self) -> List[Dict[str, Any]]:
+    def _test_recovery_mechanisms(self) -> list[dict[str, Any]]:
         """Test recovery mechanisms."""
         tests = []
 
@@ -551,17 +583,21 @@ class FaultTolerantSystem:
 
         try:
             result = failing_function(should_fail=False)
-            tests.append({
-                "test_name": "Retry mechanism (success case)",
-                "success": result == "success",
-                "result": result
-            })
+            tests.append(
+                {
+                    "test_name": "Retry mechanism (success case)",
+                    "success": result == "success",
+                    "result": result,
+                }
+            )
         except Exception as e:
-            tests.append({
-                "test_name": "Retry mechanism (success case)",
-                "success": False,
-                "error": str(e)
-            })
+            tests.append(
+                {
+                    "test_name": "Retry mechanism (success case)",
+                    "success": False,
+                    "error": str(e),
+                }
+            )
 
         # Test fallback mechanism
         def fallback_function(*args, **kwargs):
@@ -573,21 +609,21 @@ class FaultTolerantSystem:
 
         try:
             result = function_with_fallback()
-            tests.append({
-                "test_name": "Fallback mechanism",
-                "success": result == "fallback_result",
-                "result": result
-            })
+            tests.append(
+                {
+                    "test_name": "Fallback mechanism",
+                    "success": result == "fallback_result",
+                    "result": result,
+                }
+            )
         except Exception as e:
-            tests.append({
-                "test_name": "Fallback mechanism",
-                "success": False,
-                "error": str(e)
-            })
+            tests.append(
+                {"test_name": "Fallback mechanism", "success": False, "error": str(e)}
+            )
 
         return tests
 
-    def _test_fault_tolerance(self) -> List[Dict[str, Any]]:
+    def _test_fault_tolerance(self) -> list[dict[str, Any]]:
         """Test fault tolerance features."""
         tests = []
 
@@ -596,12 +632,14 @@ class FaultTolerantSystem:
         self.error_handler.create_checkpoint("test_checkpoint", test_data)
 
         restored_data = self.error_handler.restore_checkpoint("test_checkpoint")
-        tests.append({
-            "test_name": "Checkpoint creation and restoration",
-            "success": restored_data == test_data,
-            "original_data": test_data,
-            "restored_data": restored_data
-        })
+        tests.append(
+            {
+                "test_name": "Checkpoint creation and restoration",
+                "success": restored_data == test_data,
+                "original_data": test_data,
+                "restored_data": restored_data,
+            }
+        )
 
         # Test fault-tolerant context
         context_success = False
@@ -610,16 +648,20 @@ class FaultTolerantSystem:
                 # Simulate successful operation
                 context_success = True
         except Exception as e:
-            tests.append({
-                "test_name": "Fault-tolerant context (success)",
-                "success": False,
-                "error": str(e)
-            })
+            tests.append(
+                {
+                    "test_name": "Fault-tolerant context (success)",
+                    "success": False,
+                    "error": str(e),
+                }
+            )
         else:
-            tests.append({
-                "test_name": "Fault-tolerant context (success)",
-                "success": context_success
-            })
+            tests.append(
+                {
+                    "test_name": "Fault-tolerant context (success)",
+                    "success": context_success,
+                }
+            )
 
         return tests
 
@@ -671,7 +713,7 @@ def run_error_handling_recovery_system():
     def robust_file_reader(filename):
         if not os.path.exists(filename):
             raise FileNotFoundError(f"File not found: {filename}")
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             return {"status": "success", "data": f.read()}
 
     # Test file operation with non-existent file
@@ -689,39 +731,43 @@ def run_error_handling_recovery_system():
         "additional_tests": {
             "matrix_operation_test": {
                 "success": matrix_test_success,
-                "description": "Robust matrix operation with error handling"
+                "description": "Robust matrix operation with error handling",
             },
             "file_operation_test": {
                 "success": file_test_success,
-                "description": "File operation with fallback recovery"
-            }
+                "description": "File operation with fallback recovery",
+            },
         },
         "system_capabilities": {
             "error_types_handled": len(ft_system.error_handler.error_registry),
-            "recovery_strategies_available": len(ft_system.error_handler.recovery_strategies),
+            "recovery_strategies_available": len(
+                ft_system.error_handler.recovery_strategies
+            ),
             "circuit_breakers_active": len(ft_system.error_handler.circuit_breakers),
-            "checkpoints_created": len(ft_system.error_handler.checkpoints)
+            "checkpoints_created": len(ft_system.error_handler.checkpoints),
         },
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     # Display summary
     stats = error_stats
     capabilities = comprehensive_results["system_capabilities"]
 
-    print(f"\nERROR HANDLING AND RECOVERY SUMMARY:")
+    print("\nERROR HANDLING AND RECOVERY SUMMARY:")
     print(f"  Total Errors Handled: {stats.get('total_errors', 0)}")
     print(f"  Error Types Registered: {capabilities['error_types_handled']}")
-    print(f"  Recovery Strategies Available: {capabilities['recovery_strategies_available']}")
+    print(
+        f"  Recovery Strategies Available: {capabilities['recovery_strategies_available']}"
+    )
     print(f"  Circuit Breakers Active: {capabilities['circuit_breakers_active']}")
 
     # Display test results
-    print(f"\nDIAGNOSTIC TEST RESULTS:")
+    print("\nDIAGNOSTIC TEST RESULTS:")
     for category, tests in diagnostic_results.items():
         successful_tests = sum(1 for test in tests if test.get("success", False))
         print(f"  {category}: {successful_tests}/{len(tests)} tests passed")
 
-    print(f"\nADDITIONAL TESTS:")
+    print("\nADDITIONAL TESTS:")
     for test_name, test_result in comprehensive_results["additional_tests"].items():
         status = "✓ PASS" if test_result["success"] else "✗ FAIL"
         print(f"  {status} {test_result['description']}")
@@ -731,13 +777,15 @@ def run_error_handling_recovery_system():
     results_dir.mkdir(exist_ok=True)
 
     results_file = results_dir / "task_5_4_error_handling_recovery_report.json"
-    with open(results_file, 'w') as f:
+    with open(results_file, "w") as f:
         json.dump(comprehensive_results, f, indent=2)
 
     print(f"\n📄 Error handling report saved to: {results_file}")
-    print(f"✅ Task 5.4 Error Handling and Recovery Complete!")
+    print("✅ Task 5.4 Error Handling and Recovery Complete!")
     print(f"🛡️  {capabilities['error_types_handled']} error types handled")
-    print(f"🔄 {capabilities['recovery_strategies_available']} recovery strategies available")
+    print(
+        f"🔄 {capabilities['recovery_strategies_available']} recovery strategies available"
+    )
     print(f"⚠️  {capabilities['circuit_breakers_active']} circuit breakers monitoring")
 
     return comprehensive_results

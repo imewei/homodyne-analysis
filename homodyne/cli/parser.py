@@ -14,9 +14,11 @@ from pathlib import Path
 # Import completion setup if available
 try:
     from .ui.completion.adapter import setup_shell_completion
+
     COMPLETION_AVAILABLE = True
 except ImportError:
     COMPLETION_AVAILABLE = False
+
     def setup_shell_completion(parser: argparse.ArgumentParser) -> None:
         pass
 

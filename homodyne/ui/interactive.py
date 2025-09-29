@@ -19,10 +19,10 @@ Features:
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
 
 try:
     from rich.console import Console
@@ -146,12 +146,11 @@ class InteractiveInterface:
             # Check environment and available packages
             if JUPYTER_AVAILABLE and self._is_jupyter_environment():
                 return "jupyter"
-            elif STREAMLIT_AVAILABLE and self._is_streamlit_environment():
+            if STREAMLIT_AVAILABLE and self._is_streamlit_environment():
                 return "web"
-            elif RICH_AVAILABLE:
+            if RICH_AVAILABLE:
                 return "cli"
-            else:
-                return "basic_cli"
+            return "basic_cli"
         return mode
 
     def _is_jupyter_environment(self) -> bool:
@@ -286,12 +285,11 @@ class InteractiveInterface:
 
         if self.interface_mode == "cli":
             return self._start_cli_session(session)
-        elif self.interface_mode == "jupyter":
+        if self.interface_mode == "jupyter":
             return self._start_jupyter_session(session)
-        elif self.interface_mode == "web":
+        if self.interface_mode == "web":
             return self._start_web_session(session)
-        else:
-            return self._start_basic_cli_session(session)
+        return self._start_basic_cli_session(session)
 
     def _start_cli_session(self, session: AnalysisSession) -> AnalysisSession:
         """Start CLI-based interactive session."""

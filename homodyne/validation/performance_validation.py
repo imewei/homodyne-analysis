@@ -98,16 +98,15 @@ class BenchmarkResult:
         """Calculate performance grade based on improvements."""
         if self.speedup_factor >= 500:
             return "A+"
-        elif self.speedup_factor >= 250:
+        if self.speedup_factor >= 250:
             return "A"
-        elif self.speedup_factor >= 100:
+        if self.speedup_factor >= 100:
             return "B+"
-        elif self.speedup_factor >= 50:
+        if self.speedup_factor >= 50:
             return "B"
-        elif self.speedup_factor >= 10:
+        if self.speedup_factor >= 10:
             return "C"
-        else:
-            return "D"
+        return "D"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for reporting."""
@@ -256,9 +255,7 @@ class PerformanceBenchmarkSuite:
                         data,
                         params[
                             : (
-                                data.shape[1]
-                                if data.shape[1] < len(params)
-                                else len(params)
+                                min(len(params), data.shape[1])
                             )
                         ].reshape(-1, 1)[: data.shape[1]],
                         data.T,

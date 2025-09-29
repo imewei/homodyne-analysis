@@ -166,10 +166,9 @@ class CompletionInstaller:
                 result.success = True
                 result.message = "Completion system installed successfully"
                 result.backup_files = backup_files
-            else:
-                # Restore backups on failure
-                if backup_files:
-                    self._restore_backups(backup_files)
+            # Restore backups on failure
+            elif backup_files:
+                self._restore_backups(backup_files)
 
         except Exception as e:
             result.errors.append(f"Installation error: {e}")
@@ -382,8 +381,7 @@ class CompletionInstaller:
             # Environment-specific activation
             if self.env_type in [EnvironmentType.CONDA, EnvironmentType.MAMBA]:
                 return self._install_conda_activation(install_dir, result)
-            else:
-                return self._install_venv_activation(install_dir, result)
+            return self._install_venv_activation(install_dir, result)
 
         except Exception as e:
             result.errors.append(f"Failed to install activation scripts: {e}")
@@ -524,12 +522,11 @@ if __name__ == "__main__":
 
         if shell == ShellType.BASH:
             return self._generate_bash_script(engine_script)
-        elif shell == ShellType.ZSH:
+        if shell == ShellType.ZSH:
             return self._generate_zsh_script(engine_script)
-        elif shell == ShellType.FISH:
+        if shell == ShellType.FISH:
             return self._generate_fish_script(engine_script)
-        else:
-            raise ValueError(f"Unsupported shell: {shell}")
+        raise ValueError(f"Unsupported shell: {shell}")
 
     def _generate_bash_script(self, engine_script: Path) -> str:
         """Generate bash completion script."""
@@ -629,7 +626,7 @@ if [[ -f "{script_path}" ]]; then
     source "{script_path}"
 fi
 """
-        elif shell == ShellType.FISH:
+        if shell == ShellType.FISH:
             return f"""# Homodyne Advanced Completion System Activation
 # Auto-generated activation script
 

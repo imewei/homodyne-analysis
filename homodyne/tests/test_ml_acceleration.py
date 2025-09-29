@@ -9,7 +9,6 @@ Authors: Wei Chen, Hongrui He, Claude (Anthropic)
 Institution: Argonne National Laboratory
 """
 
-import pickle
 import shutil
 import tempfile
 import time
@@ -22,6 +21,7 @@ import pytest
 # Check for sklearn availability
 try:
     import sklearn
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -89,7 +89,9 @@ class TestOptimizationRecord:
             assert np.array_equal(
                 deserialized.initial_parameters, record.initial_parameters
             )
-            assert np.array_equal(deserialized.final_parameters, record.final_parameters)
+            assert np.array_equal(
+                deserialized.final_parameters, record.final_parameters
+            )
             assert deserialized.objective_value == record.objective_value
             assert deserialized.convergence_time == record.convergence_time
             assert deserialized.method == record.method
@@ -133,7 +135,9 @@ class TestMLModelConfig:
         assert config.enable_hyperparameter_tuning is False
 
 
-@pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+@pytest.mark.skipif(
+    not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests"
+)
 class TestEnsembleOptimizationPredictor:
     """Test suite for ensemble optimization predictor."""
 
@@ -291,7 +295,9 @@ class TestEnsembleOptimizationPredictor:
         assert not np.any(np.isnan(features))  # No NaN values
 
 
-@pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+@pytest.mark.skipif(
+    not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests"
+)
 class TestTransferLearningPredictor:
     """Test suite for transfer learning predictor."""
 
@@ -346,8 +352,14 @@ class TestTransferLearningPredictor:
 
         # Test domain classification
         conditions1 = {"temperature": 25.0, "concentration": 0.1}
-        conditions2 = {"temperature": 35.0, "concentration": 0.1}  # More different temperature
-        conditions3 = {"temperature": 25.0, "concentration": 0.3}  # More different concentration
+        conditions2 = {
+            "temperature": 35.0,
+            "concentration": 0.1,
+        }  # More different temperature
+        conditions3 = {
+            "temperature": 25.0,
+            "concentration": 0.3,
+        }  # More different concentration
 
         domain1 = transfer_predictor._classify_domain(conditions1)
         domain2 = transfer_predictor._classify_domain(conditions2)
@@ -357,7 +369,9 @@ class TestTransferLearningPredictor:
         # At least one should be different or test the classification logic differently
         domains = [domain1, domain2, domain3]
         unique_domains = set(domains)
-        assert len(unique_domains) >= 2, f"Expected at least 2 unique domains, got: {unique_domains}"
+        assert len(unique_domains) >= 2, (
+            f"Expected at least 2 unique domains, got: {unique_domains}"
+        )
 
     def test_transfer_learning_fitting(self, sample_optimization_records):
         """Test transfer learning fitting process."""
@@ -432,7 +446,10 @@ class TestMLAcceleratedOptimizer:
         yield Path(temp_dir)
         shutil.rmtree(temp_dir)
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_ml_accelerated_optimizer_initialization(self, temp_data_dir):
         """Test ML accelerated optimizer initialization."""
         config = {
@@ -447,7 +464,10 @@ class TestMLAcceleratedOptimizer:
         assert optimizer.enable_transfer_learning is True
         assert optimizer.data_storage_path == temp_data_dir
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_accelerated_optimization_without_training(self, temp_data_dir):
         """Test optimization acceleration without pre-trained model."""
         config = {"data_storage_path": str(temp_data_dir)}
@@ -480,7 +500,10 @@ class TestMLAcceleratedOptimizer:
             optimization_info["ml_acceleration_info"]["ml_initialization_used"] is False
         )
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_accelerated_optimization_with_training(
         self, sample_optimization_records, temp_data_dir
     ):
@@ -515,7 +538,10 @@ class TestMLAcceleratedOptimizer:
         assert result_params is not None
         assert "ml_acceleration_info" in optimization_info
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_predictor_training(self, sample_optimization_records, temp_data_dir):
         """Test predictor training functionality."""
         config = {"data_storage_path": str(temp_data_dir)}
@@ -536,7 +562,10 @@ class TestMLAcceleratedOptimizer:
         assert training_result["success"] is False
         assert "error" in training_result
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_optimization_insights(self, sample_optimization_records, temp_data_dir):
         """Test optimization insights generation."""
         config = {"data_storage_path": str(temp_data_dir)}
@@ -556,7 +585,10 @@ class TestMLAcceleratedOptimizer:
         assert "best_objective" in stats
         assert "average_objective" in stats
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_data_persistence(self, sample_optimization_records, temp_data_dir):
         """Test data persistence functionality."""
         config = {"data_storage_path": str(temp_data_dir)}
@@ -574,7 +606,10 @@ class TestMLAcceleratedOptimizer:
         # Check that data was loaded
         assert len(optimizer2.optimization_history) > 0
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_experiment_id_generation(self, temp_data_dir):
         """Test experiment ID generation."""
         config = {"data_storage_path": str(temp_data_dir)}
@@ -595,7 +630,10 @@ class TestMLAcceleratedOptimizer:
 class TestMLIntegrationFunctions:
     """Test suite for ML integration functions."""
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_create_ml_accelerated_optimizer(self):
         """Test factory function for creating ML accelerated optimizer."""
         config = {"enable_transfer_learning": False}
@@ -605,7 +643,10 @@ class TestMLIntegrationFunctions:
         assert isinstance(optimizer, MLAcceleratedOptimizer)
         assert optimizer.config == config
 
-    @pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+    @pytest.mark.skipif(
+        not SKLEARN_AVAILABLE,
+        reason="scikit-learn is required for ML acceleration tests",
+    )
     def test_enhance_classical_optimizer_with_ml(self):
         """Test enhancement of classical optimizer with ML."""
         # Mock classical optimizer
@@ -634,7 +675,9 @@ class TestMLIntegrationFunctions:
             )  # Version may not be available
 
 
-@pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+@pytest.mark.skipif(
+    not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests"
+)
 class TestMLOptimizationEdgeCases:
     """Test edge cases and error conditions for ML optimization."""
 
@@ -712,7 +755,9 @@ class TestMLOptimizationEdgeCases:
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests")
+@pytest.mark.skipif(
+    not SKLEARN_AVAILABLE, reason="scikit-learn is required for ML acceleration tests"
+)
 class TestMLOptimizationPerformance:
     """Performance-focused tests for ML optimization."""
 
@@ -767,7 +812,12 @@ class TestMLOptimizationPerformance:
         predictor = EnsembleOptimizationPredictor()
         predictor.fit(sample_optimization_records)
 
-        conditions = {"temperature": 25.0, "concentration": 0.08, "shear_rate": 50.0, "q_value": 0.12}
+        conditions = {
+            "temperature": 25.0,
+            "concentration": 0.08,
+            "shear_rate": 50.0,
+            "q_value": 0.12,
+        }
 
         # Time multiple predictions
         prediction_times = []

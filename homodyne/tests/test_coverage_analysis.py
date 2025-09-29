@@ -17,15 +17,11 @@ import ast
 import warnings
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
 
 # Try to import coverage if available
 try:
     import coverage
+
     COVERAGE_AVAILABLE = True
 except ImportError:
     COVERAGE_AVAILABLE = False
@@ -42,7 +38,7 @@ class CodeUsageAnalyzer:
     - Truly unused code (dead code candidates)
     """
 
-    def __init__(self, package_root: Path, test_dirs: Optional[List[str]] = None):
+    def __init__(self, package_root: Path, test_dirs: list[str] | None = None):
         """
         Initialize code usage analyzer.
 
@@ -54,18 +50,18 @@ class CodeUsageAnalyzer:
             Test directory names (defaults to common test patterns)
         """
         self.package_root = Path(package_root)
-        self.test_dirs = test_dirs or ['tests', 'test', 'testing']
+        self.test_dirs = test_dirs or ["tests", "test", "testing"]
 
         # Track different types of code usage
-        self.production_usage: Dict[str, Set[str]] = defaultdict(set)
-        self.test_usage: Dict[str, Set[str]] = defaultdict(set)
-        self.all_definitions: Dict[str, Set[str]] = defaultdict(set)
+        self.production_usage: dict[str, set[str]] = defaultdict(set)
+        self.test_usage: dict[str, set[str]] = defaultdict(set)
+        self.all_definitions: dict[str, set[str]] = defaultdict(set)
 
         # AST analyzers
         self.call_analyzer = CallGraphAnalyzer()
         self.definition_analyzer = DefinitionAnalyzer()
 
-    def analyze_package_usage(self) -> Dict[str, Any]:
+    def analyze_package_usage(self) -> dict[str, Any]:
         """
         Analyze code usage patterns across the entire package.
 
@@ -87,7 +83,9 @@ class CodeUsageAnalyzer:
             else:
                 production_files.append(file_path)
 
-        print(f"Found {len(production_files)} production files, {len(test_files)} test files")
+        print(
+            f"Found {len(production_files)} production files, {len(test_files)} test files"
+        )
 
         # Step 2: Analyze definitions in all files
         for file_path in python_files:
@@ -105,7 +103,9 @@ class CodeUsageAnalyzer:
                 module_name = self._get_module_name(file_path)
                 self.production_usage[module_name].update(usage)
             except Exception as e:
-                print(f"Warning: Failed to analyze production usage in {file_path}: {e}")
+                print(
+                    f"Warning: Failed to analyze production usage in {file_path}: {e}"
+                )
 
         # Step 4: Analyze usage in test files
         for file_path in test_files:
@@ -130,9 +130,13 @@ class CodeUsageAnalyzer:
         except ValueError:
             return str(file_path)
 
-    def _generate_usage_report(self) -> Dict[str, Any]:
+    def _generate_usage_report(self) -> dict[str, Any]:
         """Generate comprehensive usage analysis report."""
-        all_modules = set(self.all_definitions.keys()) | set(self.production_usage.keys()) | set(self.test_usage.keys())
+        all_modules = (
+            set(self.all_definitions.keys())
+            | set(self.production_usage.keys())
+            | set(self.test_usage.keys())
+        )
 
         # Flatten all usage across modules
         all_production_usage = set()
@@ -163,8 +167,16 @@ class CodeUsageAnalyzer:
                 "test_usage": len(test_usage),
                 "unused_in_module": len(definitions - prod_usage - test_usage),
                 "test_only_in_module": len((definitions & test_usage) - prod_usage),
-                "production_coverage": len(prod_usage & definitions) / len(definitions) if definitions else 0,
-                "test_coverage": len(test_usage & definitions) / len(definitions) if definitions else 0,
+                "production_coverage": (
+                    len(prod_usage & definitions) / len(definitions)
+                    if definitions
+                    else 0
+                ),
+                "test_coverage": (
+                    len(test_usage & definitions) / len(definitions)
+                    if definitions
+                    else 0
+                ),
             }
 
         return {
@@ -188,18 +200,26 @@ class CodeUsageAnalyzer:
             "recommendations": self._generate_recommendations(truly_unused, test_only),
         }
 
-    def _generate_recommendations(self, truly_unused: Set[str], test_only: Set[str]) -> List[str]:
+    def _generate_recommendations(
+        self, truly_unused: set[str], test_only: set[str]
+    ) -> list[str]:
         """Generate actionable recommendations based on analysis."""
         recommendations = []
 
         if truly_unused:
-            recommendations.append(f"🗑️  Remove {len(truly_unused)} truly unused code elements")
+            recommendations.append(
+                f"🗑️  Remove {len(truly_unused)} truly unused code elements"
+            )
 
         if test_only:
-            recommendations.append(f"🧪 Review {len(test_only)} test-only code elements for potential cleanup")
+            recommendations.append(
+                f"🧪 Review {len(test_only)} test-only code elements for potential cleanup"
+            )
 
         if len(truly_unused) > 50:
-            recommendations.append("⚠️  High amount of dead code detected - prioritize cleanup")
+            recommendations.append(
+                "⚠️  High amount of dead code detected - prioritize cleanup"
+            )
         elif len(truly_unused) < 10:
             recommendations.append("✅ Low dead code - codebase is well-maintained")
 
@@ -210,16 +230,16 @@ class DefinitionAnalyzer(ast.NodeVisitor):
     """AST-based analyzer for extracting function, class, and method definitions."""
 
     def __init__(self):
-        self.definitions: Set[str] = set()
+        self.definitions: set[str] = set()
         self.current_class = None
 
-    def extract_definitions(self, file_path: Path) -> Set[str]:
+    def extract_definitions(self, file_path: Path) -> set[str]:
         """Extract all definitions from a Python file."""
         self.definitions = set()
         self.current_class = None
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 source = f.read()
 
             tree = ast.parse(source)
@@ -265,14 +285,14 @@ class CallGraphAnalyzer(ast.NodeVisitor):
     """AST-based analyzer for extracting function and method calls."""
 
     def __init__(self):
-        self.calls: Set[str] = set()
+        self.calls: set[str] = set()
 
-    def extract_calls(self, file_path: Path) -> Set[str]:
+    def extract_calls(self, file_path: Path) -> set[str]:
         """Extract all function/method calls from a Python file."""
         self.calls = set()
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 source = f.read()
 
             tree = ast.parse(source)
@@ -299,19 +319,19 @@ class CallGraphAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _extract_call_name(self, node: ast.AST) -> Optional[str]:
+    def _extract_call_name(self, node: ast.AST) -> str | None:
         """Extract the name of a function call."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return self._extract_attribute_name(node)
         return None
 
-    def _extract_attribute_name(self, node: ast.Attribute) -> Optional[str]:
+    def _extract_attribute_name(self, node: ast.Attribute) -> str | None:
         """Extract attribute name from attribute access."""
         if isinstance(node.value, ast.Name):
             return f"{node.value.id}.{node.attr}"
-        elif isinstance(node.value, ast.Attribute):
+        if isinstance(node.value, ast.Attribute):
             base = self._extract_attribute_name(node.value)
             return f"{base}.{node.attr}" if base else None
         return node.attr
@@ -327,7 +347,9 @@ class CoverageBasedAnalyzer:
     def __init__(self, package_root: Path):
         self.package_root = Path(package_root)
 
-    def run_coverage_analysis(self, test_command: str = "python -m pytest") -> Dict[str, Any]:
+    def run_coverage_analysis(
+        self, test_command: str = "python -m pytest"
+    ) -> dict[str, Any]:
         """
         Run coverage analysis to identify unused code.
 
@@ -355,7 +377,7 @@ class CoverageBasedAnalyzer:
                     "*/test_*",
                     "*/__pycache__/*",
                     "*/.*",
-                ]
+                ],
             )
 
             # Start coverage
@@ -387,8 +409,11 @@ class CoverageBasedAnalyzer:
                         "executed_lines": len(analysis.executed),
                         "missing_lines": len(analysis.missing),
                         "total_lines": len(analysis.statements),
-                        "coverage_percent": (len(analysis.executed) / len(analysis.statements) * 100)
-                                          if analysis.statements else 100,
+                        "coverage_percent": (
+                            (len(analysis.executed) / len(analysis.statements) * 100)
+                            if analysis.statements
+                            else 100
+                        ),
                         "missing_line_numbers": sorted(analysis.missing),
                     }
                 except Exception as e:
@@ -402,7 +427,7 @@ class CoverageBasedAnalyzer:
         except Exception as e:
             return {"error": f"Coverage analysis failed: {e}"}
 
-    def _summarize_coverage(self, coverage_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _summarize_coverage(self, coverage_data: dict[str, Any]) -> dict[str, Any]:
         """Summarize coverage analysis results."""
         if not coverage_data:
             return {"error": "No coverage data available"}
@@ -412,7 +437,8 @@ class CoverageBasedAnalyzer:
         missing_lines = sum(data["missing_lines"] for data in coverage_data.values())
 
         low_coverage_files = [
-            filename for filename, data in coverage_data.items()
+            filename
+            for filename, data in coverage_data.items()
             if data["coverage_percent"] < 50 and data["total_lines"] > 10
         ]
 
@@ -420,7 +446,9 @@ class CoverageBasedAnalyzer:
             "total_lines": total_lines,
             "executed_lines": executed_lines,
             "missing_lines": missing_lines,
-            "overall_coverage_percent": (executed_lines / total_lines * 100) if total_lines > 0 else 0,
+            "overall_coverage_percent": (
+                (executed_lines / total_lines * 100) if total_lines > 0 else 0
+            ),
             "files_analyzed": len(coverage_data),
             "low_coverage_files": low_coverage_files,
             "potentially_dead_lines": missing_lines,
@@ -437,7 +465,7 @@ class DeadCodeDetector:
         self.usage_analyzer = CodeUsageAnalyzer(package_root)
         self.coverage_analyzer = CoverageBasedAnalyzer(package_root)
 
-    def detect_dead_code(self) -> Dict[str, Any]:
+    def detect_dead_code(self) -> dict[str, Any]:
         """
         Comprehensive dead code detection using multiple analysis methods.
 
@@ -458,16 +486,19 @@ class DeadCodeDetector:
 
         # Combine results
         return {
-            "analysis_timestamp": __import__('datetime').datetime.now().isoformat(),
+            "analysis_timestamp": __import__("datetime").datetime.now().isoformat(),
             "package_root": str(self.package_root),
             "static_analysis": usage_analysis,
             "coverage_analysis": coverage_analysis,
-            "recommendations": self._generate_combined_recommendations(usage_analysis, coverage_analysis),
+            "recommendations": self._generate_combined_recommendations(
+                usage_analysis, coverage_analysis
+            ),
             "summary": self._generate_summary(usage_analysis, coverage_analysis),
         }
 
-    def _generate_combined_recommendations(self, usage_analysis: Dict[str, Any],
-                                         coverage_analysis: Dict[str, Any]) -> List[str]:
+    def _generate_combined_recommendations(
+        self, usage_analysis: dict[str, Any], coverage_analysis: dict[str, Any]
+    ) -> list[str]:
         """Generate recommendations based on combined analysis."""
         recommendations = []
 
@@ -476,53 +507,75 @@ class DeadCodeDetector:
             recommendations.extend(usage_analysis["recommendations"])
 
         # From coverage analysis
-        if "summary" in coverage_analysis and coverage_analysis["summary"]:
+        if coverage_analysis.get("summary"):
             summary = coverage_analysis["summary"]
             if "overall_coverage_percent" in summary:
                 coverage_pct = summary["overall_coverage_percent"]
                 if coverage_pct < 70:
-                    recommendations.append(f"⚠️  Low overall coverage ({coverage_pct:.1f}%) - improve test coverage")
+                    recommendations.append(
+                        f"⚠️  Low overall coverage ({coverage_pct:.1f}%) - improve test coverage"
+                    )
                 elif coverage_pct > 90:
-                    recommendations.append(f"✅ Excellent coverage ({coverage_pct:.1f}%)")
+                    recommendations.append(
+                        f"✅ Excellent coverage ({coverage_pct:.1f}%)"
+                    )
 
         # Combined insights
-        static_dead = len(usage_analysis.get("categorized_code", {}).get("truly_unused", []))
+        static_dead = len(
+            usage_analysis.get("categorized_code", {}).get("truly_unused", [])
+        )
         if static_dead > 20:
-            recommendations.append("🧹 High dead code detected - implement cleanup pipeline")
+            recommendations.append(
+                "🧹 High dead code detected - implement cleanup pipeline"
+            )
 
         return recommendations
 
-    def _generate_summary(self, usage_analysis: Dict[str, Any],
-                         coverage_analysis: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_summary(
+        self, usage_analysis: dict[str, Any], coverage_analysis: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate combined summary."""
         summary = {
             "analysis_methods": ["static_ast_analysis", "coverage_analysis"],
             "static_analysis_success": "summary" in usage_analysis,
-            "coverage_analysis_success": "summary" in coverage_analysis and not coverage_analysis.get("error"),
+            "coverage_analysis_success": "summary" in coverage_analysis
+            and not coverage_analysis.get("error"),
         }
 
         # Add static analysis summary
         if summary["static_analysis_success"]:
             static_summary = usage_analysis["summary"]
-            summary.update({
-                "total_definitions": static_summary.get("total_definitions", 0),
-                "dead_code_candidates": static_summary.get("dead_code_candidates", 0),
-                "test_only_code": static_summary.get("test_only_usage", 0),
-            })
+            summary.update(
+                {
+                    "total_definitions": static_summary.get("total_definitions", 0),
+                    "dead_code_candidates": static_summary.get(
+                        "dead_code_candidates", 0
+                    ),
+                    "test_only_code": static_summary.get("test_only_usage", 0),
+                }
+            )
 
         # Add coverage summary
         if summary["coverage_analysis_success"]:
             cov_summary = coverage_analysis["summary"]
-            summary.update({
-                "overall_coverage_percent": cov_summary.get("overall_coverage_percent", 0),
-                "potentially_dead_lines": cov_summary.get("potentially_dead_lines", 0),
-                "files_analyzed": cov_summary.get("files_analyzed", 0),
-            })
+            summary.update(
+                {
+                    "overall_coverage_percent": cov_summary.get(
+                        "overall_coverage_percent", 0
+                    ),
+                    "potentially_dead_lines": cov_summary.get(
+                        "potentially_dead_lines", 0
+                    ),
+                    "files_analyzed": cov_summary.get("files_analyzed", 0),
+                }
+            )
 
         return summary
 
 
-def analyze_dead_code_in_package(package_root: str = "/Users/b80985/Projects/homodyne-analysis/homodyne") -> Dict[str, Any]:
+def analyze_dead_code_in_package(
+    package_root: str = "/Users/b80985/Projects/homodyne-analysis/homodyne",
+) -> dict[str, Any]:
     """
     Convenience function to run comprehensive dead code analysis.
 
@@ -544,21 +597,23 @@ if __name__ == "__main__":
     # Run analysis on the homodyne package
     result = analyze_dead_code_in_package()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📊 DEAD CODE ANALYSIS RESULTS")
-    print("="*60)
+    print("=" * 60)
 
     if "summary" in result:
         summary = result["summary"]
-        print(f"\n📈 Summary:")
+        print("\n📈 Summary:")
         print(f"   • Total definitions: {summary.get('total_definitions', 'N/A')}")
-        print(f"   • Dead code candidates: {summary.get('dead_code_candidates', 'N/A')}")
+        print(
+            f"   • Dead code candidates: {summary.get('dead_code_candidates', 'N/A')}"
+        )
         print(f"   • Test-only code: {summary.get('test_only_code', 'N/A')}")
         print(f"   • Coverage: {summary.get('overall_coverage_percent', 'N/A'):.1f}%")
 
     if "recommendations" in result:
-        print(f"\n💡 Recommendations:")
+        print("\n💡 Recommendations:")
         for rec in result["recommendations"]:
             print(f"   {rec}")
 
-    print(f"\n✅ Analysis complete!")
+    print("\n✅ Analysis complete!")

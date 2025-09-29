@@ -19,6 +19,7 @@ try:
     from homodyne.core.config import ConfigManager
     from homodyne.core.config import configure_logging
     from homodyne.core.config import performance_monitor
+
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False
@@ -42,15 +43,12 @@ class TestConfigManager:
                 "sample_thickness": 1.0,
                 "dt": 0.1,
                 "stator_rotor_gap": 2000000,
-                "temporal": {
-                    "start_frame": 1,
-                    "end_frame": 100
-                }
+                "temporal": {"start_frame": 1, "end_frame": 100},
             },
             "experimental_data": {
                 "data_file": "test_data.h5",
                 "cache_enabled": True,
-                "preload_data": False
+                "preload_data": False,
             },
             "optimization_config": {
                 "mode": "laminar_flow",
@@ -66,7 +64,7 @@ class TestConfigManager:
                     "gamma0": [1e-4, 1.0],
                     "beta": [0.1, 2.0],
                     "gamma_offset": [1e-6, 1e-1],
-                    "phi0": [-180, 180]
+                    "phi0": [-180, 180],
                 },
                 "initial_guesses": {
                     "D0": 1e-3,
@@ -75,27 +73,27 @@ class TestConfigManager:
                     "gamma0": 0.01,
                     "beta": 0.8,
                     "gamma_offset": 0.001,
-                    "phi0": 0.0
-                }
+                    "phi0": 0.0,
+                },
             },
             "output_settings": {
                 "save_plots": True,
                 "plot_format": "png",
                 "save_results": True,
-                "output_directory": "./results"
-            }
+                "output_directory": "./results",
+            },
         }
 
         # Create temporary config file
         self.temp_config = tempfile.NamedTemporaryFile(
-            mode='w', suffix='.json', delete=False
+            mode="w", suffix=".json", delete=False
         )
         json.dump(self.sample_config, self.temp_config, indent=2)
         self.temp_config.close()
 
     def teardown_method(self):
         """Cleanup test fixtures."""
-        if hasattr(self, 'temp_config'):
+        if hasattr(self, "temp_config"):
             os.unlink(self.temp_config.name)
 
     def test_config_manager_initialization(self):
@@ -103,7 +101,7 @@ class TestConfigManager:
         # Test initialization with file path
         manager = ConfigManager(config_file=self.temp_config.name)
         assert manager.config is not None
-        assert manager.config['analyzer_parameters']['q_value'] == 0.1
+        assert manager.config["analyzer_parameters"]["q_value"] == 0.1
 
         # ConfigManager only supports file-based initialization
 
@@ -112,8 +110,8 @@ class TestConfigManager:
         manager = ConfigManager()
         config = manager.load_config(self.temp_config.name)
 
-        assert config['analyzer_parameters']['contrast'] == 0.95
-        assert config['optimization_config']['mode'] == "laminar_flow"
+        assert config["analyzer_parameters"]["contrast"] == 0.95
+        assert config["optimization_config"]["mode"] == "laminar_flow"
 
     def test_config_validation(self):
         """Test configuration validation."""
@@ -133,20 +131,20 @@ class TestConfigManager:
 
         # Test valid parameters
         valid_params = {
-            'D0': 1e-3,
-            'alpha': 0.9,
-            'D_offset': 1e-4,
-            'gamma0': 0.01,
-            'beta': 0.8,
-            'gamma_offset': 0.001,
-            'phi0': 0.0
+            "D0": 1e-3,
+            "alpha": 0.9,
+            "D_offset": 1e-4,
+            "gamma0": 0.01,
+            "beta": 0.8,
+            "gamma_offset": 0.001,
+            "phi0": 0.0,
         }
         assert manager.validate_parameter_bounds(valid_params)
 
         # Test invalid parameters
         invalid_params = {
-            'D0': 1.0,  # Above upper bound
-            'alpha': 0.05,  # Below lower bound
+            "D0": 1.0,  # Above upper bound
+            "alpha": 0.05,  # Below lower bound
         }
         assert not manager.validate_parameter_bounds(invalid_params)
 
@@ -155,16 +153,16 @@ class TestConfigManager:
         manager = ConfigManager(config=self.sample_config)
 
         # Test existing parameter
-        q_value = manager.get_parameter('analyzer_parameters', 'q_value')
+        q_value = manager.get_parameter("analyzer_parameters", "q_value")
         assert q_value == 0.1
 
         # Test non-existing parameter
         with pytest.raises(KeyError):
-            manager.get_parameter('analyzer_parameters', 'non_existing')
+            manager.get_parameter("analyzer_parameters", "non_existing")
 
         # Test with default value
         default_val = manager.get_parameter(
-            'analyzer_parameters', 'non_existing', default=0.5
+            "analyzer_parameters", "non_existing", default=0.5
         )
         assert default_val == 0.5
 
@@ -173,12 +171,12 @@ class TestConfigManager:
         manager = ConfigManager(config=self.sample_config.copy())
 
         # Test setting existing parameter
-        manager.set_parameter('analyzer_parameters', 'q_value', 0.2)
-        assert manager.get_parameter('analyzer_parameters', 'q_value') == 0.2
+        manager.set_parameter("analyzer_parameters", "q_value", 0.2)
+        assert manager.get_parameter("analyzer_parameters", "q_value") == 0.2
 
         # Test setting new parameter
-        manager.set_parameter('analyzer_parameters', 'new_param', 42)
-        assert manager.get_parameter('analyzer_parameters', 'new_param') == 42
+        manager.set_parameter("analyzer_parameters", "new_param", 42)
+        assert manager.get_parameter("analyzer_parameters", "new_param") == 42
 
     def test_config_merging(self):
         """Test configuration merging functionality."""
@@ -186,32 +184,29 @@ class TestConfigManager:
 
         # Create partial update config
         update_config = {
-            "analyzer_parameters": {
-                "q_value": 0.2,
-                "new_parameter": "test_value"
-            },
-            "new_section": {
-                "test_param": 123
-            }
+            "analyzer_parameters": {"q_value": 0.2, "new_parameter": "test_value"},
+            "new_section": {"test_param": 123},
         }
 
         merged = manager.merge_configs(update_config)
 
         # Check that existing values are updated
-        assert merged['analyzer_parameters']['q_value'] == 0.2
+        assert merged["analyzer_parameters"]["q_value"] == 0.2
         # Check that new values are added
-        assert merged['analyzer_parameters']['new_parameter'] == "test_value"
+        assert merged["analyzer_parameters"]["new_parameter"] == "test_value"
         # Check that existing values are preserved
-        assert merged['analyzer_parameters']['contrast'] == 0.95
+        assert merged["analyzer_parameters"]["contrast"] == 0.95
         # Check that new sections are added
-        assert merged['new_section']['test_param'] == 123
+        assert merged["new_section"]["test_param"] == 123
 
     def test_config_saving(self):
         """Test configuration saving to file."""
         manager = ConfigManager(config=self.sample_config)
 
         # Test saving to new file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as temp_file:
             temp_path = temp_file.name
 
         try:
@@ -220,7 +215,7 @@ class TestConfigManager:
             # Verify file was created and contains correct data
             assert os.path.exists(temp_path)
 
-            with open(temp_path, 'r') as f:
+            with open(temp_path) as f:
                 saved_config = json.load(f)
 
             assert saved_config == self.sample_config
@@ -248,18 +243,18 @@ class TestConfigManager:
 
         # Test that required sections exist (using actual schema)
         required_sections = [
-            'analyzer_parameters',
-            'experimental_data',
-            'optimization_config'
+            "analyzer_parameters",
+            "experimental_data",
+            "optimization_config",
         ]
 
         for section in required_sections:
             assert section in manager.config
 
         # Test required analyzer parameters
-        required_analyzer_params = ['q_value', 'contrast', 'offset']
+        required_analyzer_params = ["q_value", "contrast", "offset"]
         for param in required_analyzer_params:
-            assert param in manager.config['analyzer_parameters']
+            assert param in manager.config["analyzer_parameters"]
 
     def test_config_type_validation(self):
         """Test configuration type validation."""
@@ -270,18 +265,18 @@ class TestConfigManager:
             "analyzer_parameters": {
                 "q_value": 0.1,  # float
                 "contrast": 0.95,  # float
-                "offset": 1.0  # float
+                "offset": 1.0,  # float
             },
             "experimental_data": {
                 "data_file": "test_data.h5",  # string
                 "cache_enabled": True,  # boolean
-                "preload_data": False  # boolean
+                "preload_data": False,  # boolean
             },
             "optimization_config": {
                 "mode": "laminar_flow",  # string
                 "enable_angle_filtering": True,  # boolean
-                "max_iterations": 1000  # int
-            }
+                "max_iterations": 1000,  # int
+            },
         }
 
         manager_valid = ConfigManager(config=valid_config)
@@ -291,7 +286,7 @@ class TestConfigManager:
         invalid_config = {
             "analyzer_parameters": {
                 "q_value": "not_a_number",  # Should be float
-                "contrast": 0.95
+                "contrast": 0.95,
             }
         }
 
@@ -303,12 +298,12 @@ class TestConfigManager:
     def test_environment_variable_substitution(self):
         """Test environment variable substitution in config."""
         # Set test environment variable
-        os.environ['TEST_HOMODYNE_PARAM'] = '0.123'
+        os.environ["TEST_HOMODYNE_PARAM"] = "0.123"
 
         config_with_env = {
             "analyzer_parameters": {
                 "q_value": "${TEST_HOMODYNE_PARAM}",
-                "contrast": 0.95
+                "contrast": 0.95,
             }
         }
 
@@ -317,10 +312,10 @@ class TestConfigManager:
 
         # Check that environment variable was substituted
         # Note: Implementation depends on whether env var substitution is implemented
-        assert 'q_value' in processed_config['analyzer_parameters']
+        assert "q_value" in processed_config["analyzer_parameters"]
 
         # Cleanup
-        del os.environ['TEST_HOMODYNE_PARAM']
+        del os.environ["TEST_HOMODYNE_PARAM"]
 
     def test_config_backup_and_restore(self):
         """Test configuration backup and restore functionality."""
@@ -331,12 +326,12 @@ class TestConfigManager:
         assert backup == manager.config
 
         # Modify config
-        manager.set_parameter('analyzer_parameters', 'q_value', 0.5)
-        assert manager.get_parameter('analyzer_parameters', 'q_value') == 0.5
+        manager.set_parameter("analyzer_parameters", "q_value", 0.5)
+        assert manager.get_parameter("analyzer_parameters", "q_value") == 0.5
 
         # Restore from backup
         manager.restore_from_backup(backup)
-        assert manager.get_parameter('analyzer_parameters', 'q_value') == 0.1
+        assert manager.get_parameter("analyzer_parameters", "q_value") == 0.1
 
     def test_config_difference_detection(self):
         """Test configuration difference detection."""
@@ -344,7 +339,7 @@ class TestConfigManager:
 
         # Create modified config
         modified_config = self.sample_config.copy()
-        modified_config['analyzer_parameters']['q_value'] = 0.2
+        modified_config["analyzer_parameters"]["q_value"] = 0.2
 
         manager2 = ConfigManager(config=modified_config)
 
@@ -353,8 +348,8 @@ class TestConfigManager:
         assert isinstance(differences, dict)
 
         # Should detect the q_value change
-        if 'analyzer_parameters' in differences:
-            assert 'q_value' in differences['analyzer_parameters']
+        if "analyzer_parameters" in differences:
+            assert "q_value" in differences["analyzer_parameters"]
 
 
 @pytest.mark.skipif(not CONFIG_AVAILABLE, reason="Configuration module not available")
@@ -376,7 +371,7 @@ class TestConfigTemplates:
 
             if path:  # If template exists
                 assert isinstance(path, (str, Path))
-                assert str(path).endswith('.json')
+                assert str(path).endswith(".json")
 
     def test_get_config_dir(self):
         """Test config directory retrieval."""
@@ -389,29 +384,29 @@ class TestConfigTemplates:
         """Test template loading functionality."""
         if TEMPLATE_FILES and get_template_path:
             for template_file in TEMPLATE_FILES:
-                template_name = template_file.replace('.json', '')
+                template_name = template_file.replace(".json", "")
                 template_path = get_template_path(template_name)
 
                 if template_path and os.path.exists(template_path):
                     # Try to load the template
-                    with open(template_path, 'r') as f:
+                    with open(template_path) as f:
                         template_config = json.load(f)
 
                     assert isinstance(template_config, dict)
 
                     # Check that it has required sections (using actual schema)
-                    assert 'analyzer_parameters' in template_config
-                    assert 'experimental_data' in template_config
+                    assert "analyzer_parameters" in template_config
+                    assert "experimental_data" in template_config
 
     def test_template_validation(self):
         """Test that templates are valid configurations."""
         if TEMPLATE_FILES and get_template_path:
             for template_file in TEMPLATE_FILES:
-                template_name = template_file.replace('.json', '')
+                template_name = template_file.replace(".json", "")
                 template_path = get_template_path(template_name)
 
                 if template_path and os.path.exists(template_path):
-                    with open(template_path, 'r') as f:
+                    with open(template_path) as f:
                         template_config = json.load(f)
 
                     # Validate template using ConfigManager
@@ -433,7 +428,8 @@ class TestLoggingConfiguration:
 
             # Should not raise exceptions
             import logging
-            logger = logging.getLogger('homodyne')
+
+            logger = logging.getLogger("homodyne")
             assert logger is not None
 
     def test_configure_logging_with_level(self):
@@ -443,14 +439,14 @@ class TestLoggingConfiguration:
 
             configure_logging(level=logging.DEBUG)
 
-            logger = logging.getLogger('homodyne')
+            logger = logging.getLogger("homodyne")
             # Should be configured for DEBUG level
             assert logger.level <= logging.DEBUG
 
     def test_configure_logging_with_file(self):
         """Test logging configuration with file output."""
         if configure_logging is not None:
-            with tempfile.NamedTemporaryFile(suffix='.log', delete=False) as temp_log:
+            with tempfile.NamedTemporaryFile(suffix=".log", delete=False) as temp_log:
                 temp_log_path = temp_log.name
 
             try:
@@ -458,7 +454,8 @@ class TestLoggingConfiguration:
 
                 # Test that log file is created
                 import logging
-                logger = logging.getLogger('homodyne')
+
+                logger = logging.getLogger("homodyne")
                 logger.info("Test log message")
 
                 # File should exist (though may be empty due to buffering)
@@ -476,7 +473,9 @@ class TestPerformanceMonitor:
         """Test basic performance monitor functionality."""
         if performance_monitor is not None:
             # Should be callable or have expected interface
-            assert hasattr(performance_monitor, '__call__') or hasattr(performance_monitor, 'start')
+            assert hasattr(performance_monitor, "__call__") or hasattr(
+                performance_monitor, "start"
+            )
 
     def test_performance_monitor_context(self):
         """Test performance monitor as context manager."""
@@ -496,6 +495,7 @@ class TestPerformanceMonitor:
         if performance_monitor is not None:
             # Test if it can be used as a decorator
             try:
+
                 @performance_monitor
                 def test_function():
                     return sum(range(100))
@@ -519,12 +519,12 @@ class TestConfigurationIntegration:
                 "offset": 1.0,
                 "pixel_size": 172e-6,
                 "detector_distance": 8.0,
-                "x_ray_energy": 7.35
+                "x_ray_energy": 7.35,
             },
             "experimental_data": {
                 "data_file": "test_data.h5",
                 "cache_enabled": True,
-                "preload_data": False
+                "preload_data": False,
             },
             "optimization_config": {
                 "mode": "static_isotropic",
@@ -535,57 +535,57 @@ class TestConfigurationIntegration:
                 "parameter_bounds": {
                     "D0": [1e-5, 1e-2],
                     "alpha": [0.2, 1.8],
-                    "D_offset": [1e-7, 1e-4]
-                }
+                    "D_offset": [1e-7, 1e-4],
+                },
             },
             "performance_settings": {
                 "use_numba": True,
                 "enable_caching": True,
-                "memory_limit_mb": 1000
-            }
+                "memory_limit_mb": 1000,
+            },
         }
 
-    @pytest.mark.skipif(not CONFIG_AVAILABLE, reason="Configuration module not available")
+    @pytest.mark.skipif(
+        not CONFIG_AVAILABLE, reason="Configuration module not available"
+    )
     def test_config_integration_with_analysis(self):
         """Test configuration integration with analysis components."""
         manager = ConfigManager(config=self.integration_config)
 
         # Test that config can be used by analysis components
-        q_value = manager.get_parameter('analyzer_parameters', 'q_value')
+        q_value = manager.get_parameter("analyzer_parameters", "q_value")
         assert q_value == 0.08
 
-        mode = manager.get_parameter('optimization_config', 'mode')
+        mode = manager.get_parameter("optimization_config", "mode")
         assert mode == "static_isotropic"
 
-    @pytest.mark.skipif(not CONFIG_AVAILABLE, reason="Configuration module not available")
+    @pytest.mark.skipif(
+        not CONFIG_AVAILABLE, reason="Configuration module not available"
+    )
     def test_config_with_different_modes(self):
         """Test configuration with different analysis modes."""
-        modes = ['static_isotropic', 'static_anisotropic', 'laminar_flow']
+        modes = ["static_isotropic", "static_anisotropic", "laminar_flow"]
 
         for mode in modes:
             config = self.integration_config.copy()
-            config['optimization_config']['mode'] = mode
+            config["optimization_config"]["mode"] = mode
 
             manager = ConfigManager(config=config)
-            assert manager.get_parameter('optimization_config', 'mode') == mode
+            assert manager.get_parameter("optimization_config", "mode") == mode
 
             # Validate that the config is still valid
             assert manager.validate_config()
 
-    @pytest.mark.skipif(not CONFIG_AVAILABLE, reason="Configuration module not available")
+    @pytest.mark.skipif(
+        not CONFIG_AVAILABLE, reason="Configuration module not available"
+    )
     def test_config_parameter_inheritance(self):
         """Test configuration parameter inheritance and defaults."""
         # Test minimal config with defaults
-        minimal_config = {
-            "analyzer_parameters": {
-                "q_value": 0.1
-            }
-        }
+        minimal_config = {"analyzer_parameters": {"q_value": 0.1}}
 
         manager = ConfigManager(config=minimal_config)
 
         # Should handle missing parameters gracefully
-        contrast = manager.get_parameter(
-            'analyzer_parameters', 'contrast', default=0.9
-        )
+        contrast = manager.get_parameter("analyzer_parameters", "contrast", default=0.9)
         assert contrast == 0.9

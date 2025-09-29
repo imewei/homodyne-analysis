@@ -127,21 +127,20 @@ class EnhancedPlottingManager:
                     plot_task,
                     **kwargs,
                 )
-            else:
-                # Use original function without progress tracking
-                success = original_plot_c2_heatmaps(
-                    exp, theory, phi_angles, outdir, config, t2, t1, method_name
-                )
+            # Use original function without progress tracking
+            success = original_plot_c2_heatmaps(
+                exp, theory, phi_angles, outdir, config, t2, t1, method_name
+            )
 
-                return {
-                    "success": success,
-                    "plots_created": len(phi_angles) if success else 0,
-                    "method": method_name,
-                    "performance": {
-                        "execution_time": time.time() - start_time,
-                        "optimized": False,
-                    },
-                }
+            return {
+                "success": success,
+                "plots_created": len(phi_angles) if success else 0,
+                "method": method_name,
+                "performance": {
+                    "execution_time": time.time() - start_time,
+                    "optimized": False,
+                },
+            }
 
         except Exception as e:
             self.plot_stats["errors_encountered"] += 1

@@ -27,10 +27,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import psutil
@@ -41,6 +37,7 @@ warnings.filterwarnings("ignore")
 @dataclass
 class MemoryMetrics:
     """Memory usage metrics."""
+
     operation_name: str
     memory_before_mb: float
     memory_after_mb: float
@@ -79,7 +76,7 @@ class MemoryProfiler:
             "tracemalloc_current_mb": current / 1024 / 1024,
             "tracemalloc_peak_mb": peak / 1024 / 1024,
             "process_memory_mb": process_memory,
-            "gc_objects": len(gc.get_objects())
+            "gc_objects": len(gc.get_objects()),
         }
 
         self.snapshots.append(snapshot)
@@ -99,7 +96,9 @@ class MemoryProfiler:
         after_snapshot = self.take_snapshot(f"{operation_name}_after")
 
         # Calculate metrics
-        memory_delta = after_snapshot["process_memory_mb"] - before_snapshot["process_memory_mb"]
+        memory_delta = (
+            after_snapshot["process_memory_mb"] - before_snapshot["process_memory_mb"]
+        )
 
         metrics = MemoryMetrics(
             operation_name=operation_name,
@@ -110,7 +109,7 @@ class MemoryProfiler:
             allocation_count=0,  # Would need more detailed tracking
             deallocation_count=0,
             gc_collections=0,
-            optimization_method="baseline"
+            optimization_method="baseline",
         )
 
         self.metrics.append(metrics)
@@ -126,20 +125,21 @@ class MemoryPool:
         self.allocation_count = 0
         self.reuse_count = 0
 
-    def get_array(self, shape: Tuple[int, ...], dtype: np.dtype = np.float64) -> np.ndarray:
+    def get_array(
+        self, shape: tuple[int, ...], dtype: np.dtype = np.float64
+    ) -> np.ndarray:
         """Get an array from the pool or allocate new one."""
         key = (shape, dtype)
 
-        if key in self.pools and self.pools[key]:
+        if self.pools.get(key):
             # Reuse from pool
             array = self.pools[key].pop()
             array.fill(0)  # Clear previous data
             self.reuse_count += 1
             return array
-        else:
-            # Allocate new array
-            self.allocation_count += 1
-            return np.zeros(shape, dtype=dtype)
+        # Allocate new array
+        self.allocation_count += 1
+        return np.zeros(shape, dtype=dtype)
 
     def return_array(self, array: np.ndarray):
         """Return array to the pool."""
@@ -151,14 +151,14 @@ class MemoryPool:
         if len(self.pools[key]) < self.max_pool_size:
             self.pools[key].append(array)
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get pool statistics."""
         total_pooled = sum(len(arrays) for arrays in self.pools.values())
         return {
             "allocations": self.allocation_count,
             "reuses": self.reuse_count,
             "pooled_arrays": total_pooled,
-            "pool_shapes": len(self.pools)
+            "pool_shapes": len(self.pools),
         }
 
 
@@ -166,8 +166,11 @@ class InPlaceOperations:
     """Optimized in-place operations to reduce memory allocation."""
 
     @staticmethod
-    def inplace_chi_squared(c2_exp: np.ndarray, c2_theo: np.ndarray,
-                           result_array: Optional[np.ndarray] = None) -> np.ndarray:
+    def inplace_chi_squared(
+        c2_exp: np.ndarray,
+        c2_theo: np.ndarray,
+        result_array: np.ndarray | None = None,
+    ) -> np.ndarray:
         """In-place chi-squared calculation."""
         if result_array is None:
             result_array = np.empty_like(c2_exp)
@@ -179,8 +182,9 @@ class InPlaceOperations:
         return result_array
 
     @staticmethod
-    def inplace_correlation_function(data: np.ndarray,
-                                   result: Optional[np.ndarray] = None) -> np.ndarray:
+    def inplace_correlation_function(
+        data: np.ndarray, result: np.ndarray | None = None
+    ) -> np.ndarray:
         """Memory-efficient correlation function calculation."""
         n_angles, n_time = data.shape
 
@@ -196,9 +200,11 @@ class InPlaceOperations:
         return result
 
     @staticmethod
-    def inplace_normalization(array: np.ndarray,
-                            min_val: Optional[float] = None,
-                            max_val: Optional[float] = None) -> np.ndarray:
+    def inplace_normalization(
+        array: np.ndarray,
+        min_val: float | None = None,
+        max_val: float | None = None,
+    ) -> np.ndarray:
         """In-place array normalization."""
         if min_val is None:
             min_val = np.min(array)
@@ -218,9 +224,11 @@ class MemoryMappedOperations:
     """Memory-mapped file operations for large datasets."""
 
     @staticmethod
-    def create_memory_mapped_array(shape: Tuple[int, ...],
-                                 dtype: np.dtype = np.float64,
-                                 filename: Optional[str] = None) -> np.ndarray:
+    def create_memory_mapped_array(
+        shape: tuple[int, ...],
+        dtype: np.dtype = np.float64,
+        filename: str | None = None,
+    ) -> np.ndarray:
         """Create memory-mapped array."""
         if filename is None:
             # Create temporary file
@@ -233,14 +241,15 @@ class MemoryMappedOperations:
         total_size = np.prod(shape) * itemsize
 
         # Create memory-mapped array
-        with open(filename, 'wb') as f:
-            f.write(b'\x00' * total_size)
+        with open(filename, "wb") as f:
+            f.write(b"\x00" * total_size)
 
-        return np.memmap(filename, dtype=dtype, mode='r+', shape=shape)
+        return np.memmap(filename, dtype=dtype, mode="r+", shape=shape)
 
     @staticmethod
-    def chunked_operation(array: np.ndarray, operation: callable,
-                         chunk_size: int = 1000) -> np.ndarray:
+    def chunked_operation(
+        array: np.ndarray, operation: callable, chunk_size: int = 1000
+    ) -> np.ndarray:
         """Apply operation in chunks to reduce memory usage."""
         if array.size <= chunk_size:
             return operation(array)
@@ -250,7 +259,7 @@ class MemoryMappedOperations:
         result_chunks = []
 
         for i in range(0, len(flat_array), chunk_size):
-            chunk = flat_array[i:i + chunk_size]
+            chunk = flat_array[i : i + chunk_size]
             result_chunk = operation(chunk)
             result_chunks.append(result_chunk)
 
@@ -265,6 +274,7 @@ class GarbageCollectionOptimizer:
     @staticmethod
     def disable_gc_during_computation(func):
         """Decorator to disable GC during computation."""
+
         def wrapper(*args, **kwargs):
             gc_enabled = gc.isenabled()
             if gc_enabled:
@@ -277,6 +287,7 @@ class GarbageCollectionOptimizer:
                     gc.enable()
 
             return result
+
         return wrapper
 
     @staticmethod
@@ -293,7 +304,9 @@ class GarbageCollectionOptimizer:
                     gc.collect()
 
                 return func(*args, **kwargs)
+
             return wrapper
+
         return decorator
 
     @staticmethod
@@ -319,7 +332,9 @@ class GarbageCollectionOptimizer:
             "time_with_gc": time_with_gc,
             "time_without_gc": time_without_gc,
             "gc_overhead": gc_overhead,
-            "gc_overhead_percent": (gc_overhead / time_with_gc) * 100 if time_with_gc > 0 else 0
+            "gc_overhead_percent": (
+                (gc_overhead / time_with_gc) * 100 if time_with_gc > 0 else 0
+            ),
         }
 
 
@@ -331,7 +346,7 @@ class MemoryOptimizationSuite:
         self.memory_pool = MemoryPool()
         self.results = {}
 
-    def test_memory_pool_efficiency(self) -> Dict[str, Any]:
+    def test_memory_pool_efficiency(self) -> dict[str, Any]:
         """Test memory pool efficiency."""
         print("Testing memory pool efficiency...")
 
@@ -368,17 +383,18 @@ class MemoryOptimizationSuite:
         return {
             "without_pool": {
                 "memory_delta_mb": metrics_without_pool.memory_delta_mb,
-                "peak_memory_mb": metrics_without_pool.memory_peak_mb
+                "peak_memory_mb": metrics_without_pool.memory_peak_mb,
             },
             "with_pool": {
                 "memory_delta_mb": metrics_with_pool.memory_delta_mb,
-                "peak_memory_mb": metrics_with_pool.memory_peak_mb
+                "peak_memory_mb": metrics_with_pool.memory_peak_mb,
             },
             "pool_stats": pool_stats,
-            "memory_reduction": metrics_without_pool.memory_delta_mb - metrics_with_pool.memory_delta_mb
+            "memory_reduction": metrics_without_pool.memory_delta_mb
+            - metrics_with_pool.memory_delta_mb,
         }
 
-    def test_inplace_operations(self) -> Dict[str, Any]:
+    def test_inplace_operations(self) -> dict[str, Any]:
         """Test in-place operation efficiency."""
         print("Testing in-place operations...")
 
@@ -411,16 +427,17 @@ class MemoryOptimizationSuite:
         return {
             "standard": {
                 "memory_delta_mb": metrics_standard.memory_delta_mb,
-                "peak_memory_mb": metrics_standard.memory_peak_mb
+                "peak_memory_mb": metrics_standard.memory_peak_mb,
             },
             "inplace": {
                 "memory_delta_mb": metrics_inplace.memory_delta_mb,
-                "peak_memory_mb": metrics_inplace.memory_peak_mb
+                "peak_memory_mb": metrics_inplace.memory_peak_mb,
             },
-            "memory_reduction": metrics_standard.memory_delta_mb - metrics_inplace.memory_delta_mb
+            "memory_reduction": metrics_standard.memory_delta_mb
+            - metrics_inplace.memory_delta_mb,
         }
 
-    def test_memory_mapped_operations(self) -> Dict[str, Any]:
+    def test_memory_mapped_operations(self) -> dict[str, Any]:
         """Test memory-mapped file operations."""
         print("Testing memory-mapped operations...")
 
@@ -450,16 +467,17 @@ class MemoryOptimizationSuite:
         return {
             "standard": {
                 "memory_delta_mb": metrics_standard.memory_delta_mb,
-                "peak_memory_mb": metrics_standard.memory_peak_mb
+                "peak_memory_mb": metrics_standard.memory_peak_mb,
             },
             "memmap": {
                 "memory_delta_mb": metrics_memmap.memory_delta_mb,
-                "peak_memory_mb": metrics_memmap.memory_peak_mb
+                "peak_memory_mb": metrics_memmap.memory_peak_mb,
             },
-            "memory_reduction": metrics_standard.memory_delta_mb - metrics_memmap.memory_delta_mb
+            "memory_reduction": metrics_standard.memory_delta_mb
+            - metrics_memmap.memory_delta_mb,
         }
 
-    def test_gc_optimization(self) -> Dict[str, Any]:
+    def test_gc_optimization(self) -> dict[str, Any]:
         """Test garbage collection optimization."""
         print("Testing garbage collection optimization...")
 
@@ -479,7 +497,7 @@ class MemoryOptimizationSuite:
 
         return gc_impact
 
-    def test_chunked_operations(self) -> Dict[str, Any]:
+    def test_chunked_operations(self) -> dict[str, Any]:
         """Test chunked operations for memory efficiency."""
         print("Testing chunked operations...")
 
@@ -511,16 +529,17 @@ class MemoryOptimizationSuite:
         return {
             "standard": {
                 "memory_delta_mb": metrics_standard.memory_delta_mb,
-                "peak_memory_mb": metrics_standard.memory_peak_mb
+                "peak_memory_mb": metrics_standard.memory_peak_mb,
             },
             "chunked": {
                 "memory_delta_mb": metrics_chunked.memory_delta_mb,
-                "peak_memory_mb": metrics_chunked.memory_peak_mb
+                "peak_memory_mb": metrics_chunked.memory_peak_mb,
             },
-            "memory_reduction": metrics_standard.memory_delta_mb - metrics_chunked.memory_delta_mb
+            "memory_reduction": metrics_standard.memory_delta_mb
+            - metrics_chunked.memory_delta_mb,
         }
 
-    def run_comprehensive_memory_optimization_test(self) -> Dict[str, Any]:
+    def run_comprehensive_memory_optimization_test(self) -> dict[str, Any]:
         """Run comprehensive memory optimization tests."""
         print("Running Comprehensive Memory Optimization Tests")
         print("=" * 60)
@@ -550,7 +569,7 @@ class MemoryOptimizationSuite:
         return all_results
 
 
-def generate_memory_optimization_report(results: Dict[str, Any]) -> str:
+def generate_memory_optimization_report(results: dict[str, Any]) -> str:
     """Generate comprehensive memory optimization report."""
     report_lines = []
     report_lines.append("MEMORY OPTIMIZATION REPORT - TASK 4.4")
@@ -560,38 +579,55 @@ def generate_memory_optimization_report(results: Dict[str, Any]) -> str:
     if "memory_pool" in results:
         pool_data = results["memory_pool"]
         report_lines.append("\nMEMORY POOL OPTIMIZATION:")
-        report_lines.append(f"  Memory reduction: {pool_data.get('memory_reduction', 0):.2f} MB")
+        report_lines.append(
+            f"  Memory reduction: {pool_data.get('memory_reduction', 0):.2f} MB"
+        )
         report_lines.append(f"  Pool stats: {pool_data.get('pool_stats', {})}")
 
     # In-place operations
     if "inplace_operations" in results:
         inplace_data = results["inplace_operations"]
         report_lines.append("\nIN-PLACE OPERATIONS:")
-        report_lines.append(f"  Memory reduction: {inplace_data.get('memory_reduction', 0):.2f} MB")
+        report_lines.append(
+            f"  Memory reduction: {inplace_data.get('memory_reduction', 0):.2f} MB"
+        )
 
     # Memory-mapped operations
     if "memory_mapped" in results:
         memmap_data = results["memory_mapped"]
         report_lines.append("\nMEMORY-MAPPED OPERATIONS:")
-        report_lines.append(f"  Memory reduction: {memmap_data.get('memory_reduction', 0):.2f} MB")
+        report_lines.append(
+            f"  Memory reduction: {memmap_data.get('memory_reduction', 0):.2f} MB"
+        )
 
     # Garbage collection
     if "garbage_collection" in results:
         gc_data = results["garbage_collection"]
         report_lines.append("\nGARBAGE COLLECTION OPTIMIZATION:")
-        report_lines.append(f"  GC overhead: {gc_data.get('gc_overhead_percent', 0):.2f}%")
+        report_lines.append(
+            f"  GC overhead: {gc_data.get('gc_overhead_percent', 0):.2f}%"
+        )
         report_lines.append(f"  Time with GC: {gc_data.get('time_with_gc', 0):.4f}s")
-        report_lines.append(f"  Time without GC: {gc_data.get('time_without_gc', 0):.4f}s")
+        report_lines.append(
+            f"  Time without GC: {gc_data.get('time_without_gc', 0):.4f}s"
+        )
 
     # Chunked operations
     if "chunked_operations" in results:
         chunked_data = results["chunked_operations"]
         report_lines.append("\nCHUNKED OPERATIONS:")
-        report_lines.append(f"  Memory reduction: {chunked_data.get('memory_reduction', 0):.2f} MB")
+        report_lines.append(
+            f"  Memory reduction: {chunked_data.get('memory_reduction', 0):.2f} MB"
+        )
 
     # Calculate total memory savings
     total_savings = 0
-    for category in ["memory_pool", "inplace_operations", "memory_mapped", "chunked_operations"]:
+    for category in [
+        "memory_pool",
+        "inplace_operations",
+        "memory_mapped",
+        "chunked_operations",
+    ]:
         if category in results:
             total_savings += results[category].get("memory_reduction", 0)
 
@@ -619,19 +655,23 @@ def run_memory_optimization_suite():
 
     # Save JSON results
     json_file = results_dir / "task_4_4_memory_optimization_results.json"
-    with open(json_file, 'w') as f:
-        json.dump({
-            "optimization_results": results,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "summary": {
-                "total_optimizations": len(results),
-                "memory_techniques": list(results.keys())
-            }
-        }, f, indent=2)
+    with open(json_file, "w") as f:
+        json.dump(
+            {
+                "optimization_results": results,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "summary": {
+                    "total_optimizations": len(results),
+                    "memory_techniques": list(results.keys()),
+                },
+            },
+            f,
+            indent=2,
+        )
 
     # Save text report
     report_file = results_dir / "task_4_4_memory_optimization_report.txt"
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         f.write(report)
 
     print(f"\n📄 Results saved to: {json_file}")
@@ -639,11 +679,16 @@ def run_memory_optimization_suite():
 
     # Calculate total memory savings
     total_savings = 0
-    for category in ["memory_pool", "inplace_operations", "memory_mapped", "chunked_operations"]:
+    for category in [
+        "memory_pool",
+        "inplace_operations",
+        "memory_mapped",
+        "chunked_operations",
+    ]:
         if category in results:
             total_savings += results[category].get("memory_reduction", 0)
 
-    print(f"\n✅ Task 4.4 Memory Optimization Complete!")
+    print("\n✅ Task 4.4 Memory Optimization Complete!")
     print(f"💾 Total memory savings: {total_savings:.2f} MB")
     print(f"🎯 {len(results)} optimization techniques implemented")
 

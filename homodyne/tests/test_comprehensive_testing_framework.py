@@ -15,9 +15,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import numpy as np
 
@@ -27,22 +24,24 @@ warnings.filterwarnings("ignore")
 @dataclass
 class TestMetrics:
     """Test execution metrics."""
+
     test_name: str
     execution_time: float
-    memory_usage: Optional[float] = None
+    memory_usage: float | None = None
     status: str = "PASS"
-    error_message: Optional[str] = None
-    coverage_percentage: Optional[float] = None
+    error_message: str | None = None
+    coverage_percentage: float | None = None
 
 
 @dataclass
 class CoverageReport:
     """Code coverage analysis report."""
+
     total_lines: int
     covered_lines: int
-    missing_lines: List[int]
+    missing_lines: list[int]
     coverage_percentage: float
-    branch_coverage: Optional[float] = None
+    branch_coverage: float | None = None
 
 
 class ComprehensiveTestFramework:
@@ -54,7 +53,7 @@ class ComprehensiveTestFramework:
         self.test_metrics = []
         self.coverage_data = {}
 
-    def run_unit_tests(self) -> Dict[str, Any]:
+    def run_unit_tests(self) -> dict[str, Any]:
         """Run comprehensive unit tests."""
         print("Running comprehensive unit tests...")
 
@@ -66,7 +65,7 @@ class ComprehensiveTestFramework:
             "test_configuration_handling": self._test_configuration_handling,
             "test_error_handling": self._test_error_handling,
             "test_performance_regression": self._test_performance_regression,
-            "test_memory_management": self._test_memory_management
+            "test_memory_management": self._test_memory_management,
         }
 
         results = {}
@@ -79,13 +78,13 @@ class ComprehensiveTestFramework:
                 metric = TestMetrics(
                     test_name=test_name,
                     execution_time=execution_time,
-                    status="PASS" if test_result else "FAIL"
+                    status="PASS" if test_result else "FAIL",
                 )
 
                 results[test_name] = {
                     "status": metric.status,
                     "execution_time": execution_time,
-                    "result": test_result
+                    "result": test_result,
                 }
 
             except Exception as e:
@@ -94,13 +93,13 @@ class ComprehensiveTestFramework:
                     test_name=test_name,
                     execution_time=execution_time,
                     status="ERROR",
-                    error_message=str(e)
+                    error_message=str(e),
                 )
 
                 results[test_name] = {
                     "status": "ERROR",
                     "execution_time": execution_time,
-                    "error": str(e)
+                    "error": str(e),
                 }
 
             self.test_metrics.append(metric)
@@ -163,10 +162,10 @@ class ComprehensiveTestFramework:
         """Test statistical function accuracy."""
         # Test with different data distributions
         test_data = [
-            np.random.normal(0, 1, 1000),    # Normal distribution
+            np.random.normal(0, 1, 1000),  # Normal distribution
             np.random.exponential(1, 1000),  # Exponential distribution
             np.random.uniform(-1, 1, 1000),  # Uniform distribution
-            np.random.poisson(5, 1000)       # Poisson distribution
+            np.random.poisson(5, 1000),  # Poisson distribution
         ]
 
         for data in test_data:
@@ -195,7 +194,7 @@ class ComprehensiveTestFramework:
             np.array([np.inf, 1, 2, 3]),
             np.array([-np.inf, 1, 2, 3]),
             np.array([]),  # Empty array
-            None
+            None,
         ]
 
         for invalid_input in invalid_inputs:
@@ -204,8 +203,12 @@ class ComprehensiveTestFramework:
                     continue
 
                 # Test that we can detect invalid data
-                has_nan = np.any(np.isnan(invalid_input)) if invalid_input.size > 0 else False
-                has_inf = np.any(np.isinf(invalid_input)) if invalid_input.size > 0 else False
+                has_nan = (
+                    np.any(np.isnan(invalid_input)) if invalid_input.size > 0 else False
+                )
+                has_inf = (
+                    np.any(np.isinf(invalid_input)) if invalid_input.size > 0 else False
+                )
                 is_empty = invalid_input.size == 0
 
                 # These should be detectable issues
@@ -220,7 +223,7 @@ class ComprehensiveTestFramework:
         valid_inputs = [
             np.array([1, 2, 3, 4, 5]),
             np.random.rand(100),
-            np.random.rand(10, 10)
+            np.random.rand(10, 10),
         ]
 
         for valid_input in valid_inputs:
@@ -235,10 +238,7 @@ class ComprehensiveTestFramework:
         test_config = {
             "analysis_mode": "static_isotropic",
             "optimization_method": "classical",
-            "parameters": {
-                "tolerance": 1e-6,
-                "max_iterations": 1000
-            }
+            "parameters": {"tolerance": 1e-6, "max_iterations": 1000},
         }
 
         try:
@@ -256,7 +256,7 @@ class ComprehensiveTestFramework:
                 "floats": [1.0, 2.5, 3.14],
                 "integers": [1, 2, 3],
                 "booleans": [True, False],
-                "strings": ["test", "config"]
+                "strings": ["test", "config"],
             }
 
             complex_json = json.dumps(complex_config)
@@ -374,7 +374,7 @@ class ComprehensiveTestFramework:
 
         return True
 
-    def run_integration_tests(self) -> Dict[str, Any]:
+    def run_integration_tests(self) -> dict[str, Any]:
         """Run integration tests across components."""
         print("Running integration tests...")
 
@@ -382,7 +382,7 @@ class ComprehensiveTestFramework:
             "test_end_to_end_analysis": self._test_end_to_end_analysis,
             "test_component_interaction": self._test_component_interaction,
             "test_data_pipeline": self._test_data_pipeline,
-            "test_optimization_pipeline": self._test_optimization_pipeline
+            "test_optimization_pipeline": self._test_optimization_pipeline,
         }
 
         results = {}
@@ -395,7 +395,7 @@ class ComprehensiveTestFramework:
                 results[test_name] = {
                     "status": "PASS" if test_result else "FAIL",
                     "execution_time": execution_time,
-                    "result": test_result
+                    "result": test_result,
                 }
 
             except Exception as e:
@@ -403,7 +403,7 @@ class ComprehensiveTestFramework:
                 results[test_name] = {
                     "status": "ERROR",
                     "execution_time": execution_time,
-                    "error": str(e)
+                    "error": str(e),
                 }
 
         return results
@@ -476,7 +476,7 @@ class ComprehensiveTestFramework:
                 "mean": np.mean(transformed_data),
                 "std": np.std(transformed_data),
                 "min": np.min(transformed_data),
-                "max": np.max(transformed_data)
+                "max": np.max(transformed_data),
             }
 
             # Component 5: Results validation
@@ -488,7 +488,7 @@ class ComprehensiveTestFramework:
             export_data = {
                 "original_shape": raw_data.shape,
                 "transformed_shape": transformed_data.shape,
-                "statistics": stats
+                "statistics": stats,
             }
 
             # Validate export data structure
@@ -515,18 +515,20 @@ class ComprehensiveTestFramework:
             pipeline_stages.append(("cleaning", cleaned_data.shape))
 
             # Stage 3: Data normalization
-            normalized_data = (cleaned_data - np.mean(cleaned_data)) / np.std(cleaned_data)
+            normalized_data = (cleaned_data - np.mean(cleaned_data)) / np.std(
+                cleaned_data
+            )
             pipeline_stages.append(("normalization", normalized_data.shape))
 
             # Stage 4: Data analysis
-            analysis_result = np.sum(normalized_data ** 2)
+            analysis_result = np.sum(normalized_data**2)
             pipeline_stages.append(("analysis", analysis_result))
 
             # Stage 5: Results packaging
             final_result = {
                 "pipeline_stages": len(pipeline_stages),
                 "final_value": float(analysis_result),
-                "data_quality": "good" if not np.isnan(analysis_result) else "poor"
+                "data_quality": "good" if not np.isnan(analysis_result) else "poor",
             }
 
             # Validate pipeline integrity
@@ -574,7 +576,9 @@ class ComprehensiveTestFramework:
                     params_plus[i] += eps
                     params_minus[i] -= eps
 
-                    gradient[i] = (objective(params_plus) - objective(params_minus)) / (2 * eps)
+                    gradient[i] = (objective(params_plus) - objective(params_minus)) / (
+                        2 * eps
+                    )
 
                 # Update parameters
                 new_params = current_params - learning_rate * gradient
@@ -603,7 +607,7 @@ class ComprehensiveTestFramework:
         except Exception:
             return False
 
-    def analyze_code_coverage(self) -> Dict[str, CoverageReport]:
+    def analyze_code_coverage(self) -> dict[str, CoverageReport]:
         """Analyze code coverage for the test suite."""
         print("Analyzing code coverage...")
 
@@ -619,7 +623,7 @@ class ComprehensiveTestFramework:
             "statistical_functions",
             "data_validation",
             "configuration_handling",
-            "error_handling"
+            "error_handling",
         ]
 
         for module in modules:
@@ -634,12 +638,12 @@ class ComprehensiveTestFramework:
                 covered_lines=covered_lines,
                 missing_lines=missing_lines,
                 coverage_percentage=coverage_percentage,
-                branch_coverage=coverage_percentage * 0.9  # Estimate branch coverage
+                branch_coverage=coverage_percentage * 0.9,  # Estimate branch coverage
             )
 
         return coverage_reports
 
-    def run_performance_tests(self) -> Dict[str, Any]:
+    def run_performance_tests(self) -> dict[str, Any]:
         """Run performance benchmark tests."""
         print("Running performance benchmark tests...")
 
@@ -648,7 +652,7 @@ class ComprehensiveTestFramework:
             "medium_dataset_performance": self._test_medium_dataset_performance,
             "large_dataset_performance": self._test_large_dataset_performance,
             "memory_efficiency_test": self._test_memory_efficiency,
-            "concurrent_processing_test": self._test_concurrent_processing
+            "concurrent_processing_test": self._test_concurrent_processing,
         }
 
         results = {}
@@ -661,7 +665,7 @@ class ComprehensiveTestFramework:
                 results[test_name] = {
                     "status": "PASS" if test_result["success"] else "FAIL",
                     "execution_time": execution_time,
-                    "metrics": test_result
+                    "metrics": test_result,
                 }
 
             except Exception as e:
@@ -669,12 +673,12 @@ class ComprehensiveTestFramework:
                 results[test_name] = {
                     "status": "ERROR",
                     "execution_time": execution_time,
-                    "error": str(e)
+                    "error": str(e),
                 }
 
         return results
 
-    def _test_small_dataset_performance(self) -> Dict[str, Any]:
+    def _test_small_dataset_performance(self) -> dict[str, Any]:
         """Test performance with small datasets."""
         dataset_size = (10, 20, 20)
         c2_exp = np.random.rand(*dataset_size)
@@ -691,10 +695,10 @@ class ComprehensiveTestFramework:
             "success": success,
             "execution_time": execution_time,
             "dataset_size": dataset_size,
-            "result_valid": not (np.isnan(result) or np.isinf(result))
+            "result_valid": not (np.isnan(result) or np.isinf(result)),
         }
 
-    def _test_medium_dataset_performance(self) -> Dict[str, Any]:
+    def _test_medium_dataset_performance(self) -> dict[str, Any]:
         """Test performance with medium datasets."""
         dataset_size = (50, 100, 100)
         c2_exp = np.random.rand(*dataset_size)
@@ -711,10 +715,10 @@ class ComprehensiveTestFramework:
             "success": success,
             "execution_time": execution_time,
             "dataset_size": dataset_size,
-            "result_valid": not (np.isnan(result) or np.isinf(result))
+            "result_valid": not (np.isnan(result) or np.isinf(result)),
         }
 
-    def _test_large_dataset_performance(self) -> Dict[str, Any]:
+    def _test_large_dataset_performance(self) -> dict[str, Any]:
         """Test performance with large datasets."""
         dataset_size = (20, 200, 200)
         c2_exp = np.random.rand(*dataset_size)
@@ -731,10 +735,10 @@ class ComprehensiveTestFramework:
             "success": success,
             "execution_time": execution_time,
             "dataset_size": dataset_size,
-            "result_valid": not (np.isnan(result) or np.isinf(result))
+            "result_valid": not (np.isnan(result) or np.isinf(result)),
         }
 
-    def _test_memory_efficiency(self) -> Dict[str, Any]:
+    def _test_memory_efficiency(self) -> dict[str, Any]:
         """Test memory efficiency."""
         import os
 
@@ -745,7 +749,7 @@ class ComprehensiveTestFramework:
 
         # Create and process large array
         large_array = np.random.rand(1000, 1000)
-        processed_array = large_array ** 2 + 2 * large_array + 1
+        processed_array = large_array**2 + 2 * large_array + 1
         result = np.sum(processed_array)
 
         peak_memory = process.memory_info().rss / 1024 / 1024
@@ -768,17 +772,19 @@ class ComprehensiveTestFramework:
             "final_memory_mb": final_memory,
             "memory_increase_mb": memory_increase,
             "memory_cleanup_mb": memory_cleanup,
-            "cleanup_efficiency": memory_cleanup / memory_increase if memory_increase > 0 else 1.0
+            "cleanup_efficiency": (
+                memory_cleanup / memory_increase if memory_increase > 0 else 1.0
+            ),
         }
 
-    def _test_concurrent_processing(self) -> Dict[str, Any]:
+    def _test_concurrent_processing(self) -> dict[str, Any]:
         """Test concurrent processing capabilities."""
         from concurrent.futures import ThreadPoolExecutor
 
         def worker_task(task_id):
             """Simple worker task for concurrent testing."""
             data = np.random.rand(100, 100)
-            result = np.sum(data ** 2)
+            result = np.sum(data**2)
             return {"task_id": task_id, "result": result}
 
         num_workers = 4
@@ -794,10 +800,12 @@ class ComprehensiveTestFramework:
 
         # Validate results
         success = (
-            len(results) == num_tasks and
-            all("result" in r for r in results) and
-            all(not (np.isnan(r["result"]) or np.isinf(r["result"])) for r in results) and
-            execution_time < 10.0  # Should complete within reasonable time
+            len(results) == num_tasks
+            and all("result" in r for r in results)
+            and all(
+                not (np.isnan(r["result"]) or np.isinf(r["result"])) for r in results
+            )
+            and execution_time < 10.0  # Should complete within reasonable time
         )
 
         return {
@@ -805,10 +813,10 @@ class ComprehensiveTestFramework:
             "execution_time": execution_time,
             "num_workers": num_workers,
             "num_tasks": num_tasks,
-            "results_valid": len(results) == num_tasks
+            "results_valid": len(results) == num_tasks,
         }
 
-    def generate_comprehensive_report(self) -> Dict[str, Any]:
+    def generate_comprehensive_report(self) -> dict[str, Any]:
         """Generate comprehensive testing report."""
         print("\nGenerating comprehensive testing report...")
 
@@ -819,14 +827,26 @@ class ComprehensiveTestFramework:
         coverage_reports = self.analyze_code_coverage()
 
         # Calculate overall statistics
-        all_tests = {**unit_test_results, **integration_test_results, **performance_test_results}
+        all_tests = {
+            **unit_test_results,
+            **integration_test_results,
+            **performance_test_results,
+        }
 
         total_tests = len(all_tests)
-        passed_tests = sum(1 for result in all_tests.values() if result["status"] == "PASS")
-        failed_tests = sum(1 for result in all_tests.values() if result["status"] == "FAIL")
-        error_tests = sum(1 for result in all_tests.values() if result["status"] == "ERROR")
+        passed_tests = sum(
+            1 for result in all_tests.values() if result["status"] == "PASS"
+        )
+        failed_tests = sum(
+            1 for result in all_tests.values() if result["status"] == "FAIL"
+        )
+        error_tests = sum(
+            1 for result in all_tests.values() if result["status"] == "ERROR"
+        )
 
-        overall_coverage = np.mean([report.coverage_percentage for report in coverage_reports.values()])
+        overall_coverage = np.mean(
+            [report.coverage_percentage for report in coverage_reports.values()]
+        )
 
         comprehensive_report = {
             "test_execution_summary": {
@@ -834,18 +854,20 @@ class ComprehensiveTestFramework:
                 "passed_tests": passed_tests,
                 "failed_tests": failed_tests,
                 "error_tests": error_tests,
-                "success_rate": (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+                "success_rate": (
+                    (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+                ),
             },
             "test_categories": {
                 "unit_tests": unit_test_results,
                 "integration_tests": integration_test_results,
-                "performance_tests": performance_test_results
+                "performance_tests": performance_test_results,
             },
             "coverage_analysis": {
                 module: asdict(report) for module, report in coverage_reports.items()
             },
             "overall_coverage_percentage": overall_coverage,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
         return comprehensive_report
@@ -864,26 +886,28 @@ def run_comprehensive_testing_framework():
 
     # Display summary
     summary = report["test_execution_summary"]
-    print(f"\nTESTING EXECUTION SUMMARY:")
+    print("\nTESTING EXECUTION SUMMARY:")
     print(f"  Total Tests: {summary['total_tests']}")
     print(f"  Passed: {summary['passed_tests']}")
     print(f"  Failed: {summary['failed_tests']}")
     print(f"  Errors: {summary['error_tests']}")
     print(f"  Success Rate: {summary['success_rate']:.1f}%")
 
-    print(f"\nCOVERAGE ANALYSIS:")
+    print("\nCOVERAGE ANALYSIS:")
     print(f"  Overall Coverage: {report['overall_coverage_percentage']:.1f}%")
 
     for module, coverage_data in report["coverage_analysis"].items():
-        print(f"  {module}: {coverage_data['coverage_percentage']:.1f}% ({coverage_data['covered_lines']}/{coverage_data['total_lines']} lines)")
+        print(
+            f"  {module}: {coverage_data['coverage_percentage']:.1f}% ({coverage_data['covered_lines']}/{coverage_data['total_lines']} lines)"
+        )
 
     # Save results
     results_file = framework.results_dir / "task_5_1_comprehensive_testing_report.json"
-    with open(results_file, 'w') as f:
+    with open(results_file, "w") as f:
         json.dump(report, f, indent=2)
 
     print(f"\n📄 Comprehensive testing report saved to: {results_file}")
-    print(f"✅ Task 5.1 Comprehensive Testing Framework Complete!")
+    print("✅ Task 5.1 Comprehensive Testing Framework Complete!")
     print(f"🎯 {summary['passed_tests']}/{summary['total_tests']} tests passed")
     print(f"📊 {report['overall_coverage_percentage']:.1f}% overall code coverage")
 

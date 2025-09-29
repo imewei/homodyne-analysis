@@ -233,7 +233,7 @@ def create_config_override(args: argparse.Namespace) -> dict[str, Any] | None:
         logger.info("Using command-line override: laminar flow mode (7 parameters)")
 
     # Handle experimental data plotting override
-    if hasattr(args, 'plot_experimental_data') and args.plot_experimental_data:
+    if hasattr(args, "plot_experimental_data") and args.plot_experimental_data:
         if config_override is None:
             config_override = {}
         if "workflow_integration" not in config_override:
@@ -250,7 +250,9 @@ def create_config_override(args: argparse.Namespace) -> dict[str, Any] | None:
     return config_override
 
 
-def validate_advanced_optimization_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+def validate_advanced_optimization_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
     """
     Validate advanced optimization arguments for consistency.
 
@@ -262,19 +264,33 @@ def validate_advanced_optimization_args(args: argparse.Namespace, parser: argpar
         Parser instance for error reporting
     """
     # Validate advanced optimization arguments
-    if hasattr(args, 'parameter_sweep') and args.parameter_sweep and not args.distributed:
+    if (
+        hasattr(args, "parameter_sweep")
+        and args.parameter_sweep
+        and not args.distributed
+    ):
         parser.error("--parameter-sweep requires --distributed to be enabled")
 
-    if hasattr(args, 'parameter_ranges') and args.parameter_ranges and not args.parameter_sweep:
+    if (
+        hasattr(args, "parameter_ranges")
+        and args.parameter_ranges
+        and not args.parameter_sweep
+    ):
         parser.error("--parameter-ranges can only be used with --parameter-sweep")
 
-    if hasattr(args, 'benchmark') and args.benchmark and (args.distributed or args.ml_accelerated):
+    if (
+        hasattr(args, "benchmark")
+        and args.benchmark
+        and (args.distributed or args.ml_accelerated)
+    ):
         parser.error(
             "--benchmark cannot be used with --distributed or --ml-accelerated (benchmarks compare these methods)"
         )
 
 
-def validate_scaling_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+def validate_scaling_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
     """
     Validate scaling and plotting arguments for consistency.
 

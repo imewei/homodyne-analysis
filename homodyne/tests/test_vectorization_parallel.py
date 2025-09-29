@@ -27,10 +27,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Tuple
 
 import numpy as np
 
@@ -40,6 +36,7 @@ warnings.filterwarnings("ignore")
 @dataclass
 class ParallelizationResult:
     """Results of parallelization optimization."""
+
     operation_name: str
     serial_time: float
     parallel_time: float
@@ -54,7 +51,9 @@ class VectorizationOptimizer:
     """SIMD vectorization optimizations."""
 
     @staticmethod
-    def vectorized_chi_squared_batch(c2_exp_batch: np.ndarray, c2_theo_batch: np.ndarray) -> np.ndarray:
+    def vectorized_chi_squared_batch(
+        c2_exp_batch: np.ndarray, c2_theo_batch: np.ndarray
+    ) -> np.ndarray:
         """Vectorized chi-squared calculation for multiple datasets."""
         # Process multiple datasets simultaneously
         diff = c2_exp_batch - c2_theo_batch
@@ -78,21 +77,19 @@ class VectorizationOptimizer:
         return correlations
 
     @staticmethod
-    def vectorized_statistical_moments(data_batch: np.ndarray) -> Dict[str, np.ndarray]:
+    def vectorized_statistical_moments(data_batch: np.ndarray) -> dict[str, np.ndarray]:
         """Vectorized statistical calculations across multiple datasets."""
         # Calculate moments for entire batch at once
         means = np.mean(data_batch, axis=-1)
         variances = np.var(data_batch, axis=-1, ddof=0)
         stds = np.sqrt(variances)
 
-        return {
-            "means": means,
-            "variances": variances,
-            "stds": stds
-        }
+        return {"means": means, "variances": variances, "stds": stds}
 
     @staticmethod
-    def vectorized_matrix_operations_batch(matrices: np.ndarray) -> Dict[str, np.ndarray]:
+    def vectorized_matrix_operations_batch(
+        matrices: np.ndarray,
+    ) -> dict[str, np.ndarray]:
         """Vectorized matrix operations for batch processing."""
         # matrices shape: (batch_size, n, n)
 
@@ -109,7 +106,7 @@ class VectorizationOptimizer:
         return {
             "determinants": determinants,
             "eigenvalues": eigenvalues,
-            "products": products
+            "products": products,
         }
 
 
@@ -119,22 +116,25 @@ class ThreadParallelProcessor:
     def __init__(self, num_threads: int = None):
         self.num_threads = num_threads or mp.cpu_count()
 
-    def parallel_chi_squared_calculation(self, c2_exp_list: List[np.ndarray],
-                                       c2_theo_list: List[np.ndarray]) -> List[float]:
+    def parallel_chi_squared_calculation(
+        self, c2_exp_list: list[np.ndarray], c2_theo_list: list[np.ndarray]
+    ) -> list[float]:
         """Parallel chi-squared calculation using threads."""
 
         def compute_single_chi_squared(args):
             c2_exp, c2_theo = args
             return np.sum((c2_exp - c2_theo) ** 2)
 
-        data_pairs = list(zip(c2_exp_list, c2_theo_list))
+        data_pairs = list(zip(c2_exp_list, c2_theo_list, strict=False))
 
         with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
             results = list(executor.map(compute_single_chi_squared, data_pairs))
 
         return results
 
-    def parallel_correlation_processing(self, data_list: List[np.ndarray]) -> List[np.ndarray]:
+    def parallel_correlation_processing(
+        self, data_list: list[np.ndarray]
+    ) -> list[np.ndarray]:
         """Parallel correlation function processing."""
 
         def compute_correlation(data):
@@ -151,7 +151,9 @@ class ThreadParallelProcessor:
 
         return results
 
-    def parallel_eigenvalue_computation(self, matrices: List[np.ndarray]) -> List[np.ndarray]:
+    def parallel_eigenvalue_computation(
+        self, matrices: list[np.ndarray]
+    ) -> list[np.ndarray]:
         """Parallel eigenvalue computation."""
 
         def compute_eigenvalues(matrix):
@@ -169,22 +171,25 @@ class ProcessParallelProcessor:
     def __init__(self, num_processes: int = None):
         self.num_processes = num_processes or mp.cpu_count()
 
-    def parallel_chi_squared_calculation(self, c2_exp_list: List[np.ndarray],
-                                       c2_theo_list: List[np.ndarray]) -> List[float]:
+    def parallel_chi_squared_calculation(
+        self, c2_exp_list: list[np.ndarray], c2_theo_list: list[np.ndarray]
+    ) -> list[float]:
         """Parallel chi-squared calculation using processes."""
 
         def compute_single_chi_squared(args):
             c2_exp, c2_theo = args
             return float(np.sum((c2_exp - c2_theo) ** 2))
 
-        data_pairs = list(zip(c2_exp_list, c2_theo_list))
+        data_pairs = list(zip(c2_exp_list, c2_theo_list, strict=False))
 
         with ProcessPoolExecutor(max_workers=self.num_processes) as executor:
             results = list(executor.map(compute_single_chi_squared, data_pairs))
 
         return results
 
-    def parallel_statistical_analysis(self, data_list: List[np.ndarray]) -> List[Dict[str, float]]:
+    def parallel_statistical_analysis(
+        self, data_list: list[np.ndarray]
+    ) -> list[dict[str, float]]:
         """Parallel statistical analysis."""
 
         def compute_statistics(data):
@@ -193,7 +198,7 @@ class ProcessParallelProcessor:
                 "std": float(np.std(data)),
                 "var": float(np.var(data)),
                 "min": float(np.min(data)),
-                "max": float(np.max(data))
+                "max": float(np.max(data)),
             }
 
         with ProcessPoolExecutor(max_workers=self.num_processes) as executor:
@@ -206,7 +211,7 @@ class LoadBalancer:
     """Load balancing for parallel processing."""
 
     @staticmethod
-    def balance_workload(data_list: List[Any], num_workers: int) -> List[List[Any]]:
+    def balance_workload(data_list: list[Any], num_workers: int) -> list[list[Any]]:
         """Balance workload across workers."""
         chunk_size = len(data_list) // num_workers
         remainder = len(data_list) % num_workers
@@ -225,7 +230,9 @@ class LoadBalancer:
         return chunks
 
     @staticmethod
-    def adaptive_chunk_size(data_size: int, num_workers: int, min_chunk_size: int = 100) -> int:
+    def adaptive_chunk_size(
+        data_size: int, num_workers: int, min_chunk_size: int = 100
+    ) -> int:
         """Calculate adaptive chunk size based on data size and workers."""
         chunk_size = max(data_size // num_workers, min_chunk_size)
         return chunk_size
@@ -237,7 +244,7 @@ class ParallelizationBenchmarker:
     def __init__(self):
         self.results = []
 
-    def benchmark_chi_squared_parallelization(self) -> List[ParallelizationResult]:
+    def benchmark_chi_squared_parallelization(self) -> list[ParallelizationResult]:
         """Benchmark chi-squared parallelization methods."""
         results = []
 
@@ -249,7 +256,7 @@ class ParallelizationBenchmarker:
         # Serial computation
         start_time = time.perf_counter()
         serial_results = []
-        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list):
+        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list, strict=False):
             chi2 = np.sum((c2_exp - c2_theo) ** 2)
             serial_results.append(chi2)
         serial_time = time.perf_counter() - start_time
@@ -257,20 +264,26 @@ class ParallelizationBenchmarker:
         # Thread-based parallelization
         thread_processor = ThreadParallelProcessor()
         start_time = time.perf_counter()
-        thread_results = thread_processor.parallel_chi_squared_calculation(c2_exp_list, c2_theo_list)
+        thread_results = thread_processor.parallel_chi_squared_calculation(
+            c2_exp_list, c2_theo_list
+        )
         thread_time = time.perf_counter() - start_time
 
         # Process-based parallelization
         process_processor = ProcessParallelProcessor()
         start_time = time.perf_counter()
-        process_results = process_processor.parallel_chi_squared_calculation(c2_exp_list, c2_theo_list)
+        process_results = process_processor.parallel_chi_squared_calculation(
+            c2_exp_list, c2_theo_list
+        )
         process_time = time.perf_counter() - start_time
 
         # Vectorized computation
         c2_exp_batch = np.array(c2_exp_list)
         c2_theo_batch = np.array(c2_theo_list)
         start_time = time.perf_counter()
-        vectorized_results = VectorizationOptimizer.vectorized_chi_squared_batch(c2_exp_batch, c2_theo_batch)
+        vectorized_results = VectorizationOptimizer.vectorized_chi_squared_batch(
+            c2_exp_batch, c2_theo_batch
+        )
         vectorized_time = time.perf_counter() - start_time
 
         # Calculate results
@@ -278,42 +291,52 @@ class ParallelizationBenchmarker:
         process_speedup = serial_time / process_time if process_time > 0 else 0
         vectorized_speedup = serial_time / vectorized_time if vectorized_time > 0 else 0
 
-        results.append(ParallelizationResult(
-            operation_name="chi_squared_threads",
-            serial_time=serial_time,
-            parallel_time=thread_time,
-            speedup_factor=thread_speedup,
-            efficiency=thread_speedup / thread_processor.num_threads,
-            num_workers=thread_processor.num_threads,
-            parallelization_method="threading",
-            overhead_time=max(0, thread_time - serial_time / thread_processor.num_threads)
-        ))
+        results.append(
+            ParallelizationResult(
+                operation_name="chi_squared_threads",
+                serial_time=serial_time,
+                parallel_time=thread_time,
+                speedup_factor=thread_speedup,
+                efficiency=thread_speedup / thread_processor.num_threads,
+                num_workers=thread_processor.num_threads,
+                parallelization_method="threading",
+                overhead_time=max(
+                    0, thread_time - serial_time / thread_processor.num_threads
+                ),
+            )
+        )
 
-        results.append(ParallelizationResult(
-            operation_name="chi_squared_processes",
-            serial_time=serial_time,
-            parallel_time=process_time,
-            speedup_factor=process_speedup,
-            efficiency=process_speedup / process_processor.num_processes,
-            num_workers=process_processor.num_processes,
-            parallelization_method="multiprocessing",
-            overhead_time=max(0, process_time - serial_time / process_processor.num_processes)
-        ))
+        results.append(
+            ParallelizationResult(
+                operation_name="chi_squared_processes",
+                serial_time=serial_time,
+                parallel_time=process_time,
+                speedup_factor=process_speedup,
+                efficiency=process_speedup / process_processor.num_processes,
+                num_workers=process_processor.num_processes,
+                parallelization_method="multiprocessing",
+                overhead_time=max(
+                    0, process_time - serial_time / process_processor.num_processes
+                ),
+            )
+        )
 
-        results.append(ParallelizationResult(
-            operation_name="chi_squared_vectorized",
-            serial_time=serial_time,
-            parallel_time=vectorized_time,
-            speedup_factor=vectorized_speedup,
-            efficiency=vectorized_speedup,  # SIMD efficiency
-            num_workers=1,  # Single thread but SIMD
-            parallelization_method="vectorization",
-            overhead_time=max(0, vectorized_time - serial_time)
-        ))
+        results.append(
+            ParallelizationResult(
+                operation_name="chi_squared_vectorized",
+                serial_time=serial_time,
+                parallel_time=vectorized_time,
+                speedup_factor=vectorized_speedup,
+                efficiency=vectorized_speedup,  # SIMD efficiency
+                num_workers=1,  # Single thread but SIMD
+                parallelization_method="vectorization",
+                overhead_time=max(0, vectorized_time - serial_time),
+            )
+        )
 
         return results
 
-    def benchmark_correlation_parallelization(self) -> List[ParallelizationResult]:
+    def benchmark_correlation_parallelization(self) -> list[ParallelizationResult]:
         """Benchmark correlation function parallelization."""
         results = []
 
@@ -341,37 +364,47 @@ class ParallelizationBenchmarker:
         # Vectorized batch processing
         data_batch = np.array(data_list)
         start_time = time.perf_counter()
-        vectorized_results = VectorizationOptimizer.vectorized_correlation_functions(data_batch)
+        vectorized_results = VectorizationOptimizer.vectorized_correlation_functions(
+            data_batch
+        )
         vectorized_time = time.perf_counter() - start_time
 
         thread_speedup = serial_time / thread_time if thread_time > 0 else 0
         vectorized_speedup = serial_time / vectorized_time if vectorized_time > 0 else 0
 
-        results.append(ParallelizationResult(
-            operation_name="correlation_threads",
-            serial_time=serial_time,
-            parallel_time=thread_time,
-            speedup_factor=thread_speedup,
-            efficiency=thread_speedup / thread_processor.num_threads,
-            num_workers=thread_processor.num_threads,
-            parallelization_method="threading",
-            overhead_time=max(0, thread_time - serial_time / thread_processor.num_threads)
-        ))
+        results.append(
+            ParallelizationResult(
+                operation_name="correlation_threads",
+                serial_time=serial_time,
+                parallel_time=thread_time,
+                speedup_factor=thread_speedup,
+                efficiency=thread_speedup / thread_processor.num_threads,
+                num_workers=thread_processor.num_threads,
+                parallelization_method="threading",
+                overhead_time=max(
+                    0, thread_time - serial_time / thread_processor.num_threads
+                ),
+            )
+        )
 
-        results.append(ParallelizationResult(
-            operation_name="correlation_vectorized",
-            serial_time=serial_time,
-            parallel_time=vectorized_time,
-            speedup_factor=vectorized_speedup,
-            efficiency=vectorized_speedup,
-            num_workers=1,
-            parallelization_method="vectorization",
-            overhead_time=max(0, vectorized_time - serial_time)
-        ))
+        results.append(
+            ParallelizationResult(
+                operation_name="correlation_vectorized",
+                serial_time=serial_time,
+                parallel_time=vectorized_time,
+                speedup_factor=vectorized_speedup,
+                efficiency=vectorized_speedup,
+                num_workers=1,
+                parallelization_method="vectorization",
+                overhead_time=max(0, vectorized_time - serial_time),
+            )
+        )
 
         return results
 
-    def benchmark_scaling_performance(self, max_workers: int = None) -> Dict[str, List[float]]:
+    def benchmark_scaling_performance(
+        self, max_workers: int = None
+    ) -> dict[str, list[float]]:
         """Benchmark performance scaling with different numbers of workers."""
         if max_workers is None:
             max_workers = mp.cpu_count()
@@ -381,7 +414,7 @@ class ParallelizationBenchmarker:
             "thread_speedups": [],
             "process_speedups": [],
             "thread_efficiencies": [],
-            "process_efficiencies": []
+            "process_efficiencies": [],
         }
 
         # Generate test data
@@ -391,7 +424,7 @@ class ParallelizationBenchmarker:
 
         # Serial baseline
         start_time = time.perf_counter()
-        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list):
+        for c2_exp, c2_theo in zip(c2_exp_list, c2_theo_list, strict=False):
             np.sum((c2_exp - c2_theo) ** 2)
         serial_time = time.perf_counter() - start_time
 
@@ -414,7 +447,9 @@ class ParallelizationBenchmarker:
             # Process-based
             process_processor = ProcessParallelProcessor(num_workers)
             start_time = time.perf_counter()
-            process_processor.parallel_chi_squared_calculation(c2_exp_list, c2_theo_list)
+            process_processor.parallel_chi_squared_calculation(
+                c2_exp_list, c2_theo_list
+            )
             process_time = time.perf_counter() - start_time
 
             process_speedup = serial_time / process_time if process_time > 0 else 0
@@ -425,7 +460,7 @@ class ParallelizationBenchmarker:
 
         return scaling_results
 
-    def run_comprehensive_parallelization_benchmark(self) -> Dict[str, Any]:
+    def run_comprehensive_parallelization_benchmark(self) -> dict[str, Any]:
         """Run comprehensive parallelization benchmarks."""
         print("Running Comprehensive Vectorization and Parallelization Benchmarks")
         print("=" * 70)
@@ -450,7 +485,7 @@ class ParallelizationBenchmarker:
         return all_results
 
 
-def generate_parallelization_report(results: Dict[str, Any]) -> str:
+def generate_parallelization_report(results: dict[str, Any]) -> str:
     """Generate comprehensive parallelization report."""
     report_lines = []
     report_lines.append("VECTORIZATION AND PARALLELIZATION REPORT - TASK 4.5")
@@ -478,13 +513,23 @@ def generate_parallelization_report(results: Dict[str, Any]) -> str:
     # Scaling analysis
     if "scaling" in results:
         scaling_data = results["scaling"]
-        max_thread_speedup = max(scaling_data["thread_speedups"]) if scaling_data["thread_speedups"] else 0
-        max_process_speedup = max(scaling_data["process_speedups"]) if scaling_data["process_speedups"] else 0
+        max_thread_speedup = (
+            max(scaling_data["thread_speedups"])
+            if scaling_data["thread_speedups"]
+            else 0
+        )
+        max_process_speedup = (
+            max(scaling_data["process_speedups"])
+            if scaling_data["process_speedups"]
+            else 0
+        )
 
         report_lines.append("\nSCALING ANALYSIS:")
         report_lines.append(f"  Maximum thread speedup: {max_thread_speedup:.2f}x")
         report_lines.append(f"  Maximum process speedup: {max_process_speedup:.2f}x")
-        report_lines.append(f"  Optimal thread count: {scaling_data['num_workers'][scaling_data['thread_speedups'].index(max_thread_speedup)] if scaling_data['thread_speedups'] else 'N/A'}")
+        report_lines.append(
+            f"  Optimal thread count: {scaling_data['num_workers'][scaling_data['thread_speedups'].index(max_thread_speedup)] if scaling_data['thread_speedups'] else 'N/A'}"
+        )
 
     return "\n".join(report_lines)
 
@@ -516,32 +561,38 @@ def run_vectorization_parallel_suite():
             # Convert ParallelizationResult objects to dicts
             json_results[category] = []
             for result in data:
-                json_results[category].append({
-                    "operation_name": result.operation_name,
-                    "serial_time": float(result.serial_time),
-                    "parallel_time": float(result.parallel_time),
-                    "speedup_factor": float(result.speedup_factor),
-                    "efficiency": float(result.efficiency),
-                    "num_workers": int(result.num_workers),
-                    "parallelization_method": result.parallelization_method,
-                    "overhead_time": float(result.overhead_time)
-                })
+                json_results[category].append(
+                    {
+                        "operation_name": result.operation_name,
+                        "serial_time": float(result.serial_time),
+                        "parallel_time": float(result.parallel_time),
+                        "speedup_factor": float(result.speedup_factor),
+                        "efficiency": float(result.efficiency),
+                        "num_workers": int(result.num_workers),
+                        "parallelization_method": result.parallelization_method,
+                        "overhead_time": float(result.overhead_time),
+                    }
+                )
 
     # Save JSON results
     json_file = results_dir / "task_4_5_vectorization_results.json"
-    with open(json_file, 'w') as f:
-        json.dump({
-            "parallelization_results": json_results,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "system_info": {
-                "cpu_count": mp.cpu_count(),
-                "available_cores": mp.cpu_count()
-            }
-        }, f, indent=2)
+    with open(json_file, "w") as f:
+        json.dump(
+            {
+                "parallelization_results": json_results,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "system_info": {
+                    "cpu_count": mp.cpu_count(),
+                    "available_cores": mp.cpu_count(),
+                },
+            },
+            f,
+            indent=2,
+        )
 
     # Save text report
     report_file = results_dir / "task_4_5_vectorization_report.txt"
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         f.write(report)
 
     print(f"\n📄 Results saved to: {json_file}")
@@ -558,7 +609,7 @@ def run_vectorization_parallel_suite():
     avg_speedup = np.mean(all_speedups) if all_speedups else 0
     max_speedup = np.max(all_speedups) if all_speedups else 0
 
-    print(f"\n✅ Task 4.5 Vectorization and Parallelization Complete!")
+    print("\n✅ Task 4.5 Vectorization and Parallelization Complete!")
     print(f"🚀 Average speedup achieved: {avg_speedup:.2f}x")
     print(f"🎯 Maximum speedup achieved: {max_speedup:.2f}x")
     print(f"⚡ {len(all_speedups)} parallelization methods tested")

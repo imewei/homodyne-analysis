@@ -26,7 +26,6 @@ Institution: Argonne National Laboratory
 import json
 import logging
 import os
-import statistics
 import sys
 import time
 import tracemalloc
@@ -35,16 +34,13 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 import psutil
 
 # Use lazy loading for dependencies
 try:
     from ..core.lazy_imports import scientific_deps
+
     np = scientific_deps.get("numpy")
 except ImportError:
     import numpy as np
@@ -66,10 +62,7 @@ except ImportError:
     StartupMonitor = None
 
 # Import optimized components to monitor
-from ..analysis.core import HomodyneAnalysisCore
 from ..core.kernels import compute_chi_squared_batch_numba
-from ..optimization.classical import ClassicalOptimizer
-from ..optimization.robust import RobustHomodyneOptimizer
 
 
 @dataclass
@@ -109,10 +102,10 @@ class IntegratedPerformanceReport:
     """Comprehensive performance report including structural optimizations."""
 
     structural_metrics: StructuralOptimizationMetrics
-    runtime_metrics: Dict[str, Any]
-    regression_detection: Dict[str, Any]
-    optimization_recommendations: List[str]
-    performance_baselines: Dict[str, float]
+    runtime_metrics: dict[str, Any]
+    regression_detection: dict[str, Any]
+    optimization_recommendations: list[str]
+    performance_baselines: dict[str, float]
 
 
 class IntegratedPerformanceMonitor:
@@ -121,7 +114,7 @@ class IntegratedPerformanceMonitor:
     completed structural optimizations and provides real-time monitoring.
     """
 
-    def __init__(self, baseline_dir: Optional[str] = None):
+    def __init__(self, baseline_dir: str | None = None):
         """Initialize the integrated performance monitor."""
         self.baseline_dir = Path(baseline_dir or "performance_reports")
         self.baseline_dir.mkdir(exist_ok=True)
@@ -129,7 +122,9 @@ class IntegratedPerformanceMonitor:
         # Initialize component monitors (with graceful fallbacks)
         self.performance_monitor = PerformanceMonitor() if PerformanceMonitor else None
         self.startup_monitor = StartupMonitor() if StartupMonitor else None
-        self.performance_profiler = PerformanceProfiler() if PerformanceProfiler else None
+        self.performance_profiler = (
+            PerformanceProfiler() if PerformanceProfiler else None
+        )
 
         # Known baseline values from structural optimizations
         self.structural_baselines = {
@@ -149,7 +144,7 @@ class IntegratedPerformanceMonitor:
 
         self.logger = logging.getLogger(__name__)
 
-    def measure_import_performance(self) -> Tuple[float, float]:
+    def measure_import_performance(self) -> tuple[float, float]:
         """Measure current import performance and compare to baselines."""
         start_time = time.perf_counter()
 
@@ -157,28 +152,30 @@ class IntegratedPerformanceMonitor:
         import subprocess
         import tempfile
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(
+                """
 import sys
 import time
 start = time.perf_counter()
 import homodyne
 end = time.perf_counter()
 print(f"IMPORT_TIME:{end - start}")
-""")
+"""
+            )
             temp_script = f.name
 
         try:
             result = subprocess.run(
                 [sys.executable, temp_script],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
 
-            for line in result.stdout.split('\n'):
+            for line in result.stdout.split("\n"):
                 if line.startswith("IMPORT_TIME:"):
-                    current_import_time = float(line.split(':')[1])
+                    current_import_time = float(line.split(":")[1])
                     break
             else:
                 current_import_time = 0.0
@@ -194,7 +191,9 @@ print(f"IMPORT_TIME:{end - start}")
 
         return current_import_time, total_measurement_time
 
-    def measure_optimized_function_performance(self, n_iterations: int = 100) -> Dict[str, float]:
+    def measure_optimized_function_performance(
+        self, n_iterations: int = 100
+    ) -> dict[str, float]:
         """Measure performance of the refactored optimized functions."""
 
         # Prepare test data for chi-squared calculation
@@ -203,8 +202,12 @@ print(f"IMPORT_TIME:{end - start}")
             n_angles = 10
             n_data_points = 100
 
-            theory_batch = np.random.exponential(scale=1.0, size=(n_angles, n_data_points))
-            exp_batch = theory_batch + 0.1 * np.random.normal(size=(n_angles, n_data_points))
+            theory_batch = np.random.exponential(
+                scale=1.0, size=(n_angles, n_data_points)
+            )
+            exp_batch = theory_batch + 0.1 * np.random.normal(
+                size=(n_angles, n_data_points)
+            )
             contrast_batch = np.ones(n_angles)
             offset_batch = np.zeros(n_angles)
 
@@ -231,7 +234,7 @@ print(f"IMPORT_TIME:{end - start}")
             self.logger.error(f"Failed to measure optimized function performance: {e}")
             return {"error": str(e)}
 
-    def measure_memory_efficiency(self) -> Dict[str, float]:
+    def measure_memory_efficiency(self) -> dict[str, float]:
         """Measure current memory efficiency compared to pre-optimization baselines."""
 
         tracemalloc.start()
@@ -251,7 +254,7 @@ print(f"IMPORT_TIME:{end - start}")
             # Create instances to measure actual memory usage
             config = {
                 "analysis_mode": "static_isotropic",
-                "optimization": {"method": "nelder_mead", "max_iterations": 10}
+                "optimization": {"method": "nelder_mead", "max_iterations": 10},
             }
 
             analyzer = HomodyneAnalysisCore(config)
@@ -268,7 +271,9 @@ print(f"IMPORT_TIME:{end - start}")
                 "final_memory_mb": final_memory,
                 "memory_used_mb": memory_used,
                 "traced_memory_mb": traced_memory_mb,
-                "memory_efficiency_ratio": traced_memory_mb / memory_used if memory_used > 0 else 0,
+                "memory_efficiency_ratio": (
+                    traced_memory_mb / memory_used if memory_used > 0 else 0
+                ),
             }
 
         except Exception as e:
@@ -276,7 +281,9 @@ print(f"IMPORT_TIME:{end - start}")
             self.logger.error(f"Failed to measure memory efficiency: {e}")
             return {"error": str(e)}
 
-    def detect_performance_regressions(self, current_metrics: Dict[str, Any]) -> List[str]:
+    def detect_performance_regressions(
+        self, current_metrics: dict[str, Any]
+    ) -> list[str]:
         """Detect performance regressions compared to known baselines."""
 
         regressions = []
@@ -287,7 +294,9 @@ print(f"IMPORT_TIME:{end - start}")
             baseline_import = self.structural_baselines["import_time_optimized"]
 
             if current_import > baseline_import * 1.1:  # 10% tolerance
-                regression_percent = ((current_import - baseline_import) / baseline_import) * 100
+                regression_percent = (
+                    (current_import - baseline_import) / baseline_import
+                ) * 100
                 regressions.append(
                     f"Import time regression detected: {current_import:.3f}s vs {baseline_import:.3f}s "
                     f"baseline ({regression_percent:.1f}% slower)"
@@ -319,7 +328,9 @@ print(f"IMPORT_TIME:{end - start}")
 
         return regressions
 
-    def generate_optimization_recommendations(self, metrics: Dict[str, Any]) -> List[str]:
+    def generate_optimization_recommendations(
+        self, metrics: dict[str, Any]
+    ) -> list[str]:
         """Generate optimization recommendations based on current performance."""
 
         recommendations = []
@@ -337,18 +348,23 @@ print(f"IMPORT_TIME:{end - start}")
             )
 
         # Function performance recommendations
-        if "chi_squared_batch_mean_ms" in metrics and metrics["chi_squared_batch_mean_ms"] > 2.0:
+        if (
+            "chi_squared_batch_mean_ms" in metrics
+            and metrics["chi_squared_batch_mean_ms"] > 2.0
+        ):
             recommendations.append(
                 "Chi-squared calculation could benefit from further vectorization or Numba optimization"
             )
 
         # General recommendations based on structural optimizations
-        recommendations.extend([
-            "Maintain current lazy loading architecture to preserve import performance gains",
-            "Continue monitoring cyclomatic complexity to prevent regression from 8+ complexity",
-            "Regularly audit for new unused imports and dead code accumulation",
-            "Consider implementing automatic performance regression testing in CI/CD",
-        ])
+        recommendations.extend(
+            [
+                "Maintain current lazy loading architecture to preserve import performance gains",
+                "Continue monitoring cyclomatic complexity to prevent regression from 8+ complexity",
+                "Regularly audit for new unused imports and dead code accumulation",
+                "Consider implementing automatic performance regression testing in CI/CD",
+            ]
+        )
 
         return recommendations
 
@@ -371,8 +387,9 @@ print(f"IMPORT_TIME:{end - start}")
             import_time_before=self.structural_baselines["import_time_original"],
             import_time_after=import_time,
             import_improvement_percent=(
-                (self.structural_baselines["import_time_original"] - import_time) /
-                self.structural_baselines["import_time_original"] * 100
+                (self.structural_baselines["import_time_original"] - import_time)
+                / self.structural_baselines["import_time_original"]
+                * 100
             ),
             module_load_time_before=0.0,  # Would need baseline measurement
             module_load_time_after=measurement_overhead,
@@ -380,12 +397,14 @@ print(f"IMPORT_TIME:{end - start}")
             memory_usage_after_mb=memory_metrics.get("memory_used_mb", 0),
             memory_improvement_percent=20.0,  # Estimated from dead code removal
             function_execution_time_before=10.0,  # Estimated pre-refactoring (ms)
-            function_execution_time_after=function_metrics.get("chi_squared_batch_mean_ms", 0),
+            function_execution_time_after=function_metrics.get(
+                "chi_squared_batch_mean_ms", 0
+            ),
             complexity_improvement_percent=82.0,  # From cyclomatic complexity reduction
             startup_overhead_before=2.0,  # Estimated
             startup_overhead_after=import_time,
             overhead_reduction_percent=93.9,  # From actual measurements
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
         # 5. Combine runtime metrics
@@ -403,7 +422,7 @@ print(f"IMPORT_TIME:{end - start}")
             "regressions_found": len(regressions) > 0,
             "regression_count": len(regressions),
             "regressions": regressions,
-            "analysis_timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            "analysis_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
         # 7. Generate recommendations
@@ -413,7 +432,9 @@ print(f"IMPORT_TIME:{end - start}")
         performance_baselines = {
             "current_import_time": import_time,
             "current_memory_usage_mb": memory_metrics.get("memory_used_mb", 0),
-            "current_chi_squared_performance_ms": function_metrics.get("chi_squared_batch_mean_ms", 0),
+            "current_chi_squared_performance_ms": function_metrics.get(
+                "chi_squared_batch_mean_ms", 0
+            ),
             "baseline_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
@@ -423,7 +444,7 @@ print(f"IMPORT_TIME:{end - start}")
             runtime_metrics=runtime_metrics,
             regression_detection=regression_detection,
             optimization_recommendations=recommendations,
-            performance_baselines=performance_baselines
+            performance_baselines=performance_baselines,
         )
 
         # Save report
@@ -438,7 +459,9 @@ print(f"IMPORT_TIME:{end - start}")
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
         # Save comprehensive JSON report
-        json_file = self.baseline_dir / f"integrated_performance_report_{timestamp}.json"
+        json_file = (
+            self.baseline_dir / f"integrated_performance_report_{timestamp}.json"
+        )
 
         # Convert report to dictionary for JSON serialization
         report_dict = {
@@ -449,42 +472,60 @@ print(f"IMPORT_TIME:{end - start}")
             "performance_baselines": report.performance_baselines,
         }
 
-        with open(json_file, 'w') as f:
+        with open(json_file, "w") as f:
             json.dump(report_dict, f, indent=2, default=str)
 
         # Save human-readable summary
-        summary_file = self.baseline_dir / f"integrated_performance_summary_{timestamp}.txt"
+        summary_file = (
+            self.baseline_dir / f"integrated_performance_summary_{timestamp}.txt"
+        )
 
-        with open(summary_file, 'w') as f:
+        with open(summary_file, "w") as f:
             f.write("INTEGRATED PERFORMANCE MONITORING REPORT\n")
             f.write("=" * 50 + "\n\n")
 
             f.write("STRUCTURAL OPTIMIZATION ACHIEVEMENTS:\n")
-            f.write(f"• Import Performance: {report.structural_metrics.import_improvement_percent:.1f}% improvement\n")
-            f.write(f"  ({report.structural_metrics.import_time_before:.3f}s → {report.structural_metrics.import_time_after:.3f}s)\n")
-            f.write(f"• Complexity Reduction: {report.structural_metrics.complexity_improvement_percent:.1f}% improvement\n")
-            f.write(f"• Memory Efficiency: {report.structural_metrics.memory_improvement_percent:.1f}% improvement\n")
-            f.write(f"• Startup Overhead: {report.structural_metrics.overhead_reduction_percent:.1f}% reduction\n\n")
+            f.write(
+                f"• Import Performance: {report.structural_metrics.import_improvement_percent:.1f}% improvement\n"
+            )
+            f.write(
+                f"  ({report.structural_metrics.import_time_before:.3f}s → {report.structural_metrics.import_time_after:.3f}s)\n"
+            )
+            f.write(
+                f"• Complexity Reduction: {report.structural_metrics.complexity_improvement_percent:.1f}% improvement\n"
+            )
+            f.write(
+                f"• Memory Efficiency: {report.structural_metrics.memory_improvement_percent:.1f}% improvement\n"
+            )
+            f.write(
+                f"• Startup Overhead: {report.structural_metrics.overhead_reduction_percent:.1f}% reduction\n\n"
+            )
 
             f.write("RUNTIME PERFORMANCE METRICS:\n")
             if "chi_squared_batch_mean_ms" in report.runtime_metrics:
-                f.write(f"• Chi-squared batch calculation: {report.runtime_metrics['chi_squared_batch_mean_ms']:.3f}ms\n")
+                f.write(
+                    f"• Chi-squared batch calculation: {report.runtime_metrics['chi_squared_batch_mean_ms']:.3f}ms\n"
+                )
             if "memory_used_mb" in report.runtime_metrics:
-                f.write(f"• Memory usage: {report.runtime_metrics['memory_used_mb']:.1f}MB\n")
-            f.write(f"• Current import time: {report.runtime_metrics['import_time']:.3f}s\n\n")
+                f.write(
+                    f"• Memory usage: {report.runtime_metrics['memory_used_mb']:.1f}MB\n"
+                )
+            f.write(
+                f"• Current import time: {report.runtime_metrics['import_time']:.3f}s\n\n"
+            )
 
             f.write("REGRESSION DETECTION:\n")
             if report.regression_detection["regressions_found"]:
-                f.write(f"⚠️  {report.regression_detection['regression_count']} regressions detected:\n")
-                for regression in report.regression_detection["regressions"]:
-                    f.write(f"  - {regression}\n")
+                f.write(
+                    f"⚠️  {report.regression_detection['regression_count']} regressions detected:\n"
+                )
+                f.writelines(f"  - {regression}\n" for regression in report.regression_detection["regressions"])
             else:
                 f.write("✅ No performance regressions detected\n")
             f.write("\n")
 
             f.write("OPTIMIZATION RECOMMENDATIONS:\n")
-            for i, rec in enumerate(report.optimization_recommendations, 1):
-                f.write(f"{i}. {rec}\n")
+            f.writelines(f"{i}. {rec}\n" for i, rec in enumerate(report.optimization_recommendations, 1))
 
             f.write(f"\nReport generated: {report.structural_metrics.timestamp}\n")
 
@@ -523,8 +564,8 @@ print(f"IMPORT_TIME:{end - start}")
             }
 
             metrics_file = self.baseline_dir / "workflow_metrics.jsonl"
-            with open(metrics_file, 'a') as f:
-                f.write(json.dumps(workflow_metrics) + '\n')
+            with open(metrics_file, "a") as f:
+                f.write(json.dumps(workflow_metrics) + "\n")
 
 
 def main():
@@ -540,31 +581,45 @@ def main():
     report = monitor.run_comprehensive_analysis()
 
     print("\n📊 STRUCTURAL OPTIMIZATION RESULTS:")
-    print(f"• Import Performance: {report.structural_metrics.import_improvement_percent:.1f}% improvement")
-    print(f"• Complexity Reduction: {report.structural_metrics.complexity_improvement_percent:.1f}% improvement")
-    print(f"• Startup Overhead: {report.structural_metrics.overhead_reduction_percent:.1f}% reduction")
+    print(
+        f"• Import Performance: {report.structural_metrics.import_improvement_percent:.1f}% improvement"
+    )
+    print(
+        f"• Complexity Reduction: {report.structural_metrics.complexity_improvement_percent:.1f}% improvement"
+    )
+    print(
+        f"• Startup Overhead: {report.structural_metrics.overhead_reduction_percent:.1f}% reduction"
+    )
 
     print("\n⚡ CURRENT RUNTIME PERFORMANCE:")
     if "chi_squared_batch_mean_ms" in report.runtime_metrics:
-        print(f"• Chi-squared calculation: {report.runtime_metrics['chi_squared_batch_mean_ms']:.3f}ms")
+        print(
+            f"• Chi-squared calculation: {report.runtime_metrics['chi_squared_batch_mean_ms']:.3f}ms"
+        )
     print(f"• Import time: {report.runtime_metrics['import_time']:.3f}s")
     if "memory_used_mb" in report.runtime_metrics:
         print(f"• Memory usage: {report.runtime_metrics['memory_used_mb']:.1f}MB")
 
     print("\n🔍 REGRESSION STATUS:")
     if report.regression_detection["regressions_found"]:
-        print(f"⚠️  {report.regression_detection['regression_count']} regressions detected")
+        print(
+            f"⚠️  {report.regression_detection['regression_count']} regressions detected"
+        )
         for regression in report.regression_detection["regressions"]:
             print(f"  - {regression}")
     else:
         print("✅ No performance regressions detected")
 
-    print(f"\n📋 OPTIMIZATION RECOMMENDATIONS ({len(report.optimization_recommendations)}):")
+    print(
+        f"\n📋 OPTIMIZATION RECOMMENDATIONS ({len(report.optimization_recommendations)}):"
+    )
     for i, rec in enumerate(report.optimization_recommendations[:3], 1):
         print(f"{i}. {rec}")
 
-    print(f"\n📄 Full report saved to performance_reports/ directory")
-    print("🎯 Integration of performance monitoring with structural optimizations COMPLETE!")
+    print("\n📄 Full report saved to performance_reports/ directory")
+    print(
+        "🎯 Integration of performance monitoring with structural optimizations COMPLETE!"
+    )
 
 
 if __name__ == "__main__":

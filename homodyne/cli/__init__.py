@@ -35,6 +35,7 @@ try:
 except ImportError as e:
     # Graceful degradation if files haven't been moved yet
     import warnings
+
     warnings.warn(f"Could not import CLI modules: {e}", ImportWarning, stacklevel=2)
 
     run_homodyne_main = None
@@ -62,21 +63,21 @@ except ImportError as e:
     create_argument_parser = None
 
 __all__ = [
+    "MockResult",
+    "core_main",
+    "create_argument_parser",
     "create_config_main",
     "enhanced_runner_main",
-    "run_homodyne_main",
-    "core_main",
-    "run_classical_optimization",
-    "run_robust_optimization",
-    "run_all_methods",
-    "plot_simulated_data",
     "generate_classical_plots",
-    "generate_robust_plots",
     "generate_comparison_plots",
+    "generate_robust_plots",
+    "plot_simulated_data",
+    "print_banner",
+    "print_method_documentation",
+    "run_all_methods",
+    "run_classical_optimization",
+    "run_homodyne_main",
+    "run_robust_optimization",
     "save_individual_method_results",
     "setup_logging",
-    "print_banner",
-    "MockResult",
-    "print_method_documentation",
-    "create_argument_parser",
 ]

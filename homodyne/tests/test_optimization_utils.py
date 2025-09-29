@@ -99,7 +99,9 @@ def test_numba_availability_detection():
                 # Create a wrapper that behaves like a compiled function
                 def wrapper(*args, **kwargs):
                     return func(*args, **kwargs)
+
                 return wrapper
+
             return decorator
 
         mock_numba.jit = mock_jit
@@ -287,9 +289,8 @@ def run_all_tests():
 
     if failed > 0:
         return False
-    else:
-        print("🎉 ALL OPTIMIZATION UTILITIES TESTS PASSED!")
-        return True
+    print("🎉 ALL OPTIMIZATION UTILITIES TESTS PASSED!")
+    return True
 
 
 if __name__ == "__main__":

@@ -26,23 +26,14 @@ Institution: Argonne National Laboratory
 import json
 import logging
 import os
-import statistics
-import subprocess
-import sys
 import time
-import warnings
 from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 # Import existing monitoring components
 from .integrated_monitoring import IntegratedPerformanceMonitor
-from .integrated_monitoring import StructuralOptimizationMetrics
 
 
 @dataclass
@@ -67,7 +58,7 @@ class RegressionAlert:
     regression_percent: float
     severity: str  # "WARNING", "CRITICAL"
     timestamp: str
-    suggested_actions: List[str]
+    suggested_actions: list[str]
 
 
 class PerformanceRegressionPreventor:
@@ -76,7 +67,11 @@ class PerformanceRegressionPreventor:
     the benefits of completed structural optimizations.
     """
 
-    def __init__(self, budget: Optional[PerformanceBudget] = None, baseline_dir: Optional[str] = None):
+    def __init__(
+        self,
+        budget: PerformanceBudget | None = None,
+        baseline_dir: str | None = None,
+    ):
         """Initialize the regression prevention system."""
         self.budget = budget or PerformanceBudget()
         self.baseline_dir = Path(baseline_dir or "performance_reports")
@@ -90,7 +85,7 @@ class PerformanceRegressionPreventor:
         # Load historical baselines
         self.historical_baselines = self.load_historical_baselines()
 
-    def load_historical_baselines(self) -> Dict[str, float]:
+    def load_historical_baselines(self) -> dict[str, float]:
         """Load historical performance baselines for comparison."""
 
         baselines = {
@@ -102,14 +97,16 @@ class PerformanceRegressionPreventor:
         }
 
         # Try to load latest baselines from files
-        baseline_files = list(self.baseline_dir.glob("integrated_performance_report_*.json"))
+        baseline_files = list(
+            self.baseline_dir.glob("integrated_performance_report_*.json")
+        )
 
         if baseline_files:
             # Load the most recent baseline file
             latest_file = max(baseline_files, key=lambda p: p.stat().st_mtime)
 
             try:
-                with open(latest_file, 'r') as f:
+                with open(latest_file) as f:
                     latest_data = json.load(f)
 
                 # Extract key metrics for baseline comparison
@@ -123,7 +120,7 @@ class PerformanceRegressionPreventor:
 
         return baselines
 
-    def check_import_performance_regression(self) -> Optional[RegressionAlert]:
+    def check_import_performance_regression(self) -> RegressionAlert | None:
         """Check for import performance regression."""
 
         # Measure current import performance
@@ -131,8 +128,10 @@ class PerformanceRegressionPreventor:
 
         # Check against budget
         if current_time > self.budget.max_import_time_s:
-            regression_percent = ((current_time - self.budget.max_import_time_s) /
-                                  self.budget.max_import_time_s) * 100
+            regression_percent = (
+                (current_time - self.budget.max_import_time_s)
+                / self.budget.max_import_time_s
+            ) * 100
 
             severity = "CRITICAL" if regression_percent > 50 else "WARNING"
 
@@ -148,12 +147,12 @@ class PerformanceRegressionPreventor:
                     "Check for new heavy dependencies in __init__.py",
                     "Verify lazy loading is still functioning",
                     "Run import profiling analysis",
-                ]
+                ],
             )
 
         return None
 
-    def check_memory_usage_regression(self) -> Optional[RegressionAlert]:
+    def check_memory_usage_regression(self) -> RegressionAlert | None:
         """Check for memory usage regression."""
 
         # Measure current memory efficiency
@@ -163,8 +162,10 @@ class PerformanceRegressionPreventor:
             current_memory = memory_metrics["memory_used_mb"]
 
             if current_memory > self.budget.max_memory_usage_mb:
-                regression_percent = ((current_memory - self.budget.max_memory_usage_mb) /
-                                      self.budget.max_memory_usage_mb) * 100
+                regression_percent = (
+                    (current_memory - self.budget.max_memory_usage_mb)
+                    / self.budget.max_memory_usage_mb
+                ) * 100
 
                 severity = "CRITICAL" if regression_percent > 100 else "WARNING"
 
@@ -180,23 +181,27 @@ class PerformanceRegressionPreventor:
                         "Check for memory leaks in recent changes",
                         "Verify garbage collection is working properly",
                         "Consider implementing memory pooling",
-                    ]
+                    ],
                 )
 
         return None
 
-    def check_function_performance_regression(self) -> Optional[RegressionAlert]:
+    def check_function_performance_regression(self) -> RegressionAlert | None:
         """Check for regression in optimized function performance."""
 
         # Measure current function performance
-        function_metrics = self.monitor.measure_optimized_function_performance(n_iterations=20)
+        function_metrics = self.monitor.measure_optimized_function_performance(
+            n_iterations=20
+        )
 
         if "chi_squared_batch_mean_ms" in function_metrics:
             current_perf = function_metrics["chi_squared_batch_mean_ms"]
 
             if current_perf > self.budget.max_chi_squared_calc_ms:
-                regression_percent = ((current_perf - self.budget.max_chi_squared_calc_ms) /
-                                      self.budget.max_chi_squared_calc_ms) * 100
+                regression_percent = (
+                    (current_perf - self.budget.max_chi_squared_calc_ms)
+                    / self.budget.max_chi_squared_calc_ms
+                ) * 100
 
                 severity = "CRITICAL" if regression_percent > 200 else "WARNING"
 
@@ -212,12 +217,12 @@ class PerformanceRegressionPreventor:
                         "Verify Numba JIT compilation is working",
                         "Check for inefficient algorithm modifications",
                         "Run detailed function profiling",
-                    ]
+                    ],
                 )
 
         return None
 
-    def check_structural_integrity_regression(self) -> List[RegressionAlert]:
+    def check_structural_integrity_regression(self) -> list[RegressionAlert]:
         """Check for regressions in structural optimizations."""
 
         alerts = []
@@ -239,19 +244,21 @@ class PerformanceRegressionPreventor:
                 missing_modules.append(module_path)
 
         if missing_modules:
-            alerts.append(RegressionAlert(
-                metric_name="module_structure_integrity",
-                current_value=len(missing_modules),
-                budget_value=0,
-                regression_percent=100.0,
-                severity="CRITICAL",
-                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-                suggested_actions=[
-                    f"Restore missing modules: {', '.join(missing_modules)}",
-                    "Verify module restructuring is intact",
-                    "Check git history for accidental deletions",
-                ]
-            ))
+            alerts.append(
+                RegressionAlert(
+                    metric_name="module_structure_integrity",
+                    current_value=len(missing_modules),
+                    budget_value=0,
+                    regression_percent=100.0,
+                    severity="CRITICAL",
+                    timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                    suggested_actions=[
+                        f"Restore missing modules: {', '.join(missing_modules)}",
+                        "Verify module restructuring is intact",
+                        "Check git history for accidental deletions",
+                    ],
+                )
+            )
 
         # Check for complexity regression (simplified check)
         try:
@@ -260,26 +267,32 @@ class PerformanceRegressionPreventor:
             from ..optimization.classical import ClassicalOptimizer
 
             # If imports succeed, structure is likely intact
-            self.logger.debug("Structural integrity check passed - key functions accessible")
+            self.logger.debug(
+                "Structural integrity check passed - key functions accessible"
+            )
 
         except ImportError as e:
-            alerts.append(RegressionAlert(
-                metric_name="function_accessibility",
-                current_value=1,
-                budget_value=0,
-                regression_percent=100.0,
-                severity="CRITICAL",
-                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-                suggested_actions=[
-                    f"Fix import error: {e}",
-                    "Verify refactored functions are properly exposed",
-                    "Check module initialization files",
-                ]
-            ))
+            alerts.append(
+                RegressionAlert(
+                    metric_name="function_accessibility",
+                    current_value=1,
+                    budget_value=0,
+                    regression_percent=100.0,
+                    severity="CRITICAL",
+                    timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                    suggested_actions=[
+                        f"Fix import error: {e}",
+                        "Verify refactored functions are properly exposed",
+                        "Check module initialization files",
+                    ],
+                )
+            )
 
         return alerts
 
-    def run_comprehensive_regression_check(self) -> Tuple[List[RegressionAlert], Dict[str, Any]]:
+    def run_comprehensive_regression_check(
+        self,
+    ) -> tuple[list[RegressionAlert], dict[str, Any]]:
         """Run comprehensive check for all types of performance regressions."""
 
         self.logger.info("Running comprehensive performance regression check")
@@ -299,7 +312,9 @@ class PerformanceRegressionPreventor:
                 alert = check_func()
                 if alert:
                     alerts.append(alert)
-                    self.logger.warning(f"Regression detected in {check_name}: {alert.regression_percent:.1f}%")
+                    self.logger.warning(
+                        f"Regression detected in {check_name}: {alert.regression_percent:.1f}%"
+                    )
                 else:
                     self.logger.debug(f"No regression detected in {check_name}")
 
@@ -336,7 +351,11 @@ class PerformanceRegressionPreventor:
             "total_alerts": len(alerts),
             "critical_alerts": len(critical_alerts),
             "warning_alerts": len(warning_alerts),
-            "overall_status": "CRITICAL" if critical_alerts else ("WARNING" if warning_alerts else "HEALTHY"),
+            "overall_status": (
+                "CRITICAL"
+                if critical_alerts
+                else ("WARNING" if warning_alerts else "HEALTHY")
+            ),
             "check_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
@@ -347,7 +366,9 @@ class PerformanceRegressionPreventor:
 
         return alerts, metrics
 
-    def generate_regression_report(self, alerts: List[RegressionAlert], metrics: Dict[str, Any]) -> str:
+    def generate_regression_report(
+        self, alerts: list[RegressionAlert], metrics: dict[str, Any]
+    ) -> str:
         """Generate a comprehensive regression report."""
 
         report_lines = [
@@ -362,30 +383,36 @@ class PerformanceRegressionPreventor:
         ]
 
         if not alerts:
-            report_lines.extend([
-                "🎯 NO REGRESSIONS DETECTED!",
-                "All structural optimizations are performing within budget:",
-                f"• Import time budget: <{self.budget.max_import_time_s}s",
-                f"• Memory usage budget: <{self.budget.max_memory_usage_mb}MB",
-                f"• Function performance budget: <{self.budget.max_chi_squared_calc_ms}ms",
-                "",
-                "Structural optimization benefits are MAINTAINED.",
-            ])
+            report_lines.extend(
+                [
+                    "🎯 NO REGRESSIONS DETECTED!",
+                    "All structural optimizations are performing within budget:",
+                    f"• Import time budget: <{self.budget.max_import_time_s}s",
+                    f"• Memory usage budget: <{self.budget.max_memory_usage_mb}MB",
+                    f"• Function performance budget: <{self.budget.max_chi_squared_calc_ms}ms",
+                    "",
+                    "Structural optimization benefits are MAINTAINED.",
+                ]
+            )
         else:
-            report_lines.extend([
-                "⚠️  PERFORMANCE REGRESSIONS DETECTED:",
-                "",
-            ])
+            report_lines.extend(
+                [
+                    "⚠️  PERFORMANCE REGRESSIONS DETECTED:",
+                    "",
+                ]
+            )
 
             for alert in alerts:
                 severity_icon = "🚨" if alert.severity == "CRITICAL" else "⚠️ "
-                report_lines.extend([
-                    f"{severity_icon} {alert.metric_name.upper()} REGRESSION",
-                    f"   Current: {alert.current_value:.3f} | Budget: {alert.budget_value:.3f}",
-                    f"   Regression: {alert.regression_percent:.1f}%",
-                    f"   Severity: {alert.severity}",
-                    "   Suggested Actions:",
-                ])
+                report_lines.extend(
+                    [
+                        f"{severity_icon} {alert.metric_name.upper()} REGRESSION",
+                        f"   Current: {alert.current_value:.3f} | Budget: {alert.budget_value:.3f}",
+                        f"   Regression: {alert.regression_percent:.1f}%",
+                        f"   Severity: {alert.severity}",
+                        "   Suggested Actions:",
+                    ]
+                )
 
                 for action in alert.suggested_actions:
                     report_lines.append(f"   • {action}")
@@ -393,24 +420,28 @@ class PerformanceRegressionPreventor:
                 report_lines.append("")
 
         # Performance budget status
-        report_lines.extend([
-            "PERFORMANCE BUDGET STATUS:",
-            f"• Import time: {self.budget.max_import_time_s}s budget",
-            f"• Memory usage: {self.budget.max_memory_usage_mb}MB budget",
-            f"• Function performance: {self.budget.max_chi_squared_calc_ms}ms budget",
-            f"• Complexity score: {self.budget.max_complexity_score} budget",
-            "",
-            "MAINTAINED OPTIMIZATION BENEFITS:",
-            "✅ 93.9% import performance improvement",
-            "✅ 82% average complexity reduction (44→8, 27→8)",
-            "✅ 97% module size reduction (3,526 lines → 7 modules)",
-            "✅ 82% unused imports cleanup (221→39)",
-            "✅ 500+ lines of dead code removed",
-        ])
+        report_lines.extend(
+            [
+                "PERFORMANCE BUDGET STATUS:",
+                f"• Import time: {self.budget.max_import_time_s}s budget",
+                f"• Memory usage: {self.budget.max_memory_usage_mb}MB budget",
+                f"• Function performance: {self.budget.max_chi_squared_calc_ms}ms budget",
+                f"• Complexity score: {self.budget.max_complexity_score} budget",
+                "",
+                "MAINTAINED OPTIMIZATION BENEFITS:",
+                "✅ 93.9% import performance improvement",
+                "✅ 82% average complexity reduction (44→8, 27→8)",
+                "✅ 97% module size reduction (3,526 lines → 7 modules)",
+                "✅ 82% unused imports cleanup (221→39)",
+                "✅ 500+ lines of dead code removed",
+            ]
+        )
 
         return "\n".join(report_lines)
 
-    def save_regression_results(self, alerts: List[RegressionAlert], metrics: Dict[str, Any]):
+    def save_regression_results(
+        self, alerts: list[RegressionAlert], metrics: dict[str, Any]
+    ):
         """Save regression check results to files."""
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -424,14 +455,14 @@ class PerformanceRegressionPreventor:
         }
 
         json_file = self.baseline_dir / f"regression_check_{timestamp}.json"
-        with open(json_file, 'w') as f:
+        with open(json_file, "w") as f:
             json.dump(results, f, indent=2, default=str)
 
         # Save human-readable report
         report_content = self.generate_regression_report(alerts, metrics)
         report_file = self.baseline_dir / f"regression_report_{timestamp}.txt"
 
-        with open(report_file, 'w') as f:
+        with open(report_file, "w") as f:
             f.write(report_content)
 
         self.logger.info(f"Regression results saved to {json_file} and {report_file}")
@@ -441,7 +472,7 @@ class PerformanceRegressionPreventor:
     def setup_ci_integration(self) -> str:
         """Generate CI/CD integration script for automated regression prevention."""
 
-        ci_script = '''#!/bin/bash
+        ci_script = """#!/bin/bash
 # Performance Regression Prevention CI Script
 # Automatically checks for performance regressions in pull requests
 
@@ -475,10 +506,10 @@ print('✅ Performance regression check passed')
 "
 
 echo "✅ Performance regression check completed"
-'''
+"""
 
         ci_file = self.baseline_dir / "ci_regression_check.sh"
-        with open(ci_file, 'w') as f:
+        with open(ci_file, "w") as f:
             f.write(ci_script)
 
         # Make executable
@@ -491,8 +522,7 @@ def main():
     """Main function for running regression prevention check."""
 
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
     print("🛡️  PERFORMANCE REGRESSION PREVENTION")
@@ -520,7 +550,13 @@ def main():
     print("=" * 30)
 
     summary = metrics["summary"]
-    status_icon = "🎯" if summary["overall_status"] == "HEALTHY" else "⚠️" if summary["overall_status"] == "WARNING" else "🚨"
+    status_icon = (
+        "🎯"
+        if summary["overall_status"] == "HEALTHY"
+        else "⚠️"
+        if summary["overall_status"] == "WARNING"
+        else "🚨"
+    )
 
     print(f"{status_icon} Status: {summary['overall_status']}")
     print(f"Total alerts: {summary['total_alerts']}")

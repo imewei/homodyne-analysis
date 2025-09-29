@@ -9,7 +9,6 @@ This module contains standalone helper functions that provide interpretation
 and quality assessment for analysis results.
 """
 
-from typing import List
 
 
 def get_chi2_interpretation(chi2_value: float) -> str:
@@ -33,18 +32,17 @@ def get_chi2_interpretation(chi2_value: float) -> str:
     if chi2_value <= 1.0:
         return f"Excellent fit (χ²_red = {
             chi2_value:.2f} ≤ 1.0): Model matches data within expected noise"
-    elif chi2_value <= 2.0:
+    if chi2_value <= 2.0:
         return f"Very good fit (χ²_red = {
             chi2_value:.2f}): Model captures main features with minor deviations"
-    elif chi2_value <= 5.0:
+    if chi2_value <= 5.0:
         return f"Acceptable fit (χ²_red = {
             chi2_value:.2f}): Model reasonable but some systematic deviations present"
-    elif chi2_value <= 10.0:
+    if chi2_value <= 10.0:
         return f"Poor fit (χ²_red = {
             chi2_value:.2f}): Significant deviations suggest model inadequacy or underestimated uncertainties"
-    else:
-        return f"Very poor fit (χ²_red = {
-            chi2_value:.2f}): Major systematic deviations, model likely inappropriate"
+    return f"Very poor fit (χ²_red = {
+        chi2_value:.2f}): Major systematic deviations, model likely inappropriate"
 
 
 def get_quality_explanation(quality: str) -> str:
@@ -59,7 +57,7 @@ def get_quality_explanation(quality: str) -> str:
     return explanations.get(quality, "Unknown quality level")
 
 
-def get_quality_recommendations(quality: str, issues: List[str]) -> List[str]:
+def get_quality_recommendations(quality: str, issues: list[str]) -> list[str]:
     """Provide actionable recommendations based on quality assessment."""
     recommendations = []
 

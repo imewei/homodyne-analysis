@@ -35,7 +35,7 @@ def test_mathematical_correctness():
 
     # Manual calculation: (1-1.1)^2 + (2-2.1)^2 + (3-3.1)^2 + (4-4.1)^2 = 4*0.01 = 0.04
     chi2_manual = 0.04
-    chi2_vectorized = np.sum((c2_exp - c2_theo)**2)
+    chi2_vectorized = np.sum((c2_exp - c2_theo) ** 2)
 
     assert abs(chi2_vectorized - chi2_manual) < 1e-15
     print("✓ Chi-squared calculation accuracy verified")
@@ -162,9 +162,11 @@ def test_function_composition_integrity():
         print("✓ Function piping working")
 
         # Test Pipeline
-        pipeline = (Pipeline()
-                   .add_validation(lambda x: x > 0, "Must be positive")
-                   .add_transform(lambda x: x * 2))
+        pipeline = (
+            Pipeline()
+            .add_validation(lambda x: x > 0, "Must be positive")
+            .add_transform(lambda x: x * 2)
+        )
 
         result = pipeline.execute(5)
         assert result.is_success
@@ -221,6 +223,7 @@ def test_refactored_functions_exist():
     # Test CLI refactored functions
     try:
         from homodyne.cli.run_homodyne import _validate_and_load_config
+
         assert callable(_validate_and_load_config)
         print("✓ CLI validation function exists")
     except ImportError:
@@ -235,25 +238,26 @@ def test_refactored_functions_exist():
             "analyzer_parameters": {"temporal": {}, "angular": {}},
             "initial_parameters": {"parameter_names": [], "values": []},
             "experimental_data": {"file_path": "/tmp"},
-            "optimization_config": {"method": "classical"}
+            "optimization_config": {"method": "classical"},
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_path = f.name
 
         try:
             analyzer = HomodyneAnalysisCore(config_path)
-            if hasattr(analyzer, '_validate_parameters'):
+            if hasattr(analyzer, "_validate_parameters"):
                 print("✓ Analysis core validation method exists")
-            if hasattr(analyzer, '_determine_optimization_angles'):
+            if hasattr(analyzer, "_determine_optimization_angles"):
                 print("✓ Analysis core angle optimization method exists")
-            if hasattr(analyzer, '_prepare_memory_optimized_arrays'):
+            if hasattr(analyzer, "_prepare_memory_optimized_arrays"):
                 print("✓ Analysis core memory optimization method exists")
         except Exception as e:
             print(f"ℹ Analysis core methods check failed: {e}")
         finally:
             import os
+
             os.unlink(config_path)
 
     except ImportError:
@@ -266,9 +270,9 @@ def test_refactored_functions_exist():
         from homodyne.optimization.classical import ClassicalOptimizer
 
         optimizer = ClassicalOptimizer(Mock(), {})
-        if hasattr(optimizer, '_initialize_gurobi_options'):
+        if hasattr(optimizer, "_initialize_gurobi_options"):
             print("✓ Optimization Gurobi options method exists")
-        if hasattr(optimizer, '_estimate_gradient'):
+        if hasattr(optimizer, "_estimate_gradient"):
             print("✓ Optimization gradient estimation method exists")
     except ImportError:
         print("ℹ Optimization functions not available")
@@ -288,7 +292,7 @@ def run_comprehensive_validation():
         ("Error Handling Consistency", test_error_handling_consistency),
         ("Function Composition Integrity", test_function_composition_integrity),
         ("Workflow Components", test_workflow_components),
-        ("Refactored Function Existence", test_refactored_functions_exist)
+        ("Refactored Function Existence", test_refactored_functions_exist),
     ]
 
     passed_tests = 0
@@ -309,7 +313,7 @@ def run_comprehensive_validation():
     print("VALIDATION SUMMARY")
     print("=" * 60)
     print(f"Tests Passed: {passed_tests}/{total_tests}")
-    print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
+    print(f"Success Rate: {(passed_tests / total_tests) * 100:.1f}%")
 
     if passed_tests >= total_tests * 0.8:  # 80% success rate
         print("\n🎉 VALIDATION SUCCESSFUL!")
@@ -319,7 +323,7 @@ def run_comprehensive_validation():
         print("✓ Function composition framework operational")
         print("\nRefactoring validation COMPLETE - behavioral equivalence verified!")
     else:
-        print(f"\n⚠️  VALIDATION INCOMPLETE")
+        print("\n⚠️  VALIDATION INCOMPLETE")
         print(f"Only {passed_tests}/{total_tests} tests passed")
         print("Additional work needed on refactored functions")
 

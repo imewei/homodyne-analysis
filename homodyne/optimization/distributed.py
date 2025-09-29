@@ -127,15 +127,14 @@ class ErrorRecoveryManager:
         # Different retry strategies for different error types
         if error_type in ["timeout", "network", "temporary"]:
             return True
-        elif error_type in ["memory", "resource"]:
+        if error_type in ["memory", "resource"]:
             # Retry with longer delays for resource issues
             return task.retry_count < 2
-        elif error_type in ["algorithm", "convergence"]:
+        if error_type in ["algorithm", "convergence"]:
             # Mathematical/algorithm errors might not benefit from retries
             return False
-        else:
-            # Unknown errors - be conservative
-            return task.retry_count < 1
+        # Unknown errors - be conservative
+        return task.retry_count < 1
 
     def calculate_retry_delay(
         self, task: "OptimizationTask", error: Exception
@@ -180,20 +179,19 @@ class ErrorRecoveryManager:
 
         if "timeout" in error_msg or "timeout" in error_type:
             return "timeout"
-        elif "memory" in error_msg or "oom" in error_msg:
+        if "memory" in error_msg or "oom" in error_msg:
             return "memory"
-        elif "network" in error_msg or "connection" in error_msg:
+        if "network" in error_msg or "connection" in error_msg:
             return "network"
-        elif "resource" in error_msg or "busy" in error_msg:
+        if "resource" in error_msg or "busy" in error_msg:
             return "resource"
-        elif "convergence" in error_msg or "singular" in error_msg:
+        if "convergence" in error_msg or "singular" in error_msg:
             return "convergence"
-        elif "algorithm" in error_msg or "numerical" in error_msg:
+        if "algorithm" in error_msg or "numerical" in error_msg:
             return "algorithm"
-        elif "temporary" in error_msg or "transient" in error_msg:
+        if "temporary" in error_msg or "transient" in error_msg:
             return "temporary"
-        else:
-            return "unknown"
+        return "unknown"
 
     def _is_circuit_breaker_open(self, error_type: str) -> bool:
         """Check if circuit breaker is open for error type."""
@@ -249,32 +247,26 @@ class DistributedOptimizationBackend(ABC):
     @abstractmethod
     def initialize(self, config: dict[str, Any]) -> bool:
         """Initialize the distributed backend."""
-        pass
 
     @abstractmethod
     def shutdown(self) -> None:
         """Shutdown the distributed backend."""
-        pass
 
     @abstractmethod
     def submit_task(self, task: OptimizationTask) -> str:
         """Submit optimization task for execution."""
-        pass
 
     @abstractmethod
     def get_results(self, timeout: float | None = None) -> list[OptimizationResult]:
         """Retrieve completed optimization results."""
-        pass
 
     @abstractmethod
     def get_cluster_info(self) -> dict[str, Any]:
         """Get information about the compute cluster."""
-        pass
 
     @abstractmethod
     def cancel_pending_tasks(self) -> int:
         """Cancel all pending tasks and return count of cancelled tasks."""
-        pass
 
 
 class RayDistributedBackend(DistributedOptimizationBackend):
@@ -446,9 +438,8 @@ class RayDistributedBackend(DistributedOptimizationBackend):
                 if "target_params" in objective_config:
                     target = np.array(objective_config["target_params"])
                     return np.sum((params - target) ** 2)
-                else:
-                    # Default: minimize sum of squares
-                    return np.sum(params**2)
+                # Default: minimize sum of squares
+                return np.sum(params**2)
 
             # Execute optimization based on method
             if method == "Nelder-Mead":
@@ -661,7 +652,6 @@ def _execute_optimization_task_standalone(task: OptimizationTask) -> Optimizatio
 
     try:
         # Import optimization modules
-        import os
 
         from scipy import optimize
 
@@ -679,12 +669,11 @@ def _execute_optimization_task_standalone(task: OptimizationTask) -> Optimizatio
             if function_type == "failing":
                 # For testing error recovery - intentionally fail
                 raise ValueError("Intentional test failure for error recovery testing")
-            elif "target_params" in objective_config:
+            if "target_params" in objective_config:
                 target = np.array(objective_config["target_params"])
                 return np.sum((params - target) ** 2)
-            else:
-                # Default: minimize sum of squares
-                return np.sum(params**2)
+            # Default: minimize sum of squares
+            return np.sum(params**2)
 
         # Execute optimization based on method
         if method == "Nelder-Mead":
@@ -725,8 +714,12 @@ def _execute_optimization_task_standalone(task: OptimizationTask) -> Optimizatio
         # Determine success - either scipy says success OR objective is reasonable for the problem
         # For quadratic problems, success threshold should scale with dimension
         problem_size = len(initial_params)
-        success_threshold = max(1e-6, problem_size * 2.0)  # Very lenient threshold for high-dimensional problems
-        optimization_success = result.success or (hasattr(result, 'fun') and result.fun < success_threshold)
+        success_threshold = max(
+            1e-6, problem_size * 2.0
+        )  # Very lenient threshold for high-dimensional problems
+        optimization_success = result.success or (
+            hasattr(result, "fun") and result.fun < success_threshold
+        )
 
         return OptimizationResult(
             task_id=task.task_id,
@@ -886,9 +879,8 @@ class MultiprocessingBackend(DistributedOptimizationBackend):
                 if "target_params" in objective_config:
                     target = np.array(objective_config["target_params"])
                     return np.sum((params - target) ** 2)
-                else:
-                    # Default: minimize sum of squares
-                    return np.sum(params**2)
+                # Default: minimize sum of squares
+                return np.sum(params**2)
 
             # Execute optimization based on method
             if method == "Nelder-Mead":
@@ -1320,8 +1312,7 @@ class DistributedOptimizationCoordinator:
                     self.backend_type = backend_name
                     self.logger.info(f"Successfully initialized {backend_name} backend")
                     return True
-                else:
-                    self.logger.warning(f"Failed to initialize {backend_name} backend")
+                self.logger.warning(f"Failed to initialize {backend_name} backend")
 
             except Exception as e:
                 self.logger.warning(
@@ -1628,11 +1619,10 @@ class DistributedOptimizationCoordinator:
                                 f"Retrying... attempt {retry_count}/{max_retries}"
                             )
                             continue
-                        else:
-                            self.logger.error(
-                                "Max retries reached, terminating parameter sweep"
-                            )
-                            break
+                        self.logger.error(
+                            "Max retries reached, terminating parameter sweep"
+                        )
+                        break
                 else:
                     consecutive_empty_results = 0
                     retry_count = 0
@@ -1851,8 +1841,7 @@ def create_distributed_optimizer(
 
     if coordinator.initialize(backend_preference):
         return coordinator
-    else:
-        raise RuntimeError("Failed to initialize distributed optimization coordinator")
+    raise RuntimeError("Failed to initialize distributed optimization coordinator")
 
 
 def get_available_backends() -> dict[str, bool]:

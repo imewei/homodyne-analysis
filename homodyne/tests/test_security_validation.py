@@ -16,12 +16,14 @@ import pytest
 try:
     from homodyne.core.secure_io import secure_file_operations
     from homodyne.core.security_metrics import SecurityMetrics
+
     SECURITY_AVAILABLE = True
 except ImportError:
     SECURITY_AVAILABLE = False
 
 try:
     from homodyne.core.config import ConfigManager
+
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
@@ -39,13 +41,13 @@ class TestInputValidation:
             "experimental_parameters": {
                 "q_value": 0.1,
                 "contrast": 0.95,
-                "offset": 1.0
+                "offset": 1.0,
             },
             "parameter_bounds": {
                 "D0": [1e-6, 1e-1],
                 "alpha": [0.1, 2.0],
-                "D_offset": [1e-8, 1e-3]
-            }
+                "D_offset": [1e-8, 1e-3],
+            },
         }
 
         manager = ConfigManager(config=config)
@@ -72,7 +74,7 @@ class TestInputValidation:
     def test_array_shape_validation(self):
         """Test validation of input array shapes."""
         # Test with mismatched array shapes
-        angles = np.linspace(0, 2*np.pi, 8, endpoint=False)
+        angles = np.linspace(0, 2 * np.pi, 8, endpoint=False)
         t1_array = np.array([1.0, 2.0, 3.0])
         t2_array = np.array([1.5, 2.5, 3.5])
 
@@ -82,15 +84,21 @@ class TestInputValidation:
 
         # Wrong number of angles
         c2_wrong_angles = np.ones((6, 3, 3))
-        assert not self._validate_array_shapes(c2_wrong_angles, angles, t1_array, t2_array)
+        assert not self._validate_array_shapes(
+            c2_wrong_angles, angles, t1_array, t2_array
+        )
 
         # Wrong time array dimensions
         c2_wrong_time = np.ones((8, 4, 3))
-        assert not self._validate_array_shapes(c2_wrong_time, angles, t1_array, t2_array)
+        assert not self._validate_array_shapes(
+            c2_wrong_time, angles, t1_array, t2_array
+        )
 
         # Wrong total dimensions
         c2_wrong_dims = np.ones((8, 3, 3, 2))  # Extra dimension
-        assert not self._validate_array_shapes(c2_wrong_dims, angles, t1_array, t2_array)
+        assert not self._validate_array_shapes(
+            c2_wrong_dims, angles, t1_array, t2_array
+        )
 
     def _validate_array_shapes(self, c2_data, angles, t1_array, t2_array):
         """Helper function to validate array shapes."""
@@ -144,7 +152,9 @@ class TestInputValidation:
 
         # Test with complex numbers (should fail)
         c2_complex = np.ones((3, 2, 2), dtype=np.complex128)
-        assert not self._validate_data_types(c2_complex, angles_float, t1_float, t1_float)
+        assert not self._validate_data_types(
+            c2_complex, angles_float, t1_float, t1_float
+        )
 
     def _validate_data_types(self, c2_data, angles, t1_array, t2_array):
         """Helper function to validate data types."""
@@ -176,21 +186,21 @@ class TestInputValidation:
             {
                 "experimental_parameters": {
                     "q_value": "'; DROP TABLE users; --",  # SQL injection attempt
-                    "contrast": 0.95
+                    "contrast": 0.95,
                 }
             },
             {
                 "experimental_parameters": {
                     "q_value": "<script>alert('xss')</script>",  # XSS attempt
-                    "contrast": 0.95
+                    "contrast": 0.95,
                 }
             },
             {
                 "analysis_parameters": {
                     "mode": "../../../etc/passwd",  # Path traversal attempt
-                    "method": "classical"
+                    "method": "classical",
                 }
-            }
+            },
         ]
 
         for malicious_config in malicious_configs:
@@ -212,7 +222,7 @@ class TestInputValidation:
         valid_paths = [
             "/tmp/test_data.npz",
             "./data/experiment.json",
-            "results/output.txt"
+            "results/output.txt",
         ]
 
         for path in valid_paths:
@@ -221,10 +231,10 @@ class TestInputValidation:
         # Test potentially dangerous paths
         dangerous_paths = [
             "../../../etc/passwd",  # Path traversal
-            "/dev/null",           # System device
-            "//server/share/file", # UNC path
+            "/dev/null",  # System device
+            "//server/share/file",  # UNC path
             "file:///etc/passwd",  # File URL
-            "C:\\Windows\\System32\\config\\SAM"  # Windows system file
+            "C:\\Windows\\System32\\config\\SAM",  # Windows system file
         ]
 
         for path in dangerous_paths:
@@ -247,7 +257,14 @@ class TestInputValidation:
                 return False
 
             # Check for absolute paths to system directories
-            system_dirs = ["/etc", "/sys", "/proc", "/dev", "C:\\Windows", "C:\\System32"]
+            system_dirs = [
+                "/etc",
+                "/sys",
+                "/proc",
+                "/dev",
+                "C:\\Windows",
+                "C:\\System32",
+            ]
             resolved_path = str(path.resolve())
 
             for sys_dir in system_dirs:
@@ -270,6 +287,7 @@ class TestSecureFileOperations:
     def teardown_method(self):
         """Cleanup secure file operation tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_secure_file_reading(self):
@@ -278,12 +296,12 @@ class TestSecureFileOperations:
         test_file = os.path.join(self.temp_dir, "test_data.json")
         test_data = {"test": "data", "value": 123}
 
-        with open(test_file, 'w') as f:
+        with open(test_file, "w") as f:
             json.dump(test_data, f)
 
         # Test secure reading
         try:
-            with secure_file_operations.secure_open(test_file, 'r') as f:
+            with secure_file_operations.secure_open(test_file, "r") as f:
                 loaded_data = json.load(f)
                 assert loaded_data == test_data
         except AttributeError:
@@ -294,7 +312,7 @@ class TestSecureFileOperations:
         """Test file permission validation."""
         # Create test file with specific permissions
         test_file = os.path.join(self.temp_dir, "perm_test.txt")
-        with open(test_file, 'w') as f:
+        with open(test_file, "w") as f:
             f.write("test content")
 
         # Set restrictive permissions
@@ -324,8 +342,9 @@ class TestSecureFileOperations:
             group_readable = mode & 0o040
 
             # For security, configuration files should not be world-readable
-            if world_readable and file_path.endswith(('.json', '.conf', '.config')):
+            if world_readable and file_path.endswith((".json", ".conf", ".config")):
                 import warnings
+
                 warnings.warn(f"File {file_path} is world-readable", UserWarning)
 
             return True
@@ -335,7 +354,9 @@ class TestSecureFileOperations:
     def test_temporary_file_security(self):
         """Test security of temporary file operations."""
         # Test secure temporary file creation
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as temp_file:
             temp_path = temp_file.name
             test_data = {"secure": "data"}
             json.dump(test_data, temp_file)
@@ -350,7 +371,7 @@ class TestSecureFileOperations:
             assert not world_readable, "Temporary file is world-readable"
 
             # Read back data
-            with open(temp_path, 'r') as f:
+            with open(temp_path) as f:
                 loaded_data = json.load(f)
                 assert loaded_data == test_data
 
@@ -363,9 +384,8 @@ class TestSecureFileOperations:
         large_file = os.path.join(self.temp_dir, "large_file.txt")
 
         # Write 1MB of data
-        with open(large_file, 'w') as f:
-            for _ in range(10000):
-                f.write("A" * 100 + "\n")
+        with open(large_file, "w") as f:
+            f.writelines("A" * 100 + "\n" for _ in range(10000))
 
         # Test size checking
         max_size = 500 * 1024  # 500KB limit
@@ -373,7 +393,7 @@ class TestSecureFileOperations:
 
         # Create small file
         small_file = os.path.join(self.temp_dir, "small_file.txt")
-        with open(small_file, 'w') as f:
+        with open(small_file, "w") as f:
             f.write("small content")
 
         assert self._check_file_size_limit(small_file, max_size)
@@ -391,29 +411,29 @@ class TestSecureFileOperations:
         base_dir = self.temp_dir
 
         # Test legitimate paths
-        legitimate_paths = [
-            "data.json",
-            "subdir/data.json",
-            "./data.json"
-        ]
+        legitimate_paths = ["data.json", "subdir/data.json", "./data.json"]
 
         for rel_path in legitimate_paths:
             full_path = self._secure_join(base_dir, rel_path)
-            assert full_path.startswith(base_dir), f"Path {full_path} outside base directory"
+            assert full_path.startswith(base_dir), (
+                f"Path {full_path} outside base directory"
+            )
 
         # Test malicious paths
         malicious_paths = [
             "../../../etc/passwd",
             "..\\..\\..\\windows\\system32\\config\\sam",
             "/etc/passwd",
-            "C:\\Windows\\System32\\config\\SAM"
+            "C:\\Windows\\System32\\config\\SAM",
         ]
 
         for mal_path in malicious_paths:
             try:
                 full_path = self._secure_join(base_dir, mal_path)
                 # If join succeeds, result should still be within base directory
-                assert full_path.startswith(base_dir), f"Directory traversal vulnerability: {full_path}"
+                assert full_path.startswith(base_dir), (
+                    f"Directory traversal vulnerability: {full_path}"
+                )
             except ValueError:
                 # Acceptable to reject malicious paths
                 pass
@@ -445,11 +465,9 @@ class TestDataSanitization:
     def test_numerical_data_sanitization(self):
         """Test sanitization of numerical data."""
         # Create data with various issues
-        problematic_data = np.array([
-            [1.0, 2.0, np.inf],
-            [np.nan, 3.0, 4.0],
-            [-np.inf, 5.0, 6.0]
-        ])
+        problematic_data = np.array(
+            [[1.0, 2.0, np.inf], [np.nan, 3.0, 4.0], [-np.inf, 5.0, 6.0]]
+        )
 
         sanitized = self._sanitize_numerical_data(problematic_data)
 
@@ -463,7 +481,12 @@ class TestDataSanitization:
         data_copy = data.copy()
 
         # Replace NaN with zeros or interpolated values
-        data_copy = np.nan_to_num(data_copy, nan=0.0, posinf=np.finfo(np.float64).max, neginf=np.finfo(np.float64).min)
+        data_copy = np.nan_to_num(
+            data_copy,
+            nan=0.0,
+            posinf=np.finfo(np.float64).max,
+            neginf=np.finfo(np.float64).min,
+        )
 
         # Clip extreme values
         data_copy = np.clip(data_copy, -1e10, 1e10)
@@ -497,14 +520,25 @@ class TestDataSanitization:
             return str(input_string)
 
         # Remove null bytes and control characters
-        sanitized = ''.join(char for char in input_string if ord(char) >= 32 or char in '\t\n\r')
+        sanitized = "".join(
+            char for char in input_string if ord(char) >= 32 or char in "\t\n\r"
+        )
 
         # Remove potentially dangerous patterns
         dangerous_patterns = [
-            "DROP TABLE", "DELETE FROM", "INSERT INTO", "UPDATE SET",  # SQL
-            "<script>", "</script>", "javascript:", "data:",  # XSS
-            "../", "..\\",  # Path traversal
-            "$(", "`", "${",  # Command injection
+            "DROP TABLE",
+            "DELETE FROM",
+            "INSERT INTO",
+            "UPDATE SET",  # SQL
+            "<script>",
+            "</script>",
+            "javascript:",
+            "data:",  # XSS
+            "../",
+            "..\\",  # Path traversal
+            "$(",
+            "`",
+            "${",  # Command injection
         ]
 
         for pattern in dangerous_patterns:
@@ -523,43 +557,46 @@ class TestDataSanitization:
             "experimental_parameters": {
                 "q_value": "0.1; DROP TABLE users;",
                 "contrast": "<script>alert('xss')</script>",
-                "offset": np.inf
+                "offset": np.inf,
             },
             "file_paths": {
                 "data_file": "../../etc/passwd",
-                "output_dir": "/tmp/../../../root"
-            }
+                "output_dir": "/tmp/../../../root",
+            },
         }
 
         sanitized_config = self._sanitize_configuration(problematic_config)
 
         # Check numerical values are sanitized
-        assert np.isfinite(sanitized_config['experimental_parameters']['offset'])
+        assert np.isfinite(sanitized_config["experimental_parameters"]["offset"])
 
         # Check string values are sanitized
-        assert "DROP TABLE" not in str(sanitized_config['experimental_parameters']['q_value'])
-        assert "<script>" not in str(sanitized_config['experimental_parameters']['contrast'])
+        assert "DROP TABLE" not in str(
+            sanitized_config["experimental_parameters"]["q_value"]
+        )
+        assert "<script>" not in str(
+            sanitized_config["experimental_parameters"]["contrast"]
+        )
 
         # Check file paths are sanitized
-        assert "../" not in sanitized_config['file_paths']['data_file']
-        assert "../" not in sanitized_config['file_paths']['output_dir']
+        assert "../" not in sanitized_config["file_paths"]["data_file"]
+        assert "../" not in sanitized_config["file_paths"]["output_dir"]
 
     def _sanitize_configuration(self, config):
         """Helper function to sanitize configuration data."""
+
         def sanitize_value(value):
             if isinstance(value, str):
                 return self._sanitize_string_input(value)
-            elif isinstance(value, (int, float, np.number)):
+            if isinstance(value, (int, float, np.number)):
                 if np.isfinite(value):
                     return float(value)
-                else:
-                    return 0.0
-            elif isinstance(value, dict):
+                return 0.0
+            if isinstance(value, dict):
                 return {k: sanitize_value(v) for k, v in value.items()}
-            elif isinstance(value, list):
+            if isinstance(value, list):
                 return [sanitize_value(v) for v in value]
-            else:
-                return value
+            return value
 
         return sanitize_value(config)
 
@@ -587,19 +624,21 @@ class TestAccessControl:
                     # If access is allowed, it should be due to running as root
                     # In a production environment, this should be restricted
                     import warnings
-                    warnings.warn(f"Write access to {directory} should be restricted", UserWarning)
+
+                    warnings.warn(
+                        f"Write access to {directory} should be restricted", UserWarning
+                    )
 
     def _check_directory_access(self, directory, access_type):
         """Helper function to check directory access."""
         try:
             if access_type == "read":
                 return os.access(directory, os.R_OK)
-            elif access_type == "write":
+            if access_type == "write":
                 return os.access(directory, os.W_OK)
-            elif access_type == "execute":
+            if access_type == "execute":
                 return os.access(directory, os.X_OK)
-            else:
-                return False
+            return False
         except OSError:
             return False
 
@@ -656,6 +695,7 @@ class TestAccessControl:
             with pytest.raises(TimeoutError):
                 # Simulate long operation
                 import time
+
                 time.sleep(2)
 
         except (AttributeError, OSError):
@@ -685,7 +725,7 @@ class TestSecurityMetrics:
             report = metrics.get_security_report()
 
             assert isinstance(report, dict)
-            assert 'file_access' in report or len(report) >= 0
+            assert "file_access" in report or len(report) >= 0
 
         except AttributeError:
             pytest.skip("SecurityMetrics not fully implemented")

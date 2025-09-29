@@ -8,7 +8,6 @@ security validation, and scientific computing accuracy verification.
 """
 
 import argparse
-import os
 import sys
 
 import pytest
@@ -36,12 +35,14 @@ class TestRunner:
         ]
 
         if coverage:
-            args.extend([
-                "--cov=homodyne.core",
-                "--cov=homodyne.analysis",
-                "--cov=homodyne.config",
-                "--cov-report=term-missing",
-            ])
+            args.extend(
+                [
+                    "--cov=homodyne.core",
+                    "--cov=homodyne.analysis",
+                    "--cov=homodyne.config",
+                    "--cov-report=term-missing",
+                ]
+            )
 
         return pytest.main(args)
 
@@ -53,12 +54,15 @@ class TestRunner:
             "homodyne/tests/test_cli_integration.py",
             "-v" if verbose else "-q",
             "--tb=short",
-            "-m", "integration",
+            "-m",
+            "integration",
         ]
 
         return pytest.main(args)
 
-    def run_performance_tests(self, verbose: bool = False, benchmark: bool = True) -> int:
+    def run_performance_tests(
+        self, verbose: bool = False, benchmark: bool = True
+    ) -> int:
         """Run performance tests and benchmarks."""
         print("⚡ Running Performance Tests...")
 
@@ -66,7 +70,8 @@ class TestRunner:
             "homodyne/tests/test_optimization_performance.py",
             "-v" if verbose else "-q",
             "--tb=short",
-            "-m", "performance",
+            "-m",
+            "performance",
         ]
 
         if benchmark:
@@ -82,7 +87,8 @@ class TestRunner:
             "homodyne/tests/test_security_validation.py",
             "-v" if verbose else "-q",
             "--tb=short",
-            "-m", "security",
+            "-m",
+            "security",
         ]
 
         return pytest.main(args)
@@ -95,17 +101,20 @@ class TestRunner:
             "homodyne/tests/test_scientific_validation.py",
             "-v" if verbose else "-q",
             "--tb=short",
-            "-m", "scientific",
+            "-m",
+            "scientific",
         ]
 
         return pytest.main(args)
 
-    def run_all_tests(self,
-                     verbose: bool = False,
-                     coverage: bool = True,
-                     parallel: bool = False,
-                     markers: list[str] | None = None,
-                     no_limit: bool = False) -> int:
+    def run_all_tests(
+        self,
+        verbose: bool = False,
+        coverage: bool = True,
+        parallel: bool = False,
+        markers: list[str] | None = None,
+        no_limit: bool = False,
+    ) -> int:
         """Run comprehensive test suite."""
         print("🚀 Running Comprehensive Test Suite...")
 
@@ -123,13 +132,15 @@ class TestRunner:
             args.append("--maxfail=0")  # No failure limit for full discovery
 
         if coverage:
-            args.extend([
-                "--cov=homodyne",
-                "--cov-report=term-missing",
-                "--cov-report=html:htmlcov",
-                "--cov-report=xml:coverage.xml",
-                "--cov-fail-under=75",
-            ])
+            args.extend(
+                [
+                    "--cov=homodyne",
+                    "--cov-report=term-missing",
+                    "--cov-report=html:htmlcov",
+                    "--cov-report=xml:coverage.xml",
+                    "--cov-fail-under=75",
+                ]
+            )
 
         if parallel:
             args.extend(["-n", "auto"])
@@ -154,12 +165,14 @@ class TestRunner:
         ]
 
         if coverage:
-            args.extend([
-                "--cov=homodyne",
-                "--cov-report=term-missing",
-                "--cov-report=html:htmlcov",
-                "--cov-report=xml:coverage.xml",
-            ])
+            args.extend(
+                [
+                    "--cov=homodyne",
+                    "--cov-report=term-missing",
+                    "--cov-report=html:htmlcov",
+                    "--cov-report=xml:coverage.xml",
+                ]
+            )
 
         return pytest.main(args)
 
@@ -171,7 +184,8 @@ class TestRunner:
             "homodyne/tests/",
             "-v" if verbose else "-q",
             "--tb=short",
-            "-m", "not slow and not performance",
+            "-m",
+            "not slow and not performance",
             "--maxfail=3",
         ]
 
@@ -185,7 +199,8 @@ class TestRunner:
             "homodyne/tests/",
             "-v" if verbose else "-q",
             "--tb=short",
-            "-m", "regression",
+            "-m",
+            "regression",
         ]
 
         return pytest.main(args)
@@ -318,30 +333,48 @@ Examples:
   python test_runner.py --scientific             # Scientific validation
   python test_runner.py --smoke                  # Minimal smoke tests
   python test_runner.py --check-env              # Check test environment
-        """
+        """,
     )
 
     # Test categories
     parser.add_argument("--all", action="store_true", help="Run all tests")
-    parser.add_argument("--discovery", action="store_true", help="Run comprehensive test discovery with no failure limits")
+    parser.add_argument(
+        "--discovery",
+        action="store_true",
+        help="Run comprehensive test discovery with no failure limits",
+    )
     parser.add_argument("--unit", action="store_true", help="Run unit tests")
-    parser.add_argument("--integration", action="store_true", help="Run integration tests")
-    parser.add_argument("--performance", action="store_true", help="Run performance tests")
+    parser.add_argument(
+        "--integration", action="store_true", help="Run integration tests"
+    )
+    parser.add_argument(
+        "--performance", action="store_true", help="Run performance tests"
+    )
     parser.add_argument("--security", action="store_true", help="Run security tests")
-    parser.add_argument("--scientific", action="store_true", help="Run scientific validation tests")
+    parser.add_argument(
+        "--scientific", action="store_true", help="Run scientific validation tests"
+    )
     parser.add_argument("--fast", action="store_true", help="Run fast tests only")
     parser.add_argument("--smoke", action="store_true", help="Run smoke tests")
-    parser.add_argument("--regression", action="store_true", help="Run regression tests")
+    parser.add_argument(
+        "--regression", action="store_true", help="Run regression tests"
+    )
 
     # Test options
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    parser.add_argument("--coverage", action="store_true", help="Generate coverage report")
+    parser.add_argument(
+        "--coverage", action="store_true", help="Generate coverage report"
+    )
     parser.add_argument("--no-coverage", action="store_true", help="Disable coverage")
     parser.add_argument("--parallel", action="store_true", help="Run tests in parallel")
     parser.add_argument("--benchmark", action="store_true", help="Run benchmarks")
     parser.add_argument("--profile", action="store_true", help="Run with profiling")
     parser.add_argument("--memory", action="store_true", help="Monitor memory usage")
-    parser.add_argument("--no-limit", action="store_true", help="Remove failure limits for comprehensive discovery")
+    parser.add_argument(
+        "--no-limit",
+        action="store_true",
+        help="Remove failure limits for comprehensive discovery",
+    )
 
     # Filtering
     parser.add_argument("--markers", nargs="+", help="Test markers to include")
@@ -349,7 +382,9 @@ Examples:
 
     # Reporting
     parser.add_argument("--report", help="Generate HTML report file")
-    parser.add_argument("--check-env", action="store_true", help="Check test environment")
+    parser.add_argument(
+        "--check-env", action="store_true", help="Check test environment"
+    )
 
     args = parser.parse_args()
 
@@ -377,7 +412,7 @@ Examples:
             coverage=coverage,
             parallel=args.parallel,
             markers=args.markers,
-            no_limit=args.no_limit
+            no_limit=args.no_limit,
         )
     elif args.discovery:
         result = runner.run_test_discovery(verbose=args.verbose, coverage=coverage)
@@ -386,7 +421,9 @@ Examples:
     elif args.integration:
         result = runner.run_integration_tests(verbose=args.verbose)
     elif args.performance:
-        result = runner.run_performance_tests(verbose=args.verbose, benchmark=args.benchmark)
+        result = runner.run_performance_tests(
+            verbose=args.verbose, benchmark=args.benchmark
+        )
     elif args.security:
         result = runner.run_security_tests(verbose=args.verbose)
     elif args.scientific:

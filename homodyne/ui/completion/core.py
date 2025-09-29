@@ -205,8 +205,7 @@ class CompletionContext:
                 with open(config_file) as f:
                     if config_file.suffix in [".yaml", ".yml"] and yaml:
                         return yaml.safe_load(f)
-                    else:
-                        return json.load(f)
+                    return json.load(f)
             except Exception:
                 continue
         return None
@@ -266,7 +265,7 @@ class CompletionEngine:
         # Environment-specific cache directories
         if conda_env := os.environ.get("CONDA_DEFAULT_ENV"):
             return home / ".cache" / "homodyne" / "completion" / f"conda-{conda_env}"
-        elif virtual_env := os.environ.get("VIRTUAL_ENV"):
+        if virtual_env := os.environ.get("VIRTUAL_ENV"):
             env_name = Path(virtual_env).name
             return home / ".cache" / "homodyne" / "completion" / f"venv-{env_name}"
 
@@ -393,7 +392,7 @@ class CompletionEngine:
             mode = context.homodyne_config.get("mode", "")
             if "static" in mode.lower():
                 return ["vi", "hybrid"]
-            elif "laminar" in mode.lower():
+            if "laminar" in mode.lower():
                 return ["mcmc", "hybrid"]
 
         return default_methods
@@ -474,8 +473,7 @@ class CompletionEngine:
                 result, timestamp = self._completion_cache[cache_key]
                 if time.time() - timestamp < result.cache_ttl:
                     return [result]
-                else:
-                    del self._completion_cache[cache_key]
+                del self._completion_cache[cache_key]
         return None
 
     def _cache_completion(
@@ -563,9 +561,9 @@ class CompletionEngine:
 
 # Export all main classes and types
 __all__ = [
-    "CompletionType",
-    "EnvironmentType",
-    "CompletionResult",
     "CompletionContext",
     "CompletionEngine",
+    "CompletionResult",
+    "CompletionType",
+    "EnvironmentType",
 ]

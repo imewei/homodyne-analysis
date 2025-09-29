@@ -15,8 +15,6 @@ import logging
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
-from typing import Tuple
 
 import numpy as np
 
@@ -96,7 +94,9 @@ def initialize_analysis_core_for_simulation(args: argparse.Namespace):
     tuple
         (core, config, initial_params) or raises exception on failure
     """
-    DEFAULT_INITIAL_PARAMS, DEFAULT_PARAM_NAMES, DEFAULT_ANALYZER_CONFIG = get_default_simulation_config()
+    DEFAULT_INITIAL_PARAMS, DEFAULT_PARAM_NAMES, DEFAULT_ANALYZER_CONFIG = (
+        get_default_simulation_config()
+    )
 
     # Import here to avoid circular imports
     from ..analysis.core import HomodyneAnalysisCore
@@ -107,7 +107,12 @@ def initialize_analysis_core_for_simulation(args: argparse.Namespace):
         if not Path(args.config).exists():
             logger.warning(f"Configuration file not found: {args.config}")
             logger.info("Using default parameters for simulation")
-            return create_default_analysis_core(args, DEFAULT_INITIAL_PARAMS, DEFAULT_PARAM_NAMES, DEFAULT_ANALYZER_CONFIG)
+            return create_default_analysis_core(
+                args,
+                DEFAULT_INITIAL_PARAMS,
+                DEFAULT_PARAM_NAMES,
+                DEFAULT_ANALYZER_CONFIG,
+            )
 
         # Apply command-line mode overrides
         config_override = create_simulation_config_override(args)
@@ -130,10 +135,17 @@ def initialize_analysis_core_for_simulation(args: argparse.Namespace):
     except Exception as e:
         logger.warning(f"Failed to initialize analysis core with config: {e}")
         logger.info("Falling back to default parameters for simulation")
-        return create_default_analysis_core(args, DEFAULT_INITIAL_PARAMS, DEFAULT_PARAM_NAMES, DEFAULT_ANALYZER_CONFIG)
+        return create_default_analysis_core(
+            args, DEFAULT_INITIAL_PARAMS, DEFAULT_PARAM_NAMES, DEFAULT_ANALYZER_CONFIG
+        )
 
 
-def create_default_analysis_core(args: argparse.Namespace, DEFAULT_INITIAL_PARAMS, DEFAULT_PARAM_NAMES, DEFAULT_ANALYZER_CONFIG):
+def create_default_analysis_core(
+    args: argparse.Namespace,
+    DEFAULT_INITIAL_PARAMS,
+    DEFAULT_PARAM_NAMES,
+    DEFAULT_ANALYZER_CONFIG,
+):
     """
     Create analysis core with default configuration.
 
@@ -168,9 +180,7 @@ def create_default_analysis_core(args: argparse.Namespace, DEFAULT_INITIAL_PARAM
     logger.info(f"Using default initial parameters: {initial_params}")
 
     # Create a minimal core for calculation
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         temp_config = {
             "metadata": {"config_version": "0.6.5.dev0"},
             "analyzer_parameters": DEFAULT_ANALYZER_CONFIG,
@@ -242,7 +252,9 @@ def create_phi_angles_for_simulation(args: argparse.Namespace) -> np.ndarray:
     if args.phi_angles is not None:
         # Parse custom phi angles from command line
         try:
-            phi_angles = np.array([float(x.strip()) for x in args.phi_angles.split(",")])
+            phi_angles = np.array(
+                [float(x.strip()) for x in args.phi_angles.split(",")]
+            )
             logger.info(f"Using custom phi angles: {phi_angles}")
         except ValueError as e:
             logger.error(f"❌ Invalid phi angles format: {args.phi_angles}")
@@ -256,7 +268,9 @@ def create_phi_angles_for_simulation(args: argparse.Namespace) -> np.ndarray:
     return phi_angles
 
 
-def create_time_arrays_for_simulation(config: dict) -> Tuple[np.ndarray, np.ndarray, int]:
+def create_time_arrays_for_simulation(
+    config: dict,
+) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Create time arrays for simulation based on configuration.
 
@@ -277,7 +291,7 @@ def create_time_arrays_for_simulation(config: dict) -> Tuple[np.ndarray, np.ndar
     end_frame = temporal_config.get("end_frame", 100)
     n_time = end_frame - start_frame + 1
 
-    logger.info(f"Simulation temporal parameters:")
+    logger.info("Simulation temporal parameters:")
     logger.info(f"  dt: {dt}")
     logger.info(f"  start_frame: {start_frame}")
     logger.info(f"  end_frame: {end_frame}")
@@ -290,7 +304,9 @@ def create_time_arrays_for_simulation(config: dict) -> Tuple[np.ndarray, np.ndar
     return t1, t2, n_time
 
 
-def generate_theoretical_c2_data(core, initial_params: np.ndarray, phi_angles: np.ndarray, n_time: int) -> np.ndarray:
+def generate_theoretical_c2_data(
+    core, initial_params: np.ndarray, phi_angles: np.ndarray, n_time: int
+) -> np.ndarray:
     """
     Generate theoretical C2 data using the analysis core.
 
@@ -311,7 +327,9 @@ def generate_theoretical_c2_data(core, initial_params: np.ndarray, phi_angles: n
         Theoretical C2 data array with shape (n_phi, n_time, n_time)
     """
     try:
-        logger.info(f"Generating theoretical C2 data for {len(phi_angles)} phi angles...")
+        logger.info(
+            f"Generating theoretical C2 data for {len(phi_angles)} phi angles..."
+        )
 
         # Initialize output array
         c2_theoretical = np.zeros((len(phi_angles), n_time, n_time))
@@ -330,15 +348,23 @@ def generate_theoretical_c2_data(core, initial_params: np.ndarray, phi_angles: n
                 # Get the theoretical C2 data from the core's internal calculation
                 # The calculate_chi_squared_optimized method computes C2 theoretical internally
                 # We need to extract it - this is a bit of a workaround
-                c2_single = core._last_theoretical_c2 if hasattr(core, '_last_theoretical_c2') else None
+                c2_single = (
+                    core._last_theoretical_c2
+                    if hasattr(core, "_last_theoretical_c2")
+                    else None
+                )
 
                 if c2_single is None:
                     # Fallback: compute C2 directly if available
-                    if hasattr(core, 'calculate_correlation_function'):
-                        c2_single = core.calculate_correlation_function(initial_params, phi_single)
+                    if hasattr(core, "calculate_correlation_function"):
+                        c2_single = core.calculate_correlation_function(
+                            initial_params, phi_single
+                        )
                     else:
                         # Final fallback: create dummy data
-                        logger.warning(f"Cannot extract theoretical C2 for phi={phi}, using dummy data")
+                        logger.warning(
+                            f"Cannot extract theoretical C2 for phi={phi}, using dummy data"
+                        )
                         c2_single = np.ones((1, n_time, n_time))
 
                 c2_theoretical[i] = c2_single[0]
@@ -349,9 +375,11 @@ def generate_theoretical_c2_data(core, initial_params: np.ndarray, phi_angles: n
                 # Use dummy data for failed calculations
                 c2_theoretical[i] = np.ones((n_time, n_time))
 
-        logger.info(f"✓ Theoretical C2 data generated successfully")
+        logger.info("✓ Theoretical C2 data generated successfully")
         logger.info(f"  Shape: {c2_theoretical.shape}")
-        logger.info(f"  Data range: [{c2_theoretical.min():.6f}, {c2_theoretical.max():.6f}]")
+        logger.info(
+            f"  Data range: [{c2_theoretical.min():.6f}, {c2_theoretical.max():.6f}]"
+        )
 
         return c2_theoretical
 
@@ -362,7 +390,9 @@ def generate_theoretical_c2_data(core, initial_params: np.ndarray, phi_angles: n
         return np.ones((len(phi_angles), n_time, n_time))
 
 
-def apply_scaling_transformation(c2_theoretical: np.ndarray, args: argparse.Namespace) -> Tuple[np.ndarray, str]:
+def apply_scaling_transformation(
+    c2_theoretical: np.ndarray, args: argparse.Namespace
+) -> tuple[np.ndarray, str]:
     """
     Apply scaling transformation to theoretical data.
 
@@ -432,7 +462,9 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     t1, t2, n_time = create_time_arrays_for_simulation(config)
 
     # Generate theoretical C2 data
-    c2_theoretical = generate_theoretical_c2_data(core, initial_params, phi_angles, n_time)
+    c2_theoretical = generate_theoretical_c2_data(
+        core, initial_params, phi_angles, n_time
+    )
 
     # Apply scaling transformation
     c2_plot_data, data_type = apply_scaling_transformation(c2_theoretical, args)
@@ -445,6 +477,7 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     # Generate heatmap plots
     try:
         from .visualization import generate_c2_heatmap_plots
+
         plot_count = generate_c2_heatmap_plots(
             c2_plot_data, phi_angles, t1, t2, data_type, args, simulated_dir
         )
@@ -455,8 +488,15 @@ def plot_simulated_data(args: argparse.Namespace) -> None:
     # Save simulation data
     try:
         save_simulation_data(
-            c2_plot_data, phi_angles, t1, t2, initial_params, config,
-            data_type, args, simulated_dir
+            c2_plot_data,
+            phi_angles,
+            t1,
+            t2,
+            initial_params,
+            config,
+            data_type,
+            args,
+            simulated_dir,
         )
     except Exception as e:
         logger.error(f"❌ Failed to save simulation data: {e}")

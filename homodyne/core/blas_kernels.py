@@ -159,11 +159,10 @@ class UltraHighPerformanceBLASKernels:
             return self._compute_chi_squared_pure_blas(
                 theory, experimental, contrast, offset
             )
-        else:
-            # Method 2: Optimized NumPy fallback
-            return self._compute_chi_squared_optimized_numpy(
-                theory, experimental, contrast, offset
-            )
+        # Method 2: Optimized NumPy fallback
+        return self._compute_chi_squared_optimized_numpy(
+            theory, experimental, contrast, offset
+        )
 
     def _compute_chi_squared_pure_blas(
         self,
@@ -407,12 +406,11 @@ class UltraHighPerformanceBLASKernels:
 
             # Reshape back to batch format
             return result.T  # Shape (n_batch, n)
-        else:
-            # NumPy fallback
-            result = np.zeros((n_batch, n), dtype=self.dtype)
-            for i in range(n_batch):
-                result[i] = matrix_batch[i] @ vector_batch[i]
-            return result
+        # NumPy fallback
+        result = np.zeros((n_batch, n), dtype=self.dtype)
+        for i in range(n_batch):
+            result[i] = matrix_batch[i] @ vector_batch[i]
+        return result
 
     def get_performance_summary(self) -> dict:
         """Get comprehensive performance summary."""
@@ -653,4 +651,4 @@ if __name__ == "__main__":
         print("\n🎉 SIGNIFICANT PERFORMANCE IMPROVEMENT ACHIEVED!")
     else:
         print("\n⚠️  Performance improvement detected but below target.")
-        dgesvd,  # Singular Value Decomposition
+        (dgesvd,)  # Singular Value Decomposition

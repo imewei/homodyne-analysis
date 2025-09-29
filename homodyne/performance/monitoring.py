@@ -43,12 +43,12 @@ import statistics
 import sys
 import time
 import tracemalloc
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -365,18 +365,24 @@ class PerformanceMonitor:
                 )
 
             results.append(
-                self.run_benchmark("cache_optimized_operations", cache_optimized_benchmark)
+                self.run_benchmark(
+                    "cache_optimized_operations", cache_optimized_benchmark
+                )
             )
 
             # Parallel chi-squared computation
             def parallel_chi_squared_benchmark():
-                parameter_sets = [test_params + np.random.randn(3) * 0.1 for _ in range(10)]
+                parameter_sets = [
+                    test_params + np.random.randn(3) * 0.1 for _ in range(10)
+                ]
                 return cpu_optimizer.parallel_chi_squared_cpu(
                     parameter_sets, test_angles, test_data
                 )
 
             results.append(
-                self.run_benchmark("parallel_chi_squared_cpu", parallel_chi_squared_benchmark)
+                self.run_benchmark(
+                    "parallel_chi_squared_cpu", parallel_chi_squared_benchmark
+                )
             )
 
         # Benchmark correlation calculation
@@ -753,7 +759,7 @@ class PerformanceMonitor:
             "cpu_optimization": {
                 "available": CPU_OPTIMIZATION_AVAILABLE,
                 "mode": "cpu_only",  # Explicitly CPU-only
-            }
+            },
         }
 
         # Add CPU optimization details if available
@@ -761,10 +767,12 @@ class PerformanceMonitor:
             try:
                 cpu_info = get_cpu_optimization_info()
                 cpu_perf_info = get_cpu_performance_info()
-                system_info["cpu_optimization"].update({
-                    "optimization_info": cpu_info,
-                    "performance_info": cpu_perf_info,
-                })
+                system_info["cpu_optimization"].update(
+                    {
+                        "optimization_info": cpu_info,
+                        "performance_info": cpu_perf_info,
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Failed to get CPU optimization info: {e}")
 
@@ -952,8 +960,7 @@ def main():
                         f"  {reg['benchmark']}: +{reg['regression_percent']:.1f}% ({reg['severity']})"
                     )
                 return 1
-            else:
-                logger.info("No performance regressions detected")
+            logger.info("No performance regressions detected")
 
         elif args.component:
             # Component-specific monitoring

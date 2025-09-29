@@ -20,10 +20,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 warnings.filterwarnings("ignore")
 
@@ -31,18 +27,20 @@ warnings.filterwarnings("ignore")
 @dataclass
 class BuildMetrics:
     """Build performance metrics."""
+
     build_id: str
     build_time: float
     package_size: int
     dependencies_count: int
     optimization_level: str
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
 class DeploymentTarget:
     """Deployment target configuration."""
+
     name: str
     platform: str
     python_version: str
@@ -63,10 +61,10 @@ class BuildOptimizer:
             "code_minification",
             "asset_compression",
             "parallel_builds",
-            "incremental_builds"
+            "incremental_builds",
         ]
 
-    def analyze_dependencies(self) -> Dict[str, Any]:
+    def analyze_dependencies(self) -> dict[str, Any]:
         """Analyze project dependencies for optimization."""
         dependency_analysis = {
             "total_dependencies": 0,
@@ -74,7 +72,7 @@ class BuildOptimizer:
             "optional_dependencies": 0,
             "outdated_dependencies": [],
             "unused_dependencies": [],
-            "size_impact": {}
+            "size_impact": {},
         }
 
         # Check for requirements files
@@ -83,7 +81,7 @@ class BuildOptimizer:
             "requirements-dev.txt",
             "pyproject.toml",
             "setup.py",
-            "Pipfile"
+            "Pipfile",
         ]
 
         found_files = []
@@ -96,15 +94,21 @@ class BuildOptimizer:
         req_txt = self.project_root / "requirements.txt"
         if req_txt.exists():
             try:
-                with open(req_txt, 'r') as f:
+                with open(req_txt) as f:
                     lines = f.readlines()
 
                 dependencies = []
                 for line in lines:
                     line = line.strip()
-                    if line and not line.startswith('#'):
+                    if line and not line.startswith("#"):
                         # Extract package name
-                        package_name = line.split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0]
+                        package_name = (
+                            line.split("==")[0]
+                            .split(">=")[0]
+                            .split("<=")[0]
+                            .split(">")[0]
+                            .split("<")[0]
+                        )
                         dependencies.append(package_name.strip())
 
                 dependency_analysis["total_dependencies"] = len(dependencies)
@@ -112,7 +116,9 @@ class BuildOptimizer:
                 # Simulate size impact analysis
                 for dep in dependencies:
                     # Estimate size impact (simplified)
-                    dependency_analysis["size_impact"][dep] = len(dep) * 100  # Placeholder calculation
+                    dependency_analysis["size_impact"][dep] = (
+                        len(dep) * 100
+                    )  # Placeholder calculation
 
             except Exception as e:
                 dependency_analysis["error"] = str(e)
@@ -121,12 +127,16 @@ class BuildOptimizer:
         pyproject = self.project_root / "pyproject.toml"
         if pyproject.exists():
             try:
-                with open(pyproject, 'r') as f:
+                with open(pyproject) as f:
                     content = f.read()
 
                 # Count dependencies in pyproject.toml
-                if 'dependencies' in content:
-                    dep_lines = [line for line in content.split('\n') if '=' in line and not line.strip().startswith('#')]
+                if "dependencies" in content:
+                    dep_lines = [
+                        line
+                        for line in content.split("\n")
+                        if "=" in line and not line.strip().startswith("#")
+                    ]
                     dependency_analysis["total_dependencies"] += len(dep_lines)
 
             except Exception:
@@ -135,7 +145,7 @@ class BuildOptimizer:
         dependency_analysis["found_files"] = found_files
         return dependency_analysis
 
-    def optimize_build_process(self) -> Dict[str, Any]:
+    def optimize_build_process(self) -> dict[str, Any]:
         """Optimize the build process."""
         optimization_results = {}
 
@@ -159,19 +169,19 @@ class BuildOptimizer:
                 optimization_results[strategy] = {
                     "result": result,
                     "optimization_time": optimization_time,
-                    "success": result.get("success", True)
+                    "success": result.get("success", True),
                 }
 
             except Exception as e:
                 optimization_results[strategy] = {
                     "result": {"error": str(e)},
                     "optimization_time": time.perf_counter() - start_time,
-                    "success": False
+                    "success": False,
                 }
 
         return optimization_results
 
-    def _optimize_dependencies(self) -> Dict[str, Any]:
+    def _optimize_dependencies(self) -> dict[str, Any]:
         """Optimize project dependencies."""
         dep_analysis = self.analyze_dependencies()
 
@@ -183,11 +193,14 @@ class BuildOptimizer:
             "success": True,
             "original_dependencies": original_count,
             "optimized_dependencies": optimized_count,
-            "reduction_percentage": ((original_count - optimized_count) / max(original_count, 1)) * 100,
-            "strategy": "removed_unused_and_redundant"
+            "reduction_percentage": (
+                (original_count - optimized_count) / max(original_count, 1)
+            )
+            * 100,
+            "strategy": "removed_unused_and_redundant",
         }
 
-    def _optimize_code(self) -> Dict[str, Any]:
+    def _optimize_code(self) -> dict[str, Any]:
         """Optimize code for production."""
         # Count Python files
         python_files = list(self.project_root.glob("**/*.py"))
@@ -198,31 +211,35 @@ class BuildOptimizer:
 
         for py_file in python_files[:20]:  # Limit for demo
             try:
-                with open(py_file, 'r', encoding='utf-8') as f:
+                with open(py_file, encoding="utf-8") as f:
                     content = f.read()
 
                 original_size += len(content)
 
                 # Simulate minification (remove comments and extra whitespace)
-                lines = content.split('\n')
+                lines = content.split("\n")
                 optimized_lines = []
 
                 for line in lines:
                     stripped = line.strip()
                     # Keep non-comment, non-empty lines
-                    if stripped and not stripped.startswith('#'):
+                    if stripped and not stripped.startswith("#"):
                         # Remove inline comments (simplified)
-                        if '#' in stripped and not ('"""' in stripped or "'''" in stripped):
-                            stripped = stripped.split('#')[0].strip()
+                        if "#" in stripped and not (
+                            '"""' in stripped or "'''" in stripped
+                        ):
+                            stripped = stripped.split("#")[0].strip()
                         optimized_lines.append(stripped)
 
-                optimized_content = '\n'.join(optimized_lines)
+                optimized_content = "\n".join(optimized_lines)
                 optimized_size += len(optimized_content)
 
             except Exception:
                 continue
 
-        size_reduction = ((original_size - optimized_size) / max(original_size, 1)) * 100
+        size_reduction = (
+            (original_size - optimized_size) / max(original_size, 1)
+        ) * 100
 
         return {
             "success": True,
@@ -230,10 +247,10 @@ class BuildOptimizer:
             "original_size_bytes": original_size,
             "optimized_size_bytes": optimized_size,
             "size_reduction_percentage": size_reduction,
-            "strategy": "comment_removal_and_whitespace_optimization"
+            "strategy": "comment_removal_and_whitespace_optimization",
         }
 
-    def _compress_assets(self) -> Dict[str, Any]:
+    def _compress_assets(self) -> dict[str, Any]:
         """Compress project assets."""
         # Look for compressible files
         asset_patterns = ["*.json", "*.md", "*.txt", "*.csv"]
@@ -256,7 +273,9 @@ class BuildOptimizer:
             except Exception:
                 continue
 
-        compression_ratio = ((original_size - compressed_size) / max(original_size, 1)) * 100
+        compression_ratio = (
+            (original_size - compressed_size) / max(original_size, 1)
+        ) * 100
 
         return {
             "success": True,
@@ -264,10 +283,10 @@ class BuildOptimizer:
             "original_size_bytes": original_size,
             "compressed_size_bytes": compressed_size,
             "compression_ratio_percentage": compression_ratio,
-            "strategy": "gzip_compression"
+            "strategy": "gzip_compression",
         }
 
-    def _setup_parallel_builds(self) -> Dict[str, Any]:
+    def _setup_parallel_builds(self) -> dict[str, Any]:
         """Setup parallel build configuration."""
         # Check system capabilities
         cpu_count = os.cpu_count() or 1
@@ -278,10 +297,10 @@ class BuildOptimizer:
             "cpu_cores": cpu_count,
             "recommended_workers": recommended_workers,
             "parallel_strategy": "multi_process_build",
-            "estimated_speedup": min(cpu_count, 4)  # Diminishing returns after 4 cores
+            "estimated_speedup": min(cpu_count, 4),  # Diminishing returns after 4 cores
         }
 
-    def _setup_incremental_builds(self) -> Dict[str, Any]:
+    def _setup_incremental_builds(self) -> dict[str, Any]:
         """Setup incremental build system."""
         # Create build cache directory
         cache_dir = self.project_root / ".build_cache"
@@ -293,7 +312,7 @@ class BuildOptimizer:
 
         for py_file in tracked_files[:30]:  # Limit for demo
             try:
-                with open(py_file, 'rb') as f:
+                with open(py_file, "rb") as f:
                     content = f.read()
                 file_hash = hashlib.md5(content).hexdigest()
                 file_hashes[str(py_file.relative_to(self.project_root))] = file_hash
@@ -302,7 +321,7 @@ class BuildOptimizer:
 
         # Save hash cache
         cache_file = cache_dir / "file_hashes.json"
-        with open(cache_file, 'w') as f:
+        with open(cache_file, "w") as f:
             json.dump(file_hashes, f, indent=2)
 
         return {
@@ -310,10 +329,10 @@ class BuildOptimizer:
             "tracked_files": len(file_hashes),
             "cache_directory": str(cache_dir),
             "strategy": "hash_based_incremental_builds",
-            "estimated_time_savings": "30-70%"
+            "estimated_time_savings": "30-70%",
         }
 
-    def create_build_configuration(self) -> Dict[str, Any]:
+    def create_build_configuration(self) -> dict[str, Any]:
         """Create optimized build configuration."""
         build_config = {
             "build_system": "setuptools",
@@ -327,26 +346,26 @@ class BuildOptimizer:
                 "run_tests": True,
                 "code_quality": True,
                 "security_scan": True,
-                "performance_test": True
+                "performance_test": True,
             },
             "deployment_targets": [
                 {
                     "name": "development",
                     "optimization_level": "debug",
-                    "include_dev_dependencies": True
+                    "include_dev_dependencies": True,
                 },
                 {
                     "name": "staging",
                     "optimization_level": "optimized",
-                    "include_dev_dependencies": False
+                    "include_dev_dependencies": False,
                 },
                 {
                     "name": "production",
                     "optimization_level": "maximum",
                     "include_dev_dependencies": False,
-                    "strip_debug_info": True
-                }
-            ]
+                    "strip_debug_info": True,
+                },
+            ],
         }
 
         return build_config
@@ -366,10 +385,10 @@ class DeploymentPipeline:
             "security_scanning",
             "build_creation",
             "deployment_preparation",
-            "deployment_execution"
+            "deployment_execution",
         ]
 
-    def setup_deployment_targets(self) -> List[DeploymentTarget]:
+    def setup_deployment_targets(self) -> list[DeploymentTarget]:
         """Setup deployment targets."""
         targets = [
             DeploymentTarget(
@@ -379,7 +398,7 @@ class DeploymentPipeline:
                 requirements_file="requirements.txt",
                 build_command="python -m build",
                 test_command="python -m pytest",
-                deployment_strategy="local_install"
+                deployment_strategy="local_install",
             ),
             DeploymentTarget(
                 name="container_deployment",
@@ -388,7 +407,7 @@ class DeploymentPipeline:
                 requirements_file="requirements.txt",
                 build_command="docker build -t homodyne-analysis .",
                 test_command="docker run --rm homodyne-analysis python -m pytest",
-                deployment_strategy="containerized"
+                deployment_strategy="containerized",
             ),
             DeploymentTarget(
                 name="pypi_distribution",
@@ -397,14 +416,14 @@ class DeploymentPipeline:
                 requirements_file="requirements.txt",
                 build_command="python -m build --wheel --sdist",
                 test_command="python -m pytest",
-                deployment_strategy="package_distribution"
-            )
+                deployment_strategy="package_distribution",
+            ),
         ]
 
         self.deployment_targets = targets
         return targets
 
-    def run_pipeline_stage(self, stage_name: str) -> Dict[str, Any]:
+    def run_pipeline_stage(self, stage_name: str) -> dict[str, Any]:
         """Run a specific pipeline stage."""
         start_time = time.perf_counter()
 
@@ -435,7 +454,7 @@ class DeploymentPipeline:
                 "success": result.get("success", True),
                 "execution_time": execution_time,
                 "details": result,
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
         except Exception as e:
@@ -444,29 +463,33 @@ class DeploymentPipeline:
                 "success": False,
                 "execution_time": time.perf_counter() - start_time,
                 "error": str(e),
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
-    def _validate_source(self) -> Dict[str, Any]:
+    def _validate_source(self) -> dict[str, Any]:
         """Validate source code and project structure."""
         validation_results = {
             "python_files_found": 0,
             "test_files_found": 0,
             "config_files_found": 0,
             "documentation_found": False,
-            "setup_files_found": 0
+            "setup_files_found": 0,
         }
 
         # Count Python files
         python_files = list(self.project_root.glob("**/*.py"))
-        validation_results["python_files_found"] = len([f for f in python_files if "__pycache__" not in str(f)])
+        validation_results["python_files_found"] = len(
+            [f for f in python_files if "__pycache__" not in str(f)]
+        )
 
         # Count test files
         test_files = list(self.project_root.glob("**/test_*.py"))
         validation_results["test_files_found"] = len(test_files)
 
         # Check for documentation
-        doc_files = list(self.project_root.glob("README*")) + list(self.project_root.glob("docs/**/*"))
+        doc_files = list(self.project_root.glob("README*")) + list(
+            self.project_root.glob("docs/**/*")
+        )
         validation_results["documentation_found"] = len(doc_files) > 0
 
         # Check for setup files
@@ -476,14 +499,14 @@ class DeploymentPipeline:
 
         # Determine success
         success = (
-            validation_results["python_files_found"] > 0 and
-            validation_results["setup_files_found"] > 0
+            validation_results["python_files_found"] > 0
+            and validation_results["setup_files_found"] > 0
         )
 
         validation_results["success"] = success
         return validation_results
 
-    def _install_dependencies(self) -> Dict[str, Any]:
+    def _install_dependencies(self) -> dict[str, Any]:
         """Simulate dependency installation."""
         req_files = ["requirements.txt", "pyproject.toml"]
         found_requirements = [f for f in req_files if (self.project_root / f).exists()]
@@ -492,7 +515,7 @@ class DeploymentPipeline:
             return {
                 "success": False,
                 "error": "No requirements files found",
-                "dependencies_installed": 0
+                "dependencies_installed": 0,
             }
 
         # Simulate installation timing
@@ -502,16 +525,16 @@ class DeploymentPipeline:
             "success": True,
             "requirements_files": found_requirements,
             "dependencies_installed": 25,  # Simulated count
-            "installation_method": "pip"
+            "installation_method": "pip",
         }
 
-    def _run_quality_checks(self) -> Dict[str, Any]:
+    def _run_quality_checks(self) -> dict[str, Any]:
         """Run code quality checks."""
         quality_results = {
             "linting_passed": True,
             "formatting_passed": True,
             "type_checking_passed": True,
-            "complexity_check_passed": True
+            "complexity_check_passed": True,
         }
 
         # Simulate quality checks
@@ -520,8 +543,13 @@ class DeploymentPipeline:
 
         # Random simulation of quality issues
         import random
-        quality_results["linting_passed"] = random.choice([True, True, True, False])  # 75% pass rate
-        quality_results["formatting_passed"] = random.choice([True, True, False])     # 67% pass rate
+
+        quality_results["linting_passed"] = random.choice(
+            [True, True, True, False]
+        )  # 75% pass rate
+        quality_results["formatting_passed"] = random.choice(
+            [True, True, False]
+        )  # 67% pass rate
 
         all_passed = all(quality_results.values())
 
@@ -529,19 +557,15 @@ class DeploymentPipeline:
             "success": all_passed,
             "files_checked": files_checked,
             "quality_metrics": quality_results,
-            "overall_score": sum(quality_results.values()) / len(quality_results) * 100
+            "overall_score": sum(quality_results.values()) / len(quality_results) * 100,
         }
 
-    def _execute_tests(self) -> Dict[str, Any]:
+    def _execute_tests(self) -> dict[str, Any]:
         """Execute test suite."""
         test_files = list(self.project_root.glob("**/test_*.py"))
 
         if not test_files:
-            return {
-                "success": False,
-                "error": "No test files found",
-                "tests_run": 0
-            }
+            return {"success": False, "error": "No test files found", "tests_run": 0}
 
         # Simulate test execution
         time.sleep(0.2)  # Simulate test execution time
@@ -556,35 +580,39 @@ class DeploymentPipeline:
             "tests_passed": passed_tests,
             "tests_failed": failed_tests,
             "test_files": len(test_files),
-            "pass_rate": (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+            "pass_rate": (passed_tests / total_tests) * 100 if total_tests > 0 else 0,
         }
 
-    def _run_security_scan(self) -> Dict[str, Any]:
+    def _run_security_scan(self) -> dict[str, Any]:
         """Run security vulnerability scan."""
         # Simulate security scanning
         security_results = {
             "vulnerabilities_found": 0,
             "critical_issues": 0,
             "medium_issues": 0,
-            "low_issues": 0
+            "low_issues": 0,
         }
 
         # Simulate occasional security findings
         import random
+
         if random.random() < 0.2:  # 20% chance of finding issues
             security_results["low_issues"] = random.randint(1, 3)
             security_results["vulnerabilities_found"] = security_results["low_issues"]
 
-        success = security_results["critical_issues"] == 0 and security_results["medium_issues"] == 0
+        success = (
+            security_results["critical_issues"] == 0
+            and security_results["medium_issues"] == 0
+        )
 
         return {
             "success": success,
             "scan_completed": True,
             "security_metrics": security_results,
-            "scan_tool": "bandit"
+            "scan_tool": "bandit",
         }
 
-    def _create_build(self) -> Dict[str, Any]:
+    def _create_build(self) -> dict[str, Any]:
         """Create build artifacts."""
         # Simulate build creation
         build_artifacts = []
@@ -596,35 +624,39 @@ class DeploymentPipeline:
             # Simulate wheel creation
             wheel_path = temp_path / "homodyne_analysis-1.0.0-py3-none-any.whl"
             wheel_path.write_text("simulated wheel content")
-            build_artifacts.append({
-                "type": "wheel",
-                "path": str(wheel_path),
-                "size": wheel_path.stat().st_size
-            })
+            build_artifacts.append(
+                {
+                    "type": "wheel",
+                    "path": str(wheel_path),
+                    "size": wheel_path.stat().st_size,
+                }
+            )
 
             # Simulate source distribution
             sdist_path = temp_path / "homodyne_analysis-1.0.0.tar.gz"
             sdist_path.write_text("simulated source distribution")
-            build_artifacts.append({
-                "type": "sdist",
-                "path": str(sdist_path),
-                "size": sdist_path.stat().st_size
-            })
+            build_artifacts.append(
+                {
+                    "type": "sdist",
+                    "path": str(sdist_path),
+                    "size": sdist_path.stat().st_size,
+                }
+            )
 
         return {
             "success": True,
             "artifacts_created": len(build_artifacts),
             "build_artifacts": build_artifacts,
-            "build_tool": "setuptools"
+            "build_tool": "setuptools",
         }
 
-    def _prepare_deployment(self) -> Dict[str, Any]:
+    def _prepare_deployment(self) -> dict[str, Any]:
         """Prepare for deployment."""
         deployment_prep = {
             "environment_validated": True,
             "credentials_checked": True,
             "target_accessible": True,
-            "backup_created": True
+            "backup_created": True,
         }
 
         # Simulate deployment preparation
@@ -634,10 +666,10 @@ class DeploymentPipeline:
             "success": all_ready,
             "preparation_steps": deployment_prep,
             "deployment_strategy": "rolling_update",
-            "rollback_plan": "automatic"
+            "rollback_plan": "automatic",
         }
 
-    def _execute_deployment(self) -> Dict[str, Any]:
+    def _execute_deployment(self) -> dict[str, Any]:
         """Execute deployment to target environment."""
         # Simulate deployment execution
         deployment_steps = [
@@ -647,7 +679,7 @@ class DeploymentPipeline:
             "update_configuration",
             "start_services",
             "health_check",
-            "smoke_tests"
+            "smoke_tests",
         ]
 
         completed_steps = []
@@ -666,17 +698,17 @@ class DeploymentPipeline:
             "completed_steps": completed_steps,
             "total_steps": len(deployment_steps),
             "deployment_time": time.time(),
-            "rollback_required": not success
+            "rollback_required": not success,
         }
 
-    def run_full_pipeline(self) -> Dict[str, Any]:
+    def run_full_pipeline(self) -> dict[str, Any]:
         """Run the complete deployment pipeline."""
         pipeline_results = {
             "pipeline_id": f"pipeline_{int(time.time())}",
             "start_time": time.time(),
             "stages": {},
             "overall_success": True,
-            "failed_stages": []
+            "failed_stages": [],
         }
 
         print("Running complete deployment pipeline...")
@@ -696,7 +728,9 @@ class DeploymentPipeline:
                     break
 
         pipeline_results["end_time"] = time.time()
-        pipeline_results["total_duration"] = pipeline_results["end_time"] - pipeline_results["start_time"]
+        pipeline_results["total_duration"] = (
+            pipeline_results["end_time"] - pipeline_results["start_time"]
+        )
 
         return pipeline_results
 
@@ -730,47 +764,51 @@ def run_build_deployment_pipeline():
         "build_optimization": {
             "dependency_analysis": dependency_analysis,
             "optimization_results": optimization_results,
-            "build_configuration": build_config
+            "build_configuration": build_config,
         },
         "deployment_pipeline": {
             "targets": [asdict(target) for target in deployment_targets],
-            "pipeline_execution": pipeline_results
+            "pipeline_execution": pipeline_results,
         },
         "summary_metrics": {
             "total_dependencies": dependency_analysis.get("total_dependencies", 0),
             "optimization_strategies": len(optimization_results),
-            "successful_optimizations": sum(1 for opt in optimization_results.values() if opt["success"]),
+            "successful_optimizations": sum(
+                1 for opt in optimization_results.values() if opt["success"]
+            ),
             "deployment_targets": len(deployment_targets),
             "pipeline_success": pipeline_results["overall_success"],
             "pipeline_duration": pipeline_results["total_duration"],
-            "failed_stages": len(pipeline_results["failed_stages"])
+            "failed_stages": len(pipeline_results["failed_stages"]),
         },
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     # Display summary
     summary = comprehensive_results["summary_metrics"]
-    print(f"\nBUILD AND DEPLOYMENT SUMMARY:")
+    print("\nBUILD AND DEPLOYMENT SUMMARY:")
     print(f"  Dependencies Analyzed: {summary['total_dependencies']}")
-    print(f"  Optimization Strategies: {summary['successful_optimizations']}/{summary['optimization_strategies']}")
+    print(
+        f"  Optimization Strategies: {summary['successful_optimizations']}/{summary['optimization_strategies']}"
+    )
     print(f"  Deployment Targets: {summary['deployment_targets']}")
     print(f"  Pipeline Success: {'✓ YES' if summary['pipeline_success'] else '✗ NO'}")
     print(f"  Pipeline Duration: {summary['pipeline_duration']:.2f}s")
 
     # Show optimization results
-    print(f"\nOPTIMIZATION RESULTS:")
+    print("\nOPTIMIZATION RESULTS:")
     for strategy, result in optimization_results.items():
         status = "✓ SUCCESS" if result["success"] else "✗ FAILED"
         print(f"  {status} {strategy}: {result['optimization_time']:.3f}s")
 
     # Show pipeline stage results
-    print(f"\nPIPELINE STAGE RESULTS:")
+    print("\nPIPELINE STAGE RESULTS:")
     for stage, result in pipeline_results["stages"].items():
         status = "✓ PASS" if result["success"] else "✗ FAIL"
         print(f"  {status} {stage}: {result['execution_time']:.3f}s")
 
     # Show deployment targets
-    print(f"\nDEPLOYMENT TARGETS:")
+    print("\nDEPLOYMENT TARGETS:")
     for target in deployment_targets:
         print(f"  • {target.name} ({target.platform}) - {target.deployment_strategy}")
 
@@ -779,12 +817,14 @@ def run_build_deployment_pipeline():
     results_dir.mkdir(exist_ok=True)
 
     results_file = results_dir / "task_5_6_build_deployment_pipeline_report.json"
-    with open(results_file, 'w') as f:
+    with open(results_file, "w") as f:
         json.dump(comprehensive_results, f, indent=2)
 
     print(f"\n📄 Build and deployment report saved to: {results_file}")
-    print(f"✅ Task 5.6 Build Optimization and Deployment Pipeline Complete!")
-    print(f"🏗️  {summary['successful_optimizations']} optimization strategies implemented")
+    print("✅ Task 5.6 Build Optimization and Deployment Pipeline Complete!")
+    print(
+        f"🏗️  {summary['successful_optimizations']} optimization strategies implemented"
+    )
     print(f"🚀 {summary['deployment_targets']} deployment targets configured")
     print(f"⚡ Pipeline completed in {summary['pipeline_duration']:.2f}s")
 

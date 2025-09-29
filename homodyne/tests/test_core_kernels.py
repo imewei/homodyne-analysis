@@ -14,10 +14,7 @@ from homodyne.core.kernels import NUMBA_AVAILABLE
 from homodyne.core.kernels import _compute_sinc_squared_single
 from homodyne.core.kernels import calculate_diffusion_coefficient_numba
 from homodyne.core.kernels import calculate_shear_rate_numba
-from homodyne.core.kernels import compute_g1_correlation_numba
 from homodyne.core.kernels import compute_sinc_squared_numba
-from homodyne.core.kernels import create_time_integral_matrix_numba
-from homodyne.core.kernels import memory_efficient_cache
 
 
 class TestNumbaCoreKernels:
@@ -36,13 +33,13 @@ class TestNumbaCoreKernels:
 
         # Physical parameters
         self.params = {
-            'D0': 1.0e-3,      # Å²/s
-            'alpha': 0.9,      # dimensionless
-            'D_offset': 1.0e-4, # Å²/s
-            'gamma0': 1.0e-2,  # s⁻¹
-            'beta': 0.8,       # dimensionless
-            'gamma_offset': 1.0e-3, # s⁻¹
-            'phi0': 0.0        # radians
+            "D0": 1.0e-3,  # Å²/s
+            "alpha": 0.9,  # dimensionless
+            "D_offset": 1.0e-4,  # Å²/s
+            "gamma0": 1.0e-2,  # s⁻¹
+            "beta": 0.8,  # dimensionless
+            "gamma_offset": 1.0e-3,  # s⁻¹
+            "phi0": 0.0,  # radians
         }
 
     def test_sinc_squared_computation(self):
@@ -53,7 +50,9 @@ class TestNumbaCoreKernels:
 
         # Test at pi (should be 0.0)
         result_pi = _compute_sinc_squared_single(np.pi)
-        assert_allclose(result_pi, 0.0, atol=1e-2)  # Relaxed tolerance for numerical precision
+        assert_allclose(
+            result_pi, 0.0, atol=1e-2
+        )  # Relaxed tolerance for numerical precision
 
         # Test at pi/2
         x_half_pi = np.pi / 2
@@ -62,7 +61,7 @@ class TestNumbaCoreKernels:
         assert_allclose(result_half_pi, expected_half_pi, rtol=1e-10)
 
         # Test array input
-        x_array = np.array([0.0, np.pi/4, np.pi/2, np.pi])
+        x_array = np.array([0.0, np.pi / 4, np.pi / 2, np.pi])
         results = np.array([_compute_sinc_squared_single(x) for x in x_array])
         expected = (np.sinc(x_array)) ** 2  # np.sinc already normalizes by π
         assert_allclose(results, expected, rtol=1e-10)
@@ -97,12 +96,14 @@ class TestNumbaCoreKernels:
             assert np.all(small_result >= 0.0)
         except (ModuleNotFoundError, ImportError, TypeError):
             # Skip test when numba is disabled or function signatures don't match
-            pytest.skip("Numba functions not available or incompatible when numba is disabled")
+            pytest.skip(
+                "Numba functions not available or incompatible when numba is disabled"
+            )
 
     @pytest.mark.skipif(not NUMBA_AVAILABLE, reason="Numba not available")
     def test_complex_integration(self):
         """Test complex kernel integration scenarios."""
-        pass
+
 
 class TestKernelIntegration:
     """Integration tests for kernel combinations."""

@@ -14,7 +14,6 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -39,6 +38,7 @@ except ImportError as e:
 # Check for scikit-learn availability for ML tests
 try:
     import sklearn
+
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
@@ -372,9 +372,7 @@ class TestDistributedMLIntegration:
             success = case.get("success", case.get("metrics", {}).get("success", False))
             assert success, f"Benchmark case {case['name']} failed"
             execution_time = case.get("execution_time", case.get("total_time", 0))
-            assert execution_time > 0, (
-                f"Invalid execution time for {case['name']}"
-            )
+            assert execution_time > 0, f"Invalid execution time for {case['name']}"
 
     def test_error_recovery_and_fault_tolerance(self, integration_config):
         """Test error recovery and fault tolerance in distributed/ML systems."""
@@ -562,9 +560,14 @@ class TestDistributedMLIntegration:
                     task = OptimizationTask(
                         task_id=f"perf_test_{test_name}",
                         method="Nelder-Mead",
-                        parameters=np.random.uniform(0.5, 1.5, size),  # Random start near optimum
+                        parameters=np.random.uniform(
+                            0.5, 1.5, size
+                        ),  # Random start near optimum
                         bounds=[(-2.0, 2.0)] * size,  # Tighter bounds around optimum
-                        objective_config={"function_type": "quadratic", "target_params": np.zeros(size)},
+                        objective_config={
+                            "function_type": "quadratic",
+                            "target_params": np.zeros(size),
+                        },
                     )
 
                     coordinator.submit_optimization_task(task)
@@ -646,7 +649,9 @@ def test_integration_modules_basic_functionality():
         "Failed to create DistributedOptimizationCoordinator"
     )
 
-    ml_optimizer = MLAcceleratedOptimizer(config={"ml_model_config": {"model_type": "ensemble"}})
+    ml_optimizer = MLAcceleratedOptimizer(
+        config={"ml_model_config": {"model_type": "ensemble"}}
+    )
     assert ml_optimizer is not None, "Failed to create MLAcceleratedOptimizer"
 
     config = OptimizationConfig()

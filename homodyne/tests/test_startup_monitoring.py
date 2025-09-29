@@ -11,8 +11,8 @@ Institution: Argonne National Laboratory
 
 import tempfile
 import time
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -106,8 +106,7 @@ class TestStartupPerformanceMonitor:
         """Setup test environment with temporary directory."""
         self.temp_dir = tempfile.mkdtemp()
         self.monitor = StartupPerformanceMonitor(
-            package_name="homodyne",
-            baseline_dir=Path(self.temp_dir)
+            package_name="homodyne", baseline_dir=Path(self.temp_dir)
         )
 
     def test_monitor_initialization(self):
@@ -115,7 +114,9 @@ class TestStartupPerformanceMonitor:
         assert self.monitor.package_name == "homodyne"
         assert self.monitor.baseline_dir.exists()
         assert isinstance(self.monitor.baselines, dict)
-        assert isinstance(self.monitor.recent_metrics, type(self.monitor.recent_metrics))
+        assert isinstance(
+            self.monitor.recent_metrics, type(self.monitor.recent_metrics)
+        )
 
     def test_system_info_collection(self):
         """Test system information collection."""
@@ -132,14 +133,14 @@ class TestStartupPerformanceMonitor:
     def test_single_startup_measurement(self):
         """Test single startup measurement."""
         # Mock subprocess to avoid actual package import
-        with patch('subprocess.run') as mock_subprocess:
+        with patch("subprocess.run") as mock_subprocess:
             mock_result = Mock()
             mock_result.returncode = 0
             mock_result.stdout = "IMPORT_TIME: 1.5\n"
             mock_result.stderr = ""
             mock_subprocess.return_value = mock_result
 
-            with patch('psutil.Process') as mock_process:
+            with patch("psutil.Process") as mock_process:
                 mock_proc = Mock()
                 mock_proc.memory_info.return_value.rss = 100 * 1024 * 1024  # 100MB
                 mock_process.return_value = mock_proc
@@ -153,9 +154,9 @@ class TestStartupPerformanceMonitor:
     def test_baseline_establishment(self):
         """Test baseline establishment."""
         # Mock the measurement process
-        with patch.object(self.monitor, 'measure_startup_performance') as mock_measure:
+        with patch.object(self.monitor, "measure_startup_performance") as mock_measure:
             mock_metrics = StartupMetrics(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 import_time=1.8,
                 memory_usage_mb=120.0,
                 python_version="3.12.0",
@@ -176,7 +177,7 @@ class TestStartupPerformanceMonitor:
                 target_import_time=2.0,
                 max_memory_usage_mb=150.0,
                 acceptable_variance_percent=10.0,
-                measurement_count=3
+                measurement_count=3,
             )
 
             assert baseline.name == "test_baseline"
@@ -193,14 +194,14 @@ class TestStartupPerformanceMonitor:
             acceptable_variance_percent=10.0,
             measurement_count=5,
             environment_tags=["test"],
-            created_at=datetime.now(timezone.utc).isoformat(),
-            updated_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
+            updated_at=datetime.now(UTC).isoformat(),
         )
         self.monitor.baselines["test_baseline"] = baseline
 
         # Create metrics that exceed baseline
         bad_metrics = StartupMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             import_time=3.0,  # Exceeds baseline
             memory_usage_mb=200.0,  # Exceeds baseline
             python_version="3.12.0",
@@ -215,10 +216,7 @@ class TestStartupPerformanceMonitor:
             immediate_modules_count=40,
         )
 
-        alerts = self.monitor.check_performance_regression(
-            "test_baseline",
-            bad_metrics
-        )
+        alerts = self.monitor.check_performance_regression("test_baseline", bad_metrics)
 
         assert len(alerts) >= 1  # Should have at least import time alert
         assert any(alert.metric_name == "import_time" for alert in alerts)
@@ -226,10 +224,10 @@ class TestStartupPerformanceMonitor:
     def test_performance_trend_analysis(self):
         """Test performance trend analysis."""
         # Mock historical metrics
-        with patch.object(self.monitor, '_load_historical_metrics') as mock_load:
+        with patch.object(self.monitor, "_load_historical_metrics") as mock_load:
             mock_metrics = [
                 StartupMetrics(
-                    timestamp=(datetime.now(timezone.utc)).isoformat(),
+                    timestamp=(datetime.now(UTC)).isoformat(),
                     import_time=1.5 + i * 0.1,  # Degrading trend
                     memory_usage_mb=100.0 + i * 5,
                     python_version="3.12.0",
@@ -257,13 +255,14 @@ class TestStartupPerformanceMonitor:
     def test_comprehensive_performance_report(self):
         """Test comprehensive performance report generation."""
         # Mock the measurement and regression check
-        with patch.object(self.monitor, 'measure_startup_performance') as mock_measure:
-            with patch.object(self.monitor, 'check_performance_regression') as mock_check:
-                with patch.object(self.monitor, 'get_performance_trend') as mock_trend:
-
+        with patch.object(self.monitor, "measure_startup_performance") as mock_measure:
+            with patch.object(
+                self.monitor, "check_performance_regression"
+            ) as mock_check:
+                with patch.object(self.monitor, "get_performance_trend") as mock_trend:
                     # Setup mocks
                     mock_metrics = StartupMetrics(
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         import_time=1.5,
                         memory_usage_mb=100.0,
                         python_version="3.12.0",
@@ -279,7 +278,10 @@ class TestStartupPerformanceMonitor:
                     )
                     mock_measure.return_value = mock_metrics
                     mock_check.return_value = []  # No alerts
-                    mock_trend.return_value = {"period_days": 30, "total_measurements": 10}
+                    mock_trend.return_value = {
+                        "period_days": 30,
+                        "total_measurements": 10,
+                    }
 
                     # Add a test baseline
                     self.monitor.baselines["test"] = PerformanceBaseline(
@@ -289,8 +291,8 @@ class TestStartupPerformanceMonitor:
                         acceptable_variance_percent=10.0,
                         measurement_count=5,
                         environment_tags=["test"],
-                        created_at=datetime.now(timezone.utc).isoformat(),
-                        updated_at=datetime.now(timezone.utc).isoformat(),
+                        created_at=datetime.now(UTC).isoformat(),
+                        updated_at=datetime.now(UTC).isoformat(),
                     )
 
                     report = self.monitor.generate_performance_report()
@@ -311,8 +313,8 @@ class TestStartupPerformanceMonitor:
             acceptable_variance_percent=15.0,
             measurement_count=3,
             environment_tags=["persistent", "test"],
-            created_at=datetime.now(timezone.utc).isoformat(),
-            updated_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
+            updated_at=datetime.now(UTC).isoformat(),
         )
 
         self.monitor.baselines["persistent_test"] = baseline
@@ -320,8 +322,7 @@ class TestStartupPerformanceMonitor:
 
         # Create new monitor and load baselines
         new_monitor = StartupPerformanceMonitor(
-            package_name="homodyne",
-            baseline_dir=Path(self.temp_dir)
+            package_name="homodyne", baseline_dir=Path(self.temp_dir)
         )
 
         assert "persistent_test" in new_monitor.baselines
@@ -333,7 +334,7 @@ class TestStartupPerformanceMonitor:
         """Test metrics storage and historical retrieval."""
         # Create test metrics
         metrics = StartupMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             import_time=1.5,
             memory_usage_mb=100.0,
             python_version="3.12.0",
@@ -361,7 +362,7 @@ class TestStartupPerformanceMonitor:
         """Test performance rating calculation."""
         # Excellent performance
         excellent_metrics = StartupMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             import_time=0.8,
             memory_usage_mb=80.0,
             python_version="3.12.0",
@@ -387,11 +388,13 @@ class TestStartupPerformanceMonitor:
             baseline_value=2.0,
             degradation_percent=150.0,
             severity="critical",
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             recommendations=[],
         )
 
-        rating = self.monitor._calculate_performance_rating(excellent_metrics, [critical_alert])
+        rating = self.monitor._calculate_performance_rating(
+            excellent_metrics, [critical_alert]
+        )
         assert rating == "poor"
 
 
@@ -409,7 +412,9 @@ class TestGlobalFunctions:
     @pytest.mark.slow
     def test_establish_default_baselines(self):
         """Test establishment of default baselines."""
-        with patch('homodyne.performance.startup_monitoring.StartupPerformanceMonitor.establish_baseline') as mock_establish:
+        with patch(
+            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.establish_baseline"
+        ) as mock_establish:
             mock_baseline = PerformanceBaseline(
                 name="test",
                 target_import_time=2.0,
@@ -417,8 +422,8 @@ class TestGlobalFunctions:
                 acceptable_variance_percent=10.0,
                 measurement_count=5,
                 environment_tags=[],
-                created_at=datetime.now(timezone.utc).isoformat(),
-                updated_at=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
+                updated_at=datetime.now(UTC).isoformat(),
             )
             mock_establish.return_value = mock_baseline
 
@@ -429,9 +434,11 @@ class TestGlobalFunctions:
 
     def test_check_startup_health(self):
         """Test startup health check function."""
-        with patch('homodyne.performance.startup_monitoring.StartupPerformanceMonitor.measure_startup_performance') as mock_measure:
+        with patch(
+            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.measure_startup_performance"
+        ) as mock_measure:
             mock_metrics = StartupMetrics(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 import_time=1.5,  # Good performance
                 memory_usage_mb=100.0,  # Good memory usage
                 python_version="3.12.0",
@@ -456,9 +463,11 @@ class TestGlobalFunctions:
 
     def test_check_startup_health_unhealthy(self):
         """Test startup health check with poor performance."""
-        with patch('homodyne.performance.startup_monitoring.StartupPerformanceMonitor.measure_startup_performance') as mock_measure:
+        with patch(
+            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.measure_startup_performance"
+        ) as mock_measure:
             mock_metrics = StartupMetrics(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 import_time=5.0,  # Poor performance
                 memory_usage_mb=400.0,  # High memory usage
                 python_version="3.12.0",
@@ -488,17 +497,19 @@ class TestIntegrationWithMainPackage:
         import homodyne
 
         # Should have monitoring functions available
-        assert hasattr(homodyne, 'establish_performance_baseline')
-        assert hasattr(homodyne, 'check_performance_health')
-        assert hasattr(homodyne, 'monitor_startup_performance')
-        assert hasattr(homodyne, 'get_performance_trend_report')
+        assert hasattr(homodyne, "establish_performance_baseline")
+        assert hasattr(homodyne, "check_performance_health")
+        assert hasattr(homodyne, "monitor_startup_performance")
+        assert hasattr(homodyne, "get_performance_trend_report")
 
     def test_establish_baseline_function(self):
         """Test main package baseline establishment."""
         import homodyne
 
         # Mock to avoid actual measurement
-        with patch('homodyne.performance.startup_monitoring.StartupPerformanceMonitor.establish_baseline') as mock_establish:
+        with patch(
+            "homodyne.performance.startup_monitoring.StartupPerformanceMonitor.establish_baseline"
+        ) as mock_establish:
             mock_baseline = PerformanceBaseline(
                 name="test_main",
                 target_import_time=2.0,
@@ -506,14 +517,13 @@ class TestIntegrationWithMainPackage:
                 acceptable_variance_percent=15.0,
                 measurement_count=5,
                 environment_tags=[],
-                created_at=datetime.now(timezone.utc).isoformat(),
-                updated_at=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
+                updated_at=datetime.now(UTC).isoformat(),
             )
             mock_establish.return_value = mock_baseline
 
             result = homodyne.establish_performance_baseline(
-                name="test_main",
-                target_import_time=2.0
+                name="test_main", target_import_time=2.0
             )
 
             assert "name" in result
@@ -524,15 +534,17 @@ class TestIntegrationWithMainPackage:
         import homodyne
 
         # Mock to avoid actual measurement
-        with patch('homodyne.performance.simple_monitoring.SimpleStartupMonitor.check_startup_health') as mock_health:
+        with patch(
+            "homodyne.performance.simple_monitoring.SimpleStartupMonitor.check_startup_health"
+        ) as mock_health:
             mock_health.return_value = {
                 "status": "good",
                 "import_time": 1.5,
                 "package_version": "0.7.1",
                 "python_version": "3.12.0",
                 "optimization_enabled": True,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "assessment": "Good startup performance"
+                "timestamp": datetime.now(UTC).isoformat(),
+                "assessment": "Good startup performance",
             }
 
             health = homodyne.check_performance_health()
@@ -546,16 +558,18 @@ class TestIntegrationWithMainPackage:
         import homodyne
 
         # Mock to avoid actual measurement
-        with patch('homodyne.performance.simple_monitoring.SimpleStartupMonitor.measure_startup_time') as mock_measure:
+        with patch(
+            "homodyne.performance.simple_monitoring.SimpleStartupMonitor.measure_startup_time"
+        ) as mock_measure:
             from homodyne.performance.simple_monitoring import SimpleStartupMetrics
 
             mock_metrics = SimpleStartupMetrics(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 import_time=1.3,
                 package_version="0.7.1",
                 python_version="3.12.0",
                 optimization_enabled=True,
-                measurement_iterations=3
+                measurement_iterations=3,
             )
             mock_measure.return_value = mock_metrics
 
@@ -573,31 +587,27 @@ class TestPerformanceBenchmarks:
     @pytest.mark.slow
     def test_monitoring_overhead(self):
         """Test that monitoring system doesn't add significant overhead."""
-        import time
 
         # Measure overhead of monitoring system initialization
         start_time = time.perf_counter()
-        monitor = StartupPerformanceMonitor(
-            baseline_dir=Path(tempfile.mkdtemp())
-        )
+        monitor = StartupPerformanceMonitor(baseline_dir=Path(tempfile.mkdtemp()))
         end_time = time.perf_counter()
 
         initialization_time = end_time - start_time
 
         # Should initialize quickly (adjust threshold as needed)
-        assert initialization_time < 0.1, f"Monitor initialization too slow: {initialization_time:.4f}s"
+        assert initialization_time < 0.1, (
+            f"Monitor initialization too slow: {initialization_time:.4f}s"
+        )
 
     def test_baseline_operation_performance(self):
         """Test performance of baseline operations."""
-        import time
 
-        monitor = StartupPerformanceMonitor(
-            baseline_dir=Path(tempfile.mkdtemp())
-        )
+        monitor = StartupPerformanceMonitor(baseline_dir=Path(tempfile.mkdtemp()))
 
         # Mock metrics to avoid measurement overhead
         mock_metrics = StartupMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             import_time=1.5,
             memory_usage_mb=100.0,
             python_version="3.12.0",
@@ -612,7 +622,9 @@ class TestPerformanceBenchmarks:
             immediate_modules_count=40,
         )
 
-        with patch.object(monitor, 'measure_startup_performance', return_value=mock_metrics):
+        with patch.object(
+            monitor, "measure_startup_performance", return_value=mock_metrics
+        ):
             start_time = time.perf_counter()
 
             # Test baseline establishment
@@ -626,7 +638,9 @@ class TestPerformanceBenchmarks:
         operation_time = end_time - start_time
 
         # Should complete quickly
-        assert operation_time < 1.0, f"Baseline operations too slow: {operation_time:.4f}s"
+        assert operation_time < 1.0, (
+            f"Baseline operations too slow: {operation_time:.4f}s"
+        )
 
 
 if __name__ == "__main__":

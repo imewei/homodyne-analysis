@@ -381,20 +381,19 @@ def main() -> int:
 
             return 0
 
-        else:
-            print_status(result.message, "error", args.quiet)
+        print_status(result.message, "error", args.quiet)
 
-            if result.errors:
-                print("\n💥 Errors encountered:")
-                for error in result.errors:
-                    print_status(error, "error", args.quiet)
+        if result.errors:
+            print("\n💥 Errors encountered:")
+            for error in result.errors:
+                print_status(error, "error", args.quiet)
 
-            if result.warnings and args.verbose:
-                print("\n⚠️  Warnings:")
-                for warning in result.warnings:
-                    print_status(warning, "warning", args.quiet)
+        if result.warnings and args.verbose:
+            print("\n⚠️  Warnings:")
+            for warning in result.warnings:
+                print_status(warning, "warning", args.quiet)
 
-            return 1
+        return 1
 
     except KeyboardInterrupt:
         print_status("Uninstall cancelled by user", "warning", args.quiet)

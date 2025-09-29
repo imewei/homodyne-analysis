@@ -271,11 +271,10 @@ class LegacyCompletionAdapter:
                 print(f"✓ Advanced completion system installed for {shell}")
                 print("✓ Restart your shell session to enable completions")
                 return 0
-            else:
-                print(f"✗ Installation failed: {result.message}")
-                for error in result.errors:
-                    print(f"  Error: {error}")
-                return 1
+            print(f"✗ Installation failed: {result.message}")
+            for error in result.errors:
+                print(f"  Error: {error}")
+            return 1
 
         except Exception as e:
             print(f"✗ Installation error: {e}")
@@ -291,11 +290,10 @@ class LegacyCompletionAdapter:
                 print("✓ Advanced completion system uninstalled")
                 print("✓ Restart your shell session for changes to take effect")
                 return 0
-            else:
-                print(f"✗ Uninstallation failed: {result.message}")
-                for error in result.errors:
-                    print(f"  Error: {error}")
-                return 1
+            print(f"✗ Uninstallation failed: {result.message}")
+            for error in result.errors:
+                print(f"  Error: {error}")
+            return 1
 
         except Exception as e:
             print(f"✗ Uninstallation error: {e}")

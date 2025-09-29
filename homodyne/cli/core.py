@@ -13,8 +13,6 @@ import logging
 import sys
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import Optional
 
 import numpy as np
 
@@ -40,9 +38,11 @@ try:
     from ..analysis.core import HomodyneAnalysisCore
     from ..optimization.classical import ClassicalOptimizer
     from ..optimization.robust import create_robust_optimizer
+
     CORE_ANALYSIS_AVAILABLE = True
 except ImportError as e:
     import logging
+
     logger = logging.getLogger(__name__)
     logger.error(f"❌ Core analysis components not available: {e}")
     HomodyneAnalysisCore = None
@@ -54,6 +54,7 @@ except ImportError as e:
 try:
     from ..optimization.distributed import create_distributed_optimizer
     from ..optimization.distributed import get_available_backends
+
     DISTRIBUTED_AVAILABLE = True
 except ImportError:
     DISTRIBUTED_AVAILABLE = False
@@ -63,6 +64,7 @@ except ImportError:
 try:
     from ..optimization.ml_acceleration import create_ml_accelerated_optimizer
     from ..optimization.ml_acceleration import get_ml_backend_info
+
     ML_ACCELERATION_AVAILABLE = True
 except ImportError:
     ML_ACCELERATION_AVAILABLE = False
@@ -78,6 +80,7 @@ try:
     from ..optimization.utils import quick_setup_distributed_optimization
     from ..optimization.utils import quick_setup_ml_acceleration
     from ..optimization.utils import setup_logging_for_optimization
+
     OPTIMIZATION_UTILS_AVAILABLE = True
 except ImportError:
     OPTIMIZATION_UTILS_AVAILABLE = False
@@ -90,10 +93,14 @@ except ImportError:
     quick_setup_ml_acceleration = None
     setup_logging_for_optimization = None
 
-ADVANCED_OPTIMIZATION_AVAILABLE = DISTRIBUTED_AVAILABLE or ML_ACCELERATION_AVAILABLE or OPTIMIZATION_UTILS_AVAILABLE
+ADVANCED_OPTIMIZATION_AVAILABLE = (
+    DISTRIBUTED_AVAILABLE or ML_ACCELERATION_AVAILABLE or OPTIMIZATION_UTILS_AVAILABLE
+)
 
 
-def initialize_analysis_engine(config_path: Path, config_override: Optional[Dict[str, Any]]):
+def initialize_analysis_engine(
+    config_path: Path, config_override: dict[str, Any] | None
+):
     """
     Initialize the analysis engine with configuration.
 
@@ -126,7 +133,9 @@ def initialize_analysis_engine(config_path: Path, config_override: Optional[Dict
 
     except Exception as e:
         logger.error(f"❌ Failed to initialize analysis engine: {e}")
-        logger.error("Please check your configuration file and ensure all dependencies are installed")
+        logger.error(
+            "Please check your configuration file and ensure all dependencies are installed"
+        )
         sys.exit(1)
 
 
@@ -153,13 +162,15 @@ def load_and_validate_data(analyzer, args: argparse.Namespace):
         c2_exp, time_length, phi_angles, num_angles = analyzer.load_experimental_data()
 
         # Get initial parameters
-        initial_params = np.array(analyzer.config.get("initial_parameters", {}).get("values", []))
+        initial_params = np.array(
+            analyzer.config.get("initial_parameters", {}).get("values", [])
+        )
 
         if len(initial_params) == 0:
             logger.error("❌ No initial parameters found in configuration")
             sys.exit(1)
 
-        logger.info(f"✓ Data loaded successfully:")
+        logger.info("✓ Data loaded successfully:")
         logger.info(f"  Phi angles: {len(phi_angles)} angles")
         logger.info(f"  Data shape: {c2_exp.shape}")
         logger.info(f"  Initial parameters: {len(initial_params)} parameters")
@@ -172,7 +183,9 @@ def load_and_validate_data(analyzer, args: argparse.Namespace):
         sys.exit(1)
 
 
-def configure_optimization_enhancements(args: argparse.Namespace, initial_params, phi_angles, analyzer):
+def configure_optimization_enhancements(
+    args: argparse.Namespace, initial_params, phi_angles, analyzer
+):
     """
     Configure optimization enhancements based on command-line arguments.
 
@@ -195,7 +208,7 @@ def configure_optimization_enhancements(args: argparse.Namespace, initial_params
     enhanced_config = {}
 
     # Configure distributed optimization
-    if hasattr(args, 'distributed') and args.distributed:
+    if hasattr(args, "distributed") and args.distributed:
         if not ADVANCED_OPTIMIZATION_AVAILABLE:
             logger.warning("⚠️  Advanced optimization features not available")
             logger.warning("Continuing with standard optimization...")
@@ -205,15 +218,17 @@ def configure_optimization_enhancements(args: argparse.Namespace, initial_params
                 distributed_config = quick_setup_distributed_optimization(
                     backend=args.backend,
                     workers=args.workers,
-                    config_path=getattr(args, 'distributed_config', None)
+                    config_path=getattr(args, "distributed_config", None),
                 )
-                enhanced_config['distributed'] = distributed_config
-                logger.info(f"✓ Distributed optimization configured: {distributed_config['backend']}")
+                enhanced_config["distributed"] = distributed_config
+                logger.info(
+                    f"✓ Distributed optimization configured: {distributed_config['backend']}"
+                )
             except Exception as e:
                 logger.warning(f"⚠️  Failed to configure distributed optimization: {e}")
 
     # Configure ML acceleration
-    if hasattr(args, 'ml_accelerated') and args.ml_accelerated:
+    if hasattr(args, "ml_accelerated") and args.ml_accelerated:
         if not ADVANCED_OPTIMIZATION_AVAILABLE:
             logger.warning("⚠️  ML acceleration features not available")
             logger.warning("Continuing with standard optimization...")
@@ -222,10 +237,12 @@ def configure_optimization_enhancements(args: argparse.Namespace, initial_params
             try:
                 ml_config = quick_setup_ml_acceleration(
                     data_path=args.ml_data_path,
-                    train_models=getattr(args, 'train_ml_model', False),
-                    enable_transfer_learning=getattr(args, 'enable_transfer_learning', False)
+                    train_models=getattr(args, "train_ml_model", False),
+                    enable_transfer_learning=getattr(
+                        args, "enable_transfer_learning", False
+                    ),
                 )
-                enhanced_config['ml_acceleration'] = ml_config
+                enhanced_config["ml_acceleration"] = ml_config
                 logger.info("✓ ML acceleration configured")
             except Exception as e:
                 logger.warning(f"⚠️  Failed to configure ML acceleration: {e}")
@@ -233,7 +250,14 @@ def configure_optimization_enhancements(args: argparse.Namespace, initial_params
     return enhanced_config
 
 
-def execute_optimization_methods(args: argparse.Namespace, analyzer, initial_params, phi_angles, c2_exp, enhanced_config):
+def execute_optimization_methods(
+    args: argparse.Namespace,
+    analyzer,
+    initial_params,
+    phi_angles,
+    c2_exp,
+    enhanced_config,
+):
     """
     Execute optimization methods based on command-line arguments.
 
@@ -270,21 +294,20 @@ def execute_optimization_methods(args: argparse.Namespace, analyzer, initial_par
         )
         return {"classical": result} if result else {}
 
-    elif args.method == "robust":
+    if args.method == "robust":
         result = run_robust_optimization(
             analyzer, initial_params, phi_angles, c2_exp, args.output_dir
         )
         return {"robust": result} if result else {}
 
-    elif args.method == "all":
+    if args.method == "all":
         results = run_all_methods(
             analyzer, initial_params, phi_angles, c2_exp, args.output_dir
         )
         return results
 
-    else:
-        logger.error(f"❌ Unknown optimization method: {args.method}")
-        return {}
+    logger.error(f"❌ Unknown optimization method: {args.method}")
+    return {}
 
 
 def create_enhanced_optimizers(args: argparse.Namespace, analyzer, enhanced_config):
@@ -305,35 +328,35 @@ def create_enhanced_optimizers(args: argparse.Namespace, analyzer, enhanced_conf
 
     try:
         # Create enhanced classical optimizer
-        if 'distributed' in enhanced_config or 'ml_acceleration' in enhanced_config:
+        if "distributed" in enhanced_config or "ml_acceleration" in enhanced_config:
             logger.info("Creating enhanced classical optimizer...")
             enhanced_classical = ClassicalOptimizer(analyzer, analyzer.config)
 
-            if 'distributed' in enhanced_config:
+            if "distributed" in enhanced_config:
                 enhanced_classical = create_distributed_optimizer(
-                    enhanced_classical, enhanced_config['distributed']
+                    enhanced_classical, enhanced_config["distributed"]
                 )
 
-            if 'ml_acceleration' in enhanced_config:
+            if "ml_acceleration" in enhanced_config:
                 enhanced_classical = create_ml_accelerated_optimizer(
-                    enhanced_classical, enhanced_config['ml_acceleration']
+                    enhanced_classical, enhanced_config["ml_acceleration"]
                 )
 
             analyzer._enhanced_classical_optimizer = enhanced_classical
 
         # Create enhanced robust optimizer
-        if 'distributed' in enhanced_config or 'ml_acceleration' in enhanced_config:
+        if "distributed" in enhanced_config or "ml_acceleration" in enhanced_config:
             logger.info("Creating enhanced robust optimizer...")
             enhanced_robust = create_robust_optimizer(analyzer)
 
-            if 'distributed' in enhanced_config:
+            if "distributed" in enhanced_config:
                 enhanced_robust = create_distributed_optimizer(
-                    enhanced_robust, enhanced_config['distributed']
+                    enhanced_robust, enhanced_config["distributed"]
                 )
 
-            if 'ml_acceleration' in enhanced_config:
+            if "ml_acceleration" in enhanced_config:
                 enhanced_robust = create_ml_accelerated_optimizer(
-                    enhanced_robust, enhanced_config['ml_acceleration']
+                    enhanced_robust, enhanced_config["ml_acceleration"]
                 )
 
             analyzer._enhanced_robust_optimizer = enhanced_robust
@@ -342,7 +365,9 @@ def create_enhanced_optimizers(args: argparse.Namespace, analyzer, enhanced_conf
         logger.warning(f"⚠️  Failed to create enhanced optimizers: {e}")
 
 
-def process_and_save_results(results: Dict[str, Any], args: argparse.Namespace, analyzer):
+def process_and_save_results(
+    results: dict[str, Any], args: argparse.Namespace, analyzer
+):
     """
     Process and save optimization results.
 
@@ -383,7 +408,7 @@ def process_and_save_results(results: Dict[str, Any], args: argparse.Namespace, 
                 results.get("robust"),
                 phi_angles,
                 c2_exp,
-                args.output_dir
+                args.output_dir,
             )
 
         logger.info(f"✓ All results saved to: {args.output_dir}")
@@ -416,10 +441,14 @@ def run_analysis(args: argparse.Namespace) -> None:
     initial_params, phi_angles, c2_exp = load_and_validate_data(analyzer, args)
 
     # Configure optimization enhancements
-    enhanced_config = configure_optimization_enhancements(args, initial_params, phi_angles, analyzer)
+    enhanced_config = configure_optimization_enhancements(
+        args, initial_params, phi_angles, analyzer
+    )
 
     # Execute optimization methods
-    results = execute_optimization_methods(args, analyzer, initial_params, phi_angles, c2_exp, enhanced_config)
+    results = execute_optimization_methods(
+        args, analyzer, initial_params, phi_angles, c2_exp, enhanced_config
+    )
 
     # Process and save results
     process_and_save_results(results, args, analyzer)
@@ -442,18 +471,20 @@ def main():
     args = parser.parse_args()
 
     # Handle special commands first
-    if hasattr(args, 'install_completion') and args.install_completion:
+    if hasattr(args, "install_completion") and args.install_completion:
         try:
             from .ui.completion.adapter import install_shell_completion
+
             return install_shell_completion(args.install_completion)
         except ImportError:
             print("Error: Shell completion requires additional packages.")
             print("Install with: pip install argcomplete")
             return 1
 
-    if hasattr(args, 'uninstall_completion') and args.uninstall_completion:
+    if hasattr(args, "uninstall_completion") and args.uninstall_completion:
         try:
             from .ui.completion.adapter import uninstall_shell_completion
+
             return uninstall_shell_completion(args.uninstall_completion)
         except ImportError:
             return 1
@@ -492,9 +523,13 @@ def main():
 
     # Log analysis mode selection
     if args.static_isotropic:
-        logger.info("Command-line mode: static isotropic (3 parameters, no angle selection)")
+        logger.info(
+            "Command-line mode: static isotropic (3 parameters, no angle selection)"
+        )
     elif hasattr(args, "static_anisotropic") and args.static_anisotropic:
-        logger.info("Command-line mode: static anisotropic (3 parameters, with angle selection)")
+        logger.info(
+            "Command-line mode: static anisotropic (3 parameters, with angle selection)"
+        )
     elif args.laminar_flow:
         logger.info("Command-line mode: laminar flow (7 parameters)")
     else:
@@ -524,7 +559,9 @@ def main():
         raise
     except Exception as e:
         logger.error(f"❌ Analysis failed: {e}")
-        logger.error("Please check your configuration and ensure all dependencies are installed")
+        logger.error(
+            "Please check your configuration and ensure all dependencies are installed"
+        )
         sys.exit(1)
 
 

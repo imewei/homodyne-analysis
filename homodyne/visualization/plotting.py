@@ -19,9 +19,9 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import gridspec
 
 from homodyne.core.io_utils import ensure_dir
 from homodyne.core.io_utils import save_fig
@@ -236,7 +236,7 @@ def plot_c2_heatmaps(
 
             # Calculate appropriate vmin for this angle's data
             angle_data_min = min(np.min(exp[i]), np.min(fitted[i]))
-            angle_vmin = 1.0 if angle_data_min >= 1.0 else angle_data_min
+            angle_vmin = min(1.0, angle_data_min)
 
             # Experimental data heatmap
             ax1 = fig.add_subplot(gs[0, 0])
@@ -299,7 +299,7 @@ def plot_c2_heatmaps(
             data_min = min(np.min(exp[i]), np.min(fitted[i]))
             data_max = max(np.max(exp[i]), np.max(fitted[i]))
             # Use the same vmin logic as the imshow calls
-            colorbar_vmin = 1.0 if data_min >= 1.0 else data_min
+            colorbar_vmin = min(1.0, data_min)
             colorbar_vmax = data_max
             im1.set_clim(colorbar_vmin, colorbar_vmax)
             im2.set_clim(colorbar_vmin, colorbar_vmax)

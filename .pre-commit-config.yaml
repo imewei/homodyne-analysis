@@ -77,9 +77,10 @@ repos:
     hooks:
       - id: vulture
         name: detect-dead-code
-        args: [--min-confidence=80, --sort-by-size]
+        args: [--min-confidence=80, --sort-by-size, homodyne/]
         description: "Find unused Python code (functions, classes, variables)"
         exclude: ^(homodyne/tests/|tests/|.*test.*\.py$|__init__\.py$)
+        pass_filenames: false
 
   # Dead function detection
   - repo: https://github.com/asottile/dead
@@ -210,25 +211,26 @@ repos:
   # PHASE 8: CUSTOM HOMODYNE-SPECIFIC QUALITY CHECKS
   # ═══════════════════════════════════════════════════════════════════
 
-  # Custom quality checks (if modules exist)
-  - repo: local
-    hooks:
-      - id: homodyne-dead-code-check
-        name: homodyne-deadcode-detection
-        entry: python -c "try:\n    from homodyne.tests.test_dead_code_detection_pipeline import main\n    main()\nexcept ImportError:\n    print('Dead code detection module not available, skipping...')\n    exit(0)"
-        language: python
-        files: \.py$
-        exclude: ^(homodyne/tests/|tests/|.*test.*\.py$|__init__\.py$)
-        description: "Custom dead code detection for Homodyne package"
-        pass_filenames: false
-
-      - id: homodyne-quality-metrics
-        name: homodyne-quality-check
-        entry: python -c "try:\n    from homodyne.tests.test_code_quality_metrics import main\n    main()\nexcept ImportError:\n    print('Quality metrics module not available, skipping...')\n    exit(0)"
-        language: python
-        files: \.py$
-        description: "Code quality metrics validation for Homodyne"
-        pass_filenames: false
+  # Custom quality checks (DISABLED: Python -c syntax incompatible with pre-commit YAML)
+  # TODO: Re-enable by creating wrapper scripts in scripts/ directory
+  # - repo: local
+  #   hooks:
+  #     - id: homodyne-dead-code-check
+  #       name: homodyne-deadcode-detection
+  #       entry: scripts/run_dead_code_check.sh
+  #       language: system
+  #       files: \.py$
+  #       exclude: ^(homodyne/tests/|tests/|.*test.*\.py$|__init__\.py$)
+  #       description: "Custom dead code detection for Homodyne package"
+  #       pass_filenames: false
+  #
+  #     - id: homodyne-quality-metrics
+  #       name: homodyne-quality-check
+  #       entry: scripts/run_quality_check.sh
+  #       language: system
+  #       files: \.py$
+  #       description: "Code quality metrics validation for Homodyne"
+  #       pass_filenames: false
 
   # ═══════════════════════════════════════════════════════════════════
   # PHASE 9: DOCUMENTATION AND MARKUP FORMATTING

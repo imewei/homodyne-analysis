@@ -30,10 +30,10 @@ import os
 import shutil
 import stat
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
-from typing import Generator
 
 import numpy as np
 
@@ -202,7 +202,7 @@ def ensure_dir_secure(path: str | Path, permissions: int = 0o755) -> Path:
         if not path_obj.exists():
             logger.error(f"Failed to create directory {path_obj}: {e}")
             raise
-        elif not path_obj.is_dir():
+        if not path_obj.is_dir():
             raise ValidationError(f"Path exists but is not a directory: {path_obj}")
 
         return path_obj
@@ -294,18 +294,17 @@ def save_numpy_secure(
 
             success = True
 
+        # Use original implementation for smaller arrays
+        elif _original_save_numpy:
+            success = _original_save_numpy(data, filepath, compressed, **kwargs)
         else:
-            # Use original implementation for smaller arrays
-            if _original_save_numpy:
-                success = _original_save_numpy(data, filepath, compressed, **kwargs)
+            # Fallback implementation
+            ensure_dir_secure(filepath.parent)
+            if compressed or filepath.suffix == ".npz":
+                np.savez_compressed(filepath, data=data, **kwargs)
             else:
-                # Fallback implementation
-                ensure_dir_secure(filepath.parent)
-                if compressed or filepath.suffix == ".npz":
-                    np.savez_compressed(filepath, data=data, **kwargs)
-                else:
-                    np.save(filepath, data, **kwargs)
-                success = True
+                np.save(filepath, data, **kwargs)
+            success = True
 
         if success and verify_integrity:
             # Verify file was written correctly
@@ -365,24 +364,21 @@ def load_numpy_secure(
                 with np.load(filepath, mmap_mode=None) as npz_file:
                     if "data" in npz_file:
                         return npz_file["data"]
-                    else:
-                        # Return first array if 'data' key not found
-                        key = next(iter(npz_file.keys()))
-                        return npz_file[key]
+                    # Return first array if 'data' key not found
+                    key = next(iter(npz_file.keys()))
+                    return npz_file[key]
             else:
                 return np.load(filepath, mmap_mode=mmap_mode)
 
+        # Standard loading for smaller files
+        elif filepath.suffix == ".npz":
+            with np.load(filepath) as npz_file:
+                if "data" in npz_file:
+                    return npz_file["data"]
+                key = next(iter(npz_file.keys()))
+                return npz_file[key]
         else:
-            # Standard loading for smaller files
-            if filepath.suffix == ".npz":
-                with np.load(filepath) as npz_file:
-                    if "data" in npz_file:
-                        return npz_file["data"]
-                    else:
-                        key = next(iter(npz_file.keys()))
-                        return npz_file[key]
-            else:
-                return np.load(filepath)
+            return np.load(filepath)
 
     except Exception as e:
         logger.error(f"Failed to load secure NumPy array from {filepath}: {e}")
@@ -411,49 +407,48 @@ def save_analysis_results_secure(
             # Use original implementation but with secure file operations
             return _original_save_analysis_results(results, config, base_name)
 
-        else:
-            # Fallback secure implementation
-            output_dir = Path("./homodyne_results")
-            if config and "output_settings" in config:
-                output_dir = Path(
-                    config["output_settings"].get(
-                        "results_directory", "./homodyne_results"
-                    )
+        # Fallback secure implementation
+        output_dir = Path("./homodyne_results")
+        if config and "output_settings" in config:
+            output_dir = Path(
+                config["output_settings"].get(
+                    "results_directory", "./homodyne_results"
                 )
+            )
 
-            ensure_dir_secure(output_dir)
+        ensure_dir_secure(output_dir)
 
-            # Generate secure filename
-            from datetime import datetime
+        # Generate secure filename
+        from datetime import datetime
 
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            chi2 = results.get("best_chi_squared")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        chi2 = results.get("best_chi_squared")
 
-            filename_parts = [base_name, timestamp]
-            if chi2 is not None:
-                filename_parts.append(f"chi2_{chi2:.6f}")
+        filename_parts = [base_name, timestamp]
+        if chi2 is not None:
+            filename_parts.append(f"chi2_{chi2:.6f}")
 
-            filename_base = "_".join(filename_parts)
+        filename_base = "_".join(filename_parts)
 
-            save_status = {}
+        save_status = {}
 
-            # Save JSON results
-            json_path = output_dir / f"{filename_base}.json"
-            save_status["json"] = save_json_secure(results, json_path, verify_integrity)
+        # Save JSON results
+        json_path = output_dir / f"{filename_base}.json"
+        save_status["json"] = save_json_secure(results, json_path, verify_integrity)
 
-            # Save NumPy arrays if present
-            if "correlation_data" in results and isinstance(
-                results["correlation_data"], np.ndarray
-            ):
-                npz_path = output_dir / f"{filename_base}_data.npz"
-                save_status["numpy"] = save_numpy_secure(
-                    results["correlation_data"],
-                    npz_path,
-                    verify_integrity=verify_integrity,
-                )
+        # Save NumPy arrays if present
+        if "correlation_data" in results and isinstance(
+            results["correlation_data"], np.ndarray
+        ):
+            npz_path = output_dir / f"{filename_base}_data.npz"
+            save_status["numpy"] = save_numpy_secure(
+                results["correlation_data"],
+                npz_path,
+                verify_integrity=verify_integrity,
+            )
 
-            logger.info(f"Secure analysis results saved: {filename_base}")
-            return save_status
+        logger.info(f"Secure analysis results saved: {filename_base}")
+        return save_status
 
     except Exception as e:
         logger.error(f"Failed to save secure analysis results: {e}")

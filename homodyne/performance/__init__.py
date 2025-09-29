@@ -29,8 +29,9 @@ except ImportError as e:
     )
     # Create placeholder modules for compatibility
     import types
-    baseline = types.ModuleType('baseline')
-    monitoring = types.ModuleType('monitoring')
+
+    baseline = types.ModuleType("baseline")
+    monitoring = types.ModuleType("monitoring")
 
 # Integrated monitoring system imports
 try:
@@ -66,9 +67,7 @@ try:
 except ImportError as e:
     import warnings
 
-    warnings.warn(
-        f"Could not import StartupMonitor: {e}", ImportWarning, stacklevel=2
-    )
+    warnings.warn(f"Could not import StartupMonitor: {e}", ImportWarning, stacklevel=2)
     StartupMonitor = None
 
 __all__ = [

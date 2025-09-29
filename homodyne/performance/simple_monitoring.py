@@ -16,12 +16,9 @@ import sys
 import time
 from dataclasses import asdict
 from dataclasses import dataclass
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SimpleStartupMetrics:
     """Simple startup performance metrics."""
+
     timestamp: str
     import_time: float
     package_version: str
@@ -67,8 +65,11 @@ class SimpleStartupMonitor:
         for i in range(iterations):
             try:
                 start_time = time.perf_counter()
-                result = subprocess.run([
-                    sys.executable, "-c", f'''
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        f"""
 import sys
 import os
 sys.modules["numba"] = None
@@ -81,15 +82,19 @@ start = time.perf_counter()
 import {self.package_name}
 end = time.perf_counter()
 print(f"IMPORT_TIME:{{end - start:.6f}}")
-                    '''
-                ], capture_output=True, text=True, timeout=30)
+                    """,
+                    ],
+                    check=False, capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
                 end_time = time.perf_counter()
 
                 if result.returncode == 0:
                     # Parse import time from output
-                    for line in result.stdout.split('\n'):
-                        if line.startswith('IMPORT_TIME:'):
-                            import_time = float(line.split(':')[1])
+                    for line in result.stdout.split("\n"):
+                        if line.startswith("IMPORT_TIME:"):
+                            import_time = float(line.split(":")[1])
                             times.append(import_time)
                             break
                 else:
@@ -106,28 +111,32 @@ print(f"IMPORT_TIME:{{end - start:.6f}}")
         # Get system information
         try:
             import importlib.metadata
+
             package_version = importlib.metadata.version(self.package_name)
         except Exception:
             package_version = "unknown"
 
         import platform
+
         python_version = platform.python_version()
 
-        optimization_enabled = os.environ.get("HOMODYNE_OPTIMIZE_STARTUP", "true").lower() in ("true", "1", "yes")
+        optimization_enabled = os.environ.get(
+            "HOMODYNE_OPTIMIZE_STARTUP", "true"
+        ).lower() in ("true", "1", "yes")
 
         metrics = SimpleStartupMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             import_time=avg_time,
             package_version=package_version,
             python_version=python_version,
             optimization_enabled=optimization_enabled,
-            measurement_iterations=len(times)
+            measurement_iterations=len(times),
         )
 
         logger.info(f"Startup time: {avg_time:.3f}s (avg of {len(times)} measurements)")
         return metrics
 
-    def check_startup_health(self) -> Dict[str, Any]:
+    def check_startup_health(self) -> dict[str, Any]:
         """
         Simple startup health check.
 
@@ -156,7 +165,7 @@ print(f"IMPORT_TIME:{{end - start:.6f}}")
                 "python_version": metrics.python_version,
                 "optimization_enabled": metrics.optimization_enabled,
                 "timestamp": metrics.timestamp,
-                "assessment": self._get_performance_assessment(metrics.import_time)
+                "assessment": self._get_performance_assessment(metrics.import_time),
             }
 
         except Exception as e:
@@ -164,21 +173,20 @@ print(f"IMPORT_TIME:{{end - start:.6f}}")
             return {
                 "status": "error",
                 "error": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def _get_performance_assessment(self, import_time: float) -> str:
         """Get performance assessment message."""
         if import_time < 1.0:
             return "Excellent startup performance"
-        elif import_time < 2.0:
+        if import_time < 2.0:
             return "Good startup performance"
-        elif import_time < 3.0:
+        if import_time < 3.0:
             return "Fair startup performance - consider optimization"
-        else:
-            return "Poor startup performance - optimization needed"
+        return "Poor startup performance - optimization needed"
 
-    def create_simple_baseline(self, name: str, target_time: float) -> Dict[str, Any]:
+    def create_simple_baseline(self, name: str, target_time: float) -> dict[str, Any]:
         """
         Create a simple performance baseline.
 
@@ -202,13 +210,15 @@ print(f"IMPORT_TIME:{{end - start:.6f}}")
             "current_time": current_metrics.import_time,
             "meets_target": current_metrics.import_time <= target_time,
             "created_at": current_metrics.timestamp,
-            "package_version": current_metrics.package_version
+            "package_version": current_metrics.package_version,
         }
 
-        logger.info(f"Baseline '{name}' created: target {target_time}s, current {current_metrics.import_time:.3f}s")
+        logger.info(
+            f"Baseline '{name}' created: target {target_time}s, current {current_metrics.import_time:.3f}s"
+        )
         return baseline
 
-    def generate_simple_report(self) -> Dict[str, Any]:
+    def generate_simple_report(self) -> dict[str, Any]:
         """
         Generate a simple performance report.
 
@@ -221,38 +231,42 @@ print(f"IMPORT_TIME:{{end - start:.6f}}")
         metrics = self.measure_startup_time(iterations=5)
 
         return {
-            "report_generated_at": datetime.now(timezone.utc).isoformat(),
+            "report_generated_at": datetime.now(UTC).isoformat(),
             "package_name": self.package_name,
             "health_status": health["status"],
             "current_performance": {
                 "import_time": metrics.import_time,
                 "measurement_iterations": metrics.measurement_iterations,
-                "optimization_enabled": metrics.optimization_enabled
+                "optimization_enabled": metrics.optimization_enabled,
             },
             "assessment": health.get("assessment", "Unknown"),
             "recommendations": self._get_recommendations(metrics.import_time),
             "system_info": {
                 "package_version": metrics.package_version,
                 "python_version": metrics.python_version,
-                "timestamp": metrics.timestamp
-            }
+                "timestamp": metrics.timestamp,
+            },
         }
 
-    def _get_recommendations(self, import_time: float) -> List[str]:
+    def _get_recommendations(self, import_time: float) -> list[str]:
         """Get performance recommendations."""
         recommendations = []
 
         if import_time > 3.0:
-            recommendations.extend([
-                "Consider enabling optimization with HOMODYNE_OPTIMIZE_STARTUP=true",
-                "Review import structure for heavy dependencies",
-                "Check for circular imports or unnecessary eager loading"
-            ])
+            recommendations.extend(
+                [
+                    "Consider enabling optimization with HOMODYNE_OPTIMIZE_STARTUP=true",
+                    "Review import structure for heavy dependencies",
+                    "Check for circular imports or unnecessary eager loading",
+                ]
+            )
         elif import_time > 2.0:
-            recommendations.extend([
-                "Monitor performance trends",
-                "Consider lazy loading for non-critical components"
-            ])
+            recommendations.extend(
+                [
+                    "Monitor performance trends",
+                    "Consider lazy loading for non-critical components",
+                ]
+            )
         else:
             recommendations.append("Performance is within acceptable range")
 
@@ -271,7 +285,7 @@ def get_simple_monitor() -> SimpleStartupMonitor:
     return _simple_monitor
 
 
-def quick_startup_check() -> Dict[str, Any]:
+def quick_startup_check() -> dict[str, Any]:
     """
     Quick startup performance check.
 
@@ -284,7 +298,7 @@ def quick_startup_check() -> Dict[str, Any]:
     return monitor.check_startup_health()
 
 
-def measure_current_startup_performance(iterations: int = 3) -> Dict[str, Any]:
+def measure_current_startup_performance(iterations: int = 3) -> dict[str, Any]:
     """
     Measure current startup performance.
 
@@ -303,7 +317,7 @@ def measure_current_startup_performance(iterations: int = 3) -> Dict[str, Any]:
     return asdict(metrics)
 
 
-def create_performance_baseline(name: str, target_time: float = 2.0) -> Dict[str, Any]:
+def create_performance_baseline(name: str, target_time: float = 2.0) -> dict[str, Any]:
     """
     Create a simple performance baseline.
 

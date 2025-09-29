@@ -3,17 +3,17 @@
 ## System Comparison
 
 | Feature | Legacy System | Current System |
-|---------|---------------|----------------|
-| **Architecture** | Multiple fragmented scripts | Unified plugin-based engine |
-| **Files** | `cli_completion.py`, `completion_fast.py`, standalone scripts | Modular system in `homodyne/ui/completion/` |
-| **Caching** | Basic file-based cache | Environment-aware intelligent caching |
-| **Method Names** | `classical`, `robust`, `all` | `vi`, `mcmc`, `hybrid` |
-| **Installation** | Simple shell script injection | Atomic installation with rollback |
-| **Environment Support** | System-wide only | Per-environment isolation |
-| **Project Awareness** | None | Auto-detects project structure |
-| **Plugin Support** | None | Extensible plugin architecture |
-| **Error Handling** | Basic fallbacks | Comprehensive error recovery |
-| **Performance** | ~50ms response time | <50ms with intelligent caching |
+|---------|---------------|----------------| | **Architecture** | Multiple fragmented
+scripts | Unified plugin-based engine | | **Files** | `cli_completion.py`,
+`completion_fast.py`, standalone scripts | Modular system in `homodyne/ui/completion/` |
+| **Caching** | Basic file-based cache | Environment-aware intelligent caching | |
+**Method Names** | `classical`, `robust`, `all` | `vi`, `mcmc`, `hybrid` | |
+**Installation** | Simple shell script injection | Atomic installation with rollback | |
+**Environment Support** | System-wide only | Per-environment isolation | | **Project
+Awareness** | None | Auto-detects project structure | | **Plugin Support** | None |
+Extensible plugin architecture | | **Error Handling** | Basic fallbacks | Comprehensive
+error recovery | | **Performance** | ~50ms response time | \<50ms with intelligent
+caching |
 
 ## Migration Summary
 
@@ -167,13 +167,12 @@ homodyne --uninstall-completion zsh  # Same command, improved cleanup
 ### Legacy Problems Solved
 
 | Problem | Legacy Issue | Current Solution |
-|---------|-------------|-----------------|
-| **Fragmentation** | Multiple scattered files | Unified modular system |
-| **Maintenance** | Hard to modify/extend | Plugin-based architecture |
-| **Performance** | No intelligent caching | Multi-layer caching strategy |
-| **Environment** | Global pollution | Environment isolation |
-| **Installation** | Brittle shell injection | Atomic installation system |
-| **Debugging** | Hard to troubleshoot | Comprehensive error handling |
+|---------|-------------|-----------------| | **Fragmentation** | Multiple scattered
+files | Unified modular system | | **Maintenance** | Hard to modify/extend |
+Plugin-based architecture | | **Performance** | No intelligent caching | Multi-layer
+caching strategy | | **Environment** | Global pollution | Environment isolation | |
+**Installation** | Brittle shell injection | Atomic installation system | |
+**Debugging** | Hard to troubleshoot | Comprehensive error handling |
 
 ### Code Quality Improvements
 
@@ -221,4 +220,6 @@ class LegacyAdapter:         # Backward compatibility
 
 ## Conclusion
 
-The current completion system provides all the benefits of the legacy system with significant improvements in performance, intelligence, and maintainability while maintaining complete backward compatibility.
+The current completion system provides all the benefits of the legacy system with
+significant improvements in performance, intelligence, and maintainability while
+maintaining complete backward compatibility.

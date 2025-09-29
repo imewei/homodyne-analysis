@@ -16,16 +16,10 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
-from typing import Union
 
 import pytest
 
@@ -35,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TypeHintModernization:
     """Type hint modernization record."""
+
     file_path: str
     line_number: int
     old_hint: str
@@ -46,11 +41,12 @@ class TypeHintModernization:
 @dataclass
 class TypeHintAnalysisResults:
     """Results of type hint analysis."""
+
     total_files: int
     files_with_hints: int
     total_type_hints: int
     modernizable_hints: int
-    modernizations: List[TypeHintModernization] = field(default_factory=list)
+    modernizations: list[TypeHintModernization] = field(default_factory=list)
     performance_improvements: int = 0
     coverage_percentage: float = 0.0
 
@@ -62,7 +58,7 @@ class Python312TypeHintModernizer:
         self.package_root = package_root
         self.modernization_patterns = self._get_modernization_patterns()
 
-    def _get_modernization_patterns(self) -> Dict[str, Dict[str, Any]]:
+    def _get_modernization_patterns(self) -> dict[str, dict[str, Any]]:
         """Get type hint modernization patterns."""
         return {
             # Union type modernization (PEP 604)
@@ -72,17 +68,15 @@ class Python312TypeHintModernizer:
                     part.strip() for part in match.group(1).split(",")
                 ),
                 "performance": "improved",
-                "description": "Replace Union[X, Y] with X | Y"
+                "description": "Replace Union[X, Y] with X | Y",
             },
-
             # Optional type modernization
             "optional_types": {
                 "pattern": r"Optional\[([^\]]+)\]",
                 "replacement": lambda match: f"{match.group(1).strip()} | None",
                 "performance": "improved",
-                "description": "Replace Optional[X] with X | None"
+                "description": "Replace Optional[X] with X | None",
             },
-
             # List/Dict/Set modernization (PEP 585)
             "generic_collections": {
                 "patterns": {
@@ -98,50 +92,47 @@ class Python312TypeHintModernizer:
                     r"ChainMap\[([^\]]+)\]": r"ChainMap[\1]",
                 },
                 "performance": "improved",
-                "description": "Use built-in generics instead of typing module"
+                "description": "Use built-in generics instead of typing module",
             },
-
             # Type alias with TypeAlias annotation
             "type_aliases": {
                 "pattern": r"^(\s*)([A-Z][A-Za-z0-9_]*)\s*=\s*([A-Za-z0-9_\[\],\s\|]+)$",
                 "replacement": r"\1\2: TypeAlias = \3",
                 "performance": "improved",
-                "description": "Add TypeAlias annotation for better static analysis"
+                "description": "Add TypeAlias annotation for better static analysis",
             },
-
             # Literal types for better type safety
             "literal_strings": {
                 "pattern": r'str\s*=\s*["\']([a-zA-Z_][a-zA-Z0-9_]*)["\']',
                 "replacement": r'Literal["\1"]',
                 "performance": "improved",
-                "description": "Use Literal types for string constants"
+                "description": "Use Literal types for string constants",
             },
-
             # Self type for method return types (PEP 673)
             "self_return_types": {
                 "pattern": r"def\s+(\w+)\(self[^)]*\)\s*->\s*['\"]?([A-Z][A-Za-z0-9_]*)['\"]?:",
-                "replacement": lambda match, class_name: f"def {match.group(1)}(self) -> Self:",
+                "replacement": lambda match,
+                class_name: f"def {match.group(1)}(self) -> Self:",
                 "performance": "improved",
-                "description": "Use Self type for method return types"
+                "description": "Use Self type for method return types",
             },
-
             # Generic type parameter syntax (PEP 695)
             "generic_syntax": {
                 "pattern": r"class\s+([A-Z][A-Za-z0-9_]*)\(Generic\[([T-Z][A-Za-z0-9_]*)\]\)",
                 "replacement": r"class \1[\2]",
                 "performance": "improved",
-                "description": "Use new generic syntax"
-            }
+                "description": "Use new generic syntax",
+            },
         }
 
-    def analyze_file_type_hints(self, file_path: Path) -> List[TypeHintModernization]:
+    def analyze_file_type_hints(self, file_path: Path) -> list[TypeHintModernization]:
         """Analyze type hints in a single file and identify modernization opportunities."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             modernizations = []
-            lines = content.split('\n')
+            lines = content.split("\n")
 
             # Check each line for modernizable patterns
             for line_num, line in enumerate(lines, 1):
@@ -163,7 +154,9 @@ class Python312TypeHintModernizer:
             logger.warning(f"Failed to analyze type hints in {file_path}: {e}")
             return []
 
-    def _analyze_line_type_hints(self, line: str, file_path: str, line_num: int) -> List[TypeHintModernization]:
+    def _analyze_line_type_hints(
+        self, line: str, file_path: str, line_num: int
+    ) -> list[TypeHintModernization]:
         """Analyze type hints in a single line."""
         modernizations = []
 
@@ -173,49 +166,61 @@ class Python312TypeHintModernizer:
             old_hint = match.group(0)
             new_hint = self.modernization_patterns["union_types"]["replacement"](match)
 
-            modernizations.append(TypeHintModernization(
-                file_path=file_path,
-                line_number=line_num,
-                old_hint=old_hint,
-                new_hint=new_hint,
-                modernization_type="union",
-                performance_impact="improved"
-            ))
+            modernizations.append(
+                TypeHintModernization(
+                    file_path=file_path,
+                    line_number=line_num,
+                    old_hint=old_hint,
+                    new_hint=new_hint,
+                    modernization_type="union",
+                    performance_impact="improved",
+                )
+            )
 
         # Optional type modernization
         optional_pattern = self.modernization_patterns["optional_types"]["pattern"]
         for match in re.finditer(optional_pattern, line):
             old_hint = match.group(0)
-            new_hint = self.modernization_patterns["optional_types"]["replacement"](match)
+            new_hint = self.modernization_patterns["optional_types"]["replacement"](
+                match
+            )
 
-            modernizations.append(TypeHintModernization(
-                file_path=file_path,
-                line_number=line_num,
-                old_hint=old_hint,
-                new_hint=new_hint,
-                modernization_type="optional",
-                performance_impact="improved"
-            ))
+            modernizations.append(
+                TypeHintModernization(
+                    file_path=file_path,
+                    line_number=line_num,
+                    old_hint=old_hint,
+                    new_hint=new_hint,
+                    modernization_type="optional",
+                    performance_impact="improved",
+                )
+            )
 
         # Generic collections modernization
-        generic_patterns = self.modernization_patterns["generic_collections"]["patterns"]
+        generic_patterns = self.modernization_patterns["generic_collections"][
+            "patterns"
+        ]
         for old_pattern, new_pattern in generic_patterns.items():
             for match in re.finditer(old_pattern, line):
                 old_hint = match.group(0)
                 new_hint = re.sub(old_pattern, new_pattern, old_hint)
 
-                modernizations.append(TypeHintModernization(
-                    file_path=file_path,
-                    line_number=line_num,
-                    old_hint=old_hint,
-                    new_hint=new_hint,
-                    modernization_type="generic",
-                    performance_impact="improved"
-                ))
+                modernizations.append(
+                    TypeHintModernization(
+                        file_path=file_path,
+                        line_number=line_num,
+                        old_hint=old_hint,
+                        new_hint=new_hint,
+                        modernization_type="generic",
+                        performance_impact="improved",
+                    )
+                )
 
         return modernizations
 
-    def _analyze_ast_type_hints(self, tree: ast.AST, file_path: str) -> List[TypeHintModernization]:
+    def _analyze_ast_type_hints(
+        self, tree: ast.AST, file_path: str
+    ) -> list[TypeHintModernization]:
         """Analyze type hints using AST parsing."""
         modernizations = []
 
@@ -251,16 +256,22 @@ class Python312TypeHintModernizer:
                         if name == "Union":
                             old_hint = ast.unparse(annotation)
                             # Simplified modernization for AST
-                            new_hint = old_hint.replace("Union[", "").replace("]", "").replace(", ", " | ")
+                            new_hint = (
+                                old_hint.replace("Union[", "")
+                                .replace("]", "")
+                                .replace(", ", " | ")
+                            )
 
-                            self.modernizations.append(TypeHintModernization(
-                                file_path=file_path,
-                                line_number=line_num,
-                                old_hint=old_hint,
-                                new_hint=new_hint,
-                                modernization_type="union",
-                                performance_impact="improved"
-                            ))
+                            self.modernizations.append(
+                                TypeHintModernization(
+                                    file_path=file_path,
+                                    line_number=line_num,
+                                    old_hint=old_hint,
+                                    new_hint=new_hint,
+                                    modernization_type="union",
+                                    performance_impact="improved",
+                                )
+                            )
 
                         # Check for Optional types
                         elif name == "Optional":
@@ -273,14 +284,16 @@ class Python312TypeHintModernizer:
                                 inner_type = ast.unparse(annotation.slice)
                                 new_hint = f"{inner_type} | None"
 
-                            self.modernizations.append(TypeHintModernization(
-                                file_path=file_path,
-                                line_number=line_num,
-                                old_hint=old_hint,
-                                new_hint=new_hint,
-                                modernization_type="optional",
-                                performance_impact="improved"
-                            ))
+                            self.modernizations.append(
+                                TypeHintModernization(
+                                    file_path=file_path,
+                                    line_number=line_num,
+                                    old_hint=old_hint,
+                                    new_hint=new_hint,
+                                    modernization_type="optional",
+                                    performance_impact="improved",
+                                )
+                            )
 
         visitor = TypeHintVisitor()
         visitor.visit(tree)
@@ -308,13 +321,14 @@ class Python312TypeHintModernizer:
                 all_modernizations.extend(file_modernizations)
 
         # Calculate performance improvements
-        performance_improvements = len([
-            m for m in all_modernizations
-            if m.performance_impact == "improved"
-        ])
+        performance_improvements = len(
+            [m for m in all_modernizations if m.performance_impact == "improved"]
+        )
 
         # Calculate coverage
-        coverage_percentage = (files_with_hints / total_files * 100) if total_files > 0 else 0
+        coverage_percentage = (
+            (files_with_hints / total_files * 100) if total_files > 0 else 0
+        )
 
         results = TypeHintAnalysisResults(
             total_files=total_files,
@@ -323,16 +337,19 @@ class Python312TypeHintModernizer:
             modernizable_hints=len(all_modernizations),
             modernizations=all_modernizations,
             performance_improvements=performance_improvements,
-            coverage_percentage=coverage_percentage
+            coverage_percentage=coverage_percentage,
         )
 
         logger.info(f"Found {len(all_modernizations)} modernizable type hints")
         return results
 
-    def apply_modernizations(self, modernizations: List[TypeHintModernization],
-                           dry_run: bool = True) -> Dict[str, Any]:
+    def apply_modernizations(
+        self, modernizations: list[TypeHintModernization], dry_run: bool = True
+    ) -> dict[str, Any]:
         """Apply type hint modernizations to files."""
-        logger.info(f"Applying {len(modernizations)} type hint modernizations (dry_run={dry_run})")
+        logger.info(
+            f"Applying {len(modernizations)} type hint modernizations (dry_run={dry_run})"
+        )
 
         # Group by file
         by_file = defaultdict(list)
@@ -344,12 +361,14 @@ class Python312TypeHintModernizer:
             "total_modernizations": len(modernizations),
             "successful_modernizations": 0,
             "failed_modernizations": 0,
-            "errors": []
+            "errors": [],
         }
 
         for file_path, file_modernizations in by_file.items():
             try:
-                if self._apply_file_modernizations(file_path, file_modernizations, dry_run):
+                if self._apply_file_modernizations(
+                    file_path, file_modernizations, dry_run
+                ):
                     results["files_modified"] += 1
                     results["successful_modernizations"] += len(file_modernizations)
                 else:
@@ -360,17 +379,20 @@ class Python312TypeHintModernizer:
 
         return results
 
-    def _apply_file_modernizations(self, file_path: str, modernizations: List[TypeHintModernization],
-                                  dry_run: bool) -> bool:
+    def _apply_file_modernizations(
+        self, file_path: str, modernizations: list[TypeHintModernization], dry_run: bool
+    ) -> bool:
         """Apply modernizations to a single file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Sort modernizations by line number (descending) to avoid offset issues
-            sorted_mods = sorted(modernizations, key=lambda m: m.line_number, reverse=True)
+            sorted_mods = sorted(
+                modernizations, key=lambda m: m.line_number, reverse=True
+            )
 
-            lines = content.split('\n')
+            lines = content.split("\n")
             modified = False
 
             for mod in sorted_mods:
@@ -380,11 +402,13 @@ class Python312TypeHintModernizer:
                         new_line = line.replace(mod.old_hint, mod.new_hint)
                         lines[mod.line_number - 1] = new_line
                         modified = True
-                        logger.debug(f"Modernized {mod.old_hint} -> {mod.new_hint} in {file_path}:{mod.line_number}")
+                        logger.debug(
+                            f"Modernized {mod.old_hint} -> {mod.new_hint} in {file_path}:{mod.line_number}"
+                        )
 
             if modified and not dry_run:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write('\n'.join(lines))
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines))
 
             return modified
 
@@ -395,12 +419,20 @@ class Python312TypeHintModernizer:
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if file should be skipped."""
         skip_patterns = {
-            "__pycache__", ".git", "build", "dist",
-            ".pytest_cache", ".mypy_cache", "venv", ".venv"
+            "__pycache__",
+            ".git",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            "venv",
+            ".venv",
         }
         return any(pattern in str(file_path) for pattern in skip_patterns)
 
-    def generate_modernization_report(self, results: TypeHintAnalysisResults) -> Dict[str, Any]:
+    def generate_modernization_report(
+        self, results: TypeHintAnalysisResults
+    ) -> dict[str, Any]:
         """Generate comprehensive modernization report."""
         # Group modernizations by type
         by_type = defaultdict(int)
@@ -418,13 +450,13 @@ class Python312TypeHintModernizer:
         top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
         report = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "summary": {
                 "total_files_analyzed": results.total_files,
                 "files_with_modernizable_hints": results.files_with_hints,
                 "total_modernizable_hints": results.modernizable_hints,
                 "performance_improvements": results.performance_improvements,
-                "coverage_percentage": results.coverage_percentage
+                "coverage_percentage": results.coverage_percentage,
             },
             "modernization_types": dict(by_type),
             "performance_impact": dict(by_performance),
@@ -439,15 +471,15 @@ class Python312TypeHintModernizer:
                     "line": mod.line_number,
                     "old": mod.old_hint,
                     "new": mod.new_hint,
-                    "type": mod.modernization_type
+                    "type": mod.modernization_type,
                 }
                 for mod in results.modernizations[:10]
-            ]
+            ],
         }
 
         return report
 
-    def _generate_recommendations(self, results: TypeHintAnalysisResults) -> List[str]:
+    def _generate_recommendations(self, results: TypeHintAnalysisResults) -> list[str]:
         """Generate modernization recommendations."""
         recommendations = []
 
@@ -455,34 +487,50 @@ class Python312TypeHintModernizer:
             recommendations.append("Consider running automated type hint modernization")
 
         if results.performance_improvements > 20:
-            recommendations.append("High potential for performance improvements through modern type hints")
+            recommendations.append(
+                "High potential for performance improvements through modern type hints"
+            )
 
         # Check for specific patterns
-        union_count = len([m for m in results.modernizations if m.modernization_type == "union"])
+        union_count = len(
+            [m for m in results.modernizations if m.modernization_type == "union"]
+        )
         if union_count > 10:
-            recommendations.append(f"Replace {union_count} Union types with | syntax for better performance")
+            recommendations.append(
+                f"Replace {union_count} Union types with | syntax for better performance"
+            )
 
-        optional_count = len([m for m in results.modernizations if m.modernization_type == "optional"])
+        optional_count = len(
+            [m for m in results.modernizations if m.modernization_type == "optional"]
+        )
         if optional_count > 10:
-            recommendations.append(f"Replace {optional_count} Optional types with | None syntax")
+            recommendations.append(
+                f"Replace {optional_count} Optional types with | None syntax"
+            )
 
-        generic_count = len([m for m in results.modernizations if m.modernization_type == "generic"])
+        generic_count = len(
+            [m for m in results.modernizations if m.modernization_type == "generic"]
+        )
         if generic_count > 5:
-            recommendations.append(f"Modernize {generic_count} generic collection types for better performance")
+            recommendations.append(
+                f"Modernize {generic_count} generic collection types for better performance"
+            )
 
         if results.coverage_percentage < 50:
-            recommendations.append("Consider adding type hints to improve static analysis")
+            recommendations.append(
+                "Consider adding type hints to improve static analysis"
+            )
 
         return recommendations
 
     def validate_modernized_syntax(self, file_path: Path) -> bool:
         """Validate that modernized syntax is correct."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Try to compile the code
-            compile(content, str(file_path), 'exec')
+            compile(content, str(file_path), "exec")
 
             # Try to parse as AST
             ast.parse(content)
@@ -567,13 +615,15 @@ class TestTypeHintModernization:
         # Create a temporary file with old-style type hints
         import tempfile
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(
+                """
 from typing import Optional, Union, List
 
 def test_func(x: Optional[str], y: Union[int, float]) -> List[str]:
     return []
-""")
+"""
+            )
             temp_path = f.name
 
         try:
@@ -594,11 +644,13 @@ def test_func(x: Optional[str], y: Union[int, float]) -> List[str]:
         """Test syntax validation after modernization."""
         import tempfile
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(
+                """
 def test_func(x: str | None, y: int | float) -> list[str]:
     return []
-""")
+"""
+            )
             temp_path = f.name
 
         try:
@@ -626,10 +678,11 @@ if __name__ == "__main__":
 
         # Save report
         import json
-        with open("type_hint_modernization_report.json", 'w') as f:
+
+        with open("type_hint_modernization_report.json", "w") as f:
             json.dump(report, f, indent=2)
 
-        print(f"Type hint analysis complete:")
+        print("Type hint analysis complete:")
         print(f"  Files analyzed: {results.total_files}")
         print(f"  Modernizable hints: {results.modernizable_hints}")
         print(f"  Performance improvements: {results.performance_improvements}")

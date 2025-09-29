@@ -66,9 +66,7 @@ class TestHeavyDependencyLoader:
         """Test handling of failed loading for optional modules."""
         fallback_value = "fallback"
         loader = HeavyDependencyLoader(
-            "nonexistent_module",
-            required=False,
-            fallback=fallback_value
+            "nonexistent_module", required=False, fallback=fallback_value
         )
 
         # Should return fallback without raising
@@ -214,6 +212,7 @@ class TestScientificDependencies:
 
         # Fallback should be a no-op decorator
         if not numba_jit_loader.is_available:
+
             @jit_func
             def test_func():
                 return 42
@@ -289,9 +288,7 @@ class TestIntegrationWithMainPackage:
         # Measure import time
         start_time = time.time()
         result = subprocess.run(
-            [sys.executable, "-c", "import homodyne"],
-            capture_output=True,
-            text=True
+            [sys.executable, "-c", "import homodyne"], check=False, capture_output=True, text=True
         )
         end_time = time.time()
 

@@ -29,6 +29,7 @@ import psutil
 try:
     from numba import jit
     from numba import prange
+
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
@@ -70,14 +71,14 @@ class CPUOptimizer:
     def _detect_cpu_cache(self) -> dict[str, int]:
         """Detect CPU cache sizes for optimization."""
         cache_info = {
-            "l1_cache_kb": 32,    # Default conservative estimate
-            "l2_cache_kb": 256,   # Default conservative estimate
+            "l1_cache_kb": 32,  # Default conservative estimate
+            "l2_cache_kb": 256,  # Default conservative estimate
             "l3_cache_kb": 8192,  # Default conservative estimate
         }
 
         try:
             # Try to get actual cache sizes
-            if hasattr(psutil, 'cpu_stats'):
+            if hasattr(psutil, "cpu_stats"):
                 # Estimate based on CPU model if available
                 cpu_info = platform.processor()
                 if "intel" in cpu_info.lower():
@@ -101,9 +102,10 @@ class CPUOptimizer:
         try:
             # Check NumPy build info for SIMD support
             import numpy as np
-            config = np.show_config(mode='dicts')
-            if 'Blas' in config:
-                blas_info = str(config['Blas'])
+
+            config = np.show_config(mode="dicts")
+            if "Blas" in config:
+                blas_info = str(config["Blas"])
                 simd_support["sse"] = "sse" in blas_info.lower()
                 simd_support["avx"] = "avx" in blas_info.lower()
                 simd_support["avx2"] = "avx2" in blas_info.lower()
@@ -117,7 +119,7 @@ class CPUOptimizer:
         self,
         matrix: np.ndarray,
         operation: str = "correlation",
-        cache_size_kb: int | None = None
+        cache_size_kb: int | None = None,
     ) -> np.ndarray:
         """
         Optimize matrix operations for CPU cache hierarchy.
@@ -147,14 +149,15 @@ class CPUOptimizer:
 
         if operation == "correlation":
             return self._cache_optimized_correlation(matrix, optimal_block_size)
-        elif operation == "fft":
+        if operation == "fft":
             return self._cache_optimized_fft(matrix, optimal_block_size)
-        elif operation == "matmul":
+        if operation == "matmul":
             return self._cache_optimized_matmul(matrix, optimal_block_size)
-        else:
-            raise ValueError(f"Unsupported operation: {operation}")
+        raise ValueError(f"Unsupported operation: {operation}")
 
-    def _cache_optimized_correlation(self, matrix: np.ndarray, block_size: int) -> np.ndarray:
+    def _cache_optimized_correlation(
+        self, matrix: np.ndarray, block_size: int
+    ) -> np.ndarray:
         """Cache-friendly correlation computation."""
         rows, cols = matrix.shape
         result = np.zeros((rows, rows))
@@ -170,7 +173,9 @@ class CPUOptimizer:
                 block_j = matrix[j:j_end, :]
 
                 # Vectorized correlation using NumPy
-                result[i:i_end, j:j_end] = np.corrcoef(block_i, block_j)[:i_end-i, :j_end-j]
+                result[i:i_end, j:j_end] = np.corrcoef(block_i, block_j)[
+                    : i_end - i, : j_end - j
+                ]
 
         return result
 
@@ -194,7 +199,9 @@ class CPUOptimizer:
 
         return result
 
-    def _cache_optimized_matmul(self, matrix: np.ndarray, block_size: int) -> np.ndarray:
+    def _cache_optimized_matmul(
+        self, matrix: np.ndarray, block_size: int
+    ) -> np.ndarray:
         """Cache-friendly matrix multiplication."""
         # For self-multiplication (common in correlation analysis)
         n = matrix.shape[0]
@@ -220,7 +227,7 @@ class CPUOptimizer:
         parameter_sets: list[np.ndarray],
         phi_degrees: np.ndarray,
         data: tuple[np.ndarray, np.ndarray],
-        max_workers: int | None = None
+        max_workers: int | None = None,
     ) -> list[float]:
         """
         Parallel chi-squared computation using CPU multiprocessing.
@@ -255,10 +262,9 @@ class CPUOptimizer:
             # Submit chunks of work
             futures = []
             for i in range(0, len(parameter_sets), chunk_size):
-                chunk = parameter_sets[i:i + chunk_size]
+                chunk = parameter_sets[i : i + chunk_size]
                 future = executor.submit(
-                    self._compute_chi_squared_chunk,
-                    chunk, phi_degrees, data
+                    self._compute_chi_squared_chunk, chunk, phi_degrees, data
                 )
                 futures.append(future)
 
@@ -274,7 +280,7 @@ class CPUOptimizer:
         self,
         parameter_chunk: list[np.ndarray],
         phi_degrees: np.ndarray,
-        data: tuple[np.ndarray, np.ndarray]
+        data: tuple[np.ndarray, np.ndarray],
     ) -> list[float]:
         """Compute chi-squared for a chunk of parameters."""
         experimental_g2, experimental_errors = data
@@ -291,7 +297,9 @@ class CPUOptimizer:
 
         return results
 
-    def _compute_theoretical_g2(self, params: np.ndarray, phi_degrees: np.ndarray) -> np.ndarray:
+    def _compute_theoretical_g2(
+        self, params: np.ndarray, phi_degrees: np.ndarray
+    ) -> np.ndarray:
         """
         Compute theoretical g2 function (placeholder implementation).
 
@@ -308,8 +316,7 @@ if NUMBA_AVAILABLE:
 
     @jit(nopython=True, parallel=True)
     def vectorized_correlation_numba(
-        matrix1: np.ndarray,
-        matrix2: np.ndarray
+        matrix1: np.ndarray, matrix2: np.ndarray
     ) -> np.ndarray:
         """
         Numba-optimized vectorized correlation with OpenMP threading.
@@ -336,8 +343,8 @@ if NUMBA_AVAILABLE:
                 mean2 = np.mean(matrix2[j, :])
 
                 num = np.sum((matrix1[i, :] - mean1) * (matrix2[j, :] - mean2))
-                den1 = np.sqrt(np.sum((matrix1[i, :] - mean1)**2))
-                den2 = np.sqrt(np.sum((matrix2[j, :] - mean2)**2))
+                den1 = np.sqrt(np.sum((matrix1[i, :] - mean1) ** 2))
+                den2 = np.sqrt(np.sum((matrix2[j, :] - mean2) ** 2))
 
                 if den1 * den2 > 0:
                     result[i, j] = num / (den1 * den2)
@@ -346,9 +353,7 @@ if NUMBA_AVAILABLE:
 
     @jit(nopython=True, parallel=True)
     def fast_chi_squared_numba(
-        experimental_data: np.ndarray,
-        theoretical_data: np.ndarray,
-        errors: np.ndarray
+        experimental_data: np.ndarray, theoretical_data: np.ndarray, errors: np.ndarray
     ) -> float:
         """
         Numba-optimized chi-squared calculation with OpenMP.
@@ -368,21 +373,23 @@ if NUMBA_AVAILABLE:
 
         # Parallel reduction using Numba
         for i in prange(n):
-            residual = (experimental_data.flat[i] - theoretical_data.flat[i]) / errors.flat[i]
+            residual = (
+                experimental_data.flat[i] - theoretical_data.flat[i]
+            ) / errors.flat[i]
             chi_squared += residual * residual
 
         return chi_squared
 
 else:
     # Fallback implementations without Numba
-    def vectorized_correlation_numba(matrix1: np.ndarray, matrix2: np.ndarray) -> np.ndarray:
+    def vectorized_correlation_numba(
+        matrix1: np.ndarray, matrix2: np.ndarray
+    ) -> np.ndarray:
         """Fallback correlation without Numba optimization."""
-        return np.corrcoef(matrix1, matrix2)[:matrix1.shape[0], matrix1.shape[0]:]
+        return np.corrcoef(matrix1, matrix2)[: matrix1.shape[0], matrix1.shape[0] :]
 
     def fast_chi_squared_numba(
-        experimental_data: np.ndarray,
-        theoretical_data: np.ndarray,
-        errors: np.ndarray
+        experimental_data: np.ndarray, theoretical_data: np.ndarray, errors: np.ndarray
     ) -> float:
         """Fallback chi-squared without Numba optimization."""
         residuals = (experimental_data - theoretical_data) / errors
@@ -413,7 +420,7 @@ def get_cpu_optimization_info() -> dict[str, Any]:
             "multiprocessing": True,
             "openmp_threading": NUMBA_AVAILABLE,
             "simd_acceleration": any(optimizer.simd_support.values()),
-        }
+        },
     }
 
 

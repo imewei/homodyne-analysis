@@ -419,7 +419,9 @@ class TestQuickSetupFunctions:
         except ImportError:
             pytest.skip("create_distributed_optimizer function not yet implemented")
 
-        with patch("homodyne.optimization.utils.create_distributed_optimizer") as mock_create_distributed:
+        with patch(
+            "homodyne.optimization.utils.create_distributed_optimizer"
+        ) as mock_create_distributed:
             mock_coordinator = Mock()
             mock_create_distributed.return_value = mock_coordinator
 
@@ -438,7 +440,9 @@ class TestQuickSetupFunctions:
         except ImportError:
             pytest.skip("create_ml_accelerated_optimizer function not yet implemented")
 
-        with patch("homodyne.optimization.utils.create_ml_accelerated_optimizer") as mock_create_ml:
+        with patch(
+            "homodyne.optimization.utils.create_ml_accelerated_optimizer"
+        ) as mock_create_ml:
             mock_optimizer = Mock()
             mock_create_ml.return_value = mock_optimizer
 

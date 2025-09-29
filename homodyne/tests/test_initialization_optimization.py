@@ -38,9 +38,10 @@ class TestDependencyAnalyzer:
         analyzer = DependencyAnalyzer("homodyne")
 
         # Mock the complex parts to avoid file system dependencies
-        with patch.object(analyzer, '_build_dependency_graph'):
-            with patch.object(analyzer, '_find_critical_path', return_value=['homodyne']):
-                analysis = analyzer.analyze_dependencies()
+        with patch.object(analyzer, "_build_dependency_graph"), patch.object(
+            analyzer, "_find_critical_path", return_value=["homodyne"]
+        ):
+            analysis = analyzer.analyze_dependencies()
 
         assert "dependency_graph" in analysis
         assert "critical_path" in analysis
@@ -50,6 +51,7 @@ class TestDependencyAnalyzer:
     def test_path_to_module_name_conversion(self):
         """Test conversion of file paths to module names."""
         from pathlib import Path
+
         analyzer = DependencyAnalyzer("homodyne")
 
         # Create mock paths
@@ -115,7 +117,7 @@ class TestInitializationOptimizer:
         optimizer = InitializationOptimizer("homodyne")
 
         # Mock the analysis to avoid complex dependencies
-        with patch.object(optimizer.analyzer, 'analyze_dependencies') as mock_analyze:
+        with patch.object(optimizer.analyzer, "analyze_dependencies") as mock_analyze:
             mock_analyze.return_value = {
                 "dependency_graph": {},
                 "critical_path": [],
@@ -126,10 +128,10 @@ class TestInitializationOptimizer:
             strategy = optimizer.optimize_initialization_order()
 
             assert strategy is not None
-            assert hasattr(strategy, 'core_modules')
-            assert hasattr(strategy, 'lazy_modules')
-            assert hasattr(strategy, 'deferred_modules')
-            assert hasattr(strategy, 'preload_modules')
+            assert hasattr(strategy, "core_modules")
+            assert hasattr(strategy, "lazy_modules")
+            assert hasattr(strategy, "deferred_modules")
+            assert hasattr(strategy, "preload_modules")
 
     def test_performance_report_generation(self):
         """Test performance report generation."""
@@ -170,6 +172,7 @@ class TestInitializationOptimizer:
 
         # Set up a mock strategy
         from homodyne.core.initialization_optimizer import InitializationStrategy
+
         optimizer.optimization_strategy = InitializationStrategy(
             core_modules=["math", "json"],  # Use standard library modules
             lazy_modules=[],
@@ -185,8 +188,10 @@ class TestInitializationOptimizer:
         optimizer = InitializationOptimizer("homodyne")
 
         # Mock the optimization to avoid complex dependencies
-        with patch.object(optimizer, 'optimize_initialization_order') as mock_optimize:
-            mock_optimize.return_value = optimizer.analyzer._calculate_optimization_strategies()
+        with patch.object(optimizer, "optimize_initialization_order") as mock_optimize:
+            mock_optimize.return_value = (
+                optimizer.analyzer._calculate_optimization_strategies()
+            )
 
             # Should not raise exceptions
             optimizer.apply_optimizations()
@@ -214,11 +219,11 @@ class TestGlobalFunctions:
         assert isinstance(strategy, InitializationStrategy)
 
         # Verify strategy has expected attributes
-        assert hasattr(strategy, 'core_modules')
-        assert hasattr(strategy, 'lazy_modules')
-        assert hasattr(strategy, 'deferred_modules')
-        assert hasattr(strategy, 'preload_modules')
-        assert hasattr(strategy, 'optimization_level')
+        assert hasattr(strategy, "core_modules")
+        assert hasattr(strategy, "lazy_modules")
+        assert hasattr(strategy, "deferred_modules")
+        assert hasattr(strategy, "preload_modules")
+        assert hasattr(strategy, "optimization_level")
 
         # Verify lists are not empty (at least core_modules should have entries)
         assert isinstance(strategy.core_modules, list)
@@ -242,16 +247,19 @@ class TestIntegrationWithMainPackage:
         import homodyne
 
         # Should have optimization functions available
-        assert hasattr(homodyne, 'optimize_initialization')
-        assert hasattr(homodyne, 'get_startup_performance_report')
+        assert hasattr(homodyne, "optimize_initialization")
+        assert hasattr(homodyne, "get_startup_performance_report")
 
     def test_optimize_initialization_function(self):
         """Test main package optimization function."""
         import homodyne
 
         # Mock to avoid complex analysis
-        with patch('homodyne.core.initialization_optimizer.optimize_package_initialization') as mock_opt:
+        with patch(
+            "homodyne.core.initialization_optimizer.optimize_package_initialization"
+        ) as mock_opt:
             from homodyne.core.initialization_optimizer import InitializationStrategy
+
             mock_strategy = InitializationStrategy(
                 core_modules=["test"],
                 lazy_modules=["test"],
@@ -278,8 +286,6 @@ class TestIntegrationWithMainPackage:
         """Test that optimizations are applied automatically during import."""
         # Test with environment variable enabled
         import os
-        import subprocess
-        import sys
 
         env = os.environ.copy()
         env["HOMODYNE_OPTIMIZE_STARTUP"] = "true"
@@ -287,9 +293,9 @@ class TestIntegrationWithMainPackage:
         # Import package in subprocess with optimization enabled
         result = subprocess.run(
             [sys.executable, "-c", "import homodyne; print('Success')"],
-            env=env,
+            check=False, env=env,
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 0
@@ -298,8 +304,6 @@ class TestIntegrationWithMainPackage:
     def test_optimization_environment_variable_disabled(self):
         """Test behavior when optimization is disabled."""
         import os
-        import subprocess
-        import sys
 
         env = os.environ.copy()
         env["HOMODYNE_OPTIMIZE_STARTUP"] = "false"
@@ -307,9 +311,9 @@ class TestIntegrationWithMainPackage:
         # Should still import successfully
         result = subprocess.run(
             [sys.executable, "-c", "import homodyne; print('Success')"],
-            env=env,
+            check=False, env=env,
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 0
@@ -324,8 +328,6 @@ class TestPerformanceBenchmarks:
     def test_startup_time_benchmark(self):
         """Benchmark startup time with and without optimization."""
         import statistics
-        import subprocess
-        import sys
 
         # Measure startup time multiple times
         startup_times = []
@@ -334,8 +336,8 @@ class TestPerformanceBenchmarks:
             start_time = time.perf_counter()
             result = subprocess.run(
                 [sys.executable, "-c", "import homodyne"],
-                capture_output=True,
-                text=True
+                check=False, capture_output=True,
+                text=True,
             )
             end_time = time.perf_counter()
 
@@ -358,15 +360,19 @@ class TestPerformanceBenchmarks:
         initial_memory = optimizer._get_memory_usage()
 
         # Apply optimizations
-        with patch.object(optimizer, 'optimize_initialization_order') as mock_opt:
-            mock_opt.return_value = optimizer.analyzer._calculate_optimization_strategies()
+        with patch.object(optimizer, "optimize_initialization_order") as mock_opt:
+            mock_opt.return_value = (
+                optimizer.analyzer._calculate_optimization_strategies()
+            )
             optimizer.apply_optimizations()
 
         final_memory = optimizer._get_memory_usage()
 
         # Memory usage should be reasonable
         memory_increase = final_memory - initial_memory
-        assert memory_increase < 100.0, f"Memory increase too high: {memory_increase:.2f}MB"
+        assert memory_increase < 100.0, (
+            f"Memory increase too high: {memory_increase:.2f}MB"
+        )
 
 
 if __name__ == "__main__":

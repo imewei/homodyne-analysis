@@ -35,7 +35,7 @@ np = scientific_deps.get("numpy")
 scipy_optimize = scientific_deps.get("scipy_optimize")
 
 # Fallback import for scipy.optimize if lazy loading fails
-if scipy_optimize is None or not hasattr(scipy_optimize, 'OptimizeResult'):
+if scipy_optimize is None or not hasattr(scipy_optimize, "OptimizeResult"):
     try:
         from scipy import optimize as scipy_optimize
     except ImportError:
@@ -120,7 +120,7 @@ class ClassicalOptimizer:
         phi_angles: np.ndarray | None = None,
         c2_experimental: np.ndarray | None = None,
         return_tuple: bool = False,
-        **kwargs
+        **kwargs,
     ) -> tuple[np.ndarray | None, Any] | dict[str, Any]:
         """
         Main optimization interface for CLI compatibility.
@@ -149,7 +149,7 @@ class ClassicalOptimizer:
         """
         # Filter kwargs to only include supported parameters
         supported_kwargs = {}
-        supported_params = {'methods', 'bounds', 'options', 'objective_func'}
+        supported_params = {"methods", "bounds", "options", "objective_func"}
         for key, value in kwargs.items():
             if key in supported_params:
                 supported_kwargs[key] = value
@@ -158,45 +158,62 @@ class ClassicalOptimizer:
             initial_parameters=initial_params,
             phi_angles=phi_angles,
             c2_experimental=c2_experimental,
-            **supported_kwargs
+            **supported_kwargs,
         )
 
         if return_tuple:
             return params, result
-        else:
-            # Convert to dict format for tests
-            result_dict = {
-                'success': getattr(result, 'success', False),
-                'parameters': params if params is not None else getattr(result, 'x', None),
-                'chi_squared': getattr(result, 'fun', float('inf')),
-                'initial_parameters': initial_params if initial_params is not None else kwargs.get('initial_parameters', None),
-            }
+        # Convert to dict format for tests
+        result_dict = {
+            "success": getattr(result, "success", False),
+            "parameters": (
+                params if params is not None else getattr(result, "x", None)
+            ),
+            "chi_squared": getattr(result, "fun", float("inf")),
+            "initial_parameters": (
+                initial_params
+                if initial_params is not None
+                else kwargs.get("initial_parameters")
+            ),
+        }
 
-            # Add all other attributes from result
-            if hasattr(result, '__dict__'):
-                for key, value in result.__dict__.items():
-                    if key not in result_dict:
-                        result_dict[key] = value
+        # Add all other attributes from result
+        if hasattr(result, "__dict__"):
+            for key, value in result.__dict__.items():
+                if key not in result_dict:
+                    result_dict[key] = value
 
-            # Ensure initial_parameters is set
-            if result_dict['initial_parameters'] is None:
-                if "initial_parameters" in self.config and "values" in self.config["initial_parameters"]:
-                    result_dict['initial_parameters'] = self.config["initial_parameters"]["values"]
-                else:
-                    # Use defaults
-                    effective_param_count = 7
-                    if hasattr(self.core, "config_manager") and self.core.config_manager:
-                        try:
-                            effective_param_count = int(self.core.config_manager.get_effective_parameter_count())
-                        except (TypeError, ValueError, AttributeError):
-                            effective_param_count = 7
-                    default_params = {
-                        3: [1e-3, 0.9, 1e-4],
-                        7: [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0],
-                    }
-                    result_dict['initial_parameters'] = default_params.get(effective_param_count, default_params[7])
+        # Ensure initial_parameters is set
+        if result_dict["initial_parameters"] is None:
+            if (
+                "initial_parameters" in self.config
+                and "values" in self.config["initial_parameters"]
+            ):
+                result_dict["initial_parameters"] = self.config[
+                    "initial_parameters"
+                ]["values"]
+            else:
+                # Use defaults
+                effective_param_count = 7
+                if (
+                    hasattr(self.core, "config_manager")
+                    and self.core.config_manager
+                ):
+                    try:
+                        effective_param_count = int(
+                            self.core.config_manager.get_effective_parameter_count()
+                        )
+                    except (TypeError, ValueError, AttributeError):
+                        effective_param_count = 7
+                default_params = {
+                    3: [1e-3, 0.9, 1e-4],
+                    7: [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0],
+                }
+                result_dict["initial_parameters"] = default_params.get(
+                    effective_param_count, default_params[7]
+                )
 
-            return result_dict
+        return result_dict
 
     def optimize(
         self,
@@ -204,7 +221,7 @@ class ClassicalOptimizer:
         phi_angles: np.ndarray | None = None,
         t1_array: np.ndarray | None = None,
         t2_array: np.ndarray | None = None,
-        **kwargs
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Backward compatibility wrapper for optimize() method.
@@ -237,13 +254,13 @@ class ClassicalOptimizer:
         """
         # Call run_optimization and request dict format
         result_dict = self.run_optimization(
-            initial_params=kwargs.get('initial_params', None),
+            initial_params=kwargs.get("initial_params"),
             phi_angles=phi_angles,
             c2_experimental=c2_experimental,
             t1_array=t1_array,
             t2_array=t2_array,
             return_tuple=False,
-            **kwargs
+            **kwargs,
         )
 
         return result_dict
@@ -320,7 +337,10 @@ class ClassicalOptimizer:
 
         if initial_parameters is None:
             # Try to get initial parameters from config, with fallback
-            if "initial_parameters" in self.config and "values" in self.config["initial_parameters"]:
+            if (
+                "initial_parameters" in self.config
+                and "values" in self.config["initial_parameters"]
+            ):
                 initial_parameters = np.array(
                     self.config["initial_parameters"]["values"], dtype=np.float64
                 )
@@ -329,11 +349,19 @@ class ClassicalOptimizer:
                 logger.warning("No initial parameters in config, using defaults")
                 default_params = {
                     3: [1e-3, 0.9, 1e-4],  # Static mode defaults
-                    7: [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0],  # Laminar flow defaults
+                    7: [
+                        1e-3,
+                        0.9,
+                        1e-4,
+                        0.01,
+                        0.8,
+                        0.001,
+                        0.0,
+                    ],  # Laminar flow defaults
                 }
                 initial_parameters = np.array(
                     default_params.get(effective_param_count, default_params[7]),
-                    dtype=np.float64
+                    dtype=np.float64,
                 )
 
         # Adjust parameters based on analysis mode
@@ -341,7 +369,9 @@ class ClassicalOptimizer:
         try:
             effective_param_count = int(effective_param_count)
         except (TypeError, ValueError):
-            logger.warning(f"Invalid effective_param_count: {effective_param_count}, defaulting to 7")
+            logger.warning(
+                f"Invalid effective_param_count: {effective_param_count}, defaulting to 7"
+            )
             effective_param_count = 7
 
         if is_static_mode and len(initial_parameters) > effective_param_count:
@@ -503,24 +533,23 @@ class ClassicalOptimizer:
             enhanced_result.best_method = best_method  # Add best method info
 
             return best_params, enhanced_result
-        else:
-            total_time = time.time() - start_time
+        total_time = time.time() - start_time
 
-            # Analyze failed results
-            failed_analysis = self.analyze_optimization_results(
-                [(method, False, result) for method, result in all_results]
-            )
+        # Analyze failed results
+        failed_analysis = self.analyze_optimization_results(
+            [(method, False, result) for method, result in all_results]
+        )
 
-            logger.error(
-                f"Classical optimization failed after {
-                    total_time:.2f}s - all methods failed"
-            )
-            logger.error(f"Failure analysis: {failed_analysis}")
+        logger.error(
+            f"Classical optimization failed after {
+                total_time:.2f}s - all methods failed"
+        )
+        logger.error(f"Failure analysis: {failed_analysis}")
 
-            raise RuntimeError(
-                f"All classical methods failed. "
-                f"Failed methods: {[method for method, _ in all_results]}"
-            )
+        raise RuntimeError(
+            f"All classical methods failed. "
+            f"Failed methods: {[method for method, _ in all_results]}"
+        )
 
     def get_available_methods(self) -> list[str]:
         """
@@ -563,7 +592,7 @@ class ClassicalOptimizer:
 
         if method == "Nelder-Mead":
             return True
-        elif method == "Gurobi":
+        if method == "Gurobi":
             return GUROBI_AVAILABLE
         return False
 
@@ -741,7 +770,7 @@ class ClassicalOptimizer:
                 return self._run_gurobi_optimization(
                     objective_func, initial_parameters, bounds, method_options
                 )
-            elif method.startswith("Robust-"):
+            if method.startswith("Robust-"):
                 return self._run_robust_optimization(
                     method,
                     objective_func,
@@ -749,34 +778,35 @@ class ClassicalOptimizer:
                     bounds,
                     method_options,
                 )
-            else:
-                # Filter out comment fields (keys starting with '_' and ending
-                # with '_note')
-                filtered_options = {}
-                if method_options:
-                    filtered_options = {
-                        k: v
-                        for k, v in method_options.items()
-                        if not (k.startswith("_") and k.endswith("_note"))
-                    }
-
-                kwargs = {
-                    "fun": objective_func,
-                    "x0": initial_parameters,
-                    "method": method,
-                    "options": filtered_options,
+            # Filter out comment fields (keys starting with '_' and ending
+            # with '_note')
+            filtered_options = {}
+            if method_options:
+                filtered_options = {
+                    k: v
+                    for k, v in method_options.items()
+                    if not (k.startswith("_") and k.endswith("_note"))
                 }
 
-                # Nelder-Mead doesn't use explicit bounds
-                # The method handles constraints through the objective function
+            kwargs = {
+                "fun": objective_func,
+                "x0": initial_parameters,
+                "method": method,
+                "options": filtered_options,
+            }
 
-                result = scipy_optimize.minimize(**kwargs)
-                return True, result
+            # Nelder-Mead doesn't use explicit bounds
+            # The method handles constraints through the objective function
+
+            result = scipy_optimize.minimize(**kwargs)
+            return True, result
 
         except Exception as e:
             return False, e
 
-    def _initialize_gurobi_options(self, method_options: dict[str, Any] | float | None = None) -> dict[str, Any]:
+    def _initialize_gurobi_options(
+        self, method_options: dict[str, Any] | float | None = None
+    ) -> dict[str, Any]:
         """
         Initialize Gurobi optimization options with defaults and user overrides.
 
@@ -818,7 +848,11 @@ class ClassicalOptimizer:
         return gurobi_options
 
     def _estimate_gradient(
-        self, objective_func, x_current: np.ndarray, base_epsilon: float, return_tuple: bool = False
+        self,
+        objective_func,
+        x_current: np.ndarray,
+        base_epsilon: float,
+        return_tuple: bool = False,
     ) -> np.ndarray | tuple[np.ndarray, int]:
         """
         Estimate gradient using finite differences.
@@ -857,11 +891,14 @@ class ClassicalOptimizer:
 
         if return_tuple:
             return grad, function_evaluations
-        else:
-            return grad
+        return grad
 
     def _estimate_hessian_diagonal(
-        self, objective_func, x_current: np.ndarray, f_current: float, base_epsilon: float
+        self,
+        objective_func,
+        x_current: np.ndarray,
+        f_current: float,
+        base_epsilon: float,
     ) -> tuple[np.ndarray, int]:
         """
         Estimate diagonal Hessian approximation (BFGS-like).
@@ -959,8 +996,7 @@ class ClassicalOptimizer:
 
         # Trust region constraint: ||step||_2 <= trust_radius
         model.addQConstr(
-            gp.quicksum(step[i] * step[i] for i in range(n_params))
-            <= trust_radius**2,
+            gp.quicksum(step[i] * step[i] for i in range(n_params)) <= trust_radius**2,
             "trust_region",
         )
 
@@ -1203,7 +1239,12 @@ class ClassicalOptimizer:
                 try:
                     # Step 3c: Create and solve Gurobi QP subproblem
                     env, model, step = self._create_gurobi_model(
-                        gurobi_options, grad, hessian_diag, trust_radius, x_current, bounds
+                        gurobi_options,
+                        grad,
+                        hessian_diag,
+                        trust_radius,
+                        x_current,
+                        bounds,
                     )
 
                     try:
@@ -1222,7 +1263,10 @@ class ClassicalOptimizer:
                             # Step 3d: Update trust region and accept/reject step
                             actual_reduction = f_current - f_new
                             trust_radius, accept_step = self._update_trust_region(
-                                trust_radius, step_values, actual_reduction, gurobi_options
+                                trust_radius,
+                                step_values,
+                                actual_reduction,
+                                gurobi_options,
                             )
 
                             if accept_step:
@@ -1278,8 +1322,14 @@ class ClassicalOptimizer:
             # Step 4: Create final result
             success = iteration < max_iter or grad_norm < tolerance
             result = self._create_optimization_result(
-                x_current, f_current, success, iteration, function_evaluations,
-                max_iter, grad_norm, tolerance
+                x_current,
+                f_current,
+                success,
+                iteration,
+                function_evaluations,
+                max_iter,
+                grad_norm,
+                tolerance,
             )
             return success, result
 
@@ -1384,21 +1434,20 @@ class ClassicalOptimizer:
                 )
 
                 return True, result
-            else:
-                # Optimization failed
-                error_msg = info.get(
-                    "error", f"Robust optimization ({robust_method}) failed"
-                )
-                result = scipy_optimize.OptimizeResult(
-                    x=initial_parameters,
-                    fun=float("inf"),
-                    success=False,
-                    status=info.get("status", "failed"),
-                    message=error_msg,
-                    method=f"Robust-{robust_method.capitalize()}",
-                )
+            # Optimization failed
+            error_msg = info.get(
+                "error", f"Robust optimization ({robust_method}) failed"
+            )
+            result = scipy_optimize.OptimizeResult(
+                x=initial_parameters,
+                fun=float("inf"),
+                success=False,
+                status=info.get("status", "failed"),
+                message=error_msg,
+                method=f"Robust-{robust_method.capitalize()}",
+            )
 
-                return False, result
+            return False, result
 
         except Exception as e:
             logger.error(f"Robust optimization error: {e}")
@@ -1701,18 +1750,21 @@ class ClassicalOptimizer:
         float
             Chi-squared value
         """
-        if hasattr(self.core, '_calculate_chi_squared'):
+        if hasattr(self.core, "_calculate_chi_squared"):
             # Use the core's chi-squared calculation method if available
             try:
                 # We need experimental data for the calculation
-                if hasattr(self, '_cached_experimental_data'):
-                    return self.core._calculate_chi_squared(parameters, self._cached_experimental_data)
-                else:
-                    # Load data if not cached
-                    c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
-                    self._cached_experimental_data = c2_experimental
-                    self._cached_phi_angles = phi_angles
-                    return self.core._calculate_chi_squared(parameters, c2_experimental)
+                if hasattr(self, "_cached_experimental_data"):
+                    return self.core._calculate_chi_squared(
+                        parameters, self._cached_experimental_data
+                    )
+                # Load data if not cached
+                c2_experimental, _, phi_angles, _ = (
+                    self.core.load_experimental_data()
+                )
+                self._cached_experimental_data = c2_experimental
+                self._cached_phi_angles = phi_angles
+                return self.core._calculate_chi_squared(parameters, c2_experimental)
             except Exception as e:
                 logger.warning(f"Chi-squared calculation failed: {e}")
                 return np.inf
@@ -1732,11 +1784,7 @@ class ClassicalOptimizer:
 
 # Module-level wrapper functions for CLI and test compatibility
 def run_classical_optimization_optimized(
-    analyzer,
-    initial_params,
-    phi_angles=None,
-    c2_experimental=None,
-    **kwargs
+    analyzer, initial_params, phi_angles=None, c2_experimental=None, **kwargs
 ) -> tuple[np.ndarray | None, Any]:
     """Optimized classical optimization function.
 
@@ -1762,21 +1810,21 @@ def run_classical_optimization_optimized(
         Optimization results (optimized_params, optimization_result)
     """
     # Extract config from analyzer if available
-    if hasattr(analyzer, 'config'):
+    if hasattr(analyzer, "config"):
         config = analyzer.config
-    elif hasattr(analyzer, 'config_dict'):
+    elif hasattr(analyzer, "config_dict"):
         config = analyzer.config_dict
     else:
         # Create minimal config for basic operation
         config = {
-            'initial_parameters': {'values': list(initial_params)},
-            'optimization_config': {},
-            'parameter_space': {'bounds': []},
-            'advanced_settings': {}
+            "initial_parameters": {"values": list(initial_params)},
+            "optimization_config": {},
+            "parameter_space": {"bounds": []},
+            "advanced_settings": {},
         }
 
     # Convert initial_params to numpy array if needed
-    if hasattr(np, 'array') and initial_params is not None:
+    if hasattr(np, "array") and initial_params is not None:
         initial_params = np.array(initial_params)
 
     # Create optimizer and run optimization
@@ -1785,7 +1833,7 @@ def run_classical_optimization_optimized(
         initial_parameters=initial_params,
         phi_angles=phi_angles,
         c2_experimental=c2_experimental,
-        **kwargs
+        **kwargs,
     )
 
 

@@ -19,8 +19,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
 
 import numpy as np
 import psutil
@@ -31,6 +29,7 @@ warnings.filterwarnings("ignore")
 @dataclass
 class SimpleProfileData:
     """Simple profiling data."""
+
     function_name: str
     execution_time: float
     memory_usage: float
@@ -45,6 +44,7 @@ class SimpleProfiler:
 
     def profile_function(self, name: str = None):
         """Simple profiling decorator."""
+
         def decorator(func):
             profile_name = name or func.__name__
 
@@ -70,7 +70,7 @@ class SimpleProfiler:
                         function_name=profile_name,
                         execution_time=execution_time,
                         memory_usage=memory_delta,
-                        call_count=1
+                        call_count=1,
                     )
                 else:
                     # Update existing profile
@@ -80,10 +80,12 @@ class SimpleProfiler:
                     profile.memory_usage = max(profile.memory_usage, memory_delta)
 
                 return result
+
             return wrapper
+
         return decorator
 
-    def get_profile_summary(self) -> Dict[str, Any]:
+    def get_profile_summary(self) -> dict[str, Any]:
         """Get profile summary."""
         if not self.profiles:
             return {}
@@ -95,7 +97,7 @@ class SimpleProfiler:
                 "total_time": float(profile.execution_time),
                 "avg_time": float(profile.execution_time / profile.call_count),
                 "memory_usage": float(profile.memory_usage),
-                "call_count": int(profile.call_count)
+                "call_count": int(profile.call_count),
             }
 
         return profiles_dict
@@ -119,7 +121,7 @@ class PerformanceMonitor:
                 "timestamp": time.time(),
                 "cpu_percent": float(cpu_percent),
                 "memory_mb": float(memory_info.rss / 1024 / 1024),
-                "memory_percent": float(psutil.virtual_memory().percent)
+                "memory_percent": float(psutil.virtual_memory().percent),
             }
 
             self.system_metrics.append(metrics)
@@ -131,7 +133,7 @@ class PerformanceMonitor:
         except Exception:
             pass  # Ignore monitoring errors
 
-    def get_monitoring_summary(self) -> Dict[str, Any]:
+    def get_monitoring_summary(self) -> dict[str, Any]:
         """Get monitoring summary."""
         if not self.system_metrics:
             return {}
@@ -144,7 +146,7 @@ class PerformanceMonitor:
             "avg_cpu_percent": float(np.mean(cpu_values)),
             "max_cpu_percent": float(np.max(cpu_values)),
             "avg_memory_mb": float(np.mean(memory_values)),
-            "max_memory_mb": float(np.max(memory_values))
+            "max_memory_mb": float(np.max(memory_values)),
         }
 
 
@@ -170,11 +172,7 @@ def test_profiling_system():
     @monitor.profiler.profile_function("statistical_operations")
     def stats_test():
         data = np.random.rand(10000)
-        return {
-            "mean": np.mean(data),
-            "std": np.std(data),
-            "median": np.median(data)
-        }
+        return {"mean": np.mean(data), "std": np.std(data), "median": np.median(data)}
 
     # Run tests
     print("Running profiled operations...")
@@ -203,13 +201,17 @@ def test_profiling_system():
 
     # Display results
     print("\nPROFILING RESULTS:")
-    print(f"{'Function':<25} {'Calls':<8} {'Total (ms)':<12} {'Avg (ms)':<12} {'Memory (MB)':<12}")
+    print(
+        f"{'Function':<25} {'Calls':<8} {'Total (ms)':<12} {'Avg (ms)':<12} {'Memory (MB)':<12}"
+    )
     print("-" * 69)
 
     for name, data in profile_summary.items():
         total_ms = data["total_time"] * 1000
         avg_ms = data["avg_time"] * 1000
-        print(f"{name:<25} {data['call_count']:<8} {total_ms:<12.2f} {avg_ms:<12.4f} {data['memory_usage']:<12.2f}")
+        print(
+            f"{name:<25} {data['call_count']:<8} {total_ms:<12.2f} {avg_ms:<12.4f} {data['memory_usage']:<12.2f}"
+        )
 
     print("\nSYSTEM MONITORING:")
     print(f"  Metrics collected: {monitoring_summary.get('metrics_collected', 0)}")
@@ -227,12 +229,12 @@ def test_profiling_system():
         "profiling_summary": profile_summary,
         "monitoring_summary": monitoring_summary,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "task": "4.2_profiling_infrastructure"
+        "task": "4.2_profiling_infrastructure",
     }
 
     # Save to JSON
     results_file = results_dir / "task_4_2_profiling_results.json"
-    with open(results_file, 'w') as f:
+    with open(results_file, "w") as f:
         json.dump(combined_results, f, indent=2)
 
     # Generate text report
@@ -246,8 +248,8 @@ def test_profiling_system():
     for name, data in profile_summary.items():
         report_lines.append(f"  {name}:")
         report_lines.append(f"    Calls: {data['call_count']}")
-        report_lines.append(f"    Total Time: {data['total_time']*1000:.2f} ms")
-        report_lines.append(f"    Average Time: {data['avg_time']*1000:.4f} ms")
+        report_lines.append(f"    Total Time: {data['total_time'] * 1000:.2f} ms")
+        report_lines.append(f"    Average Time: {data['avg_time'] * 1000:.4f} ms")
         report_lines.append(f"    Memory Usage: {data['memory_usage']:.2f} MB")
         report_lines.append("")
 
@@ -257,7 +259,7 @@ def test_profiling_system():
 
     # Save text report
     report_file = results_dir / "task_4_2_profiling_report.txt"
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         f.write("\n".join(report_lines))
 
     print(f"\n📄 Results saved to: {results_file}")
@@ -278,14 +280,14 @@ def test_profiling_system():
 
     # Get cProfile stats
     s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+    ps = pstats.Stats(pr, stream=s).sort_stats("cumulative")
     ps.print_stats(10)  # Top 10 functions
 
     profile_output = s.getvalue()
 
     # Save cProfile output
     cprofile_file = results_dir / "task_4_2_cprofile_output.txt"
-    with open(cprofile_file, 'w') as f:
+    with open(cprofile_file, "w") as f:
         f.write("CPROFILE OUTPUT - SVD Operation\n")
         f.write("=" * 40 + "\n")
         f.write(profile_output)
@@ -295,7 +297,9 @@ def test_profiling_system():
     print("\n✅ Task 4.2 Profiling Infrastructure Complete!")
     print("🎯 Advanced profiling and monitoring system established")
     print(f"📊 {len(profile_summary)} functions profiled")
-    print(f"📈 {monitoring_summary.get('metrics_collected', 0)} system metrics collected")
+    print(
+        f"📈 {monitoring_summary.get('metrics_collected', 0)} system metrics collected"
+    )
 
     return combined_results
 

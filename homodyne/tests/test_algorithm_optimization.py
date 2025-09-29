@@ -26,17 +26,20 @@ import numpy as np
 try:
     from numba import jit
     from numba import njit
+
     NUMBA_AVAILABLE = True
 except ImportError:
     # Mock decorators if numba not available
     def jit(*args, **kwargs):
         def decorator(func):
             return func
+
         return decorator if args else decorator
 
     def njit(*args, **kwargs):
         def decorator(func):
             return func
+
         return decorator if args else decorator
 
     NUMBA_AVAILABLE = False
@@ -44,10 +47,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Tuple
 
 warnings.filterwarnings("ignore")
 
@@ -55,6 +54,7 @@ warnings.filterwarnings("ignore")
 @dataclass
 class OptimizationResult:
     """Results of algorithm optimization."""
+
     original_time: float
     optimized_time: float
     speedup_factor: float
@@ -96,7 +96,9 @@ class MathematicalOptimizer:
         return np.dot(A, B)
 
     @staticmethod
-    def correlation_function_optimized(data: np.ndarray, angles: np.ndarray) -> np.ndarray:
+    def correlation_function_optimized(
+        data: np.ndarray, angles: np.ndarray
+    ) -> np.ndarray:
         """Optimized correlation function calculation."""
         n_angles, n_time = data.shape[0], data.shape[1]
         result = np.zeros((n_angles, n_time, n_time))
@@ -110,7 +112,9 @@ class MathematicalOptimizer:
         return result
 
     @staticmethod
-    def correlation_function_original(data: np.ndarray, angles: np.ndarray) -> np.ndarray:
+    def correlation_function_original(
+        data: np.ndarray, angles: np.ndarray
+    ) -> np.ndarray:
         """Original correlation function calculation."""
         n_angles, n_time = data.shape[0], data.shape[1]
         result = np.zeros((n_angles, n_time, n_time))
@@ -131,7 +135,7 @@ class MathematicalOptimizer:
         return np.linalg.eigvals(matrix)
 
     @staticmethod
-    def statistical_moments_optimized(data: np.ndarray) -> Dict[str, float]:
+    def statistical_moments_optimized(data: np.ndarray) -> dict[str, float]:
         """Optimized statistical moment calculations."""
         # Use single-pass algorithm for efficiency
         n = len(data)
@@ -143,25 +147,17 @@ class MathematicalOptimizer:
         variance = np.var(data, ddof=0)
         std = np.sqrt(variance)
 
-        return {
-            "mean": float(mean),
-            "variance": float(variance),
-            "std": float(std)
-        }
+        return {"mean": float(mean), "variance": float(variance), "std": float(std)}
 
     @staticmethod
-    def statistical_moments_original(data: np.ndarray) -> Dict[str, float]:
+    def statistical_moments_original(data: np.ndarray) -> dict[str, float]:
         """Original statistical moment calculations."""
         # Multi-pass algorithm
         mean = sum(data) / len(data)
         variance = sum((x - mean) ** 2 for x in data) / len(data)
-        std = variance ** 0.5
+        std = variance**0.5
 
-        return {
-            "mean": mean,
-            "variance": variance,
-            "std": std
-        }
+        return {"mean": mean, "variance": variance, "std": std}
 
 
 class MemoryOptimizer:
@@ -177,7 +173,9 @@ class MemoryOptimizer:
         return data
 
     @staticmethod
-    def memory_efficient_correlation(data: np.ndarray, chunk_size: int = 100) -> np.ndarray:
+    def memory_efficient_correlation(
+        data: np.ndarray, chunk_size: int = 100
+    ) -> np.ndarray:
         """Memory-efficient correlation calculation using chunking."""
         n_angles, n_time = data.shape[0], data.shape[1]
 
@@ -202,17 +200,21 @@ class MemoryOptimizer:
         return result
 
     @staticmethod
-    def pre_allocate_arrays(shape: Tuple[int, ...], dtype: np.dtype = np.float64) -> np.ndarray:
+    def pre_allocate_arrays(
+        shape: tuple[int, ...], dtype: np.dtype = np.float64
+    ) -> np.ndarray:
         """Pre-allocate arrays with optimal memory layout."""
         # Use C-contiguous arrays for better cache performance
-        return np.zeros(shape, dtype=dtype, order='C')
+        return np.zeros(shape, dtype=dtype, order="C")
 
 
 class NumericalStabilityOptimizer:
     """Optimizations for numerical stability."""
 
     @staticmethod
-    def stable_chi_squared(c2_exp: np.ndarray, c2_theo: np.ndarray, epsilon: float = 1e-15) -> float:
+    def stable_chi_squared(
+        c2_exp: np.ndarray, c2_theo: np.ndarray, epsilon: float = 1e-15
+    ) -> float:
         """Numerically stable chi-squared calculation."""
         # Avoid overflow and underflow
         diff = c2_exp - c2_theo
@@ -244,8 +246,7 @@ class NumericalStabilityOptimizer:
             regularization = 1e-10 * np.eye(matrix.shape[0])
             matrix_reg = matrix + regularization
             return np.linalg.eigvals(matrix_reg)
-        else:
-            return np.linalg.eigvals(matrix)
+        return np.linalg.eigvals(matrix)
 
     @staticmethod
     def stable_correlation_normalization(correlation: np.ndarray) -> np.ndarray:
@@ -272,7 +273,7 @@ class AlgorithmBenchmarker:
     def __init__(self):
         self.results = {}
 
-    def benchmark_chi_squared_optimizations(self) -> Dict[str, OptimizationResult]:
+    def benchmark_chi_squared_optimizations(self) -> dict[str, OptimizationResult]:
         """Benchmark chi-squared calculation optimizations."""
         results = {}
 
@@ -289,19 +290,25 @@ class AlgorithmBenchmarker:
             # Benchmark original
             start_time = time.perf_counter()
             for _ in range(100):
-                result_orig = MathematicalOptimizer.chi_squared_original(c2_exp, c2_theo)
+                result_orig = MathematicalOptimizer.chi_squared_original(
+                    c2_exp, c2_theo
+                )
             orig_time = time.perf_counter() - start_time
 
             # Benchmark vectorized
             start_time = time.perf_counter()
             for _ in range(100):
-                result_vec = MathematicalOptimizer.chi_squared_vectorized(c2_exp, c2_theo)
+                result_vec = MathematicalOptimizer.chi_squared_vectorized(
+                    c2_exp, c2_theo
+                )
             vec_time = time.perf_counter() - start_time
 
             # Benchmark JIT optimized
             start_time = time.perf_counter()
             for _ in range(100):
-                result_jit = MathematicalOptimizer.chi_squared_optimized(c2_exp, c2_theo)
+                result_jit = MathematicalOptimizer.chi_squared_optimized(
+                    c2_exp, c2_theo
+                )
             jit_time = time.perf_counter() - start_time
 
             # Check accuracy
@@ -312,24 +319,24 @@ class AlgorithmBenchmarker:
             results[f"{size_key}_vectorized"] = OptimizationResult(
                 original_time=orig_time,
                 optimized_time=vec_time,
-                speedup_factor=orig_time / vec_time if vec_time > 0 else float('inf'),
+                speedup_factor=orig_time / vec_time if vec_time > 0 else float("inf"),
                 memory_reduction=0.0,  # Same memory usage
                 accuracy_preserved=accuracy_vec,
-                optimization_method="vectorization"
+                optimization_method="vectorization",
             )
 
             results[f"{size_key}_jit"] = OptimizationResult(
                 original_time=orig_time,
                 optimized_time=jit_time,
-                speedup_factor=orig_time / jit_time if jit_time > 0 else float('inf'),
+                speedup_factor=orig_time / jit_time if jit_time > 0 else float("inf"),
                 memory_reduction=0.0,
                 accuracy_preserved=accuracy_jit,
-                optimization_method="numba_jit"
+                optimization_method="numba_jit",
             )
 
         return results
 
-    def benchmark_correlation_optimizations(self) -> Dict[str, OptimizationResult]:
+    def benchmark_correlation_optimizations(self) -> dict[str, OptimizationResult]:
         """Benchmark correlation function optimizations."""
         results = {}
 
@@ -345,12 +352,16 @@ class AlgorithmBenchmarker:
 
             # Benchmark original
             start_time = time.perf_counter()
-            result_orig = MathematicalOptimizer.correlation_function_original(data, angles)
+            result_orig = MathematicalOptimizer.correlation_function_original(
+                data, angles
+            )
             orig_time = time.perf_counter() - start_time
 
             # Benchmark optimized
             start_time = time.perf_counter()
-            result_opt = MathematicalOptimizer.correlation_function_optimized(data, angles)
+            result_opt = MathematicalOptimizer.correlation_function_optimized(
+                data, angles
+            )
             opt_time = time.perf_counter() - start_time
 
             # Check accuracy
@@ -359,15 +370,15 @@ class AlgorithmBenchmarker:
             results[size_key] = OptimizationResult(
                 original_time=orig_time,
                 optimized_time=opt_time,
-                speedup_factor=orig_time / opt_time if opt_time > 0 else float('inf'),
+                speedup_factor=orig_time / opt_time if opt_time > 0 else float("inf"),
                 memory_reduction=0.0,
                 accuracy_preserved=accuracy,
-                optimization_method="vectorization"
+                optimization_method="vectorization",
             )
 
         return results
 
-    def benchmark_statistical_optimizations(self) -> Dict[str, OptimizationResult]:
+    def benchmark_statistical_optimizations(self) -> dict[str, OptimizationResult]:
         """Benchmark statistical computation optimizations."""
         results = {}
 
@@ -391,21 +402,23 @@ class AlgorithmBenchmarker:
             opt_time = time.perf_counter() - start_time
 
             # Check accuracy
-            accuracy = (abs(result_orig["mean"] - result_opt["mean"]) < 1e-10 and
-                       abs(result_orig["variance"] - result_opt["variance"]) < 1e-10)
+            accuracy = (
+                abs(result_orig["mean"] - result_opt["mean"]) < 1e-10
+                and abs(result_orig["variance"] - result_opt["variance"]) < 1e-10
+            )
 
             results[size_key] = OptimizationResult(
                 original_time=orig_time,
                 optimized_time=opt_time,
-                speedup_factor=orig_time / opt_time if opt_time > 0 else float('inf'),
+                speedup_factor=orig_time / opt_time if opt_time > 0 else float("inf"),
                 memory_reduction=0.0,
                 accuracy_preserved=accuracy,
-                optimization_method="single_pass_algorithm"
+                optimization_method="single_pass_algorithm",
             )
 
         return results
 
-    def run_comprehensive_optimization_benchmark(self) -> Dict[str, Any]:
+    def run_comprehensive_optimization_benchmark(self) -> dict[str, Any]:
         """Run comprehensive optimization benchmarks."""
         print("Running Comprehensive Algorithm Optimization Benchmarks")
         print("=" * 60)
@@ -445,7 +458,7 @@ def test_numerical_stability():
         orig_stable = np.isfinite(result_orig)
     except (OverflowError, RuntimeError):
         orig_stable = False
-        result_orig = float('inf')
+        result_orig = float("inf")
 
     # Stable calculation
     result_stable = NumericalStabilityOptimizer.stable_chi_squared(c2_exp, c2_theo)
@@ -453,7 +466,9 @@ def test_numerical_stability():
 
     print(f"  Original calculation stable: {orig_stable}")
     print(f"  Optimized calculation stable: {stable_stable}")
-    print(f"  Stability improvement: {'✓' if stable_stable and not orig_stable else '='}")
+    print(
+        f"  Stability improvement: {'✓' if stable_stable and not orig_stable else '='}"
+    )
 
     # Test eigenvalue stability
     # Create ill-conditioned matrix
@@ -474,17 +489,19 @@ def test_numerical_stability():
     print(f"  Robust eigenvalues stable: {robust_eig_stable}")
 
 
-def generate_optimization_report(results: Dict[str, OptimizationResult]) -> str:
+def generate_optimization_report(results: dict[str, OptimizationResult]) -> str:
     """Generate comprehensive optimization report."""
     report_lines = []
     report_lines.append("ALGORITHM OPTIMIZATION REPORT - TASK 4.3")
     report_lines.append("=" * 60)
 
     # Summary statistics
-    speedups = [r.speedup_factor for r in results.values() if r.speedup_factor != float('inf')]
+    speedups = [
+        r.speedup_factor for r in results.values() if r.speedup_factor != float("inf")
+    ]
     accuracy_preserved = sum(1 for r in results.values() if r.accuracy_preserved)
 
-    report_lines.append(f"\nSUMMARY STATISTICS:")
+    report_lines.append("\nSUMMARY STATISTICS:")
     report_lines.append(f"  Total optimizations: {len(results)}")
     report_lines.append(f"  Accuracy preserved: {accuracy_preserved}/{len(results)}")
     report_lines.append(f"  Average speedup: {np.mean(speedups):.2f}x")
@@ -492,15 +509,23 @@ def generate_optimization_report(results: Dict[str, OptimizationResult]) -> str:
     report_lines.append(f"  Minimum speedup: {np.min(speedups):.2f}x")
 
     # Detailed results
-    report_lines.append(f"\nDETAILED RESULTS:")
-    report_lines.append(f"{'Operation':<30} {'Speedup':<10} {'Method':<20} {'Accurate':<10}")
+    report_lines.append("\nDETAILED RESULTS:")
+    report_lines.append(
+        f"{'Operation':<30} {'Speedup':<10} {'Method':<20} {'Accurate':<10}"
+    )
     report_lines.append("-" * 70)
 
     for name, result in results.items():
-        speedup_str = f"{result.speedup_factor:.2f}x" if result.speedup_factor != float('inf') else "∞"
+        speedup_str = (
+            f"{result.speedup_factor:.2f}x"
+            if result.speedup_factor != float("inf")
+            else "∞"
+        )
         accurate_str = "✓" if result.accuracy_preserved else "✗"
 
-        report_lines.append(f"{name:<30} {speedup_str:<10} {result.optimization_method:<20} {accurate_str:<10}")
+        report_lines.append(
+            f"{name:<30} {speedup_str:<10} {result.optimization_method:<20} {accurate_str:<10}"
+        )
 
     return "\n".join(report_lines)
 
@@ -531,39 +556,53 @@ def run_algorithm_optimization_suite():
         json_results[name] = {
             "original_time": float(result.original_time),
             "optimized_time": float(result.optimized_time),
-            "speedup_factor": float(result.speedup_factor) if result.speedup_factor != float('inf') else None,
+            "speedup_factor": (
+                float(result.speedup_factor)
+                if result.speedup_factor != float("inf")
+                else None
+            ),
             "memory_reduction": float(result.memory_reduction),
             "accuracy_preserved": bool(result.accuracy_preserved),
-            "optimization_method": str(result.optimization_method)
+            "optimization_method": str(result.optimization_method),
         }
 
     # Save JSON results
     json_file = results_dir / "task_4_3_optimization_results.json"
-    with open(json_file, 'w') as f:
-        json.dump({
-            "optimization_results": json_results,
-            "summary": {
-                "total_optimizations": len(results),
-                "accuracy_preserved": sum(1 for r in results.values() if r.accuracy_preserved),
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-            }
-        }, f, indent=2)
+    with open(json_file, "w") as f:
+        json.dump(
+            {
+                "optimization_results": json_results,
+                "summary": {
+                    "total_optimizations": len(results),
+                    "accuracy_preserved": sum(
+                        1 for r in results.values() if r.accuracy_preserved
+                    ),
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            f,
+            indent=2,
+        )
 
     # Save text report
     report_file = results_dir / "task_4_3_optimization_report.txt"
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         f.write(report)
 
     print(f"\n📄 Results saved to: {json_file}")
     print(f"📄 Report saved to: {report_file}")
 
-    speedups = [r.speedup_factor for r in results.values() if r.speedup_factor != float('inf')]
+    speedups = [
+        r.speedup_factor for r in results.values() if r.speedup_factor != float("inf")
+    ]
     avg_speedup = np.mean(speedups) if speedups else 0
 
-    print(f"\n✅ Task 4.3 Algorithm Optimization Complete!")
+    print("\n✅ Task 4.3 Algorithm Optimization Complete!")
     print(f"🚀 Average speedup achieved: {avg_speedup:.2f}x")
     print(f"🎯 {len(results)} optimizations implemented")
-    print(f"✓ Numerical accuracy preserved in {sum(1 for r in results.values() if r.accuracy_preserved)}/{len(results)} cases")
+    print(
+        f"✓ Numerical accuracy preserved in {sum(1 for r in results.values() if r.accuracy_preserved)}/{len(results)} cases"
+    )
 
     return json_results
 

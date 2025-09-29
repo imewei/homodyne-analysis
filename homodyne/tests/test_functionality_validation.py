@@ -29,25 +29,27 @@ class TestCoreAPIAvailability:
 
         # Test that all public API components are available
         public_api_components = [
-            'HomodyneAnalysisCore',
-            'ClassicalOptimizer',
-            'RobustHomodyneOptimizer',
-            'ConfigManager',
-            'PerformanceMonitor',
+            "HomodyneAnalysisCore",
+            "ClassicalOptimizer",
+            "RobustHomodyneOptimizer",
+            "ConfigManager",
+            "PerformanceMonitor",
         ]
 
         for component in public_api_components:
-            assert hasattr(homodyne, component), f"Missing public API component: {component}"
+            assert hasattr(homodyne, component), (
+                f"Missing public API component: {component}"
+            )
 
     def test_computational_kernels_available(self):
         """Test that computational kernels are available."""
         kernel_functions = [
-            'calculate_diffusion_coefficient_numba',
-            'calculate_shear_rate_numba',
-            'compute_g1_correlation_numba',
-            'compute_sinc_squared_numba',
-            'create_time_integral_matrix_numba',
-            'memory_efficient_cache',
+            "calculate_diffusion_coefficient_numba",
+            "calculate_shear_rate_numba",
+            "compute_g1_correlation_numba",
+            "compute_sinc_squared_numba",
+            "create_time_integral_matrix_numba",
+            "memory_efficient_cache",
         ]
 
         for func_name in kernel_functions:
@@ -58,9 +60,9 @@ class TestCoreAPIAvailability:
     def test_cli_functions_available(self):
         """Test that CLI functions are available."""
         cli_functions = [
-            'run_homodyne_main',
-            'create_config_main',
-            'enhanced_runner_main',
+            "run_homodyne_main",
+            "create_config_main",
+            "enhanced_runner_main",
         ]
 
         for func_name in cli_functions:
@@ -69,9 +71,9 @@ class TestCoreAPIAvailability:
     def test_configuration_utilities_available(self):
         """Test that configuration utilities are available."""
         config_functions = [
-            'get_template_path',
-            'get_config_dir',
-            'TEMPLATE_FILES',
+            "get_template_path",
+            "get_config_dir",
+            "TEMPLATE_FILES",
         ]
 
         for func_name in config_functions:
@@ -80,16 +82,18 @@ class TestCoreAPIAvailability:
     def test_performance_monitoring_available(self):
         """Test that performance monitoring functions are available."""
         perf_functions = [
-            'check_performance_health',
-            'establish_performance_baseline',
-            'monitor_startup_performance',
-            'get_import_performance_report',
-            'preload_scientific_dependencies',
-            'optimize_initialization',
+            "check_performance_health",
+            "establish_performance_baseline",
+            "monitor_startup_performance",
+            "get_import_performance_report",
+            "preload_scientific_dependencies",
+            "optimize_initialization",
         ]
 
         for func_name in perf_functions:
-            assert hasattr(homodyne, func_name), f"Missing performance function: {func_name}"
+            assert hasattr(homodyne, func_name), (
+                f"Missing performance function: {func_name}"
+            )
             func = getattr(homodyne, func_name)
             assert callable(func), f"Performance function {func_name} is not callable"
 
@@ -124,6 +128,7 @@ class TestLazyLoadingFunctionality:
         try:
             # This should work even if numba is disabled
             import numpy as np
+
             result = kernel_func(np.array([1.0, 2.0]))
             assert result is not None
         except Exception:
@@ -140,6 +145,7 @@ class TestLazyLoadingFunctionality:
 
         # Test basic numpy operation
         import numpy as np
+
         arr = np.array([1, 2, 3])
         assert arr.sum() == 6
 
@@ -169,7 +175,7 @@ class TestConfigurationSystem:
             # Test with a known template
             template_path = homodyne.get_template_path("static_isotropic")
             assert template_path is not None
-        except Exception as e:
+        except Exception:
             # This might fail if template doesn't exist, but function should be accessible
             pass
 
@@ -209,8 +215,7 @@ class TestPerformanceSystemIntegration:
         """Test baseline establishment."""
         try:
             baseline = homodyne.establish_performance_baseline(
-                name="test_validation",
-                target_import_time=2.0
+                name="test_validation", target_import_time=2.0
             )
             assert isinstance(baseline, dict)
             assert "name" in baseline
@@ -237,7 +242,9 @@ class TestCoreWorkflows:
             assert config_manager is not None
 
         except ImportError as e:
-            pytest.skip(f"Analysis workflow test skipped due to missing dependencies: {e}")
+            pytest.skip(
+                f"Analysis workflow test skipped due to missing dependencies: {e}"
+            )
         except Exception as e:
             pytest.fail(f"Basic analysis workflow failed: {e}")
 
@@ -252,7 +259,9 @@ class TestCoreWorkflows:
             assert robust_opt is not None
 
         except ImportError as e:
-            pytest.skip(f"Optimization workflow test skipped due to missing dependencies: {e}")
+            pytest.skip(
+                f"Optimization workflow test skipped due to missing dependencies: {e}"
+            )
         except Exception as e:
             pytest.fail(f"Optimization workflow failed: {e}")
 
@@ -277,7 +286,9 @@ class TestModuleIntegrity:
     def test_all_exports_accessible(self):
         """Test that all items in __all__ are accessible."""
         for item_name in homodyne.__all__:
-            assert hasattr(homodyne, item_name), f"__all__ item {item_name} not accessible"
+            assert hasattr(homodyne, item_name), (
+                f"__all__ item {item_name} not accessible"
+            )
             item = getattr(homodyne, item_name)
             assert item is not None, f"__all__ item {item_name} is None"
 
@@ -286,6 +297,7 @@ class TestModuleIntegrity:
         # Test core module
         try:
             from homodyne import core
+
             assert core is not None
         except ImportError as e:
             pytest.fail(f"Core module import failed: {e}")
@@ -293,6 +305,7 @@ class TestModuleIntegrity:
         # Test performance module
         try:
             from homodyne import performance
+
             assert performance is not None
         except ImportError as e:
             pytest.fail(f"Performance module import failed: {e}")
@@ -311,9 +324,9 @@ class TestBackwardCompatibility:
     def test_legacy_api_access(self):
         """Test that legacy API access patterns still work."""
         # Test direct attribute access
-        assert hasattr(homodyne, 'HomodyneAnalysisCore')
-        assert hasattr(homodyne, 'ClassicalOptimizer')
-        assert hasattr(homodyne, 'ConfigManager')
+        assert hasattr(homodyne, "HomodyneAnalysisCore")
+        assert hasattr(homodyne, "ClassicalOptimizer")
+        assert hasattr(homodyne, "ConfigManager")
 
     def test_function_signatures_preserved(self):
         """Test that public function signatures are preserved."""
@@ -322,12 +335,12 @@ class TestBackwardCompatibility:
 
         # Test monitor_startup_performance signature
         sig = inspect.signature(homodyne.monitor_startup_performance)
-        assert 'iterations' in sig.parameters
+        assert "iterations" in sig.parameters
 
         # Test establish_performance_baseline signature
         sig = inspect.signature(homodyne.establish_performance_baseline)
-        assert 'name' in sig.parameters
-        assert 'target_import_time' in sig.parameters
+        assert "name" in sig.parameters
+        assert "target_import_time" in sig.parameters
 
 
 class TestErrorHandling:
@@ -353,7 +366,9 @@ class TestErrorHandling:
             assert result is None or result is not None  # Either is acceptable
         except Exception:
             # Should not raise for non-required dependencies
-            pytest.fail("Lazy loader should handle missing optional dependencies gracefully")
+            pytest.fail(
+                "Lazy loader should handle missing optional dependencies gracefully"
+            )
 
     def test_performance_monitoring_error_handling(self):
         """Test performance monitoring error handling."""
@@ -372,17 +387,23 @@ class TestRealWorldUsage:
     @pytest.mark.slow
     def test_import_in_subprocess(self):
         """Test package import in subprocess (real-world scenario)."""
-        import subprocess
-        import sys
 
         # Test that package imports successfully in clean subprocess
-        result = subprocess.run([
-            sys.executable, "-c",
-            "import homodyne; print('SUCCESS:', homodyne.__version__)"
-        ], capture_output=True, text=True, timeout=30)
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import homodyne; print('SUCCESS:', homodyne.__version__)",
+            ],
+            check=False, capture_output=True,
+            text=True,
+            timeout=30,
+        )
 
         assert result.returncode == 0, f"Subprocess import failed: {result.stderr}"
-        assert "SUCCESS:" in result.stdout, "Package import didn't produce expected output"
+        assert "SUCCESS:" in result.stdout, (
+            "Package import didn't produce expected output"
+        )
 
     def test_repeated_imports(self):
         """Test repeated imports don't cause issues."""
@@ -407,11 +428,13 @@ class TestRealWorldUsage:
                 core_class = homodyne.HomodyneAnalysisCore
                 config_class = homodyne.ConfigManager
 
-                results.append({
-                    "health": health,
-                    "core_available": core_class is not None,
-                    "config_available": config_class is not None
-                })
+                results.append(
+                    {
+                        "health": health,
+                        "core_available": core_class is not None,
+                        "config_available": config_class is not None,
+                    }
+                )
             except Exception as e:
                 errors.append(e)
 

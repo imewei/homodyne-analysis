@@ -14,8 +14,6 @@ import time
 import warnings
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
 
 import numpy as np
 
@@ -29,19 +27,19 @@ class PerformanceRegressionTester:
         self.baseline_file = Path(baseline_file)
         self.tolerance = 0.20  # 20% performance degradation tolerance
 
-    def load_baseline(self) -> Dict[str, Any]:
+    def load_baseline(self) -> dict[str, Any]:
         """Load performance baseline."""
         if self.baseline_file.exists():
-            with open(self.baseline_file, 'r') as f:
+            with open(self.baseline_file) as f:
                 return json.load(f)
         return {}
 
-    def save_baseline(self, baseline: Dict[str, Any]):
+    def save_baseline(self, baseline: dict[str, Any]):
         """Save performance baseline."""
-        with open(self.baseline_file, 'w') as f:
+        with open(self.baseline_file, "w") as f:
             json.dump(baseline, f, indent=2)
 
-    def run_performance_tests(self) -> Dict[str, float]:
+    def run_performance_tests(self) -> dict[str, float]:
         """Run current performance tests."""
         results = {}
 
@@ -73,7 +71,7 @@ class PerformanceRegressionTester:
 
         return results
 
-    def check_regression(self) -> Dict[str, Any]:
+    def check_regression(self) -> dict[str, Any]:
         """Check for performance regression."""
         baseline = self.load_baseline()
         current = self.run_performance_tests()
@@ -82,7 +80,7 @@ class PerformanceRegressionTester:
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "tests": {},
             "overall_status": "PASS",
-            "regressions_detected": 0
+            "regressions_detected": 0,
         }
 
         for test_name, current_time in current.items():
@@ -100,7 +98,7 @@ class PerformanceRegressionTester:
                     "current_time": current_time,
                     "ratio": ratio,
                     "status": status,
-                    "degradation_percent": (ratio - 1) * 100
+                    "degradation_percent": (ratio - 1) * 100,
                 }
 
         return regression_report
@@ -134,11 +132,13 @@ def run_regression_testing():
 
     for test_name, test_data in report["tests"].items():
         status_emoji = "✓" if test_data["status"] == "PASS" else "✗"
-        print(f"  {status_emoji} {test_name}: {test_data['ratio']:.2f}x ({test_data['degradation_percent']:+.1f}%)")
+        print(
+            f"  {status_emoji} {test_name}: {test_data['ratio']:.2f}x ({test_data['degradation_percent']:+.1f}%)"
+        )
 
     # Save report
     report_file = Path("performance_regression_report.json")
-    with open(report_file, 'w') as f:
+    with open(report_file, "w") as f:
         json.dump(report, f, indent=2)
 
     print(f"\n📄 Report saved to: {report_file}")

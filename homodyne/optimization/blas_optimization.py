@@ -30,9 +30,9 @@ Institution: Argonne National Laboratory
 
 import time
 import warnings
+from collections.abc import Callable
 from functools import wraps
 from typing import Any
-from typing import Callable
 
 import numpy as np
 from scipy.optimize import minimize
@@ -706,10 +706,9 @@ def test_blas_optimization_integration(
         """Simple theoretical model for testing."""
         if len(params) == 1:
             return params[0] * np.ones(n_points)
-        elif len(params) == 2:
+        if len(params) == 2:
             return params[0] * np.exp(-params[1] * x)
-        else:
-            return params[0] * np.exp(-params[1] * x) + params[2]
+        return params[0] * np.exp(-params[1] * x) + params[2]
 
     # Generate experimental data
     experimental_data = theory_function(true_params) + 0.05 * np.random.randn(n_points)

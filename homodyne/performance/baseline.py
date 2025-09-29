@@ -526,7 +526,7 @@ class PerformanceProfiler:
                     "--tb=short",
                     "-q",
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=300,
             )

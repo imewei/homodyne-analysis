@@ -19,8 +19,9 @@ except ImportError as e:
     )
     # Create placeholder modules for compatibility
     import types
-    enhanced_plotting = types.ModuleType('enhanced_plotting')
-    plotting = types.ModuleType('plotting')
+
+    enhanced_plotting = types.ModuleType("enhanced_plotting")
+    plotting = types.ModuleType("plotting")
 
 # Specific backward compatibility functions with explicit error handling
 try:

@@ -36,13 +36,13 @@ import stat
 import tempfile
 import threading
 import time
+from collections.abc import Callable
+from collections.abc import Generator
 from contextlib import contextmanager
 from functools import lru_cache
 from functools import wraps
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Generator
 
 # Note: Core security features use Python standard library (hmac, hashlib, secrets)
 # No external cryptography dependencies required for current functionality
@@ -88,25 +88,21 @@ TEMP_FILES_LOCK = threading.RLock()
 class SecurityError(Exception):
     """Base exception for security-related errors."""
 
-    pass
 
 
 class ValidationError(SecurityError):
     """Input validation failed."""
 
-    pass
 
 
 class RateLimitError(SecurityError):
     """Rate limit exceeded."""
 
-    pass
 
 
 class MemoryLimitError(SecurityError):
     """Memory usage limit exceeded."""
 
-    pass
 
 
 class SecureCache:

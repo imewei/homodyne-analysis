@@ -25,9 +25,6 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -48,7 +45,8 @@ except ImportError:
     # Fallback for development/testing
     import os
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tests'))
+
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tests"))
     from import_analyzer import EnterpriseImportAnalyzer
     from import_workflow_integrator import IntegrationConfig
     from import_workflow_integrator import IntegrationLevel
@@ -58,7 +56,7 @@ except ImportError:
 app = typer.Typer(
     name="homodyne-imports",
     help="🔍 Enterprise-grade import management for homodyne package",
-    add_completion=False
+    add_completion=False,
 )
 console = Console()
 
@@ -68,7 +66,7 @@ def get_package_root() -> Path:
     # Start from the CLI script location and work upward
     current = Path(__file__).parent
     while current.parent != current:
-        if (current / 'homodyne' / '__init__.py').exists():
+        if (current / "homodyne" / "__init__.py").exists():
             return current
         current = current.parent
 
@@ -78,33 +76,46 @@ def get_package_root() -> Path:
 
 @app.command()
 def analyze(
-    package_root: Optional[Path] = typer.Option(None, "--package-root", "-r", help="Package root directory"),
+    package_root: Path | None = typer.Option(
+        None, "--package-root", "-r", help="Package root directory"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
-    external_tools: bool = typer.Option(False, "--external", "-e", help="Run external tool validation"),
-    cross_validate: bool = typer.Option(False, "--cross-validate", "-x", help="Cross-validate with external tools"),
-    output_file: Optional[Path] = typer.Option(None, "--output", "-o", help="Save results to file"),
+    external_tools: bool = typer.Option(
+        False, "--external", "-e", help="Run external tool validation"
+    ),
+    cross_validate: bool = typer.Option(
+        False, "--cross-validate", "-x", help="Cross-validate with external tools"
+    ),
+    output_file: Path | None = typer.Option(
+        None, "--output", "-o", help="Save results to file"
+    ),
     no_cache: bool = typer.Option(False, "--no-cache", help="Disable analysis caching"),
-    safety_level: str = typer.Option("medium", "--safety", help="Safety level (low/medium/high)"),
-    show_suggestions: bool = typer.Option(True, "--suggestions/--no-suggestions", help="Show optimization suggestions")
+    safety_level: str = typer.Option(
+        "medium", "--safety", help="Safety level (low/medium/high)"
+    ),
+    show_suggestions: bool = typer.Option(
+        True, "--suggestions/--no-suggestions", help="Show optimization suggestions"
+    ),
 ):
     """🔍 Run comprehensive import analysis."""
 
     if package_root is None:
         package_root = get_package_root()
 
-    console.print(Panel.fit(
-        f"🔍 [bold blue]Import Analysis[/bold blue]\n"
-        f"Package: [cyan]{package_root.name}[/cyan]\n"
-        f"Safety Level: [yellow]{safety_level}[/yellow]",
-        style="blue"
-    ))
+    console.print(
+        Panel.fit(
+            f"🔍 [bold blue]Import Analysis[/bold blue]\n"
+            f"Package: [cyan]{package_root.name}[/cyan]\n"
+            f"Safety Level: [yellow]{safety_level}[/yellow]",
+            style="blue",
+        )
+    )
 
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
-        console=console
+        console=console,
     ) as progress:
-
         # Initialize analyzer
         task1 = progress.add_task("Initializing analyzer...", total=None)
         analyzer = EnterpriseImportAnalyzer(package_root)
@@ -113,8 +124,7 @@ def analyze(
         # Run analysis
         task2 = progress.add_task("Analyzing files...", total=None)
         analysis_results = analyzer.analyze_all_files(
-            use_cache=not no_cache,
-            show_progress=verbose
+            use_cache=not no_cache, show_progress=verbose
         )
         progress.update(task2, description=f"✅ Analyzed {len(analysis_results)} files")
 
@@ -134,11 +144,15 @@ def analyze(
 
             if cross_validate:
                 task5 = progress.add_task("Cross-validating findings...", total=None)
-                validation_results = analyzer.cross_validate_findings(unused_imports, external_results)
+                validation_results = analyzer.cross_validate_findings(
+                    unused_imports, external_results
+                )
                 progress.update(task5, description="✅ Cross-validation complete")
 
     # Display results
-    _display_analysis_results(analysis_results, unused_imports, external_results, validation_results, verbose)
+    _display_analysis_results(
+        analysis_results, unused_imports, external_results, validation_results, verbose
+    )
 
     # Show optimization suggestions
     if show_suggestions:
@@ -146,45 +160,71 @@ def analyze(
 
     # Save results if requested
     if output_file:
-        _save_analysis_results(output_file, analysis_results, unused_imports, external_results, validation_results, safety_level)
+        _save_analysis_results(
+            output_file,
+            analysis_results,
+            unused_imports,
+            external_results,
+            validation_results,
+            safety_level,
+        )
 
     # Exit with appropriate code
     total_unused = sum(len(imports) for imports in unused_imports.values())
     if total_unused > 0:
-        console.print(f"\n⚠️  Found {total_unused} unused imports. Consider running cleanup.")
+        console.print(
+            f"\n⚠️  Found {total_unused} unused imports. Consider running cleanup."
+        )
         return 1
-    else:
-        console.print("\n✅ No unused imports found!")
-        return 0
+    console.print("\n✅ No unused imports found!")
+    return 0
 
 
 @app.command()
 def cleanup(
-    package_root: Optional[Path] = typer.Option(None, "--package-root", "-r", help="Package root directory"),
-    dry_run: bool = typer.Option(False, "--dry-run", "-n", help="Preview changes without applying"),
-    safety_level: str = typer.Option("medium", "--safety", help="Safety level (low/medium/high)"),
-    backup: bool = typer.Option(True, "--backup/--no-backup", help="Create backup before cleanup"),
-    script_output: Optional[Path] = typer.Option(None, "--script", "-s", help="Generate cleanup script"),
-    interactive: bool = typer.Option(False, "--interactive", "-i", help="Interactive cleanup mode"),
-    force: bool = typer.Option(False, "--force", help="Force cleanup without safety checks")
+    package_root: Path | None = typer.Option(
+        None, "--package-root", "-r", help="Package root directory"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", "-n", help="Preview changes without applying"
+    ),
+    safety_level: str = typer.Option(
+        "medium", "--safety", help="Safety level (low/medium/high)"
+    ),
+    backup: bool = typer.Option(
+        True, "--backup/--no-backup", help="Create backup before cleanup"
+    ),
+    script_output: Path | None = typer.Option(
+        None, "--script", "-s", help="Generate cleanup script"
+    ),
+    interactive: bool = typer.Option(
+        False, "--interactive", "-i", help="Interactive cleanup mode"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Force cleanup without safety checks"
+    ),
 ):
     """🧹 Automated import cleanup with safety checks."""
 
     if package_root is None:
         package_root = get_package_root()
 
-    console.print(Panel.fit(
-        f"🧹 [bold green]Import Cleanup[/bold green]\n"
-        f"Package: [cyan]{package_root.name}[/cyan]\n"
-        f"Safety Level: [yellow]{safety_level}[/yellow]\n"
-        f"Mode: [magenta]{'Dry Run' if dry_run else 'Execute'}[/magenta]",
-        style="green"
-    ))
+    console.print(
+        Panel.fit(
+            f"🧹 [bold green]Import Cleanup[/bold green]\n"
+            f"Package: [cyan]{package_root.name}[/cyan]\n"
+            f"Safety Level: [yellow]{safety_level}[/yellow]\n"
+            f"Mode: [magenta]{'Dry Run' if dry_run else 'Execute'}[/magenta]",
+            style="green",
+        )
+    )
 
     # Run analysis first
     with console.status("🔍 Analyzing imports..."):
         analyzer = EnterpriseImportAnalyzer(package_root)
-        analysis_results = analyzer.analyze_all_files(use_cache=True, show_progress=False)
+        analysis_results = analyzer.analyze_all_files(
+            use_cache=True, show_progress=False
+        )
         unused_imports = analyzer.find_unused_imports(analysis_results)
 
     if not unused_imports:
@@ -192,14 +232,18 @@ def cleanup(
         return 0
 
     total_unused = sum(len(imports) for imports in unused_imports.values())
-    console.print(f"\n📊 Found {total_unused} unused imports in {len(unused_imports)} files")
+    console.print(
+        f"\n📊 Found {total_unused} unused imports in {len(unused_imports)} files"
+    )
 
     # Filter by safety level
     safe_imports = _filter_by_safety(unused_imports, safety_level)
     safe_count = sum(len(imports) for imports in safe_imports.values())
 
     if safe_count == 0:
-        console.print(f"⚠️  No imports meet safety level '{safety_level}' for automated removal")
+        console.print(
+            f"⚠️  No imports meet safety level '{safety_level}' for automated removal"
+        )
         console.print("💡 Try lowering safety level or use manual review")
         return 1
 
@@ -223,7 +267,9 @@ def cleanup(
     # Generate cleanup script
     if script_output or not force:
         with console.status("📝 Generating cleanup script..."):
-            script_path = analyzer.generate_safe_cleanup_script(safe_imports, script_output)
+            script_path = analyzer.generate_safe_cleanup_script(
+                safe_imports, script_output
+            )
 
         console.print(f"📝 Cleanup script generated: [cyan]{script_path}[/cyan]")
 
@@ -248,27 +294,43 @@ def cleanup(
 
 @app.command()
 def setup_workflow(
-    package_root: Optional[Path] = typer.Option(None, "--package-root", "-r", help="Package root directory"),
-    level: str = typer.Option("standard", "--level", help="Integration level (basic/standard/enterprise)"),
-    safety_level: str = typer.Option("medium", "--safety", help="Safety level for automated operations"),
-    enable_auto_fix: bool = typer.Option(False, "--auto-fix", help="Enable automated fix workflows"),
-    disable_pre_commit: bool = typer.Option(False, "--no-pre-commit", help="Disable pre-commit hooks"),
-    disable_github: bool = typer.Option(False, "--no-github", help="Disable GitHub Actions"),
+    package_root: Path | None = typer.Option(
+        None, "--package-root", "-r", help="Package root directory"
+    ),
+    level: str = typer.Option(
+        "standard", "--level", help="Integration level (basic/standard/enterprise)"
+    ),
+    safety_level: str = typer.Option(
+        "medium", "--safety", help="Safety level for automated operations"
+    ),
+    enable_auto_fix: bool = typer.Option(
+        False, "--auto-fix", help="Enable automated fix workflows"
+    ),
+    disable_pre_commit: bool = typer.Option(
+        False, "--no-pre-commit", help="Disable pre-commit hooks"
+    ),
+    disable_github: bool = typer.Option(
+        False, "--no-github", help="Disable GitHub Actions"
+    ),
     disable_ide: bool = typer.Option(False, "--no-ide", help="Disable IDE integration"),
-    disable_metrics: bool = typer.Option(False, "--no-metrics", help="Disable metrics collection")
+    disable_metrics: bool = typer.Option(
+        False, "--no-metrics", help="Disable metrics collection"
+    ),
 ):
     """⚙️ Setup development workflow integration."""
 
     if package_root is None:
         package_root = get_package_root()
 
-    console.print(Panel.fit(
-        f"⚙️ [bold cyan]Workflow Integration Setup[/bold cyan]\n"
-        f"Package: [cyan]{package_root.name}[/cyan]\n"
-        f"Level: [yellow]{level}[/yellow]\n"
-        f"Safety: [green]{safety_level}[/green]",
-        style="cyan"
-    ))
+    console.print(
+        Panel.fit(
+            f"⚙️ [bold cyan]Workflow Integration Setup[/bold cyan]\n"
+            f"Package: [cyan]{package_root.name}[/cyan]\n"
+            f"Level: [yellow]{level}[/yellow]\n"
+            f"Safety: [green]{safety_level}[/green]",
+            style="cyan",
+        )
+    )
 
     # Create configuration
     config = IntegrationConfig(
@@ -278,16 +340,15 @@ def setup_workflow(
         enable_ide_integration=not disable_ide,
         enable_metrics=not disable_metrics,
         safety_level=safety_level,
-        auto_fix_enabled=enable_auto_fix
+        auto_fix_enabled=enable_auto_fix,
     )
 
     # Setup integration
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
-        console=console
+        console=console,
     ) as progress:
-
         task1 = progress.add_task("Initializing integrator...", total=None)
         integrator = WorkflowIntegrator(package_root, config)
         progress.update(task1, description="✅ Integrator initialized")
@@ -303,42 +364,62 @@ def setup_workflow(
     total_count = len(results)
 
     if success_count == total_count:
-        console.print("\n🎉 [bold green]Full integration setup completed successfully![/bold green]")
+        console.print(
+            "\n🎉 [bold green]Full integration setup completed successfully![/bold green]"
+        )
     elif success_count > 0:
-        console.print(f"\n⚠️  [yellow]Partial integration setup completed ({success_count}/{total_count})[/yellow]")
+        console.print(
+            f"\n⚠️  [yellow]Partial integration setup completed ({success_count}/{total_count})[/yellow]"
+        )
     else:
         console.print("\n❌ [red]Integration setup failed[/red]")
         return 1
 
     # Show next steps
     console.print("\n📋 [bold]Next Steps:[/bold]")
-    console.print("1. 📖 Review integration report: [cyan].import_integration/integration_report.md[/cyan]")
-    console.print("2. 🔬 Test pre-commit hooks: [yellow]git commit[/yellow] (with changes)")
+    console.print(
+        "1. 📖 Review integration report: [cyan].import_integration/integration_report.md[/cyan]"
+    )
+    console.print(
+        "2. 🔬 Test pre-commit hooks: [yellow]git commit[/yellow] (with changes)"
+    )
     console.print("3. 🚀 Check GitHub Actions: Push changes to trigger workflows")
-    console.print("4. 📊 Open metrics dashboard: [cyan].import_integration/metrics/dashboard.html[/cyan]")
+    console.print(
+        "4. 📊 Open metrics dashboard: [cyan].import_integration/metrics/dashboard.html[/cyan]"
+    )
 
     return 0
 
 
 @app.command()
 def monitor(
-    package_root: Optional[Path] = typer.Option(None, "--package-root", "-r", help="Package root directory"),
-    interval: int = typer.Option(30, "--interval", help="Monitoring interval in seconds"),
-    threshold: int = typer.Option(5, "--threshold", help="Alert threshold for unused imports"),
-    log_file: Optional[Path] = typer.Option(None, "--log", help="Log file for monitoring events")
+    package_root: Path | None = typer.Option(
+        None, "--package-root", "-r", help="Package root directory"
+    ),
+    interval: int = typer.Option(
+        30, "--interval", help="Monitoring interval in seconds"
+    ),
+    threshold: int = typer.Option(
+        5, "--threshold", help="Alert threshold for unused imports"
+    ),
+    log_file: Path | None = typer.Option(
+        None, "--log", help="Log file for monitoring events"
+    ),
 ):
     """👁️ Real-time import monitoring."""
 
     if package_root is None:
         package_root = get_package_root()
 
-    console.print(Panel.fit(
-        f"👁️ [bold yellow]Import Monitoring[/bold yellow]\n"
-        f"Package: [cyan]{package_root.name}[/cyan]\n"
-        f"Interval: [green]{interval}s[/green]\n"
-        f"Threshold: [red]{threshold}[/red]",
-        style="yellow"
-    ))
+    console.print(
+        Panel.fit(
+            f"👁️ [bold yellow]Import Monitoring[/bold yellow]\n"
+            f"Package: [cyan]{package_root.name}[/cyan]\n"
+            f"Interval: [green]{interval}s[/green]\n"
+            f"Threshold: [red]{threshold}[/red]",
+            style="yellow",
+        )
+    )
 
     console.print("🚀 Starting import monitoring... (Press Ctrl+C to stop)")
 
@@ -347,16 +428,22 @@ def monitor(
     try:
         while True:
             with console.status("🔍 Checking imports..."):
-                analysis_results = analyzer.analyze_all_files(use_cache=True, show_progress=False)
+                analysis_results = analyzer.analyze_all_files(
+                    use_cache=True, show_progress=False
+                )
                 unused_imports = analyzer.find_unused_imports(analysis_results)
 
             total_unused = sum(len(imports) for imports in unused_imports.values())
 
             if total_unused > threshold:
-                console.print(f"🚨 [red]Alert: {total_unused} unused imports detected![/red]")
+                console.print(
+                    f"🚨 [red]Alert: {total_unused} unused imports detected![/red]"
+                )
                 if log_file:
-                    with open(log_file, 'a') as f:
-                        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Alert - {total_unused} unused imports\n")
+                    with open(log_file, "a") as f:
+                        f.write(
+                            f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Alert - {total_unused} unused imports\n"
+                        )
             else:
                 console.print(f"✅ Import status: {total_unused} unused imports")
 
@@ -368,26 +455,38 @@ def monitor(
 
 @app.command()
 def metrics(
-    package_root: Optional[Path] = typer.Option(None, "--package-root", "-r", help="Package root directory"),
-    show_history: bool = typer.Option(False, "--history", help="Show historical metrics"),
-    export_format: str = typer.Option("table", "--format", help="Export format (table/json/csv)"),
-    output_file: Optional[Path] = typer.Option(None, "--output", help="Export metrics to file")
+    package_root: Path | None = typer.Option(
+        None, "--package-root", "-r", help="Package root directory"
+    ),
+    show_history: bool = typer.Option(
+        False, "--history", help="Show historical metrics"
+    ),
+    export_format: str = typer.Option(
+        "table", "--format", help="Export format (table/json/csv)"
+    ),
+    output_file: Path | None = typer.Option(
+        None, "--output", help="Export metrics to file"
+    ),
 ):
     """📊 View import management metrics."""
 
     if package_root is None:
         package_root = get_package_root()
 
-    console.print(Panel.fit(
-        f"📊 [bold magenta]Import Metrics[/bold magenta]\n"
-        f"Package: [cyan]{package_root.name}[/cyan]",
-        style="magenta"
-    ))
+    console.print(
+        Panel.fit(
+            f"📊 [bold magenta]Import Metrics[/bold magenta]\n"
+            f"Package: [cyan]{package_root.name}[/cyan]",
+            style="magenta",
+        )
+    )
 
     # Collect current metrics
     with console.status("📊 Collecting metrics..."):
         analyzer = EnterpriseImportAnalyzer(package_root)
-        analysis_results = analyzer.analyze_all_files(use_cache=True, show_progress=False)
+        analysis_results = analyzer.analyze_all_files(
+            use_cache=True, show_progress=False
+        )
         unused_imports = analyzer.find_unused_imports(analysis_results)
 
     # Calculate metrics
@@ -409,8 +508,13 @@ def metrics(
         _display_metrics_history(package_root)
 
 
-def _display_analysis_results(analysis_results: Dict, unused_imports: Dict,
-                            external_results: Dict, validation_results: Dict, verbose: bool):
+def _display_analysis_results(
+    analysis_results: dict,
+    unused_imports: dict,
+    external_results: dict,
+    validation_results: dict,
+    verbose: bool,
+):
     """Display comprehensive analysis results."""
 
     total_unused = sum(len(imports) for imports in unused_imports.values())
@@ -425,8 +529,14 @@ def _display_analysis_results(analysis_results: Dict, unused_imports: Dict,
     table.add_row("Total Unused Imports", str(total_unused))
 
     if validation_results:
-        confirmed = sum(len(imports) for imports in validation_results.get('confirmed_unused', {}).values())
-        disputed = sum(len(imports) for imports in validation_results.get('disputed_findings', {}).values())
+        confirmed = sum(
+            len(imports)
+            for imports in validation_results.get("confirmed_unused", {}).values()
+        )
+        disputed = sum(
+            len(imports)
+            for imports in validation_results.get("disputed_findings", {}).values()
+        )
         table.add_row("Confirmed by External Tools", str(confirmed))
         table.add_row("Disputed Findings", str(disputed))
 
@@ -440,8 +550,8 @@ def _display_analysis_results(analysis_results: Dict, unused_imports: Dict,
         ext_table.add_column("Issues Found", style="white")
 
         for tool, result in external_results.items():
-            status = "✅ Available" if result.get('available') else "❌ Not Available"
-            issues = "🚨 Yes" if result.get('issues_found') else "✅ No"
+            status = "✅ Available" if result.get("available") else "❌ Not Available"
+            issues = "🚨 Yes" if result.get("issues_found") else "✅ No"
             ext_table.add_row(tool, status, issues)
 
         console.print(ext_table)
@@ -450,24 +560,32 @@ def _display_analysis_results(analysis_results: Dict, unused_imports: Dict,
     if unused_imports and verbose:
         console.print("\n🔍 [bold]Detailed Findings:[/bold]")
         for file_path, imports in unused_imports.items():
-            console.print(f"\n📁 [cyan]{file_path}[/cyan]: {len(imports)} unused imports")
+            console.print(
+                f"\n📁 [cyan]{file_path}[/cyan]: {len(imports)} unused imports"
+            )
             for imp in imports[:5]:  # Limit to first 5
-                safety_icon = {'high': '🟢', 'medium': '🟡', 'low': '🔴'}.get(
-                    imp.get('safety_level', 'medium'), '⚪'
+                safety_icon = {"high": "🟢", "medium": "🟡", "low": "🔴"}.get(
+                    imp.get("safety_level", "medium"), "⚪"
                 )
-                conditional = ' [CONDITIONAL]' if imp.get('is_conditional') else ''
-                type_only = ' [TYPE-ONLY]' if imp.get('is_type_only') else ''
+                conditional = " [CONDITIONAL]" if imp.get("is_conditional") else ""
+                type_only = " [TYPE-ONLY]" if imp.get("is_type_only") else ""
 
-                if imp['type'] == 'import':
-                    console.print(f"    {safety_icon} Line {imp['line']}: import {imp['module']}{conditional}{type_only}")
+                if imp["type"] == "import":
+                    console.print(
+                        f"    {safety_icon} Line {imp['line']}: import {imp['module']}{conditional}{type_only}"
+                    )
                 else:
-                    console.print(f"    {safety_icon} Line {imp['line']}: from {imp['module']} import {imp['name']}{conditional}{type_only}")
+                    console.print(
+                        f"    {safety_icon} Line {imp['line']}: from {imp['module']} import {imp['name']}{conditional}{type_only}"
+                    )
 
             if len(imports) > 5:
                 console.print(f"    ... and {len(imports) - 5} more")
 
 
-def _display_optimization_suggestions(analyzer: EnterpriseImportAnalyzer, analysis_results: Dict):
+def _display_optimization_suggestions(
+    analyzer: EnterpriseImportAnalyzer, analysis_results: dict
+):
     """Display optimization suggestions."""
     suggestions = analyzer.suggest_optimizations(analysis_results)
 
@@ -477,18 +595,18 @@ def _display_optimization_suggestions(analyzer: EnterpriseImportAnalyzer, analys
     console.print("\n💡 [bold]Optimization Recommendations:[/bold]")
 
     for i, suggestion in enumerate(suggestions[:10], 1):  # Show top 10
-        impact = suggestion.get('impact_score', 0)
-        impact_icon = '🔥' if impact >= 5 else '⭐' if impact >= 3 else '💡'
+        impact = suggestion.get("impact_score", 0)
+        impact_icon = "🔥" if impact >= 5 else "⭐" if impact >= 3 else "💡"
 
         console.print(f"{i:2d}. {impact_icon} {suggestion['suggestion']}")
-        if 'rationale' in suggestion:
+        if "rationale" in suggestion:
             console.print(f"     [dim]Rationale: {suggestion['rationale']}[/dim]")
 
     if len(suggestions) > 10:
         console.print(f"    ... and {len(suggestions) - 10} more suggestions")
 
 
-def _display_integration_results(results: Dict[str, bool]):
+def _display_integration_results(results: dict[str, bool]):
     """Display workflow integration results."""
     table = Table(title="⚙️ Integration Results", style="cyan")
     table.add_column("Component", style="white")
@@ -496,22 +614,22 @@ def _display_integration_results(results: Dict[str, bool]):
 
     for component, success in results.items():
         status = "✅ SUCCESS" if success else "❌ FAILED"
-        formatted_component = component.replace('_', ' ').title()
+        formatted_component = component.replace("_", " ").title()
         table.add_row(formatted_component, status)
 
     console.print(table)
 
 
-def _filter_by_safety(unused_imports: Dict, safety_level: str) -> Dict:
+def _filter_by_safety(unused_imports: dict, safety_level: str) -> dict:
     """Filter unused imports by safety level."""
-    safety_levels = {'low': 0, 'medium': 1, 'high': 2}
+    safety_levels = {"low": 0, "medium": 1, "high": 2}
     min_level = safety_levels.get(safety_level, 1)
 
     filtered = {}
     for file_path, imports in unused_imports.items():
         safe_imports = []
         for imp in imports:
-            imp_level = safety_levels.get(imp.get('safety_level', 'medium'), 1)
+            imp_level = safety_levels.get(imp.get("safety_level", "medium"), 1)
             if imp_level >= min_level:
                 safe_imports.append(imp)
 
@@ -521,47 +639,59 @@ def _filter_by_safety(unused_imports: Dict, safety_level: str) -> Dict:
     return filtered
 
 
-def _show_cleanup_preview(safe_imports: Dict):
+def _show_cleanup_preview(safe_imports: dict):
     """Show preview of cleanup changes."""
     console.print("\n🔍 [bold]Cleanup Preview:[/bold]")
 
     for file_path, imports in safe_imports.items():
         console.print(f"\n📁 [cyan]{file_path}[/cyan]: {len(imports)} removals")
         for imp in imports:
-            if imp['type'] == 'import':
+            if imp["type"] == "import":
                 console.print(f"    ➖ Line {imp['line']}: import {imp['module']}")
             else:
-                console.print(f"    ➖ Line {imp['line']}: from {imp['module']} import {imp['name']}")
+                console.print(
+                    f"    ➖ Line {imp['line']}: from {imp['module']} import {imp['name']}"
+                )
 
 
-def _save_analysis_results(output_file: Path, analysis_results: Dict, unused_imports: Dict,
-                         external_results: Dict, validation_results: Dict, safety_level: str):
+def _save_analysis_results(
+    output_file: Path,
+    analysis_results: dict,
+    unused_imports: dict,
+    external_results: dict,
+    validation_results: dict,
+    safety_level: str,
+):
     """Save analysis results to file."""
     results = {
-        'metadata': {
-            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
-            'analysis_version': '2.0',
-            'safety_level': safety_level
+        "metadata": {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "analysis_version": "2.0",
+            "safety_level": safety_level,
         },
-        'summary': {
-            'files_analyzed': len(analysis_results),
-            'files_with_unused_imports': len(unused_imports),
-            'total_unused_imports': sum(len(imports) for imports in unused_imports.values()),
-            'external_tools_used': list(external_results.keys()) if external_results else []
+        "summary": {
+            "files_analyzed": len(analysis_results),
+            "files_with_unused_imports": len(unused_imports),
+            "total_unused_imports": sum(
+                len(imports) for imports in unused_imports.values()
+            ),
+            "external_tools_used": (
+                list(external_results.keys()) if external_results else []
+            ),
         },
-        'analysis_results': analysis_results,
-        'unused_imports': unused_imports,
-        'external_validation': external_results,
-        'cross_validation': validation_results
+        "analysis_results": analysis_results,
+        "unused_imports": unused_imports,
+        "external_validation": external_results,
+        "cross_validation": validation_results,
     }
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2, default=str)
 
     console.print(f"\n📄 Results saved to: [cyan]{output_file}[/cyan]")
 
 
-def _calculate_metrics(analysis_results: Dict, unused_imports: Dict) -> Dict:
+def _calculate_metrics(analysis_results: dict, unused_imports: dict) -> dict:
     """Calculate import management metrics."""
     total_files = len(analysis_results)
     files_with_unused = len(unused_imports)
@@ -570,30 +700,32 @@ def _calculate_metrics(analysis_results: Dict, unused_imports: Dict) -> Dict:
     cleanliness_ratio = 1 - (files_with_unused / max(total_files, 1))
 
     return {
-        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
-        'files_analyzed': total_files,
-        'files_with_unused_imports': files_with_unused,
-        'total_unused_imports': total_unused,
-        'import_cleanliness_ratio': cleanliness_ratio,
-        'cleanliness_percentage': round(cleanliness_ratio * 100, 1)
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "files_analyzed": total_files,
+        "files_with_unused_imports": files_with_unused,
+        "total_unused_imports": total_unused,
+        "import_cleanliness_ratio": cleanliness_ratio,
+        "cleanliness_percentage": round(cleanliness_ratio * 100, 1),
     }
 
 
-def _display_metrics_table(metrics: Dict):
+def _display_metrics_table(metrics: dict):
     """Display metrics in table format."""
     table = Table(title="📊 Import Management Metrics", style="magenta")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="white")
 
-    table.add_row("Files Analyzed", str(metrics['files_analyzed']))
-    table.add_row("Files with Unused Imports", str(metrics['files_with_unused_imports']))
-    table.add_row("Total Unused Imports", str(metrics['total_unused_imports']))
+    table.add_row("Files Analyzed", str(metrics["files_analyzed"]))
+    table.add_row(
+        "Files with Unused Imports", str(metrics["files_with_unused_imports"])
+    )
+    table.add_row("Total Unused Imports", str(metrics["total_unused_imports"]))
     table.add_row("Import Cleanliness", f"{metrics['cleanliness_percentage']}%")
 
     console.print(table)
 
     # Color-coded status
-    cleanliness = metrics['cleanliness_percentage']
+    cleanliness = metrics["cleanliness_percentage"]
     if cleanliness >= 90:
         console.print("🟢 [bold green]Excellent import cleanliness![/bold green]")
     elif cleanliness >= 70:
@@ -604,7 +736,9 @@ def _display_metrics_table(metrics: Dict):
 
 def _display_metrics_history(package_root: Path):
     """Display historical metrics if available."""
-    metrics_file = package_root / '.import_integration' / 'metrics' / 'metrics_history.jsonl'
+    metrics_file = (
+        package_root / ".import_integration" / "metrics" / "metrics_history.jsonl"
+    )
 
     if not metrics_file.exists():
         console.print("\n📈 No historical metrics available")
@@ -624,16 +758,16 @@ def _display_metrics_history(package_root: Path):
 
         for line in lines:
             data = json.loads(line)
-            timestamp = data.get('timestamp', 'Unknown')[:10]  # Just date
-            files = str(data.get('files_analyzed', 0))
-            unused = str(data.get('total_unused_imports', 0))
+            timestamp = data.get("timestamp", "Unknown")[:10]  # Just date
+            files = str(data.get("files_analyzed", 0))
+            unused = str(data.get("total_unused_imports", 0))
             cleanliness = f"{data.get('import_cleanliness_ratio', 0) * 100:.1f}%"
 
             table.add_row(timestamp, files, unused, cleanliness)
 
         console.print(table)
 
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         console.print("📈 Error reading historical metrics")
 
 
