@@ -21,13 +21,25 @@ _available_exports: list[str] = []
 
 # Always try to import ClassicalOptimizer
 try:
-
-    _available_exports.append("ClassicalOptimizer")
+    from .classical import ClassicalOptimizer, run_classical_optimization_optimized
+    _available_exports.extend(["ClassicalOptimizer", "run_classical_optimization_optimized"])
 except ImportError as e:
     ClassicalOptimizer: type[Any] | None = None  # type: ignore[misc,no-redef]
+    run_classical_optimization_optimized = None  # type: ignore[misc,assignment]
     import warnings
 
     warnings.warn(f"ClassicalOptimizer not available: {e}", ImportWarning, stacklevel=2)
+
+# Try to import RobustHomodyneOptimizer
+try:
+    from .robust import RobustHomodyneOptimizer, run_robust_optimization
+    _available_exports.extend(["RobustHomodyneOptimizer", "run_robust_optimization"])
+except ImportError as e:
+    RobustHomodyneOptimizer: type[Any] | None = None  # type: ignore[misc,no-redef]
+    run_robust_optimization = None  # type: ignore[misc,assignment]
+    import warnings
+
+    warnings.warn(f"RobustHomodyneOptimizer not available: {e}", ImportWarning, stacklevel=2)
 
 
 # Dynamic __all__ - suppress Pylance warning as this is intentional

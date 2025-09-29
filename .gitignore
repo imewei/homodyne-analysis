@@ -9,6 +9,14 @@ WARP.md
 my_conf*.json
 bandit*report.json
 detailed_cleanup_plan.md
+reports/
+test_report.txt
+cache_*.npz
+performance_results/
+nonexistent_template
+static_isotropic
+test_*.npz
+test_*.json
 
 # Development scripts
 scripts/dev_cleanup/

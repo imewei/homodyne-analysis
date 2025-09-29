@@ -15,6 +15,9 @@ help:
 	@echo "Testing:"
 	@echo "  test         Run tests with pytest"
 	@echo "  test-all     Run tests with all optional dependencies"
+	@echo "  test-discovery       Run comprehensive test discovery (no failure limits)"
+	@echo "  test-full-discovery  Run full test suite discovery with detailed reporting"
+	@echo "  test-discovery-report Generate comprehensive test discovery report"
 	@echo "  test-performance     Run performance tests only"
 	@echo "  test-regression      Run performance regression tests"
 	@echo "  test-ci      Run CI-style performance tests"
@@ -55,15 +58,28 @@ dev-install:
 # Testing targets
 test:
 	@echo "🧪 Running optimized test suite..."
-	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=5'])"
+	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors'])"
 
 test-all:
 	@echo "🧪 Running comprehensive test suite with coverage..."
-	pytest -v --cov=homodyne --cov-report=html --cov-report=term
+	pytest -v --cov=homodyne --cov-report=html --cov-report=term --continue-on-collection-errors
 
 test-fast:
 	@echo "⚡ Running fast test suite..."
-	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors']); print(f'\nTest result code: {result}')"
+	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; result = pytest.main(['-q', '--tb=no', '--continue-on-collection-errors', '--maxfail=3']); print(f'\nTest result code: {result}')"
+
+# Comprehensive test discovery targets
+test-discovery:
+	@echo "🔍 Running comprehensive test discovery (no failure limits)..."
+	python -c "import sys; import os; os.environ['PYTHONWARNINGS'] = 'ignore'; sys.modules['numba'] = None; sys.modules['pymc'] = None; sys.modules['arviz'] = None; sys.modules['corner'] = None; import pytest; pytest.main(['-v', '--tb=short', '--continue-on-collection-errors', '--maxfail=0'])"
+
+test-full-discovery:
+	@echo "🧪 Running full test suite discovery with detailed reporting..."
+	pytest homodyne/tests/ -v --tb=short --continue-on-collection-errors --maxfail=0 --durations=0
+
+test-discovery-report:
+	@echo "📊 Running test discovery with comprehensive reporting..."
+	pytest homodyne/tests/ -v --tb=short --continue-on-collection-errors --maxfail=0 --durations=0 --junit-xml=test-discovery-results.xml --html=test-discovery-report.html --self-contained-html
 
 # Performance testing targets
 test-performance:
@@ -155,11 +171,21 @@ clean-test:
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	rm -rf .benchmarks/
+	rm -rf reports/
 	rm -f bandit*.json
 	rm -rf node_modules/
 	rm -f test_data.json
 	rm -f test_config.json
 	rm -f test_array_data.npz
+	rm -f test_report.txt
+	rm -f cache_*.npz
+	rm -rf homodyne_results/
+	rm -rf ml_optimization_data/
+	rm -rf performance_results/
+	rm -f nonexistent_template
+	rm -f static_isotropic
+	rm -f test_*.npz
+	rm -f test_*.json
 
 clean-venv:
 	rm -rf venv/

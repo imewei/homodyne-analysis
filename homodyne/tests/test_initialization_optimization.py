@@ -206,17 +206,26 @@ class TestGlobalFunctions:
 
     def test_optimize_package_initialization(self):
         """Test package initialization optimization."""
-        # Mock the complex parts to avoid actual file system analysis
-        with patch('homodyne.core.initialization_optimizer.InitializationOptimizer') as MockOptimizer:
-            mock_instance = MockOptimizer.return_value
-            mock_strategy = object()
-            mock_instance.optimize_initialization_order.return_value = mock_strategy
+        # Test that the function returns a valid strategy
+        from homodyne.core.initialization_optimizer import InitializationStrategy
 
-            strategy = optimize_package_initialization()
+        strategy = optimize_package_initialization()
 
-            assert strategy is mock_strategy
-            mock_instance.optimize_initialization_order.assert_called_once()
-            mock_instance.apply_optimizations.assert_called_once()
+        # Verify we got a strategy back
+        assert isinstance(strategy, InitializationStrategy)
+
+        # Verify strategy has expected attributes
+        assert hasattr(strategy, 'core_modules')
+        assert hasattr(strategy, 'lazy_modules')
+        assert hasattr(strategy, 'deferred_modules')
+        assert hasattr(strategy, 'preload_modules')
+        assert hasattr(strategy, 'optimization_level')
+
+        # Verify lists are not empty (at least core_modules should have entries)
+        assert isinstance(strategy.core_modules, list)
+        assert isinstance(strategy.lazy_modules, list)
+        assert isinstance(strategy.deferred_modules, list)
+        assert isinstance(strategy.preload_modules, list)
 
     def test_profile_startup_performance(self):
         """Test startup performance profiling."""

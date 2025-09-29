@@ -218,7 +218,7 @@ addopts = [
     "--verbose",
     "--tb=short",
     "--durations=10",
-    "--maxfail=5",
+    # "--maxfail=5",  # Removed to enable full test discovery
     "--continue-on-collection-errors",
 ]
 

@@ -9,15 +9,18 @@ This module provides backward compatibility for plotting modules moved from the 
 
 # Visualization module imports with explicit fallback handling
 try:
-    from . import enhanced_plotting, plotting
+    from . import enhanced_plotting
+    from . import plotting
 except ImportError as e:
     import warnings
 
     warnings.warn(
         f"Could not import visualization modules: {e}", ImportWarning, stacklevel=2
     )
-    enhanced_plotting = None
-    plotting = None
+    # Create placeholder modules for compatibility
+    import types
+    enhanced_plotting = types.ModuleType('enhanced_plotting')
+    plotting = types.ModuleType('plotting')
 
 # Specific backward compatibility functions with explicit error handling
 try:

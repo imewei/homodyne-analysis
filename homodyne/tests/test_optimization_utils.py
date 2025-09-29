@@ -10,6 +10,8 @@ codebase cleanup to consolidate duplicate functionality.
 """
 
 import sys
+import unittest
+import unittest.mock
 
 import pytest
 
@@ -88,10 +90,21 @@ def test_numba_availability_detection():
     )
     print("✅ Numba unavailable detection working correctly")
 
-    # Test with numba mocked as available
+    # Test with numba mocked as available and functional
     with unittest.mock.patch.dict("sys.modules"):
-        # Create a mock numba module
+        # Create a properly mocked numba module with JIT functionality
         mock_numba = unittest.mock.MagicMock()
+
+        # Mock the jit decorator to return a callable function
+        def mock_jit(*args, **kwargs):
+            def decorator(func):
+                # Create a wrapper that behaves like a compiled function
+                def wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+                return wrapper
+            return decorator
+
+        mock_numba.jit = mock_jit
         sys.modules["numba"] = mock_numba
 
         # Reload the module to get fresh import behavior
@@ -100,7 +113,7 @@ def test_numba_availability_detection():
         # Import fresh value
         from homodyne.core.optimization_utils import NUMBA_AVAILABLE
 
-        # With mock numba available, NUMBA_AVAILABLE should be True
+        # With mock numba available and functional, NUMBA_AVAILABLE should be True
         assert NUMBA_AVAILABLE, (
             f"Expected NUMBA_AVAILABLE to be True when numba is available, got {NUMBA_AVAILABLE}"
         )

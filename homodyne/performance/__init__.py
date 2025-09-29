@@ -19,15 +19,18 @@ INTEGRATED PERFORMANCE FEATURES:
 
 # Core performance module imports with explicit fallback handling
 try:
-    from . import baseline, monitoring
+    from . import baseline
+    from . import monitoring
 except ImportError as e:
     import warnings
 
     warnings.warn(
         f"Could not import core performance modules: {e}", ImportWarning, stacklevel=2
     )
-    baseline = None
-    monitoring = None
+    # Create placeholder modules for compatibility
+    import types
+    baseline = types.ModuleType('baseline')
+    monitoring = types.ModuleType('monitoring')
 
 # Integrated monitoring system imports
 try:

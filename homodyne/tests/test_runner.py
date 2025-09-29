@@ -104,7 +104,8 @@ class TestRunner:
                      verbose: bool = False,
                      coverage: bool = True,
                      parallel: bool = False,
-                     markers: list[str] | None = None) -> int:
+                     markers: list[str] | None = None,
+                     no_limit: bool = False) -> int:
         """Run comprehensive test suite."""
         print("🚀 Running Comprehensive Test Suite...")
 
@@ -113,8 +114,13 @@ class TestRunner:
             "-v" if verbose else "-q",
             "--tb=short",
             "--durations=10",
-            "--maxfail=5",
         ]
+
+        # Add maxfail limit unless no_limit is specified
+        if not no_limit:
+            args.append("--maxfail=5")
+        else:
+            args.append("--maxfail=0")  # No failure limit for full discovery
 
         if coverage:
             args.extend([
@@ -131,6 +137,29 @@ class TestRunner:
         if markers:
             marker_expr = " or ".join(markers)
             args.extend(["-m", marker_expr])
+
+        return pytest.main(args)
+
+    def run_test_discovery(self, verbose: bool = False, coverage: bool = False) -> int:
+        """Run comprehensive test discovery with no failure limits."""
+        print("🔍 Running Comprehensive Test Discovery (No Failure Limits)...")
+
+        args = [
+            "homodyne/tests/",
+            "-v" if verbose else "-q",
+            "--tb=short",
+            "--durations=0",
+            "--maxfail=0",  # No failure limit for full discovery
+            "--continue-on-collection-errors",
+        ]
+
+        if coverage:
+            args.extend([
+                "--cov=homodyne",
+                "--cov-report=term-missing",
+                "--cov-report=html:htmlcov",
+                "--cov-report=xml:coverage.xml",
+            ])
 
         return pytest.main(args)
 
@@ -280,6 +309,8 @@ def main():
         epilog="""
 Examples:
   python test_runner.py --all                    # Run all tests
+  python test_runner.py --discovery              # Full test discovery (no failure limits)
+  python test_runner.py --all --no-limit         # Run all tests with no failure limits
   python test_runner.py --unit --coverage        # Unit tests with coverage
   python test_runner.py --fast                   # Quick tests only
   python test_runner.py --performance --benchmark # Performance benchmarks
@@ -291,6 +322,7 @@ Examples:
 
     # Test categories
     parser.add_argument("--all", action="store_true", help="Run all tests")
+    parser.add_argument("--discovery", action="store_true", help="Run comprehensive test discovery with no failure limits")
     parser.add_argument("--unit", action="store_true", help="Run unit tests")
     parser.add_argument("--integration", action="store_true", help="Run integration tests")
     parser.add_argument("--performance", action="store_true", help="Run performance tests")
@@ -308,6 +340,7 @@ Examples:
     parser.add_argument("--benchmark", action="store_true", help="Run benchmarks")
     parser.add_argument("--profile", action="store_true", help="Run with profiling")
     parser.add_argument("--memory", action="store_true", help="Monitor memory usage")
+    parser.add_argument("--no-limit", action="store_true", help="Remove failure limits for comprehensive discovery")
 
     # Filtering
     parser.add_argument("--markers", nargs="+", help="Test markers to include")
@@ -342,8 +375,11 @@ Examples:
             verbose=args.verbose,
             coverage=coverage,
             parallel=args.parallel,
-            markers=args.markers
+            markers=args.markers,
+            no_limit=args.no_limit
         )
+    elif args.discovery:
+        result = runner.run_test_discovery(verbose=args.verbose, coverage=coverage)
     elif args.unit:
         result = runner.run_unit_tests(verbose=args.verbose, coverage=coverage)
     elif args.integration:

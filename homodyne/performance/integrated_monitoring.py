@@ -250,7 +250,7 @@ print(f"IMPORT_TIME:{end - start}")
             }
 
             analyzer = HomodyneAnalysisCore(config)
-            optimizer = ClassicalOptimizer()
+            optimizer = ClassicalOptimizer(analyzer, config)
 
             # Memory after initialization
             final_memory = process.memory_info().rss / 1024 / 1024  # MB

@@ -78,7 +78,7 @@ def run_classical_optimization(
             optimizer = analyzer._enhanced_classical_optimizer
         else:
             logger.info("✓ Creating new classical optimizer")
-            optimizer = ClassicalOptimizer(analyzer)
+            optimizer = ClassicalOptimizer(analyzer, analyzer.config)
 
         # Validate data shapes before optimization
         if c2_exp is None or len(c2_exp) == 0:
@@ -97,7 +97,7 @@ def run_classical_optimization(
             )
 
         # Run the optimization
-        result = optimizer.optimize(
+        result = optimizer.run_optimization(
             initial_params=initial_params,
             phi_angles=phi_angles,
             c2_experimental=c2_exp,
@@ -214,7 +214,7 @@ def run_robust_optimization(
             )
 
         # Run the robust optimization
-        result = optimizer.optimize(
+        result = optimizer.run_optimization(
             initial_params=initial_params,
             phi_angles=phi_angles,
             c2_experimental=c2_exp,

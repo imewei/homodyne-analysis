@@ -97,6 +97,18 @@ Method Quality Assessment:
     )
 
     parser.add_argument(
+        "--data",
+        type=Path,
+        help="Path to input data file (optional, can be specified in config)",
+    )
+
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Path to output file (optional, defaults to auto-generated filename)",
+    )
+
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default="./homodyne_results",

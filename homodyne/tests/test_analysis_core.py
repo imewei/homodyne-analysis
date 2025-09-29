@@ -27,7 +27,7 @@ class TestHomodyneAnalysisCore:
         """Setup test fixtures."""
         # Create temporary config file
         self.config_data = {
-            "experimental_parameters": {
+            "experimental_data": {
                 "q_value": 0.1,
                 "contrast": 0.95,
                 "offset": 1.0,
@@ -36,13 +36,30 @@ class TestHomodyneAnalysisCore:
                 "x_ray_energy": 7.35,
                 "sample_thickness": 1.0
             },
-            "analysis_parameters": {
+            "analyzer_parameters": {
                 "mode": "laminar_flow",
                 "method": "classical",
                 "enable_angle_filtering": True,
                 "chi_squared_threshold": 2.0,
                 "max_iterations": 1000,
-                "tolerance": 1e-6
+                "tolerance": 1e-6,
+                "temporal": {
+                    "dt": 0.1,
+                    "start_frame": 1,
+                    "end_frame": 100
+                },
+                "scattering": {
+                    "wavevector_q": 0.005
+                },
+                "geometry": {
+                    "stator_rotor_gap": 200000.0
+                }
+            },
+            "optimization_config": {
+                "method": "scipy_minimize",
+                "max_iterations": 1000,
+                "tolerance": 1e-6,
+                "initial_step_size": 0.1
             },
             "parameter_bounds": {
                 "D0": [1e-6, 1e-1],
@@ -91,14 +108,14 @@ class TestHomodyneAnalysisCore:
 
         assert analyzer is not None
         assert hasattr(analyzer, 'config')
-        assert analyzer.config['experimental_parameters']['q_value'] == 0.1
+        assert analyzer.config['experimental_data']['q_value'] == 0.1
 
     def test_initialization_with_config_dict(self):
         """Test initialization with configuration dictionary."""
         analyzer = HomodyneAnalysisCore(config_override=self.config_data)
 
         assert analyzer is not None
-        assert analyzer.config['experimental_parameters']['contrast'] == 0.95
+        assert analyzer.config['experimental_data']['contrast'] == 0.95
 
     def test_parameter_extraction(self):
         """Test parameter extraction from configuration."""
@@ -133,7 +150,7 @@ class TestHomodyneAnalysisCore:
 
         # Test static mode
         static_config = self.config_data.copy()
-        static_config['analysis_parameters']['mode'] = 'static_isotropic'
+        static_config['analyzer_parameters']['mode'] = 'static_isotropic'
         analyzer_static = HomodyneAnalysisCore(config=static_config)
         assert analyzer_static._get_analysis_mode() == "static_isotropic"
 
@@ -170,7 +187,7 @@ class TestHomodyneAnalysisCore:
     def test_angle_filtering(self):
         """Test angle filtering functionality."""
         config_with_filtering = self.config_data.copy()
-        config_with_filtering['analysis_parameters']['enable_angle_filtering'] = True
+        config_with_filtering['analyzer_parameters']['enable_angle_filtering'] = True
 
         analyzer = HomodyneAnalysisCore(config=config_with_filtering)
 
@@ -250,6 +267,9 @@ class TestHomodyneAnalysisCore:
     def test_static_mode_parameter_handling(self):
         """Test parameter handling in static mode."""
         static_config = self.config_data.copy()
+        # Ensure analysis_parameters key exists
+        if 'analysis_parameters' not in static_config:
+            static_config['analysis_parameters'] = {}
         static_config['analysis_parameters']['mode'] = 'static_isotropic'
 
         analyzer = HomodyneAnalysisCore(config=static_config)
@@ -328,6 +348,9 @@ class TestHomodyneAnalysisCore:
 
         # Test with tight tolerance
         tight_config = self.config_data.copy()
+        # Ensure analysis_parameters key exists
+        if 'analysis_parameters' not in tight_config:
+            tight_config['analysis_parameters'] = {}
         tight_config['analysis_parameters']['tolerance'] = 1e-12
 
         analyzer_tight = HomodyneAnalysisCore(config=tight_config)
@@ -342,31 +365,77 @@ class TestAnalysisCoreIntegration:
     def setup_method(self):
         """Setup integration test fixtures."""
         self.config_data = {
-            "experimental_parameters": {
-                "q_value": 0.05,
-                "contrast": 0.9,
-                "offset": 1.0,
-                "pixel_size": 172e-6,
-                "detector_distance": 8.0,
-                "x_ray_energy": 7.35,
-                "sample_thickness": 1.0
+            "experimental_data": {
+                "data_folder_path": "./data/test/",
+                "data_file_name": "test_data.hdf",
+                "phi_angles_path": "./data/phi_angles/",
+                "phi_angles_file": "phi_list.txt",
+                "exchange_key": "exchange"
             },
-            "analysis_parameters": {
-                "mode": "laminar_flow",
-                "method": "classical",
-                "enable_angle_filtering": True,
-                "chi_squared_threshold": 2.0,
-                "max_iterations": 100,  # Reduced for testing
-                "tolerance": 1e-4
+            "analyzer_parameters": {
+                "temporal": {
+                    "dt": 0.1,
+                    "start_frame": 100,
+                    "end_frame": 1000
+                },
+                "scattering": {
+                    "wavevector_q": 0.05
+                },
+                "geometry": {
+                    "stator_rotor_gap": 2000000
+                },
+                "computational": {
+                    "num_threads": "auto",
+                    "auto_detect_cores": True,
+                    "max_threads_limit": 8
+                }
             },
-            "parameter_bounds": {
-                "D0": [1e-5, 1e-2],
-                "alpha": [0.5, 1.5],
-                "D_offset": [1e-7, 1e-4],
-                "gamma0": [1e-3, 0.1],
-                "beta": [0.5, 1.5],
-                "gamma_offset": [1e-5, 1e-2],
-                "phi0": [-90, 90]
+            "optimization_config": {
+                "angle_filtering": {
+                    "enabled": True
+                },
+                "classical_optimization": {
+                    "methods": ["Nelder-Mead"],
+                    "method_options": {
+                        "Nelder-Mead": {
+                            "maxiter": 100,
+                            "xatol": 1e-6,
+                            "fatol": 1e-6,
+                            "adaptive": True
+                        }
+                    }
+                },
+                "scaling_parameters": {
+                    "contrast": {
+                        "min": 1e-4,
+                        "max": 0.5,
+                        "prior_mu": 0.9,
+                        "prior_sigma": 0.01,
+                        "type": "TruncatedNormal"
+                    },
+                    "offset": {
+                        "min": 1.0,
+                        "max": 1.5,
+                        "prior_mu": 1.0,
+                        "prior_sigma": 0.01,
+                        "type": "TruncatedNormal"
+                    }
+                }
+            },
+            "parameter_space": {
+                "bounds": [
+                    {"name": "D0", "min": 1e-5, "max": 1e-2, "type": "TruncatedNormal", "prior_mu": 1e-3, "prior_sigma": 1e-4, "unit": "Å²/s"},
+                    {"name": "alpha", "min": 0.5, "max": 1.5, "type": "Normal", "prior_mu": 0.9, "prior_sigma": 0.1, "unit": "dimensionless"},
+                    {"name": "D_offset", "min": 1e-7, "max": 1e-4, "type": "Normal", "prior_mu": 1e-5, "prior_sigma": 1e-6, "unit": "Å²/s"},
+                    {"name": "gamma0", "min": 1e-3, "max": 0.1, "type": "TruncatedNormal", "prior_mu": 0.01, "prior_sigma": 0.001, "unit": "s⁻¹"},
+                    {"name": "beta", "min": 0.5, "max": 1.5, "type": "Normal", "prior_mu": 0.8, "prior_sigma": 0.1, "unit": "dimensionless"},
+                    {"name": "gamma_offset", "min": 1e-5, "max": 1e-2, "type": "Normal", "prior_mu": 0.001, "prior_sigma": 0.0001, "unit": "s⁻¹"},
+                    {"name": "phi0", "min": -90, "max": 90, "type": "Normal", "prior_mu": 0.0, "prior_sigma": 5.0, "unit": "degrees"}
+                ]
+            },
+            "analysis_settings": {
+                "static_mode": False,
+                "static_submode": None
             }
         }
 
@@ -413,6 +482,9 @@ class TestAnalysisCoreIntegration:
 
         for mode in modes:
             config = self.config_data.copy()
+            # Ensure analysis_parameters key exists
+            if 'analysis_parameters' not in config:
+                config['analysis_parameters'] = {}
             config['analysis_parameters']['mode'] = mode
 
             analyzer = HomodyneAnalysisCore(config=config)

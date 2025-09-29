@@ -37,31 +37,68 @@ class TestCLIBasicFunctionality:
 
         # Create sample configuration
         self.sample_config = {
-            "experimental_parameters": {
-                "q_value": 0.1,
-                "contrast": 0.95,
-                "offset": 1.0,
-                "pixel_size": 172e-6,
-                "detector_distance": 8.0,
-                "x_ray_energy": 7.35,
-                "sample_thickness": 1.0
+            "analyzer_parameters": {
+                "temporal": {
+                    "dt": 0.1,
+                    "start_frame": 1,
+                    "end_frame": 100
+                },
+                "scattering": {
+                    "wavevector_q": 0.1
+                },
+                "geometry": {
+                    "stator_rotor_gap": 1e4
+                },
+                "detector": {
+                    "contrast": 0.95,
+                    "offset": 1.0,
+                    "pixel_size": 172e-6,
+                    "detector_distance": 8.0,
+                    "x_ray_energy": 7.35,
+                    "sample_thickness": 1.0
+                }
             },
-            "analysis_parameters": {
+            "experimental_data": {
+                "data_folder_path": self.temp_dir,
+                "data_file_name": "test_data.npz",
+                "phi_angles_file": os.path.join(self.temp_dir, "phi_angles.txt"),
+                "cache_filename_template": "cache_{hash}.npz",
+                "cache_enabled": True,
+                "preload_data": False
+            },
+            "optimization_config": {
                 "mode": "laminar_flow",
                 "method": "classical",
                 "enable_angle_filtering": True,
                 "chi_squared_threshold": 2.0,
                 "max_iterations": 100,  # Reduced for testing
-                "tolerance": 1e-4
+                "tolerance": 1e-4,
+                "parameter_bounds": {
+                    "D0": [1e-6, 1e-1],
+                    "alpha": [0.1, 2.0],
+                    "D_offset": [1e-8, 1e-3],
+                    "gamma0": [1e-4, 1.0],
+                    "beta": [0.1, 2.0],
+                    "gamma_offset": [1e-6, 1e-1],
+                    "phi0": [-180, 180]
+                },
+                "initial_guesses": {
+                    "D0": 1e-3,
+                    "alpha": 0.9,
+                    "D_offset": 1e-4,
+                    "gamma0": 0.01,
+                    "beta": 0.8,
+                    "gamma_offset": 0.001,
+                    "phi0": 0.0
+                }
             },
-            "parameter_bounds": {
-                "D0": [1e-6, 1e-1],
-                "alpha": [0.1, 2.0],
-                "D_offset": [1e-8, 1e-3],
-                "gamma0": [1e-4, 1.0],
-                "beta": [0.1, 2.0],
-                "gamma_offset": [1e-6, 1e-1],
-                "phi0": [-180, 180]
+            "initial_parameters": {
+                "values": [1e-3, 0.9, 1e-4, 0.01, 0.8, 0.001, 0.0]
+            },
+            "advanced_settings": {
+                "data_loading": {
+                    "use_diagonal_correction": True
+                }
             },
             "output_settings": {
                 "save_plots": False,  # Disable for testing
@@ -114,6 +151,10 @@ class TestCLIBasicFunctionality:
             t2_array=t2_array
         )
 
+        # Create phi angles file
+        phi_angles_path = os.path.join(self.temp_dir, 'phi_angles.txt')
+        np.savetxt(phi_angles_path, angles, fmt='%.6f')
+
     def test_config_creation_cli(self):
         """Test configuration creation via CLI."""
         # Test create_config CLI
@@ -127,7 +168,7 @@ class TestCLIBasicFunctionality:
         if os.path.exists(self.config_path):
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
-            assert 'experimental_parameters' in config
+            assert 'analyzer_parameters' in config
 
     def test_run_homodyne_cli_help(self):
         """Test run_homodyne CLI help functionality."""
@@ -149,6 +190,13 @@ class TestCLIBasicFunctionality:
                 'method': 'classical'
             }
             mock_instance.fit.return_value = mock_result
+            # Mock the data loading to return dummy data
+            mock_instance.load_experimental_data.return_value = (
+                np.random.random((8, 5, 5)),  # c2_data
+                np.linspace(0, 2*np.pi, 8),  # phi_angles
+                np.array([0.5, 1.0, 1.5, 2.0, 2.5]),  # t1_array
+                np.array([1.0, 1.5, 2.0, 2.5, 3.0])   # t2_array
+            )
             mock_analysis.return_value = mock_instance
 
             # Test CLI execution
@@ -237,25 +285,59 @@ class TestWorkflowIntegration:
         """Setup workflow test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
         self.workflow_config = {
-            "experimental_parameters": {
-                "q_value": 0.05,
-                "contrast": 0.9,
-                "offset": 1.0,
-                "pixel_size": 172e-6,
-                "detector_distance": 8.0,
-                "x_ray_energy": 7.35
+            "analyzer_parameters": {
+                "temporal": {
+                    "dt": 0.1,
+                    "start_frame": 1,
+                    "end_frame": 50
+                },
+                "scattering": {
+                    "wavevector_q": 0.05
+                },
+                "geometry": {
+                    "stator_rotor_gap": 1e4
+                },
+                "detector": {
+                    "contrast": 0.9,
+                    "offset": 1.0,
+                    "pixel_size": 172e-6,
+                    "detector_distance": 8.0,
+                    "x_ray_energy": 7.35,
+                    "sample_thickness": 1.0
+                }
             },
-            "analysis_parameters": {
+            "experimental_data": {
+                "data_folder_path": self.temp_dir,
+                "data_file_name": "workflow_data.npz",
+                "phi_angles_file": os.path.join(self.temp_dir, "phi_angles.txt"),
+                "cache_filename_template": "cache_{hash}.npz",
+                "cache_enabled": True,
+                "preload_data": False
+            },
+            "optimization_config": {
                 "mode": "static_isotropic",
                 "method": "classical",
                 "enable_angle_filtering": False,
                 "max_iterations": 50,  # Very reduced for testing
-                "tolerance": 1e-3
+                "tolerance": 1e-3,
+                "parameter_bounds": {
+                    "D0": [1e-5, 1e-2],
+                    "alpha": [0.5, 1.5],
+                    "D_offset": [1e-7, 1e-4]
+                },
+                "initial_guesses": {
+                    "D0": 1e-3,
+                    "alpha": 0.9,
+                    "D_offset": 1e-4
+                }
             },
-            "parameter_bounds": {
-                "D0": [1e-5, 1e-2],
-                "alpha": [0.5, 1.5],
-                "D_offset": [1e-7, 1e-4]
+            "initial_parameters": {
+                "values": [1e-3, 0.9, 1e-4]
+            },
+            "advanced_settings": {
+                "data_loading": {
+                    "use_diagonal_correction": True
+                }
             },
             "output_settings": {
                 "save_plots": False,
@@ -284,6 +366,10 @@ class TestWorkflowIntegration:
         c2_data = 1.0 + 0.1 * np.random.random((4, 2, 2))
 
         np.savez(data_path, c2_data=c2_data, angles=angles, t1_array=t1_array, t2_array=t2_array)
+
+        # Create phi angles file
+        phi_angles_path = os.path.join(self.temp_dir, 'phi_angles.txt')
+        np.savetxt(phi_angles_path, angles, fmt='%.6f')
 
         # Mock the analysis pipeline
         with patch('homodyne.analysis.core.HomodyneAnalysisCore') as mock_analysis:
@@ -374,7 +460,7 @@ class TestWorkflowIntegration:
         for i, config_override in enumerate(configurations):
             # Create modified config
             config = self.workflow_config.copy()
-            config['analysis_parameters'].update(config_override)
+            config['optimization_config'].update(config_override)
 
             config_path = os.path.join(self.temp_dir, f'config_{i}.json')
             with open(config_path, 'w') as f:

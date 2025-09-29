@@ -11,21 +11,38 @@ try:
     from .create_config import main as create_config_main
     from .enhanced_runner import main as enhanced_runner_main
     from .run_homodyne import main as run_homodyne_main
-    from .core import main as core_main
+    from .core import (
+        main as core_main,
+        run_analysis,
+        initialize_analysis_engine,
+        load_and_validate_data
+    )
 
     # Import key functions from modular structure
     from .optimization import run_classical_optimization, run_robust_optimization, run_all_methods
     from .simulation import plot_simulated_data
-    from .visualization import generate_classical_plots, generate_robust_plots, generate_comparison_plots
+    from .visualization import (
+        generate_classical_plots,
+        generate_robust_plots,
+        generate_comparison_plots,
+        save_individual_method_results,
+        generate_c2_heatmap_plots
+    )
     from .utils import setup_logging, print_banner, MockResult, print_method_documentation
     from .parser import create_argument_parser
 
-except ImportError:
+except ImportError as e:
     # Graceful degradation if files haven't been moved yet
+    import warnings
+    warnings.warn(f"Could not import CLI modules: {e}", ImportWarning, stacklevel=2)
+
     run_homodyne_main = None
     create_config_main = None
     enhanced_runner_main = None
     core_main = None
+    run_analysis = None
+    initialize_analysis_engine = None
+    load_and_validate_data = None
 
     # Set other imports to None for graceful degradation
     run_classical_optimization = None
@@ -35,6 +52,8 @@ except ImportError:
     generate_classical_plots = None
     generate_robust_plots = None
     generate_comparison_plots = None
+    save_individual_method_results = None
+    generate_c2_heatmap_plots = None
     setup_logging = None
     print_banner = None
     MockResult = None
@@ -53,6 +72,7 @@ __all__ = [
     "generate_classical_plots",
     "generate_robust_plots",
     "generate_comparison_plots",
+    "save_individual_method_results",
     "setup_logging",
     "print_banner",
     "MockResult",

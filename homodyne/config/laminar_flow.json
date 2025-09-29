@@ -1,0 +1,578 @@
+{
+  "metadata": {
+    "_comment": "Laminar Flow Configuration - 7 parameter optimization for flow analysis. Full plotting support for experimental and simulated data.",
+    "config_version": "0.6.5.dev0",
+    "description": "Laminar flow homodyne scattering analysis - comprehensive 7-parameter nonequilibrium model",
+    "based_on": "He et al. PNAS 2024 - Transport coefficient approach (full flow model)",
+    "analysis_mode": "laminar_flow",
+    "plotting_features": {
+      "experimental_data_plotting": "Use --plot-experimental-data for comprehensive flow analysis validation",
+      "simulated_data_plotting": "Use --plot-simulated-data with flow scaling transformation",
+      "scaling_examples": [
+        "--contrast 0.25 --offset 1.2",
+        "--phi-angles 0,30,60,90,120,150"
+      ],
+      "multi_angle_support": "Individual plots for each phi angle with optimized color scaling"
+    },
+    "parameters_optimized": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma0",
+      "beta",
+      "gamma_offset",
+      "phi0"
+    ],
+    "angle_filtering": "enabled_with_performance_boost",
+    "script_compatibility": "homodyne v0.6.5.dev0"
+  },
+  "experimental_data": {
+    "_comment": "Data source and loading configuration",
+    "data_folder_path": "./data/SAMPLE_NAME/",
+    "data_file_name": "your_data_file.hdf",
+    "phi_angles_path": "./data/phi_angles/",
+    "phi_angles_file": "phi_list.txt",
+    "exchange_key": "exchange",
+    "cache_file_path": "./data/SAMPLE_NAME/",
+    "cache_filename_template": "cached_c2_frames_{start_frame}_{end_frame}.npz",
+    "cache_compression": true,
+    "data_type": "float64",
+    "file_format": "NPZ",
+    "preprocessing": {
+      "apply_diagonal_correction": true,
+      "vectorized_correction": true,
+      "cache_processed_data": true,
+      "normalize_data": true,
+      "normalization_method": "baseline"
+    }
+  },
+  "analyzer_parameters": {
+    "_comment": "Core analysis parameters - laminar flow mode",
+    "temporal": {
+      "dt": 0.1,
+      "_dt_note": "Time step between frames in seconds",
+      "dt_unit": "seconds",
+      "start_frame": 100,
+      "end_frame": 1000,
+      "frame_description": "Analysis window for flow experiment"
+    },
+    "scattering": {
+      "wavevector_q": 0.01,
+      "_q_note": "Scattering wavevector magnitude: q = 4π sin(θ/2)/λ",
+      "q_unit": "Å⁻¹",
+      "typical_range": [0.001, 0.1]
+    },
+    "geometry": {
+      "stator_rotor_gap": 2000000,
+      "_gap_note": "Gap in Angstroms - critical for laminar flow analysis",
+      "gap_unit": "Å",
+      "gap_in_microns": 200
+    },
+    "computational": {
+      "num_threads": "auto",
+      "auto_detect_cores": true,
+      "max_threads_limit": 12,
+      "memory_limit_gb": 16
+    }
+  },
+  "initial_parameters": {
+    "_comment": "Starting values for 7-parameter laminar flow optimization [D0, alpha, D_offset, gamma0, beta, gamma_offset, phi0]",
+    "values": [100.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0],
+    "parameter_names": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma0",
+      "beta",
+      "gamma_offset",
+      "phi0"
+    ],
+    "units": [
+      "Å²/s",
+      "dimensionless",
+      "Å²/s",
+      "s⁻¹",
+      "dimensionless",
+      "s⁻¹",
+      "degrees"
+    ],
+    "physical_meaning": {
+      "D0": "Reference diffusion coefficient",
+      "alpha": "Power-law exponent for D(t) evolution",
+      "D_offset": "Baseline diffusion coefficient",
+      "gamma0": "Reference shear rate",
+      "beta": "Power-law exponent for shear rate evolution",
+      "gamma_offset": "Baseline shear rate",
+      "phi0": "Angular offset between flow and scattering"
+    },
+    "active_parameters": [
+      "D0",
+      "alpha",
+      "D_offset",
+      "gamma0",
+      "beta",
+      "gamma_offset",
+      "phi0"
+    ],
+    "parameter_units": {
+      "D0": "Å²/s",
+      "alpha": "dimensionless",
+      "D_offset": "Å²/s",
+      "gamma0": "s⁻¹",
+      "beta": "dimensionless",
+      "gamma_offset": "s⁻¹",
+      "phi0": "degrees"
+    }
+  },
+  "optimization_config": {
+    "_comment": "Optimization configuration with enhanced angle filtering for flow analysis",
+    "angle_filtering": {
+      "enabled": true,
+      "_flow_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits",
+      "target_ranges": [
+        { "min_angle": -10.0, "max_angle": 10.0 },
+        { "min_angle": 170.0, "max_angle": 190.0 }
+      ],
+      "fallback_to_all_angles": true,
+      "_fallback_note": "Use all angles if no angles found in target ranges",
+      "_performance_note": "Angle filtering provides 3-5x speedup for complex 7-parameter fits"
+    },
+    "classical_optimization": {
+      "methods": ["Nelder-Mead", "Gurobi"],
+      "_methods_note": "Classical methods: Nelder-Mead (always available), Gurobi (if licensed). Robust methods are in separate robust_optimization section.",
+      "_usage_flags": {
+        "--method classical": "Runs ONLY traditional classical methods: Nelder-Mead, Gurobi (if available)",
+        "--method robust": "Runs ONLY robust methods: Robust-Wasserstein, Robust-Scenario, Robust-Ellipsoidal",
+        "--method all": "Runs all available methods (classical + robust)"
+      },
+      "_gurobi_availability": "Gurobi quadratic programming solver provides an alternative to Nelder-Mead using quadratic approximation of the chi-squared objective function. Requires Gurobi license and installation (pip install gurobipy).",
+      "method_options": {
+        "Nelder-Mead": {
+          "maxiter": 10000,
+          "_maxiter_note": "Increased iterations for better convergence with 7 parameters",
+          "xatol": 1e-10,
+          "_xatol_note": "Tighter parameter tolerance for high precision",
+          "fatol": 1e-10,
+          "_fatol_note": "Tighter function tolerance for better fitting",
+          "adaptive": true,
+          "_adaptive_note": "Adaptive step sizes for better convergence"
+        },
+        "Gurobi": {
+          "_comment": "ENHANCED: Now uses iterative Trust Region SQP instead of single-shot QP (fixes χ² convergence)",
+          "_algorithm": "Iterative trust region SQP optimization with quadratic approximation and adaptive radius",
+          "max_iterations": 1500,
+          "_max_iterations_note": "More iterations needed for complex 7-parameter flow case",
+          "tolerance": 1e-6,
+          "_tolerance_note": "Convergence tolerance for optimization",
+          "output_flag": 0,
+          "_output_flag_note": "Gurobi output verbosity (0=silent, 1=normal)",
+          "method": 2,
+          "_method_note": "Gurobi solution method (2=barrier method recommended for QP)",
+          "time_limit": 600,
+          "_time_limit_note": "Longer time limit for complex 7-parameter problem",
+          "_trust_region_settings": {
+            "initial_radius": 1.0,
+            "max_radius": 10.0,
+            "eta1": 0.25,
+            "eta2": 0.75,
+            "gamma1": 0.25,
+            "gamma2": 2.0,
+            "max_trust_iterations": 100,
+            "_note": "Trust region hyperparameters for enhanced optimization"
+          },
+          "_gurobi_flow_note": "Gurobi particularly effective for laminar flow with bounds constraints",
+          "_usage_note": "Gurobi uses quadratic approximation via finite differences. Best for smooth objective functions with bounds constraints.",
+          "_advantages": "Handles bounds constraints naturally, can be faster for well-conditioned problems",
+          "_disadvantages": "Requires license, uses quadratic approximation which may not capture all nonlinearity"
+        }
+      },
+      "selection_strategy": "best_chi_squared",
+      "_selection_strategy_note": "How to choose best result when multiple methods are used: best_chi_squared, consensus, first_success",
+      "_optimization_note": "7-parameter optimization is complex - good initial values critical"
+    },
+    "robust_optimization": {
+      "_comment": "Robust optimization settings using CVXPY with optimized performance (CLARABEL/SCS solvers)",
+      "_usage_examples": [
+        "python run_homodyne.py --method robust  # Run only robust methods",
+        "python run_homodyne.py --method robust --laminar-flow  # Robust in laminar flow mode",
+        "python run_homodyne.py --method classical  # Run all methods including robust",
+        "python run_homodyne.py --method all  # Run classical + robust"
+      ],
+      "_robust_flag_benefits": "Use --method robust for noise-resistant estimation without classical methods",
+      "_performance_note": "v0.6.5+ optimizations: 100x-5000x speedup with caching, adaptive Jacobians, and streamlined solvers",
+      "enabled": true,
+      "uncertainty_model": "wasserstein",
+      "_uncertainty_model_note": "Options: wasserstein, ellipsoidal, scenario",
+      "uncertainty_radius": 0.05,
+      "_uncertainty_radius_note": "Fraction of data variance for uncertainty set (0.01-0.1 typical)",
+      "n_scenarios": 15,
+      "_n_scenarios_note": "Number of bootstrap scenarios for scenario-based optimization (optimized for performance)",
+      "regularization_alpha": 0.02,
+      "_regularization_alpha_note": "Higher L2 regularization for 7-parameter stability",
+      "regularization_beta": 0.001,
+      "_regularization_beta_note": "L1 sparsity parameter for parameter deviations",
+      "jacobian_epsilon": 1e-6,
+      "_jacobian_epsilon_note": "Finite difference epsilon for Jacobian computation",
+      "enable_caching": true,
+      "_enable_caching_note": "Enable performance caching for repeated computations",
+      "preferred_solver": "CLARABEL",
+      "_preferred_solver_note": "Preferred CVXPY solver: CLARABEL, SCS, CVXOPT",
+      "solver_settings": {
+        "Method": 2,
+        "_Method_note": "Gurobi solver method: 2=Barrier, 0=Primal simplex, 1=Dual simplex",
+        "CrossOver": 0,
+        "_CrossOver_note": "Skip crossover for numerical stability",
+        "BarHomogeneous": 1,
+        "_BarHomogeneous_note": "Use homogeneous barrier method",
+        "TimeLimit": 600,
+        "_TimeLimit_note": "Longer timeout for complex 7-parameter optimization",
+        "MIPGap": 1e-4,
+        "_MIPGap_note": "Optimality gap tolerance (relaxed for speed)",
+        "NumericFocus": 2,
+        "_NumericFocus_note": "Numerical stability focus (optimized for speed)",
+        "OutputFlag": 0,
+        "_OutputFlag_note": "Suppress solver output"
+      },
+      "method_options": {
+        "wasserstein": {
+          "uncertainty_radius": 0.05,
+          "regularization_alpha": 0.02
+        },
+        "scenario": {
+          "n_scenarios": 15,
+          "bootstrap_method": "residual"
+        },
+        "ellipsoidal": {
+          "gamma": 0.15,
+          "regularization_alpha": 0.02
+        }
+      }
+    },
+    "scaling_parameters": {
+      "_comment": "Physical scaling for c2_fitted = c2_theory * contrast + offset",
+      "fitted_range": { "min": 1.0, "max": 2.0 },
+      "theory_range": { "min": 0.0, "max": 1.0 },
+      "contrast": {
+        "min": 0.05,
+        "max": 0.5,
+        "prior_mu": 0.3,
+        "prior_sigma": 0.1,
+        "type": "TruncatedNormal"
+      },
+      "offset": {
+        "min": 0.05,
+        "max": 1.95,
+        "prior_mu": 1.0,
+        "prior_sigma": 0.2,
+        "type": "TruncatedNormal"
+      }
+    }
+  },
+  "parameter_space": {
+    "_comment": "Parameter bounds for 7-parameter laminar flow optimization",
+    "bounds": [
+      {
+        "name": "D0",
+        "min": 1.0,
+        "max": 1000000.0,
+        "type": "TruncatedNormal",
+        "prior_mu": 10000.0,
+        "prior_sigma": 1000.0,
+        "unit": "Å²/s"
+      },
+      {
+        "name": "alpha",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "Normal",
+        "prior_mu": -1.5,
+        "prior_sigma": 0.1,
+        "unit": "dimensionless"
+      },
+      {
+        "name": "D_offset",
+        "min": -100,
+        "max": 100,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 10.0,
+        "unit": "Å²/s"
+      },
+      {
+        "name": "gamma0",
+        "min": 1e-6,
+        "max": 1.0,
+        "type": "TruncatedNormal",
+        "prior_mu": 0.001,
+        "prior_sigma": 0.01,
+        "unit": "s⁻¹"
+      },
+      {
+        "name": "beta",
+        "min": -2.0,
+        "max": 2.0,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.1,
+        "unit": "dimensionless"
+      },
+      {
+        "name": "gamma_offset",
+        "min": -0.01,
+        "max": 0.01,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 0.001,
+        "unit": "s⁻¹"
+      },
+      {
+        "name": "phi0",
+        "min": -10.0,
+        "max": 10.0,
+        "type": "Normal",
+        "prior_mu": 0.0,
+        "prior_sigma": 5.0,
+        "unit": "degrees"
+      }
+    ]
+  },
+  "analysis_settings": {
+    "_comment": "Laminar flow mode configuration",
+    "static_mode": false,
+    "_static_mode_note": "False for laminar flow analysis (all 7 parameters)",
+    "static_submode": null,
+    "_submode_note": "Not applicable for laminar flow mode",
+    "model_description": {
+      "laminar_flow": "g₂ = g₁_diff × g₁_shear with sinc² term for full flow dynamics",
+      "flow_physics": "D(t) = D₀ × t^α + D_offset, γ̇(t) = γ̇₀ × t^β + γ̇_offset"
+    }
+  },
+  "advanced_settings": {
+    "_comment": "Advanced computational settings for laminar flow",
+    "data_loading": {
+      "use_diagonal_correction": true,
+      "vectorized_diagonal_fix": true
+    },
+    "chi_squared_calculation": {
+      "method": "standard",
+      "_scaling_note": "Scaling optimization always enabled for proper chi-squared",
+      "uncertainty_estimation_factor": 0.1,
+      "minimum_sigma": 1e-10,
+      "fast_computation": true,
+      "uncertainty_calculation": {
+        "enable_uncertainty": true,
+        "report_uncertainty": true,
+        "minimum_angles_for_uncertainty": 2
+      },
+      "validity_check": {
+        "check_positive_D0": true,
+        "check_positive_gamma0": true,
+        "check_positive_time_dependent": true,
+        "check_parameter_bounds": true
+      }
+    },
+    "numerical_integration": {
+      "method": "simpson",
+      "relative_tolerance": 1e-8,
+      "absolute_tolerance": 1e-12
+    },
+    "optimization_controls": {
+      "convergence_tolerance": 1e-8,
+      "max_function_evaluations": 15000,
+      "_max_function_evaluations_note": "Increased for 7-parameter complexity",
+      "parameter_scaling": "auto",
+      "finite_difference_step": 1e-8
+    }
+  },
+  "performance_settings": {
+    "_comment": "Performance settings optimized for 7-parameter laminar flow",
+    "caching": {
+      "enable_memory_cache": true,
+      "enable_disk_cache": true,
+      "cache_size_limit_mb": 1000,
+      "auto_cleanup": true
+    },
+    "parallel_processing": {
+      "enable_multiprocessing": true,
+      "chunk_size": "auto",
+      "backend": "threading"
+    },
+    "memory_management": {
+      "low_memory_mode": false,
+      "garbage_collection_frequency": 10,
+      "memory_monitoring": false
+    },
+    "numba_optimization": {
+      "enable_numba": true,
+      "warmup_numba": true,
+      "parallel_numba": true,
+      "cache_numba": true,
+      "stability_enhancements": {
+        "enable_kernel_warmup": true,
+        "warmup_iterations": 5,
+        "_warmup_note": "More warmup for complex 7-parameter calculations",
+        "optimize_memory_layout": true,
+        "enable_nogil": true,
+        "environment_optimization": {
+          "auto_configure": true,
+          "max_threads": 4,
+          "gc_optimization": true
+        }
+      },
+      "performance_monitoring": {
+        "enable_profiling": false,
+        "stable_benchmarking": false,
+        "adaptive_benchmarking": false,
+        "performance_baselines": false,
+        "target_cv": 0.1,
+        "memory_monitoring": true,
+        "smart_caching": {
+          "enabled": true,
+          "max_items": 100,
+          "max_memory_mb": 500.0
+        }
+      }
+    },
+    "noise_model": {
+      "use_simple_forward_model": false,
+      "_note": "False uses full forward model consistent with classical optimization",
+      "sigma_prior": 0.1
+    }
+  },
+  "validation_rules": {
+    "_comment": "Validation rules for laminar flow analysis",
+    "data_quality": {
+      "check_data_range": true,
+      "correlation_minimum": 0.0,
+      "correlation_maximum": 10.0,
+      "check_nan_values": true,
+      "nan_handling": "raise"
+    },
+    "parameter_validation": {
+      "check_bounds": true,
+      "physics_constraints": true,
+      "correlation_checks": true
+    },
+    "fit_quality": {
+      "_comment": "Quality thresholds for 7-parameter optimization",
+      "overall_chi_squared": {
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "critical_threshold": 50.0
+      },
+      "per_angle_chi_squared": {
+        "excellent_threshold": 5.0,
+        "acceptable_threshold": 10.0,
+        "warning_threshold": 20.0,
+        "outlier_threshold_multiplier": 2.5,
+        "max_outlier_fraction": 0.25,
+        "min_good_angles": 3
+      }
+    },
+    "frame_range": {
+      "minimum_frames": 10,
+      "maximum_frames": null,
+      "check_continuity": true
+    }
+  },
+  "workflow_integration": {
+    "_comment": "Analysis workflow settings",
+    "analysis_workflow": {
+      "auto_generate_plots": true,
+      "plot_integration_enabled": true,
+      "plot_experimental_data_on_load": false,
+      "cache_plot_data": true,
+      "save_intermediate_plots": false
+    },
+    "data_management": {
+      "experimental_data_cache": true,
+      "theoretical_data_cache": true,
+      "cache_directory": "./cache",
+      "auto_cleanup_cache": false,
+      "cache_retention_days": 30
+    },
+    "error_handling": {
+      "continue_on_plot_errors": true,
+      "log_plot_errors": true,
+      "fallback_plotting": true,
+      "validate_plot_data": true
+    }
+  },
+  "output_settings": {
+    "_comment": "Output and reporting configuration",
+    "_output_structure": "homodyne_analysis_results.json (main summary) saved to output directory root. Method-specific results saved to individual directories: classical/[method_name]/ and robust/[method_name]/ containing analysis_results_[method_name].json, parameters.json, fitted_data.npz (consolidated: c2_experimental, c2_fitted, residuals, parameters, uncertainties, chi_squared, phi_angles, t1, t2), and c2_heatmaps_[method_name].png. Summary files: all_classical_methods_summary.json and all_robust_methods_summary.json.",
+    "results_directory": "./homodyne_results",
+    "file_formats": {
+      "results_format": "json",
+      "save_intermediate": false,
+      "compression": true,
+      "precision": "float64"
+    },
+    "file_naming": {
+      "timestamp_format": "%Y%m%d_%H%M%S",
+      "include_config_name": true,
+      "include_chi_squared": true
+    },
+    "reporting": {
+      "generate_plots": true,
+      "plot_formats": ["png", "pdf"],
+      "detailed_summary": true,
+      "convergence_diagnostics": true
+    },
+    "plotting": {
+      "_comment": "Plotting configuration for laminar flow mode",
+      "general": {
+        "create_plots": true,
+        "plot_format": "png",
+        "dpi": 300,
+        "figure_size": [12, 8],
+        "_figsize_note": "Larger figures for complex 7-parameter results",
+        "style": "publication",
+        "save_plots": true,
+        "show_plots": false
+      },
+      "c2_heatmaps": {
+        "enabled": true,
+        "_method_specific_note": "When multiple optimization methods are used (e.g., Nelder-Mead + Gurobi), separate heatmaps are generated for each method with method names in filenames",
+        "layout": "single_row",
+        "include_experimental": true,
+        "include_theoretical": true,
+        "include_residuals": true,
+        "colormap": "viridis",
+        "colorbar_position": "right",
+        "title_prefix": "C2 Correlation Function (Laminar Flow)",
+        "figsize": [18, 6]
+      },
+      "diagnostic_plots": {
+        "enabled": true,
+        "chi_squared_summary": true,
+        "parameter_correlations": true,
+        "residual_analysis": true,
+        "convergence_history": true
+      },
+      "output": {
+        "base_directory": "./plots",
+        "subdirectories": {
+          "c2_heatmaps": "c2_correlation",
+          "parameter_plots": "parameters",
+          "diagnostics": "diagnostics"
+        },
+        "filename_template": "{analysis_type}_{start_frame}_{end_frame}_{method}_{timestamp}",
+        "_filename_template_note": "Frame-aware plotting: includes start_frame, end_frame for data range identification, method name (e.g., Nelder-Mead, Gurobi), and timestamp",
+        "include_timestamp": true,
+        "overwrite_existing": false
+      }
+    },
+    "logging": {
+      "log_level": "INFO",
+      "log_to_file": true,
+      "log_to_console": true,
+      "log_filename": "homodyne_laminar_flow.log",
+      "rotation": {
+        "max_bytes": 10485760,
+        "backup_count": 3
+      }
+    }
+  }
+}

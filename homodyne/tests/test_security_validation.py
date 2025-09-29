@@ -148,16 +148,20 @@ class TestInputValidation:
 
     def _validate_data_types(self, c2_data, angles, t1_array, t2_array):
         """Helper function to validate data types."""
-        try:
-            # Check if arrays can be converted to float
-            c2_float = np.asarray(c2_data, dtype=np.float64)
-            angles_float = np.asarray(angles, dtype=np.float64)
-            t1_float = np.asarray(t1_array, dtype=np.float64)
-            t2_float = np.asarray(t2_array, dtype=np.float64)
+        import warnings
 
-            # Check for complex numbers
+        try:
+            # Check for complex numbers first before conversion
             if np.iscomplexobj(c2_data):
                 return False
+
+            # Check if arrays can be converted to float (suppress warnings)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")  # Ignore all warnings during conversion
+                c2_float = np.asarray(c2_data, dtype=np.float64)
+                angles_float = np.asarray(angles, dtype=np.float64)
+                t1_float = np.asarray(t1_array, dtype=np.float64)
+                t2_float = np.asarray(t2_array, dtype=np.float64)
 
             return True
         except (ValueError, TypeError):
@@ -165,6 +169,8 @@ class TestInputValidation:
 
     def test_configuration_injection_prevention(self):
         """Test prevention of configuration injection attacks."""
+        import warnings
+
         # Test with malicious configuration content
         malicious_configs = [
             {
@@ -189,7 +195,8 @@ class TestInputValidation:
 
         for malicious_config in malicious_configs:
             # Should either reject the config or sanitize the inputs
-            with pytest.warns(None):  # May issue warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")  # May issue warnings
                 try:
                     if CORE_AVAILABLE:
                         manager = ConfigManager(config=malicious_config)

@@ -558,3 +558,13 @@ class CompletionEngine:
 
         warming_thread = threading.Thread(target=_warm_worker, daemon=True)
         warming_thread.start()
+
+
+# Export all main classes and types
+__all__ = [
+    "CompletionType",
+    "EnvironmentType",
+    "CompletionResult",
+    "CompletionContext",
+    "CompletionEngine",
+]

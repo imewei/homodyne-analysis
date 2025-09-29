@@ -149,7 +149,7 @@ class ExperimentalDataConfig(TypedDict, total=False):
     cache_filename_template: str
 
 
-def configure_logging(cfg: dict[str, Any]) -> logging.Logger:
+def configure_logging(cfg: dict[str, Any] = None, *, level: Any = None, log_file: str = None) -> logging.Logger:
     """
     Configure centralized logging system with hierarchy and handlers.
 
@@ -161,7 +161,7 @@ def configure_logging(cfg: dict[str, Any]) -> logging.Logger:
 
     Parameters
     ----------
-    cfg : dict
+    cfg : dict, optional
         Logging configuration dictionary with keys:
         - log_to_file: bool, enable file logging
         - log_to_console: bool, enable console logging
@@ -169,12 +169,42 @@ def configure_logging(cfg: dict[str, Any]) -> logging.Logger:
         - level: str, logging level ('DEBUG', 'INFO', 'WARNING', 'ERROR')
         - format: str, log message format string
         - rotation: dict with 'max_bytes' and 'backup_count'
+    level : Any, optional
+        Logging level for backward compatibility (can be string or logging constant)
+    log_file : str, optional
+        Log file path for backward compatibility
 
     Returns
     -------
     logging.Logger
         Configured logger instance for reuse
     """
+    # Handle backward compatibility with individual parameters
+    if cfg is None:
+        cfg = {}
+
+    # Convert individual parameters to config dict for backward compatibility
+    if level is not None:
+        if isinstance(level, int):
+            # Convert logging level constant to string
+            level_names = {
+                logging.DEBUG: 'DEBUG',
+                logging.INFO: 'INFO',
+                logging.WARNING: 'WARNING',
+                logging.ERROR: 'ERROR',
+                logging.CRITICAL: 'CRITICAL'
+            }
+            cfg['level'] = level_names.get(level, 'INFO')
+        else:
+            cfg['level'] = str(level)
+
+    if log_file is not None:
+        cfg['log_to_file'] = True
+        cfg['log_filename'] = log_file
+
+    # Set defaults for backward compatibility
+    if 'log_to_console' not in cfg:
+        cfg['log_to_console'] = True
     # Clear any existing handlers to avoid conflicts
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
@@ -292,7 +322,7 @@ class ConfigManager:
         angle_ranges = config_manager.get_target_angle_ranges()
     """
 
-    def __init__(self, config_file: str = "homodyne_config.json"):
+    def __init__(self, config_file: str = "homodyne_config.json", config: dict[str, Any] | None = None):
         """
         Initialize configuration manager.
 
@@ -300,15 +330,25 @@ class ConfigManager:
         ----------
         config_file : str
             Path to JSON configuration file
+        config : dict, optional
+            Configuration dictionary (if provided, config_file is ignored)
         """
         self.config_file = config_file
         self.config: dict[str, Any] | None = None
         self._cached_values: dict[str, Any] = {}
-        self.load_config()
-        self.validate_config()
-        self.setup_logging()
 
-    def load_config(self) -> None:
+        if config is not None:
+            # Use provided config dictionary
+            self.config = config
+            # Don't validate provided config in constructor - let caller handle validation
+            self.setup_logging()
+        else:
+            # Load from file and validate
+            self.load_config()
+            self.validate_config()
+            self.setup_logging()
+
+    def load_config(self, config_file: str | None = None) -> dict[str, Any] | None:
         """
         Load and parse JSON configuration file with comprehensive error handling and security validation.
 
@@ -333,15 +373,18 @@ class ConfigManager:
         - Configuration structure caching for fast access
         - Timing instrumentation for performance monitoring
         """
+        # Use provided config_file parameter or fall back to instance variable
+        actual_config_file = config_file if config_file is not None else self.config_file
+
         with performance_monitor.time_function("config_loading"):
             try:
-                if self.config_file is None:
+                if actual_config_file is None:
                     raise ValueError("Configuration file path cannot be None")
 
-                config_path = Path(self.config_file)
+                config_path = Path(actual_config_file)
                 if not config_path.exists():
                     raise FileNotFoundError(
-                        f"Configuration file not found: {self.config_file}"
+                        f"Configuration file not found: {actual_config_file}"
                     )
 
                 # Security-enhanced configuration loading
@@ -350,7 +393,7 @@ class ConfigManager:
                         logger.debug("Loading configuration with security validation")
                         self.config = secure_config_loader(config_path)
                         logger.info(
-                            f"Secure configuration loaded from: {self.config_file}"
+                            f"Secure configuration loaded from: {actual_config_file}"
                         )
                     except ValidationError as e:
                         logger.warning(f"Security validation failed: {e}")
@@ -373,11 +416,28 @@ class ConfigManager:
                 logger.error(f"JSON parsing error: {e}")
                 logger.info("Using default configuration...")
                 self.config = self._get_default_config()
+            except FileNotFoundError as e:
+                logger.error(f"Failed to load configuration: {e}")
+                logger.info("Attempting to load default template...")
+                try:
+                    # Try to load a default template from the config directory
+                    from homodyne.config import get_template_path
+
+                    template_path = get_template_path("template")
+                    with open(template_path, 'r') as f:
+                        self.config = json.load(f)
+                    logger.info(f"Loaded default template configuration from: {template_path}")
+                except Exception as template_error:
+                    logger.warning(f"Failed to load default template: {template_error}")
+                    logger.info("Using built-in default configuration...")
+                    self.config = self._get_default_config()
             except Exception as e:
                 logger.error(f"Failed to load configuration: {e}")
                 logger.exception("Full traceback for configuration loading failure:")
-                logger.info("Using default configuration...")
+                logger.info("Using built-in default configuration...")
                 self.config = self._get_default_config()
+
+        return self.config
 
     def _load_config_standard(self, config_path: Path) -> None:
         """
@@ -453,7 +513,7 @@ class ConfigManager:
             3 if self._cached_values.get("static_mode", False) else 7
         )
 
-    def validate_config(self) -> None:
+    def validate_config(self) -> bool:
         """
         Comprehensive validation of configuration parameters.
 
@@ -483,7 +543,7 @@ class ConfigManager:
             Missing required data files (if validation enabled)
         """
         if not self.config:
-            raise ValueError("Configuration is None")
+            return False
 
         # Check required sections
         required_sections = [
@@ -493,15 +553,16 @@ class ConfigManager:
         ]
         missing = [s for s in required_sections if s not in self.config]
         if missing:
-            raise ValueError(f"Missing required sections: {missing}")
+            return False
 
         # Validate frame range
-        analyzer = self.config["analyzer_parameters"]
-        start = analyzer.get("start_frame", 1)
-        end = analyzer.get("end_frame", 100)
+        analyzer = self.config.get("analyzer_parameters", {})
+        temporal = analyzer.get("temporal", {})
+        start = temporal.get("start_frame", 1)
+        end = temporal.get("end_frame", 100)
 
         if start >= end:
-            raise ValueError(f"Invalid frame range: {start} >= {end}")
+            return False
 
         # Check minimum frame count
         min_frames = (
@@ -510,14 +571,204 @@ class ConfigManager:
             .get("minimum_frames", 10)
         )
         if end - start < min_frames:
-            raise ValueError(f"Insufficient frames: {end - start} < {min_frames}")
+            return False
 
         # Validate physical parameters
-        self._validate_physical_parameters()
+        try:
+            self._validate_physical_parameters()
+        except (ValueError, KeyError):
+            return False
 
         logger.info(
             f"Configuration validated: frames {start}-{end} ({end - start} frames)"
         )
+
+        return True
+
+    def validate_parameter_bounds(self, parameters: dict[str, float]) -> bool:
+        """
+        Validate that parameters are within the configured bounds.
+
+        Parameters
+        ----------
+        parameters : dict[str, float]
+            Dictionary of parameter names and values to validate
+
+        Returns
+        -------
+        bool
+            True if all parameters are within bounds, False otherwise
+        """
+        import numpy as np
+
+        if not self.config:
+            return False
+
+        # Try multiple locations for parameter bounds (backwards compatibility)
+        bounds = (
+            self.config.get("parameter_bounds", {}) or
+            self.config.get("optimization_config", {}).get("parameter_bounds", {})
+        )
+
+        if not bounds:
+            # If no bounds configured, assume validation passes
+            return True
+
+        for param_name, param_value in parameters.items():
+            # Check for NaN or Inf values
+            if not np.isfinite(param_value):
+                return False
+
+            if param_name in bounds:
+                min_val, max_val = bounds[param_name]
+                if not (min_val <= param_value <= max_val):
+                    return False
+
+        return True
+
+    def get_parameter(self, section: str, parameter: str, default: Any = None) -> Any:
+        """
+        Get a parameter value from a specific configuration section.
+
+        Parameters
+        ----------
+        section : str
+            Configuration section name
+        parameter : str
+            Parameter name within the section
+        default : Any, optional
+            Default value to return if parameter not found
+
+        Returns
+        -------
+        Any
+            Parameter value
+
+        Raises
+        ------
+        KeyError
+            If parameter not found and no default provided
+        """
+        if not self.config:
+            if default is not None:
+                return default
+            raise KeyError(f"Configuration not loaded")
+
+        if section not in self.config:
+            if default is not None:
+                return default
+            raise KeyError(f"Section '{section}' not found in configuration")
+
+        section_config = self.config[section]
+        if parameter not in section_config:
+            if default is not None:
+                return default
+            raise KeyError(f"Parameter '{parameter}' not found in section '{section}'")
+
+        return section_config[parameter]
+
+    def set_parameter(self, section: str, parameter: str, value: Any) -> None:
+        """
+        Set a parameter value in a specific configuration section.
+
+        Parameters
+        ----------
+        section : str
+            Configuration section name
+        parameter : str
+            Parameter name within the section
+        value : Any
+            Value to set for the parameter
+
+        Raises
+        ------
+        KeyError
+            If section not found in configuration
+        """
+        if not self.config:
+            raise KeyError("Configuration not loaded")
+
+        if section not in self.config:
+            # Create section if it doesn't exist
+            self.config[section] = {}
+
+        self.config[section][parameter] = value
+
+    def merge_configs(self, update_config: dict[str, Any]) -> dict[str, Any]:
+        """
+        Merge an update configuration with the current configuration.
+
+        Parameters
+        ----------
+        update_config : dict[str, Any]
+            Configuration dictionary to merge with current config
+
+        Returns
+        -------
+        dict[str, Any]
+            Merged configuration dictionary
+        """
+        if not self.config:
+            return update_config.copy()
+
+        # Deep merge configurations
+        merged = self._deep_merge_dicts(self.config.copy(), update_config)
+        return merged
+
+    def save_config(self, file_path: str) -> None:
+        """
+        Save the current configuration to a JSON file.
+
+        Parameters
+        ----------
+        file_path : str
+            Path where the configuration file should be saved
+
+        Raises
+        ------
+        ValueError
+            If no configuration is loaded
+        FileNotFoundError
+            If the parent directory doesn't exist
+        """
+        if not self.config:
+            raise ValueError("No configuration loaded to save")
+
+        from pathlib import Path
+
+        # Ensure parent directory exists
+        path = Path(file_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save configuration with proper formatting
+        with open(file_path, 'w') as f:
+            json.dump(self.config, f, indent=2, default=str)
+
+    def _deep_merge_dicts(self, base: dict, update: dict) -> dict:
+        """
+        Recursively merge two dictionaries.
+
+        Parameters
+        ----------
+        base : dict
+            Base dictionary
+        update : dict
+            Dictionary to merge into base
+
+        Returns
+        -------
+        dict
+            Merged dictionary
+        """
+        result = base.copy()
+
+        for key, value in update.items():
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                result[key] = self._deep_merge_dicts(result[key], value)
+            else:
+                result[key] = value
+
+        return result
 
     def _validate_physical_parameters(self) -> None:
         """
@@ -884,6 +1135,160 @@ class ConfigManager:
 
         return count
 
+    def list_available_templates(self) -> list[str]:
+        """
+        List all available configuration templates.
+
+        Returns
+        -------
+        list[str]
+            List of available template names
+        """
+        from homodyne.config import TEMPLATE_FILES
+        return list(TEMPLATE_FILES.keys())
+
+    def load_template(self, template_name: str) -> dict[str, Any]:
+        """
+        Load a configuration template by name.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of the template to load
+
+        Returns
+        -------
+        dict[str, Any]
+            Template configuration dictionary
+
+        Raises
+        ------
+        ValueError
+            If template name is not found
+        FileNotFoundError
+            If template file doesn't exist
+        """
+        from homodyne.config import get_template_path
+
+        try:
+            template_path = get_template_path(template_name)
+            with open(template_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            raise FileNotFoundError(f"Failed to load template '{template_name}': {e}")
+
+    def resolve_environment_variables(self, config: dict[str, Any]) -> dict[str, Any]:
+        """
+        Resolve environment variables in configuration.
+
+        Parameters
+        ----------
+        config : dict[str, Any]
+            Configuration dictionary that may contain environment variable references
+
+        Returns
+        -------
+        dict[str, Any]
+            Configuration with environment variables substituted
+        """
+        import os
+        import re
+        import copy
+
+        def substitute_env_vars(obj):
+            if isinstance(obj, str):
+                # Replace ${VAR_NAME} or $VAR_NAME patterns
+                pattern = r'\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)'
+                def replacer(match):
+                    var_name = match.group(1) or match.group(2)
+                    return os.environ.get(var_name, match.group(0))
+                return re.sub(pattern, replacer, obj)
+            elif isinstance(obj, dict):
+                return {key: substitute_env_vars(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [substitute_env_vars(item) for item in obj]
+            else:
+                return obj
+
+        return substitute_env_vars(copy.deepcopy(config))
+
+    def create_backup(self) -> dict[str, Any]:
+        """
+        Create a backup of the current configuration.
+
+        Returns
+        -------
+        dict[str, Any]
+            Deep copy of the current configuration
+
+        Raises
+        ------
+        ValueError
+            If no configuration is loaded
+        """
+        if not self.config:
+            raise ValueError("No configuration loaded to backup")
+
+        import copy
+        return copy.deepcopy(self.config)
+
+    def restore_from_backup(self, backup: dict[str, Any]) -> None:
+        """
+        Restore configuration from a backup.
+
+        Parameters
+        ----------
+        backup : dict[str, Any]
+            Configuration backup to restore
+        """
+        import copy
+        self.config = copy.deepcopy(backup)
+
+    def get_config_differences(self, other_config: dict[str, Any]) -> dict[str, Any]:
+        """
+        Get differences between current configuration and another configuration.
+
+        Parameters
+        ----------
+        other_config : dict[str, Any]
+            Configuration to compare against
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing differences
+        """
+        if not self.config:
+            return {"error": "No configuration loaded"}
+
+        def find_differences(config1, config2, path=""):
+            differences = {}
+
+            # Check all keys in config1
+            for key in config1:
+                current_path = f"{path}.{key}" if path else key
+
+                if key not in config2:
+                    differences[key] = {"missing_in_other": config1[key]}
+                elif isinstance(config1[key], dict) and isinstance(config2[key], dict):
+                    nested_diff = find_differences(config1[key], config2[key], current_path)
+                    if nested_diff:
+                        differences[key] = nested_diff
+                elif config1[key] != config2[key]:
+                    differences[key] = {
+                        "current": config1[key],
+                        "other": config2[key]
+                    }
+
+            # Check for keys only in config2
+            for key in config2:
+                if key not in config1:
+                    differences[key] = {"missing_in_current": config2[key]}
+
+            return differences
+
+        return find_differences(self.config, other_config)
+
     def get_analysis_settings(self) -> dict[str, Any]:
         """
         Get analysis settings with defaults.
@@ -1081,6 +1486,38 @@ class PerformanceMonitor:
     def __init__(self) -> None:
         self.timings: dict[str, list[float]] = {}
         self.memory_usage: dict[str, float] = {}
+
+    def __call__(self, operation_name: str) -> "PerformanceMonitor._TimingContext":
+        """
+        Make PerformanceMonitor callable as a context manager.
+
+        Parameters
+        ----------
+        operation_name : str
+            Name of the operation being monitored
+
+        Returns
+        -------
+        _TimingContext
+            Context manager for timing the operation
+        """
+        return self.time_function(operation_name)
+
+    def start(self, operation_name: str = "default_operation") -> "PerformanceMonitor._TimingContext":
+        """
+        Start monitoring an operation.
+
+        Parameters
+        ----------
+        operation_name : str, optional
+            Name of the operation being monitored
+
+        Returns
+        -------
+        _TimingContext
+            Context manager for timing the operation
+        """
+        return self.time_function(operation_name)
 
     def time_function(self, func_name: str) -> "PerformanceMonitor._TimingContext":
         """

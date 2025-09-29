@@ -131,9 +131,16 @@ class HeavyDependencyLoader:
 
         try:
             import time
+            import sys
             start_time = time.perf_counter()
 
             logger.debug(f"Loading heavy dependency: {self.module_name}")
+
+            # Special handling for test environments where modules are disabled
+            # Check if module is explicitly disabled (common pattern: sys.modules['module'] = None)
+            if (self.module_name in sys.modules and
+                sys.modules[self.module_name] is None):
+                raise ImportError(f"Module '{self.module_name}' is disabled in test environment")
 
             # Import the module
             if self.module_name.startswith("."):
@@ -141,11 +148,20 @@ class HeavyDependencyLoader:
             else:
                 module = importlib.import_module(self.module_name)
 
+            # Additional check: ensure the imported module is not None
+            # (can happen in test environments)
+            if module is None:
+                raise ImportError(f"Module '{self.module_name}' imported as None")
+
             # Extract specific attribute if requested
             if self.attribute:
                 obj = getattr(module, self.attribute)
             else:
                 obj = module
+
+            # Final check: ensure the object is not None
+            if obj is None and self.fallback is None:
+                raise ImportError(f"Attribute '{self.attribute}' in '{self.module_name}' is None")
 
             # Cache the result
             self._cached_object = obj
@@ -184,10 +200,16 @@ class HeavyDependencyLoader:
         if self._cache_key in _IMPORT_SUCCESS:
             return _IMPORT_SUCCESS[self._cache_key]
 
+        # Special handling for test environments where modules are disabled
+        import sys
+        if (self.module_name in sys.modules and
+            sys.modules[self.module_name] is None):
+            return False
+
         # Quick availability check without full import
         try:
-            importlib.util.find_spec(self.module_name)
-            return True
+            spec = importlib.util.find_spec(self.module_name)
+            return spec is not None
         except (ImportError, ValueError):
             return False
 
@@ -378,6 +400,12 @@ def clear_import_cache() -> None:
         _IMPORT_CACHE.clear()
         _IMPORT_TIMES.clear()
         _IMPORT_SUCCESS.clear()
+
+        # Also reset all loader instances in scientific_deps
+        for loader in scientific_deps.loaders.values():
+            loader._cached_object = None
+            loader._load_attempted = False
+            loader._load_time = 0.0
 
 
 # Backward compatibility aliases

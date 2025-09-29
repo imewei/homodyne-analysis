@@ -557,13 +557,9 @@ class EnhancedClassicalOptimizer:
         )
 
         # Compatibility with existing interface
-        if EXISTING_OPTIMIZERS_AVAILABLE:
-            try:
-                self.classical_optimizer = ClassicalOptimizer(config)
-            except:
-                self.classical_optimizer = None
-        else:
-            self.classical_optimizer = None
+        # Note: ClassicalOptimizer requires analysis_core as first argument
+        # Since we don't have it in this context, we skip initialization
+        self.classical_optimizer = None
 
     def optimize(
         self,

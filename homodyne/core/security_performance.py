@@ -516,8 +516,8 @@ class ConfigurationSecurity:
         """
         Validate configuration file structure for security.
         """
-        # Core required sections (at least one must be present)
-        core_sections = {
+        # Core required sections (ALL must be present for a valid config)
+        required_sections = {
             "analyzer_parameters",
             "experimental_data",
             "optimization_config",
@@ -526,9 +526,9 @@ class ConfigurationSecurity:
         if not isinstance(config, dict):
             return False
 
-        # Check if at least one core section is present
+        # Check if ALL required sections are present
         config_sections = set(config.keys())
-        if not any(section in config_sections for section in core_sections):
+        if not required_sections.issubset(config_sections):
             return False
 
         # Validate experimental data paths (if section exists)

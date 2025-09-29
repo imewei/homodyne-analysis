@@ -141,9 +141,7 @@ def load_and_validate_data(analyzer, args: argparse.Namespace):
         logger.info("Loading experimental data...")
 
         # Load data using analyzer
-        data = analyzer.load_experimental_data()
-        phi_angles = data["phi_angles"]
-        c2_exp = data["c2_experimental"]
+        c2_exp, time_length, phi_angles, num_angles = analyzer.load_experimental_data()
 
         # Get initial parameters
         initial_params = np.array(analyzer.config.get("initial_parameters", {}).get("values", []))
@@ -300,7 +298,7 @@ def create_enhanced_optimizers(args: argparse.Namespace, analyzer, enhanced_conf
         # Create enhanced classical optimizer
         if 'distributed' in enhanced_config or 'ml_acceleration' in enhanced_config:
             logger.info("Creating enhanced classical optimizer...")
-            enhanced_classical = ClassicalOptimizer(analyzer)
+            enhanced_classical = ClassicalOptimizer(analyzer, analyzer.config)
 
             if 'distributed' in enhanced_config:
                 enhanced_classical = create_distributed_optimizer(

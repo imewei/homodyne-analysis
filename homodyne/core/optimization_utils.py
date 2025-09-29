@@ -13,12 +13,71 @@ numba detection utilities.
 from typing import Any
 
 # Numba availability detection
-try:
-    import numba  # noqa: F401
+def _check_numba_availability() -> bool:
+    """Check if Numba is truly available and functional.
 
-    NUMBA_AVAILABLE = True
-except ImportError:
-    NUMBA_AVAILABLE = False
+    This function handles edge cases like test environments where
+    sys.modules['numba'] is set to None to disable numba.
+
+    Returns
+    -------
+    bool
+        True if Numba is available and functional, False otherwise
+    """
+    try:
+        import sys
+
+        # First check if numba is disabled in test environment
+        # (common pattern: sys.modules['numba'] = None)
+        if 'numba' in sys.modules and sys.modules['numba'] is None:
+            return False
+
+        # Try to import numba normally
+        import numba
+
+        # Check if the imported module is actually None (test environment case)
+        if numba is None:
+            return False
+
+        # Check if numba has the required JIT functionality
+        if not hasattr(numba, 'jit'):
+            return False
+
+        # Test that Numba actually works by trying to compile a simple function
+        try:
+            @numba.jit(nopython=True, cache=True, nogil=True)
+            def _test_numba_function(x):
+                return x + 1.0
+
+            # Try to compile and call the function
+            result = _test_numba_function(1.0)
+            return abs(result - 2.0) < 1e-10
+
+        except Exception:
+            # If Numba compilation fails, treat as unavailable
+            return False
+
+    except (ImportError, AttributeError, ModuleNotFoundError):
+        return False
+
+# Initialize the global flag
+NUMBA_AVAILABLE = _check_numba_availability()
+
+
+def refresh_numba_availability() -> bool:
+    """Refresh the global NUMBA_AVAILABLE flag by re-checking availability.
+
+    This is useful in test environments where numba availability may change
+    dynamically during test execution.
+
+    Returns
+    -------
+    bool
+        Updated numba availability status
+    """
+    global NUMBA_AVAILABLE
+    NUMBA_AVAILABLE = _check_numba_availability()
+    return NUMBA_AVAILABLE
 
 # Global optimization counter for tracking iterations across all methods
 OPTIMIZATION_COUNTER = 0
@@ -76,16 +135,23 @@ def get_optimization_capabilities() -> dict[str, bool]:
     """
     Get available optimization capabilities.
 
+    This function dynamically checks the current state of optimization
+    features, including re-checking Numba availability in case the
+    environment changed (e.g., during tests).
+
     Returns
     -------
     dict[str, bool]
         Available optimization features
     """
+    # Re-check numba availability dynamically for robustness
+    current_numba_available = _check_numba_availability()
     cpu_opt_available = _check_cpu_optimization_availability()
+
     return {
-        "numba_jit": NUMBA_AVAILABLE,
+        "numba_jit": current_numba_available,
         "cpu_optimization": cpu_opt_available,
-        "openmp_threading": NUMBA_AVAILABLE,  # Numba provides OpenMP support
+        "openmp_threading": current_numba_available,  # Numba provides OpenMP support
         "vectorization": True,  # NumPy always available
         "multiprocessing": True,  # Built-in Python feature
         "cache_optimization": cpu_opt_available,

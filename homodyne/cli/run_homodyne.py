@@ -82,6 +82,9 @@ try:
     # For backward compatibility, also expose some internal functions
     from .core import run_analysis, initialize_analysis_engine, load_and_validate_data
 
+    # Add perform_analysis as an alias to run_analysis for test compatibility
+    perform_analysis = run_analysis
+
 except ImportError as e:
     # Handle cases where modular imports fail
     import logging

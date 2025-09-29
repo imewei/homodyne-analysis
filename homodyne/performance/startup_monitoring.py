@@ -795,3 +795,7 @@ def check_startup_health() -> Dict[str, Any]:
             "error": str(e),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+
+
+# Backward compatibility alias
+StartupMonitor = StartupPerformanceMonitor

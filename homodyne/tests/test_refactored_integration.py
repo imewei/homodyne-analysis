@@ -18,6 +18,7 @@ import tempfile
 import json
 import os
 import warnings
+from unittest.mock import patch, Mock
 
 # Suppress warnings for cleaner test output
 warnings.filterwarnings("ignore")
@@ -41,16 +42,51 @@ class TestRefactoredCalculateChiSquared:
         try:
             from homodyne.analysis.core import HomodyneAnalysisCore
 
-            # Create mock configuration
+            # Create mock configuration matching expected structure
             config = {
                 "analyzer_parameters": {
-                    "temporal": {"dt": 0.1, "start_frame": 1, "end_frame": 11},
-                    "angular": {"phi_angles": "0,45,90,135"},
-                    "experimental": {"data_path": "/tmp/mock"}
+                    "temporal": {
+                        "dt": 0.1,
+                        "start_frame": 1,
+                        "end_frame": 11
+                    },
+                    "scattering": {
+                        "wavevector_q": 0.005
+                    },
+                    "geometry": {
+                        "stator_rotor_gap": 2000000
+                    },
+                    "contrast": 0.95,
+                    "offset": 1.0
+                },
+                "experimental_data": {
+                    "data_file": "/tmp/mock/data.h5",
+                    "cache_enabled": False,
+                    "preload_data": False
+                },
+                "optimization_config": {
+                    "mode": "static_isotropic",
+                    "method": "classical",
+                    "enable_angle_filtering": False,
+                    "parameter_bounds": {
+                        "D0": [1e-12, 1e-10],
+                        "alpha": [0.1, 2.0],
+                        "beta": [-2.0, 2.0]
+                    },
+                    "initial_guesses": {
+                        "D0": 1e-11,
+                        "alpha": 0.5,
+                        "beta": -0.3
+                    }
                 },
                 "initial_parameters": {
                     "parameter_names": ["D0", "alpha", "beta"],
                     "values": [1e-11, 0.5, -0.3]
+                },
+                "output_settings": {
+                    "save_plots": False,
+                    "save_results": False,
+                    "output_directory": "/tmp/mock"
                 }
             }
 
@@ -60,6 +96,7 @@ class TestRefactoredCalculateChiSquared:
                 config_path = f.name
 
             try:
+                from unittest.mock import patch, Mock
                 # Mock the analyzer core components that we can't easily test
                 with patch('homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data') as mock_load:
                     # Mock data loading
@@ -75,14 +112,13 @@ class TestRefactoredCalculateChiSquared:
                         # Test that the refactored methods can be called
                         analyzer = HomodyneAnalysisCore(config_path)
 
-                        # Test parameter validation
-                        params = np.array([1e-11, 0.5, -0.3])
-                        phi_angles = np.array([0, 45, 90, 135])
-                        c2_exp = np.random.rand(4, 10, 10)
+                        # Test parameter validation with valid parameters
+                        # [D0, alpha, D_offset] where D_offset must be non-negative
+                        params = np.array([1e-11, 0.5, 0.3e-12])
 
-                        # This should not raise an exception
-                        result = analyzer._validate_parameters(params, phi_angles, c2_exp)
-                        assert result == (params, phi_angles, c2_exp)
+                        # This should not raise an exception (returns bool)
+                        result = analyzer._validate_parameters(params)
+                        assert result is True  # Valid parameters return True
 
                         print("✓ Refactored chi-squared validation working")
 
@@ -101,6 +137,17 @@ class TestRefactoredCalculateChiSquared:
             # Create mock analyzer
             config = {
                 "analyzer_parameters": {
+                    "temporal": {
+                        "dt": 0.1,
+                        "start_frame": 1,
+                        "end_frame": 11
+                    },
+                    "scattering": {
+                        "wavevector_q": 0.005
+                    },
+                    "geometry": {
+                        "stator_rotor_gap": 2000000
+                    },
                     "angular": {"phi_angles": "0,45,90,135"}
                 }
             }
@@ -110,12 +157,14 @@ class TestRefactoredCalculateChiSquared:
                 config_path = f.name
 
             try:
+                from unittest.mock import patch, Mock
                 with patch('homodyne.analysis.core.HomodyneAnalysisCore.load_experimental_data'):
                     analyzer = HomodyneAnalysisCore(config_path)
 
-                    # Test angle processing
+                    # Test angle processing (renamed method)
                     phi_angles = np.array([0, 45, 90, 135])
-                    angle_indices = analyzer._determine_optimization_angles(phi_angles)
+                    # _get_optimization_indices takes (phi_angles, filter_angles_for_optimization)
+                    angle_indices = analyzer._get_optimization_indices(phi_angles, filter_angles_for_optimization=False)
 
                     # Should return valid indices
                     assert len(angle_indices) <= len(phi_angles)
@@ -245,6 +294,7 @@ class TestRefactoredOptimization:
     def test_gurobi_options_refactored(self):
         """Test the refactored Gurobi options setup."""
         try:
+            from unittest.mock import patch, Mock
             from homodyne.optimization.classical import ClassicalOptimizer
 
             # Create mock optimizer
@@ -270,6 +320,7 @@ class TestRefactoredOptimization:
     def test_gradient_estimation_refactored(self):
         """Test the refactored gradient estimation."""
         try:
+            from unittest.mock import patch, Mock
             from homodyne.optimization.classical import ClassicalOptimizer
 
             # Create mock optimizer

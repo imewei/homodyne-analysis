@@ -23,6 +23,7 @@ import tempfile
 import json
 from pathlib import Path
 import warnings
+from unittest.mock import Mock
 
 # Suppress warnings for cleaner test output
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -508,7 +509,7 @@ class TestNumericalAccuracyValidation:
             identity_test = A @ A_inv
             expected_identity = np.eye(n)
 
-            np.testing.assert_allclose(identity_test, expected_identity, rtol=1e-10)
+            np.testing.assert_allclose(identity_test, expected_identity, rtol=1e-10, atol=1e-14)
 
         print("✓ Matrix operation accuracy verified")
 

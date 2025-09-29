@@ -150,6 +150,50 @@ class XPCSDataLoader:
 
         logger.info("XPCS data loader initialized for HDF5 format auto-detection")
 
+    def _check_dependencies(self) -> None:
+        """
+        Check for required dependencies for XPCS data loading.
+
+        Raises
+        ------
+        XPCSDependencyError
+            If required dependencies are not available
+        """
+        # Check for h5py dependency
+        if not HAS_H5PY:
+            raise XPCSDependencyError(
+                "h5py is required for XPCS data loading but was not found. "
+                "Please install h5py: pip install h5py"
+            )
+
+        # Check for numpy (should always be available, but validate version)
+        try:
+            import numpy as np
+            # Check minimum numpy version for scientific computing
+            np_version = tuple(map(int, np.__version__.split('.')[:2]))
+            if np_version < (1, 20):
+                raise XPCSDependencyError(
+                    f"NumPy version {np.__version__} is too old. "
+                    "Please upgrade to NumPy >= 1.20.0: pip install --upgrade numpy"
+                )
+        except ImportError:
+            raise XPCSDependencyError(
+                "NumPy is required for XPCS data loading but was not found. "
+                "Please install numpy: pip install numpy"
+            )
+
+        logger.debug("✓ All required dependencies available for XPCS data loading")
+
+    def _get_temporal_param(self, param_name: str, default_value: Any) -> Any:
+        """Get temporal parameter from configuration, handling both flat and nested structures."""
+        # Check if parameters are in temporal subsection (new structure)
+        if "temporal" in self.analyzer_config:
+            temporal_config = self.analyzer_config["temporal"]
+            return temporal_config.get(param_name, default_value)
+        else:
+            # Fallback to flat structure (old format)
+            return self.analyzer_config.get(param_name, default_value)
+
     def _validate_configuration(self) -> None:
         """Validate configuration parameters."""
         required_exp_data = ["data_folder_path", "data_file_name"]
@@ -224,15 +268,23 @@ class XPCSDataLoader:
             logger.info(f"Loading cached data from: {cache_path}")
             data = self._load_from_cache(cache_path)
         else:
-            # Load from raw HDF file
-            hdf_path = os.path.join(data_folder, data_file)
-            if not os.path.exists(hdf_path):
+            # Load from raw data file (HDF5 or NPZ)
+            data_path = os.path.join(data_folder, data_file)
+            if not os.path.exists(data_path):
                 raise FileNotFoundError(
-                    f"Neither cache file {cache_path} nor HDF file {hdf_path} exists"
+                    f"Neither cache file {cache_path} nor data file {data_path} exists"
                 )
 
-            logger.info(f"Loading raw data from: {hdf_path}")
-            data = self._load_from_hdf(hdf_path)
+            logger.info(f"Loading raw data from: {data_path}")
+
+            # Detect file format and load accordingly
+            if data_file.lower().endswith('.npz'):
+                data = self._load_from_npz(data_path)
+            elif data_file.lower().endswith(('.h5', '.hdf5')):
+                data = self._load_from_hdf(data_path)
+            else:
+                # Try HDF5 format as default
+                data = self._load_from_hdf(data_path)
 
             # Save to cache
             logger.info(f"Saving processed data to cache: {cache_path}")
@@ -253,8 +305,10 @@ class XPCSDataLoader:
         # Perform basic data quality checks
         self._validate_loaded_data(c2_experimental, data["phi_angles_list"])
 
+        # Get shape info for logging
+        phi_shape = getattr(data['phi_angles_list'], 'shape', f"list[{len(data['phi_angles_list'])}]")
         logger.info(
-            f"Data loaded successfully - shapes: phi{data['phi_angles_list'].shape}, "
+            f"Data loaded successfully - shapes: phi{phi_shape}, "
             f"c2{c2_experimental.shape}"
         )
 
@@ -468,6 +522,84 @@ class XPCSDataLoader:
             )
 
         logger.info("Basic data quality validation completed")
+
+    def _load_from_npz(self, npz_path: str) -> dict[str, Any]:
+        """Load data from NPZ file (for testing purposes)."""
+        logger.info(f"Loading NPZ data from: {npz_path}")
+
+        try:
+            data = np.load(npz_path)
+
+            # Extract data arrays
+            c2_data = data['c2_data']
+            angles = data['angles']
+            t1_array = data['t1_array'] if 't1_array' in data else None
+            t2_array = data['t2_array'] if 't2_array' in data else None
+
+            logger.debug(f"NPZ data shape: {c2_data.shape}")
+            logger.debug(f"Angles: {len(angles)}")
+
+            # Create correlation matrices list
+            c2_list = []
+            for i in range(len(angles)):
+                c2_list.append(c2_data[i])
+
+            time_length = c2_data.shape[1] if len(c2_data.shape) > 1 else 1
+
+            logger.info(f"✓ Loaded NPZ data: {len(c2_list)} angles, time_length={time_length}")
+
+            return {
+                "c2_exp": c2_list,
+                "phi_angles_list": [angles] * len(c2_list),
+                "time_length": time_length,
+                "num_angles": len(angles),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to load NPZ file: {e}")
+            raise XPCSDataFormatError(f"Failed to load NPZ file {npz_path}: {e}")
+
+    def _load_from_cache(self, cache_path: str) -> dict[str, Any]:
+        """Load data from cache NPZ file."""
+        logger.info(f"Loading cached data from: {cache_path}")
+
+        try:
+            data = np.load(cache_path, allow_pickle=True)
+
+            return {
+                "c2_exp": data['c2_exp'].tolist(),
+                "phi_angles_list": data['phi_angles_list'].tolist(),
+                "time_length": int(data['time_length']),
+                "num_angles": int(data['num_angles']),
+            }
+        except Exception as e:
+            logger.error(f"Failed to load cache file: {e}")
+            raise XPCSDataFormatError(f"Failed to load cache file {cache_path}: {e}")
+
+    def _save_to_cache(self, data: dict[str, Any], cache_path: str) -> None:
+        """Save data to cache NPZ file."""
+        logger.info(f"Saving data to cache: {cache_path}")
+
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+
+            np.savez_compressed(
+                cache_path,
+                c2_exp=np.array(data['c2_exp'], dtype=object),
+                phi_angles_list=np.array(data['phi_angles_list'], dtype=object),
+                time_length=data['time_length'],
+                num_angles=data['num_angles']
+            )
+            logger.debug(f"✓ Cached data saved to: {cache_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save cache file: {e}")
+            # Don't raise exception for cache save failures
+
+    def _save_text_files(self, data: dict[str, Any]) -> None:
+        """Save phi angles to text file."""
+        # Simple stub - this would normally save angle data to text files
+        logger.debug("Text file generation skipped for test data")
 
 
 # Convenience function for simple usage

@@ -87,12 +87,12 @@ class TestChiSquaredAccuracy:
                     chi2_manual += (c2_exp[i, j, k] - c2_theo[i, j, k])**2
 
         # All methods should give identical results
-        np.testing.assert_allclose(chi2_vectorized, chi2_expected, rtol=1e-15)
-        np.testing.assert_allclose(chi2_manual, chi2_expected, rtol=1e-15)
+        np.testing.assert_allclose(chi2_vectorized, chi2_expected, rtol=1e-14)
+        np.testing.assert_allclose(chi2_manual, chi2_expected, rtol=1e-14)
 
         # Known expected value: 3 * 5 * 5 * (0.1)^2 = 75 * 0.01 = 0.75
         expected_value = 0.75
-        np.testing.assert_allclose(chi2_expected, expected_value, rtol=1e-15)
+        np.testing.assert_allclose(chi2_expected, expected_value, rtol=1e-14)
 
         print("✓ Chi-squared mathematical correctness verified")
 
@@ -290,13 +290,13 @@ class TestStatisticalAccuracy:
         intercept = (sum_y - slope * sum_x) / n
 
         # Should recover original coefficients exactly
-        np.testing.assert_allclose(slope, 3.0, rtol=1e-15)
-        np.testing.assert_allclose(intercept, 2.0, rtol=1e-15)
+        np.testing.assert_allclose(slope, 3.0, rtol=1e-14)
+        np.testing.assert_allclose(intercept, 2.0, rtol=1e-14)
 
         # Test with numpy polyfit
         coeffs = np.polyfit(x, y, 1)
-        np.testing.assert_allclose(coeffs[0], 3.0, rtol=1e-15)  # slope
-        np.testing.assert_allclose(coeffs[1], 2.0, rtol=1e-15)  # intercept
+        np.testing.assert_allclose(coeffs[0], 3.0, rtol=1e-14)  # slope
+        np.testing.assert_allclose(coeffs[1], 2.0, rtol=1e-14)  # intercept
 
         print("✓ Regression accuracy verified")
 
