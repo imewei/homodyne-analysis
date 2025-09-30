@@ -50,7 +50,7 @@ def run_classical_optimization(
         Results dictionary with optimized parameters and fit statistics,
         or None if optimization fails
     """
-    logger.info("Running classical optimization...")
+    logger.info("Running classical optimization... [CODE-VERSION: 2024-09-30-v2-empty-array-fix]")
 
     try:
         # Import here to avoid circular imports
@@ -91,20 +91,48 @@ def run_classical_optimization(
             )
 
         # Run the optimization (with return_tuple=True to get scipy result object)
+        logger.debug("About to call run_optimization with return_tuple=True")
         params, result = optimizer.run_optimization(
             initial_params=initial_params,
             phi_angles=phi_angles,
             c2_experimental=c2_exp,
             return_tuple=True,
         )
+        logger.debug(
+            f"run_optimization returned: params type={type(params)}, "
+            f"params={params if params is None else f'array[{len(params)}]'}, "
+            f"result type={type(result)}"
+        )
 
         if result is None or params is None:
-            logger.error("❌ Classical optimization returned no result")
+            logger.error("❌ Classical optimization returned no result (None values)")
+            logger.error(f"  params is None: {params is None}")
+            logger.error(f"  result is None: {result is None}")
             return None
 
-        # Validate optimization result
-        if not hasattr(result, "x") or result.x is None or len(result.x) == 0:
-            logger.error("❌ Classical optimization failed to find parameters")
+        # Validate optimization result - check multiple conditions
+        if not hasattr(result, "x"):
+            logger.error("❌ Optimization result has no 'x' attribute")
+            return None
+
+        if result.x is None:
+            logger.error("❌ Optimization result.x is None")
+            return None
+
+        if not isinstance(result.x, np.ndarray):
+            logger.error(
+                f"❌ Optimization result.x is not ndarray: {type(result.x)}"
+            )
+            return None
+
+        if result.x.size == 0 or len(result.x) == 0:
+            logger.error(
+                f"❌ Optimization result.x is empty: size={result.x.size}, len={len(result.x)}"
+            )
+            logger.error(f"  result.success={getattr(result, 'success', 'N/A')}")
+            logger.error(f"  result.message={getattr(result, 'message', 'N/A')}")
+            logger.error(f"  result.nit={getattr(result, 'nit', 'N/A')}")
+            logger.error(f"  result.nfev={getattr(result, 'nfev', 'N/A')}")
             return None
 
         logger.info("✓ Classical optimization completed successfully")
