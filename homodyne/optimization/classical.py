@@ -461,6 +461,7 @@ class ClassicalOptimizer:
         if (
             best_result is not None
             and best_params is not None
+            and len(best_params) > 0
             and isinstance(best_result, scipy_optimize.OptimizeResult)
         ):
             total_time = time.time() - start_time
@@ -530,22 +531,40 @@ class ClassicalOptimizer:
             enhanced_result.best_method = best_method  # Add best method info
 
             return best_params, enhanced_result
+
+        # If we reach here, no valid results were obtained
         total_time = time.time() - start_time
+
+        # Log detailed failure information
+        logger.error(
+            f"Classical optimization failed after {total_time:.2f}s - all methods failed"
+        )
+        logger.error(f"Attempted methods: {[method for method, _ in all_results]}")
+        logger.error(
+            f"Best result status: best_result={best_result is not None}, "
+            f"best_params={best_params is not None}, "
+            f"best_params_len={len(best_params) if best_params is not None else 0}"
+        )
 
         # Analyze failed results
         failed_analysis = self.analyze_optimization_results(
             [(method, False, result) for method, result in all_results]
         )
-
-        logger.error(
-            f"Classical optimization failed after {
-                total_time:.2f}s - all methods failed"
-        )
         logger.error(f"Failure analysis: {failed_analysis}")
 
+        # Log individual method failures
+        for method, result in all_results:
+            if isinstance(result, Exception):
+                logger.error(f"  {method}: {type(result).__name__}: {result}")
+            elif hasattr(result, "message"):
+                logger.error(f"  {method}: {result.message}")
+            else:
+                logger.error(f"  {method}: {result}")
+
         raise RuntimeError(
-            f"All classical methods failed. "
-            f"Failed methods: {[method for method, _ in all_results]}"
+            f"All classical methods failed to produce valid results. "
+            f"Attempted methods: {[method for method, _ in all_results]}. "
+            f"Check logs for detailed failure information."
         )
 
     def get_available_methods(self) -> list[str]:
@@ -796,6 +815,19 @@ class ClassicalOptimizer:
             # The method handles constraints through the objective function
 
             result = scipy_optimize.minimize(**kwargs)
+
+            # Validate that we got a valid result with parameters
+            if not hasattr(result, "x") or result.x is None or len(result.x) == 0:
+                error_msg = (
+                    f"Optimization method '{method}' returned empty or invalid parameter array. "
+                    f"Result status: success={getattr(result, 'success', 'N/A')}, "
+                    f"message={getattr(result, 'message', 'N/A')}, "
+                    f"nit={getattr(result, 'nit', 'N/A')}, "
+                    f"nfev={getattr(result, 'nfev', 'N/A')}"
+                )
+                logger.error(error_msg)
+                return False, ValueError(error_msg)
+
             return True, result
 
         except Exception as e:
