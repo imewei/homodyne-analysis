@@ -683,12 +683,20 @@ class ClassicalOptimizer:
             num_diffusion_params : num_diffusion_params + num_shear_params
         ]
 
-        # Check positive D0
-        if validation.get("check_positive_D0", True) and diffusion_params[0] <= 0:
+        # Check positive D0 (only if we have diffusion parameters)
+        if (
+            validation.get("check_positive_D0", True)
+            and len(diffusion_params) > 0
+            and diffusion_params[0] <= 0
+        ):
             return False, f"Negative D0: {diffusion_params[0]}"
 
-        # Check positive gamma_dot_t0
-        if validation.get("check_positive_gamma_dot_t0", True) and shear_params[0] <= 0:
+        # Check positive gamma_dot_t0 (only if we have shear parameters)
+        if (
+            validation.get("check_positive_gamma_dot_t0", True)
+            and len(shear_params) > 0
+            and shear_params[0] <= 0
+        ):
             return False, f"Negative gamma_dot_t0: {shear_params[0]}"
 
         # Check parameter bounds
