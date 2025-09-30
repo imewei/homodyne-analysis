@@ -11,6 +11,8 @@ validation.
 
 import logging
 
+import numpy as np
+
 # Module-level logger
 logger = logging.getLogger(__name__)
 
