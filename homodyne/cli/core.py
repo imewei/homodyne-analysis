@@ -388,10 +388,8 @@ def process_and_save_results(
         # Create output directory
         args.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Load data for visualization
-        data = analyzer.load_experimental_data()
-        phi_angles = data["phi_angles"]
-        c2_exp = data["c2_experimental"]
+        # Load data for visualization (returns tuple, not dict)
+        c2_exp, time_length, phi_angles, num_angles = analyzer.load_experimental_data()
 
         # Save individual method results
         for method_name, result in results.items():

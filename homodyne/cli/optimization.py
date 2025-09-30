@@ -223,7 +223,7 @@ def run_robust_optimization(
             optimizer = analyzer._enhanced_robust_optimizer
         else:
             logger.info("✓ Creating new robust optimizer")
-            optimizer = create_robust_optimizer(analyzer)
+            optimizer = create_robust_optimizer(analyzer, analyzer.config)
 
         # Validate data shapes before optimization
         if c2_exp is None or len(c2_exp) == 0:
