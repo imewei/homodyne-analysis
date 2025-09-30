@@ -52,7 +52,6 @@ except ImportError:
 
     def setup_shell_completion(parser: "argparse.ArgumentParser") -> None:
         """Fallback when completion is not available."""
-        pass
 
 
 def _remove_mcmc_sections(config):
@@ -298,7 +297,7 @@ def create_config_from_template(
     )
     print("  --method all        # All available methods (classical + robust)")
     print("\nDocumentation: CONFIGURATION_MODES.md")
-    print(f"Templates available: {', '.join(list(valid_modes.keys())[:-1])}")
+    print(f"Templates available: {', '.join(valid_modes)}")
 
 
 def main():

@@ -54,12 +54,18 @@ Shell Support:
   zsh         - Install for zsh shell
   fish        - Install for fish shell
 
-Environment Detection:
-  The installer automatically detects your virtual environment type:
+Environment Requirements:
+  ⚠️  IMPORTANT: Installation ONLY works inside a virtual environment.
+  System-wide installation is blocked for security and isolation.
+
+  Supported virtual environment types:
   - Conda/Mamba environments
   - Python venv/virtualenv
   - Poetry environments
   - Pipenv environments
+
+  The installer automatically detects your environment type and installs
+  completion files only within the virtual environment directory.
 
 Examples:
   # Quick install with auto-detection
@@ -82,7 +88,7 @@ Performance Options:
 Advanced Features:
   --enable-project    Enable project-aware completions (default)
   --enable-smart      Enable smart context-aware completions (default)
-  --enable-aliases    Enable command aliases (hmv, hmm, etc.) (default)
+  --enable-aliases    Enable command aliases (hma, hmc, hmr, etc.) (default)
         """,
     )
 
@@ -112,7 +118,7 @@ Advanced Features:
     parser.add_argument(
         "--no-aliases",
         action="store_true",
-        help="Disable command aliases (hmv, hmm, etc.)",
+        help="Disable command aliases (hma, hmc, hmr, etc.)",
     )
 
     parser.add_argument(
@@ -338,9 +344,13 @@ def main() -> int:
             if not args.quiet:
                 print("\n🚀 Installation complete!")
                 print("\n📋 Next steps:")
-                print("   1. Restart your shell or run: source ~/.bashrc (or ~/.zshrc)")
+                print("   1. Deactivate and reactivate your virtual environment:")
+                print("      $ deactivate && source /path/to/venv/bin/activate")
                 print("   2. Try: homodyne <TAB> to test completion")
-                print("   3. Use aliases: hmv, hmm, hmh for quick analysis")
+                print("   3. Use aliases: hmc, hmr, hma for quick analysis")
+                print(
+                    "\n💡 Note: Completions activate automatically when you activate the venv"
+                )
 
             return 0
 

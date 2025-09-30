@@ -46,7 +46,7 @@ def handle_fast_completion():
             completions = []
 
             if prev_word in ["--method", "-m"]:
-                methods = ["vi", "mcmc", "hybrid"]  # Updated for new system
+                methods = ["classical", "robust", "all"]  # Updated for current system
                 if current_word:
                     methods = [m for m in methods if m.startswith(current_word)]
                 completions = methods

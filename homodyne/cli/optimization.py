@@ -90,19 +90,20 @@ def run_classical_optimization(
                 f"⚠️  Data shape mismatch: expected {expected_shape}, got {c2_exp.shape}"
             )
 
-        # Run the optimization
-        result = optimizer.run_optimization(
+        # Run the optimization (with return_tuple=True to get scipy result object)
+        params, result = optimizer.run_optimization(
             initial_params=initial_params,
             phi_angles=phi_angles,
             c2_experimental=c2_exp,
+            return_tuple=True,
         )
 
-        if result is None:
+        if result is None or params is None:
             logger.error("❌ Classical optimization returned no result")
             return None
 
         # Validate optimization result
-        if not hasattr(result, "x") or result.x is None:
+        if not hasattr(result, "x") or result.x is None or len(result.x) == 0:
             logger.error("❌ Classical optimization failed to find parameters")
             return None
 

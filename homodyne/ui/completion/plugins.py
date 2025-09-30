@@ -279,14 +279,14 @@ class HomodyneCommandPlugin(CompletionPlugin):
 
     def _get_smart_methods(self, context: CompletionContext) -> list[str]:
         """Get smart method suggestions based on config context."""
-        default_methods = ["vi", "mcmc", "hybrid"]
+        default_methods = ["classical", "robust", "all"]
 
         if context.homodyne_config:
             mode = context.homodyne_config.get("mode", "").lower()
             if "static" in mode:
-                return ["vi", "hybrid"]  # VI better for static cases
+                return ["classical", "all"]  # Classical good for static cases
             if "laminar" in mode:
-                return ["mcmc", "hybrid"]  # MCMC better for dynamic cases
+                return ["robust", "all"]  # Robust better for dynamic cases
 
         return default_methods
 
@@ -317,7 +317,7 @@ class HomodyneCommandPlugin(CompletionPlugin):
 
 
 class AliasPlugin(CompletionPlugin):
-    """Plugin for completion of homodyne aliases (hmv, hmm, hmh, etc.)."""
+    """Plugin for completion of homodyne aliases (hmc, hmr, hma, etc.)."""
 
     @property
     def info(self) -> PluginInfo:
@@ -331,16 +331,16 @@ class AliasPlugin(CompletionPlugin):
 
     def can_complete(self, context: CompletionContext) -> bool:
         """Can complete homodyne aliases."""
-        aliases = ["hmv", "hmm", "hmh", "hconfig", "hexp", "hsim", "hm"]
+        aliases = ["hmc", "hmr", "hma", "hconfig", "hexp", "hsim", "hm"]
         return context.command in aliases
 
     def complete(self, context: CompletionContext) -> list[CompletionResult]:
         """Complete alias commands."""
         # Map aliases to their full equivalents
         alias_map = {
-            "hmv": "homodyne --method vi",
-            "hmm": "homodyne --method mcmc",
-            "hmh": "homodyne --method hybrid",
+            "hmc": "homodyne --method classical",
+            "hmr": "homodyne --method robust",
+            "hma": "homodyne --method all",
             "hconfig": "homodyne-config",
             "hexp": "homodyne --plot-experimental-data",
             "hsim": "homodyne --plot-simulated-data",

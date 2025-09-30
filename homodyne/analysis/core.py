@@ -2815,7 +2815,10 @@ class HomodyneAnalysisCore:
         # handles all file outputs with proper directory structure
 
     def _plot_experimental_data_validation(
-        self, c2_experimental: np.ndarray, phi_angles: np.ndarray
+        self,
+        c2_experimental: np.ndarray,
+        phi_angles: np.ndarray,
+        save_path: str | None = None,
     ) -> None:
         """
         Plot experimental C2 data immediately after loading for validation.
@@ -2829,6 +2832,8 @@ class HomodyneAnalysisCore:
             Experimental correlation data with shape (n_angles, n_t2, n_t1)
         phi_angles : np.ndarray
             Array of scattering angles in degrees
+        save_path : str, optional
+            Path where to save the plot. If None, uses configuration default.
         """
         try:
             # Import plotting dependencies
@@ -2965,18 +2970,24 @@ Validation:
             )
 
             # Save the validation plot
-            plots_base_dir = (
-                self.config.get("output_settings", {})
-                .get("plotting", {})
-                .get("output", {})
-                .get("base_directory", "./plots")
-                if self.config
-                else "./plots"
-            )
-            plots_dir = Path(plots_base_dir)
-            plots_dir.mkdir(parents=True, exist_ok=True)
+            if save_path:
+                # Use provided save path
+                output_file = Path(save_path)
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+            else:
+                # Use configuration default
+                plots_base_dir = (
+                    self.config.get("output_settings", {})
+                    .get("plotting", {})
+                    .get("output", {})
+                    .get("base_directory", "./plots")
+                    if self.config
+                    else "./plots"
+                )
+                plots_dir = Path(plots_base_dir)
+                plots_dir.mkdir(parents=True, exist_ok=True)
+                output_file = plots_dir / "experimental_data_validation.png"
 
-            output_file = plots_dir / "experimental_data_validation.png"
             plt.savefig(output_file, dpi=300, bbox_inches="tight")
             logger.info(f"Experimental data validation plot saved to: {output_file}")
 

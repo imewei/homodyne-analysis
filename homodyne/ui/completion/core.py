@@ -385,15 +385,15 @@ class CompletionEngine:
 
     def _complete_methods(self, context: CompletionContext) -> list[str]:
         """Complete analysis methods based on config context."""
-        default_methods = ["vi", "mcmc", "hybrid"]
+        default_methods = ["classical", "robust", "all"]
 
         # Smart method suggestion based on config
         if context.homodyne_config:
             mode = context.homodyne_config.get("mode", "")
             if "static" in mode.lower():
-                return ["vi", "hybrid"]
+                return ["classical", "all"]
             if "laminar" in mode.lower():
-                return ["mcmc", "hybrid"]
+                return ["robust", "all"]
 
         return default_methods
 

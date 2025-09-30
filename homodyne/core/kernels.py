@@ -785,8 +785,62 @@ def compute_sinc_squared_numba_flexible(x, prefactor=None):
     return _compute_sinc_squared_single(x)
 
 
-# Export the legacy function as the main API function for g1
-compute_g1_correlation_numba = compute_g1_correlation_legacy
+def compute_g1_correlation_vectorized(D_integral, wavevector_q_squared_half_dt):
+    """
+    Vectorized g1 correlation calculation from pre-computed diffusion integral.
+
+    This is the optimized 2-parameter version for performance-critical calculations
+    where the diffusion integral has been pre-computed.
+
+    Parameters
+    ----------
+    D_integral : array_like
+        Pre-computed diffusion integral: ∫D(t')dt' from t1 to t2
+    wavevector_q_squared_half_dt : float
+        Pre-computed factor: q²/2 * Δt
+
+    Returns
+    -------
+    array_like
+        g1 correlation: exp(-q²/2 * Δt * D_integral)
+
+    Notes
+    -----
+    This is the vectorized version optimized for batch processing.
+    For full 11-parameter calculations, use compute_g1_correlation_legacy.
+    """
+    return np.exp(-wavevector_q_squared_half_dt * D_integral)
+
+
+def compute_g1_correlation_numba_flexible(*args, **kwargs):
+    """
+    Flexible g1 correlation function supporting both legacy and vectorized signatures.
+
+    Signatures:
+    -----------
+    1. Legacy (11 parameters):
+       compute_g1_correlation_numba(t1, t2, phi, q, D0, alpha, D_offset,
+                                     gamma0, beta, gamma_offset, phi0)
+
+    2. Vectorized (2 parameters):
+       compute_g1_correlation_numba(D_integral, wavevector_q_squared_half_dt)
+    """
+    if len(args) == 2 and not kwargs:
+        # Vectorized signature: (D_integral, wavevector_q_squared_half_dt)
+        return compute_g1_correlation_vectorized(args[0], args[1])
+    if len(args) == 11 or (len(args) + len(kwargs)) == 11:
+        # Legacy signature: 11 parameters
+        return compute_g1_correlation_legacy(*args, **kwargs)
+    raise TypeError(
+        f"compute_g1_correlation_numba() takes either 2 arguments "
+        f"(D_integral, wavevector_q_squared_half_dt) or 11 arguments "
+        f"(t1, t2, phi, q, D0, alpha, D_offset, gamma0, beta, gamma_offset, phi0), "
+        f"got {len(args)} positional and {len(kwargs)} keyword arguments"
+    )
+
+
+# Export the flexible function as the main API
+compute_g1_correlation_numba = compute_g1_correlation_numba_flexible
 
 # Export the flexible sinc function
 compute_sinc_squared_numba = compute_sinc_squared_numba_flexible
@@ -813,7 +867,7 @@ def calculate_diffusion_coefficient_numba(t, D0, alpha, D_offset):
         D(t) = D0 * t^alpha + D_offset
     """
     D_t = D0 * (t**alpha) + D_offset
-    return max(D_t, 1e-10)  # Ensure minimum value for physical validity
+    return np.maximum(D_t, 1e-10)  # Ensure minimum value for physical validity
 
 
 def calculate_shear_rate_numba(t, gamma0, beta, gamma_offset):
@@ -837,7 +891,7 @@ def calculate_shear_rate_numba(t, gamma0, beta, gamma_offset):
         gamma_dot(t) = gamma0 * t^beta + gamma_offset
     """
     gamma_t = gamma0 * (t**beta) + gamma_offset
-    return max(gamma_t, 0.0)  # Shear rate must be non-negative
+    return np.maximum(gamma_t, 0.0)  # Shear rate must be non-negative
 
 
 def get_kernel_info() -> dict[str, Any]:

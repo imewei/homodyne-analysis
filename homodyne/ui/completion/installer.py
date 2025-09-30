@@ -209,11 +209,13 @@ class CompletionInstaller:
             )
             return False
 
-        # Check environment
-        if self.env_type == EnvironmentType.SYSTEM and not self.config.force_install:
-            result.warnings.append(
-                "Installing in system Python (virtual environment recommended)"
+        # Check environment - MUST be in a virtual environment
+        if self.env_type == EnvironmentType.SYSTEM:
+            result.errors.append(
+                "Cannot install completion system in system Python. "
+                "Please activate a virtual environment (venv, conda, poetry, etc.) first."
             )
+            return False
 
         # Check shell support
         if ShellType.AUTO in self.config.shells:
@@ -263,8 +265,10 @@ class CompletionInstaller:
             temp_install = Path(temp_dir) / "homodyne_completion"
 
             try:
-                # Install to temporary location first
-                if not self._install_to_directory(temp_install, result):
+                # Install to temporary location first, using final paths
+                if not self._install_to_directory(
+                    temp_install, result, use_final_paths=True
+                ):
                     return False
 
                 # Atomic move to final location
@@ -290,25 +294,39 @@ class CompletionInstaller:
 
     def _direct_install(self, result: InstallationResult) -> bool:
         """Perform direct installation."""
-        return self._install_to_directory(self.install_base, result)
+        return self._install_to_directory(
+            self.install_base, result, use_final_paths=False
+        )
 
     def _install_to_directory(
-        self, install_dir: Path, result: InstallationResult
+        self,
+        install_dir: Path,
+        result: InstallationResult,
+        use_final_paths: bool = False,
     ) -> bool:
-        """Install completion system to specified directory."""
+        """Install completion system to specified directory.
+
+        Args:
+            install_dir: Directory to install to
+            result: Installation result object
+            use_final_paths: If True, use final installation paths instead of install_dir paths
+        """
         try:
             install_dir.mkdir(parents=True, exist_ok=True)
 
+            # Determine which paths to use in generated scripts
+            target_dir = self.install_base if use_final_paths else install_dir
+
             # Install completion engine
-            if not self._install_completion_engine(install_dir, result):
+            if not self._install_completion_engine(install_dir, result, target_dir):
                 return False
 
             # Install shell scripts
-            if not self._install_shell_scripts(install_dir, result):
+            if not self._install_shell_scripts(install_dir, result, target_dir):
                 return False
 
             # Install activation scripts
-            if not self._install_activation_scripts(install_dir, result):
+            if not self._install_activation_scripts(install_dir, result, target_dir):
                 return False
 
             # Configure cache
@@ -322,7 +340,7 @@ class CompletionInstaller:
             return False
 
     def _install_completion_engine(
-        self, install_dir: Path, result: InstallationResult
+        self, install_dir: Path, result: InstallationResult, target_dir: Path
     ) -> bool:
         """Install the completion engine Python module."""
         try:
@@ -338,7 +356,7 @@ class CompletionInstaller:
                 result.installed_files.append(dest_file)
 
             # Create main completion script
-            main_script = self._generate_main_completion_script(install_dir)
+            main_script = self._generate_main_completion_script(target_dir)
             main_script_path = install_dir / "completion_engine.py"
             main_script_path.write_text(main_script)
             result.installed_files.append(main_script_path)
@@ -350,7 +368,7 @@ class CompletionInstaller:
             return False
 
     def _install_shell_scripts(
-        self, install_dir: Path, result: InstallationResult
+        self, install_dir: Path, result: InstallationResult, target_dir: Path
     ) -> bool:
         """Install shell-specific completion scripts."""
         script_dir = install_dir / "scripts"
@@ -361,7 +379,7 @@ class CompletionInstaller:
                 if shell == ShellType.AUTO:
                     continue
 
-                script_content = self._generate_shell_script(shell, install_dir)
+                script_content = self._generate_shell_script(shell, target_dir)
                 script_file = script_dir / f"completion.{shell.value}"
                 script_file.write_text(script_content)
                 script_file.chmod(0o755)
@@ -374,21 +392,21 @@ class CompletionInstaller:
             return False
 
     def _install_activation_scripts(
-        self, install_dir: Path, result: InstallationResult
+        self, install_dir: Path, result: InstallationResult, target_dir: Path
     ) -> bool:
         """Install activation scripts for automatic loading."""
         try:
             # Environment-specific activation
             if self.env_type in [EnvironmentType.CONDA, EnvironmentType.MAMBA]:
-                return self._install_conda_activation(install_dir, result)
-            return self._install_venv_activation(install_dir, result)
+                return self._install_conda_activation(install_dir, result, target_dir)
+            return self._install_venv_activation(install_dir, result, target_dir)
 
         except Exception as e:
             result.errors.append(f"Failed to install activation scripts: {e}")
             return False
 
     def _install_conda_activation(
-        self, install_dir: Path, result: InstallationResult
+        self, install_dir: Path, result: InstallationResult, target_dir: Path
     ) -> bool:
         """Install conda activation scripts."""
         activate_dir = self.env_path / "etc" / "conda" / "activate.d"
@@ -398,7 +416,7 @@ class CompletionInstaller:
             if shell == ShellType.AUTO:
                 continue
 
-            activation_script = self._generate_activation_script(shell, install_dir)
+            activation_script = self._generate_activation_script(shell, target_dir)
             script_file = activate_dir / f"homodyne-completion-v2.{shell.value}"
             script_file.write_text(activation_script)
             script_file.chmod(0o755)
@@ -407,11 +425,11 @@ class CompletionInstaller:
         return True
 
     def _install_venv_activation(
-        self, install_dir: Path, result: InstallationResult
+        self, install_dir: Path, result: InstallationResult, target_dir: Path
     ) -> bool:
         """Install virtual environment activation scripts."""
-        # For regular venv, we create a script that can be sourced manually
-        # or add it to existing activation scripts
+        # For regular venv, we create standalone activation scripts
+        # AND integrate them into the venv's activate script
 
         bin_dir = self.env_path / "bin"
         if not bin_dir.exists():
@@ -421,13 +439,82 @@ class CompletionInstaller:
             if shell == ShellType.AUTO:
                 continue
 
-            activation_script = self._generate_activation_script(shell, install_dir)
+            # Create standalone activation script
+            activation_script = self._generate_activation_script(shell, target_dir)
             script_file = bin_dir / f"activate-homodyne-completion.{shell.value}"
             script_file.write_text(activation_script)
             script_file.chmod(0o755)
             result.installed_files.append(script_file)
 
+        # Integrate into venv's activate script for automatic loading
+        self._integrate_with_venv_activate(bin_dir, target_dir, result)
+
         return True
+
+    def _integrate_with_venv_activate(
+        self, bin_dir: Path, target_dir: Path, result: InstallationResult
+    ) -> None:
+        """Integrate completion loading into venv's activate script."""
+        # Detect which shells are configured
+        for shell in self.config.shells:
+            if shell == ShellType.AUTO:
+                continue
+
+            activate_file = bin_dir / "activate"
+            if shell == ShellType.ZSH:
+                # For zsh, we need to patch the activate script
+                if activate_file.exists():
+                    self._patch_activate_script(
+                        activate_file, shell, target_dir, result
+                    )
+
+    def _patch_activate_script(
+        self,
+        activate_file: Path,
+        shell: ShellType,
+        target_dir: Path,
+        result: InstallationResult,
+    ) -> None:
+        """Patch venv's activate script to load completion."""
+        try:
+            # Read current activate script
+            content = activate_file.read_text()
+
+            # Check if already patched
+            completion_marker = "# Homodyne completion system"
+            if completion_marker in content:
+                result.warnings.append(
+                    f"Activate script already patched for {shell.value}"
+                )
+                return
+
+            # Create the patch content
+            script_path = target_dir / "scripts" / f"completion.{shell.value}"
+            patch_content = f"""
+{completion_marker}
+if [[ -n "$ZSH_VERSION" ]] && [[ -f "{script_path}" ]]; then
+    source "{script_path}" 2>/dev/null || true
+fi
+"""
+
+            # Add patch at the end of the activate script
+            patched_content = content + patch_content
+
+            # Backup original
+            if self.config.backup_existing:
+                backup_file = activate_file.with_suffix(".backup")
+                backup_file.write_text(content)
+                result.backup_files.append(backup_file)
+
+            # Write patched version
+            activate_file.write_text(patched_content)
+            result.warnings.append(f"Patched {activate_file} to auto-load completions")
+
+        except Exception as e:
+            result.warnings.append(
+                f"Failed to patch activate script: {e}. "
+                f"Manual source required: source {activate_file.parent}/activate-homodyne-completion.{shell.value}"
+            )
 
     def _setup_cache_system(
         self, install_dir: Path, result: InstallationResult
@@ -450,66 +537,168 @@ class CompletionInstaller:
 
     def _generate_main_completion_script(self, install_dir: Path) -> str:
         """Generate the main completion script."""
-        return f'''#!/usr/bin/env python3
+        return '''#!/usr/bin/env python3
 """
 Homodyne Advanced Completion System Entry Point
 ===============================================
 
-This script serves as the entry point for the advanced completion system.
+Standalone completion script that provides intelligent completions.
 """
 
 import sys
-import os
 from pathlib import Path
 
-# Add engine directory to path
-engine_dir = Path(__file__).parent / "engine"
-sys.path.insert(0, str(engine_dir))
+def get_method_completions():
+    """Get method completions."""
+    return ["classical", "robust", "all"]
 
-from .core import CompletionEngine, CompletionContext
-from .plugins import get_plugin_manager
-from .cache import CompletionCache, CacheConfig
+def get_backend_completions():
+    """Get distributed backend completions."""
+    return ["auto", "ray", "mpi", "dask", "multiprocessing"]
+
+def get_shell_completions():
+    """Get shell type completions for --install/uninstall-completion."""
+    return ["bash", "zsh", "fish", "powershell"]
+
+def get_config_completions():
+    """Get config file completions."""
+    try:
+        cwd = Path.cwd()
+        return [f.name for f in cwd.iterdir() if f.is_file() and f.suffix == ".json"]
+    except Exception:
+        return []
+
+def get_homodyne_flags():
+    """Get homodyne command flags."""
+    return [
+        # Basic options
+        "--help", "--version",
+        "--method", "--config", "--data", "--output", "--output-dir",
+        "--verbose", "--quiet",
+        # Analysis mode selection
+        "--static-isotropic", "--static-anisotropic", "--laminar-flow",
+        # Plotting options
+        "--plot-experimental-data", "--plot-simulated-data",
+        "--contrast", "--offset", "--phi-angles",
+        # Shell completion
+        "--install-completion", "--uninstall-completion",
+        # Distributed computing
+        "--distributed", "--backend", "--workers", "--distributed-config",
+        # ML acceleration
+        "--ml-accelerated", "--train-ml-model", "--enable-transfer-learning", "--ml-data-path",
+        # Advanced optimization
+        "--parameter-sweep", "--parameter-ranges", "--benchmark", "--auto-optimize",
+    ]
+
+def get_config_flags():
+    """Get homodyne-config command flags."""
+    return [
+        "--help",
+        "--mode", "-m",
+        "--output", "-o",
+        "--sample", "-s",
+        "--experiment", "-e",
+        "--author", "-a",
+    ]
+
+def get_config_mode_completions():
+    """Get configuration mode completions."""
+    return ["static_isotropic", "static_anisotropic", "laminar_flow"]
 
 def main():
     """Main completion handler."""
     try:
-        # Parse shell arguments
+        # Parse arguments: script shell_type [command] [args...]
         if len(sys.argv) < 2:
-            print("Usage: completion_engine.py <shell_type> [args...]")
-            sys.exit(1)
+            return
 
         shell_type = sys.argv[1]
-        completion_args = sys.argv[2:]
+        words = sys.argv[2:] if len(sys.argv) > 2 else []
 
-        # Create completion context
-        context = CompletionContext.from_shell_args(completion_args, shell_type)
+        # Handle empty command line - show all flags
+        if not words:
+            for flag in get_homodyne_flags():
+                print(flag)
+            return
 
-        # Initialize completion engine
-        cache_dir = Path(__file__).parent / "cache"
-        cache_config = CacheConfig(
-            max_memory_mb={self.config.cache_size_mb},
-            enable_persistence={str(self.config.enable_caching).lower()},
-        )
+        # Identify the command being completed
+        command = words[0] if words else ""
 
-        cache = CompletionCache(cache_dir=cache_dir, config=cache_config)
-        engine = CompletionEngine(
-            cache_dir=cache_dir,
-            enable_caching={str(self.config.enable_caching).lower()},
-        )
+        # Get the previous word and current word for context
+        current = words[-1] if words else ""
+        prev = words[-2] if len(words) >= 2 else ""
 
-        # Get plugin manager
-        plugin_manager = get_plugin_manager()
+        # Determine which command we're completing for
+        is_config_command = command == "homodyne-config"
+        is_homodyne_command = command == "homodyne" or command.startswith("homodyne")
 
-        # Generate completions
-        results = plugin_manager.get_completions(context)
-
-        # Output completions for shell
-        for result in results:
-            for completion in result.completions:
-                print(completion)
+        # Context-aware completions based on previous flag
+        if prev == "--method":
+            # Complete method values
+            for method in get_method_completions():
+                print(method)
+        elif prev == "--backend":
+            # Complete backend values
+            for backend in get_backend_completions():
+                print(backend)
+        elif prev in ["--install-completion", "--uninstall-completion"]:
+            # Complete shell types
+            for shell in get_shell_completions():
+                print(shell)
+        elif prev in ["--config", "--output", "-o"]:
+            # Complete config file names
+            for config in get_config_completions():
+                print(config)
+        elif prev in ["--mode", "-m"]:
+            # Complete mode values
+            for mode in get_config_mode_completions():
+                print(mode)
+        elif prev in ["--output-dir", "--data", "--distributed-config", "--ml-data-path"]:
+            # Shell will handle directory/file completion
+            pass
+        elif prev in ["--workers", "--contrast", "--offset"]:
+            # Numeric values - no completion
+            pass
+        elif prev in ["--sample", "-s", "--experiment", "-e", "--author", "-a"]:
+            # Text values - no completion
+            pass
+        elif prev == "--phi-angles":
+            # Example phi angles
+            print("0,45,90,135")
+            print("0,36,72,108,144")
+            print("30,60,90")
+        elif prev == "--parameter-ranges":
+            # Example parameter ranges
+            print("D0:10-100,alpha:-1-1")
+            print("D0:0.001-0.1,beta:0.5-1.5")
+        elif current.startswith("--"):
+            # Completing a flag - show appropriate flags for the command
+            if is_config_command:
+                for flag in get_config_flags():
+                    if flag.startswith(current):
+                        print(flag)
+            else:
+                for flag in get_homodyne_flags():
+                    if flag.startswith(current):
+                        print(flag)
+        elif len(words) == 1 or (len(words) >= 2 and current == ""):
+            # Just the command name, or command + empty current word - show all flags
+            if is_config_command:
+                for flag in get_config_flags():
+                    print(flag)
+            else:
+                for flag in get_homodyne_flags():
+                    print(flag)
+        elif not current.startswith("-"):
+            # Completing a value - check if it should be a config file
+            if prev in ["--config", "--output", "-o"]:
+                for config in get_config_completions():
+                    if config.startswith(current):
+                        print(config)
+            # Otherwise let shell handle file completion
 
     except Exception as e:
-        # Fallback to basic completion
+        # Fallback - output help flag
         print("--help")
 
 if __name__ == "__main__":
@@ -569,28 +758,64 @@ complete -F _homodyne_advanced_completion homodyne-gpu 2>/dev/null || true
 # Homodyne Advanced Completion System - Zsh
 # Generated by installation system
 
-# Advanced completion function
+# Initialize completion system if needed
+autoload -Uz compinit
+compinit -i 2>/dev/null || true
+
+# Advanced completion function for homodyne commands
 _homodyne_advanced_completion() {{
-    local -a completions
-    local -a words
+    local curcontext="$curcontext" state line
+    typeset -A opt_args
+    local -a completions completion_list
 
-    # Get current words
-    words=(${{=COMP_WORDS}})
+    # Call Python completion engine with current command line words
+    # Pass: shell_type followed by all words in the command line
+    local engine_output
+    engine_output=$(python3 "{engine_script}" zsh "${{words[@]}}" 2>/dev/null)
 
-    # Call Python completion engine
-    completions=($(python3 "{engine_script}" zsh "${{words[@]}}" 2>/dev/null))
+    if [[ -n "$engine_output" ]]; then
+        # Parse completions into array (split on newlines)
+        completion_list=("${{(@f)engine_output}}")
 
-    if [[ ${{#completions}} -gt 0 ]]; then
-        _describe 'completions' completions
+        # Provide completions
+        if [[ ${{#completion_list}} -gt 0 ]]; then
+            _describe 'homodyne completions' completion_list
+        else
+            # Fallback to file completion if no matches
+            _files
+        fi
     else
-        # Fallback to file completion
+        # Fallback to file completion if engine fails
         _files
     fi
 }}
 
-# Register completions for all homodyne commands
+# Separate completion function for homodyne-config
+_homodyne_config_completion() {{
+    local curcontext="$curcontext" state line
+    local -a completions completion_list
+
+    # Call completion engine
+    local engine_output
+    engine_output=$(python3 "{engine_script}" zsh "${{words[@]}}" 2>/dev/null)
+
+    if [[ -n "$engine_output" ]]; then
+        completion_list=("${{(@f)engine_output}}")
+        if [[ ${{#completion_list}} -gt 0 ]]; then
+            _describe 'config completions' completion_list
+        else
+            _files -g '*.json'
+        fi
+    else
+        # Fallback to JSON files
+        _files -g '*.json'
+    fi
+}}
+
+# Register completions for homodyne commands
+# Use 2>/dev/null to suppress errors during initialization
 compdef _homodyne_advanced_completion homodyne 2>/dev/null || true
-compdef _homodyne_advanced_completion homodyne-config 2>/dev/null || true
+compdef _homodyne_config_completion homodyne-config 2>/dev/null || true
 compdef _homodyne_advanced_completion homodyne-gpu 2>/dev/null || true
 
 {aliases}
@@ -617,7 +842,7 @@ complete -c homodyne-gpu -f -a "(__homodyne_advanced_complete)"
         """Generate activation script for shell."""
         script_path = install_dir / "scripts" / f"completion.{shell.value}"
 
-        if shell in [ShellType.BASH, ShellType.ZSH]:
+        if shell == ShellType.BASH:
             return f"""#!/bin/bash
 # Homodyne Advanced Completion System Activation
 # Auto-generated activation script
@@ -626,23 +851,34 @@ if [[ -f "{script_path}" ]]; then
     source "{script_path}"
 fi
 """
+        if shell == ShellType.ZSH:
+            return f"""#!/bin/zsh
+# Homodyne Advanced Completion System Activation
+# Auto-generated activation script for Zsh
+
+if [[ -f "{script_path}" ]]; then
+    source "{script_path}"
+fi
+"""
         if shell == ShellType.FISH:
-            return f"""# Homodyne Advanced Completion System Activation
+            return f"""#!/usr/bin/env fish
+# Homodyne Advanced Completion System Activation
 # Auto-generated activation script
 
 if test -f "{script_path}"
     source "{script_path}"
 end
 """
+        return ""
 
     def _generate_aliases(self) -> str:
         """Generate command aliases."""
         return """
 # Homodyne command aliases
 if [[ -n "$BASH_VERSION" ]] || [[ -n "$ZSH_VERSION" ]]; then
-    alias hmv='homodyne --method vi'        # Fast VI analysis
-    alias hmm='homodyne --method mcmc'      # Accurate MCMC analysis
-    alias hmh='homodyne --method hybrid'    # Balanced VI→MCMC pipeline
+    alias hmc='homodyne --method classical' # Classical optimization methods
+    alias hmr='homodyne --method robust'    # Robust optimization methods
+    alias hma='homodyne --method all'       # All optimization methods
     alias hconfig='homodyne-config'         # Configuration generator
     alias hexp='homodyne --plot-experimental-data'   # Plot experimental data
     alias hsim='homodyne --plot-simulated-data'      # Plot simulated data
@@ -756,6 +992,55 @@ fi
                 for script_file in bin_dir.glob(pattern):
                     script_file.unlink()
                     result.installed_files.append(script_file)
+
+            # Remove patch from venv activate script
+            self._unpatch_activate_script(bin_dir, result)
+
+    def _unpatch_activate_script(
+        self, bin_dir: Path, result: InstallationResult
+    ) -> None:
+        """Remove completion patch from venv activate script."""
+        activate_file = bin_dir / "activate"
+        if not activate_file.exists():
+            return
+
+        try:
+            content = activate_file.read_text()
+            completion_marker = "# Homodyne completion system"
+
+            if completion_marker not in content:
+                return  # Not patched
+
+            # Remove the patched section
+            lines = content.split("\n")
+            cleaned_lines = []
+            skip_section = False
+
+            for line in lines:
+                if completion_marker in line:
+                    skip_section = True
+                    continue
+                if skip_section:
+                    # Skip until we find an empty line or next section
+                    if line.strip() == "" or not line.startswith(
+                        ("if", "fi", " ", "\t")
+                    ):
+                        skip_section = False
+                    else:
+                        continue
+                cleaned_lines.append(line)
+
+            # Write cleaned content
+            activate_file.write_text("\n".join(cleaned_lines))
+            result.warnings.append("Removed completion patch from activate script")
+
+            # Restore backup if it exists
+            backup_file = activate_file.with_suffix(".backup")
+            if backup_file.exists():
+                backup_file.unlink()
+
+        except Exception as e:
+            result.warnings.append(f"Failed to unpatch activate script: {e}")
 
     def _restore_backups(self, backup_files: list[Path]) -> None:
         """Restore backup files."""

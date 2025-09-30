@@ -63,9 +63,9 @@ homodyne --method <TAB>
 homodyne --config <TAB>
 
 # Quick aliases
-hmv <TAB>    # homodyne --method vi
-hmm <TAB>    # homodyne --method mcmc
-hmh <TAB>    # homodyne --method hybrid
+hmc <TAB>    # homodyne --method classical
+hmr <TAB>    # homodyne --method robust
+hma <TAB>    # homodyne --method all
 ```
 
 ### Uninstallation
@@ -88,19 +88,19 @@ python homodyne/ui/completion/uninstall_completion.py --force
    - Plugin management
    - Performance optimization
 
-1. **Plugin System** (`plugins.py`)
+2. **Plugin System** (`plugins.py`)
 
    - Extensible completion modules
    - Priority-based execution
    - Context-aware completions
 
-1. **Cache System** (`cache.py`)
+3. **Cache System** (`cache.py`)
 
    - Environment-isolated caching
    - SQLite persistence
    - Intelligent invalidation
 
-1. **Installer** (`installer.py`)
+4. **Installer** (`installer.py`)
 
    - Atomic installation
    - Environment detection
@@ -109,7 +109,7 @@ python homodyne/ui/completion/uninstall_completion.py --force
 ### Plugin Types
 
 - **HomodyneCommandPlugin**: Core homodyne command completions
-- **AliasPlugin**: Command alias completions (hmv, hmm, etc.)
+- **AliasPlugin**: Command alias completions (hmc, hmr, hma, etc.)
 - **ProjectPlugin**: Project-aware completions
 
 ## Configuration
@@ -194,8 +194,8 @@ python homodyne/ui/completion/test_completion.py --benchmark --verbose
 The new system is designed to coexist with the existing completion system:
 
 1. **Install v2.0**: `python install_completion.py`
-1. **Test functionality**: Verify completions work
-1. **Uninstall v1.0**: `homodyne-cleanup` (from original system)
+2. **Test functionality**: Verify completions work
+3. **Uninstall v1.0**: `homodyne-cleanup` (from original system)
 
 ### Key Differences
 
@@ -263,7 +263,7 @@ cache.invalidate_environment(Path("/path/to/env"))
    python test_completion.py --unit
    ```
 
-1. **Slow completions**
+2. **Slow completions**
 
    ```bash
    # Check cache statistics
@@ -273,7 +273,7 @@ cache.invalidate_environment(Path("/path/to/env"))
    python -c "from homodyne.ui.completion.cache import CompletionCache; CompletionCache().clear()"
    ```
 
-1. **Installation conflicts**
+3. **Installation conflicts**
 
    ```bash
    # Force reinstall
@@ -300,9 +300,9 @@ HOMODYNE_COMPLETION_DEBUG=1 homodyne <TAB>
 The completion system is designed for extensibility:
 
 1. **Add new plugins** in `plugins.py`
-1. **Extend cache strategies** in `cache.py`
-1. **Improve installation** in `installer.py`
-1. **Add tests** in `test_completion.py`
+2. **Extend cache strategies** in `cache.py`
+3. **Improve installation** in `installer.py`
+4. **Add tests** in `test_completion.py`
 
 ### Plugin Development
 

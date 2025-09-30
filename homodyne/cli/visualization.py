@@ -74,15 +74,25 @@ def generate_c2_heatmap_plots(
             vmin = np.min(c2_data)
             vmax = np.max(c2_data)
 
+            # Handle case where vmin == vmax (constant data)
+            if np.abs(vmax - vmin) < 1e-10:
+                # Add small epsilon to avoid singular transformation
+                vmin = vmin - 0.01 if vmin != 0 else -0.01
+                vmax = vmax + 0.01 if vmax != 0 else 0.01
+
             # Create figure for single heatmap
             fig, ax = plt.subplots(figsize=(8, 6))
 
             # Create heatmap with custom color scale
+            # Note: With indexing='ij' in meshgrid:
+            #   t1 varies along rows (axis 0), constant along columns
+            #   t2 varies along columns (axis 1), constant along rows
+            # So extent should be: (t1_min, t1_max, t2_min, t2_max)
             im = ax.imshow(
                 c2_data,
                 aspect="equal",
                 origin="lower",
-                extent=(t1[0, 0], t1[0, -1], t2[0, 0], t2[-1, 0]),
+                extent=(t1[0, 0], t1[-1, 0], t2[0, 0], t2[0, -1]),
                 vmin=vmin,
                 vmax=vmax,
                 cmap="viridis",

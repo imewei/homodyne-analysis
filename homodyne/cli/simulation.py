@@ -289,7 +289,8 @@ def create_time_arrays_for_simulation(
     dt = temporal_config.get("dt", 0.1)
     start_frame = temporal_config.get("start_frame", 1)
     end_frame = temporal_config.get("end_frame", 100)
-    n_time = end_frame - start_frame + 1
+    # Match core.py convention: time_length = end_frame - start_frame (no +1)
+    n_time = end_frame - start_frame
 
     logger.info("Simulation temporal parameters:")
     logger.info(f"  dt: {dt}")
@@ -297,8 +298,8 @@ def create_time_arrays_for_simulation(
     logger.info(f"  end_frame: {end_frame}")
     logger.info(f"  n_time: {n_time}")
 
-    # Create time arrays
-    t_values = np.arange(start_frame, end_frame + 1) * dt
+    # Create time arrays starting from 0 for plotting: np.linspace(0, dt*(n_time-1), n_time)
+    t_values = np.linspace(0, dt * (n_time - 1), n_time)
     t1, t2 = np.meshgrid(t_values, t_values, indexing="ij")
 
     return t1, t2, n_time
@@ -331,49 +332,11 @@ def generate_theoretical_c2_data(
             f"Generating theoretical C2 data for {len(phi_angles)} phi angles..."
         )
 
-        # Initialize output array
-        c2_theoretical = np.zeros((len(phi_angles), n_time, n_time))
-
-        # Generate data for each phi angle
-        for i, phi in enumerate(phi_angles):
-            phi_single = np.array([phi])
-            logger.debug(f"Computing C2 for phi = {phi}°")
-
-            # Calculate chi-squared (which computes C2 internally)
-            try:
-                chi2 = core.calculate_chi_squared_optimized(
-                    initial_params, phi_single, np.zeros((1, n_time, n_time))
-                )
-
-                # Get the theoretical C2 data from the core's internal calculation
-                # The calculate_chi_squared_optimized method computes C2 theoretical internally
-                # We need to extract it - this is a bit of a workaround
-                c2_single = (
-                    core._last_theoretical_c2
-                    if hasattr(core, "_last_theoretical_c2")
-                    else None
-                )
-
-                if c2_single is None:
-                    # Fallback: compute C2 directly if available
-                    if hasattr(core, "calculate_correlation_function"):
-                        c2_single = core.calculate_correlation_function(
-                            initial_params, phi_single
-                        )
-                    else:
-                        # Final fallback: create dummy data
-                        logger.warning(
-                            f"Cannot extract theoretical C2 for phi={phi}, using dummy data"
-                        )
-                        c2_single = np.ones((1, n_time, n_time))
-
-                c2_theoretical[i] = c2_single[0]
-                logger.debug(f"✓ C2 computed for phi = {phi}°")
-
-            except Exception as e:
-                logger.warning(f"Error computing C2 for phi={phi}: {e}")
-                # Use dummy data for failed calculations
-                c2_theoretical[i] = np.ones((n_time, n_time))
+        # Use the core's method to calculate theoretical C2 directly
+        # This is much cleaner than the previous workaround approach
+        c2_theoretical = core.calculate_c2_nonequilibrium_laminar_parallel(
+            initial_params, phi_angles
+        )
 
         logger.info("✓ Theoretical C2 data generated successfully")
         logger.info(f"  Shape: {c2_theoretical.shape}")

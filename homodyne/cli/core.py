@@ -473,7 +473,7 @@ def main():
     # Handle special commands first
     if hasattr(args, "install_completion") and args.install_completion:
         try:
-            from .ui.completion.adapter import install_shell_completion
+            from ..ui.completion.adapter import install_shell_completion
 
             return install_shell_completion(args.install_completion)
         except ImportError:
@@ -483,7 +483,7 @@ def main():
 
     if hasattr(args, "uninstall_completion") and args.uninstall_completion:
         try:
-            from .ui.completion.adapter import uninstall_shell_completion
+            from ..ui.completion.adapter import uninstall_shell_completion
 
             return uninstall_shell_completion(args.uninstall_completion)
         except ImportError:
@@ -535,7 +535,7 @@ def main():
     else:
         logger.info("Analysis mode: from configuration file")
 
-    # Handle special plotting mode
+    # Handle special plotting modes
     if args.plot_simulated_data:
         try:
             plot_simulated_data(args)
@@ -545,6 +545,48 @@ def main():
             sys.exit(0)
         except Exception as e:
             logger.error(f"❌ Simulated data plotting failed: {e}")
+            sys.exit(1)
+
+    if args.plot_experimental_data:
+        try:
+            # Load and plot experimental data only
+            logger.info("==================================================")
+            logger.info("Plotting experimental data only (no optimization)...")
+            logger.info("==================================================")
+
+            # Load configuration and create analyzer
+            # Note: Don't use create_config_override here as it would trigger
+            # automatic plotting during load_experimental_data, and we want
+            # to control the save location explicitly
+            config_path = validate_and_load_config(args)
+            analyzer = initialize_analysis_engine(config_path, config_override=None)
+
+            # Load experimental data
+            logger.info("Loading experimental data...")
+            c2_experimental, time_length, phi_angles, num_angles = (
+                analyzer.load_experimental_data()
+            )
+            logger.info("✓ Data loaded successfully:")
+            logger.info(f"  Phi angles: {num_angles} angles")
+            logger.info(f"  Data shape: {c2_experimental.shape}")
+            logger.info(f"  Time length: {time_length}")
+
+            # Plot experimental data
+            logger.info("Generating experimental data plots...")
+            plot_path = args.output_dir / "plots" / "experimental_data_validation.png"
+            analyzer._plot_experimental_data_validation(
+                c2_experimental, phi_angles, save_path=str(plot_path)
+            )
+
+            print()
+            print("✓ Experimental data plotting completed successfully!")
+            print(f"Plot saved to: {plot_path}")
+            sys.exit(0)
+        except Exception as e:
+            logger.error(f"❌ Experimental data plotting failed: {e}")
+            import traceback
+
+            logger.error(traceback.format_exc())
             sys.exit(1)
 
     # Run the analysis

@@ -189,16 +189,13 @@ class ClassicalOptimizer:
                 "initial_parameters" in self.config
                 and "values" in self.config["initial_parameters"]
             ):
-                result_dict["initial_parameters"] = self.config[
-                    "initial_parameters"
-                ]["values"]
+                result_dict["initial_parameters"] = self.config["initial_parameters"][
+                    "values"
+                ]
             else:
                 # Use defaults
                 effective_param_count = 7
-                if (
-                    hasattr(self.core, "config_manager")
-                    and self.core.config_manager
-                ):
+                if hasattr(self.core, "config_manager") and self.core.config_manager:
                     try:
                         effective_param_count = int(
                             self.core.config_manager.get_effective_parameter_count()
@@ -1218,7 +1215,7 @@ class ClassicalOptimizer:
 
                 # Step 3a: Estimate gradient using finite differences
                 grad, grad_evals = self._estimate_gradient(
-                    objective_func, x_current, base_epsilon
+                    objective_func, x_current, base_epsilon, return_tuple=True
                 )
                 function_evaluations += grad_evals
 
@@ -1759,9 +1756,7 @@ class ClassicalOptimizer:
                         parameters, self._cached_experimental_data
                     )
                 # Load data if not cached
-                c2_experimental, _, phi_angles, _ = (
-                    self.core.load_experimental_data()
-                )
+                c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
                 self._cached_experimental_data = c2_experimental
                 self._cached_phi_angles = phi_angles
                 return self.core._calculate_chi_squared(parameters, c2_experimental)

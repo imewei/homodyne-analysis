@@ -177,7 +177,7 @@ def confirm_uninstall(installer: CompletionInstaller, force: bool = False) -> bo
     print("\n⚠️  This will remove the Homodyne Advanced Completion System:")
     print("   • All completion scripts and activation hooks")
     print("   • Cached completion data")
-    print("   • Command aliases (hmv, hmm, hmh, etc.)")
+    print("   • Command aliases (hma, hmc, hmr, etc.)")
     print("   • Environment-specific integration")
 
     print(f"\n📍 Installation location: {info['install_base']}")
@@ -377,7 +377,9 @@ def main() -> int:
                 print(
                     "   2. Check that 'homodyne <TAB>' no longer provides completions"
                 )
-                print("   3. Aliases (hmv, hmm, etc.) should no longer be available")
+                print(
+                    "   3. Aliases (hma, hmc, hmr, etc.) should no longer be available"
+                )
 
             return 0
 
