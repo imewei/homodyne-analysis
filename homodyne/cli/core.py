@@ -29,6 +29,7 @@ from .utils import validate_and_load_config
 from .utils import validate_scaling_args
 from .visualization import generate_comparison_plots
 from .visualization import save_individual_method_results
+from .visualization import save_main_summary
 
 # Module-level logger
 logger = logging.getLogger(__name__)
@@ -408,6 +409,9 @@ def process_and_save_results(
                 c2_exp,
                 args.output_dir,
             )
+
+        # Save main summary file
+        save_main_summary(results, analyzer, args.output_dir)
 
         logger.info(f"✓ All results saved to: {args.output_dir}")
 

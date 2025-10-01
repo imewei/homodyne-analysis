@@ -149,7 +149,8 @@ def generate_classical_plots(
     result_dict: dict[str, Any],
     phi_angles: np.ndarray,
     c2_exp: np.ndarray,
-    output_dir: Path,
+    category_dir: Path,
+    method_dir: Path | None = None,
 ) -> None:
     """
     Generate plots for classical optimization results.
@@ -180,9 +181,12 @@ def generate_classical_plots(
     parameters = result_dict["parameters"]
 
     try:
-        # Create plots directory
-        plots_dir = output_dir / "classical_plots"
-        plots_dir.mkdir(parents=True, exist_ok=True)
+        # Use method-specific directory if provided, otherwise use category directory
+        if method_dir is not None:
+            plots_dir = method_dir
+        else:
+            plots_dir = category_dir / "classical_plots"
+            plots_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate fitted vs experimental comparison
         logger.info("Generating classical optimization plots...")
@@ -249,7 +253,7 @@ def generate_classical_plots(
             plt.colorbar(im3, ax=ax3, label="Δ Intensity")
 
             plt.tight_layout()
-            plot_file = plots_dir / f"classical_comparison_phi_{phi:.1f}deg.png"
+            plot_file = plots_dir / f"c2_heatmaps_phi_{phi:.1f}deg.png"
             plt.savefig(plot_file, dpi=300, bbox_inches="tight")
             plt.close(fig)
 
@@ -264,7 +268,8 @@ def generate_robust_plots(
     result_dict: dict[str, Any],
     phi_angles: np.ndarray,
     c2_exp: np.ndarray,
-    output_dir: Path,
+    category_dir: Path,
+    method_dir: Path | None = None,
 ) -> None:
     """
     Generate plots for robust optimization results.
@@ -295,9 +300,12 @@ def generate_robust_plots(
     parameters = result_dict["parameters"]
 
     try:
-        # Create plots directory
-        plots_dir = output_dir / "robust_plots"
-        plots_dir.mkdir(parents=True, exist_ok=True)
+        # Use method-specific directory if provided, otherwise use category directory
+        if method_dir is not None:
+            plots_dir = method_dir
+        else:
+            plots_dir = category_dir / "robust_plots"
+            plots_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate fitted vs experimental comparison
         logger.info("Generating robust optimization plots...")
@@ -364,7 +372,7 @@ def generate_robust_plots(
             plt.colorbar(im3, ax=ax3, label="Δ Intensity")
 
             plt.tight_layout()
-            plot_file = plots_dir / f"robust_comparison_phi_{phi:.1f}deg.png"
+            plot_file = plots_dir / f"c2_heatmaps_phi_{phi:.1f}deg.png"
             plt.savefig(plot_file, dpi=300, bbox_inches="tight")
             plt.close(fig)
 
@@ -521,14 +529,23 @@ def save_individual_method_results(
     output_dir: Path,
 ) -> None:
     """
-    Save individual method results with plots and data files.
+    Save individual method results with comprehensive file structure.
+
+    Creates detailed output structure:
+    - classical/ or robust/ directory
+      - {specific_method}/ subdirectory (e.g., nelder_mead/, wasserstein/)
+        - parameters.json: Optimal parameters with metadata
+        - fitted_data.npz: Fitted correlation functions
+        - analysis_results_{method}.json: Complete results
+        - convergence_metrics.json: Optimization diagnostics
+        - c2_heatmaps_*.png: Visualization plots
 
     Parameters
     ----------
     results : Dict[str, Any]
         Optimization results
     method_name : str
-        Name of the optimization method
+        Name of the optimization method (classical or robust)
     analyzer : HomodyneAnalysisCore
         Analysis engine
     phi_angles : np.ndarray
@@ -539,8 +556,27 @@ def save_individual_method_results(
         Directory for saving results
     """
     try:
-        # Create method-specific directory
-        method_dir = output_dir / f"{method_name}_results"
+        import json
+        from datetime import datetime
+
+        # Determine specific method name from result_object
+        result_object = results.get("result_object", {})
+        if method_name == "classical":
+            # For classical, use "nelder_mead" as default
+            specific_method = "nelder_mead"
+        elif method_name == "robust":
+            # For robust, extract method from result_object
+            specific_method = result_object.get("method", "wasserstein")
+            if specific_method == "distributionally_robust":
+                specific_method = "wasserstein"
+        else:
+            specific_method = method_name
+
+        # Create method hierarchy: classical/ or robust/ → specific_method/
+        method_category_dir = output_dir / method_name
+        method_category_dir.mkdir(parents=True, exist_ok=True)
+
+        method_dir = method_category_dir / specific_method
         method_dir.mkdir(parents=True, exist_ok=True)
 
         # Calculate theoretical fit with scaling
@@ -566,21 +602,34 @@ def save_individual_method_results(
             contrast_params[i] = contrast
             offset_params[i] = offset
 
-        # Save comprehensive results data with experimental metadata
-        results_file = method_dir / f"{method_name}_results.npz"
+        # 1. Save parameters.json
+        param_names = analyzer.config.get(
+            "parameter_names", [f"p{i}" for i in range(len(parameters))]
+        )
+        parameters_dict = {
+            "method": specific_method,
+            "parameters": {
+                name: float(value) for name, value in zip(param_names, parameters)
+            },
+            "parameter_array": parameters.tolist(),
+            "chi_squared": float(results.get("chi_squared", 0)),
+            "success": bool(results.get("success", False)),
+            "timestamp": datetime.now().isoformat(),
+        }
+        with open(method_dir / "parameters.json", "w") as f:
+            json.dump(parameters_dict, f, indent=2)
+
+        # 2. Save fitted_data.npz
         np.savez_compressed(
-            results_file,
-            # Optimization results
-            parameters=results["parameters"],
-            chi_squared=results["chi_squared"],
+            method_dir / "fitted_data.npz",
             # Experimental parameters
-            phi_angles=phi_angles,
             wavevector_q=analyzer.wavevector_q,
             dt=analyzer.dt,
             stator_rotor_gap=analyzer.stator_rotor_gap,
             start_frame=analyzer.start_frame,
             end_frame=analyzer.end_frame,
             time_length=analyzer.time_length,
+            phi_angles=phi_angles,
             # Correlation data
             c2_experimental=c2_exp,
             c2_theoretical_raw=c2_theoretical_raw,
@@ -592,13 +641,145 @@ def save_individual_method_results(
             residuals=c2_exp - c2_theoretical_scaled,
         )
 
-        # Generate method-specific plots
+        # 3. Save analysis_results_{method}.json
+        analysis_results = {
+            "method": specific_method,
+            "optimization_type": method_name,
+            "parameters": parameters_dict["parameters"],
+            "chi_squared": float(results.get("chi_squared", 0)),
+            "chi_squared_reduced": float(results.get("chi_squared", 0))
+            / (c2_exp.size - len(parameters)),
+            "success": bool(results.get("success", False)),
+            "experimental_metadata": {
+                "wavevector_q": float(analyzer.wavevector_q),
+                "dt": float(analyzer.dt),
+                "gap_size_angstrom": float(analyzer.stator_rotor_gap),
+                "gap_size_um": float(analyzer.stator_rotor_gap / 1e4),
+                "start_frame": int(analyzer.start_frame),
+                "end_frame": int(analyzer.end_frame),
+                "time_length": int(analyzer.time_length),
+                "num_angles": int(num_angles),
+                "num_datapoints": int(c2_exp.size),
+            },
+            "scaling_parameters": {
+                f"angle_{i}_phi_{phi:.1f}deg": {
+                    "contrast": float(contrast_params[i]),
+                    "offset": float(offset_params[i]),
+                }
+                for i, phi in enumerate(phi_angles)
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+        with open(method_dir / f"analysis_results_{specific_method}.json", "w") as f:
+            json.dump(analysis_results, f, indent=2)
+
+        # 4. Save convergence_metrics.json (if available in result_object)
+        if isinstance(result_object, dict):
+            convergence_metrics = {
+                "method": specific_method,
+                "final_chi_squared": float(results.get("chi_squared", 0)),
+                "success": bool(results.get("success", False)),
+            }
+
+            # Extract metrics from result_object
+            if "nit" in result_object or hasattr(result_object, "nit"):
+                convergence_metrics["iterations"] = int(
+                    result_object.get("nit", getattr(result_object, "nit", 0))
+                )
+            if "nfev" in result_object or hasattr(result_object, "nfev"):
+                convergence_metrics["function_evaluations"] = int(
+                    result_object.get("nfev", getattr(result_object, "nfev", 0))
+                )
+            if "message" in result_object or hasattr(result_object, "message"):
+                convergence_metrics["message"] = str(
+                    result_object.get("message", getattr(result_object, "message", ""))
+                )
+
+            with open(method_dir / "convergence_metrics.json", "w") as f:
+                json.dump(convergence_metrics, f, indent=2)
+
+        # 5. Generate method-specific plots in the method subdirectory
         if method_name == "classical":
-            generate_classical_plots(analyzer, results, phi_angles, c2_exp, output_dir)
+            generate_classical_plots(
+                analyzer, results, phi_angles, c2_exp, method_category_dir, method_dir
+            )
         elif method_name == "robust":
-            generate_robust_plots(analyzer, results, phi_angles, c2_exp, output_dir)
+            generate_robust_plots(
+                analyzer, results, phi_angles, c2_exp, method_category_dir, method_dir
+            )
 
         logger.info(f"✓ {method_name.capitalize()} results saved to: {method_dir}")
 
     except Exception as e:
         logger.error(f"❌ Error saving {method_name} results: {e}")
+        import traceback
+
+        logger.debug(traceback.format_exc())
+
+
+def save_main_summary(
+    results: dict[str, Any], analyzer, output_dir: Path
+) -> None:
+    """
+    Save main summary file with all optimization results.
+
+    Creates homodyne_analysis_results.json with:
+    - Analysis summary (timestamp, methods run)
+    - Experimental parameters
+    - Optimization results for all methods
+
+    Parameters
+    ----------
+    results : Dict[str, Any]
+        All optimization results (classical and/or robust)
+    analyzer : HomodyneAnalysisCore
+        Analysis engine with configuration
+    output_dir : Path
+        Main output directory
+    """
+    try:
+        import json
+        from datetime import datetime
+
+        summary = {
+            "analysis_summary": {
+                "timestamp": datetime.now().isoformat(),
+                "methods_run": list(results.keys()),
+                "num_methods": len(results),
+            },
+            "experimental_parameters": {
+                "wavevector_q": float(analyzer.wavevector_q),
+                "dt": float(analyzer.dt),
+                "gap_size_angstrom": float(analyzer.stator_rotor_gap),
+                "gap_size_um": float(analyzer.stator_rotor_gap / 1e4),
+                "start_frame": int(analyzer.start_frame),
+                "end_frame": int(analyzer.end_frame),
+                "time_length": int(analyzer.time_length),
+            },
+            "optimization_results": {},
+        }
+
+        # Add results for each method
+        for method_name, result in results.items():
+            if result:
+                param_names = analyzer.config.get(
+                    "parameter_names", [f"p{i}" for i in range(len(result["parameters"]))]
+                )
+                summary["optimization_results"][method_name] = {
+                    "parameters": {
+                        name: float(value)
+                        for name, value in zip(param_names, result["parameters"])
+                    },
+                    "chi_squared": float(result.get("chi_squared", 0)),
+                    "success": bool(result.get("success", False)),
+                }
+
+        summary_file = output_dir / "homodyne_analysis_results.json"
+        with open(summary_file, "w") as f:
+            json.dump(summary, f, indent=2)
+        logger.info(f"✓ Main summary saved to: {summary_file}")
+    except Exception as e:
+        logger.error(f"❌ Error saving main summary: {e}")
+        import traceback
+
+        logger.debug(traceback.format_exc())
