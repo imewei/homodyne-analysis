@@ -401,34 +401,79 @@ Configuration files specify analysis mode:
 
 ## Output Structure
 
+When running `homodyne --method all`, the complete analysis produces a comprehensive results directory with all optimization methods:
+
 ```
 homodyne_results/
-├── homodyne_analysis_results.json    # Main results with metadata
-├── run.log                           # Execution log
-├── classical/                        # Classical results
-│   ├── all_classical_methods_summary.json
-│   ├── nelder_mead/
-│   │   ├── analysis_results_nelder_mead.json
-│   │   ├── parameters.json           # Optimal parameters
-│   │   ├── fitted_data.npz          # Fitted correlation functions
-│   │   ├── uncertainty_analysis.json # Parameter uncertainties
-│   │   ├── convergence_metrics.json  # Optimization diagnostics
-│   │   └── c2_heatmaps_*.png
-│   └── gurobi/                       # If available
-├── robust/                           # Robust results
-│   ├── all_robust_methods_summary.json
-│   ├── wasserstein/
-│   │   ├── robust_parameters.json    # Robust optimal parameters
-│   │   ├── uncertainty_bounds.json   # Confidence intervals
-│   │   └── sensitivity_analysis.json # Robustness metrics
-│   ├── scenario/                     # Scenario-based results
-│   └── ellipsoidal/                  # Ellipsoidal uncertainty results
-├── validation/                       # Data validation and diagnostics
-│   ├── residual_analysis.png         # Fitting quality assessment
-│   ├── parameter_correlation.png     # Parameter correlation plots
-│   └── uncertainty_propagation.png   # Uncertainty visualization
-└── exp_data/                         # Data validation plots
+├── homodyne_analysis_results.json    # Summary with all methods
+├── run.log                           # Detailed execution log
+│
+├── classical/                        # Classical optimization results
+│   ├── nelder_mead/                  # Nelder-Mead simplex method
+│   │   ├── parameters.json           # Optimal parameters with metadata
+│   │   ├── fitted_data.npz          # Fitted correlation functions + experimental metadata
+│   │   ├── analysis_results_nelder_mead.json  # Complete results + chi-squared
+│   │   ├── convergence_metrics.json  # Iterations, function evaluations, diagnostics
+│   │   └── c2_heatmaps_phi_*.png    # Experimental vs fitted comparison plots
+│   └── gurobi/                       # Gurobi quadratic programming (if available)
+│       ├── parameters.json
+│       ├── fitted_data.npz
+│       ├── analysis_results_gurobi.json
+│       ├── convergence_metrics.json
+│       └── c2_heatmaps_phi_*.png
+│
+├── robust/                           # Robust optimization results
+│   ├── wasserstein/                  # Distributionally Robust Optimization (DRO)
+│   │   ├── parameters.json           # Robust optimal parameters
+│   │   ├── fitted_data.npz          # Fitted correlations with uncertainty bounds
+│   │   ├── analysis_results_wasserstein.json  # DRO results + uncertainty radius
+│   │   ├── convergence_metrics.json  # Optimization convergence info
+│   │   └── c2_heatmaps_phi_*.png    # Robust fit comparison plots
+│   ├── scenario/                     # Scenario-based bootstrap optimization
+│   │   ├── parameters.json
+│   │   ├── fitted_data.npz
+│   │   ├── analysis_results_scenario.json
+│   │   ├── convergence_metrics.json
+│   │   └── c2_heatmaps_phi_*.png
+│   └── ellipsoidal/                  # Ellipsoidal uncertainty sets
+│       ├── parameters.json
+│       ├── fitted_data.npz
+│       ├── analysis_results_ellipsoidal.json
+│       ├── convergence_metrics.json
+│       └── c2_heatmaps_phi_*.png
+│
+└── comparison_plots/                 # Method comparison visualizations
+    ├── method_comparison_phi_*.png   # Classical vs Robust comparison
+    └── parameter_comparison.png      # Parameter values across methods
 ```
+
+### Key Output Files
+
+**homodyne_analysis_results.json**: Main summary containing:
+- Analysis timestamp and methods run
+- Experimental parameters (q, dt, gap size, frames)
+- Optimization results for all methods:
+  - `classical_nelder_mead`, `classical_gurobi`, `classical_best`
+  - `robust_wasserstein`, `robust_scenario`, `robust_ellipsoidal`, `robust_best`
+
+**fitted_data.npz**: NumPy compressed archive with:
+- Experimental metadata: `wavevector_q`, `dt`, `stator_rotor_gap`, `start_frame`, `end_frame`
+- Correlation data: `c2_experimental`, `c2_theoretical_raw`, `c2_theoretical_scaled`
+- Scaling parameters: `contrast_params`, `offset_params`
+- Quality metrics: `residuals`
+
+**analysis_results_{method}.json**: Method-specific detailed results:
+- Optimized parameters with names
+- Chi-squared and reduced chi-squared values
+- Experimental metadata
+- Scaling parameters for each angle
+- Success status and timestamp
+
+**convergence_metrics.json**: Optimization diagnostics:
+- Number of iterations
+- Function evaluations
+- Convergence message
+- Final chi-squared value
 
 ## Performance
 
