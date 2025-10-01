@@ -3,22 +3,63 @@ XPCS Data Loader for Homodyne Analysis
 ======================================
 
 Enhanced XPCS data loader supporting both APS (old) and APS-U (new) HDF5 formats
-with intelligent caching and robust error handling.
+with intelligent caching, comprehensive filtering, and robust error handling.
 
 This module provides:
 - Auto-detection of APS vs APS-U format
 - Direct h5py-based HDF5 reading (no pyxpcsviewer dependency)
+- Complete APS-U processed_bins mapping implementation
 - Half-matrix reconstruction for correlation matrices
 - Mandatory diagonal correction applied post-load
 - Smart NPZ caching to avoid reloading large HDF5 files
-- Integration with existing homodyne configuration system
+- Integration with cache-aware phi angles loading system
+
+APS-U Format Support (Complete Implementation):
+------------------------------------------------
+The APS-U format uses a grid-based structure with processed_bins mapping:
+
+HDF5 Structure:
+  xpcs/
+  ├── qmap/
+  │   ├── dynamic_v_list_dim0   # All q-values (wavevector magnitudes)
+  │   └── dynamic_v_list_dim1   # All phi-values (angles in degrees)
+  └── twotime/
+      ├── processed_bins        # Maps which (q,phi) pairs have data
+      └── correlation_map/
+          ├── c2_00001          # Correlation matrix 1 (half-matrix format)
+          ├── c2_00002          # Correlation matrix 2
+          └── ...
+
+Loading Algorithm:
+  1. Load processed_bins mapping to identify available (q,phi) pairs
+  2. Map bins to actual (q,phi) coordinates using grid formula:
+     - bin_idx = processed_bin - 1 (convert to 0-based)
+     - q_idx = bin_idx // n_phi (row index)
+     - phi_idx = bin_idx % n_phi (column index)
+  3. Load correlation matrices for valid bins
+  4. Apply data filtering (quality, phi-range)
+  5. Select optimal q-vector (closest to config value)
+  6. Extract all phi angles for selected q-vector (exact matching)
+  7. Apply frame slicing and generate time arrays
+  8. Return complete data structure with q-list, phi-list, time arrays, and c2 data
+
+Key Differences from APS Old Format:
+  - Q-Phi Storage: Grid structure with processed_bins vs flat (q,phi) pairs
+  - Correlation Data: xpcs/twotime/correlation_map vs exchange/C2T_all
+  - Q-Vector Selection: Exact matching (< 1e-10) vs tolerance-based (10%)
+  - Phi Angles: Structured grid per q-vector vs variable per q-vector
+
+Cache-Aware Workflow:
+  - When cache exists: Load from NPZ (includes phi_angles_list)
+  - When no cache: Extract from HDF5, save phi_angles_list.txt + wavevector_q_list.txt
 
 Key Features:
-- Format Support: APS old format and APS-U new format
+- Format Support: Complete APS old and APS-U new format
 - Configuration: JSON-based (compatible with existing configs)
 - Caching: Intelligent NPZ caching with compression
 - Output: NumPy arrays optimized for homodyne analysis
 - Validation: Basic data quality checks
+- Text Files: Generates phi_angles_list.txt and wavevector_q_list.txt
 """
 
 import json
@@ -486,70 +527,174 @@ class XPCSDataLoader:
             }
 
     def _load_aps_u_format(self, hdf_path: str) -> dict[str, Any]:
-        """Load data from APS-U new format HDF5 file using processed_bins mapping."""
+        """
+        Load data from APS-U new format HDF5 file using processed_bins mapping.
+
+        This implementation follows the comprehensive APS-U loading algorithm:
+        1. Load processed_bins mapping to identify which (q,phi) pairs have data
+        2. Map bins to actual (q,phi) coordinates using grid structure
+        3. Load correlation matrices for valid bins
+        4. Apply data filtering (quality, phi-range)
+        5. Select optimal q-vector
+        6. Extract all phi angles for selected q-vector
+        7. Apply frame slicing and generate time arrays
+
+        Returns complete data structure compatible with cache-aware loading.
+        """
         with h5py.File(hdf_path, "r") as f:
-            # Load the processed_bins mapping
+            # Step 1: Load processed_bins mapping - indicates which (q,phi) have data
             processed_bins = f["xpcs/twotime/processed_bins"][()]
 
-            # Load the q and phi lists
-            q_values = f["xpcs/qmap/dynamic_v_list_dim0"][()]
-            phi_values = f["xpcs/qmap/dynamic_v_list_dim1"][()]
+            # Step 2: Load q and phi value grids
+            q_values = f["xpcs/qmap/dynamic_v_list_dim0"][()]  # All q values
+            phi_values = f["xpcs/qmap/dynamic_v_list_dim1"][()]  # All phi values
 
             n_q = len(q_values)
             n_phi = len(phi_values)
 
             logger.debug(f"APS-U format: {n_q} q-values, {n_phi} phi-values")
+            logger.debug(f"Q range: {q_values.min():.6f} to {q_values.max():.6f} Å⁻¹")
+            logger.debug(f"Phi values: {phi_values}")
             logger.debug(
                 f"Processed bins: {len(processed_bins)} correlation matrices available"
             )
 
-            # Map processed_bins to (q,phi) pairs
+            # Step 3: Map processed_bins to (q,phi) pairs using grid structure
+            # Formula: bin_idx = processed_bin - 1; q_idx = bin_idx // n_phi; phi_idx = bin_idx % n_phi
             qphi_pairs = []
             valid_bin_indices = []
 
             for i, processed_bin in enumerate(processed_bins):
-                bin_idx = processed_bin - 1  # Convert to 0-based
+                bin_idx = processed_bin - 1  # Convert to 0-based indexing
                 q_idx = bin_idx // n_phi
                 phi_idx = bin_idx % n_phi
 
-                # Check if indices are valid
+                # Validate indices are within grid bounds
                 if 0 <= q_idx < n_q and 0 <= phi_idx < n_phi:
+                    q_val = q_values[q_idx]
                     phi_val = phi_values[phi_idx]
-                    qphi_pairs.append(phi_val)
+                    qphi_pairs.append((q_val, phi_val))  # Store both q and phi
                     valid_bin_indices.append(i)
+                else:
+                    logger.warning(
+                        f"Invalid bin mapping: processed_bin={processed_bin}, "
+                        f"q_idx={q_idx}, phi_idx={phi_idx}"
+                    )
 
             if len(qphi_pairs) == 0:
                 raise XPCSDataFormatError(
                     "No valid (q,phi) pairs found from processed_bins mapping"
                 )
 
-            # Load correlation matrices
-            corr_group = f["xpcs/twotime/correlation_map"]
-            c2_keys = sorted(corr_group.keys())
+            # Step 4: Convert to arrays for processing
+            qphi_array = np.array(qphi_pairs)
+            filtered_dqlist = qphi_array[:, 0]  # q values for valid pairs
+            filtered_dphilist = qphi_array[:, 1]  # phi values for valid pairs
 
             logger.debug(
-                f"Loading {len(valid_bin_indices)} correlation matrices from APS-U format"
+                f"Extracted {len(valid_bin_indices)} valid (q,phi) pairs from processed_bins"
             )
 
-            c2_matrices = []
+            # Step 5: Load correlation matrices for valid bins
+            corr_group = f["xpcs/twotime/correlation_map"]
+            c2_keys = sorted(corr_group.keys())  # Sorted alphabetically (c2_00001, c2_00002, ...)
+
+            logger.debug(
+                f"Loading {len(valid_bin_indices)} correlation matrices corresponding to valid (q,phi) pairs"
+            )
+            c2_matrices_for_filtering = []
+
             for bin_idx in valid_bin_indices:
                 if bin_idx < len(c2_keys):
                     key = c2_keys[bin_idx]
                     c2_half = corr_group[key][()]
-                    # Reconstruct full matrix from half matrix
+                    # Reconstruct full matrix from half-matrix storage
                     c2_full = self._reconstruct_full_matrix(c2_half)
-                    c2_matrices.append(c2_full)
+                    c2_matrices_for_filtering.append(c2_full)
+                else:
+                    logger.warning(
+                        f"Matrix index {bin_idx} exceeds available matrices ({len(c2_keys)})"
+                    )
 
-            # Convert to numpy arrays
+            # Step 6: Ensure consistency between matrices and (q,phi) pairs
+            min_count = min(len(c2_matrices_for_filtering), len(filtered_dqlist))
+            if len(c2_matrices_for_filtering) != len(filtered_dqlist):
+                logger.warning(
+                    f"Matrix count ({len(c2_matrices_for_filtering)}) != "
+                    f"(q,phi) pair count ({len(filtered_dqlist)})"
+                )
+                c2_matrices_for_filtering = c2_matrices_for_filtering[:min_count]
+                filtered_dqlist = filtered_dqlist[:min_count]
+                filtered_dphilist = filtered_dphilist[:min_count]
+                logger.debug(f"Truncated to {min_count} entries for consistency")
+
+            # Step 7: Select optimal q-vector (closest match to config)
+            selected_q_idx = self._select_optimal_wavevector(filtered_dqlist)
+            selected_q = filtered_dqlist[selected_q_idx]
+
+            logger.debug(
+                f"Selected optimal q-vector: {selected_q:.6f} Å⁻¹ (index {selected_q_idx})"
+            )
+
+            # Step 8: Find all (q,phi) pairs matching selected q-vector
+            # APS-U uses exact matching (< 1e-10 tolerance) unlike APS old (10% tolerance)
+            q_matching_indices = np.where(np.abs(filtered_dqlist - selected_q) < 1e-10)[0]
+            logger.debug(
+                f"Found {len(q_matching_indices)} (q,phi) pairs matching selected q-vector"
+            )
+
+            # Step 9: Apply phi filtering if enabled
+            selected_indices = self._get_selected_indices_simple(filtered_dphilist)
+
+            if selected_indices is not None:
+                # Intersect q-vector selection with phi filtering
+                final_indices = np.intersect1d(q_matching_indices, selected_indices)
+                logger.debug(
+                    f"After intersecting with phi filtering: {len(final_indices)} pairs remain"
+                )
+            else:
+                # No phi filtering - use all pairs for selected q-vector
+                final_indices = q_matching_indices
+                logger.debug(
+                    f"No phi filtering applied - using all {len(final_indices)} pairs for selected q-vector"
+                )
+
+            # Step 10: Fallback if no valid indices (safety check)
+            if len(final_indices) == 0:
+                logger.warning("No valid indices found, using first available entry as fallback")
+                final_indices = [0]
+
+            # Step 11: Extract final data for selected indices
+            final_dqlist = filtered_dqlist[final_indices]
+            final_dphilist = filtered_dphilist[final_indices]
+            c2_matrices = [c2_matrices_for_filtering[i] for i in final_indices]
+
+            logger.debug(f"Final selection: {len(c2_matrices)} correlation matrices")
+
+            # Step 12: Convert to numpy array for frame slicing
             c2_matrices_array = np.array(c2_matrices)
-            phi_angles_array = np.array(qphi_pairs)
 
-            # Apply frame slicing
+            # Step 13: Apply frame slicing to selected q-vector data
             c2_exp = self._apply_frame_slicing(c2_matrices_array)
 
+            # Step 14: Calculate time arrays (2D meshgrids for correlation analysis)
+            dt = self._get_temporal_param("dt", 0.1)
+            start_frame = self._get_temporal_param("start_frame", 1)
+            end_frame = self._get_temporal_param(
+                "end_frame", start_frame + c2_exp.shape[-1] - 1
+            )
+
+            time_max = dt * (end_frame - start_frame)
+            time_1d = np.linspace(0, time_max, c2_exp.shape[-1])
+            t1, t2 = np.meshgrid(time_1d, time_1d, indexing="ij")
+
+            # Step 15: Return complete data structure
             return {
-                "phi_angles_list": phi_angles_array,
-                "c2_exp": c2_exp,
+                "wavevector_q_list": final_dqlist,  # Selected q-values
+                "phi_angles_list": final_dphilist,  # Corresponding phi angles
+                "t1": t1,  # 2D time meshgrid (first dimension)
+                "t2": t2,  # 2D time meshgrid (second dimension)
+                "c2_exp": c2_exp,  # Shape: (n_phi, n_frames, n_frames)
             }
 
     def _reconstruct_full_matrix(self, c2_half: np.ndarray) -> np.ndarray:
@@ -774,9 +919,37 @@ class XPCSDataLoader:
             # Don't raise exception for cache save failures
 
     def _save_text_files(self, data: dict[str, Any]) -> None:
-        """Save phi angles to text file."""
-        # Simple stub - this would normally save angle data to text files
-        logger.debug("Text file generation skipped for test data")
+        """Save phi angles and wavevector q-values to text files."""
+        # Get output directories
+        phi_folder = self.exp_config.get("phi_angles_path", self.exp_config.get("data_folder_path", "."))
+        data_folder = self.exp_config.get("data_folder_path", ".")
+
+        # Ensure directories exist
+        os.makedirs(phi_folder, exist_ok=True)
+        os.makedirs(data_folder, exist_ok=True)
+
+        # Save phi angles list
+        phi_file = os.path.join(phi_folder, "phi_angles_list.txt")
+        np.savetxt(
+            phi_file,
+            data["phi_angles_list"],
+            fmt="%.6f",
+            header="Phi angles (degrees)",
+            comments="# ",
+        )
+        logger.debug(f"Saved phi_angles_list.txt to {phi_file}")
+
+        # Save wavevector q list (if available from HDF5 loading)
+        if "wavevector_q_list" in data:
+            q_file = os.path.join(data_folder, "wavevector_q_list.txt")
+            np.savetxt(
+                q_file,
+                data["wavevector_q_list"],
+                fmt="%.8e",
+                header="Wavevector q (1/Angstrom)",
+                comments="# ",
+            )
+            logger.debug(f"Saved wavevector_q_list.txt to {q_file}")
 
 
 # Convenience function for simple usage
