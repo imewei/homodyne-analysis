@@ -585,8 +585,35 @@ class HomodyneAnalysisCore:
             )
             phi_angles_file = self.config["experimental_data"]["phi_angles_file"]
             phi_file = os.path.join(phi_angles_path, phi_angles_file)
-            logger.debug(f"Loading phi angles from: {phi_file}")
-            phi_angles = np.loadtxt(phi_file, dtype=np.float64)
+
+            # Try multiple filename variations for robustness
+            phi_file_variations = [
+                phi_file,  # Exact config filename
+                os.path.join(phi_angles_path, "phi_angles_list.txt"),
+                os.path.join(phi_angles_path, "phi_list.txt"),
+                os.path.join(phi_angles_path, "phi_angles.txt"),
+                os.path.join(phi_angles_path, "wavevector_phi_list.txt"),
+            ]
+
+            phi_file_found = None
+            for candidate_file in phi_file_variations:
+                if os.path.exists(candidate_file):
+                    phi_file_found = candidate_file
+                    break
+
+            if phi_file_found is None:
+                raise FileNotFoundError(
+                    f"{phi_angles_file} not found. Tried:\n" +
+                    "\n".join(f"  - {f}" for f in phi_file_variations)
+                )
+
+            if phi_file_found != phi_file:
+                logger.warning(
+                    f"Config specifies '{phi_angles_file}' but using '{os.path.basename(phi_file_found)}' instead"
+                )
+
+            logger.debug(f"Loading phi angles from: {phi_file_found}")
+            phi_angles = np.loadtxt(phi_file_found, dtype=np.float64)
             # Ensure phi_angles is always an array, even for single values
             phi_angles = np.atleast_1d(phi_angles)
             num_angles = len(phi_angles)
