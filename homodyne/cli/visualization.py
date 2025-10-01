@@ -188,7 +188,9 @@ def generate_classical_plots(
         logger.info("Generating classical optimization plots...")
 
         # Calculate theoretical C2 using optimized parameters
-        c2_theoretical = analyzer.calculate_correlation_function(parameters, phi_angles)
+        c2_theoretical = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            parameters, phi_angles
+        )
 
         # Create comparison plots for each phi angle
         for i, phi in enumerate(phi_angles):
@@ -273,7 +275,9 @@ def generate_robust_plots(
         logger.info("Generating robust optimization plots...")
 
         # Calculate theoretical C2 using optimized parameters
-        c2_theoretical = analyzer.calculate_correlation_function(parameters, phi_angles)
+        c2_theoretical = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            parameters, phi_angles
+        )
 
         # Create comparison plots for each phi angle
         for i, phi in enumerate(phi_angles):
