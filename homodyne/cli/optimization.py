@@ -222,11 +222,10 @@ def run_robust_optimization(
             logger.info("✓ Using enhanced robust optimizer")
             optimizer = analyzer._enhanced_robust_optimizer
         else:
-            logger.info("✓ Creating new robust optimizer")
-            # Disable caching to avoid pickle RLock errors
-            # TODO: Fix caching serialization to support thread-safe objects
+            logger.info("✓ Creating new robust optimizer with caching enabled")
+            # Caching now uses safe_hash_object to handle unpicklable objects like RLock
             optimizer = create_robust_optimizer(
-                analyzer, analyzer.config, enable_caching=False
+                analyzer, analyzer.config, enable_caching=True
             )
 
         # Validate data shapes before optimization

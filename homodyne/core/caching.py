@@ -112,9 +112,111 @@ class ContentAddressableHash:
         return ContentAddressableHash.hash_array(arr, precision)
 
     @staticmethod
+    def safe_hash_object(obj: Any, precision: int = 12) -> str:
+        """
+        Safely hash any object, avoiding pickle errors for unpicklable objects.
+
+        This method implements a robust hashing strategy that handles:
+        1. NumPy arrays (using content hash)
+        2. Basic types (int, float, str, bool, None)
+        3. Collections (list, tuple, dict, set)
+        4. Complex objects (using object ID + type + repr)
+
+        Avoids pickling objects that contain unpicklable attributes like
+        threading.RLock, file handles, etc.
+
+        Parameters
+        ----------
+        obj : Any
+            Object to hash
+        precision : int, default=12
+            Decimal precision for floating point values
+
+        Returns
+        -------
+        str
+            Stable hash string
+        """
+        hasher = hashlib.blake2b(digest_size=16)
+
+        # Handle None
+        if obj is None:
+            hasher.update(b"None")
+            return hasher.hexdigest()
+
+        # Handle NumPy arrays
+        if isinstance(obj, np.ndarray):
+            return ContentAddressableHash.hash_array(obj, precision)
+
+        # Handle basic immutable types
+        if isinstance(obj, (int, float, str, bool)):
+            if isinstance(obj, float):
+                # Round floats for stability
+                obj = round(obj, precision)
+            hasher.update(str(obj).encode())
+            return hasher.hexdigest()
+
+        # Handle bytes
+        if isinstance(obj, bytes):
+            hasher.update(obj)
+            return hasher.hexdigest()
+
+        # Handle tuples and lists (recursive)
+        if isinstance(obj, (list, tuple)):
+            obj_type = "list" if isinstance(obj, list) else "tuple"
+            hasher.update(obj_type.encode())
+            for item in obj:
+                item_hash = ContentAddressableHash.safe_hash_object(item, precision)
+                hasher.update(item_hash.encode())
+            return hasher.hexdigest()
+
+        # Handle dictionaries (recursive, sorted keys for stability)
+        if isinstance(obj, dict):
+            hasher.update(b"dict")
+            for key in sorted(obj.keys(), key=str):
+                key_hash = ContentAddressableHash.safe_hash_object(key, precision)
+                value_hash = ContentAddressableHash.safe_hash_object(obj[key], precision)
+                hasher.update(f"{key_hash}:{value_hash}".encode())
+            return hasher.hexdigest()
+
+        # Handle sets (sorted for stability)
+        if isinstance(obj, set):
+            hasher.update(b"set")
+            for item in sorted(obj, key=str):
+                item_hash = ContentAddressableHash.safe_hash_object(item, precision)
+                hasher.update(item_hash.encode())
+            return hasher.hexdigest()
+
+        # For complex objects, try pickle first, fall back to object ID
+        try:
+            # Attempt to pickle - will fail for objects with RLock, etc.
+            pickled = pickle.dumps(obj)
+            hasher.update(pickled)
+            return hasher.hexdigest()
+        except (TypeError, AttributeError, pickle.PicklingError):
+            # Object cannot be pickled - use object ID + type + repr
+            # This is stable within a single process but not across processes
+            obj_type = type(obj).__name__
+            obj_module = type(obj).__module__
+            obj_id = id(obj)
+
+            # Try to get a meaningful repr, fall back to ID if that fails
+            try:
+                obj_repr = repr(obj)[:200]  # Limit repr length
+            except Exception:
+                obj_repr = f"<unpicklable:{obj_type}>"
+
+            hash_str = f"{obj_module}.{obj_type}:id={obj_id}:repr={obj_repr}"
+            hasher.update(hash_str.encode())
+            return hasher.hexdigest()
+
+    @staticmethod
     def hash_composite(*args, precision: int = 12, **kwargs) -> str:
         """
         Generate composite hash for multiple arguments.
+
+        Uses safe_hash_object to avoid pickle errors with unpicklable objects
+        like threading.RLock, file handles, etc.
 
         Parameters
         ----------
@@ -132,32 +234,15 @@ class ContentAddressableHash:
         """
         hasher = hashlib.blake2b(digest_size=16)
 
-        # Hash positional arguments
+        # Hash positional arguments using safe_hash_object
         for i, arg in enumerate(args):
-            if isinstance(arg, np.ndarray):
-                arg_hash = ContentAddressableHash.hash_array(arg, precision)
-            elif isinstance(arg, (list, tuple)):
-                arg_hash = ContentAddressableHash.hash_parameters(arg, precision)
-            else:
-                # Use pickle for other types
-                arg_hash = hashlib.blake2b(
-                    pickle.dumps(arg), digest_size=16
-                ).hexdigest()
-
+            arg_hash = ContentAddressableHash.safe_hash_object(arg, precision)
             hasher.update(f"arg_{i}_{arg_hash}".encode())
 
         # Hash keyword arguments (sorted for stability)
         for key in sorted(kwargs.keys()):
             value = kwargs[key]
-            if isinstance(value, np.ndarray):
-                value_hash = ContentAddressableHash.hash_array(value, precision)
-            elif isinstance(value, (list, tuple)):
-                value_hash = ContentAddressableHash.hash_parameters(value, precision)
-            else:
-                value_hash = hashlib.blake2b(
-                    pickle.dumps(value), digest_size=16
-                ).hexdigest()
-
+            value_hash = ContentAddressableHash.safe_hash_object(value, precision)
             hasher.update(f"{key}_{value_hash}".encode())
 
         return hasher.hexdigest()
