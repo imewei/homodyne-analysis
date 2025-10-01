@@ -1,0 +1,76 @@
+  How χ²_red (Reduced Chi-Squared) is Calculated
+
+  Formula:
+
+  χ²_red = χ² / DOF
+
+  where:
+    χ² = Σ [(y_exp - y_theory)² / σ²]
+    DOF = N_data - N_params
+
+  Step-by-Step Calculation (from homodyne/analysis/core.py:1499-1559):
+
+  1. Calculate theoretical correlation function
+
+  c2_theory = calculate_c2_nonequilibrium_laminar_parallel(parameters, phi_angles)
+
+  2. For each angle, solve for scaling parameters
+
+  The theoretical model needs to be scaled to match experimental intensities:
+  # Solve: y_exp = contrast * y_theory + offset
+  # Using least-squares: minimize ||y_exp - (C*y_theory + B)||²
+  contrast, offset = solve_scaling(c2_theory, c2_experimental)
+
+  3. Calculate chi-squared for each angle
+
+  # Residuals
+  residuals = c2_experimental - (contrast * c2_theory + offset)
+
+  # Uncertainty estimate (10% of experimental std deviation by default)
+  σ = max(0.1 * std(c2_experimental), 1e-10)
+
+  # Chi-squared
+  χ² = Σ(residuals² / σ²)
+
+  4. Apply degrees of freedom correction
+
+  # Degrees of freedom
+  DOF = N_data_points - N_parameters
+  DOF = max(600×600 - 3, 1)  # For your case: 360000 - 3 = 359997
+
+  # Reduced chi-squared
+  χ²_red = χ² / DOF
+
+  5. Average across angles (for optimization)
+
+  # For multiple angles, compute reduced chi-squared for each angle
+  χ²_red_per_angle = [χ²_angle / DOF_angle for each angle]
+
+  # Final value (averaged, not summed)
+  χ²_red_final = mean(χ²_red_per_angle)  # Only optimization angles
+
+  # Uncertainty estimate
+  χ²_red_uncertainty = std(χ²_red_per_angle) / sqrt(N_angles)
+
+  Your Results (from log line 61-67):
+  χ²_red = 5.804371  # Final converged value
+  Parameters:
+    p0 = 17833.108367
+    p1 = -1.584158
+    p2 = 3.072937
+
+  Quality Interpretation:
+  - χ²_red ≤ 2.0: Excellent fit
+  - 2.0 < χ²_red ≤ 5.0: Acceptable fit
+  - 5.0 < χ²_red ≤ 10.0: Warning (your case: 5.804)
+  - χ²_red > 10.0: Poor fit
+
+  Your fit is just above the "acceptable" threshold, suggesting:
+  1. Model captures most features
+  2. Some systematic deviations remain
+  3. Noise level might be higher than estimated (10% uncertainty factor)
+  4. Possible minor model inadequacy or data quality issues
+
+  The key implementation detail: uncertainty is estimated from experimental data variance (line
+  1532):
+  σ = 0.1 * std(c2_experimental)  # 10% of data std deviation
