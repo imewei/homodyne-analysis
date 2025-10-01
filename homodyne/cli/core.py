@@ -395,9 +395,25 @@ def process_and_save_results(
         # Save individual method results
         for method_name, result in results.items():
             if result:
-                save_individual_method_results(
-                    result, method_name, analyzer, phi_angles, c2_exp, args.output_dir
-                )
+                # Check if this is a robust result with multiple methods
+                if method_name == "robust" and "all_robust_results" in result:
+                    # Save each robust method separately
+                    for specific_method, method_result in result[
+                        "all_robust_results"
+                    ].items():
+                        save_individual_method_results(
+                            method_result,
+                            "robust",
+                            analyzer,
+                            phi_angles,
+                            c2_exp,
+                            args.output_dir,
+                        )
+                else:
+                    # Save single method result
+                    save_individual_method_results(
+                        result, method_name, analyzer, phi_angles, c2_exp, args.output_dir
+                    )
 
         # Generate comparison plots if both methods succeeded
         if len(results) > 1 and all(results.values()):

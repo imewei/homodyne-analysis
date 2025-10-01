@@ -770,18 +770,59 @@ def save_main_summary(results: dict[str, Any], analyzer, output_dir: Path) -> No
         # Add results for each method
         for method_name, result in results.items():
             if result:
-                param_names = analyzer.config.get(
-                    "parameter_names",
-                    [f"p{i}" for i in range(len(result["parameters"]))],
-                )
-                summary["optimization_results"][method_name] = {
-                    "parameters": {
-                        name: float(value)
-                        for name, value in zip(param_names, result["parameters"], strict=False)
-                    },
-                    "chi_squared": float(result.get("chi_squared") or 0),
-                    "success": bool(result.get("success", False)),
-                }
+                # Check if this is a robust result with multiple methods
+                if method_name == "robust" and "all_robust_results" in result:
+                    # Add each robust method separately
+                    for specific_method, method_result in result[
+                        "all_robust_results"
+                    ].items():
+                        param_names = analyzer.config.get(
+                            "parameter_names",
+                            [f"p{i}" for i in range(len(method_result["parameters"]))],
+                        )
+                        summary["optimization_results"][
+                            f"robust_{specific_method}"
+                        ] = {
+                            "parameters": {
+                                name: float(value)
+                                for name, value in zip(
+                                    param_names, method_result["parameters"], strict=False
+                                )
+                            },
+                            "chi_squared": float(method_result.get("chi_squared") or 0),
+                            "success": bool(method_result.get("success", False)),
+                        }
+                    # Also add best robust result
+                    param_names = analyzer.config.get(
+                        "parameter_names",
+                        [f"p{i}" for i in range(len(result["parameters"]))],
+                    )
+                    summary["optimization_results"]["robust_best"] = {
+                        "parameters": {
+                            name: float(value)
+                            for name, value in zip(
+                                param_names, result["parameters"], strict=False
+                            )
+                        },
+                        "chi_squared": float(result.get("chi_squared") or 0),
+                        "success": bool(result.get("success", False)),
+                    }
+                else:
+                    # Add single method result
+                    param_names = analyzer.config.get(
+                        "parameter_names",
+                        [f"p{i}" for i in range(len(result["parameters"]))],
+                    )
+                    summary["optimization_results"][method_name] = {
+                        "parameters": {
+                            name: float(value)
+                            for name, value in zip(
+                                param_names, result["parameters"], strict=False
+                            )
+                        },
+                        "chi_squared": float(result.get("chi_squared") or 0),
+                        "success": bool(result.get("success", False)),
+                    }
 
         summary_file = output_dir / "homodyne_analysis_results.json"
         with open(summary_file, "w") as f:

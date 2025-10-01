@@ -244,60 +244,117 @@ def run_robust_optimization(
                 f"⚠️  Data shape mismatch: expected {expected_shape}, got {c2_exp.shape}"
             )
 
-        # Run the robust optimization
-        # Returns tuple: (optimal_parameters, optimization_info_dict)
-        parameters, result_info = optimizer.run_robust_optimization(
-            initial_parameters=initial_params,
-            phi_angles=phi_angles,
-            c2_experimental=c2_exp,
-        )
+        # Run all three robust optimization methods
+        robust_methods = ["wasserstein", "scenario", "ellipsoidal"]
+        all_results = {}
+        best_result = None
+        best_chi_squared = float("inf")
 
-        if parameters is None or result_info is None:
-            logger.error("❌ Robust optimization returned no result")
-            logger.error(f"  parameters is None: {parameters is None}")
-            logger.error(f"  result_info is None: {result_info is None}")
+        logger.info("=" * 50)
+        logger.info("Running all robust optimization methods...")
+        logger.info("=" * 50)
+
+        for method in robust_methods:
+            logger.info("")
+            logger.info(f"ROBUST METHOD: {method.upper()}")
+            logger.info("-" * 30)
+
+            try:
+                # Run the robust optimization with specific method
+                # Returns tuple: (optimal_parameters, optimization_info_dict)
+                parameters, result_info = optimizer.run_robust_optimization(
+                    initial_parameters=initial_params,
+                    phi_angles=phi_angles,
+                    c2_experimental=c2_exp,
+                    method=method,
+                )
+
+                if parameters is None or result_info is None:
+                    logger.warning(f"⚠️  {method.capitalize()} optimization returned no result")
+                    continue
+
+                # Validate parameters
+                if not isinstance(parameters, np.ndarray) or len(parameters) == 0:
+                    logger.warning(
+                        f"⚠️  {method.capitalize()} returned invalid parameters: "
+                        f"type={type(parameters)}"
+                    )
+                    continue
+
+                # Extract chi-squared from result_info
+                chi_squared = result_info.get(
+                    "chi_squared",
+                    result_info.get("final_chi_squared", result_info.get("final_cost", 0.0)),
+                )
+                if chi_squared is None:
+                    chi_squared = 0.0
+
+                method_used = result_info.get("method", method)
+                success = result_info.get("success", True)
+
+                logger.info(f"✓ {method.capitalize()} optimization completed")
+                if chi_squared > 0:
+                    logger.info(f"✓ Final chi-squared: {chi_squared:.6f}")
+
+                # Log parameters
+                param_names = analyzer.config.get(
+                    "parameter_names", [f"p{i}" for i in range(len(parameters))]
+                )
+                for i, (name, value) in enumerate(
+                    zip(param_names, parameters, strict=False)
+                ):
+                    logger.info(f"✓ {name}: {value:.6f}")
+
+                # Store result for this method
+                method_result = {
+                    "method": method,
+                    "parameters": parameters,
+                    "chi_squared": chi_squared,
+                    "success": success,
+                    "result_object": result_info,
+                }
+                all_results[method] = method_result
+
+                # Track best result
+                if chi_squared > 0 and chi_squared < best_chi_squared:
+                    best_chi_squared = chi_squared
+                    best_result = method_result
+
+            except Exception as e:
+                logger.warning(f"⚠️  {method.capitalize()} optimization failed: {e}")
+                continue
+
+        logger.info("")
+        logger.info("=" * 50)
+        logger.info("ROBUST OPTIMIZATION SUMMARY")
+        logger.info("=" * 50)
+
+        if not all_results:
+            logger.error("❌ All robust optimization methods failed")
             return None
 
-        # Validate parameters
-        if not isinstance(parameters, np.ndarray) or len(parameters) == 0:
-            logger.error(
-                f"❌ Robust optimization returned invalid parameters: type={type(parameters)}, "
-                f"len={len(parameters) if hasattr(parameters, '__len__') else 'N/A'}"
+        # Log summary of all methods
+        for method, result in all_results.items():
+            logger.info(
+                f"{method.capitalize():15s}: χ² = {result['chi_squared']:.6f}, "
+                f"success = {result['success']}"
             )
-            return None
 
-        # Extract chi-squared from result_info
-        # Check multiple possible keys: chi_squared, final_chi_squared, final_cost
-        # Use 0.0 as default instead of None to avoid float() conversion errors
-        chi_squared = result_info.get(
-            "chi_squared",
-            result_info.get("final_chi_squared", result_info.get("final_cost", 0.0)),
-        )
-        if chi_squared is None:
-            chi_squared = 0.0
-        method_used = result_info.get("method", "robust")
-        success = result_info.get("success", True)
+        if best_result:
+            logger.info("")
+            logger.info(f"⭐ Best method: {best_result['method']} "
+                       f"(χ² = {best_chi_squared:.6f})")
 
-        logger.info(f"✓ Robust optimization completed with method: {method_used}")
+        logger.info("=" * 50)
 
-        if chi_squared > 0:
-            logger.info(f"✓ Final chi-squared: {chi_squared:.6f}")
-        else:
-            logger.info("✓ Optimization completed")
-
-        # Log parameters
-        param_names = analyzer.config.get(
-            "parameter_names", [f"p{i}" for i in range(len(parameters))]
-        )
-        for i, (name, value) in enumerate(zip(param_names, parameters, strict=False)):
-            logger.info(f"✓ {name}: {value:.6f}")
-
+        # Return the best result with all_results attached
         return {
             "method": "robust",
-            "parameters": parameters,
-            "chi_squared": chi_squared,
-            "success": success,
-            "result_object": result_info,
+            "parameters": best_result["parameters"],
+            "chi_squared": best_result["chi_squared"],
+            "success": best_result["success"],
+            "result_object": best_result["result_object"],
+            "all_robust_results": all_results,  # Include all method results
         }
 
     except Exception as e:
