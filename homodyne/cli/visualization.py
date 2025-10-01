@@ -571,7 +571,12 @@ def save_individual_method_results(
 
         # Determine specific method name from result_object
         result_object = results.get("result_object", {})
-        if method_name == "classical":
+
+        # First check if the results dict itself has a method field (for individual method results)
+        if "method" in results and results["method"] != method_name:
+            # This is an individual method result (e.g., gurobi, nelder_mead)
+            specific_method = results["method"]
+        elif method_name == "classical":
             # For classical, use "nelder_mead" as default
             specific_method = "nelder_mead"
         elif method_name == "robust":
