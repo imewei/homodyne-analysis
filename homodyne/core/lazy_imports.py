@@ -37,7 +37,6 @@ class LazyImportError(ImportError):
     """Custom exception for lazy import failures."""
 
 
-
 class HeavyDependencyLoader:
     """
     Advanced lazy loader for heavy scientific computing dependencies.

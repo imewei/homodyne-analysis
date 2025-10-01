@@ -267,7 +267,8 @@ except Exception as e:
         start_time = time.perf_counter()
         result = subprocess.run(
             [sys.executable, "-c", measurement_script],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
             text=True,
             timeout=30,  # 30-second timeout
         )

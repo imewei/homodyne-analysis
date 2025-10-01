@@ -90,7 +90,7 @@ def ensure_dir(path: str | Path, permissions: int = 0o755) -> Path:
         if not path_obj.exists():
             logger.error(f"Failed to create directory {path_obj}: {e}")
             raise
-        elif not path_obj.is_dir():
+        if not path_obj.is_dir():
             logger.error(f"Path exists but is not a directory: {path_obj}")
             raise OSError(f"Path exists but is not a directory: {path_obj}")
 
@@ -208,15 +208,14 @@ def _json_serializer(obj):
     """
     if isinstance(obj, np.ndarray):
         return obj.tolist()
-    elif isinstance(obj, (np.integer, np.floating)):
+    if isinstance(obj, (np.integer, np.floating)):
         return obj.item()
-    elif isinstance(obj, (np.complexfloating, complex)):
+    if isinstance(obj, (np.complexfloating, complex)):
         # Don't serialize complex numbers - let them fail for testing
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-    elif hasattr(obj, "__dict__"):
+    if hasattr(obj, "__dict__"):
         return str(obj)  # Convert complex objects to string
-    else:
-        return str(obj)
+    return str(obj)
 
 
 def save_json(data: Any, filepath: str | Path, **kwargs: Any) -> bool:
@@ -699,7 +698,7 @@ def save_analysis_results(
     if any(
         # Complex object detection logic
         False
-        for key in results.keys()
+        for key in results
     ):
         # Use same directory logic as main JSON file
         if "classical_optimization" in results and results.get("methods_used", []) == [
@@ -816,9 +815,7 @@ def calculate_time_length(start_frame: int, end_frame: int) -> int:
     return time_length
 
 
-def config_frames_to_python_slice(
-    start_frame: int, end_frame: int
-) -> tuple[int, int]:
+def config_frames_to_python_slice(start_frame: int, end_frame: int) -> tuple[int, int]:
     """
     Convert config frame range (1-based inclusive) to Python slice indices (0-based).
 

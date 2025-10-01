@@ -175,7 +175,9 @@ class ContentAddressableHash:
             hasher.update(b"dict")
             for key in sorted(obj.keys(), key=str):
                 key_hash = ContentAddressableHash.safe_hash_object(key, precision)
-                value_hash = ContentAddressableHash.safe_hash_object(obj[key], precision)
+                value_hash = ContentAddressableHash.safe_hash_object(
+                    obj[key], precision
+                )
                 hasher.update(f"{key_hash}:{value_hash}".encode())
             return hasher.hexdigest()
 

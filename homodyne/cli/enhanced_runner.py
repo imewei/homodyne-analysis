@@ -583,9 +583,7 @@ def main() -> int:
         log_level = (
             logging.WARNING
             if verbosity == 0
-            else logging.INFO
-            if verbosity == 1
-            else logging.DEBUG
+            else logging.INFO if verbosity == 1 else logging.DEBUG
         )
         logging.basicConfig(
             level=log_level,

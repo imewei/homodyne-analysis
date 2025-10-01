@@ -230,7 +230,9 @@ class TestMatrixOperationAccuracy:
         np.testing.assert_allclose(computed_eigenvals, expected_eigenvals, rtol=1e-12)
 
         # Test eigenvalue equation: A @ v = λ @ v
-        for i, (eigenval, eigenvec) in enumerate(zip(eigenvals, eigenvecs.T, strict=False)):
+        for i, (eigenval, eigenvec) in enumerate(
+            zip(eigenvals, eigenvecs.T, strict=False)
+        ):
             lhs = A @ eigenvec
             rhs = eigenval * eigenvec
 

@@ -265,10 +265,13 @@ class TestCLIBasicFunctionality:
         methods = ["classical", "robust", "all"]
 
         for method in methods:
-            with patch(
-                "sys.argv",
-                ["run_homodyne", "--method", method, "--config", self.config_path],
-            ), patch("homodyne.analysis.core.HomodyneAnalysisCore"):
+            with (
+                patch(
+                    "sys.argv",
+                    ["run_homodyne", "--method", method, "--config", self.config_path],
+                ),
+                patch("homodyne.analysis.core.HomodyneAnalysisCore"),
+            ):
                 try:
                     run_homodyne_main()
                 except (SystemExit, AttributeError):
@@ -279,10 +282,13 @@ class TestCLIBasicFunctionality:
         modes = ["static_isotropic", "static_anisotropic", "laminar_flow"]
 
         for mode in modes:
-            with patch(
-                "sys.argv",
-                ["run_homodyne", "--mode", mode, "--config", self.config_path],
-            ), patch("homodyne.analysis.core.HomodyneAnalysisCore"):
+            with (
+                patch(
+                    "sys.argv",
+                    ["run_homodyne", "--mode", mode, "--config", self.config_path],
+                ),
+                patch("homodyne.analysis.core.HomodyneAnalysisCore"),
+            ):
                 try:
                     run_homodyne_main()
                 except (SystemExit, AttributeError):
@@ -518,7 +524,8 @@ class TestCLISubprocess:
         try:
             result = subprocess.run(
                 [self.python_executable, "-m", "homodyne.cli.run_homodyne", "--help"],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -544,7 +551,8 @@ class TestCLISubprocess:
                         "--template",
                         "static_isotropic",
                     ],
-                    check=False, capture_output=True,
+                    check=False,
+                    capture_output=True,
                     text=True,
                     timeout=30,
                 )
@@ -568,7 +576,8 @@ class TestCLISubprocess:
                     "-c",
                     "import homodyne; print(homodyne.__version__)",
                 ],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=10,
             )

@@ -118,7 +118,9 @@ class ComplexityAnalyzer:
                     complexity_results["complexities"].append(complexity)
                     complexity_results["total_functions"] += 1
 
-                    complexity_results["max_complexity"] = max(complexity_results["max_complexity"], complexity)
+                    complexity_results["max_complexity"] = max(
+                        complexity_results["max_complexity"], complexity
+                    )
 
                     if complexity > 10:  # High complexity threshold
                         complexity_results["high_complexity_functions"].append(

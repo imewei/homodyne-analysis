@@ -1017,9 +1017,7 @@ class RobustHomodyneOptimizer:
                 }
 
                 return optimal_params, info
-            logger.error(
-                f"Scenario optimization failed with status: {problem.status}"
-            )
+            logger.error(f"Scenario optimization failed with status: {problem.status}")
             return None, {
                 "status": problem.status,
                 "method": "scenario_robust",

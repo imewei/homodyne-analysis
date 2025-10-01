@@ -26,9 +26,9 @@ class TestTimeLengthFormula:
 
         time_length = end_frame - start_frame + 1
 
-        assert time_length == expected_time_length, (
-            f"Standard case failed: {time_length} != {expected_time_length}"
-        )
+        assert (
+            time_length == expected_time_length
+        ), f"Standard case failed: {time_length} != {expected_time_length}"
 
     def test_problematic_case_401_1000(self):
         """Test the specific case that revealed the bug (401-1000)."""
@@ -38,9 +38,9 @@ class TestTimeLengthFormula:
 
         time_length = end_frame - start_frame + 1
 
-        assert time_length == expected_time_length, (
-            f"Case 401-1000 failed: {time_length} != {expected_time_length}"
-        )
+        assert (
+            time_length == expected_time_length
+        ), f"Case 401-1000 failed: {time_length} != {expected_time_length}"
 
     def test_single_frame_edge_case(self):
         """Test edge case with single frame."""
@@ -50,9 +50,9 @@ class TestTimeLengthFormula:
 
         time_length = end_frame - start_frame + 1
 
-        assert time_length == expected_time_length, (
-            f"Single frame case failed: {time_length} != {expected_time_length}"
-        )
+        assert (
+            time_length == expected_time_length
+        ), f"Single frame case failed: {time_length} != {expected_time_length}"
 
     def test_large_frame_range(self):
         """Test large frame range."""
@@ -62,9 +62,9 @@ class TestTimeLengthFormula:
 
         time_length = end_frame - start_frame + 1
 
-        assert time_length == expected_time_length, (
-            f"Large range failed: {time_length} != {expected_time_length}"
-        )
+        assert (
+            time_length == expected_time_length
+        ), f"Large range failed: {time_length} != {expected_time_length}"
 
     def test_mid_range_start(self):
         """Test non-zero start frame."""
@@ -74,9 +74,9 @@ class TestTimeLengthFormula:
 
         time_length = end_frame - start_frame + 1
 
-        assert time_length == expected_time_length, (
-            f"Mid-range start failed: {time_length} != {expected_time_length}"
-        )
+        assert (
+            time_length == expected_time_length
+        ), f"Mid-range start failed: {time_length} != {expected_time_length}"
 
 
 class TestTimeArrayConstruction:
@@ -96,9 +96,9 @@ class TestTimeArrayConstruction:
         time_length = 600
         time_array = np.linspace(0, dt * (time_length - 1), time_length)
 
-        assert len(time_array) == time_length, (
-            f"Array length {len(time_array)} != time_length {time_length}"
-        )
+        assert (
+            len(time_array) == time_length
+        ), f"Array length {len(time_array)} != time_length {time_length}"
 
     def test_time_array_spacing(self):
         """Time array spacing must equal dt."""
@@ -108,9 +108,7 @@ class TestTimeArrayConstruction:
 
         if time_length > 1:
             spacing = time_array[1] - time_array[0]
-            assert np.isclose(spacing, dt), (
-                f"Time spacing {spacing} != dt {dt}"
-            )
+            assert np.isclose(spacing, dt), f"Time spacing {spacing} != dt {dt}"
 
     def test_time_array_consistency_with_loader(self):
         """Test consistency between analysis and loader formulas."""
@@ -126,9 +124,9 @@ class TestTimeArrayConstruction:
         time_max = dt * (end_frame - start_frame)
         time_array_loader = np.linspace(0, time_max, time_length)
 
-        assert np.allclose(time_array_core, time_array_loader), (
-            "Time array formulas inconsistent between core and loader"
-        )
+        assert np.allclose(
+            time_array_core, time_array_loader
+        ), "Time array formulas inconsistent between core and loader"
 
 
 class TestAnalysisCoreIntegration:
@@ -147,9 +145,9 @@ class TestAnalysisCoreIntegration:
         time_length = end_frame - start_frame + 1
 
         expected_time_length = 600
-        assert time_length == expected_time_length, (
-            f"Formula gives {time_length} != expected {expected_time_length}"
-        )
+        assert (
+            time_length == expected_time_length
+        ), f"Formula gives {time_length} != expected {expected_time_length}"
 
         # Test that this matches what would be in analysis/core.py:240
         # (where the fix was applied)
@@ -176,9 +174,9 @@ class TestAnalysisCoreIntegration:
         # Create time_array (fixed formula from analysis/core.py)
         time_array = np.linspace(0, dt * (time_length - 1), time_length)
 
-        assert len(time_array) == time_length, (
-            f"time_array length {len(time_array)} != time_length {time_length}"
-        )
+        assert (
+            len(time_array) == time_length
+        ), f"time_array length {len(time_array)} != time_length {time_length}"
 
 
 class TestCacheDimensionConsistency:
@@ -195,9 +193,9 @@ class TestCacheDimensionConsistency:
         python_end = end_frame  # 1000
         num_frames_from_slice = python_end - python_start  # 600
 
-        assert num_frames_from_slice == expected_time_length, (
-            f"Cache dimensions {num_frames_from_slice} != expected {expected_time_length}"
-        )
+        assert (
+            num_frames_from_slice == expected_time_length
+        ), f"Cache dimensions {num_frames_from_slice} != expected {expected_time_length}"
 
     def test_cache_metadata_consistency(self):
         """Test that cache metadata correctly stores frame information."""
@@ -211,9 +209,9 @@ class TestCacheDimensionConsistency:
 
         # Verify consistency
         expected_time_length = config_end - config_start + 1  # 600
-        assert num_frames == expected_time_length, (
-            "Cache metadata inconsistent with time_length formula"
-        )
+        assert (
+            num_frames == expected_time_length
+        ), "Cache metadata inconsistent with time_length formula"
 
 
 class TestConvertScriptConsistency:
@@ -221,6 +219,7 @@ class TestConvertScriptConsistency:
 
     def test_conversion_function_correctness(self):
         """Test the convert_config_frames_to_python function."""
+
         # Simulate the conversion function from convert_c2_to_npz.py
         def convert_config_frames_to_python(config_start, config_end):
             python_start = config_start - 1
@@ -238,9 +237,9 @@ class TestConvertScriptConsistency:
         num_frames = python_end - python_start
         expected_time_length = config_end - config_start + 1
 
-        assert num_frames == expected_time_length, (
-            f"Conversion gives {num_frames} frames, expected {expected_time_length}"
-        )
+        assert (
+            num_frames == expected_time_length
+        ), f"Conversion gives {num_frames} frames, expected {expected_time_length}"
 
 
 if __name__ == "__main__":

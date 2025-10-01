@@ -175,7 +175,9 @@ def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
         threshold = 1e-10  # Avoid numerical instability for very small t
         mask = time_array > threshold
         if np.any(mask):
-            gamma_values[mask] = gamma_dot_t0 * np.power(time_array[mask], beta) + gamma_dot_t_offset
+            gamma_values[mask] = (
+                gamma_dot_t0 * np.power(time_array[mask], beta) + gamma_dot_t_offset
+            )
     else:
         # Standard calculation for non-negative beta (no singularity at t=0)
         gamma_values = gamma_dot_t0 * np.power(time_array, beta) + gamma_dot_t_offset
@@ -614,12 +616,7 @@ def refresh_kernel_functions():
     bool
         True if Numba kernels are now available, False if using fallback functions
     """
-    global \
-        create_time_integral_matrix_numba, \
-        calculate_diffusion_coefficient_numba, \
-        calculate_shear_rate_numba, \
-        compute_g1_correlation_numba, \
-        compute_sinc_squared_numba
+    global create_time_integral_matrix_numba, calculate_diffusion_coefficient_numba, calculate_shear_rate_numba, compute_g1_correlation_numba, compute_sinc_squared_numba
 
     # Re-check numba availability
     current_numba_available = _check_numba_availability()
@@ -966,7 +963,9 @@ def calculate_shear_rate_numba(t, gamma0, beta, gamma_offset):
         threshold = 1e-10
         mask = np.atleast_1d(t) > threshold
         if np.any(mask):
-            gamma_values[mask] = gamma0 * np.power(np.atleast_1d(t)[mask], beta) + gamma_offset
+            gamma_values[mask] = (
+                gamma0 * np.power(np.atleast_1d(t)[mask], beta) + gamma_offset
+            )
 
         # Return scalar if input was scalar, otherwise return array
         if np.isscalar(t):

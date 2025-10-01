@@ -266,7 +266,11 @@ class ComplexityAnalyzer(ast.NodeVisitor):
 
         # Count complexity-adding constructs
         for child in ast.walk(node):
-            if isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor)) or isinstance(child, ast.ExceptHandler) or isinstance(child, (ast.And, ast.Or)):
+            if (
+                isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor))
+                or isinstance(child, ast.ExceptHandler)
+                or isinstance(child, (ast.And, ast.Or))
+            ):
                 self.current_function_complexity += 1
 
         # Count lines
@@ -794,7 +798,6 @@ class ValidationPipeline:
 
         # Simulate module import time
         start_time = time.perf_counter()
-
 
         import_time = time.perf_counter() - start_time
 

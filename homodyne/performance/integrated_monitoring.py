@@ -168,7 +168,8 @@ print(f"IMPORT_TIME:{end - start}")
         try:
             result = subprocess.run(
                 [sys.executable, temp_script],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -519,13 +520,19 @@ print(f"IMPORT_TIME:{end - start}")
                 f.write(
                     f"⚠️  {report.regression_detection['regression_count']} regressions detected:\n"
                 )
-                f.writelines(f"  - {regression}\n" for regression in report.regression_detection["regressions"])
+                f.writelines(
+                    f"  - {regression}\n"
+                    for regression in report.regression_detection["regressions"]
+                )
             else:
                 f.write("✅ No performance regressions detected\n")
             f.write("\n")
 
             f.write("OPTIMIZATION RECOMMENDATIONS:\n")
-            f.writelines(f"{i}. {rec}\n" for i, rec in enumerate(report.optimization_recommendations, 1))
+            f.writelines(
+                f"{i}. {rec}\n"
+                for i, rec in enumerate(report.optimization_recommendations, 1)
+            )
 
             f.write(f"\nReport generated: {report.structural_metrics.timestamp}\n")
 

@@ -475,9 +475,7 @@ class UsabilityTester:
                 continue
 
         # Check for README and documentation
-        doc_files = list(Path().glob("README*")) + list(
-            Path().glob("docs/**/*.md")
-        )
+        doc_files = list(Path().glob("README*")) + list(Path().glob("docs/**/*.md"))
         if doc_files:
             help_indicators += 2
 

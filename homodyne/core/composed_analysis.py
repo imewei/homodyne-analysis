@@ -236,9 +236,7 @@ class ComposedHomodyneAnalysis:
                     result = chi2_workflow(params, data.phi_angles, data.c2_exp)
                     if result.is_success:
                         return result.value
-                    logger.warning(
-                        f"Chi-squared calculation failed: {result.error}"
-                    )
+                    logger.warning(f"Chi-squared calculation failed: {result.error}")
                     return np.inf
 
                 # Select and run optimizer
@@ -273,9 +271,7 @@ class ComposedHomodyneAnalysis:
                         message=getattr(opt_result, "message", ""),
                     )
                     return Result.success(result)
-                error_msg = (
-                    str(opt_result) if not success else "Optimization failed"
-                )
+                error_msg = str(opt_result) if not success else "Optimization failed"
                 return Result.failure(RuntimeError(error_msg))
 
             except Exception as e:

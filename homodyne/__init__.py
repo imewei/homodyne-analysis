@@ -81,7 +81,7 @@ class _LazyLoader:
         self._heavy_loader = HeavyDependencyLoader(
             module_name=module_name,
             attribute=class_name,
-            required=True  # Most package components are required
+            required=True,  # Most package components are required
         )
 
     def __call__(self, *args, **kwargs):
@@ -153,6 +153,7 @@ get_template_path = _LazyLoader(".config", "get_template_path")
 get_config_dir = _LazyLoader(".config", "get_config_dir")
 TEMPLATE_FILES = _LazyLoader(".config", "TEMPLATE_FILES")
 
+
 # Performance and monitoring utilities
 def get_import_performance_report() -> dict[str, Any]:
     """
@@ -164,7 +165,9 @@ def get_import_performance_report() -> dict[str, Any]:
         Performance metrics including load times and success rates
     """
     from .core.lazy_imports import get_import_performance_report
+
     return get_import_performance_report()
+
 
 def preload_scientific_dependencies() -> None:
     """
@@ -173,7 +176,9 @@ def preload_scientific_dependencies() -> None:
     This can reduce latency for first-time usage of heavy computational modules.
     """
     from .core.lazy_imports import preload_critical_dependencies
+
     preload_critical_dependencies()
+
 
 def configure_logging() -> None:
     """Configure logging for the homodyne package."""
@@ -184,8 +189,9 @@ def configure_logging() -> None:
     log_level = os.environ.get("HOMODYNE_LOG_LEVEL", "INFO").upper()
     logging.basicConfig(
         level=getattr(logging, log_level, logging.INFO),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
 
 def optimize_initialization() -> dict[str, Any]:
     """
@@ -197,6 +203,7 @@ def optimize_initialization() -> dict[str, Any]:
         Optimization strategy and performance metrics
     """
     from .core.initialization_optimizer import optimize_package_initialization
+
     strategy = optimize_package_initialization()
     return {
         "strategy": {
@@ -208,6 +215,7 @@ def optimize_initialization() -> dict[str, Any]:
         }
     }
 
+
 def get_startup_performance_report() -> dict[str, Any]:
     """
     Get comprehensive startup performance report.
@@ -218,10 +226,13 @@ def get_startup_performance_report() -> dict[str, Any]:
         Startup performance metrics and analysis
     """
     from .core.initialization_optimizer import profile_startup_performance
+
     return profile_startup_performance()
 
-def establish_performance_baseline(name: str,
-                                 target_import_time: float = 2.0) -> dict[str, Any]:
+
+def establish_performance_baseline(
+    name: str, target_import_time: float = 2.0
+) -> dict[str, Any]:
     """
     Establish a performance baseline for startup monitoring.
 
@@ -238,7 +249,9 @@ def establish_performance_baseline(name: str,
         Created baseline information
     """
     from .performance.simple_monitoring import create_performance_baseline
+
     return create_performance_baseline(name=name, target_time=target_import_time)
+
 
 def check_performance_health() -> dict[str, Any]:
     """
@@ -250,7 +263,9 @@ def check_performance_health() -> dict[str, Any]:
         Performance health status
     """
     from .performance.simple_monitoring import quick_startup_check
+
     return quick_startup_check()
+
 
 def monitor_startup_performance(iterations: int = 5) -> dict[str, Any]:
     """
@@ -267,7 +282,9 @@ def monitor_startup_performance(iterations: int = 5) -> dict[str, Any]:
         Startup performance metrics
     """
     from .performance.simple_monitoring import measure_current_startup_performance
+
     return measure_current_startup_performance(iterations=iterations)
+
 
 def get_performance_trend_report(days: int = 30) -> dict[str, Any]:
     """
@@ -284,14 +301,21 @@ def get_performance_trend_report(days: int = 30) -> dict[str, Any]:
         Performance trend report
     """
     from .performance.startup_monitoring import get_startup_monitor
+
     monitor = get_startup_monitor()
     return monitor.get_performance_trend(days=days)
+
 
 # Apply initialization optimizations automatically if enabled
 def _apply_startup_optimizations() -> None:
     """Apply startup optimizations if enabled by environment variable."""
     import os
-    if os.environ.get("HOMODYNE_OPTIMIZE_STARTUP", "true").lower() in ("true", "1", "yes"):
+
+    if os.environ.get("HOMODYNE_OPTIMIZE_STARTUP", "true").lower() in (
+        "true",
+        "1",
+        "yes",
+    ):
         try:
             optimizer = get_initialization_optimizer()
             optimizer.optimize_initialization_order()
@@ -299,6 +323,7 @@ def _apply_startup_optimizations() -> None:
         except Exception:
             # Silently ignore optimization failures to prevent startup issues
             pass
+
 
 # Apply optimizations during package import
 _apply_startup_optimizations()

@@ -114,21 +114,20 @@ class VisualizationOptimizer:
         if backend == "auto":
             if self.interactive and PLOTLY_AVAILABLE:
                 return "plotly"
-            elif MATPLOTLIB_AVAILABLE:
+            if MATPLOTLIB_AVAILABLE:
                 return "matplotlib"
-            elif PLOTLY_AVAILABLE:
+            if PLOTLY_AVAILABLE:
                 return "plotly"
-            elif BOKEH_AVAILABLE:
+            if BOKEH_AVAILABLE:
                 return "bokeh"
-            else:
-                raise ImportError("No supported plotting backend available")
+            raise ImportError("No supported plotting backend available")
 
         # Validate requested backend
         if backend == "matplotlib" and not MATPLOTLIB_AVAILABLE:
             raise ImportError("Matplotlib not available")
-        elif backend == "plotly" and not PLOTLY_AVAILABLE:
+        if backend == "plotly" and not PLOTLY_AVAILABLE:
             raise ImportError("Plotly not available")
-        elif backend == "bokeh" and not BOKEH_AVAILABLE:
+        if backend == "bokeh" and not BOKEH_AVAILABLE:
             raise ImportError("Bokeh not available")
 
         return backend
@@ -220,11 +219,10 @@ class VisualizationOptimizer:
 
         if data.ndim == 1:
             return data[::downsample_factor]
-        elif data.ndim == 2:
+        if data.ndim == 2:
             return data[::downsample_factor, ::downsample_factor]
-        else:
-            # For higher dimensions, downsample first two dimensions
-            return data[::downsample_factor, ::downsample_factor, ...]
+        # For higher dimensions, downsample first two dimensions
+        return data[::downsample_factor, ::downsample_factor, ...]
 
     def create_correlation_heatmap(
         self,
@@ -251,7 +249,7 @@ class VisualizationOptimizer:
                     progress,
                     **kwargs,
                 )
-            elif self.backend == "plotly":
+            if self.backend == "plotly":
                 return self._create_plotly_heatmap(
                     exp_data,
                     theory_data,
@@ -261,8 +259,7 @@ class VisualizationOptimizer:
                     progress,
                     **kwargs,
                 )
-            else:
-                raise ValueError(f"Unsupported backend: {self.backend}")
+            raise ValueError(f"Unsupported backend: {self.backend}")
 
     def create_parameter_evolution_plot(
         self,
@@ -275,10 +272,9 @@ class VisualizationOptimizer:
             return self._create_matplotlib_evolution(
                 parameter_history, output_path, title
             )
-        elif self.backend == "plotly":
+        if self.backend == "plotly":
             return self._create_plotly_evolution(parameter_history, output_path, title)
-        else:
-            raise ValueError(f"Unsupported backend: {self.backend}")
+        raise ValueError(f"Unsupported backend: {self.backend}")
 
     def create_performance_dashboard(
         self, analysis_results: dict[str, Any], output_path: Path | None = None
@@ -286,8 +282,7 @@ class VisualizationOptimizer:
         """Create performance analysis dashboard."""
         if self.backend == "plotly" and PLOTLY_AVAILABLE:
             return self._create_plotly_dashboard(analysis_results, output_path)
-        else:
-            return self._create_matplotlib_dashboard(analysis_results, output_path)
+        return self._create_matplotlib_dashboard(analysis_results, output_path)
 
     def get_performance_summary(self) -> dict[str, Any]:
         """Get visualization performance summary."""

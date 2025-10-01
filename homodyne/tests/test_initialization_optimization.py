@@ -39,8 +39,9 @@ class TestDependencyAnalyzer:
         analyzer = DependencyAnalyzer("homodyne")
 
         # Mock the complex parts to avoid file system dependencies
-        with patch.object(analyzer, "_build_dependency_graph"), patch.object(
-            analyzer, "_find_critical_path", return_value=["homodyne"]
+        with (
+            patch.object(analyzer, "_build_dependency_graph"),
+            patch.object(analyzer, "_find_critical_path", return_value=["homodyne"]),
         ):
             analysis = analyzer.analyze_dependencies()
 
@@ -292,7 +293,8 @@ class TestIntegrationWithMainPackage:
         # Import package in subprocess with optimization enabled
         result = subprocess.run(
             [sys.executable, "-c", "import homodyne; print('Success')"],
-            check=False, env=env,
+            check=False,
+            env=env,
             capture_output=True,
             text=True,
         )
@@ -310,7 +312,8 @@ class TestIntegrationWithMainPackage:
         # Should still import successfully
         result = subprocess.run(
             [sys.executable, "-c", "import homodyne; print('Success')"],
-            check=False, env=env,
+            check=False,
+            env=env,
             capture_output=True,
             text=True,
         )
@@ -335,7 +338,8 @@ class TestPerformanceBenchmarks:
             start_time = time.perf_counter()
             result = subprocess.run(
                 [sys.executable, "-c", "import homodyne"],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
             )
             end_time = time.perf_counter()
@@ -369,9 +373,9 @@ class TestPerformanceBenchmarks:
 
         # Memory usage should be reasonable
         memory_increase = final_memory - initial_memory
-        assert memory_increase < 100.0, (
-            f"Memory increase too high: {memory_increase:.2f}MB"
-        )
+        assert (
+            memory_increase < 100.0
+        ), f"Memory increase too high: {memory_increase:.2f}MB"
 
 
 if __name__ == "__main__":

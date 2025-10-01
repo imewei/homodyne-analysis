@@ -484,9 +484,7 @@ def get_security_health_status() -> dict[str, Any]:
         "status": (
             "healthy"
             if health_score.overall_score >= 80
-            else "warning"
-            if health_score.overall_score >= 60
-            else "critical"
+            else "warning" if health_score.overall_score >= 60 else "critical"
         ),
         "component_scores": {
             "input_validation": health_score.input_validation_score,

@@ -89,20 +89,16 @@ class SecurityError(Exception):
     """Base exception for security-related errors."""
 
 
-
 class ValidationError(SecurityError):
     """Input validation failed."""
-
 
 
 class RateLimitError(SecurityError):
     """Rate limit exceeded."""
 
 
-
 class MemoryLimitError(SecurityError):
     """Memory usage limit exceeded."""
-
 
 
 class SecureCache:

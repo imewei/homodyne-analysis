@@ -488,13 +488,13 @@ For production deployment, consider:
    - Memory: 4-8GB for ML models and data storage
    - Disk: 10-50GB for historical data storage
 
-1. **High Availability**:
+2. **High Availability**:
 
    - Deploy monitoring on separate infrastructure
    - Use persistent storage for baselines and history
    - Configure alert channel redundancy
 
-1. **Security**:
+3. **Security**:
 
    - Secure alert channel credentials
    - Encrypt stored performance data
@@ -529,9 +529,9 @@ print(f"Analytics dashboard: {analytics_dashboard}")
 ### Regular Maintenance Tasks
 
 1. **Baseline Updates**: Review and approve baseline updates
-1. **Alert Tuning**: Adjust alert thresholds based on operational experience
-1. **Model Retraining**: Retrain ML models with new performance data
-1. **Optimization Review**: Review and approve optimization recommendations
+2. **Alert Tuning**: Adjust alert thresholds based on operational experience
+3. **Model Retraining**: Retrain ML models with new performance data
+4. **Optimization Review**: Review and approve optimization recommendations
 
 ### Monitoring Health Checks
 
@@ -554,9 +554,9 @@ print(f"Optimization opportunities: {optimizer_status['total_opportunities']}")
 Common issues and solutions:
 
 1. **High Memory Usage**: Check data retention settings and cleanup old data
-1. **Missing Alerts**: Verify alert channel configuration and credentials
-1. **Inaccurate Baselines**: Review baseline calculation methods and data quality
-1. **False Positives**: Adjust anomaly detection sensitivity and thresholds
+2. **Missing Alerts**: Verify alert channel configuration and credentials
+3. **Inaccurate Baselines**: Review baseline calculation methods and data quality
+4. **False Positives**: Adjust anomaly detection sensitivity and thresholds
 
 ## Integration Examples
 
@@ -784,10 +784,10 @@ optimizer.config['optimization_templates'].update(custom_template)
 ### Common Issues
 
 1. **Monitoring not starting**: Check configuration file paths and permissions
-1. **High memory usage**: Review data retention settings and cleanup policies
-1. **Missing alerts**: Verify alert channel configuration and network connectivity
-1. **Inaccurate predictions**: Check data quality and model training parameters
-1. **False anomalies**: Adjust anomaly detection sensitivity and baseline quality
+2. **High memory usage**: Review data retention settings and cleanup policies
+3. **Missing alerts**: Verify alert channel configuration and network connectivity
+4. **Inaccurate predictions**: Check data quality and model training parameters
+5. **False anomalies**: Adjust anomaly detection sensitivity and baseline quality
 
 ### Debug Mode
 

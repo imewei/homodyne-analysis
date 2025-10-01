@@ -361,7 +361,8 @@ class SafetyChecker:
         try:
             result = subprocess.run(
                 ["git", "status", "--porcelain"],
-                check=False, cwd=self.package_root,
+                check=False,
+                cwd=self.package_root,
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -887,7 +888,8 @@ class EnterpriseImportAnalyzer:
         try:
             result = subprocess.run(
                 ["autoflake", "--check", "--recursive", str(self.package_root)],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )
@@ -899,7 +901,8 @@ class EnterpriseImportAnalyzer:
         try:
             result = subprocess.run(
                 ["unimport", "--check", "--recursive", str(self.package_root)],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )
@@ -920,7 +923,8 @@ class EnterpriseImportAnalyzer:
             try:
                 result = subprocess.run(
                     [tool, "--check", str(self.package_root)],
-                    check=False, capture_output=True,
+                    check=False,
+                    capture_output=True,
                     text=True,
                     timeout=30,
                 )

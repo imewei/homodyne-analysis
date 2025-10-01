@@ -352,13 +352,13 @@ setup_logging_for_optimization(
    - **MPI**: Best for HPC environments, homogeneous clusters
    - **Multiprocessing**: Best for single-node, simple parallelization
 
-1. **ML acceleration works best when:**
+2. **ML acceleration works best when:**
 
    - You have >20 previous optimization runs
    - Experimental conditions have some similarity
    - Parameter space is not too high-dimensional (≤10 parameters)
 
-1. **Memory optimization:**
+3. **Memory optimization:**
 
    - Use streaming for large parameter sweeps
    - Enable result compression for distributed storage

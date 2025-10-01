@@ -53,10 +53,12 @@ except ImportError as e:
 
 # Import advanced optimization features with graceful degradation
 try:
+    from ..optimization.distributed import get_available_backends
     from ..optimization.distributed import (
         integrate_with_classical_optimizer as integrate_distributed_classical,
+    )
+    from ..optimization.distributed import (
         integrate_with_robust_optimizer as integrate_distributed_robust,
-        get_available_backends,
     )
 
     DISTRIBUTED_AVAILABLE = True
@@ -67,11 +69,9 @@ except ImportError:
     get_available_backends = None
 
 try:
-    from ..optimization.ml_acceleration import (
-        enhance_classical_optimizer_with_ml,
-        enhance_robust_optimizer_with_ml,
-        get_ml_backend_info,
-    )
+    from ..optimization.ml_acceleration import enhance_classical_optimizer_with_ml
+    from ..optimization.ml_acceleration import enhance_robust_optimizer_with_ml
+    from ..optimization.ml_acceleration import get_ml_backend_info
 
     ML_ACCELERATION_AVAILABLE = True
 except ImportError:
@@ -226,7 +226,12 @@ def configure_optimization_enhancements(
             try:
                 # Create config dictionary for integration function
                 import psutil
-                num_processes = args.workers if hasattr(args, "workers") and args.workers else min(psutil.cpu_count() or 4, 8)
+
+                num_processes = (
+                    args.workers
+                    if hasattr(args, "workers") and args.workers
+                    else min(psutil.cpu_count() or 4, 8)
+                )
                 distributed_config = {
                     "multiprocessing_config": {"num_processes": num_processes}
                 }
@@ -247,8 +252,14 @@ def configure_optimization_enhancements(
             try:
                 # Create config dictionary for integration function
                 ml_config = {
-                    "enable_transfer_learning": getattr(args, "enable_transfer_learning", False),
-                    "data_storage_path": args.ml_data_path if hasattr(args, "ml_data_path") and args.ml_data_path else "./ml_optimization_data"
+                    "enable_transfer_learning": getattr(
+                        args, "enable_transfer_learning", False
+                    ),
+                    "data_storage_path": (
+                        args.ml_data_path
+                        if hasattr(args, "ml_data_path") and args.ml_data_path
+                        else "./ml_optimization_data"
+                    ),
                 }
                 enhanced_config["ml_acceleration"] = ml_config
                 logger.info("✓ ML acceleration configured")
@@ -616,7 +627,9 @@ def main():
 
             # Plot experimental data
             logger.info("Generating experimental data plots...")
-            plot_path = args.output_dir / "exp_data" / "experimental_data_validation.png"
+            plot_path = (
+                args.output_dir / "exp_data" / "experimental_data_validation.png"
+            )
             analyzer._plot_experimental_data_validation(
                 c2_experimental, phi_angles, save_path=str(plot_path)
             )

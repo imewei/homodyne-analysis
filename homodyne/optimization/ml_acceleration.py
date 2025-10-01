@@ -810,9 +810,7 @@ class TransferLearningPredictor(OptimizationPredictor):
             )
 
             # Combine with base prediction
-            base_result = self.base_predictor.predict(
-                experimental_conditions
-            )
+            base_result = self.base_predictor.predict(experimental_conditions)
 
             # Weighted combination based on domain similarity
             similarity = self._compute_domain_similarity(

@@ -288,7 +288,10 @@ class TestIntegrationWithMainPackage:
         # Measure import time
         start_time = time.time()
         result = subprocess.run(
-            [sys.executable, "-c", "import homodyne"], check=False, capture_output=True, text=True
+            [sys.executable, "-c", "import homodyne"],
+            check=False,
+            capture_output=True,
+            text=True,
         )
         end_time = time.time()
 

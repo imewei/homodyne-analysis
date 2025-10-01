@@ -46,15 +46,12 @@ class XPCSDataFormatError(Exception):
     """Raised when XPCS data format is not recognized or invalid."""
 
 
-
 class XPCSDependencyError(Exception):
     """Raised when required dependencies are not available."""
 
 
-
 class XPCSConfigurationError(Exception):
     """Raised when configuration is invalid or missing required parameters."""
-
 
 
 def load_xpcs_config(config_path: str | Path) -> dict[str, Any]:
@@ -379,7 +376,9 @@ class XPCSDataLoader:
             if dqlist_2d.ndim == 2:
                 dqlist = dqlist_2d[0, :]
                 dphilist = dphilist_2d[0, :]
-                logger.debug(f"Extracted 1D arrays from 2D structure: {len(dqlist)} (q,phi) pairs")
+                logger.debug(
+                    f"Extracted 1D arrays from 2D structure: {len(dqlist)} (q,phi) pairs"
+                )
             else:
                 dqlist = dqlist_2d
                 dphilist = dphilist_2d
@@ -438,7 +437,9 @@ class XPCSDataLoader:
                 closest_indices = np.argsort(q_distances)
                 n_desired = min(10, len(closest_indices))
                 q_matching_indices = closest_indices[:n_desired]
-                logger.debug(f"Expanded to {len(q_matching_indices)} q-vectors for phi coverage")
+                logger.debug(
+                    f"Expanded to {len(q_matching_indices)} q-vectors for phi coverage"
+                )
 
             logger.debug(
                 f"Selected {len(q_matching_indices)} (q,phi) pairs, "
@@ -450,7 +451,9 @@ class XPCSDataLoader:
 
             if selected_indices is not None:
                 final_indices = np.intersect1d(q_matching_indices, selected_indices)
-                logger.debug(f"After phi filtering: {len(q_matching_indices)} -> {len(final_indices)}")
+                logger.debug(
+                    f"After phi filtering: {len(q_matching_indices)} -> {len(final_indices)}"
+                )
             else:
                 final_indices = q_matching_indices
 
@@ -466,7 +469,9 @@ class XPCSDataLoader:
             # Step 10: Calculate time arrays
             dt = self._get_temporal_param("dt", 0.1)
             start_frame = self._get_temporal_param("start_frame", 1)
-            end_frame = self._get_temporal_param("end_frame", start_frame + c2_exp.shape[-1] - 1)
+            end_frame = self._get_temporal_param(
+                "end_frame", start_frame + c2_exp.shape[-1] - 1
+            )
 
             time_max = dt * (end_frame - start_frame)
             time_1d = np.linspace(0, time_max, c2_exp.shape[-1])
@@ -625,11 +630,15 @@ class XPCSDataLoader:
 
         selected_indices = np.where(selected_mask)[0]
 
-        if len(selected_indices) == 0 and angle_config.get("fallback_to_all_angles", True):
+        if len(selected_indices) == 0 and angle_config.get(
+            "fallback_to_all_angles", True
+        ):
             logger.warning("No angles in target ranges - using all angles")
             return None
 
-        logger.debug(f"Angle filtering: {len(selected_indices)}/{len(dphilist)} angles selected")
+        logger.debug(
+            f"Angle filtering: {len(selected_indices)}/{len(dphilist)} angles selected"
+        )
         return selected_indices
 
     def _apply_frame_slicing(self, c2_matrices: np.ndarray) -> np.ndarray:
@@ -643,7 +652,9 @@ class XPCSDataLoader:
 
         if start_frame > 0 or end_frame < max_frames:
             c2_exp = c2_matrices[:, start_frame:end_frame, start_frame:end_frame]
-            logger.debug(f"Applied frame slicing: [{start_frame}:{end_frame}] -> shape {c2_exp.shape}")
+            logger.debug(
+                f"Applied frame slicing: [{start_frame}:{end_frame}] -> shape {c2_exp.shape}"
+            )
         else:
             c2_exp = c2_matrices
             logger.debug("No frame slicing needed - using full range")

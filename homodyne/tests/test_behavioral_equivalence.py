@@ -165,14 +165,21 @@ class TestCalculateChiSquaredEquivalence:
 
             try:
                 # Simulate error detection logic
-                if params is None or phi_angles is None or c2_exp is None or (hasattr(params, "__len__") and len(params) == 0) or (hasattr(phi_angles, "__len__") and len(phi_angles) == 0) or (hasattr(params, "dtype") and not np.all(np.isfinite(params))):
+                if (
+                    params is None
+                    or phi_angles is None
+                    or c2_exp is None
+                    or (hasattr(params, "__len__") and len(params) == 0)
+                    or (hasattr(phi_angles, "__len__") and len(phi_angles) == 0)
+                    or (hasattr(params, "dtype") and not np.all(np.isfinite(params)))
+                ):
                     error_detected = True
             except Exception:
                 error_detected = True
 
-            assert error_detected, (
-                f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
-            )
+            assert (
+                error_detected
+            ), f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
 
         print("✓ Error handling equivalence verified")
 

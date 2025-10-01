@@ -84,7 +84,8 @@ end = time.perf_counter()
 print(f"IMPORT_TIME:{{end - start:.6f}}")
                     """,
                     ],
-                    check=False, capture_output=True,
+                    check=False,
+                    capture_output=True,
                     text=True,
                     timeout=30,
                 )

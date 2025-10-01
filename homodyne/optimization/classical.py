@@ -390,9 +390,9 @@ class ClassicalOptimizer:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data to satisfy type checker
-        assert phi_angles is not None and c2_experimental is not None, (
-            "Failed to load experimental data"
-        )
+        assert (
+            phi_angles is not None and c2_experimental is not None
+        ), "Failed to load experimental data"
 
         # Apply subsampling if enabled (to speed up optimization for large datasets)
         phi_angles, c2_experimental, (angle_indices, time_indices) = (
@@ -884,7 +884,9 @@ class ClassicalOptimizer:
             logger.info(
                 f"Final data size: {final_size:,} points ({final_n_angles} angles x {final_n_times}^2 times)"
             )
-            logger.info(f"Total memory/computation reduction: {final_reduction:.1f}x smaller")
+            logger.info(
+                f"Total memory/computation reduction: {final_reduction:.1f}x smaller"
+            )
 
         return subsampled_phi_angles, subsampled_c2_data, (angle_indices, time_indices)
 

@@ -237,7 +237,9 @@ class HomodyneAnalysisCore:
         self.dt = params["temporal"]["dt"]
         self.start_frame = params["temporal"]["start_frame"]
         self.end_frame = params["temporal"]["end_frame"]
-        self.time_length = self.end_frame - self.start_frame + 1  # +1 for inclusive counting (includes t=0)
+        self.time_length = (
+            self.end_frame - self.start_frame + 1
+        )  # +1 for inclusive counting (includes t=0)
 
         # Physical parameters
         self.wavevector_q = params["scattering"]["wavevector_q"]
@@ -685,7 +687,9 @@ class HomodyneAnalysisCore:
                     if angle_config.get("fallback_to_all_angles", True):
                         logger.warning("No angles in target ranges - using all angles")
                     else:
-                        raise ValueError(f"No angles found in target ranges {target_ranges}")
+                        raise ValueError(
+                            f"No angles found in target ranges {target_ranges}"
+                        )
                 else:
                     # Filter both phi_angles and c2_experimental
                     logger.info(
@@ -926,7 +930,7 @@ class HomodyneAnalysisCore:
             threshold = 1e-10
             mask = self.time_array > threshold
             if np.any(mask):
-                D_t[mask] = D0 * (self.time_array[mask]**alpha) + D_offset
+                D_t[mask] = D0 * (self.time_array[mask] ** alpha) + D_offset
         else:
             D_t = D0 * (self.time_array**alpha) + D_offset
 
@@ -951,12 +955,16 @@ class HomodyneAnalysisCore:
         # Handle negative beta: use physical limit at t=0
         if beta < 0:
             # Initialize with offset (physical limit as t→0)
-            gamma_t = np.full_like(self.time_array, gamma_dot_t_offset, dtype=np.float64)
+            gamma_t = np.full_like(
+                self.time_array, gamma_dot_t_offset, dtype=np.float64
+            )
             # For t > threshold, use full formula
             threshold = 1e-10
             mask = self.time_array > threshold
             if np.any(mask):
-                gamma_t[mask] = gamma_dot_t0 * (self.time_array[mask]**beta) + gamma_dot_t_offset
+                gamma_t[mask] = (
+                    gamma_dot_t0 * (self.time_array[mask] ** beta) + gamma_dot_t_offset
+                )
         else:
             gamma_t = gamma_dot_t0 * (self.time_array**beta) + gamma_dot_t_offset
 

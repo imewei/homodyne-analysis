@@ -319,9 +319,9 @@ def load_config(file_path: Path) -> dict:
         has_typing_imports = any(item.get("module") == "typing" for item in unused_list)
 
         # Either Dict is unused, or typing analysis is working correctly
-        assert has_dict_unused or len(unused_from_modules) == 0, (
-            f"Expected Dict unused or no from imports, got: {unused_from_modules}"
-        )
+        assert (
+            has_dict_unused or len(unused_from_modules) == 0
+        ), f"Expected Dict unused or no from imports, got: {unused_from_modules}"
 
         # sys should NOT be in unused (it's used)
         assert "sys" not in unused_modules
@@ -407,15 +407,19 @@ class TestSafetyChecker:
         self.safety_checker = SafetyChecker(self.temp_dir)
 
         # Initialize a git repository for testing
-        subprocess.run(["git", "init"], check=False, cwd=self.temp_dir, capture_output=True)
+        subprocess.run(
+            ["git", "init"], check=False, cwd=self.temp_dir, capture_output=True
+        )
         subprocess.run(
             ["git", "config", "user.name", "Test"],
-            check=False, cwd=self.temp_dir,
+            check=False,
+            cwd=self.temp_dir,
             capture_output=True,
         )
         subprocess.run(
             ["git", "config", "user.email", "test@test.com"],
-            check=False, cwd=self.temp_dir,
+            check=False,
+            cwd=self.temp_dir,
             capture_output=True,
         )
 
@@ -437,9 +441,14 @@ class TestSafetyChecker:
         assert self.safety_checker.check_git_status() == False
 
         # Add and commit the file
-        subprocess.run(["git", "add", "."], check=False, cwd=self.temp_dir, capture_output=True)
         subprocess.run(
-            ["git", "commit", "-m", "test"], check=False, cwd=self.temp_dir, capture_output=True
+            ["git", "add", "."], check=False, cwd=self.temp_dir, capture_output=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "test"],
+            check=False,
+            cwd=self.temp_dir,
+            capture_output=True,
         )
 
         # Should be clean again
@@ -792,15 +801,19 @@ class TestEndToEndWorkflow:
         self.test_package.mkdir()
 
         # Initialize git repository
-        subprocess.run(["git", "init"], check=False, cwd=self.temp_dir, capture_output=True)
+        subprocess.run(
+            ["git", "init"], check=False, cwd=self.temp_dir, capture_output=True
+        )
         subprocess.run(
             ["git", "config", "user.name", "Test"],
-            check=False, cwd=self.temp_dir,
+            check=False,
+            cwd=self.temp_dir,
             capture_output=True,
         )
         subprocess.run(
             ["git", "config", "user.email", "test@test.com"],
-            check=False, cwd=self.temp_dir,
+            check=False,
+            cwd=self.temp_dir,
             capture_output=True,
         )
 
@@ -821,10 +834,13 @@ if __name__ == '__main__':
         )
 
         # Commit initial state
-        subprocess.run(["git", "add", "."], check=False, cwd=self.temp_dir, capture_output=True)
+        subprocess.run(
+            ["git", "add", "."], check=False, cwd=self.temp_dir, capture_output=True
+        )
         subprocess.run(
             ["git", "commit", "-m", "Initial commit"],
-            check=False, cwd=self.temp_dir,
+            check=False,
+            cwd=self.temp_dir,
             capture_output=True,
         )
 

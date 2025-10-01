@@ -39,8 +39,14 @@ class ComplexityAnalyzer:
         complexity = 1  # Base complexity
 
         for child in ast.walk(node):
-            if isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor)) or isinstance(child, ast.ExceptHandler) or isinstance(child, (ast.And, ast.Or)) or isinstance(child, ast.comprehension) or isinstance(
-                child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+            if (
+                isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor))
+                or isinstance(child, ast.ExceptHandler)
+                or isinstance(child, (ast.And, ast.Or))
+                or isinstance(child, ast.comprehension)
+                or isinstance(
+                    child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+                )
             ):
                 complexity += 1
 

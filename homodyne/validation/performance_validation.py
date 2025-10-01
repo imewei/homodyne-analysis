@@ -253,11 +253,9 @@ class PerformanceBenchmarkSuite:
                 result = np.linalg.multi_dot(
                     [
                         data,
-                        params[
-                            : (
-                                min(len(params), data.shape[1])
-                            )
-                        ].reshape(-1, 1)[: data.shape[1]],
+                        params[: (min(len(params), data.shape[1]))].reshape(-1, 1)[
+                            : data.shape[1]
+                        ],
                         data.T,
                     ]
                 )
@@ -903,9 +901,7 @@ class PerformanceBenchmarkSuite:
                 else (
                     "B"
                     if achievement_count >= total_targets * 0.6
-                    else "C"
-                    if achievement_count >= total_targets * 0.4
-                    else "D"
+                    else "C" if achievement_count >= total_targets * 0.4 else "D"
                 )
             )
         )
@@ -980,9 +976,7 @@ INDIVIDUAL TEST RESULTS:
             status = (
                 "✅"
                 if result.performance_grade in ["A+", "A"]
-                else "⚠️"
-                if result.performance_grade == "B"
-                else "❌"
+                else "⚠️" if result.performance_grade == "B" else "❌"
             )
             report += f"""
 {result.test_name}: {status}

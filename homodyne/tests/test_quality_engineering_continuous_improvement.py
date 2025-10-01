@@ -1214,9 +1214,7 @@ def run_quality_engineering_continuous_improvement():
             status = (
                 "✓"
                 if metric["achievement_percentage"] >= 100
-                else "⚠"
-                if metric["achievement_percentage"] >= 80
-                else "✗"
+                else "⚠" if metric["achievement_percentage"] >= 80 else "✗"
             )
             print(
                 f"    {status} {metric['name']}: {metric['value']:.2f} {metric['unit']} (Target: {metric['target']:.2f}, {metric['achievement_percentage']:.1f}%)"

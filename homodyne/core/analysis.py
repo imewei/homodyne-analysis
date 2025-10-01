@@ -1006,9 +1006,7 @@ class HomodyneAnalysisCore:
                 "reduced_chi_squared_std": np.std(
                     batch_result["reduced_chi_squared_batch"]
                 ),
-                "degrees_of_freedom": np.sum(
-                    batch_result["degrees_of_freedom_batch"]
-                ),
+                "degrees_of_freedom": np.sum(batch_result["degrees_of_freedom_batch"]),
                 "batch_processing_time": batch_result["processing_time"],
             }
         return np.mean(batch_result["reduced_chi_squared_batch"])

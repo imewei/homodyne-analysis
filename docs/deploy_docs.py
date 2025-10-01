@@ -87,7 +87,10 @@ class ResearchDocumentationBuilder:
         # Check for Sphinx
         try:
             result = subprocess.run(
-                ["sphinx-build", "--version"], capture_output=True, text=True
+                ["sphinx-build", "--version"],
+                check=False,
+                capture_output=True,
+                text=True,
             )
             print(f"✅ Sphinx version: {result.stdout.strip()}")
         except FileNotFoundError:
@@ -144,7 +147,7 @@ class ResearchDocumentationBuilder:
 
         try:
             result = subprocess.run(
-                cmd, capture_output=True, text=True, cwd=self.project_root
+                cmd, check=False, capture_output=True, text=True, cwd=self.project_root
             )
 
             if result.returncode == 0:
@@ -159,10 +162,9 @@ class ResearchDocumentationBuilder:
                     list(html_dir.glob("**/research*/*.html"))
                 )
                 return True
-            else:
-                print("❌ HTML build failed:")
-                print(result.stderr)
-                return False
+            print("❌ HTML build failed:")
+            print(result.stderr)
+            return False
 
         except Exception as e:
             print(f"❌ HTML build error: {e}")
@@ -193,7 +195,7 @@ class ResearchDocumentationBuilder:
         try:
             # Build LaTeX
             result = subprocess.run(
-                cmd, capture_output=True, text=True, cwd=self.project_root
+                cmd, check=False, capture_output=True, text=True, cwd=self.project_root
             )
 
             if result.returncode != 0:
@@ -203,7 +205,7 @@ class ResearchDocumentationBuilder:
             # Compile PDF
             pdf_cmd = ["make", "all-pdf"]
             pdf_result = subprocess.run(
-                pdf_cmd, cwd=latex_dir, capture_output=True, text=True
+                pdf_cmd, check=False, cwd=latex_dir, capture_output=True, text=True
             )
 
             if pdf_result.returncode == 0:
@@ -237,7 +239,7 @@ class ResearchDocumentationBuilder:
 
         try:
             result = subprocess.run(
-                cmd, capture_output=True, text=True, cwd=self.project_root
+                cmd, check=False, capture_output=True, text=True, cwd=self.project_root
             )
 
             if result.returncode == 0:
@@ -325,7 +327,12 @@ class ResearchDocumentationBuilder:
 
         try:
             subprocess.run(
-                cmd, capture_output=True, text=True, cwd=self.project_root, timeout=300
+                cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                timeout=300,
             )
 
             output_file = linkcheck_dir / "output.txt"
@@ -334,9 +341,8 @@ class ResearchDocumentationBuilder:
                 if "broken" in content.lower():
                     print("⚠️  Broken links detected - check linkcheck report")
                     return False
-                else:
-                    print("✅ No broken links found")
-                    return True
+                print("✅ No broken links found")
+                return True
 
             print("✅ Link check completed")
             return True
@@ -365,7 +371,7 @@ class ResearchDocumentationBuilder:
 
         try:
             result = subprocess.run(
-                cmd, capture_output=True, text=True, cwd=self.project_root
+                cmd, check=False, capture_output=True, text=True, cwd=self.project_root
             )
 
             if result.returncode == 0:
@@ -404,16 +410,15 @@ class ResearchDocumentationBuilder:
 
         try:
             result = subprocess.run(
-                cmd, capture_output=True, text=True, cwd=self.project_root
+                cmd, check=False, capture_output=True, text=True, cwd=self.project_root
             )
 
             if result.returncode == 0:
                 print("✅ Successfully deployed to GitHub Pages")
                 return True
-            else:
-                print("❌ GitHub Pages deployment failed:")
-                print(result.stderr)
-                return False
+            print("❌ GitHub Pages deployment failed:")
+            print(result.stderr)
+            return False
 
         except Exception as e:
             print(f"❌ GitHub Pages deployment error: {e}")

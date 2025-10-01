@@ -411,14 +411,17 @@ homodyne --method all        # Both classical and robust methods
 ### Changed - Version Consistency Update (2025-09-29)
 
 #### Breaking Changes
+
 - **BREAKING**: Minimum Python version updated to 3.12 (from 3.8)
 - Standardized Python version to 3.13 across all environments
 
 #### Version Updates
+
 - Updated `isort` from `>=5.13.0` to `>=6.0.1`
 - Updated `pytest-html` from `>=4.2.0` to `>=4.1.1`
 - Added `flake8>=7.3.0` to quality dependencies
-- GitHub Actions updated: `actions/upload-artifact` v3→v4, `actions/download-artifact` v3→v4
+- GitHub Actions updated: `actions/upload-artifact` v3→v4, `actions/download-artifact`
+  v3→v4
 - Pre-commit: Node.js v18 → system (v24.8.0)
 
 ### Fixed - Test Failures (2025-09-29)

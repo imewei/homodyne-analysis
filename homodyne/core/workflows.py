@@ -387,9 +387,7 @@ class SimulationWorkflow:
                 return np.linspace(0, 180, 5, endpoint=False)
             # Parse custom angles
             try:
-                angles_list = [
-                    float(angle.strip()) for angle in angles_str.split(",")
-                ]
+                angles_list = [float(angle.strip()) for angle in angles_str.split(",")]
                 return np.array(angles_list)
             except ValueError as e:
                 raise ValueError(f"Failed to parse phi angles: {e}")

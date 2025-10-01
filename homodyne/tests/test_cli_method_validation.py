@@ -91,7 +91,7 @@ class TestShellCompletion:
         """Test that shell completion does not suggest MCMC method."""
         # This test checks the completion system
         # We'll need to examine the actual completion implementation
-        pass  # Implementation will depend on completion system structure
+        # Implementation will depend on completion system structure
 
     @patch.dict(
         "os.environ",
@@ -101,7 +101,7 @@ class TestShellCompletion:
         """Test argcomplete doesn't suggest mcmc for --method completion."""
         # Mock the completion behavior
         # This would test the actual argcomplete integration
-        pass  # Implementation depends on argcomplete setup
+        # Implementation depends on argcomplete setup
 
 
 class TestCLIHelp:

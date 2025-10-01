@@ -411,9 +411,7 @@ def save_analysis_results_secure(
         output_dir = Path("./homodyne_results")
         if config and "output_settings" in config:
             output_dir = Path(
-                config["output_settings"].get(
-                    "results_directory", "./homodyne_results"
-                )
+                config["output_settings"].get("results_directory", "./homodyne_results")
             )
 
         ensure_dir_secure(output_dir)

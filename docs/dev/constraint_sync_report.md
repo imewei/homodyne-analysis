@@ -103,9 +103,9 @@ After applying these changes, all parameter constraints should be consistent acr
 ## Next Steps
 
 1. Review the backup files created during this process
-1. Test the updated configurations
-1. Commit the changes to version control
-1. Update the changelog
+2. Test the updated configurations
+3. Commit the changes to version control
+4. Update the changelog
 
 ## Files Modified
 

@@ -612,17 +612,15 @@ class TestPerformanceBenchmarks:
 
         # Measure overhead of monitoring system initialization
         start_time = time.perf_counter()
-        _monitor = StartupPerformanceMonitor(
-            baseline_dir=Path(tempfile.mkdtemp())
-        )
+        _monitor = StartupPerformanceMonitor(baseline_dir=Path(tempfile.mkdtemp()))
         end_time = time.perf_counter()
 
         initialization_time = end_time - start_time
 
         # Should initialize quickly (adjust threshold as needed)
-        assert initialization_time < 0.1, (
-            f"Monitor initialization too slow: {initialization_time:.4f}s"
-        )
+        assert (
+            initialization_time < 0.1
+        ), f"Monitor initialization too slow: {initialization_time:.4f}s"
 
     def test_baseline_operation_performance(self):
         """Test performance of baseline operations."""
@@ -662,9 +660,9 @@ class TestPerformanceBenchmarks:
         operation_time = end_time - start_time
 
         # Should complete quickly
-        assert operation_time < 1.0, (
-            f"Baseline operations too slow: {operation_time:.4f}s"
-        )
+        assert (
+            operation_time < 1.0
+        ), f"Baseline operations too slow: {operation_time:.4f}s"
 
 
 if __name__ == "__main__":

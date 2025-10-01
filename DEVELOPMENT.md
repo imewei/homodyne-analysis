@@ -438,10 +438,10 @@ make upload  # Upload to PyPI
 ### Security Response Process
 
 1. **Acknowledgment**: Receipt within 48 hours
-1. **Assessment**: Impact review (1-3 days)
-1. **Development**: Fix development and testing (3-7 days)
-1. **Release**: Security patch with advisory
-1. **Disclosure**: Coordinated disclosure after fix
+2. **Assessment**: Impact review (1-3 days)
+3. **Development**: Fix development and testing (3-7 days)
+4. **Release**: Security patch with advisory
+5. **Disclosure**: Coordinated disclosure after fix
 
 ### Security Tools
 

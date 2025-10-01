@@ -44,9 +44,7 @@ class PerformanceDashboard:
         self.metrics = []
         self.overall_stats = {}
 
-    def load_task_results(
-        self, task_file: str, task_id: str
-    ) -> dict[str, Any] | None:
+    def load_task_results(self, task_file: str, task_id: str) -> dict[str, Any] | None:
         """Load results from a specific task."""
         file_path = Path(task_file)
         if file_path.exists():
