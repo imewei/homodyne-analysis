@@ -188,37 +188,65 @@ def generate_classical_plots(
         logger.info("Generating classical optimization plots...")
 
         # Calculate theoretical C2 using optimized parameters
-        c2_theoretical = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+        c2_theoretical_raw = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
             parameters, phi_angles
         )
 
+        # Scale theoretical to match experimental intensities
+        # Solve: y_exp = contrast * y_theory + offset (least squares)
+        num_angles = len(phi_angles)
+        c2_theoretical_scaled = np.zeros_like(c2_exp)
+        scaling_params = []
+
+        for i in range(num_angles):
+            # Flatten arrays for least squares
+            theory_flat = c2_theoretical_raw[i].flatten()
+            exp_flat = c2_exp[i].flatten()
+
+            # Solve: exp = contrast * theory + offset
+            # Build design matrix A = [theory, ones]
+            A = np.column_stack([theory_flat, np.ones_like(theory_flat)])
+            # Solve: A @ [contrast, offset] = exp
+            solution, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+            contrast, offset = solution
+
+            # Apply scaling
+            c2_theoretical_scaled[i] = contrast * c2_theoretical_raw[i] + offset
+            scaling_params.append((contrast, offset))
+
         # Create comparison plots for each phi angle
         for i, phi in enumerate(phi_angles):
+            contrast, offset = scaling_params[i]
             fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
 
             # Plot experimental data
             im1 = ax1.imshow(c2_exp[i], cmap="viridis", aspect="equal", origin="lower")
             ax1.set_title(f"Experimental C₂ (φ={phi:.1f}°)")
-            ax1.set_xlabel("t₁")
-            ax1.set_ylabel("t₂")
-            plt.colorbar(im1, ax=ax1)
+            ax1.set_xlabel("t₁ (frames)")
+            ax1.set_ylabel("t₂ (frames)")
+            plt.colorbar(im1, ax=ax1, label="Intensity")
 
-            # Plot theoretical fit
+            # Plot scaled theoretical fit
             im2 = ax2.imshow(
-                c2_theoretical[i], cmap="viridis", aspect="equal", origin="lower"
+                c2_theoretical_scaled[i], cmap="viridis", aspect="equal", origin="lower"
             )
-            ax2.set_title(f"Classical Fit (φ={phi:.1f}°)")
-            ax2.set_xlabel("t₁")
-            ax2.set_ylabel("t₂")
-            plt.colorbar(im2, ax=ax2)
+            ax2.set_title(
+                f"Classical Fit (φ={phi:.1f}°)\nC={contrast:.2e}, B={offset:.2e}"
+            )
+            ax2.set_xlabel("t₁ (frames)")
+            ax2.set_ylabel("t₂ (frames)")
+            plt.colorbar(im2, ax=ax2, label="Intensity")
 
-            # Plot residuals
-            residuals = c2_exp[i] - c2_theoretical[i]
-            im3 = ax3.imshow(residuals, cmap="RdBu_r", aspect="equal", origin="lower")
+            # Plot residuals (now correctly scaled)
+            residuals = c2_exp[i] - c2_theoretical_scaled[i]
+            vmax = np.max(np.abs(residuals))
+            im3 = ax3.imshow(
+                residuals, cmap="RdBu_r", aspect="equal", origin="lower", vmin=-vmax, vmax=vmax
+            )
             ax3.set_title(f"Residuals (φ={phi:.1f}°)")
-            ax3.set_xlabel("t₁")
-            ax3.set_ylabel("t₂")
-            plt.colorbar(im3, ax=ax3)
+            ax3.set_xlabel("t₁ (frames)")
+            ax3.set_ylabel("t₂ (frames)")
+            plt.colorbar(im3, ax=ax3, label="Δ Intensity")
 
             plt.tight_layout()
             plot_file = plots_dir / f"classical_comparison_phi_{phi:.1f}deg.png"
@@ -275,37 +303,65 @@ def generate_robust_plots(
         logger.info("Generating robust optimization plots...")
 
         # Calculate theoretical C2 using optimized parameters
-        c2_theoretical = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+        c2_theoretical_raw = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
             parameters, phi_angles
         )
 
+        # Scale theoretical to match experimental intensities
+        # Solve: y_exp = contrast * y_theory + offset (least squares)
+        num_angles = len(phi_angles)
+        c2_theoretical_scaled = np.zeros_like(c2_exp)
+        scaling_params = []
+
+        for i in range(num_angles):
+            # Flatten arrays for least squares
+            theory_flat = c2_theoretical_raw[i].flatten()
+            exp_flat = c2_exp[i].flatten()
+
+            # Solve: exp = contrast * theory + offset
+            # Build design matrix A = [theory, ones]
+            A = np.column_stack([theory_flat, np.ones_like(theory_flat)])
+            # Solve: A @ [contrast, offset] = exp
+            solution, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+            contrast, offset = solution
+
+            # Apply scaling
+            c2_theoretical_scaled[i] = contrast * c2_theoretical_raw[i] + offset
+            scaling_params.append((contrast, offset))
+
         # Create comparison plots for each phi angle
         for i, phi in enumerate(phi_angles):
+            contrast, offset = scaling_params[i]
             fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
 
             # Plot experimental data
             im1 = ax1.imshow(c2_exp[i], cmap="viridis", aspect="equal", origin="lower")
             ax1.set_title(f"Experimental C₂ (φ={phi:.1f}°)")
-            ax1.set_xlabel("t₁")
-            ax1.set_ylabel("t₂")
-            plt.colorbar(im1, ax=ax1)
+            ax1.set_xlabel("t₁ (frames)")
+            ax1.set_ylabel("t₂ (frames)")
+            plt.colorbar(im1, ax=ax1, label="Intensity")
 
-            # Plot theoretical fit
+            # Plot scaled theoretical fit
             im2 = ax2.imshow(
-                c2_theoretical[i], cmap="viridis", aspect="equal", origin="lower"
+                c2_theoretical_scaled[i], cmap="viridis", aspect="equal", origin="lower"
             )
-            ax2.set_title(f"Robust Fit (φ={phi:.1f}°)")
-            ax2.set_xlabel("t₁")
-            ax2.set_ylabel("t₂")
-            plt.colorbar(im2, ax=ax2)
+            ax2.set_title(
+                f"Robust Fit (φ={phi:.1f}°)\nC={contrast:.2e}, B={offset:.2e}"
+            )
+            ax2.set_xlabel("t₁ (frames)")
+            ax2.set_ylabel("t₂ (frames)")
+            plt.colorbar(im2, ax=ax2, label="Intensity")
 
-            # Plot residuals
-            residuals = c2_exp[i] - c2_theoretical[i]
-            im3 = ax3.imshow(residuals, cmap="RdBu_r", aspect="equal", origin="lower")
+            # Plot residuals (now correctly scaled)
+            residuals = c2_exp[i] - c2_theoretical_scaled[i]
+            vmax = np.max(np.abs(residuals))
+            im3 = ax3.imshow(
+                residuals, cmap="RdBu_r", aspect="equal", origin="lower", vmin=-vmax, vmax=vmax
+            )
             ax3.set_title(f"Residuals (φ={phi:.1f}°)")
-            ax3.set_xlabel("t₁")
-            ax3.set_ylabel("t₂")
-            plt.colorbar(im3, ax=ax3)
+            ax3.set_xlabel("t₁ (frames)")
+            ax3.set_ylabel("t₂ (frames)")
+            plt.colorbar(im3, ax=ax3, label="Δ Intensity")
 
             plt.tight_layout()
             plot_file = plots_dir / f"robust_comparison_phi_{phi:.1f}deg.png"
@@ -487,7 +543,30 @@ def save_individual_method_results(
         method_dir = output_dir / f"{method_name}_results"
         method_dir.mkdir(parents=True, exist_ok=True)
 
-        # Save results data
+        # Calculate theoretical fit with scaling
+        parameters = results["parameters"]
+        c2_theoretical_raw = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            parameters, phi_angles
+        )
+
+        # Calculate scaling parameters and scaled theoretical
+        num_angles = len(phi_angles)
+        c2_theoretical_scaled = np.zeros_like(c2_exp)
+        contrast_params = np.zeros(num_angles)
+        offset_params = np.zeros(num_angles)
+
+        for i in range(num_angles):
+            # Solve: exp = contrast * theory + offset
+            theory_flat = c2_theoretical_raw[i].flatten()
+            exp_flat = c2_exp[i].flatten()
+            A = np.column_stack([theory_flat, np.ones_like(theory_flat)])
+            solution, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+            contrast, offset = solution
+            c2_theoretical_scaled[i] = contrast * c2_theoretical_raw[i] + offset
+            contrast_params[i] = contrast
+            offset_params[i] = offset
+
+        # Save comprehensive results data
         results_file = method_dir / f"{method_name}_results.npz"
         np.savez_compressed(
             results_file,
@@ -495,6 +574,11 @@ def save_individual_method_results(
             chi_squared=results["chi_squared"],
             phi_angles=phi_angles,
             c2_experimental=c2_exp,
+            c2_theoretical_raw=c2_theoretical_raw,
+            c2_theoretical_scaled=c2_theoretical_scaled,
+            contrast_params=contrast_params,
+            offset_params=offset_params,
+            residuals=c2_exp - c2_theoretical_scaled,
         )
 
         # Generate method-specific plots
