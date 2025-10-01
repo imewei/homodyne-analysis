@@ -232,7 +232,7 @@ where:
 ### Classical Methods
 
 1. **Nelder-Mead Simplex**: Derivative-free optimization for robust convergence
-1. **Gurobi Quadratic Programming**: High-performance commercial solver with trust
+2. **Gurobi Quadratic Programming**: High-performance commercial solver with trust
    region methods
 
 ### Robust Optimization Framework
@@ -244,12 +244,12 @@ Advanced uncertainty-aware optimization for noisy experimental data:
    - Wasserstein uncertainty sets for data distribution robustness
    - Optimal transport-based uncertainty quantification
 
-1. **Scenario-Based Optimization**:
+2. **Scenario-Based Optimization**:
 
    - Bootstrap resampling for statistical robustness
    - Monte Carlo uncertainty propagation
 
-1. **Ellipsoidal Uncertainty Sets**:
+3. **Ellipsoidal Uncertainty Sets**:
 
    - Bounded uncertainty with confidence ellipsoids
    - Analytical uncertainty bounds
@@ -401,7 +401,8 @@ Configuration files specify analysis mode:
 
 ## Output Structure
 
-When running `homodyne --method all`, the complete analysis produces a comprehensive results directory with all optimization methods:
+When running `homodyne --method all`, the complete analysis produces a comprehensive
+results directory with all optimization methods:
 
 ```
 homodyne_results/
@@ -450,6 +451,7 @@ homodyne_results/
 ### Key Output Files
 
 **homodyne_analysis_results.json**: Main summary containing:
+
 - Analysis timestamp and methods run
 - Experimental parameters (q, dt, gap size, frames)
 - Optimization results for all methods:
@@ -457,12 +459,15 @@ homodyne_results/
   - `robust_wasserstein`, `robust_scenario`, `robust_ellipsoidal`, `robust_best`
 
 **fitted_data.npz**: NumPy compressed archive with:
-- Experimental metadata: `wavevector_q`, `dt`, `stator_rotor_gap`, `start_frame`, `end_frame`
+
+- Experimental metadata: `wavevector_q`, `dt`, `stator_rotor_gap`, `start_frame`,
+  `end_frame`
 - Correlation data: `c2_experimental`, `c2_theoretical_raw`, `c2_theoretical_scaled`
 - Scaling parameters: `contrast_params`, `offset_params`
 - Quality metrics: `residuals`
 
-**analysis_results_{method}.json**: Method-specific detailed results:
+**analysis_results\_{method}.json**: Method-specific detailed results:
+
 - Optimized parameters with names
 - Chi-squared and reduced chi-squared values
 - Experimental metadata
@@ -470,6 +475,7 @@ homodyne_results/
 - Success status and timestamp
 
 **convergence_metrics.json**: Optimization diagnostics:
+
 - Number of iterations
 - Function evaluations
 - Convergence message
