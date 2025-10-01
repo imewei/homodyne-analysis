@@ -442,10 +442,33 @@ def generate_comparison_plots(
         robust_params = robust_result["parameters"]
 
         # Calculate theoretical C2 for both methods
-        c2_classical = analyzer.calculate_correlation_function(
+        c2_classical_raw = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
             classical_params, phi_angles
         )
-        c2_robust = analyzer.calculate_correlation_function(robust_params, phi_angles)
+        c2_robust_raw = analyzer.calculate_c2_nonequilibrium_laminar_parallel(
+            robust_params, phi_angles
+        )
+
+        # Scale theoretical to match experimental intensities
+        num_angles = len(phi_angles)
+        c2_classical = np.zeros_like(c2_exp)
+        c2_robust = np.zeros_like(c2_exp)
+
+        for i in range(num_angles):
+            # Scale classical
+            theory_flat = c2_classical_raw[i].flatten()
+            exp_flat = c2_exp[i].flatten()
+            A = np.column_stack([theory_flat, np.ones_like(theory_flat)])
+            solution, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+            contrast, offset = solution
+            c2_classical[i] = contrast * c2_classical_raw[i] + offset
+
+            # Scale robust
+            theory_flat = c2_robust_raw[i].flatten()
+            A = np.column_stack([theory_flat, np.ones_like(theory_flat)])
+            solution, _, _, _ = np.linalg.lstsq(A, exp_flat, rcond=None)
+            contrast, offset = solution
+            c2_robust[i] = contrast * c2_robust_raw[i] + offset
 
         # Create comparison plots for each phi angle
         for i, phi in enumerate(phi_angles):
