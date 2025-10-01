@@ -245,7 +245,12 @@ def generate_classical_plots(
             residuals = c2_exp[i] - c2_theoretical_scaled[i]
             vmax = np.max(np.abs(residuals))
             im3 = ax3.imshow(
-                residuals, cmap="RdBu_r", aspect="equal", origin="lower", vmin=-vmax, vmax=vmax
+                residuals,
+                cmap="RdBu_r",
+                aspect="equal",
+                origin="lower",
+                vmin=-vmax,
+                vmax=vmax,
             )
             ax3.set_title(f"Residuals (φ={phi:.1f}°)")
             ax3.set_xlabel("t₁ (frames)")
@@ -364,7 +369,12 @@ def generate_robust_plots(
             residuals = c2_exp[i] - c2_theoretical_scaled[i]
             vmax = np.max(np.abs(residuals))
             im3 = ax3.imshow(
-                residuals, cmap="RdBu_r", aspect="equal", origin="lower", vmin=-vmax, vmax=vmax
+                residuals,
+                cmap="RdBu_r",
+                aspect="equal",
+                origin="lower",
+                vmin=-vmax,
+                vmax=vmax,
             )
             ax3.set_title(f"Residuals (φ={phi:.1f}°)")
             ax3.set_xlabel("t₁ (frames)")
@@ -609,10 +619,10 @@ def save_individual_method_results(
         parameters_dict = {
             "method": specific_method,
             "parameters": {
-                name: float(value) for name, value in zip(param_names, parameters)
+                name: float(value) for name, value in zip(param_names, parameters, strict=False)
             },
             "parameter_array": parameters.tolist(),
-            "chi_squared": float(results.get("chi_squared", 0)),
+            "chi_squared": float(results.get("chi_squared") or 0),
             "success": bool(results.get("success", False)),
             "timestamp": datetime.now().isoformat(),
         }
@@ -642,13 +652,13 @@ def save_individual_method_results(
         )
 
         # 3. Save analysis_results_{method}.json
+        chi_sq_value = float(results.get("chi_squared") or 0)
         analysis_results = {
             "method": specific_method,
             "optimization_type": method_name,
             "parameters": parameters_dict["parameters"],
-            "chi_squared": float(results.get("chi_squared", 0)),
-            "chi_squared_reduced": float(results.get("chi_squared", 0))
-            / (c2_exp.size - len(parameters)),
+            "chi_squared": chi_sq_value,
+            "chi_squared_reduced": chi_sq_value / (c2_exp.size - len(parameters)),
             "success": bool(results.get("success", False)),
             "experimental_metadata": {
                 "wavevector_q": float(analyzer.wavevector_q),
@@ -677,7 +687,7 @@ def save_individual_method_results(
         if isinstance(result_object, dict):
             convergence_metrics = {
                 "method": specific_method,
-                "final_chi_squared": float(results.get("chi_squared", 0)),
+                "final_chi_squared": float(results.get("chi_squared") or 0),
                 "success": bool(results.get("success", False)),
             }
 
@@ -717,9 +727,7 @@ def save_individual_method_results(
         logger.debug(traceback.format_exc())
 
 
-def save_main_summary(
-    results: dict[str, Any], analyzer, output_dir: Path
-) -> None:
+def save_main_summary(results: dict[str, Any], analyzer, output_dir: Path) -> None:
     """
     Save main summary file with all optimization results.
 
@@ -763,14 +771,15 @@ def save_main_summary(
         for method_name, result in results.items():
             if result:
                 param_names = analyzer.config.get(
-                    "parameter_names", [f"p{i}" for i in range(len(result["parameters"]))]
+                    "parameter_names",
+                    [f"p{i}" for i in range(len(result["parameters"]))],
                 )
                 summary["optimization_results"][method_name] = {
                     "parameters": {
                         name: float(value)
-                        for name, value in zip(param_names, result["parameters"])
+                        for name, value in zip(param_names, result["parameters"], strict=False)
                     },
-                    "chi_squared": float(result.get("chi_squared", 0)),
+                    "chi_squared": float(result.get("chi_squared") or 0),
                     "success": bool(result.get("success", False)),
                 }
 

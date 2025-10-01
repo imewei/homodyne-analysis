@@ -267,13 +267,20 @@ def run_robust_optimization(
             return None
 
         # Extract chi-squared from result_info
-        chi_squared = result_info.get("chi_squared", result_info.get("final_cost", None))
+        # Check multiple possible keys: chi_squared, final_chi_squared, final_cost
+        # Use 0.0 as default instead of None to avoid float() conversion errors
+        chi_squared = result_info.get(
+            "chi_squared",
+            result_info.get("final_chi_squared", result_info.get("final_cost", 0.0)),
+        )
+        if chi_squared is None:
+            chi_squared = 0.0
         method_used = result_info.get("method", "robust")
         success = result_info.get("success", True)
 
         logger.info(f"✓ Robust optimization completed with method: {method_used}")
 
-        if chi_squared is not None:
+        if chi_squared > 0:
             logger.info(f"✓ Final chi-squared: {chi_squared:.6f}")
         else:
             logger.info("✓ Optimization completed")
