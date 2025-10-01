@@ -395,7 +395,7 @@ def process_and_save_results(
         # Save individual method results
         for method_name, result in results.items():
             if result:
-                # Check if this is a robust result with multiple methods
+                # Check if this is a result with multiple methods (robust or classical)
                 if method_name == "robust" and "all_robust_results" in result:
                     # Save each robust method separately
                     for specific_method, method_result in result[
@@ -404,6 +404,19 @@ def process_and_save_results(
                         save_individual_method_results(
                             method_result,
                             "robust",
+                            analyzer,
+                            phi_angles,
+                            c2_exp,
+                            args.output_dir,
+                        )
+                elif method_name == "classical" and "all_classical_results" in result:
+                    # Save each classical method separately
+                    for specific_method, method_result in result[
+                        "all_classical_results"
+                    ].items():
+                        save_individual_method_results(
+                            method_result,
+                            "classical",
                             analyzer,
                             phi_angles,
                             c2_exp,

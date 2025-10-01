@@ -148,12 +148,51 @@ def run_classical_optimization(
         for i, (name, value) in enumerate(zip(param_names, result.x, strict=False)):
             logger.info(f"✓ {name}: {value:.6f}")
 
+        # Extract individual method results if available
+        all_classical_results = {}
+        if hasattr(result, "method_results"):
+            logger.info("")
+            logger.info("=" * 50)
+            logger.info("CLASSICAL METHODS SUMMARY")
+            logger.info("=" * 50)
+
+            for method_name, method_data in result.method_results.items():
+                if method_data.get("success", False) and method_data.get("parameters"):
+                    logger.info(
+                        f"{method_name:15s}: χ² = {method_data['chi_squared']:.6f}, "
+                        f"success = {method_data['success']}"
+                    )
+
+                    # Create result dict for this method
+                    all_classical_results[method_name.lower().replace("-", "_")] = {
+                        "method": method_name.lower().replace("-", "_"),
+                        "parameters": np.array(method_data["parameters"]),
+                        "chi_squared": method_data["chi_squared"],
+                        "success": method_data["success"],
+                        "result_object": {
+                            "iterations": method_data.get("iterations"),
+                            "function_evaluations": method_data.get(
+                                "function_evaluations"
+                            ),
+                            "message": method_data.get("message", ""),
+                            "method": method_data.get("method", method_name),
+                        },
+                    }
+
+            if hasattr(result, "best_method"):
+                logger.info("")
+                logger.info(
+                    f"⭐ Best method: {result.best_method} (χ² = {result.fun:.6f})"
+                )
+            logger.info("=" * 50)
+
         return {
             "method": "classical",
             "parameters": result.x,
             "chi_squared": result.fun,
             "success": result.success,
             "result_object": result,
+            "all_classical_results": all_classical_results,  # Include all method results
         }
 
     except Exception as e:
