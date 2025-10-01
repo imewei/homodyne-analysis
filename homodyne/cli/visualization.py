@@ -566,18 +566,29 @@ def save_individual_method_results(
             contrast_params[i] = contrast
             offset_params[i] = offset
 
-        # Save comprehensive results data
+        # Save comprehensive results data with experimental metadata
         results_file = method_dir / f"{method_name}_results.npz"
         np.savez_compressed(
             results_file,
+            # Optimization results
             parameters=results["parameters"],
             chi_squared=results["chi_squared"],
+            # Experimental parameters
             phi_angles=phi_angles,
+            wavevector_q=analyzer.wavevector_q,
+            dt=analyzer.dt,
+            stator_rotor_gap=analyzer.stator_rotor_gap,
+            start_frame=analyzer.start_frame,
+            end_frame=analyzer.end_frame,
+            time_length=analyzer.time_length,
+            # Correlation data
             c2_experimental=c2_exp,
             c2_theoretical_raw=c2_theoretical_raw,
             c2_theoretical_scaled=c2_theoretical_scaled,
+            # Scaling parameters
             contrast_params=contrast_params,
             offset_params=offset_params,
+            # Analysis results
             residuals=c2_exp - c2_theoretical_scaled,
         )
 
