@@ -578,48 +578,7 @@ class HomodyneAnalysisCore:
             logger.info(
                 "Isotropic static mode: Using single dummy angle (0.0°) instead of loading phi_angles_file"
             )
-        else:
-            # Normal mode: load phi angles from file
-            phi_angles_path = self.config["experimental_data"].get(
-                "phi_angles_path", "."
-            )
-            phi_angles_file = self.config["experimental_data"]["phi_angles_file"]
-            phi_file = os.path.join(phi_angles_path, phi_angles_file)
-
-            # Try multiple filename variations for robustness
-            phi_file_variations = [
-                phi_file,  # Exact config filename
-                os.path.join(phi_angles_path, "phi_angles_list.txt"),
-                os.path.join(phi_angles_path, "phi_list.txt"),
-                os.path.join(phi_angles_path, "phi_angles.txt"),
-                os.path.join(phi_angles_path, "wavevector_phi_list.txt"),
-            ]
-
-            phi_file_found = None
-            for candidate_file in phi_file_variations:
-                if os.path.exists(candidate_file):
-                    phi_file_found = candidate_file
-                    break
-
-            if phi_file_found is None:
-                raise FileNotFoundError(
-                    f"{phi_angles_file} not found. Tried:\n" +
-                    "\n".join(f"  - {f}" for f in phi_file_variations)
-                )
-
-            if phi_file_found != phi_file:
-                logger.warning(
-                    f"Config specifies '{phi_angles_file}' but using '{os.path.basename(phi_file_found)}' instead"
-                )
-
-            logger.debug(f"Loading phi angles from: {phi_file_found}")
-            phi_angles = np.loadtxt(phi_file_found, dtype=np.float64)
-            # Ensure phi_angles is always an array, even for single values
-            phi_angles = np.atleast_1d(phi_angles)
-            num_angles = len(phi_angles)
-            logger.debug(f"Loaded {num_angles} phi angles: {phi_angles}")
-
-        # Check for cached processed data
+        # Check for cached processed data first
         cache_template = self.config["experimental_data"]["cache_filename_template"]
         cache_file_path = self.config["experimental_data"].get("cache_file_path", ".")
         cache_filename = (
@@ -630,7 +589,39 @@ class HomodyneAnalysisCore:
         cache_file = os.path.join(cache_file_path, cache_filename)
         logger.debug(f"Checking for cached data at: {cache_file}")
 
-        if os.path.isfile(cache_file):
+        cache_exists = os.path.isfile(cache_file)
+
+        # Determine phi angles loading strategy based on cache availability
+        if cache_exists:
+            # Cache exists: load phi_angles from phi_angles_list.txt
+            logger.debug("Cache exists - loading phi angles from phi_angles_list.txt")
+            phi_angles_path = self.config["experimental_data"].get(
+                "phi_angles_path", "."
+            )
+            phi_file = os.path.join(phi_angles_path, "phi_angles_list.txt")
+
+            if not os.path.exists(phi_file):
+                raise FileNotFoundError(
+                    f"Cache file exists but phi_angles_list.txt not found at {phi_file}. "
+                    f"This file should have been created when the cache was generated."
+                )
+
+            logger.debug(f"Loading phi angles from: {phi_file}")
+            phi_angles = np.loadtxt(phi_file, dtype=np.float64)
+            phi_angles = np.atleast_1d(phi_angles)
+            num_angles = len(phi_angles)
+            logger.debug(f"Loaded {num_angles} phi angles from txt file: {phi_angles}")
+
+        else:
+            # No cache: must load from HDF5, which will extract phi_angles
+            # The phi_angles will be extracted and saved by _load_raw_data
+            logger.info(
+                "No cache found - will extract phi angles from HDF5 file during data loading"
+            )
+            phi_angles = None  # Will be extracted from HDF5
+            num_angles = None  # Will be determined from HDF5
+
+        if cache_exists:
             logger.info(f"Cache hit: Loading cached data from {cache_file}")
             # Optimized loading with memory mapping for large files
             try:
@@ -676,8 +667,11 @@ class HomodyneAnalysisCore:
             logger.info(
                 f"Cache miss: Loading raw data (cache file {cache_file} not found)"
             )
-            c2_experimental = self._load_raw_data(phi_angles, num_angles)
+            c2_experimental, phi_angles, num_angles = self._load_raw_data(
+                phi_angles, num_angles
+            )
             logger.info(f"Raw data loaded with shape: {c2_experimental.shape}")
+            logger.debug(f"Extracted {num_angles} phi angles from HDF5")
 
             # Save to cache
             compression_enabled = self.config["experimental_data"].get(
@@ -788,8 +782,14 @@ class HomodyneAnalysisCore:
         logger.debug("load_experimental_data method completed successfully")
         return c2_experimental, self.time_length, phi_angles, num_angles
 
-    def _load_raw_data(self, phi_angles: np.ndarray, num_angles: int) -> np.ndarray:
-        """Load raw data from HDF5 files using advanced XPCS loader."""
+    def _load_raw_data(
+        self, phi_angles: np.ndarray | None, num_angles: int | None
+    ) -> tuple[np.ndarray, np.ndarray, int]:
+        """Load raw data from HDF5 files using advanced XPCS loader.
+
+        Returns:
+            tuple: (c2_experimental, phi_angles_loaded, num_angles_loaded)
+        """
         logger.debug("Starting _load_raw_data method with advanced XPCS loader")
 
         if self.config is None:
@@ -818,6 +818,18 @@ class HomodyneAnalysisCore:
             logger.info("XPCS data loader detected format and loaded data successfully")
             logger.debug(f"Loaded data shape: {c2_experimental.shape}")
             logger.debug(f"Phi angles loaded: {len(phi_angles_loaded)}")
+
+            # Save phi angles to phi_angles_list.txt for future cache-based runs
+            phi_angles_path = self.config["experimental_data"].get(
+                "phi_angles_path", "."
+            )
+            phi_file = os.path.join(phi_angles_path, "phi_angles_list.txt")
+            np.savetxt(
+                phi_file, phi_angles_loaded, fmt="%.6f", header="Phi angles (degrees)"
+            )
+            logger.info(
+                f"Saved {len(phi_angles_loaded)} phi angles to {phi_file} for future runs"
+            )
 
             # Validate loaded data dimensions and auto-adjust if needed
             if (
@@ -873,7 +885,7 @@ class HomodyneAnalysisCore:
             logger.info(
                 f"Successfully loaded raw data with final shape: {c2_experimental.shape}"
             )
-            return c2_experimental
+            return c2_experimental, phi_angles_loaded, len(phi_angles_loaded)
 
         except Exception as e:
             logger.error(f"Failed to load data using XPCS loader: {e}")
