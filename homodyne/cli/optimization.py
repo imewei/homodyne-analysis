@@ -52,7 +52,9 @@ def run_classical_optimization(
         Results dictionary with optimized parameters and fit statistics,
         or None if optimization fails
     """
-    logger.info("Running classical optimization... [CODE-VERSION: 2024-09-30-v2-empty-array-fix]")
+    logger.info(
+        "Running classical optimization... [CODE-VERSION: 2024-09-30-v2-empty-array-fix]"
+    )
 
     try:
         # Import here to avoid circular imports
@@ -122,9 +124,7 @@ def run_classical_optimization(
             return None
 
         if not isinstance(result.x, np.ndarray):
-            logger.error(
-                f"❌ Optimization result.x is not ndarray: {type(result.x)}"
-            )
+            logger.error(f"❌ Optimization result.x is not ndarray: {type(result.x)}")
             return None
 
         if result.x.size == 0 or len(result.x) == 0:
@@ -309,7 +309,9 @@ def run_robust_optimization(
                 )
 
                 if parameters is None or result_info is None:
-                    logger.warning(f"⚠️  {method.capitalize()} optimization returned no result")
+                    logger.warning(
+                        f"⚠️  {method.capitalize()} optimization returned no result"
+                    )
                     continue
 
                 # Validate parameters
@@ -323,7 +325,9 @@ def run_robust_optimization(
                 # Extract chi-squared from result_info
                 chi_squared = result_info.get(
                     "chi_squared",
-                    result_info.get("final_chi_squared", result_info.get("final_cost", 0.0)),
+                    result_info.get(
+                        "final_chi_squared", result_info.get("final_cost", 0.0)
+                    ),
                 )
                 if chi_squared is None:
                     chi_squared = 0.0
@@ -381,8 +385,9 @@ def run_robust_optimization(
 
         if best_result:
             logger.info("")
-            logger.info(f"⭐ Best method: {best_result['method']} "
-                       f"(χ² = {best_chi_squared:.6f})")
+            logger.info(
+                f"⭐ Best method: {best_result['method']} (χ² = {best_chi_squared:.6f})"
+            )
 
         logger.info("=" * 50)
 

@@ -647,7 +647,8 @@ def save_individual_method_results(
         parameters_dict = {
             "method": specific_method,
             "parameters": {
-                name: float(value) for name, value in zip(param_names, parameters, strict=False)
+                name: float(value)
+                for name, value in zip(param_names, parameters, strict=False)
             },
             "parameter_array": parameters.tolist(),
             "chi_squared": float(results.get("chi_squared") or 0),
@@ -808,13 +809,13 @@ def save_main_summary(results: dict[str, Any], analyzer, output_dir: Path) -> No
                             "parameter_names",
                             [f"p{i}" for i in range(len(method_result["parameters"]))],
                         )
-                        summary["optimization_results"][
-                            f"robust_{specific_method}"
-                        ] = {
+                        summary["optimization_results"][f"robust_{specific_method}"] = {
                             "parameters": {
                                 name: float(value)
                                 for name, value in zip(
-                                    param_names, method_result["parameters"], strict=False
+                                    param_names,
+                                    method_result["parameters"],
+                                    strict=False,
                                 )
                             },
                             "chi_squared": float(method_result.get("chi_squared") or 0),
@@ -850,7 +851,9 @@ def save_main_summary(results: dict[str, Any], analyzer, output_dir: Path) -> No
                             "parameters": {
                                 name: float(value)
                                 for name, value in zip(
-                                    param_names, method_result["parameters"], strict=False
+                                    param_names,
+                                    method_result["parameters"],
+                                    strict=False,
                                 )
                             },
                             "chi_squared": float(method_result.get("chi_squared") or 0),

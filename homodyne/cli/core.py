@@ -425,7 +425,12 @@ def process_and_save_results(
                 else:
                     # Save single method result
                     save_individual_method_results(
-                        result, method_name, analyzer, phi_angles, c2_exp, args.output_dir
+                        result,
+                        method_name,
+                        analyzer,
+                        phi_angles,
+                        c2_exp,
+                        args.output_dir,
                     )
 
         # Generate comparison plots if both methods succeeded
