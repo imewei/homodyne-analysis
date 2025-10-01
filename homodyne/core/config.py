@@ -591,7 +591,7 @@ class ConfigManager:
             return False
 
         logger.info(
-            f"Configuration validated: frames {start}-{end} ({end - start} frames)"
+            f"Configuration validated: frames {start}-{end} ({end - start + 1} frames)"
         )
 
         return True

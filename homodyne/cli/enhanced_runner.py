@@ -300,7 +300,7 @@ class EnhancedHomodyneRunner:
         analyzer_params = config_manager.get("analyzer_parameters", {})
         start_frame = analyzer_params.get("start_frame", 1001)
         end_frame = analyzer_params.get("end_frame", 2000)
-        frame_count = end_frame - start_frame
+        frame_count = end_frame - start_frame + 1  # Inclusive counting
 
         # Rough data size estimation (frames * angles * correlation matrix size)
         estimated_size_mb = (frame_count * 180 * 100 * 100 * 8) / (

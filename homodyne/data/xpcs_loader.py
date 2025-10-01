@@ -363,6 +363,123 @@ class XPCSDataLoader:
                 f"Available root keys: {available_keys}"
             )
 
+    def _load_aps_old_format(self, hdf_path: str) -> dict[str, Any]:
+        """Load data from APS old format HDF5 file."""
+        with h5py.File(hdf_path, "r") as f:
+            # Step 1: Load q and phi lists (2D arrays - extract first row)
+            if "xpcs/dqlist" not in f:
+                raise XPCSDataFormatError("Required path 'xpcs/dqlist' not found")
+            if "xpcs/dphilist" not in f:
+                raise XPCSDataFormatError("Required path 'xpcs/dphilist' not found")
+
+            dqlist_2d = f["xpcs/dqlist"][()]
+            dphilist_2d = f["xpcs/dphilist"][()]
+
+            # Extract 1D arrays from 2D structure [0, :]
+            if dqlist_2d.ndim == 2:
+                dqlist = dqlist_2d[0, :]
+                dphilist = dphilist_2d[0, :]
+                logger.debug(f"Extracted 1D arrays from 2D structure: {len(dqlist)} (q,phi) pairs")
+            else:
+                dqlist = dqlist_2d
+                dphilist = dphilist_2d
+                logger.debug(f"Using 1D arrays directly: {len(dqlist)} (q,phi) pairs")
+
+            # Step 2: Access C2T_all as a GROUP (not dataset!)
+            if "exchange" not in f:
+                raise XPCSDataFormatError("'exchange' group not found in HDF5 file")
+
+            exchange = f["exchange"]
+            if "C2T_all" not in exchange:
+                raise XPCSDataFormatError("'C2T_all' not found in exchange group")
+
+            c2t_obj = exchange["C2T_all"]
+
+            # Step 3: Verify it's a group and get dataset keys
+            if not isinstance(c2t_obj, h5py.Group):
+                raise XPCSDataFormatError(
+                    f"'C2T_all' should be a Group but is {type(c2t_obj)}. "
+                    f"Expected structure: exchange/C2T_all/<c2_00001, c2_00002, ...>"
+                )
+
+            c2_keys = sorted(c2t_obj.keys())
+            logger.debug(f"Found {len(c2_keys)} correlation matrices in C2T_all group")
+
+            # Validate data consistency
+            if len(c2_keys) != len(dqlist):
+                logger.warning(
+                    f"Mismatch: {len(c2_keys)} correlation matrices but {len(dqlist)} (q,phi) pairs"
+                )
+                min_len = min(len(c2_keys), len(dqlist))
+                c2_keys = c2_keys[:min_len]
+                dqlist = dqlist[:min_len]
+                dphilist = dphilist[:min_len]
+                logger.debug(f"Truncated to {min_len} entries for consistency")
+
+            # Step 4: Load all correlation matrices
+            logger.debug(f"Loading {len(c2_keys)} correlation matrices")
+            c2_matrices_all = []
+            for key in c2_keys:
+                c2_half = c2t_obj[key][()]
+                c2_full = self._reconstruct_full_matrix(c2_half)
+                c2_matrices_all.append(c2_full)
+
+            # Step 5: Select optimal q-vector
+            selected_q_idx = self._select_optimal_wavevector(dqlist)
+            selected_q = dqlist[selected_q_idx]
+
+            # Step 6: Find (q,phi) pairs near selected q-vector with tolerance
+            q_tolerance = selected_q * 0.1  # 10% tolerance
+            q_matching_indices = np.where(np.abs(dqlist - selected_q) <= q_tolerance)[0]
+
+            # Ensure minimum coverage
+            if len(q_matching_indices) < 5 and len(dqlist) >= 5:
+                q_distances = np.abs(dqlist - selected_q)
+                closest_indices = np.argsort(q_distances)
+                n_desired = min(10, len(closest_indices))
+                q_matching_indices = closest_indices[:n_desired]
+                logger.debug(f"Expanded to {len(q_matching_indices)} q-vectors for phi coverage")
+
+            logger.debug(
+                f"Selected {len(q_matching_indices)} (q,phi) pairs, "
+                f"q-range: {dqlist[q_matching_indices].min():.6f}-{dqlist[q_matching_indices].max():.6f} Å⁻¹"
+            )
+
+            # Step 7: Apply phi filtering if enabled
+            selected_indices = self._get_selected_indices_simple(dphilist)
+
+            if selected_indices is not None:
+                final_indices = np.intersect1d(q_matching_indices, selected_indices)
+                logger.debug(f"After phi filtering: {len(q_matching_indices)} -> {len(final_indices)}")
+            else:
+                final_indices = q_matching_indices
+
+            # Step 8: Extract filtered data
+            filtered_dqlist = dqlist[final_indices]
+            filtered_dphilist = dphilist[final_indices]
+            selected_c2_matrices = [c2_matrices_all[i] for i in final_indices]
+            c2_matrices_array = np.array(selected_c2_matrices)
+
+            # Step 9: Apply frame slicing
+            c2_exp = self._apply_frame_slicing(c2_matrices_array)
+
+            # Step 10: Calculate time arrays
+            dt = self._get_temporal_param("dt", 0.1)
+            start_frame = self._get_temporal_param("start_frame", 1)
+            end_frame = self._get_temporal_param("end_frame", start_frame + c2_exp.shape[-1] - 1)
+
+            time_max = dt * (end_frame - start_frame)
+            time_1d = np.linspace(0, time_max, c2_exp.shape[-1])
+            t1, t2 = np.meshgrid(time_1d, time_1d, indexing="ij")
+
+            return {
+                "wavevector_q_list": filtered_dqlist,
+                "phi_angles_list": filtered_dphilist,
+                "t1": t1,
+                "t2": t2,
+                "c2_exp": c2_exp,
+            }
+
     def _load_aps_u_format(self, hdf_path: str) -> dict[str, Any]:
         """Load data from APS-U new format HDF5 file using processed_bins mapping."""
         with h5py.File(hdf_path, "r") as f:
@@ -468,36 +585,65 @@ class XPCSDataLoader:
         c2_corrected[np.diag_indices(size)] = diag_val / norm
         return c2_corrected
 
+    def _select_optimal_wavevector(self, dqlist: np.ndarray) -> int:
+        """Select q-vector index closest to config value."""
+        # Get from nested scattering config
+        scattering_config = self.analyzer_config.get("scattering", {})
+        config_q = scattering_config.get("wavevector_q", 0.0054)
+
+        # Find closest q-vector
+        closest_idx = np.argmin(np.abs(dqlist - config_q))
+        selected_q = dqlist[closest_idx]
+        deviation = abs(selected_q - config_q)
+
+        logger.info(
+            f"Selected closest q-vector: {selected_q:.6f} Å⁻¹ "
+            f"(target: {config_q:.6f} Å⁻¹, deviation: {deviation:.6f} Å⁻¹)"
+        )
+
+        return closest_idx
+
+    def _get_selected_indices_simple(self, dphilist: np.ndarray) -> np.ndarray | None:
+        """Simple phi angle filtering based on configuration."""
+        opt_config = self.config.get("optimization_config", {})
+        angle_config = opt_config.get("angle_filtering", {})
+
+        if not angle_config.get("enabled", False):
+            logger.debug("Angle filtering disabled")
+            return None
+
+        target_ranges = angle_config.get("target_ranges", [])
+        if not target_ranges:
+            return None
+
+        selected_mask = np.zeros(len(dphilist), dtype=bool)
+        for range_spec in target_ranges:
+            min_angle = range_spec.get("min_angle", -180)
+            max_angle = range_spec.get("max_angle", 180)
+            in_range = (dphilist >= min_angle) & (dphilist <= max_angle)
+            selected_mask |= in_range
+
+        selected_indices = np.where(selected_mask)[0]
+
+        if len(selected_indices) == 0 and angle_config.get("fallback_to_all_angles", True):
+            logger.warning("No angles in target ranges - using all angles")
+            return None
+
+        logger.debug(f"Angle filtering: {len(selected_indices)}/{len(dphilist)} angles selected")
+        return selected_indices
+
     def _apply_frame_slicing(self, c2_matrices: np.ndarray) -> np.ndarray:
-        """
-        Apply frame slicing to correlation matrices.
-
-        Args:
-            c2_matrices: Correlation matrices, shape (n_phi, full_frames, full_frames)
-
-        Returns:
-            Frame-sliced correlation matrices, shape (n_phi, sliced_frames, sliced_frames)
-        """
-        start_frame = (
-            self._get_temporal_param("start_frame", 1) - 1
-        )  # Convert to 0-based
+        """Apply frame slicing to correlation matrices."""
+        start_frame = self._get_temporal_param("start_frame", 1) - 1  # 0-based
         end_frame = self._get_temporal_param("end_frame", c2_matrices.shape[-1])
 
-        # Validate frame parameters
         max_frames = c2_matrices.shape[-1]
-        if start_frame < 0:
-            start_frame = 0
-            logger.warning("start_frame adjusted to 0")
-        if end_frame > max_frames:
-            end_frame = max_frames
-            logger.warning(f"end_frame adjusted to {max_frames}")
+        start_frame = max(0, start_frame)
+        end_frame = min(max_frames, end_frame)
 
-        # Apply frame slicing if needed
         if start_frame > 0 or end_frame < max_frames:
             c2_exp = c2_matrices[:, start_frame:end_frame, start_frame:end_frame]
-            logger.debug(
-                f"Applied frame slicing: [{start_frame}:{end_frame}] -> shape {c2_exp.shape}"
-            )
+            logger.debug(f"Applied frame slicing: [{start_frame}:{end_frame}] -> shape {c2_exp.shape}")
         else:
             c2_exp = c2_matrices
             logger.debug("No frame slicing needed - using full range")
@@ -568,12 +714,20 @@ class XPCSDataLoader:
         try:
             data = np.load(cache_path, allow_pickle=True)
 
-            return {
-                "c2_exp": data["c2_exp"].tolist(),
-                "phi_angles_list": data["phi_angles_list"].tolist(),
-                "time_length": int(data["time_length"]),
-                "num_angles": int(data["num_angles"]),
+            result = {
+                "c2_exp": data["c2_exp"],
+                "phi_angles_list": data["phi_angles_list"],
             }
+
+            # Add optional fields if present (new format)
+            if "wavevector_q_list" in data:
+                result["wavevector_q_list"] = data["wavevector_q_list"]
+            if "t1" in data:
+                result["t1"] = data["t1"]
+            if "t2" in data:
+                result["t2"] = data["t2"]
+
+            return result
         except Exception as e:
             logger.error(f"Failed to load cache file: {e}")
             raise XPCSDataFormatError(f"Failed to load cache file {cache_path}: {e}")
@@ -584,15 +738,25 @@ class XPCSDataLoader:
 
         try:
             # Ensure directory exists
-            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            cache_dir = os.path.dirname(cache_path)
+            if cache_dir:
+                os.makedirs(cache_dir, exist_ok=True)
 
-            np.savez_compressed(
-                cache_path,
-                c2_exp=np.array(data["c2_exp"], dtype=object),
-                phi_angles_list=np.array(data["phi_angles_list"], dtype=object),
-                time_length=data["time_length"],
-                num_angles=data["num_angles"],
-            )
+            # Prepare data for caching
+            cache_data = {
+                "c2_exp": data["c2_exp"],
+                "phi_angles_list": data["phi_angles_list"],
+            }
+
+            # Add optional fields if present
+            if "wavevector_q_list" in data:
+                cache_data["wavevector_q_list"] = data["wavevector_q_list"]
+            if "t1" in data:
+                cache_data["t1"] = data["t1"]
+            if "t2" in data:
+                cache_data["t2"] = data["t2"]
+
+            np.savez_compressed(cache_path, **cache_data)
             logger.debug(f"✓ Cached data saved to: {cache_path}")
         except Exception as e:
             logger.warning(f"Failed to save cache file: {e}")

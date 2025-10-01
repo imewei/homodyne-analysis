@@ -289,8 +289,8 @@ def create_time_arrays_for_simulation(
     dt = temporal_config.get("dt", 0.1)
     start_frame = temporal_config.get("start_frame", 1)
     end_frame = temporal_config.get("end_frame", 100)
-    # Match core.py convention: time_length = end_frame - start_frame (no +1)
-    n_time = end_frame - start_frame
+    # Match core.py convention: time_length = end_frame - start_frame + 1 (inclusive counting)
+    n_time = end_frame - start_frame + 1
 
     logger.info("Simulation temporal parameters:")
     logger.info(f"  dt: {dt}")

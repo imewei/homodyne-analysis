@@ -394,6 +394,23 @@ class ClassicalOptimizer:
             "Failed to load experimental data"
         )
 
+        # Apply subsampling if enabled (to speed up optimization for large datasets)
+        phi_angles, c2_experimental, (angle_indices, time_indices) = (
+            self._subsample_data_for_memory(phi_angles, c2_experimental)
+        )
+
+        # Update core's time_length to match subsampled data dimensions
+        # This is critical for chi-squared calculation to work correctly
+        original_time_length = self.core.time_length
+        if c2_experimental.shape[1] != original_time_length:
+            logger.info(
+                f"Updating core.time_length from {original_time_length} to {c2_experimental.shape[1]} "
+                f"to match subsampled data dimensions"
+            )
+            self.core.time_length = c2_experimental.shape[1]
+            # Also update time_array to match new dimensions
+            self.core.time_array = np.arange(self.core.time_length) * self.core.dt
+
         best_result = None
         best_params = None
         best_chi2 = np.inf
@@ -523,6 +540,14 @@ class ClassicalOptimizer:
                 )
                 logger.debug(f"Classical optimization analysis: {analysis}")
 
+            # Restore original time_length before returning
+            if c2_experimental.shape[1] != original_time_length:
+                logger.info(
+                    f"Restoring core.time_length from {self.core.time_length} back to {original_time_length}"
+                )
+                self.core.time_length = original_time_length
+                self.core.time_array = np.arange(self.core.time_length) * self.core.dt
+
             # Return enhanced result with method information
             enhanced_result = best_result
             enhanced_result.method_results = (
@@ -534,6 +559,14 @@ class ClassicalOptimizer:
 
         # If we reach here, no valid results were obtained
         total_time = time.time() - start_time
+
+        # Restore original time_length before raising exception
+        if c2_experimental.shape[1] != original_time_length:
+            logger.info(
+                f"Restoring core.time_length from {self.core.time_length} back to {original_time_length}"
+            )
+            self.core.time_length = original_time_length
+            self.core.time_array = np.arange(self.core.time_length) * self.core.dt
 
         # Log detailed failure information
         logger.error(
@@ -759,6 +792,101 @@ class ClassicalOptimizer:
             )
 
         return objective
+
+    def _subsample_data_for_memory(
+        self, phi_angles: np.ndarray, c2_experimental: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, tuple[np.ndarray, np.ndarray]]:
+        """
+        Subsample experimental data to reduce memory usage and speed up classical optimization.
+
+        This method reduces the data size by subsampling angles and time points
+        to keep the optimization problem manageable for large datasets (>1M points).
+
+        Parameters
+        ----------
+        phi_angles : np.ndarray
+            Full array of angular positions
+        c2_experimental : np.ndarray
+            Full experimental correlation data (n_angles, n_times, n_times)
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray, tuple[np.ndarray, np.ndarray]]
+            (subsampled_phi_angles, subsampled_c2_data, (angle_indices, time_indices))
+        """
+        # Get subsampling configuration from classical_optimization config
+        subsampling_config = self.optimization_config.get("subsampling", {})
+
+        # Default values similar to robust optimization
+        max_data_points = subsampling_config.get("max_data_points", 100000)
+        time_subsample = subsampling_config.get("time_subsample_factor", 4)
+        angle_subsample = subsampling_config.get("angle_subsample_factor", 2)
+        enabled = subsampling_config.get("enabled", False)
+
+        # Calculate current data size
+        n_angles, n_times, _ = c2_experimental.shape
+        current_size = n_angles * n_times * n_times
+
+        logger.info(
+            f"Classical optimization data size: {current_size:,} points ({n_angles} angles x {n_times}^2 times)"
+        )
+
+        # If subsampling is disabled or data is already small enough, return as-is
+        if not enabled or current_size <= max_data_points:
+            if not enabled:
+                logger.info("Subsampling disabled - using full dataset")
+            else:
+                logger.info("Data size acceptable - no subsampling needed")
+            # Return full indices for no subsampling case
+            angle_indices = np.arange(len(phi_angles))
+            time_indices = np.arange(n_times)
+            return phi_angles, c2_experimental, (angle_indices, time_indices)
+
+        # Subsample angles (every angle_subsample_factor angles)
+        angle_indices = np.arange(0, len(phi_angles), angle_subsample)
+        subsampled_phi_angles = phi_angles[angle_indices]
+        subsampled_c2_angles = c2_experimental[angle_indices]
+
+        # Subsample time points (every time_subsample_factor points)
+        time_indices = np.arange(0, n_times, time_subsample)
+        subsampled_c2_data = subsampled_c2_angles[:, time_indices, :][
+            :, :, time_indices
+        ]
+
+        new_n_angles, new_n_times, _ = subsampled_c2_data.shape
+        new_size = new_n_angles * new_n_times * new_n_times
+        reduction_factor = current_size / new_size
+
+        logger.info(
+            f"Subsampled data size: {new_size:,} points ({new_n_angles} angles x {new_n_times}^2 times)"
+        )
+        logger.info(f"Memory/computation reduction: {reduction_factor:.1f}x smaller")
+
+        # If still too large, apply more aggressive subsampling
+        if new_size > max_data_points:
+            additional_time_factor = int(np.ceil(np.sqrt(new_size / max_data_points)))
+            logger.warning(
+                f"Data still too large, applying additional {additional_time_factor}x time subsampling"
+            )
+
+            time_indices_2 = np.arange(0, new_n_times, additional_time_factor)
+            subsampled_c2_data = subsampled_c2_data[:, time_indices_2, :][
+                :, :, time_indices_2
+            ]
+
+            # Update time_indices to reflect the additional subsampling
+            time_indices = time_indices[time_indices_2]
+
+            final_n_angles, final_n_times, _ = subsampled_c2_data.shape
+            final_size = final_n_angles * final_n_times * final_n_times
+            final_reduction = current_size / final_size
+
+            logger.info(
+                f"Final data size: {final_size:,} points ({final_n_angles} angles x {final_n_times}^2 times)"
+            )
+            logger.info(f"Total memory/computation reduction: {final_reduction:.1f}x smaller")
+
+        return subsampled_phi_angles, subsampled_c2_data, (angle_indices, time_indices)
 
     def run_single_method(
         self,

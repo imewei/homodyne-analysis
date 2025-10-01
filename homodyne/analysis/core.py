@@ -237,7 +237,7 @@ class HomodyneAnalysisCore:
         self.dt = params["temporal"]["dt"]
         self.start_frame = params["temporal"]["start_frame"]
         self.end_frame = params["temporal"]["end_frame"]
-        self.time_length = self.end_frame - self.start_frame
+        self.time_length = self.end_frame - self.start_frame + 1  # +1 for inclusive counting (includes t=0)
 
         # Physical parameters
         self.wavevector_q = params["scattering"]["wavevector_q"]
@@ -258,10 +258,10 @@ class HomodyneAnalysisCore:
         self._diffusion_integral_cache = {}
         self._max_cache_size = 10  # Limit cache size to avoid memory bloat
 
-        # Time array
+        # Time array (starts at 0 for t1=t2=0 correlation)
         self.time_array = np.linspace(
-            self.dt,
-            self.dt * self.time_length,
+            0,
+            self.dt * (self.time_length - 1),
             self.time_length,
             dtype=np.float64,
         )
@@ -632,8 +632,8 @@ class HomodyneAnalysisCore:
 
                 # Update time_array to match new time_length
                 self.time_array = np.linspace(
-                    self.dt,
-                    self.dt * self.time_length,
+                    0,
+                    self.dt * (self.time_length - 1),
                     self.time_length,
                     dtype=np.float64,
                 )
@@ -664,6 +664,63 @@ class HomodyneAnalysisCore:
             else:
                 np.savez(cache_file, c2_exp=c2_experimental)
             logger.debug(f"Data cached successfully to: {cache_file}")
+
+        # Apply angle filtering if enabled (AFTER loading cache, BEFORE validation)
+        opt_config = self.config.get("optimization_config", {})
+        angle_config = opt_config.get("angle_filtering", {})
+        if angle_config.get("enabled", False):
+            target_ranges = angle_config.get("target_ranges", [])
+            if target_ranges:
+                # Build selection mask
+                selected_mask = np.zeros(len(phi_angles), dtype=bool)
+                for range_spec in target_ranges:
+                    min_angle = range_spec.get("min_angle", -180)
+                    max_angle = range_spec.get("max_angle", 180)
+                    in_range = (phi_angles >= min_angle) & (phi_angles <= max_angle)
+                    selected_mask |= in_range
+
+                selected_indices = np.where(selected_mask)[0]
+
+                if len(selected_indices) == 0:
+                    if angle_config.get("fallback_to_all_angles", True):
+                        logger.warning("No angles in target ranges - using all angles")
+                    else:
+                        raise ValueError(f"No angles found in target ranges {target_ranges}")
+                else:
+                    # Filter both phi_angles and c2_experimental
+                    logger.info(
+                        f"Angle filtering: selected {len(selected_indices)}/{len(phi_angles)} angles: "
+                        f"{phi_angles[selected_indices].tolist()}"
+                    )
+                    phi_angles = phi_angles[selected_indices]
+                    c2_experimental = c2_experimental[selected_indices, :, :]
+                    num_angles = len(phi_angles)
+                    logger.info(f"Filtered data shape: {c2_experimental.shape}")
+
+        # Validate and auto-adjust angle dimensions if needed
+        if c2_experimental.shape[0] != len(phi_angles):
+            logger.warning(
+                f"Angle dimension mismatch: phi_angles has {len(phi_angles)} angles "
+                f"but cached data has {c2_experimental.shape[0]} angles. "
+                f"Auto-adjusting phi_angles to match experimental data."
+            )
+            # Trim or extend phi_angles to match data
+            if c2_experimental.shape[0] < len(phi_angles):
+                phi_angles = phi_angles[: c2_experimental.shape[0]]
+                logger.info(
+                    f"Trimmed phi_angles to {len(phi_angles)} angles to match data"
+                )
+            else:
+                # Data has more angles than phi_angles - this is unusual
+                logger.error(
+                    f"Data has {c2_experimental.shape[0]} angles but only "
+                    f"{len(phi_angles)} phi_angles provided. Cannot extend phi_angles."
+                )
+                raise ValueError(
+                    f"Insufficient phi_angles: need {c2_experimental.shape[0]}, "
+                    f"but only {len(phi_angles)} provided"
+                )
+            num_angles = len(phi_angles)
 
         # Apply diagonal correction
         if self.config["advanced_settings"]["data_loading"].get(
@@ -748,8 +805,8 @@ class HomodyneAnalysisCore:
 
                 # Update time_array to match new time_length
                 self.time_array = np.linspace(
-                    self.dt,
-                    self.dt * self.time_length,
+                    0,
+                    self.dt * (self.time_length - 1),
                     self.time_length,
                     dtype=np.float64,
                 )
@@ -848,27 +905,61 @@ class HomodyneAnalysisCore:
     ) -> np.ndarray:
         """Calculate time-dependent diffusion coefficient.
 
-        Ensures D(t) > 0 always by applying a minimum threshold."""
+        Ensures D(t) > 0 always by applying a minimum threshold.
+
+        Special handling for negative alpha:
+        - For alpha < 0, D(t) diverges as t→0
+        - Physical limit: D(0) = D_offset
+        - For t > threshold: D(t) = D0 * t^alpha + D_offset"""
         D0, alpha, D_offset = params
 
         if NUMBA_AVAILABLE:
             return calculate_diffusion_coefficient_numba(
                 self.time_array, D0, alpha, D_offset
             )
-        D_t = D0 * (self.time_array**alpha) + D_offset
+
+        # Handle negative alpha: use physical limit at t=0
+        if alpha < 0:
+            # Initialize with D_offset (physical limit as t→0)
+            D_t = np.full_like(self.time_array, D_offset, dtype=np.float64)
+            # For t > threshold, use full formula
+            threshold = 1e-10
+            mask = self.time_array > threshold
+            if np.any(mask):
+                D_t[mask] = D0 * (self.time_array[mask]**alpha) + D_offset
+        else:
+            D_t = D0 * (self.time_array**alpha) + D_offset
+
         return np.maximum(D_t, 1e-10)  # Ensure D(t) > 0 always
 
     def calculate_shear_rate_optimized(self, params: np.ndarray) -> np.ndarray:
         """Calculate time-dependent shear rate.
 
-        Ensures γ̇(t) > 0 always by applying a minimum threshold."""
+        Ensures γ̇(t) > 0 always by applying a minimum threshold.
+
+        Special handling for negative beta:
+        - For beta < 0, γ̇(t) diverges as t→0
+        - Physical limit: γ̇(0) = offset
+        - For t > threshold: γ̇(t) = γ̇₀ * t^beta + offset"""
         gamma_dot_t0, beta, gamma_dot_t_offset = params
 
         if NUMBA_AVAILABLE:
             return calculate_shear_rate_numba(
                 self.time_array, gamma_dot_t0, beta, gamma_dot_t_offset
             )
-        gamma_t = gamma_dot_t0 * (self.time_array**beta) + gamma_dot_t_offset
+
+        # Handle negative beta: use physical limit at t=0
+        if beta < 0:
+            # Initialize with offset (physical limit as t→0)
+            gamma_t = np.full_like(self.time_array, gamma_dot_t_offset, dtype=np.float64)
+            # For t > threshold, use full formula
+            threshold = 1e-10
+            mask = self.time_array > threshold
+            if np.any(mask):
+                gamma_t[mask] = gamma_dot_t0 * (self.time_array[mask]**beta) + gamma_dot_t_offset
+        else:
+            gamma_t = gamma_dot_t0 * (self.time_array**beta) + gamma_dot_t_offset
+
         return np.maximum(gamma_t, 1e-10)  # Ensure γ̇(t) > 0 always
 
     @memory_efficient_cache(maxsize=64)
@@ -1516,29 +1607,32 @@ class HomodyneAnalysisCore:
         min_sigma = chi_config.get("minimum_sigma", 1e-10)
         n_params = len(parameters)
 
-        # Calculate chi-squared for all angles (for detailed results)
-        n_angles = len(phi_angles)
-        angle_chi2 = np.zeros(n_angles)
-        angle_chi2_reduced = np.zeros(n_angles)
-
         # Memory layout optimization for better cache performance
+        # Use actual data shape for n_angles to handle dimension mismatches
         theory_flat, exp_flat, n_data_per_angle = self._optimize_memory_layout(
-            c2_theory, c2_experimental, n_angles
+            c2_theory, c2_experimental, len(phi_angles)
         )
 
-        angle_data_points = [n_data_per_angle] * n_angles
+        # Get actual number of angles from the data shape
+        actual_n_angles = theory_flat.shape[0]
+
+        # Calculate chi-squared for all angles (for detailed results)
+        angle_chi2 = np.zeros(actual_n_angles)
+        angle_chi2_reduced = np.zeros(actual_n_angles)
+
+        angle_data_points = [n_data_per_angle] * actual_n_angles
 
         # Compute variance estimates and scaling solutions
         exp_std_batch = np.std(exp_flat, axis=1) * uncertainty_factor
         sigma_batch = np.maximum(exp_std_batch, min_sigma)
 
         contrast_batch, offset_batch = self._solve_scaling_batch(
-            theory_flat, exp_flat, n_angles, n_data_per_angle
+            theory_flat, exp_flat, actual_n_angles, n_data_per_angle
         )
 
         # Compute chi-squared values
         chi2_raw_batch = self._compute_chi_squared_batch(
-            theory_flat, exp_flat, contrast_batch, offset_batch, n_angles
+            theory_flat, exp_flat, contrast_batch, offset_batch, actual_n_angles
         )
 
         # Apply sigma normalization and DOF calculation (vectorized)
@@ -1563,17 +1657,24 @@ class HomodyneAnalysisCore:
     ) -> tuple[np.ndarray, np.ndarray, int]:
         """
         Optimize memory layout for cache-friendly sequential access.
+        Handles dimension mismatches between theory and experimental data.
         """
-        original_shape = c2_theory.shape
+        theory_shape = c2_theory.shape
+        exp_shape = c2_experimental.shape
 
-        if len(original_shape) == 3:
+        if len(theory_shape) == 3:
             # For 3D arrays, create cache-optimized flat arrays
-            n_data_per_angle = original_shape[1] * original_shape[2]
+            # Use actual array shapes to handle dimension mismatches
+            n_angles_theory = theory_shape[0]
+            n_angles_exp = exp_shape[0]
+            n_data_per_angle = theory_shape[1] * theory_shape[2]
+
+            # Reshape each array using its own actual shape
             theory_flat = np.ascontiguousarray(
-                c2_theory.reshape(n_angles, n_data_per_angle), dtype=np.float64
+                c2_theory.reshape(n_angles_theory, n_data_per_angle), dtype=np.float64
             )
             exp_flat = np.ascontiguousarray(
-                c2_experimental.reshape(n_angles, n_data_per_angle),
+                c2_experimental.reshape(n_angles_exp, n_data_per_angle),
                 dtype=np.float64,
             )
         else:
@@ -1780,6 +1881,7 @@ class HomodyneAnalysisCore:
         if return_components:
             return self._build_detailed_results(
                 angle_chi2,
+                angle_chi2_reduced,
                 reduced_chi2,
                 reduced_chi2_uncertainty,
                 reduced_chi2_std,
@@ -1824,6 +1926,7 @@ class HomodyneAnalysisCore:
     def _build_detailed_results(
         self,
         angle_chi2: np.ndarray,
+        angle_chi2_reduced: np.ndarray,
         reduced_chi2: float,
         reduced_chi2_uncertainty: float,
         reduced_chi2_std: float,

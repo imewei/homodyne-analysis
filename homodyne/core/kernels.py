@@ -120,9 +120,27 @@ def _calculate_diffusion_coefficient_impl(time_array, D0, alpha, D_offset):
     1. Use NumPy power operation for entire array
     2. Vectorized arithmetic operations
     3. Vectorized maximum operation for clamping
+
+    Special handling for negative alpha:
+    - For alpha < 0, D(t) = D0 * t^alpha + D_offset diverges as t→0
+    - Physical limit: lim(t→0) D(t) = D_offset (constant term dominates)
+    - For t=0 or very small t: D(0) = D_offset
+    - For t > threshold: D(t) = D0 * t^alpha + D_offset
     """
-    # REVOLUTIONARY VECTORIZATION: Replace loop with vectorized operations
-    D_values = D0 * np.power(time_array, alpha) + D_offset
+    if alpha < 0:
+        # For negative alpha, handle t=0 by taking the physical limit
+        # Initialize with D_offset (the limit as t→0)
+        D_values = np.full_like(time_array, D_offset, dtype=np.float64)
+
+        # For t > threshold, compute the full power-law + offset
+        threshold = 1e-10  # Avoid numerical instability for very small t
+        mask = time_array > threshold
+        if np.any(mask):
+            D_values[mask] = D0 * np.power(time_array[mask], alpha) + D_offset
+    else:
+        # Standard calculation for non-negative alpha (no singularity at t=0)
+        D_values = D0 * np.power(time_array, alpha) + D_offset
+
     # Vectorized maximum operation to ensure minimum threshold
     D_t = np.maximum(D_values, 1e-10)
     return D_t
@@ -141,9 +159,27 @@ def _calculate_shear_rate_impl(time_array, gamma_dot_t0, beta, gamma_dot_t_offse
     1. Use NumPy power operation for entire array
     2. Vectorized arithmetic operations
     3. Vectorized maximum operation for clamping
+
+    Special handling for negative beta:
+    - For beta < 0, γ̇(t) = γ̇₀ * t^beta + offset diverges as t→0
+    - Physical limit: lim(t→0) γ̇(t) = offset (constant term dominates)
+    - For t=0 or very small t: γ̇(0) = offset
+    - For t > threshold: γ̇(t) = γ̇₀ * t^beta + offset
     """
-    # REVOLUTIONARY VECTORIZATION: Replace loop with vectorized operations
-    gamma_values = gamma_dot_t0 * np.power(time_array, beta) + gamma_dot_t_offset
+    if beta < 0:
+        # For negative beta, handle t=0 by taking the physical limit
+        # Initialize with offset (the limit as t→0)
+        gamma_values = np.full_like(time_array, gamma_dot_t_offset, dtype=np.float64)
+
+        # For t > threshold, compute the full power-law + offset
+        threshold = 1e-10  # Avoid numerical instability for very small t
+        mask = time_array > threshold
+        if np.any(mask):
+            gamma_values[mask] = gamma_dot_t0 * np.power(time_array[mask], beta) + gamma_dot_t_offset
+    else:
+        # Standard calculation for non-negative beta (no singularity at t=0)
+        gamma_values = gamma_dot_t0 * np.power(time_array, beta) + gamma_dot_t_offset
+
     # Vectorized maximum operation to ensure minimum threshold
     gamma_dot_t = np.maximum(gamma_values, 1e-10)
     return gamma_dot_t
@@ -852,8 +888,8 @@ def calculate_diffusion_coefficient_numba(t, D0, alpha, D_offset):
 
     Parameters
     ----------
-    t : float
-        Time
+    t : float or array
+        Time (can be scalar or array)
     D0 : float
         Reference diffusion coefficient
     alpha : float
@@ -863,10 +899,35 @@ def calculate_diffusion_coefficient_numba(t, D0, alpha, D_offset):
 
     Returns
     -------
-    float
+    float or array
         D(t) = D0 * t^alpha + D_offset
+
+    Notes
+    -----
+    For negative alpha, uses physical limit approach to avoid NaN at t=0:
+    - At t=0: D(0) = D_offset (physical limit)
+    - For t > threshold: D(t) = D0 * t^alpha + D_offset
     """
-    D_t = D0 * (t**alpha) + D_offset
+    if alpha < 0:
+        # For negative alpha, handle t=0 by taking the physical limit
+        # Initialize with D_offset (the limit as t→0)
+        D_values = np.full_like(np.atleast_1d(t), D_offset, dtype=np.float64)
+
+        # For t > threshold, compute the full power-law + offset
+        threshold = 1e-10
+        mask = np.atleast_1d(t) > threshold
+        if np.any(mask):
+            D_values[mask] = D0 * np.power(np.atleast_1d(t)[mask], alpha) + D_offset
+
+        # Return scalar if input was scalar, otherwise return array
+        if np.isscalar(t):
+            D_t = D_values[0]
+        else:
+            D_t = D_values
+    else:
+        # Standard calculation for non-negative alpha
+        D_t = D0 * (t**alpha) + D_offset
+
     return np.maximum(D_t, 1e-10)  # Ensure minimum value for physical validity
 
 
@@ -876,8 +937,8 @@ def calculate_shear_rate_numba(t, gamma0, beta, gamma_offset):
 
     Parameters
     ----------
-    t : float
-        Time
+    t : float or array
+        Time (can be scalar or array)
     gamma0 : float
         Reference shear rate
     beta : float
@@ -887,10 +948,35 @@ def calculate_shear_rate_numba(t, gamma0, beta, gamma_offset):
 
     Returns
     -------
-    float
+    float or array
         gamma_dot(t) = gamma0 * t^beta + gamma_offset
+
+    Notes
+    -----
+    For negative beta, uses physical limit approach to avoid NaN at t=0:
+    - At t=0: gamma(0) = gamma_offset (physical limit)
+    - For t > threshold: gamma(t) = gamma0 * t^beta + gamma_offset
     """
-    gamma_t = gamma0 * (t**beta) + gamma_offset
+    if beta < 0:
+        # For negative beta, handle t=0 by taking the physical limit
+        # Initialize with gamma_offset (the limit as t→0)
+        gamma_values = np.full_like(np.atleast_1d(t), gamma_offset, dtype=np.float64)
+
+        # For t > threshold, compute the full power-law + offset
+        threshold = 1e-10
+        mask = np.atleast_1d(t) > threshold
+        if np.any(mask):
+            gamma_values[mask] = gamma0 * np.power(np.atleast_1d(t)[mask], beta) + gamma_offset
+
+        # Return scalar if input was scalar, otherwise return array
+        if np.isscalar(t):
+            gamma_t = gamma_values[0]
+        else:
+            gamma_t = gamma_values
+    else:
+        # Standard calculation for non-negative beta
+        gamma_t = gamma0 * (t**beta) + gamma_offset
+
     return np.maximum(gamma_t, 0.0)  # Shear rate must be non-negative
 
 

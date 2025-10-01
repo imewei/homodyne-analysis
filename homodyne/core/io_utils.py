@@ -13,6 +13,7 @@ Key Features:
 - Custom JSON serializer for NumPy arrays and complex objects
 - Comprehensive error handling with detailed logging
 - Structured result saving for analysis workflows
+- Frame counting utilities for consistent time_length calculations
 
 Data Formats Supported:
 - JSON: Configuration files, analysis results, metadata
@@ -757,3 +758,106 @@ if __name__ == "__main__":
         print(f"Pickle save success: {pickle_success}")
 
     print("All tests completed!")
+
+
+# ============================================================================
+# Frame Counting Utilities
+# ============================================================================
+
+
+def calculate_time_length(start_frame: int, end_frame: int) -> int:
+    """
+    Calculate time_length using inclusive frame counting.
+
+    This is the canonical formula used throughout the homodyne package to ensure
+    dimensional consistency between configuration, cached data, and runtime arrays.
+
+    Frame Counting Convention:
+    -------------------------
+    - Config frames are 1-based and inclusive: [start_frame, end_frame]
+    - time_length includes both start and end frames
+    - Formula: time_length = end_frame - start_frame + 1
+
+    Examples:
+    ---------
+    >>> calculate_time_length(1, 100)
+    100
+    >>> calculate_time_length(401, 1000)
+    600
+    >>> calculate_time_length(1, 1)
+    1
+
+    Args:
+        start_frame: Starting frame number (1-based, inclusive)
+        end_frame: Ending frame number (1-based, inclusive)
+
+    Returns:
+        int: Number of frames in the range (time_length)
+
+    Raises:
+        ValueError: If start_frame > end_frame
+
+    Note:
+        This formula was fixed in v0.6.5+ to address a critical bug where the
+        original formula (end_frame - start_frame) caused off-by-one errors,
+        dimensional mismatches, and NaN chi-squared values.
+
+    See Also:
+        - homodyne/analysis/core.py:240 - Core time_length calculation
+        - homodyne/data/xpcs_loader.py - Data loading with frame slicing
+        - homodyne/tests/test_time_length_calculation.py - Regression tests
+    """
+    if start_frame > end_frame:
+        raise ValueError(
+            f"Invalid frame range: start_frame ({start_frame}) > end_frame ({end_frame})"
+        )
+
+    time_length = end_frame - start_frame + 1
+    return time_length
+
+
+def config_frames_to_python_slice(
+    start_frame: int, end_frame: int
+) -> tuple[int, int]:
+    """
+    Convert config frame range (1-based inclusive) to Python slice indices (0-based).
+
+    Config Convention:
+    ------------------
+    - start_frame: 1-based, inclusive (e.g., 1 means first frame)
+    - end_frame: 1-based, inclusive (e.g., 100 means include frame 100)
+
+    Python Slice Convention:
+    ------------------------
+    - start: 0-based, inclusive
+    - end: 0-based, exclusive (used as data[start:end])
+
+    Examples:
+    ---------
+    >>> config_frames_to_python_slice(1, 100)
+    (0, 100)
+    >>> config_frames_to_python_slice(401, 1000)
+    (400, 1000)
+
+    This gives slice [0:100] = 100 frames, [400:1000] = 600 frames,
+    matching time_length = end_frame - start_frame + 1.
+
+    Args:
+        start_frame: Starting frame from config (1-based, inclusive)
+        end_frame: Ending frame from config (1-based, inclusive)
+
+    Returns:
+        tuple[int, int]: (python_start, python_end) for use in data[start:end]
+
+    Note:
+        The returned indices are designed for Python array slicing where the
+        end index is exclusive. The slice [python_start:python_end] will give
+        exactly time_length = end_frame - start_frame + 1 elements.
+
+    See Also:
+        - convert_c2_to_npz.py:convert_config_frames_to_python() - Data conversion
+        - homodyne/data/xpcs_loader.py:637 - Frame slicing in data loader
+    """
+    python_start = start_frame - 1  # Convert to 0-based
+    python_end = end_frame  # Keep as-is for exclusive slice
+    return python_start, python_end

@@ -53,23 +53,31 @@ except ImportError as e:
 
 # Import advanced optimization features with graceful degradation
 try:
-    from ..optimization.distributed import create_distributed_optimizer
-    from ..optimization.distributed import get_available_backends
+    from ..optimization.distributed import (
+        integrate_with_classical_optimizer as integrate_distributed_classical,
+        integrate_with_robust_optimizer as integrate_distributed_robust,
+        get_available_backends,
+    )
 
     DISTRIBUTED_AVAILABLE = True
 except ImportError:
     DISTRIBUTED_AVAILABLE = False
-    create_distributed_optimizer = None
+    integrate_distributed_classical = None
+    integrate_distributed_robust = None
     get_available_backends = None
 
 try:
-    from ..optimization.ml_acceleration import create_ml_accelerated_optimizer
-    from ..optimization.ml_acceleration import get_ml_backend_info
+    from ..optimization.ml_acceleration import (
+        enhance_classical_optimizer_with_ml,
+        enhance_robust_optimizer_with_ml,
+        get_ml_backend_info,
+    )
 
     ML_ACCELERATION_AVAILABLE = True
 except ImportError:
     ML_ACCELERATION_AVAILABLE = False
-    create_ml_accelerated_optimizer = None
+    enhance_classical_optimizer_with_ml = None
+    enhance_robust_optimizer_with_ml = None
     get_ml_backend_info = None
 
 # Check for advanced optimization utilities
@@ -216,14 +224,15 @@ def configure_optimization_enhancements(
         else:
             logger.info("Configuring distributed optimization...")
             try:
-                distributed_config = quick_setup_distributed_optimization(
-                    backend=args.backend,
-                    workers=args.workers,
-                    config_path=getattr(args, "distributed_config", None),
-                )
+                # Create config dictionary for integration function
+                import psutil
+                num_processes = args.workers if hasattr(args, "workers") and args.workers else min(psutil.cpu_count() or 4, 8)
+                distributed_config = {
+                    "multiprocessing_config": {"num_processes": num_processes}
+                }
                 enhanced_config["distributed"] = distributed_config
                 logger.info(
-                    f"✓ Distributed optimization configured: {distributed_config['backend']}"
+                    f"✓ Distributed optimization configured: {args.backend} backend with {num_processes} processes"
                 )
             except Exception as e:
                 logger.warning(f"⚠️  Failed to configure distributed optimization: {e}")
@@ -236,13 +245,11 @@ def configure_optimization_enhancements(
         else:
             logger.info("Configuring ML acceleration...")
             try:
-                ml_config = quick_setup_ml_acceleration(
-                    data_path=args.ml_data_path,
-                    train_models=getattr(args, "train_ml_model", False),
-                    enable_transfer_learning=getattr(
-                        args, "enable_transfer_learning", False
-                    ),
-                )
+                # Create config dictionary for integration function
+                ml_config = {
+                    "enable_transfer_learning": getattr(args, "enable_transfer_learning", False),
+                    "data_storage_path": args.ml_data_path if hasattr(args, "ml_data_path") and args.ml_data_path else "./ml_optimization_data"
+                }
                 enhanced_config["ml_acceleration"] = ml_config
                 logger.info("✓ ML acceleration configured")
             except Exception as e:
@@ -334,12 +341,12 @@ def create_enhanced_optimizers(args: argparse.Namespace, analyzer, enhanced_conf
             enhanced_classical = ClassicalOptimizer(analyzer, analyzer.config)
 
             if "distributed" in enhanced_config:
-                enhanced_classical = create_distributed_optimizer(
+                enhanced_classical = integrate_distributed_classical(
                     enhanced_classical, enhanced_config["distributed"]
                 )
 
             if "ml_acceleration" in enhanced_config:
-                enhanced_classical = create_ml_accelerated_optimizer(
+                enhanced_classical = enhance_classical_optimizer_with_ml(
                     enhanced_classical, enhanced_config["ml_acceleration"]
                 )
 
@@ -348,15 +355,15 @@ def create_enhanced_optimizers(args: argparse.Namespace, analyzer, enhanced_conf
         # Create enhanced robust optimizer
         if "distributed" in enhanced_config or "ml_acceleration" in enhanced_config:
             logger.info("Creating enhanced robust optimizer...")
-            enhanced_robust = create_robust_optimizer(analyzer)
+            enhanced_robust = create_robust_optimizer(analyzer, analyzer.config)
 
             if "distributed" in enhanced_config:
-                enhanced_robust = create_distributed_optimizer(
+                enhanced_robust = integrate_distributed_robust(
                     enhanced_robust, enhanced_config["distributed"]
                 )
 
             if "ml_acceleration" in enhanced_config:
-                enhanced_robust = create_ml_accelerated_optimizer(
+                enhanced_robust = enhance_robust_optimizer_with_ml(
                     enhanced_robust, enhanced_config["ml_acceleration"]
                 )
 
@@ -609,7 +616,7 @@ def main():
 
             # Plot experimental data
             logger.info("Generating experimental data plots...")
-            plot_path = args.output_dir / "plots" / "experimental_data_validation.png"
+            plot_path = args.output_dir / "exp_data" / "experimental_data_validation.png"
             analyzer._plot_experimental_data_validation(
                 c2_experimental, phi_angles, save_path=str(plot_path)
             )

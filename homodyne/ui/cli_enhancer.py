@@ -110,7 +110,7 @@ class CLIEnhancer:
         start_frame = analyzer.get("start_frame", "N/A")
         end_frame = analyzer.get("end_frame", "N/A")
         frame_count = (
-            end_frame - start_frame
+            end_frame - start_frame + 1  # Inclusive counting
             if isinstance(start_frame, int) and isinstance(end_frame, int)
             else "N/A"
         )

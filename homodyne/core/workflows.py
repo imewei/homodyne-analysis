@@ -427,7 +427,7 @@ class SimulationWorkflow:
 
         def create_time_arrays(temporal_params):
             dt, start_frame, end_frame = temporal_params
-            n_time = end_frame - start_frame
+            n_time = end_frame - start_frame + 1  # Inclusive counting
 
             if n_time <= 0:
                 raise ValueError("Invalid time range: end_frame must be > start_frame")

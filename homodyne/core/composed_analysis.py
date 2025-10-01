@@ -407,9 +407,9 @@ class ComposedHomodyneAnalysis:
         dt = temporal_config.get("dt", 0.1)
         start_frame = temporal_config.get("start_frame", 1)
         end_frame = temporal_config.get("end_frame", 50)
-        n_time = end_frame - start_frame
+        n_time = end_frame - start_frame + 1  # Inclusive counting
 
-        # Generate time arrays
+        # Generate time arrays (n_time points from 0 to (n_time-1)*dt)
         t1 = np.arange(n_time) * dt
         t2 = np.arange(n_time) * dt
 
