@@ -242,44 +242,38 @@ def run_robust_optimization(
             )
 
         # Run the robust optimization
-        result = optimizer.run_optimization(
-            initial_params=initial_params,
+        # Returns tuple: (optimal_parameters, optimization_info_dict)
+        parameters, result_info = optimizer.run_robust_optimization(
+            initial_parameters=initial_params,
             phi_angles=phi_angles,
             c2_experimental=c2_exp,
         )
 
-        if result is None:
+        if parameters is None or result_info is None:
             logger.error("❌ Robust optimization returned no result")
+            logger.error(f"  parameters is None: {parameters is None}")
+            logger.error(f"  result_info is None: {result_info is None}")
             return None
 
-        # Handle different result formats from robust optimization
-        if hasattr(result, "method_results"):
-            # Multi-method robust result
-            best_method = result.best_method
-            if best_method and best_method in result.method_results:
-                best_result = result.method_results[best_method]
-                parameters = best_result.get("parameters", result.x)
-                chi_squared = best_result.get("chi_squared", result.fun)
-            else:
-                parameters = result.x
-                chi_squared = result.fun
+        # Validate parameters
+        if not isinstance(parameters, np.ndarray) or len(parameters) == 0:
+            logger.error(
+                f"❌ Robust optimization returned invalid parameters: type={type(parameters)}, "
+                f"len={len(parameters) if hasattr(parameters, '__len__') else 'N/A'}"
+            )
+            return None
 
-            logger.info(f"✓ Robust optimization completed with method: {best_method}")
+        # Extract chi-squared from result_info
+        chi_squared = result_info.get("chi_squared", result_info.get("final_cost", None))
+        method_used = result_info.get("method", "robust")
+        success = result_info.get("success", True)
+
+        logger.info(f"✓ Robust optimization completed with method: {method_used}")
+
+        if chi_squared is not None:
+            logger.info(f"✓ Final chi-squared: {chi_squared:.6f}")
         else:
-            # Single method result
-            parameters = result.x if hasattr(result, "x") else result
-            chi_squared = result.fun if hasattr(result, "fun") else None
-            logger.info("✓ Robust optimization completed")
-
-        if parameters is None:
-            logger.error("❌ Robust optimization failed to find parameters")
-            return None
-
-        logger.info(
-            f"✓ Final chi-squared: {chi_squared:.6f}"
-            if chi_squared
-            else "✓ Optimization completed"
-        )
+            logger.info("✓ Optimization completed")
 
         # Log parameters
         param_names = analyzer.config.get(
@@ -292,8 +286,8 @@ def run_robust_optimization(
             "method": "robust",
             "parameters": parameters,
             "chi_squared": chi_squared,
-            "success": True,
-            "result_object": result,
+            "success": success,
+            "result_object": result_info,
         }
 
     except Exception as e:
