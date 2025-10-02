@@ -129,11 +129,11 @@ The full expression combines diffusive and shear contributions:
 
 .. math::
 
-   g_{1,\text{total}}(t_1,t_2) = g_{1,\text{diffusion}}(t_1,t_2) \times g_{1,\text{shear}}(t_1,t_2)
+   c_{1,\text{total}}(t_1,t_2) = c_{1,\text{diffusion}}(t_1,t_2) \times c_{1,\text{shear}}(t_1,t_2)
 
 .. math::
 
-   g_{1,\text{shear}}(t_1,t_2) = \text{sinc}^2(\Phi)
+   c_{1,\text{shear}}(t_1,t_2) = \text{sinc}^2(\Phi)
 
 **Parameters (7 total)**:
 
