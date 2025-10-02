@@ -178,6 +178,7 @@ jobs:
           pip install -e .[test,performance]
 
       - name: "🧪 Run Tests - ${{ matrix.test-category }}"
+        shell: bash
         run: |
           # Exit code 5 means "no tests collected" - treat as success for missing markers
           pytest homodyne/tests \
