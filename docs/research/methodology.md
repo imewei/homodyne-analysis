@@ -836,5 +836,5 @@ This 2×2 linear system is solved using `np.linalg.solve()` for efficiency.
 ______________________________________________________________________
 
 **Document**: Research Methodology and Theoretical Framework **Last Updated**:
-2025-10-01 **Version**: 0.8.0 **Authors**: Wei Chen, Hongrui He (Argonne National
+2025-10-01 **Version**: 1.0.0 **Authors**: Wei Chen, Hongrui He (Argonne National
 Laboratory)

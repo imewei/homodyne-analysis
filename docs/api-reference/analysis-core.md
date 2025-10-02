@@ -531,5 +531,5 @@ print(f"Final chi-squared: {results['chi_squared']:.6e}")
 
 ______________________________________________________________________
 
-**Module**: `homodyne.analysis.core` **Last Updated**: 2025-10-01 **Version**: 0.8.0
+**Module**: `homodyne.analysis.core` **Last Updated**: 2025-10-01 **Version**: 1.0.0
 **Authors**: Wei Chen, Hongrui He (Argonne National Laboratory)

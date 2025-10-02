@@ -60,7 +60,7 @@ pydantic>=2.5.0          # Data validation and settings management
 # =============================================================================
 ruff>=0.13.2             # Fast Python linter and formatter (Rust-based)
 black>=25.9.0            # Code formatting with consistent style
-isort>=6.0.1             # Import sorting and organization
+isort>=6.1.0             # Import sorting and organization
 mypy>=1.18.2             # Static type checking with type hints
 bandit>=1.8.6            # Security linter for Python vulnerabilities
 safety>=3.6.2            # Dependency vulnerability scanning

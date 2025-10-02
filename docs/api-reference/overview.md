@@ -361,5 +361,5 @@ Old cache files may have incorrect dimensions:
 
 ______________________________________________________________________
 
-**Last Updated**: 2025-10-01 **Version**: 0.8.0 **Authors**: Wei Chen, Hongrui He
+**Last Updated**: 2025-10-01 **Version**: 1.0.0 **Authors**: Wei Chen, Hongrui He
 (Argonne National Laboratory)
