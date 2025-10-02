@@ -199,11 +199,14 @@ Optimization Issues
 .. code-block:: python
 
    # Check optimization result details
-   result = analysis.optimize_classical()
+   from homodyne.optimization.classical import ClassicalOptimizer
+   optimizer = ClassicalOptimizer(core, config)
+   params, result = optimizer.run_classical_optimization_optimized(
+       phi_angles=phi_angles, c2_experimental=c2_data)
    print(f"Success: {result.success}")
    print(f"Message: {result.message}")
    print(f"Function evaluations: {result.nfev}")
-   print(f"Final chi-squared: {result.fun}")
+   print(f"Final chi-squared: {result.chi_squared}")
 
 *Solutions*:
 
@@ -309,7 +312,11 @@ Optimization Issues
 
 .. code-block:: python
 
-   classical_result = analysis.optimize_classical()
+   # Run classical optimization first to get good starting point
+   from homodyne.optimization.classical import ClassicalOptimizer
+   optimizer = ClassicalOptimizer(core, config)
+   params, classical_result = optimizer.run_classical_optimization_optimized(
+       phi_angles=phi_angles, c2_experimental=c2_data)
 
 **Divergences**
 

@@ -266,16 +266,21 @@ Integration Testing
 
                # Run complete analysis
                config_manager = ConfigManager(str(config_file))
-               analysis = HomodyneAnalysisCore(config_manager)
-               analysis.load_experimental_data()
-               result = analysis.optimize_classical()
+               core = HomodyneAnalysisCore(config_manager)
+               core.load_experimental_data()
+
+               # Use ClassicalOptimizer for optimization
+               from homodyne.optimization.classical import ClassicalOptimizer
+               optimizer = ClassicalOptimizer(core, config_manager.config)
+               params, result = optimizer.run_classical_optimization_optimized(
+                   phi_angles=phi_angles, c2_experimental=c2_data)
 
                # Verify results
                assert result.success
-               assert result.fun < 0.05  # Excellent fit for synthetic data
+               assert result.chi_squared < 0.05  # Excellent fit for synthetic data
 
                # Check parameter recovery
-               for recovered, true in zip(result.x, true_params):
+               for recovered, true in zip(params, true_params):
                    assert abs(recovered - true) / true < 0.05
 
 
@@ -292,14 +297,16 @@ Integration Testing
                }
            }
 
-           analysis = HomodyneAnalysisCore(config_manager)
-           analysis._tau = tau
-           analysis._g1_data = g1_data
-           analysis._q = q
+           core = HomodyneAnalysisCore(config_manager)
+           core._tau = tau
+           core._g1_data = g1_data
+           core._q = q
 
            # Run classical first
-           classical_result = analysis.optimize_classical()
-
+           from homodyne.optimization.classical import ClassicalOptimizer
+           optimizer = ClassicalOptimizer(core, config_manager.config)
+           params, result = optimizer.run_classical_optimization_optimized(
+               phi_angles=phi_angles, c2_experimental=c2_data)
 
            # Check convergence
 
@@ -330,13 +337,17 @@ Performance Testing
            """Test that optimization completes within reasonable time"""
            tau, g1_data, true_params, q = synthetic_isotropic_data
 
-           analysis = HomodyneAnalysisCore(config_manager)
-           analysis._tau = tau
-           analysis._g1_data = g1_data
-           analysis._q = q
+           core = HomodyneAnalysisCore(config_manager)
+           core._tau = tau
+           core._g1_data = g1_data
+           core._q = q
 
            start_time = time.time()
-           result = analysis.optimize_classical()
+           # Use ClassicalOptimizer for optimization
+           from homodyne.optimization.classical import ClassicalOptimizer
+           optimizer = ClassicalOptimizer(core, config_manager.config)
+           params, result = optimizer.run_classical_optimization_optimized(
+               phi_angles=phi_angles, c2_experimental=c2_data)
            end_time = time.time()
 
            # Should complete within 30 seconds
@@ -397,7 +408,7 @@ Store reference results for regression testing:
        reference = reference_results["isotropic_basic"]
 
        for i, (current, expected) in enumerate(
-           zip(current_result.x, reference["parameters"])
+           zip(current_params, reference["parameters"])
        ):
            assert abs(current - expected) / expected < 0.01
 
