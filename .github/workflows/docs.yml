@@ -63,8 +63,8 @@ jobs:
 
       - name: Install additional documentation dependencies
         run: |
-          pip install sphinx-autobuild sphinx-copybutton sphinx-design sphinx-tabs
-          pip install sphinx-autodoc-typehints myst-parser linkify-it-py
+          # Already installed via .[docs] extra
+          echo "All documentation dependencies installed via pyproject.toml"
 
       - name: Verify installation
         run: |

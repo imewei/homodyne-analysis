@@ -40,20 +40,20 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.1.0",
-    "scipy>=1.14.0",
-    "matplotlib>=3.9.0",
-    "h5py>=3.12.0",
-    "pydantic>=2.9.0",
-    "typer>=0.13.0",
-    "rich>=13.9.0",
+    "numpy>=2.3.3",
+    "scipy>=1.16.2",
+    "matplotlib>=3.10.6",
+    "h5py>=3.14.0",
+    "pydantic>=2.11.9",
+    "typer>=0.19.2",
+    "rich>=14.1.0",
     "typing-extensions>=4.12.0; python_version<'3.13'",
 ]
 
 [project.optional-dependencies]
 # Core optional dependencies
 performance = [
-    "numba>=0.60.0",
+    "numba>=0.62.1",
     "psutil>=6.0.0",
     "numexpr>=2.10.0",
     "bottleneck>=1.4.0",
@@ -63,7 +63,7 @@ performance = [
     "joblib>=1.4.0",
 ]
 robust = [
-    "cvxpy>=1.5.0",
+    "cvxpy>=1.7.3",
     "gurobipy>=11.0.0",
     "mosek>=10.2.0",
 ]
@@ -77,12 +77,12 @@ robust = [
 # Modern testing ecosystem with latest features
 test = [
     # Core pytest framework with latest features
-    "pytest>=8.4.0",
-    "pytest-cov>=6.0.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",          # Parallel test execution
     "pytest-benchmark>=5.1.0",       # Performance benchmarking
     "pytest-timeout>=2.3.0",         # Test timeout handling
-    "pytest-mock>=3.14.0",           # Advanced mocking
+    "pytest-mock>=3.15.1",           # Advanced mocking
     "pytest-html>=4.1.1",            # Rich HTML reports
     "pytest-json-report>=1.5.0",     # JSON reports for CI
     "pytest-metadata>=3.1.0",        # Test metadata collection
@@ -142,13 +142,13 @@ dev = [
 # Documentation
 docs = [
     "sphinx>=8.2.0",
-    "sphinx-rtd-theme>=3.0.0",
-    "sphinx-autodoc-typehints>=2.5.0",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinx-autodoc-typehints>=3.2.0",
     "myst-parser>=4.0.0",
     "sphinx-copybutton>=0.5.3",
     "sphinx-design>=0.6.0",
     "sphinx-autoapi>=3.4.0",
-    "numpydoc>=1.8.0",
+    "numpydoc>=1.9.0",
     "sphinx-gallery>=0.18.0",
 ]
 
