@@ -390,9 +390,9 @@ class ClassicalOptimizer:
             c2_experimental, _, phi_angles, _ = self.core.load_experimental_data()
 
         # Type assertion after loading data to satisfy type checker
-        assert (
-            phi_angles is not None and c2_experimental is not None
-        ), "Failed to load experimental data"
+        assert phi_angles is not None and c2_experimental is not None, (
+            "Failed to load experimental data"
+        )
 
         # Apply subsampling if enabled (to speed up optimization for large datasets)
         phi_angles, c2_experimental, (angle_indices, time_indices) = (
@@ -841,6 +841,13 @@ class ClassicalOptimizer:
             angle_indices = np.arange(len(phi_angles))
             time_indices = np.arange(n_times)
             return phi_angles, c2_experimental, (angle_indices, time_indices)
+
+        # Don't subsample angles if there are fewer than 4 angles (preserve angular information)
+        if n_angles < 4:
+            angle_subsample = 1
+            logger.info(
+                f"Skipping angle subsampling (only {n_angles} angles available - preserving all for angular analysis)"
+            )
 
         # Subsample angles (every angle_subsample_factor angles)
         angle_indices = np.arange(0, len(phi_angles), angle_subsample)

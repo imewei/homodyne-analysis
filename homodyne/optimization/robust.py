@@ -396,6 +396,13 @@ class RobustHomodyneOptimizer:
             time_indices = np.arange(n_times)
             return phi_angles, c2_experimental, (angle_indices, time_indices)
 
+        # Don't subsample angles if there are fewer than 4 angles (preserve angular information)
+        if n_angles < 4:
+            angle_subsample = 1
+            logger.info(
+                f"Skipping angle subsampling (only {n_angles} angles available - preserving all for angular analysis)"
+            )
+
         # Subsample angles (every angle_subsample_factor angles)
         angle_indices = np.arange(0, len(phi_angles), angle_subsample)
         subsampled_phi_angles = phi_angles[angle_indices]
@@ -476,8 +483,7 @@ class RobustHomodyneOptimizer:
 
         return subsampled_data
 
-    @secure_scientific_computation
-    @monitor_memory(max_usage_percent=85.0)
+    @monitor_memory(max_usage_percent=90.0)
     def run_robust_optimization(
         self,
         initial_parameters: np.ndarray,
