@@ -26,6 +26,9 @@ doi = "10.1073/pnas.2401162121"
 institution = "Argonne National Laboratory"
 
 # -- General configuration ---------------------------------------------------
+# Encoding configuration
+source_encoding = "utf-8"
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -33,7 +36,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    "sphinx.ext.imgmath",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
@@ -48,7 +50,10 @@ suppress_warnings = [
     "misc.highlighting_failure",
     "autosummary",
     "autodoc.import_object",
+    "autodoc.mocked_object",
     "toc.not_included",
+    "ref.citation",  # Suppress unreferenced citations (bibliography entries)
+    "myst.xref_missing",  # Suppress missing cross-references in markdown files
 ]
 
 # Performance optimizations - mock heavy dependencies
@@ -122,6 +127,10 @@ napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
 napoleon_type_aliases = None
+
+# graphviz configuration - handle UTF-8 encoding
+graphviz_output_format = "png"
+graphviz_dot_args = ["-Gcharset=utf8"]
 
 # intersphinx configuration
 intersphinx_mapping = {

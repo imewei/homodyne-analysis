@@ -1,5 +1,5 @@
 Publications and Citations
-===========================
+==========================
 
 This section provides comprehensive citation information and publication guidelines for the
 homodyne-analysis package and related research.
@@ -35,7 +35,7 @@ Key Contributions
 4. **Robust Analysis**: Statistical methods for handling experimental uncertainty
 
 Software Package Citation
---------------------------
+-------------------------
 
 **homodyne-analysis: High-performance XPCS analysis with robust optimization**
 
@@ -168,7 +168,7 @@ Example Citation in Paper
      dynamics in soft matter. Proc. Natl. Acad. Sci. U.S.A. 121, e2401162121 (2024).
 
 Acknowledgment Template
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: text
 
@@ -182,7 +182,7 @@ Research Data and Reproducibility
 ---------------------------------
 
 Data Availability Statement
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The homodyne-analysis package enables full reproducibility of research results through:
 
@@ -199,7 +199,7 @@ The homodyne-analysis package enables full reproducibility of research results t
   Standardized configuration templates for different analysis modes
 
 Reproducibility Guidelines
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To ensure reproducible research with the homodyne-analysis package:
 
@@ -255,10 +255,10 @@ Recommended Presentation Templates
    Documentation: homodyne.readthedocs.io
 
 Journal-Specific Guidelines
---------------------------
+---------------------------
 
 Physical Review Letters
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bibtex
 
@@ -273,7 +273,7 @@ Physical Review Letters
    }
 
 Nature Physics
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 .. code-block:: text
 
@@ -281,17 +281,17 @@ Nature Physics
    dynamics in soft matter. Proc. Natl. Acad. Sci. USA 121, e2401162121 (2024).
 
 Science
-~~~~~~
+~~~~~~~
 
 .. code-block:: text
 
    H. He et al., Proc. Natl. Acad. Sci. USA 121, e2401162121 (2024).
 
 Funding Acknowledgment
----------------------
+----------------------
 
 Required Funding Acknowledgments
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using this software in federally funded research, include:
 
@@ -326,7 +326,7 @@ The primary publication and software package can be tracked through:
 - **ORCID Integration**: Author citation profiles
 
 Research Impact
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 The homodyne-analysis package enables research in:
 

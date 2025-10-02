@@ -262,6 +262,7 @@ Choose appropriate optimization algorithms:
            }
        }
    }
+
 **2. Optimization Strategy by Analysis Mode**
 
 Configure optimization parameters based on problem complexity:
@@ -419,6 +420,7 @@ Performance Best Practices
 2. **Use float32** unless high precision needed
 3. **Set appropriate thread counts** (match CPU cores)
 4. **Enable JIT compilation** for model functions
+
 **Optimization**:
 
 1. **Start with classical optimization** (Nelder-Mead) for reliable convergence

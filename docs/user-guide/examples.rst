@@ -4,7 +4,7 @@ Examples
 Real-world examples demonstrating common use cases and workflows.
 
 Example 1: Basic Isotropic Analysis
-------------------------------------
+-----------------------------------
 
 **Scenario**: Quick analysis of an isotropic sample for preliminary results.
 
@@ -55,7 +55,7 @@ Example 1: Basic Isotropic Analysis
    - Analysis time: 12.3s
 
 Example 2: Flow Analysis with Robust Methods
--------------------------------------------
+--------------------------------------------
 
 **Scenario**: Complete analysis of a system under flow conditions with noise resistance.
 
@@ -122,7 +122,7 @@ Example 2: Flow Analysis with Robust Methods
    - Uncertainty resistance: Excellent
 
 Example 3: Performance-Optimized Analysis
-------------------------------------------
+-----------------------------------------
 
 **Scenario**: Large dataset requiring optimized performance settings.
 
@@ -160,7 +160,7 @@ Example 3: Performance-Optimized Analysis
 - **Accuracy**: Maintained with optimized angle ranges
 
 Example 4: Batch Processing Multiple Samples
----------------------------------------------
+--------------------------------------------
 
 **Scenario**: Process multiple samples with consistent parameters.
 
@@ -245,7 +245,7 @@ Example 4: Batch Processing Multiple Samples
    print(f"Batch processing complete. Results saved to batch_results.json")
 
 Example 5: Progressive Analysis Workflow
------------------------------------------
+----------------------------------------
 
 **Scenario**: Systematic approach from simple to complex analysis.
 
@@ -429,7 +429,7 @@ Common Patterns
            print("❌ No significant improvement")
 
 Output Directory Structure
----------------------------
+--------------------------
 
 Starting from version 6.0, the analysis results are organized into method-specific subdirectories:
 
@@ -478,12 +478,12 @@ Starting from version 6.0, the analysis results are organized into method-specif
 - **Plotting behavior**: The ``--plot-experimental-data`` flag now skips all fitting and exits immediately after plotting
 
 Diagnostic Summary Visualizations
-----------------------------------
+---------------------------------
 
 The package automatically generates comprehensive diagnostic summary plots that combine multiple analysis components into a single visualization. These provide researchers with immediate feedback on analysis quality and method performance.
 
 Main Diagnostic Summary Plot
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each analysis generates a main ``diagnostic_summary.png`` file in the root results directory (``./homodyne_results/diagnostic_summary.png``) with a **2×3 grid layout** containing:
 
@@ -511,12 +511,12 @@ Each analysis generates a main ``diagnostic_summary.png`` file in the root resul
   - Shows placeholder if residuals data unavailable
 
 Method-Specific Diagnostic Summaries (Removed)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Note:** Method-specific diagnostic summary plots have been removed to reduce redundant output. Only the main ``diagnostic_summary.png`` is generated for ``--method all`` to provide meaningful cross-method comparisons.
 
 Additional Visualization Outputs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **C2 Correlation Heatmaps** (``c2_heatmaps_*.png``)
   - 2D heatmaps of experimental vs theoretical correlation functions
@@ -548,7 +548,7 @@ Key Features
 These diagnostic summaries provide immediate visual feedback on analysis quality, method performance, and parameter reliability, enabling researchers to quickly assess their results and identify potential issues.
 
 Common Output Structure for All 5 Classical Methods
-----------------------------------------------------
+---------------------------------------------------
 
 Each of the 5 optimization methods (``Nelder-Mead``, ``Gurobi``, ``Robust-Wasserstein``, ``Robust-Scenario``, ``Robust-Ellipsoidal``) generates standardized outputs for consistent analysis and comparison.
 
@@ -611,7 +611,7 @@ Complete data structure for each method:
   - **Angles**: ``(n_angles,)`` - typically ``[0°, 45°, 90°, 135°]``
 
 Method-Specific Characteristics
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Classical Methods (Nelder-Mead, Gurobi)**
   - Point estimates only with deterministic convergence metrics
@@ -645,7 +645,7 @@ All methods use consistent data array dimensions:
 This standardized structure enables direct comparison of optimization performance and facilitates automated analysis workflows across different methods.
 
 Available Optimization Methods
----------------------------------
+------------------------------
 
 The homodyne package provides two main optimization approaches:
 
@@ -678,7 +678,7 @@ The homodyne package provides two main optimization approaches:
 - Both methods include comprehensive goodness-of-fit metrics
 
 Example 6: Logging Control for Different Scenarios
-----------------------------------------------------
+--------------------------------------------------
 
 **Scenario**: Using different logging modes for various use cases.
 
@@ -764,7 +764,7 @@ Example 6: Logging Control for Different Scenarios
 **Error Handling Note**: In quiet mode, errors are only logged to files, so check ``run.log`` files for troubleshooting.
 
 Example 7: Performance Monitoring and Optimization
-----------------------------------------------------
+--------------------------------------------------
 
 **Scenario**: Monitor and optimize performance with production-ready stability. The homodyne package has been rebalanced for excellent performance consistency with 97% reduction in chi-squared calculation variability.
 

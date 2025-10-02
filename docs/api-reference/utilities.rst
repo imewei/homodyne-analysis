@@ -132,8 +132,6 @@ Usage Examples
 
 .. code-block:: python
 
-   from homodyne.plotting import (
-   )
    from homodyne.core.io_utils import save_fig
 
    # Plot correlation data heatmaps

@@ -59,7 +59,6 @@ The package includes the following key modules:
 * **homodyne.analysis.core** - Main analysis engine
 * **homodyne.optimization.classical** - Classical optimization (Nelder-Mead, Gurobi)
 * **homodyne.optimization.robust** - Robust optimization (Wasserstein DRO, Scenario-based, Ellipsoidal)
-* **homodyne.plotting** - Visualization utilities
 
 .. note::
    For detailed API documentation, see the individual module pages in the navigation.
@@ -77,4 +76,3 @@ The package includes the following key modules:
       homodyne.core.io_utils
       homodyne.analysis.core
       homodyne.optimization.classical
-      homodyne.plotting

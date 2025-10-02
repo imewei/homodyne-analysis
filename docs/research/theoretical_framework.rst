@@ -8,7 +8,7 @@ Mathematical Foundation
 -----------------------
 
 Nonequilibrium Correlation Functions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The fundamental quantity analyzed is the time-dependent intensity correlation function for systems
 under flow conditions:
@@ -172,7 +172,7 @@ Boundary Conditions and Constraints
 -----------------------------------
 
 Physical Constraints
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 The optimization is subject to physically meaningful constraints:
 
@@ -246,7 +246,7 @@ Error Analysis and Uncertainty Quantification
 ---------------------------------------------
 
 Statistical Framework
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 **Parameter Uncertainties**
 
@@ -277,7 +277,7 @@ Systematic deviations are identified through residual analysis:
    r_{ij} = \frac{c_2^{\text{exp}}(\phi_i, t_j) - c_2^{\text{model}}(\phi_i, t_j)}{\sigma_{ij}}
 
 Validation Protocols
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 **Cross-Validation**
   * K-fold cross-validation for parameter stability assessment
@@ -294,17 +294,4 @@ Validation Protocols
 References
 ----------
 
-.. [He2024] He, H., Liang, H., Chu, M., Jiang, Z., de Pablo, J.J., Tirrell, M.V.,
-           Narayanan, S., & Chen, W. "Transport coefficient approach for characterizing
-           nonequilibrium dynamics in soft matter." *Proceedings of the National Academy
-           of Sciences*, 121(31), e2401162121 (2024).
-           DOI: `10.1073/pnas.2401162121 <https://doi.org/10.1073/pnas.2401162121>`_
-
-.. [Berne1976] Berne, B.J. & Pecora, R. "Dynamic Light Scattering: With Applications
-              to Chemistry, Biology, and Physics." *Wiley*, New York (1976).
-
-.. [Brown1993] Brown, W. "Dynamic Light Scattering: The Method and Some Applications."
-              *Oxford University Press*, Oxford (1993).
-
-.. [Pusey1989] Pusey, P.N. & van Megen, W. "Dynamic light scattering by non-ergodic media."
-              *Physica A*, 157(2), 705-741 (1989).
+See :doc:`publications` for complete citation information.

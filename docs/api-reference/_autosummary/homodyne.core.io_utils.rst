@@ -1,4 +1,4 @@
-﻿homodyne.core.io\_utils
+homodyne.core.io\_utils
 =======================
 
 .. currentmodule:: homodyne.core

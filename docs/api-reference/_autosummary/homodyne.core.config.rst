@@ -1,4 +1,4 @@
-﻿homodyne.core.config
+homodyne.core.config
 ====================
 
 .. currentmodule:: homodyne.core

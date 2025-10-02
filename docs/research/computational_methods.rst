@@ -1,5 +1,5 @@
 Computational Methods
-====================
+=====================
 
 This section details the computational algorithms and implementation strategies used in the
 homodyne-analysis package for high-performance scientific computing.
@@ -169,7 +169,7 @@ High-performance commercial solver for quadratic optimization:
            raise OptimizationError(f"Gurobi optimization failed: {e}")
 
 Robust Optimization Framework
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Distributionally Robust Optimization (DRO)**
 
@@ -278,7 +278,7 @@ Numerical Integration and Differentiation
 -----------------------------------------
 
 Adaptive Quadrature
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -339,7 +339,7 @@ Numerical Gradient Computation
        return gradient
 
 Parallel Computing
------------------
+------------------
 
 Multi-Threading with Numba
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -371,7 +371,7 @@ Multi-Threading with Numba
        return np.sum(chi_squared_values)
 
 Task-Based Parallelism
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -412,7 +412,7 @@ Task-Based Parallelism
                return results
 
 Memory Management
-----------------
+-----------------
 
 Efficient Data Structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -455,7 +455,7 @@ Efficient Data Structures
                return np.ascontiguousarray(correlations, dtype=np.float64)
 
 Cache Management
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -511,7 +511,7 @@ Error Handling and Numerical Stability
 --------------------------------------
 
 Numerical Robustness
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -549,7 +549,7 @@ Numerical Robustness
        return result
 
 Exception Handling
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -586,10 +586,10 @@ Exception Handling
            raise OptimizationError(f"Optimization failed: {e}")
 
 Performance Monitoring
----------------------
+----------------------
 
 Benchmarking Framework
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 

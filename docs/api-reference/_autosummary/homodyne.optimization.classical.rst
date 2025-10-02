@@ -1,4 +1,4 @@
-﻿homodyne.optimization.classical
+homodyne.optimization.classical
 ===============================
 
 .. currentmodule:: homodyne.optimization

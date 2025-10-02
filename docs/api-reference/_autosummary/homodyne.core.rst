@@ -1,4 +1,4 @@
-﻿homodyne.core
+homodyne.core
 =============
 
 .. currentmodule:: homodyne

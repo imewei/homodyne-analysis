@@ -1,4 +1,4 @@
-﻿homodyne.analysis.core
+homodyne.analysis.core
 ======================
 
 .. currentmodule:: homodyne.analysis

@@ -319,14 +319,16 @@ Best Practices
 1. **Start with classical** methods for rapid prototyping
 2. **Use angle filtering** to reduce computational complexity
 3. **Enable robust methods** for noisy/uncertain data
-5. **Monitor performance** with built-in profiling tools
+4. **Monitor performance** with built-in profiling tools
+
 
 **Production Deployment:**
 
 1. **Install performance extras**: ``pip install homodyne-analysis[performance]``
 2. **Configure environment variables** for optimal threading
 3. **Enable caching** in robust optimization settings
-5. **Validate with benchmarks** before deployment
+4. **Validate with benchmarks** before deployment
+
 
 Code Quality and Maintenance
 ============================

@@ -10,10 +10,7 @@ including theoretical foundations, computational methods, and experimental valid
 
    theoretical_framework
    computational_methods
-   experimental_validation
-   performance_analysis
    publications
-   collaboration
 
 Overview
 --------
