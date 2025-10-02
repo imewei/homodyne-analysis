@@ -758,7 +758,9 @@ class TestImportVerification:
                 required_broken = [
                     broken
                     for broken in broken_list
-                    if broken["module"] not in OPTIONAL_MODULES
+                    if not any(
+                        broken["module"].startswith(opt) for opt in OPTIONAL_MODULES
+                    )
                 ]
                 if required_broken:
                     filtered_broken[file_path] = required_broken
