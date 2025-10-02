@@ -10,6 +10,7 @@ Institution: Argonne National Laboratory
 """
 
 import json
+import re
 import statistics
 import time
 import warnings

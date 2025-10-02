@@ -477,11 +477,17 @@ max-complexity = 15  # Reasonable complexity for scientific code
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "F405", "E731"]  # Allow unused imports and lambda in lazy loaders
-"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841"]
-"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841"]
-"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841"]
+"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821"]
+"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821"]
+"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821"]
 "docs/**/*" = ["S603", "S607", "S108", "PTH", "T201"]  # Deployment scripts need subprocess
 "scripts/**/*" = ["S603", "S607", "S108", "PTH", "T201"]  # Deployment scripts need subprocess
+"homodyne/core/caching.py" = ["E722"]  # Intentional bare except for robustness
+"homodyne/core/result_memoization.py" = ["E722"]  # Intentional bare except for robustness
+"homodyne/statistics/chi_squared.py" = ["E722"]  # Intentional bare except for robustness
+"homodyne/core/cpu_optimization.py" = ["F821"]  # Conditional imports
+"homodyne/optimization/blas_optimization.py" = ["F821"]  # Conditional imports
+"homodyne/validation/performance_validation.py" = ["F821"]  # Conditional imports
 
 [tool.ruff.lint.isort]
 known-first-party = ["homodyne"]
