@@ -96,7 +96,7 @@ def test_error_handling_consistency():
 
     # Test division by zero handling
     try:
-        assert False, "Should have raised exception"
+        raise AssertionError("Should have raised exception")
     except ZeroDivisionError:
         print("✓ Division by zero handled correctly")
 
@@ -105,7 +105,7 @@ def test_error_handling_consistency():
         invalid_data = np.array([1, 2, np.inf])
         if not np.all(np.isfinite(invalid_data)):
             raise ValueError("Non-finite values detected")
-        assert False, "Should have raised exception"
+        raise AssertionError("Should have raised exception")
     except ValueError:
         print("✓ Non-finite value detection working")
 
@@ -117,7 +117,7 @@ def test_error_handling_consistency():
         # Let's test a real mismatch
         c = np.array([1, 2, 3])
         a + c  # This should fail
-        assert False, "Should have raised exception"
+        raise AssertionError("Should have raised exception")
     except ValueError:
         print("✓ Array shape mismatch handling working")
 

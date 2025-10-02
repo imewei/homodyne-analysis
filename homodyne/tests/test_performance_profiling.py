@@ -320,7 +320,7 @@ class PerformanceMonitor:
             "max_cpu_percent": 80.0,  # percent
         }
 
-    def profile_function(self, func_name: str = None):
+    def profile_function(self, func_name: str | None = None):
         """Decorator for profiling functions."""
 
         def decorator(func):

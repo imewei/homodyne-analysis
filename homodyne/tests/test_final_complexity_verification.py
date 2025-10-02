@@ -41,14 +41,22 @@ class ComplexityAnalyzer:
         complexity = 1  # Base complexity
 
         for child in ast.walk(node):
-            if (
-                isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor))
-                or isinstance(child, ast.ExceptHandler)
-                or isinstance(child, (ast.And, ast.Or))
-                or isinstance(child, ast.comprehension)
-                or isinstance(
-                    child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
-                )
+            if isinstance(
+                child,
+                (
+                    ast.If,
+                    ast.While,
+                    ast.For,
+                    ast.AsyncFor,
+                    ast.ExceptHandler,
+                    ast.And,
+                    ast.Or,
+                    ast.comprehension,
+                    ast.ListComp,
+                    ast.SetComp,
+                    ast.DictComp,
+                    ast.GeneratorExp,
+                ),
             ):
                 complexity += 1
 
@@ -121,7 +129,7 @@ class ComplexityAnalyzer:
         return all_functions, stats
 
 
-def generate_complexity_report(package_path: Path = None) -> dict:
+def generate_complexity_report(package_path: Path | None = None) -> dict:
     """Generate comprehensive complexity report."""
     if package_path is None:
         package_path = Path("homodyne")

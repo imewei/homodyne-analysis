@@ -21,11 +21,13 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from typing import Any
-from typing import Generic
 from typing import TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ U = TypeVar("U")
 V = TypeVar("V")
 
 
-class Result(Generic[T]):
+class Result[T]:
     """
     Monadic Result type for composable error handling.
 
@@ -349,7 +351,7 @@ class Pipeline:
         else:
             step = func
 
-        return Pipeline(steps=self.steps + [step], error_handler=self.error_handler)
+        return Pipeline(steps=[*self.steps, step], error_handler=self.error_handler)
 
     def add_validation(
         self, predicate: Callable[[Any], bool], error_msg: str

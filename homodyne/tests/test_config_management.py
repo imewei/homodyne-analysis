@@ -366,7 +366,7 @@ class TestConfigTemplates:
         """Test template path retrieval."""
         if get_template_path is not None and TEMPLATE_FILES:
             # Test with valid template name
-            template_name = list(TEMPLATE_FILES.keys())[0]
+            template_name = next(iter(TEMPLATE_FILES.keys()))
             path = get_template_path(template_name)
 
             if path:  # If template exists
@@ -473,7 +473,7 @@ class TestPerformanceMonitor:
         """Test basic performance monitor functionality."""
         if performance_monitor is not None:
             # Should be callable or have expected interface
-            assert hasattr(performance_monitor, "__call__") or hasattr(
+            assert callable(performance_monitor) or hasattr(
                 performance_monitor, "start"
             )
 

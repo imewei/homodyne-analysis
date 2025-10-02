@@ -67,7 +67,7 @@ config_template = "import matplotlib.pyplot as plt"
         assert analyzer.imports["os"].alias == "operating_system"
 
         # Verify TYPE_CHECKING detection
-        from_imports_keys = [key for key in analyzer.from_imports.keys()]
+        from_imports_keys = list(analyzer.from_imports.keys())
         typing_imports = [key for key in from_imports_keys if key[0] == "typing"]
         assert len(typing_imports) > 0
 
@@ -431,14 +431,14 @@ class TestSafetyChecker:
     def test_git_status_check(self):
         """Test git repository status checking."""
         # Initially clean repository
-        assert self.safety_checker.check_git_status() == True
+        assert self.safety_checker.check_git_status()
 
         # Add a file to make it dirty
         test_file = self.temp_dir / "test.py"
         test_file.write_text('print("hello")')
 
         # Now should be dirty
-        assert self.safety_checker.check_git_status() == False
+        assert not self.safety_checker.check_git_status()
 
         # Add and commit the file
         subprocess.run(
@@ -452,7 +452,7 @@ class TestSafetyChecker:
         )
 
         # Should be clean again
-        assert self.safety_checker.check_git_status() == True
+        assert self.safety_checker.check_git_status()
 
     def test_backup_creation(self):
         """Test backup creation functionality."""
@@ -490,7 +490,7 @@ if __name__ == '__main__':
     main()
 """
         )
-        assert self.safety_checker.verify_syntax(valid_file) == True
+        assert self.safety_checker.verify_syntax(valid_file)
 
         # Invalid Python file
         invalid_file = self.temp_dir / "invalid.py"
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     main()
 """
         )
-        assert self.safety_checker.verify_syntax(invalid_file) == False
+        assert not self.safety_checker.verify_syntax(invalid_file)
 
     def test_import_safety_assessment(self):
         """Test import safety assessment."""
@@ -531,15 +531,12 @@ def main():
     print(sys.version)
 """
 
-        assert (
-            self.safety_checker.check_import_safety(safe_import, file_content) == True
-        )
+        assert self.safety_checker.check_import_safety(safe_import, file_content)
 
         # Unsafe import (conditional)
         conditional_import = safe_import._replace(is_conditional=True)
-        assert (
-            self.safety_checker.check_import_safety(conditional_import, file_content)
-            == False
+        assert not self.safety_checker.check_import_safety(
+            conditional_import, file_content
         )
 
         # Unsafe import (used in strings with dynamic patterns)
@@ -553,18 +550,13 @@ def main():
     module_name = "unused_module"
     getattr(sys.modules[module_name], 'some_attr')
 """
-        assert (
-            self.safety_checker.check_import_safety(
-                string_usage_import, dynamic_content
-            )
-            == False
+        assert not self.safety_checker.check_import_safety(
+            string_usage_import, dynamic_content
         )
 
         # Star import (never safe for auto-removal)
         star_import = safe_import._replace(name="*")
-        assert (
-            self.safety_checker.check_import_safety(star_import, file_content) == False
-        )
+        assert not self.safety_checker.check_import_safety(star_import, file_content)
 
 
 class TestWorkflowIntegration:
@@ -598,7 +590,7 @@ class TestWorkflowIntegration:
     def test_pre_commit_hook_setup(self):
         """Test pre-commit hook installation."""
         success = self.integrator.setup_pre_commit_integration()
-        assert success == True
+        assert success
 
         # Verify hook files were created
         pre_commit_hook = self.temp_dir / ".git" / "hooks" / "pre-commit"
@@ -620,7 +612,7 @@ class TestWorkflowIntegration:
     def test_github_actions_setup(self):
         """Test GitHub Actions workflow creation."""
         success = self.integrator.setup_github_actions()
-        assert success == True
+        assert success
 
         # Verify workflow file was created
         workflow_file = self.temp_dir / ".github" / "workflows" / "import-analysis.yml"
@@ -636,7 +628,7 @@ class TestWorkflowIntegration:
     def test_vscode_integration_setup(self):
         """Test VS Code integration setup."""
         success = self.integrator.setup_ide_integration()
-        assert success == True
+        assert success
 
         # Verify VS Code configuration files
         tasks_file = self.temp_dir / ".vscode" / "tasks.json"
@@ -664,7 +656,7 @@ class TestWorkflowIntegration:
     def test_metrics_collection_setup(self):
         """Test metrics collection setup."""
         success = self.integrator.setup_metrics_collection()
-        assert success == True
+        assert success
 
         # Verify metrics directory and files
         metrics_dir = self.temp_dir / ".import_integration" / "metrics"

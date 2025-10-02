@@ -113,7 +113,7 @@ class VectorizationOptimizer:
 class ThreadParallelProcessor:
     """Thread-based parallel processing optimizations."""
 
-    def __init__(self, num_threads: int = None):
+    def __init__(self, num_threads: int | None = None):
         self.num_threads = num_threads or mp.cpu_count()
 
     def parallel_chi_squared_calculation(
@@ -168,7 +168,7 @@ class ThreadParallelProcessor:
 class ProcessParallelProcessor:
     """Process-based parallel processing optimizations."""
 
-    def __init__(self, num_processes: int = None):
+    def __init__(self, num_processes: int | None = None):
         self.num_processes = num_processes or mp.cpu_count()
 
     def parallel_chi_squared_calculation(
@@ -395,7 +395,7 @@ class ParallelizationBenchmarker:
         return results
 
     def benchmark_scaling_performance(
-        self, max_workers: int = None
+        self, max_workers: int | None = None
     ) -> dict[str, list[float]]:
         """Benchmark performance scaling with different numbers of workers."""
         if max_workers is None:

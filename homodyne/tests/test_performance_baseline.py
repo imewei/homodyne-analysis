@@ -172,7 +172,7 @@ class PerformanceBenchmarker:
         self,
         func: Callable,
         args: tuple = (),
-        kwargs: dict = None,
+        kwargs: dict | None = None,
         iterations: int = 10,
         warmup: int = 3,
     ) -> PerformanceMetrics:

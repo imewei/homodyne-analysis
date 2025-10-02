@@ -267,11 +267,7 @@ class TestInputValidation:
             ]
             resolved_path = str(path.resolve())
 
-            for sys_dir in system_dirs:
-                if resolved_path.startswith(sys_dir):
-                    return False
-
-            return True
+            return all(not resolved_path.startswith(sys_dir) for sys_dir in system_dirs)
         except Exception:
             return False
 

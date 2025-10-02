@@ -19,9 +19,8 @@ Institution: Argonne National Laboratory
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
@@ -31,6 +30,10 @@ from .composition import Pipeline
 from .composition import Result
 from .composition import curry
 from .composition import pipe
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

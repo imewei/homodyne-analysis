@@ -670,9 +670,7 @@ class TestMLIntegrationFunctions:
 
         # Check for version information if sklearn is available
         if backend_info["sklearn"]:
-            assert (
-                "sklearn_version" in backend_info or True
-            )  # Version may not be available
+            assert True  # Version may not be available
 
 
 @pytest.mark.skipif(

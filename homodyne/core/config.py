@@ -151,7 +151,7 @@ class ExperimentalDataConfig(TypedDict, total=False):
 
 
 def configure_logging(
-    cfg: dict[str, Any] = None, *, level: Any = None, log_file: str = None
+    cfg: dict[str, Any] | None = None, *, level: Any = None, log_file: str | None = None
 ) -> logging.Logger:
     """
     Configure centralized logging system with hierarchy and handlers.

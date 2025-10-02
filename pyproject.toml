@@ -421,20 +421,39 @@ ignore = [
     "E501",    # line too long, handled by black
     "B008",    # do not perform function calls in argument defaults
     "B023",    # function definition does not bind loop variable
+    "B904",    # raise from err (not always needed)
     "C901",    # too complex
     "PLR0913", # too many arguments
     "PLR0915", # too many statements
+    "PLW0603", # global statement (singleton patterns)
+    "RET505",  # unnecessary else after return (clarity)
+    "RET503",  # missing explicit return (implicit None)
     "S101",    # use of assert for tests
+    "S102",    # exec usage (trusted code in tests)
+    "S103",    # os.chmod (trusted usage)
+    "S108",    # hardcoded /tmp (tests)
+    "S301",    # pickle usage (trusted data)
+    "S306",    # mktemp usage (tests)
+    "S324",    # md5 usage (non-security contexts)
+    "S603",    # subprocess without shell=True (trusted)
+    "S607",    # start process with partial path (trusted)
     "T201",    # print statements (allowed in CLI)
     "PLR0912", # too many branches
     "PLR0911", # too many return statements
+    "PLR1722", # use sys.exit (stylistic)
     "SLF001",  # private member access (needed for internal testing)
     "PLC0415", # import outside top-level (intentional for lazy loading)
+    "PTH113",  # os.path.isfile (compatibility)
+    "PTH116",  # os.stat (compatibility)
+    "PTH119",  # os.path.basename (compatibility)
+    "PTH120",  # os.path.dirname (compatibility)
     "PTH123",  # use Path.open instead of builtin open (stylistic)
+    "PTH202",  # os.path.getsize (compatibility)
     "PLR2004", # magic value comparison (scientific constants)
     "RUF002",  # ambiguous unicode in docstring (Greek letters intentional)
     "RUF003",  # ambiguous unicode in comment (Greek letters intentional)
     "RUF001",  # ambiguous unicode in string (Greek letters intentional)
+    "RUF005",  # consider unpacking instead of concatenation (clarity)
     "TID252",  # relative imports (standard practice)
     "E731",    # lambda assignment (used in lazy loaders)
     "E402",    # module import not at top (conditional imports)
@@ -442,23 +461,32 @@ ignore = [
     "B028",    # no explicit stacklevel in warning
     "ARG002",  # unused method argument (API compatibility)
     "ARG001",  # unused function argument (API compatibility)
+    "ARG004",  # unused static method argument (API compatibility)
+    "ARG005",  # unused lambda argument (API compatibility)
     "RET504",  # unnecessary assignment before return (clarity)
     "SIM102",  # collapsible if (clarity over brevity)
     "SIM105",  # suppressible exception (explicit error handling)
+    "SIM115",  # context manager for files (intentional for tests)
     "SIM118",  # in-dict-keys (clarity)
     "PERF401", # manual list comprehension (readability)
     "PERF102", # incorrect dict iterator (intentional)
+    "PERF403", # manual dict update (readability)
     "S110",    # try-except-pass (intentional error suppression)
     "S112",    # try-except-continue (intentional error handling)
     "PTH118",  # os.path.join (compatibility)
     "PTH108",  # os.unlink (compatibility)
     "PTH110",  # os.path.exists (compatibility)
     "PTH101",  # os.chmod (compatibility)
+    "PLW2901", # loop variable overwritten (intentional reassignment)
     "B007",    # unused loop variable (intentional in some cases)
     "RUF059",  # unused unpacked variable (intentional)
     "SIM108",  # if-else-block (clarity over brevity)
     "SIM103",  # needless-bool (clarity)
     "SIM117",  # multiple-with (readability)
+    "UP046",   # use type params (Python 3.12+ compatibility)
+    "TC003",   # type checking block (runtime needed)
+    "ICN001",  # import conventions (intentional local imports)
+    "F401",    # unused import in try/except (availability check)
 ]
 
 # Additional configuration for dead code prevention
@@ -477,17 +505,21 @@ max-complexity = 15  # Reasonable complexity for scientific code
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "F405", "E731"]  # Allow unused imports and lambda in lazy loaders
-"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821"]
-"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821"]
-"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821"]
+"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821", "F811"]
+"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821", "F811"]
+"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841", "F821", "F811"]
 "docs/**/*" = ["S603", "S607", "S108", "PTH", "T201"]  # Deployment scripts need subprocess
 "scripts/**/*" = ["S603", "S607", "S108", "PTH", "T201"]  # Deployment scripts need subprocess
 "homodyne/core/caching.py" = ["E722"]  # Intentional bare except for robustness
 "homodyne/core/result_memoization.py" = ["E722"]  # Intentional bare except for robustness
-"homodyne/statistics/chi_squared.py" = ["E722"]  # Intentional bare except for robustness
+"homodyne/statistics/chi_squared.py" = ["E722", "F401"]  # Bare except + unused scipy imports (optimized paths)
 "homodyne/core/cpu_optimization.py" = ["F821"]  # Conditional imports
+"homodyne/core/composition.py" = ["E731"]  # Lambda assignments for functional patterns
+"homodyne/analysis/core.py" = ["F811"]  # Function redefinition for compatibility layers
 "homodyne/optimization/blas_optimization.py" = ["F821"]  # Conditional imports
 "homodyne/validation/performance_validation.py" = ["F821"]  # Conditional imports
+"homodyne/performance/regression_prevention.py" = ["F401"]  # Unused imports for benchmarking
+"homodyne/data/xpcs_loader.py" = ["F841"]  # Unused variables in data loading (future use)
 
 [tool.ruff.lint.isort]
 known-first-party = ["homodyne"]

@@ -273,7 +273,7 @@ class TestHomodyneAnalysisCore:
         assert "parameters" in processed
         assert "chi_squared" in processed
         assert "success" in processed
-        assert processed["success"] == True
+        assert processed["success"]
 
     def test_static_mode_parameter_handling(self):
         """Test parameter handling in static mode."""

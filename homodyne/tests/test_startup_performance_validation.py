@@ -732,7 +732,7 @@ print('SUCCESS')
         print("\n🏆 FINAL PERFORMANCE SUMMARY:")
         print("=" * 40)
 
-        all_times = [health_time, monitor_time, baseline_time] + subprocess_times
+        all_times = [health_time, monitor_time, baseline_time, *subprocess_times]
         overall_avg = statistics.mean(all_times)
         max_time = max(all_times)
         min_time = min(all_times)

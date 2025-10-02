@@ -411,7 +411,7 @@ class ImportVerificationSuite:
             # Prepend 'homodyne' if not already there
             if parts:
                 if parts[0] != "homodyne":
-                    parts = ("homodyne",) + parts
+                    parts = ("homodyne", *parts)
                 return ".".join(parts)
             return "homodyne"
         except ValueError:
@@ -433,7 +433,7 @@ class ImportVerificationSuite:
 
             # Add from imports
             for module, _ in from_imports.keys():
-                if module and (module.startswith("homodyne") or module.startswith(".")):
+                if module and (module.startswith(("homodyne", "."))):
                     if module.startswith("."):
                         # Convert relative to absolute
                         package_name = self._get_package_name(file_path)

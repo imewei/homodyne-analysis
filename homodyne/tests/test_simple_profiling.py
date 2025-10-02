@@ -42,7 +42,7 @@ class SimpleProfiler:
     def __init__(self):
         self.profiles = {}
 
-    def profile_function(self, name: str = None):
+    def profile_function(self, name: str | None = None):
         """Simple profiling decorator."""
 
         def decorator(func):

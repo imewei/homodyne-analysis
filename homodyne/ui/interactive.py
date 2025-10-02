@@ -480,6 +480,7 @@ class InteractiveInterface:
 
         # Session summary
         self._display_session_summary(session)
+        return None
 
     def _check_step_dependencies(
         self, step: WorkflowStep, completed_steps: list[str]
@@ -524,6 +525,7 @@ class InteractiveInterface:
                 )
 
             self.console.print(results_table)
+        return None
 
     def _start_jupyter_session(self, session: AnalysisSession) -> AnalysisSession:
         """Start Jupyter notebook interface."""

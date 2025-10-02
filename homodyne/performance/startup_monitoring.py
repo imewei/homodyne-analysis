@@ -286,7 +286,7 @@ except Exception as e:
         for line in output_lines:
             if line.startswith("IMPORT_TIME:"):
                 import_time = float(line.split(":", 1)[1].strip())
-            elif line.startswith("IMPORT_ERROR:") or line.startswith("DETAILED_ERROR:"):
+            elif line.startswith(("IMPORT_ERROR:", "DETAILED_ERROR:")):
                 import_errors.append(line.split(":", 1)[1].strip())
 
         # Parse detailed metrics if available
@@ -533,10 +533,7 @@ except Exception as e:
         # Analyze trends
         import_times = [m.import_time for m in historical_metrics]
         memory_usage = [m.memory_usage_mb for m in historical_metrics]
-        timestamps = [
-            datetime.fromisoformat(m.timestamp.replace("Z", "+00:00"))
-            for m in historical_metrics
-        ]
+        timestamps = [datetime.fromisoformat(m.timestamp) for m in historical_metrics]
 
         # Calculate trend statistics
         trend_analysis = {
@@ -702,9 +699,7 @@ except Exception as e:
                 for line in f:
                     try:
                         data = json.loads(line.strip())
-                        timestamp = datetime.fromisoformat(
-                            data["timestamp"].replace("Z", "+00:00")
-                        )
+                        timestamp = datetime.fromisoformat(data["timestamp"])
 
                         if timestamp.timestamp() >= cutoff_time:
                             metrics.append(StartupMetrics(**data))

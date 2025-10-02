@@ -1893,7 +1893,7 @@ class ClassicalOptimizer:
         objective_func,
         initial_parameters: np.ndarray,
         method: str = "Nelder-Mead",
-        method_options: dict[str, Any] = None,
+        method_options: dict[str, Any] | None = None,
     ) -> Any:
         """
         Run SciPy optimization method.

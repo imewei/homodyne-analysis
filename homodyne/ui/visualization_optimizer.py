@@ -25,9 +25,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 try:
-    import matplotlib
+    import matplotlib as mpl
 
-    matplotlib.use("Agg", force=True)  # Use non-interactive backend by default
+    mpl.use("Agg", force=True)  # Use non-interactive backend by default
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False

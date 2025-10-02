@@ -267,10 +267,17 @@ class ComplexityAnalyzer(ast.NodeVisitor):
 
         # Count complexity-adding constructs
         for child in ast.walk(node):
-            if (
-                isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor))
-                or isinstance(child, ast.ExceptHandler)
-                or isinstance(child, (ast.And, ast.Or))
+            if isinstance(
+                child,
+                (
+                    ast.If,
+                    ast.While,
+                    ast.For,
+                    ast.AsyncFor,
+                    ast.ExceptHandler,
+                    ast.And,
+                    ast.Or,
+                ),
             ):
                 self.current_function_complexity += 1
 

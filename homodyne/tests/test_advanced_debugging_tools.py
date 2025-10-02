@@ -147,7 +147,7 @@ class AdvancedDebugger:
         """Add custom breakpoint."""
         self.custom_breakpoints.add((filename, line_number))
 
-    def debug_decorator(self, func_name: str = None):
+    def debug_decorator(self, func_name: str | None = None):
         """Decorator for debugging specific functions."""
 
         def decorator(func):
@@ -567,7 +567,7 @@ class DiagnosticAnalyzer:
         # Analyze each exception group
         for error_type, events in exception_groups.items():
             if len(events) > 1:  # Multiple occurrences indicate a pattern
-                affected_functions = list(set(e.function_name for e in events))
+                affected_functions = list({e.function_name for e in events})
 
                 report = DiagnosticReport(
                     report_type="error_pattern",
@@ -736,7 +736,7 @@ class ErrorTracker:
                 }
                 for error in recent_errors
             ],
-            "error_contexts": list(set(error["context"] for error in self.error_log)),
+            "error_contexts": list({error["context"] for error in self.error_log}),
         }
 
 

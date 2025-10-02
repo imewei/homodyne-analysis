@@ -71,15 +71,15 @@ except ImportError as e:
     StartupMonitor = None
 
 __all__ = [
-    # Core monitoring
-    "PerformanceMonitor",
-    "StartupMonitor",
-    "baseline",
-    "monitoring",
     # Integrated monitoring
     "IntegratedPerformanceMonitor",
-    "StructuralOptimizationMetrics",
+    "PerformanceBudget",
+    # Core monitoring
+    "PerformanceMonitor",
     # Regression prevention
     "PerformanceRegressionPreventor",
-    "PerformanceBudget",
+    "StartupMonitor",
+    "StructuralOptimizationMetrics",
+    "baseline",
+    "monitoring",
 ]

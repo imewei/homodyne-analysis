@@ -3151,13 +3151,10 @@ Validation:
             )  # type: ignore
             if show_plots:
                 # Check if matplotlib is in interactive mode
-                import matplotlib
+                import matplotlib as mpl
 
-                backend = matplotlib.get_backend().lower()
-                if (
-                    backend in ["agg", "svg", "pdf", "ps"]
-                    or not matplotlib.is_interactive()
-                ):
+                backend = mpl.get_backend().lower()
+                if backend in ["agg", "svg", "pdf", "ps"] or not mpl.is_interactive():
                     # Non-interactive backend or interactive mode disabled
                     logger.info(
                         "Matplotlib in non-interactive mode - plot saved but not displayed"
