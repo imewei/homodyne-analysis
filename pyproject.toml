@@ -468,6 +468,7 @@ ignore = [
     "SIM105",  # suppressible exception (explicit error handling)
     "SIM115",  # context manager for files (intentional for tests)
     "SIM118",  # in-dict-keys (clarity)
+    "SIM401",  # use dict.get (clarity over brevity)
     "PERF401", # manual list comprehension (readability)
     "PERF102", # incorrect dict iterator (intentional)
     "PERF403", # manual dict update (readability)
@@ -476,8 +477,10 @@ ignore = [
     "PTH118",  # os.path.join (compatibility)
     "PTH108",  # os.unlink (compatibility)
     "PTH110",  # os.path.exists (compatibility)
+    "PTH103",  # os.makedirs (compatibility)
     "PTH101",  # os.chmod (compatibility)
     "PLW2901", # loop variable overwritten (intentional reassignment)
+    "LOG015",  # root logger calls (tests and scripts)
     "B007",    # unused loop variable (intentional in some cases)
     "RUF059",  # unused unpacked variable (intentional)
     "SIM108",  # if-else-block (clarity over brevity)
@@ -515,9 +518,10 @@ max-complexity = 15  # Reasonable complexity for scientific code
 "homodyne/statistics/chi_squared.py" = ["E722", "F401"]  # Bare except + unused scipy imports (optimized paths)
 "homodyne/core/cpu_optimization.py" = ["F821"]  # Conditional imports
 "homodyne/core/composition.py" = ["E731"]  # Lambda assignments for functional patterns
+"homodyne/core/kernels.py" = ["F811"]  # Numba fallback redefinitions
 "homodyne/analysis/core.py" = ["F811"]  # Function redefinition for compatibility layers
 "homodyne/optimization/blas_optimization.py" = ["F821"]  # Conditional imports
-"homodyne/validation/performance_validation.py" = ["F821"]  # Conditional imports
+"homodyne/validation/performance_validation.py" = ["F821", "F401"]  # Conditional imports, benchmarking
 "homodyne/performance/regression_prevention.py" = ["F401"]  # Unused imports for benchmarking
 "homodyne/data/xpcs_loader.py" = ["F841"]  # Unused variables in data loading (future use)
 
