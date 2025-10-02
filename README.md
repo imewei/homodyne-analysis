@@ -3,11 +3,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
 [![PyPI version](https://badge.fury.io/py/homodyne-analysis.svg)](https://badge.fury.io/py/homodyne-analysis)
+[![Documentation](https://img.shields.io/badge/docs-ReadTheDocs-blue.svg)](https://homodyne-analysis.readthedocs.io/)
 [![NumPy](https://img.shields.io/badge/NumPy-1.24+-green.svg)](https://numpy.org)
 [![SciPy](https://img.shields.io/badge/SciPy-1.9+-green.svg)](https://scipy.org)
 [![Numba](https://img.shields.io/badge/Numba-JIT-orange.svg)](https://numba.pydata.org)
 [![DOI](https://img.shields.io/badge/DOI-10.1073/pnas.2401162121-blue.svg)](https://doi.org/10.1073/pnas.2401162121)
-[![Research](https://img.shields.io/badge/Research-XPCS%20Nonequilibrium-purple.svg)](https://github.com/imewei/homodyne)
+[![Research](https://img.shields.io/badge/Research-XPCS%20Nonequilibrium-purple.svg)](https://github.com/imewei/homodyne_analysis)
 
 ## Overview
 
@@ -892,7 +893,7 @@ If you use this software in your research, please cite the original paper:
   title={homodyne-analysis: High-performance XPCS analysis with robust optimization},
   author={Chen, Wei and He, Hongrui},
   year={2024-2025},
-  url={https://github.com/imewei/homodyne},
+  url={https://github.com/imewei/homodyne_analysis},
   version={1.0.0},
   institution={Argonne National Laboratory}
 }
@@ -903,7 +904,7 @@ If you use this software in your research, please cite the original paper:
 Development setup:
 
 ```bash
-git clone https://github.com/imewei/homodyne.git
+git clone https://github.com/imewei/homodyne_analysis.git
 cd homodyne
 pip install -e .[dev]
 
@@ -920,26 +921,6 @@ mypy homodyne/
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guidelines.
 
-## Acknowledgments
-
-### Funding Support
-
-- U.S. Department of Energy, Office of Science, Basic Energy Sciences
-- National Science Foundation (NSF) Division of Materials Research
-- Advanced Photon Source User Facility
-
-### Collaborating Institutions
-
-- **Argonne National Laboratory** - X-ray Science Division
-- **University of Chicago** - Pritzker School of Molecular Engineering
-- **Northwestern University** - Department of Materials Science
-
-### Technical Contributors
-
-- **Wei Chen** (Argonne National Laboratory) - Principal Investigator
-- **Hongrui He** (Argonne National Laboratory) - Lead Developer
-- **Advanced Photon Source** - Experimental facility and user support
-
 ## License
 
 This research software is distributed under the MIT License, enabling open collaboration
@@ -954,7 +935,8 @@ ______________________________________________________________________
 **Contact Information:**
 
 - **Primary Investigator**: Wei Chen ([wchen@anl.gov](mailto:wchen@anl.gov))
-- **Technical Support**: [GitHub Issues](https://github.com/imewei/homodyne/issues)
+- **Technical Support**:
+  [GitHub Issues](https://github.com/imewei/homodyne_analysis/issues)
 - **Research Collaboration**: Argonne National Laboratory, X-ray Science Division
 
 **Authors:** Wei Chen, Hongrui He (Argonne National Laboratory) **License:** MIT
