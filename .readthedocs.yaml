@@ -42,10 +42,6 @@ formats:
   - epub
   - htmlzip
 
-# Conda configuration (if needed for scientific dependencies)
-conda:
-  environment: docs/environment.yml
-
 # Submodules configuration
 submodules:
   include: []
