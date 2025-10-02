@@ -16,6 +16,7 @@ Institution: Argonne National Laboratory
 """
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -68,7 +69,7 @@ class ComposedHomodyneAnalysis:
             Validation workflow function
         """
         # Get analysis mode to determine validation rules
-        analysis_mode = self.analyzer.config_manager.get_analysis_mode()
+        self.analyzer.config_manager.get_analysis_mode()
         is_static = self.analyzer.is_static_mode()
 
         # Build validation pipeline based on mode
@@ -157,7 +158,7 @@ class ComposedHomodyneAnalysis:
         # Create validation pipeline
         def validate_inputs(
             params: np.ndarray, phi_angles: np.ndarray, c2_exp: np.ndarray
-        ) -> Result[Tuple]:
+        ) -> Result[tuple]:
             """Validate inputs for chi-squared calculation."""
             validation_pipeline = (
                 Pipeline()
@@ -182,7 +183,7 @@ class ComposedHomodyneAnalysis:
 
             return validation_pipeline.execute((params, phi_angles, c2_exp))
 
-        def calculate_chi_squared(validated_inputs: Tuple) -> Result[float]:
+        def calculate_chi_squared(validated_inputs: tuple) -> Result[float]:
             """Calculate chi-squared using the composed workflow."""
             try:
                 params, phi_angles, c2_exp = validated_inputs
@@ -341,8 +342,8 @@ class ComposedHomodyneAnalysis:
         return complete_analysis
 
     def create_simulation_workflow(
-        self, phi_angles: Optional[np.ndarray] = None
-    ) -> Callable[[np.ndarray], Result[Dict[str, np.ndarray]]]:
+        self, phi_angles: np.ndarray | None = None
+    ) -> Callable[[np.ndarray], Result[dict[str, np.ndarray]]]:
         """
         Create a composable simulation workflow.
 
@@ -357,7 +358,7 @@ class ComposedHomodyneAnalysis:
             Simulation workflow function
         """
 
-        def run_simulation(parameters: np.ndarray) -> Result[Dict[str, np.ndarray]]:
+        def run_simulation(parameters: np.ndarray) -> Result[dict[str, np.ndarray]]:
             """Execute simulation using functional composition."""
             try:
                 # Parameter validation
@@ -394,7 +395,7 @@ class ComposedHomodyneAnalysis:
 
     def _generate_theoretical_data(
         self, parameters: np.ndarray, phi_angles: np.ndarray
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """Generate theoretical C2 data for simulation."""
         n_angles = len(phi_angles)
 
@@ -447,9 +448,9 @@ class ComposedHomodyneAnalysis:
 
     def run_simulation(
         self,
-        parameters: Optional[np.ndarray] = None,
-        phi_angles: Optional[np.ndarray] = None,
-    ) -> Result[Dict[str, np.ndarray]]:
+        parameters: np.ndarray | None = None,
+        phi_angles: np.ndarray | None = None,
+    ) -> Result[dict[str, np.ndarray]]:
         """
         Run simulation using composed workflows.
 

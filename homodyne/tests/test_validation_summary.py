@@ -96,7 +96,6 @@ def test_error_handling_consistency():
 
     # Test division by zero handling
     try:
-        result = 1.0 / 0.0
         assert False, "Should have raised exception"
     except ZeroDivisionError:
         print("✓ Division by zero handled correctly")
@@ -114,10 +113,10 @@ def test_error_handling_consistency():
     try:
         a = np.array([[1, 2]])
         b = np.array([[1], [2], [3]])
-        result = a @ b  # This should work (1x2 @ 3x1 -> error actually)
+        a @ b  # This should work (1x2 @ 3x1 -> error actually)
         # Let's test a real mismatch
         c = np.array([1, 2, 3])
-        result = a + c  # This should fail
+        a + c  # This should fail
         assert False, "Should have raised exception"
     except ValueError:
         print("✓ Array shape mismatch handling working")

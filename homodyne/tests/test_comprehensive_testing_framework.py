@@ -12,6 +12,7 @@ Institution: Argonne National Laboratory
 import json
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -274,7 +275,6 @@ class ComprehensiveTestFramework:
         """Test error handling and recovery mechanisms."""
         # Test division by zero handling
         try:
-            result = 1.0 / 0.0
             # Should not reach here
             return False
         except ZeroDivisionError:
@@ -285,7 +285,7 @@ class ComprehensiveTestFramework:
         try:
             A = np.array([[1, 2], [3, 4]])
             B = np.array([1, 2, 3])  # Incompatible shape
-            result = A @ B
+            A @ B
             # Should raise an error
             return False
         except ValueError:
@@ -312,7 +312,7 @@ class ComprehensiveTestFramework:
 
         # Test matrix multiplication performance
         start_time = time.perf_counter()
-        result = test_data @ test_data.T
+        test_data @ test_data.T
         execution_time = time.perf_counter() - start_time
 
         # Performance threshold (should complete within reasonable time)
@@ -326,7 +326,7 @@ class ComprehensiveTestFramework:
         c2_theo = np.random.rand(100, 50, 50)
 
         start_time = time.perf_counter()
-        chi2_result = np.sum((c2_exp - c2_theo) ** 2)
+        np.sum((c2_exp - c2_theo) ** 2)
         chi2_time = time.perf_counter() - start_time
 
         # Should complete quickly with vectorized operations
@@ -750,7 +750,7 @@ class ComprehensiveTestFramework:
         # Create and process large array
         large_array = np.random.rand(1000, 1000)
         processed_array = large_array**2 + 2 * large_array + 1
-        result = np.sum(processed_array)
+        np.sum(processed_array)
 
         peak_memory = process.memory_info().rss / 1024 / 1024
 

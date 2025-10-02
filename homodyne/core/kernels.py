@@ -616,7 +616,12 @@ def refresh_kernel_functions():
     bool
         True if Numba kernels are now available, False if using fallback functions
     """
-    global create_time_integral_matrix_numba, calculate_diffusion_coefficient_numba, calculate_shear_rate_numba, compute_g1_correlation_numba, compute_sinc_squared_numba
+    global \
+        create_time_integral_matrix_numba, \
+        calculate_diffusion_coefficient_numba, \
+        calculate_shear_rate_numba, \
+        compute_g1_correlation_numba, \
+        compute_sinc_squared_numba
 
     # Re-check numba availability
     current_numba_available = _check_numba_availability()
@@ -627,7 +632,6 @@ def refresh_kernel_functions():
             numba_module = scientific_deps.get("numba")
 
             # Extract specific components
-            jit = numba_module.jit
             njit = numba_module.njit
             float64 = numba_module.float64
 

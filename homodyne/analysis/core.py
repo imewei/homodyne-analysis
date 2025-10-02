@@ -2705,7 +2705,7 @@ class HomodyneAnalysisCore:
         Detect quality issues based on angle categorization.
         """
         quality_issues = []
-        n_angles = len(angles)
+        len(angles)
 
         unacceptable_fraction = angle_categories["unacceptable_angles"]["fraction"]
         num_good_angles = angle_categories["good_angles"]["count"]

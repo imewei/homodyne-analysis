@@ -168,10 +168,10 @@ class TestInputValidation:
             # Check if arrays can be converted to float (suppress warnings)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")  # Ignore all warnings during conversion
-                c2_float = np.asarray(c2_data, dtype=np.float64)
-                angles_float = np.asarray(angles, dtype=np.float64)
-                t1_float = np.asarray(t1_array, dtype=np.float64)
-                t2_float = np.asarray(t2_array, dtype=np.float64)
+                np.asarray(c2_data, dtype=np.float64)
+                np.asarray(angles, dtype=np.float64)
+                np.asarray(t1_array, dtype=np.float64)
+                np.asarray(t2_array, dtype=np.float64)
 
             return True
         except (ValueError, TypeError):
@@ -339,7 +339,7 @@ class TestSecureFileOperations:
 
             # Check if file is readable by others
             world_readable = mode & 0o004
-            group_readable = mode & 0o040
+            mode & 0o040
 
             # For security, configuration files should not be world-readable
             if world_readable and file_path.endswith((".json", ".conf", ".config")):
@@ -415,9 +415,9 @@ class TestSecureFileOperations:
 
         for rel_path in legitimate_paths:
             full_path = self._secure_join(base_dir, rel_path)
-            assert full_path.startswith(
-                base_dir
-            ), f"Path {full_path} outside base directory"
+            assert full_path.startswith(base_dir), (
+                f"Path {full_path} outside base directory"
+            )
 
         # Test malicious paths
         malicious_paths = [
@@ -431,9 +431,9 @@ class TestSecureFileOperations:
             try:
                 full_path = self._secure_join(base_dir, mal_path)
                 # If join succeeds, result should still be within base directory
-                assert full_path.startswith(
-                    base_dir
-                ), f"Directory traversal vulnerability: {full_path}"
+                assert full_path.startswith(base_dir), (
+                    f"Directory traversal vulnerability: {full_path}"
+                )
             except ValueError:
                 # Acceptable to reject malicious paths
                 pass

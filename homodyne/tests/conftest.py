@@ -544,9 +544,9 @@ def assert_correlation_properties(g1, g2=None, contrast=None, offset=None):
 def assert_monotonic_decay(values, tolerance=1e-10):
     """Assert that values show monotonic decay."""
     for i in range(len(values) - 1):
-        assert (
-            values[i] >= values[i + 1] - tolerance
-        ), f"Non-monotonic behavior at index {i}: {values[i]} -> {values[i + 1]}"
+        assert values[i] >= values[i + 1] - tolerance, (
+            f"Non-monotonic behavior at index {i}: {values[i]} -> {values[i + 1]}"
+        )
 
 
 # Performance measurement utilities

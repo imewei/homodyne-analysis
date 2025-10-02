@@ -12,6 +12,7 @@ Institution: Argonne National Laboratory
 import json
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -130,13 +131,13 @@ class PerformanceDashboard:
         )
 
         if algo_results and "optimization_results" in algo_results:
-            optimizations = algo_results["optimization_results"]
+            algo_results["optimization_results"]
             if (
                 "summary" in algo_results
                 and "average_speedup" in algo_results["summary"]
             ):
                 avg_speedup = algo_results["summary"]["average_speedup"]
-                max_speedup = algo_results["summary"]["max_speedup"]
+                algo_results["summary"]["max_speedup"]
 
                 return PerformanceMetrics(
                     task_id="4.3",
@@ -223,7 +224,7 @@ class PerformanceDashboard:
 
             if speedups:
                 avg_speedup = np.mean(speedups)
-                max_speedup = np.max(speedups)
+                np.max(speedups)
 
                 return PerformanceMetrics(
                     task_id="4.5",
@@ -289,7 +290,7 @@ class PerformanceDashboard:
 
         if startup_results:
             cold_startup = startup_results.get("cold_startup_time", 0.5)
-            total_import = startup_results.get("total_import_time", 0.1)
+            startup_results.get("total_import_time", 0.1)
 
             # Estimate improvement (assumes 20% startup optimization)
             baseline_startup = cold_startup * 1.25

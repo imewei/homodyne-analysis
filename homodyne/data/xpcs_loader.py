@@ -597,7 +597,9 @@ class XPCSDataLoader:
 
             # Step 5: Load correlation matrices for valid bins
             corr_group = f["xpcs/twotime/correlation_map"]
-            c2_keys = sorted(corr_group.keys())  # Sorted alphabetically (c2_00001, c2_00002, ...)
+            c2_keys = sorted(
+                corr_group.keys()
+            )  # Sorted alphabetically (c2_00001, c2_00002, ...)
 
             logger.debug(
                 f"Loading {len(valid_bin_indices)} correlation matrices corresponding to valid (q,phi) pairs"
@@ -638,7 +640,9 @@ class XPCSDataLoader:
 
             # Step 8: Find all (q,phi) pairs matching selected q-vector
             # APS-U uses exact matching (< 1e-10 tolerance) unlike APS old (10% tolerance)
-            q_matching_indices = np.where(np.abs(filtered_dqlist - selected_q) < 1e-10)[0]
+            q_matching_indices = np.where(np.abs(filtered_dqlist - selected_q) < 1e-10)[
+                0
+            ]
             logger.debug(
                 f"Found {len(q_matching_indices)} (q,phi) pairs matching selected q-vector"
             )
@@ -661,7 +665,9 @@ class XPCSDataLoader:
 
             # Step 10: Fallback if no valid indices (safety check)
             if len(final_indices) == 0:
-                logger.warning("No valid indices found, using first available entry as fallback")
+                logger.warning(
+                    "No valid indices found, using first available entry as fallback"
+                )
                 final_indices = [0]
 
             # Step 11: Extract final data for selected indices
@@ -921,7 +927,9 @@ class XPCSDataLoader:
     def _save_text_files(self, data: dict[str, Any]) -> None:
         """Save phi angles and wavevector q-values to text files."""
         # Get output directories
-        phi_folder = self.exp_config.get("phi_angles_path", self.exp_config.get("data_folder_path", "."))
+        phi_folder = self.exp_config.get(
+            "phi_angles_path", self.exp_config.get("data_folder_path", ".")
+        )
         data_folder = self.exp_config.get("data_folder_path", ".")
 
         # Ensure directories exist

@@ -64,7 +64,7 @@ class SimpleStartupMonitor:
         times = []
         for i in range(iterations):
             try:
-                start_time = time.perf_counter()
+                time.perf_counter()
                 result = subprocess.run(
                     [
                         sys.executable,
@@ -89,7 +89,7 @@ print(f"IMPORT_TIME:{{end - start:.6f}}")
                     text=True,
                     timeout=30,
                 )
-                end_time = time.perf_counter()
+                time.perf_counter()
 
                 if result.returncode == 0:
                     # Parse import time from output

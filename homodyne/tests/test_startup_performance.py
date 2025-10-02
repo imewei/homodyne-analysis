@@ -72,7 +72,7 @@ class StartupBenchmarkSuite:
         self.clear_homodyne_modules()
         gc.collect()
 
-        with self.memory_profiler.monitor_memory() as initial_memory:
+        with self.memory_profiler.monitor_memory():
             with PerformanceTimer(f"Cold import {module_name}") as timer:
                 try:
                     importlib.import_module(module_name)

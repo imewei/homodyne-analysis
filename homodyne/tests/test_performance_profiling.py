@@ -461,8 +461,8 @@ class PerformanceTestSuite:
             return np.sort(data)
 
         # Run profiled functions
-        result1 = matrix_test()
-        result2 = array_test()
+        matrix_test()
+        array_test()
 
         # Get profile reports
         matrix_report = self.monitor.function_profiler.generate_profile_report(
@@ -514,7 +514,7 @@ class PerformanceTestSuite:
             return "done"
 
         # This should trigger an alert
-        result = slow_function()
+        slow_function()
 
         # Check for alerts
         alerts = self.monitor.alerts

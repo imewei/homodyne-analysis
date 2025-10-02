@@ -151,7 +151,7 @@ class CPUProfiler:
             end_metrics = self._get_current_metrics()
 
             # Calculate deltas and efficiency metrics
-            result = self._calculate_profile_result(
+            self._calculate_profile_result(
                 function_name,
                 start_time,
                 end_time,
@@ -243,7 +243,7 @@ class CPUProfiler:
         )
 
         # Calculate thread utilization
-        thread_count = end_metrics.get("thread_count", 1)
+        end_metrics.get("thread_count", 1)
         thread_utilization = min(1.0, end_metrics.get("cpu_percent", 0) / 100.0)
 
         return CPUProfileResult(
@@ -315,7 +315,7 @@ class CPUProfiler:
         total_start = time.perf_counter()
 
         for i in range(iterations):
-            with self.profile_function(f"{func.__name__}_iter_{i}") as profiler:
+            with self.profile_function(f"{func.__name__}_iter_{i}"):
                 try:
                     result = func(*args, **kwargs)
                     results.append(result)
@@ -376,7 +376,7 @@ class MemoryOptimizer:
             Optimization results and recommendations
         """
         total_memory_mb = sum(arr.nbytes for arr in arrays) / 1024 / 1024
-        memory_info = self.process.memory_info()
+        self.process.memory_info()
         available_memory_mb = psutil.virtual_memory().available / 1024 / 1024
 
         optimization_results = {
@@ -522,7 +522,7 @@ def get_cpu_performance_info() -> dict[str, Any]:
         System performance characteristics
     """
     profiler = CPUProfiler()
-    memory_optimizer = MemoryOptimizer()
+    MemoryOptimizer()
 
     system_info = {
         "cpu_count": psutil.cpu_count(logical=True),

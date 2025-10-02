@@ -18,6 +18,7 @@ import traceback
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
+from dataclasses import asdict
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
@@ -328,7 +329,7 @@ class DiagnosticAnalyzer:
         B = np.random.rand(size, size)
 
         start_time = time.perf_counter()
-        C = A @ B
+        A @ B
         execution_time = time.perf_counter() - start_time
 
         # Performance threshold
@@ -431,7 +432,7 @@ class DiagnosticAnalyzer:
             # Read test
             start_time = time.perf_counter()
             with open(temp_filename) as f:
-                read_data = f.read()
+                f.read()
             read_time = time.perf_counter() - start_time
 
             # Performance thresholds
@@ -445,7 +446,9 @@ class DiagnosticAnalyzer:
             severity = (
                 "high"
                 if (write_time > max_write_time * 2 or read_time > max_read_time * 2)
-                else "medium" if issues else "low"
+                else "medium"
+                if issues
+                else "low"
             )
 
             return {
@@ -490,7 +493,7 @@ class DiagnosticAnalyzer:
             data = [random.random() for _ in range(size)]
 
             start_time = time.perf_counter()
-            sorted_data = sorted(data)
+            sorted(data)
             execution_time = time.perf_counter() - start_time
             times.append(execution_time)
 
@@ -509,7 +512,9 @@ class DiagnosticAnalyzer:
         severity = (
             "high"
             if complexity_efficiency > max_complexity_ratio * 2
-            else "medium" if issues else "low"
+            else "medium"
+            if issues
+            else "low"
         )
 
         return {
@@ -769,8 +774,8 @@ def run_advanced_debugging_tools():
 
     # Test normal execution
     try:
-        result1 = sample_function(3, 4)
-        result2 = matrix_operation()
+        sample_function(3, 4)
+        matrix_operation()
     except Exception as e:
         print(f"Unexpected error: {e}")
 

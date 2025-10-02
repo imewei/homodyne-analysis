@@ -369,9 +369,9 @@ class TestTransferLearningPredictor:
         # At least one should be different or test the classification logic differently
         domains = [domain1, domain2, domain3]
         unique_domains = set(domains)
-        assert (
-            len(unique_domains) >= 2
-        ), f"Expected at least 2 unique domains, got: {unique_domains}"
+        assert len(unique_domains) >= 2, (
+            f"Expected at least 2 unique domains, got: {unique_domains}"
+        )
 
     def test_transfer_learning_fitting(self, sample_optimization_records):
         """Test transfer learning fitting process."""

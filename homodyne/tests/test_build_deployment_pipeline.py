@@ -17,6 +17,7 @@ import sys
 import tempfile
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any

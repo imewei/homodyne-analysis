@@ -895,9 +895,9 @@ class TestImportVerification:
 
         # Basic import should be much faster than full access
         if basic_import_time is not None:
-            assert (
-                basic_import_time < 2.0
-            ), f"Basic import too slow: {basic_import_time:.2f}s"
+            assert basic_import_time < 2.0, (
+                f"Basic import too slow: {basic_import_time:.2f}s"
+            )
 
         if lazy_access_time is not None and basic_import_time is not None:
             # Calculate the overhead properly: how much slower is lazy access compared to basic
@@ -941,7 +941,7 @@ class TestImportOptimization:
 
         # Import homodyne.core.kernels module
         try:
-            kernels_module = importlib.import_module("homodyne.core.kernels")
+            importlib.import_module("homodyne.core.kernels")
         except ImportError:
             pytest.skip("homodyne.core.kernels not available")
 
@@ -987,9 +987,9 @@ class TestImportOptimization:
         if non_numba_time and numba_time:
             overhead_ratio = numba_time / non_numba_time
             # Be more lenient as numba can have significant import overhead
-            assert (
-                overhead_ratio < 10.0
-            ), f"Excessive numba overhead: {overhead_ratio:.1f}x"
+            assert overhead_ratio < 10.0, (
+                f"Excessive numba overhead: {overhead_ratio:.1f}x"
+            )
         elif numba_time:
             # Just ensure reasonable import time when numba is available
             assert numba_time < 3.0, f"Numba import too slow: {numba_time:.2f}s"
@@ -1077,7 +1077,7 @@ def find_duplicate_imports(package_root: Path) -> dict[str, list[str]]:
 
 def suggest_import_optimizations(package_root: Path) -> list[str]:
     """Suggest import optimizations for the package."""
-    analyzer = ImportVerificationSuite(package_root)
+    ImportVerificationSuite(package_root)
     suggestions = []
 
     # Find commonly imported modules

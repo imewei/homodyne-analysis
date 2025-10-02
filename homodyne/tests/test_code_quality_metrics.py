@@ -476,9 +476,9 @@ class CodeQualityTracker:
         try:
             import importlib.metadata
 
-            package_version = importlib.metadata.version("homodyne")
+            importlib.metadata.version("homodyne")
         except Exception:
-            package_version = "unknown"
+            pass
 
         metrics = CodeQualityMetrics(
             timestamp=datetime.now(UTC).isoformat(),

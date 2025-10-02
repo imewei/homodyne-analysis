@@ -13,6 +13,7 @@ import gc
 import json
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -55,7 +56,7 @@ class QuickBenchmarker:
             gc.collect()
             start = time.perf_counter()
             try:
-                result = func(*args)
+                func(*args)
                 end = time.perf_counter()
                 times.append(end - start)
             except Exception as e:

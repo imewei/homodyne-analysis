@@ -544,7 +544,7 @@ class DeadCodeDetectionPipeline:
         """Estimate number of lines for a dead code candidate."""
         try:
             with open(candidate.file_path) as f:
-                lines = f.readlines()
+                f.readlines()
 
             # Simple heuristic: function likely spans 10-20 lines
             if candidate.type == "function":

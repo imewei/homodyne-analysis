@@ -27,6 +27,7 @@ import tracemalloc
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -195,7 +196,7 @@ class PerformanceBenchmarker:
                 func.__name__, data_size=len(args), iterations=1
             ):
                 try:
-                    result = func(*args, **kwargs)
+                    func(*args, **kwargs)
                 except Exception as e:
                     print(f"Benchmark iteration {i + 1} failed: {e}")
                     continue

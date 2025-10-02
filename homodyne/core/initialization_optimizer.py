@@ -151,7 +151,7 @@ class DependencyAnalyzer:
             for imp in relative_imports:
                 # Convert relative to absolute
                 if imp.startswith("."):
-                    level = len(imp) - len(imp.lstrip("."))
+                    len(imp) - len(imp.lstrip("."))
                     module_part = imp.lstrip(".")
                     # Simplified relative import resolution
                     if module_part:

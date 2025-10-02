@@ -332,7 +332,7 @@ def run_robust_optimization(
                 if chi_squared is None:
                     chi_squared = 0.0
 
-                method_used = result_info.get("method", method)
+                result_info.get("method", method)
                 success = result_info.get("success", True)
 
                 logger.info(f"✓ {method.capitalize()} optimization completed")

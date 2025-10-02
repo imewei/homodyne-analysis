@@ -13,6 +13,7 @@ import json
 import statistics
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
@@ -133,7 +134,7 @@ class QualityMetricsCollector:
         )
 
         # Test pass rate
-        test_files = list(self.project_root.glob("**/test_*.py"))
+        list(self.project_root.glob("**/test_*.py"))
         test_pass_rate = 88.2  # From previous test results
         metrics.append(
             QualityMetric(
@@ -570,7 +571,7 @@ class TrendAnalyzer:
     ) -> QualityTrend:
         """Calculate trend for a specific metric."""
         values = [m.value for m in metrics]
-        dates = [datetime.strptime(m.measurement_date, "%Y-%m-%d") for m in metrics]
+        [datetime.strptime(m.measurement_date, "%Y-%m-%d") for m in metrics]
 
         # Calculate trend direction
         if len(values) >= 2:
@@ -1214,7 +1215,9 @@ def run_quality_engineering_continuous_improvement():
             status = (
                 "✓"
                 if metric["achievement_percentage"] >= 100
-                else "⚠" if metric["achievement_percentage"] >= 80 else "✗"
+                else "⚠"
+                if metric["achievement_percentage"] >= 80
+                else "✗"
             )
             print(
                 f"    {status} {metric['name']}: {metric['value']:.2f} {metric['unit']} (Target: {metric['target']:.2f}, {metric['achievement_percentage']:.1f}%)"

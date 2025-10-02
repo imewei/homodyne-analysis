@@ -216,7 +216,7 @@ print(f"IMPORT_TIME:{end - start}")
             times = []
             for _ in range(n_iterations):
                 start = time.perf_counter()
-                result = compute_chi_squared_batch_numba(
+                compute_chi_squared_batch_numba(
                     theory_batch, exp_batch, contrast_batch, offset_batch
                 )
                 end = time.perf_counter()
@@ -259,7 +259,7 @@ print(f"IMPORT_TIME:{end - start}")
             }
 
             analyzer = HomodyneAnalysisCore(config)
-            optimizer = ClassicalOptimizer(analyzer, config)
+            ClassicalOptimizer(analyzer, config)
 
             # Memory after initialization
             final_memory = process.memory_info().rss / 1024 / 1024  # MB

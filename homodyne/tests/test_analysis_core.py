@@ -355,7 +355,7 @@ class TestHomodyneAnalysisCore:
 
     def test_convergence_criteria(self):
         """Test convergence criteria handling."""
-        analyzer = HomodyneAnalysisCore(config_override=self.config_data)
+        HomodyneAnalysisCore(config_override=self.config_data)
 
         # Test with tight tolerance
         tight_config = self.config_data.copy()

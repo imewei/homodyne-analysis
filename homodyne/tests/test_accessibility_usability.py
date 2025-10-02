@@ -13,6 +13,7 @@ import json
 import re
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -856,11 +857,11 @@ def run_accessibility_usability_testing():
     usability_tester = UsabilityTester()
 
     print("Running accessibility testing...")
-    accessibility_issues = accessibility_tester.test_cli_accessibility()
+    accessibility_tester.test_cli_accessibility()
     accessibility_report = accessibility_tester.generate_accessibility_report()
 
     print("Running usability testing...")
-    usability_tests = usability_tester.test_cli_usability()
+    usability_tester.test_cli_usability()
     usability_report = usability_tester.generate_usability_report()
 
     # Compile comprehensive results

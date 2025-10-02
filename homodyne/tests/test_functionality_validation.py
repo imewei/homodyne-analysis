@@ -37,9 +37,9 @@ class TestCoreAPIAvailability:
         ]
 
         for component in public_api_components:
-            assert hasattr(
-                homodyne, component
-            ), f"Missing public API component: {component}"
+            assert hasattr(homodyne, component), (
+                f"Missing public API component: {component}"
+            )
 
     def test_computational_kernels_available(self):
         """Test that computational kernels are available."""
@@ -91,9 +91,9 @@ class TestCoreAPIAvailability:
         ]
 
         for func_name in perf_functions:
-            assert hasattr(
-                homodyne, func_name
-            ), f"Missing performance function: {func_name}"
+            assert hasattr(homodyne, func_name), (
+                f"Missing performance function: {func_name}"
+            )
             func = getattr(homodyne, func_name)
             assert callable(func), f"Performance function {func_name} is not callable"
 
@@ -286,9 +286,9 @@ class TestModuleIntegrity:
     def test_all_exports_accessible(self):
         """Test that all items in __all__ are accessible."""
         for item_name in homodyne.__all__:
-            assert hasattr(
-                homodyne, item_name
-            ), f"__all__ item {item_name} not accessible"
+            assert hasattr(homodyne, item_name), (
+                f"__all__ item {item_name} not accessible"
+            )
             item = getattr(homodyne, item_name)
             assert item is not None, f"__all__ item {item_name} is None"
 
@@ -402,9 +402,9 @@ class TestRealWorldUsage:
         )
 
         assert result.returncode == 0, f"Subprocess import failed: {result.stderr}"
-        assert (
-            "SUCCESS:" in result.stdout
-        ), "Package import didn't produce expected output"
+        assert "SUCCESS:" in result.stdout, (
+            "Package import didn't produce expected output"
+        )
 
     def test_repeated_imports(self):
         """Test repeated imports don't cause issues."""

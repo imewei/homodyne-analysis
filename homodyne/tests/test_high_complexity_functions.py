@@ -151,7 +151,7 @@ class TestHighComplexityFunctions:
             with patch("matplotlib.pyplot.show"):
                 with patch("matplotlib.pyplot.savefig"):
                     # Should not crash with valid inputs
-                    result = plot_simulated_data(mock_data, config)
+                    plot_simulated_data(mock_data, config)
                     # Function should complete without errors
 
         except ImportError as e:
@@ -341,7 +341,7 @@ class TestHighComplexityFunctions:
 
                 # Test with invalid parameters (should handle gracefully)
                 try:
-                    result = opt_func(None, {})
+                    opt_func(None, {})
                 except (ValueError, TypeError, AttributeError):
                     # Expected behavior for invalid inputs
                     pass
@@ -389,18 +389,14 @@ class TestHighComplexityFunctions:
 
             # Test with valid template name
             try:
-                result = create_config_from_template(
-                    "static_isotropic", "test_output.json"
-                )
+                create_config_from_template("static_isotropic", "test_output.json")
                 # Should create configuration or handle gracefully
             except Exception as e:
                 logger.info(f"create_config_from_template validates inputs: {e}")
 
             # Test with invalid template name
             try:
-                result = create_config_from_template(
-                    "nonexistent_template", "test_output.json"
-                )
+                create_config_from_template("nonexistent_template", "test_output.json")
             except Exception as e:
                 # Should handle invalid templates gracefully
                 logger.info(
@@ -624,8 +620,6 @@ class TestNumericalAccuracy:
             # Test simple quadratic optimization
             def quadratic_objective(x):
                 return (x[0] - 2) ** 2 + (x[1] - 3) ** 2
-
-            bounds = [(-10, 10), (-10, 10)]
 
             # Any optimization method should converge to (2, 3)
             # This tests the mathematical correctness of the optimization interface

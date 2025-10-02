@@ -159,7 +159,6 @@ class TestMatrixOperationAccuracy:
     def test_matrix_multiplication_accuracy(self):
         """Test matrix multiplication accuracy preservation."""
         # Create test matrices with known properties
-        n = 5
         A = np.array(
             [
                 [1, 2, 3, 4, 5],

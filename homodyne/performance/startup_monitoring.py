@@ -264,7 +264,7 @@ except Exception as e:
         initial_memory = process.memory_info().rss / 1024 / 1024
 
         # Run measurement in subprocess
-        start_time = time.perf_counter()
+        time.perf_counter()
         result = subprocess.run(
             [sys.executable, "-c", measurement_script],
             check=False,
@@ -272,7 +272,7 @@ except Exception as e:
             text=True,
             timeout=30,  # 30-second timeout
         )
-        end_time = time.perf_counter()
+        time.perf_counter()
 
         if result.returncode != 0:
             raise RuntimeError(f"Import failed: {result.stderr}")

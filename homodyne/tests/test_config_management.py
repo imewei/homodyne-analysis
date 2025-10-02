@@ -258,7 +258,7 @@ class TestConfigManager:
 
     def test_config_type_validation(self):
         """Test configuration type validation."""
-        manager = ConfigManager()
+        ConfigManager()
 
         # Test with correct types using actual schema
         valid_config = {
@@ -293,7 +293,7 @@ class TestConfigManager:
         manager_invalid = ConfigManager(config=invalid_config)
         # Should handle type validation gracefully
         # May issue warnings but shouldn't crash
-        result = manager_invalid.validate_config()
+        manager_invalid.validate_config()
 
     def test_environment_variable_substitution(self):
         """Test environment variable substitution in config."""

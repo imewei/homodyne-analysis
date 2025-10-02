@@ -130,17 +130,17 @@ class TestPhysicalConsistency:
         # Correlation should be monotonically decreasing (allowing for numerical noise)
         for i in range(len(correlations) - 1):
             # Allow small increases due to numerical precision
-            assert (
-                correlations[i] >= correlations[i + 1] - 1e-10
-            ), f"Non-monotonic decay at index {i}: {correlations[i]} -> {correlations[i + 1]}"
+            assert correlations[i] >= correlations[i + 1] - 1e-10, (
+                f"Non-monotonic decay at index {i}: {correlations[i]} -> {correlations[i + 1]}"
+            )
 
         # First value should be 1, last should be significantly smaller
         assert_allclose(correlations[0], 1.0, rtol=1e-10)
         # With shear flow, sinc² oscillations may cause small increases near zeros
         # but overall trend should show decay - relax to check significant decay
-        assert (
-            correlations[-1] < 0.99 * correlations[0]
-        ), f"Insufficient decay: final={correlations[-1]}, initial={correlations[0]}"
+        assert correlations[-1] < 0.99 * correlations[0], (
+            f"Insufficient decay: final={correlations[-1]}, initial={correlations[0]}"
+        )
 
     @pytest.mark.skipif(
         not SCIENTIFIC_MODULES_AVAILABLE, reason="Scientific modules not available"
@@ -193,9 +193,9 @@ class TestPhysicalConsistency:
         # For flow systems, should show angular variation
         if self.realistic_params["gamma0"] > 0:
             correlation_variation = np.max(correlations) - np.min(correlations)
-            assert (
-                correlation_variation > 1e-6
-            ), "No angular dependence detected in flow system"
+            assert correlation_variation > 1e-6, (
+                "No angular dependence detected in flow system"
+            )
 
     @pytest.mark.skipif(
         not SCIENTIFIC_MODULES_AVAILABLE, reason="Scientific modules not available"
@@ -275,9 +275,9 @@ class TestPhysicalConsistency:
 
         # All correlations should be nearly identical in static case
         correlation_std = np.std(correlations)
-        assert (
-            correlation_std < 1e-10
-        ), f"Angular dependence in static case: std = {correlation_std}"
+        assert correlation_std < 1e-10, (
+            f"Angular dependence in static case: std = {correlation_std}"
+        )
 
 
 class TestNumericalAccuracy:
@@ -402,9 +402,9 @@ class TestNumericalAccuracy:
         relative_variation = np.std(correlations) / np.mean(correlations)
 
         # Allow some variation due to nonlinear physics, but should be consistent
-        assert (
-            relative_variation < 0.5
-        ), f"Large parameter scaling dependence: {relative_variation}"
+        assert relative_variation < 0.5, (
+            f"Large parameter scaling dependence: {relative_variation}"
+        )
 
     @pytest.mark.skipif(
         not SCIENTIFIC_MODULES_AVAILABLE, reason="Scientific modules not available"
@@ -429,12 +429,12 @@ class TestNumericalAccuracy:
             g1 = compute_g1_correlation_numba(t1, t2, phi, q, *params)
 
             # Should produce finite, physically reasonable results
-            assert np.isfinite(
-                g1
-            ), f"Non-finite result with extreme parameters: {params}"
-            assert (
-                0.0 <= g1 <= 1.0
-            ), f"Unphysical correlation with extreme parameters: {g1}"
+            assert np.isfinite(g1), (
+                f"Non-finite result with extreme parameters: {params}"
+            )
+            assert 0.0 <= g1 <= 1.0, (
+                f"Unphysical correlation with extreme parameters: {g1}"
+            )
 
     def test_reproducibility(self):
         """Test reproducibility of calculations."""
@@ -542,9 +542,9 @@ class TestMathematicalCorrectness:
 
         # Should show good linear correlation
         correlation_coeff = np.corrcoef(q_squared, log_correlations)[0, 1]
-        assert (
-            abs(correlation_coeff) > 0.99
-        ), f"Poor q² scaling: correlation = {correlation_coeff}"
+        assert abs(correlation_coeff) > 0.99, (
+            f"Poor q² scaling: correlation = {correlation_coeff}"
+        )
 
         # Slope should be negative (decay with q²)
         assert slope < 0, f"Incorrect q² scaling: slope = {slope}"
@@ -582,14 +582,14 @@ class TestMathematicalCorrectness:
         flow_variation = np.std(correlations_flow)
 
         # Static case should have minimal angular variation
-        assert (
-            static_variation < 1e-10
-        ), f"Unexpected anisotropy in static case: {static_variation}"
+        assert static_variation < 1e-10, (
+            f"Unexpected anisotropy in static case: {static_variation}"
+        )
 
         # Flow case should have significant angular variation
-        assert (
-            flow_variation > 1e-6
-        ), f"No anisotropy detected in flow case: {flow_variation}"
+        assert flow_variation > 1e-6, (
+            f"No anisotropy detected in flow case: {flow_variation}"
+        )
 
 
 class TestPhysicalLimits:
@@ -616,9 +616,9 @@ class TestPhysicalLimits:
         correlations = np.array(correlations)
 
         # As q → 0, correlation should approach 1
-        assert (
-            correlations[-1] > 0.99
-        ), f"Correlation doesn't approach 1 as q → 0: {correlations[-1]}"
+        assert correlations[-1] > 0.99, (
+            f"Correlation doesn't approach 1 as q → 0: {correlations[-1]}"
+        )
 
         # Should be monotonically increasing as q decreases
         # Allow numerical deviations due to finite precision at high correlations (near 1)
@@ -626,9 +626,9 @@ class TestPhysicalLimits:
             # Relative tolerance is more appropriate when values are very close to 1
             # At correlations ~ 0.9999999, numerical precision limits apply
             rel_diff = abs(correlations[i + 1] - correlations[i]) / correlations[i]
-            assert (
-                correlations[i] <= correlations[i + 1] + 1e-5 or rel_diff < 1e-5
-            ), f"Non-monotonic behavior as q → 0 at index {i}: {correlations[i]} vs {correlations[i + 1]}, rel_diff={rel_diff}"
+            assert correlations[i] <= correlations[i + 1] + 1e-5 or rel_diff < 1e-5, (
+                f"Non-monotonic behavior as q → 0 at index {i}: {correlations[i]} vs {correlations[i + 1]}, rel_diff={rel_diff}"
+            )
 
     @pytest.mark.skipif(
         not SCIENTIFIC_MODULES_AVAILABLE, reason="Scientific modules not available"
@@ -653,15 +653,15 @@ class TestPhysicalLimits:
         correlations = np.array(correlations)
 
         # Should decay towards zero for long times
-        assert (
-            correlations[-1] < 0.5 * correlations[0]
-        ), "Insufficient decay in long time limit"
+        assert correlations[-1] < 0.5 * correlations[0], (
+            "Insufficient decay in long time limit"
+        )
 
         # Should be monotonically decreasing
         for i in range(len(correlations) - 1):
-            assert (
-                correlations[i] >= correlations[i + 1] - 1e-10
-            ), f"Non-monotonic decay at index {i}"
+            assert correlations[i] >= correlations[i + 1] - 1e-10, (
+                f"Non-monotonic decay at index {i}"
+            )
 
     @pytest.mark.skipif(
         not SCIENTIFIC_MODULES_AVAILABLE, reason="Scientific modules not available"
@@ -691,9 +691,9 @@ class TestPhysicalLimits:
         variation_high = np.std(correlations_high)
 
         # High shear should have larger angular variation
-        assert (
-            variation_high > variation_low
-        ), f"High shear doesn't show increased anisotropy: {variation_high} vs {variation_low}"
+        assert variation_high > variation_low, (
+            f"High shear doesn't show increased anisotropy: {variation_high} vs {variation_low}"
+        )
 
 
 class TestValidationAgainstTheory:
@@ -756,9 +756,9 @@ class TestValidationAgainstTheory:
 
         # Should show good correlation between ln(g1) and t^(α+1)
         correlation_coeff = np.corrcoef(time_powers, log_correlations)[0, 1]
-        assert (
-            abs(correlation_coeff) > 0.95
-        ), f"Poor anomalous diffusion scaling: correlation = {correlation_coeff}"
+        assert abs(correlation_coeff) > 0.95, (
+            f"Poor anomalous diffusion scaling: correlation = {correlation_coeff}"
+        )
 
 
 class TestCrossValidation:

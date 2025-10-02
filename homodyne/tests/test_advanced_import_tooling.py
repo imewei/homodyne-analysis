@@ -316,12 +316,12 @@ def load_config(file_path: Path) -> dict:
         # so we'll check that either Dict is detected as unused, or the analyzer
         # correctly identifies it's used for type annotations only
         has_dict_unused = "Dict" in unused_from_modules
-        has_typing_imports = any(item.get("module") == "typing" for item in unused_list)
+        any(item.get("module") == "typing" for item in unused_list)
 
         # Either Dict is unused, or typing analysis is working correctly
-        assert (
-            has_dict_unused or len(unused_from_modules) == 0
-        ), f"Expected Dict unused or no from imports, got: {unused_from_modules}"
+        assert has_dict_unused or len(unused_from_modules) == 0, (
+            f"Expected Dict unused or no from imports, got: {unused_from_modules}"
+        )
 
         # sys should NOT be in unused (it's used)
         assert "sys" not in unused_modules
@@ -361,12 +361,12 @@ def load_config(file_path: Path) -> dict:
         # First analysis
         start_time = time.time()
         results1 = self.analyzer.analyze_all_files(use_cache=True)
-        first_time = time.time() - start_time
+        time.time() - start_time
 
         # Second analysis (should use cache)
         start_time = time.time()
         results2 = self.analyzer.analyze_all_files(use_cache=True)
-        second_time = time.time() - start_time
+        time.time() - start_time
 
         # Results should be identical
         assert results1.keys() == results2.keys()
@@ -1011,7 +1011,7 @@ class Class{i}:
 
         # Test unused import detection performance
         start_time = time.time()
-        unused_imports = analyzer.find_unused_imports(results)
+        analyzer.find_unused_imports(results)
         detection_time = time.time() - start_time
 
         assert detection_time < 5.0  # 5 seconds max for unused detection

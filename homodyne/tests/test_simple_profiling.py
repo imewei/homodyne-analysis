@@ -182,17 +182,17 @@ def test_profiling_system():
 
     # Run matrix operations
     for i in range(5):
-        result1 = matrix_test()
+        matrix_test()
         monitor.capture_system_metrics()
 
     # Run array operations
     for i in range(10):
-        result2 = array_test()
+        array_test()
         monitor.capture_system_metrics()
 
     # Run statistical operations
     for i in range(3):
-        result3 = stats_test()
+        stats_test()
         monitor.capture_system_metrics()
 
     # Get results
@@ -274,7 +274,7 @@ def test_profiling_system():
 
     # Run some operations to profile
     data = np.random.rand(1000, 100)
-    result = np.linalg.svd(data)
+    np.linalg.svd(data)
 
     pr.disable()
 

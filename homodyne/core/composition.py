@@ -21,7 +21,9 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 from typing import Generic
 from typing import TypeVar
 

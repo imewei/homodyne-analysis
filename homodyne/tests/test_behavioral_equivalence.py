@@ -177,9 +177,9 @@ class TestCalculateChiSquaredEquivalence:
             except Exception:
                 error_detected = True
 
-            assert (
-                error_detected
-            ), f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
+            assert error_detected, (
+                f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
+            )
 
         print("✓ Error handling equivalence verified")
 
@@ -267,7 +267,6 @@ class TestRunAnalysisEquivalence:
 
     def test_analysis_initialization_equivalence(self, temp_config_file):
         """Test that analysis initialization produces consistent results."""
-        config_path = temp_config_file
 
         # Test initialization parameters
         initialization_params = [
@@ -433,7 +432,7 @@ class TestGurobiOptimizationEquivalence:
     def test_trust_region_equivalence(self, mock_optimization_data):
         """Test that trust region logic is preserved."""
         data = mock_optimization_data
-        x = data["initial_params"]
+        data["initial_params"]
 
         # Test trust region parameters
         trust_region_radius = 1.0

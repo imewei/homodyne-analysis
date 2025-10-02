@@ -380,7 +380,7 @@ class ResilientFunction:
                     return func(*args, **kwargs)
                 except Exception as e:
                     last_error = e
-                    error_context = self.error_handler.handle_error(e, func.__name__)
+                    self.error_handler.handle_error(e, func.__name__)
 
                     if attempt < self.max_retries:
                         time.sleep(0.1 * (2**attempt))  # Exponential backoff
@@ -699,7 +699,7 @@ def run_error_handling_recovery_system():
 
     # Test successful operation
     try:
-        result = robust_matrix_operation(50)
+        robust_matrix_operation(50)
         matrix_test_success = True
     except Exception as e:
         matrix_test_success = False

@@ -553,7 +553,9 @@ def main():
     status_icon = (
         "🎯"
         if summary["overall_status"] == "HEALTHY"
-        else "⚠️" if summary["overall_status"] == "WARNING" else "🚨"
+        else "⚠️"
+        if summary["overall_status"] == "WARNING"
+        else "🚨"
     )
 
     print(f"{status_icon} Status: {summary['overall_status']}")

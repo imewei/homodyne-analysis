@@ -98,9 +98,9 @@ def update_solver_config(config_path: Path, mode: str) -> None:
             robust_config = config["optimization_config"]["robust_optimization"]
             if "solver_settings" in robust_config:
                 robust_config["solver_settings"]["TimeLimit"] = robust_time_limit
-                robust_config["solver_settings"][
-                    "_TimeLimit_note"
-                ] = "Extended for large datasets (0.1M-4M datapoints)"
+                robust_config["solver_settings"]["_TimeLimit_note"] = (
+                    "Extended for large datasets (0.1M-4M datapoints)"
+                )
 
     # Update computational resources
     if "analyzer_parameters" in config:

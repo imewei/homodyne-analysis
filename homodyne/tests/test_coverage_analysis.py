@@ -15,6 +15,7 @@ Institution: Argonne National Laboratory
 
 import ast
 import warnings
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -388,9 +389,7 @@ class CoverageBasedAnalyzer:
                 import homodyne
 
                 # Try to exercise basic functionality
-                health = homodyne.check_performance_health()
-                config_manager = homodyne.ConfigManager
-                analysis_core = homodyne.HomodyneAnalysisCore
+                homodyne.check_performance_health()
             except Exception as e:
                 print(f"Warning: Could not exercise package functionality: {e}")
 

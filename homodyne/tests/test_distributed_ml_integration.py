@@ -148,26 +148,26 @@ class TestDistributedMLIntegration:
         assert len(results) == 1, f"Expected 1 result, got {len(results)}"
         result = results[0]
 
-        assert isinstance(
-            result, OptimizationResult
-        ), "Result is not OptimizationResult instance"
+        assert isinstance(result, OptimizationResult), (
+            "Result is not OptimizationResult instance"
+        )
         assert result.task_id == task.task_id, "Task ID mismatch in result"
         assert result.success, f"Optimization failed: {result.error_message}"
         assert result.parameters is not None, "Optimization parameters are None"
-        assert len(result.parameters) == len(
-            sample_optimization_data["parameters"]
-        ), "Parameter dimension mismatch"
-        assert (
-            result.objective_value < 100.0
-        ), f"Objective value too high: {result.objective_value}"
+        assert len(result.parameters) == len(sample_optimization_data["parameters"]), (
+            "Parameter dimension mismatch"
+        )
+        assert result.objective_value < 100.0, (
+            f"Objective value too high: {result.objective_value}"
+        )
         assert result.execution_time > 0, "Execution time should be positive"
 
         # Step 7: Get cluster info
         cluster_info = coordinator.get_cluster_info()
         assert "backend" in cluster_info, "Cluster info missing backend information"
-        assert (
-            cluster_info["backend"] == coordinator.backend_type
-        ), "Backend type mismatch"
+        assert cluster_info["backend"] == coordinator.backend_type, (
+            "Backend type mismatch"
+        )
 
         # Step 8: Cleanup
         coordinator.shutdown()
@@ -225,13 +225,13 @@ class TestDistributedMLIntegration:
 
         # Step 5: Validate prediction
         assert prediction_result is not None, "ML prediction failed"
-        assert (
-            "predicted_parameters" in prediction_result
-        ), "Missing predicted parameters"
+        assert "predicted_parameters" in prediction_result, (
+            "Missing predicted parameters"
+        )
         assert "confidence_score" in prediction_result, "Missing confidence score"
-        assert (
-            "ensemble_predictions" in prediction_result
-        ), "Missing ensemble predictions"
+        assert "ensemble_predictions" in prediction_result, (
+            "Missing ensemble predictions"
+        )
 
         predicted_params = prediction_result["predicted_parameters"]
         confidence = prediction_result["confidence_score"]
@@ -242,9 +242,9 @@ class TestDistributedMLIntegration:
         # Step 6: Test that prediction is reasonable (close to known optimum)
         expected_optimum = np.array([2.0, 3.0, 1.0])
         prediction_error = np.linalg.norm(predicted_params - expected_optimum)
-        assert (
-            prediction_error < 2.0
-        ), f"Prediction too far from optimum: {prediction_error}"
+        assert prediction_error < 2.0, (
+            f"Prediction too far from optimum: {prediction_error}"
+        )
 
         # Step 7: Test ML-accelerated optimization
         def test_objective(x):
@@ -258,9 +258,9 @@ class TestDistributedMLIntegration:
 
         assert result.success, f"ML-accelerated optimization failed: {result.message}"
         final_error = np.linalg.norm(result.x - expected_optimum)
-        assert (
-            final_error < 0.5
-        ), f"ML-accelerated optimization not accurate enough: {final_error}"
+        assert final_error < 0.5, (
+            f"ML-accelerated optimization not accurate enough: {final_error}"
+        )
 
     @pytest.mark.skipif(not ML_AVAILABLE, reason="Scikit-learn not available")
     def test_combined_distributed_ml_workflow(self, temp_workspace, integration_config):
@@ -272,9 +272,7 @@ class TestDistributedMLIntegration:
 
         # Create enhanced optimizers
         # Enable distributed optimization
-        enhanced_optimizer = quick_setup_distributed_optimization(
-            num_processes=2, backend="multiprocessing"
-        )
+        quick_setup_distributed_optimization(num_processes=2, backend="multiprocessing")
 
         # Enable ML acceleration
         final_optimizer = quick_setup_ml_acceleration(
@@ -311,9 +309,9 @@ class TestDistributedMLIntegration:
         # Check that result is reasonable (within bounds and close to expected optimum)
         expected_optimum = np.array([1.0, 2.0, 3.0])
         optimization_error = np.linalg.norm(result.x - expected_optimum)
-        assert (
-            optimization_error < 1.0
-        ), f"Combined optimization not accurate: {optimization_error}"
+        assert optimization_error < 1.0, (
+            f"Combined optimization not accurate: {optimization_error}"
+        )
 
         # Step 5: Verify distributed execution occurred
         if hasattr(final_optimizer, "_distributed_coordinator"):
@@ -350,22 +348,22 @@ class TestDistributedMLIntegration:
         comparison_results = benchmark.compare_optimizers(test_cases)
 
         # Step 3: Validate benchmark results
-        assert (
-            "test_cases" in comparison_results
-        ), "Missing test cases in benchmark results"
+        assert "test_cases" in comparison_results, (
+            "Missing test cases in benchmark results"
+        )
         assert "summary" in comparison_results, "Missing summary in benchmark results"
 
         summary = comparison_results["summary"]
         assert "average_time" in summary, "Missing average time in benchmark summary"
-        assert (
-            "average_objective" in summary
-        ), "Missing average objective in benchmark summary"
+        assert "average_objective" in summary, (
+            "Missing average objective in benchmark summary"
+        )
 
         # Step 4: Verify performance improvements
         test_case_results = comparison_results["test_cases"]
-        assert len(test_case_results) == len(
-            test_cases
-        ), "Benchmark test case count mismatch"
+        assert len(test_case_results) == len(test_cases), (
+            "Benchmark test case count mismatch"
+        )
 
         # All test cases should complete successfully
         for case in test_case_results:
@@ -416,9 +414,9 @@ class TestDistributedMLIntegration:
 
         assert not error_result.success, "Task should have failed"
         assert error_result.error_message is not None, "Missing error message"
-        assert error_result.objective_value == float(
-            "inf"
-        ), "Error objective value should be inf"
+        assert error_result.objective_value == float("inf"), (
+            "Error objective value should be inf"
+        )
 
         # Step 5: Test recovery with good task
         good_task = OptimizationTask(
@@ -445,9 +443,9 @@ class TestDistributedMLIntegration:
         assert len(recovery_results) == 1, "Should get one recovery result"
         recovery_result = recovery_results[0]
 
-        assert (
-            recovery_result.success
-        ), f"Recovery task should succeed: {recovery_result.error_message}"
+        assert recovery_result.success, (
+            f"Recovery task should succeed: {recovery_result.error_message}"
+        )
         assert recovery_result.task_id == good_task.task_id, "Recovery task ID mismatch"
 
         # Cleanup
@@ -471,12 +469,12 @@ class TestDistributedMLIntegration:
 
         assert not is_valid, "Invalid configuration should be rejected"
         assert len(errors) > 0, "Should have validation errors"
-        assert any(
-            "invalid_backend" in error.lower() for error in errors
-        ), "Should catch invalid backend"
-        assert any(
-            "num_cpus" in error.lower() for error in errors
-        ), "Should catch invalid CPU count"
+        assert any("invalid_backend" in error.lower() for error in errors), (
+            "Should catch invalid backend"
+        )
+        assert any("num_cpus" in error.lower() for error in errors), (
+            "Should catch invalid CPU count"
+        )
 
         # Step 2: Test system resource optimization
         system_config = SystemResourceDetector.optimize_configuration(
@@ -495,9 +493,9 @@ class TestDistributedMLIntegration:
 
         # Step 3: Validate optimized configuration
         mp_config = system_config["distributed_optimization"]["multiprocessing_config"]
-        assert (
-            mp_config["num_processes"] is not None
-        ), "Should set multiprocessing processes"
+        assert mp_config["num_processes"] is not None, (
+            "Should set multiprocessing processes"
+        )
         assert mp_config["num_processes"] > 0, "Should set positive process count"
 
         ray_config = system_config["distributed_optimization"]["ray_config"]
@@ -515,9 +513,9 @@ class TestDistributedMLIntegration:
         assert config_file.exists(), "Configuration file should be created"
 
         loaded_config = OptimizationConfig(config_file)
-        assert (
-            loaded_config.config == system_config
-        ), "Loaded configuration should match saved"
+        assert loaded_config.config == system_config, (
+            "Loaded configuration should match saved"
+        )
 
     @pytest.mark.slow
     def test_scalability_and_performance_benchmarks(self, integration_config):
@@ -611,15 +609,15 @@ class TestDistributedMLIntegration:
             v for k, v in performance_results.items() if "multiprocessing" in k
         ]
 
-        assert len(multiprocessing_results) == len(
-            problem_sizes
-        ), "Missing performance results"
+        assert len(multiprocessing_results) == len(problem_sizes), (
+            "Missing performance results"
+        )
 
         # Check that all runs succeeded
         for result in multiprocessing_results:
-            assert result["metrics"].get(
-                "success", False
-            ), f"Performance test failed: {result['name']}"
+            assert result["metrics"].get("success", False), (
+                f"Performance test failed: {result['name']}"
+            )
 
         # Check scaling efficiency (execution time should grow sub-linearly with problem size)
         times = [r["metrics"]["execution_time"] for r in multiprocessing_results]
@@ -631,9 +629,9 @@ class TestDistributedMLIntegration:
             size_ratio = sizes[i] / sizes[i - 1]
 
             # Time growth should be less than quadratic relative to size growth
-            assert (
-                time_ratio < size_ratio**2
-            ), f"Poor scaling: time ratio {time_ratio} vs size ratio {size_ratio}"
+            assert time_ratio < size_ratio**2, (
+                f"Poor scaling: time ratio {time_ratio} vs size ratio {size_ratio}"
+            )
 
 
 def test_integration_modules_basic_functionality():
@@ -645,9 +643,9 @@ def test_integration_modules_basic_functionality():
 
     # Test basic imports and instantiation
     coordinator = DistributedOptimizationCoordinator()
-    assert (
-        coordinator is not None
-    ), "Failed to create DistributedOptimizationCoordinator"
+    assert coordinator is not None, (
+        "Failed to create DistributedOptimizationCoordinator"
+    )
 
     ml_optimizer = MLAcceleratedOptimizer(
         config={"ml_model_config": {"model_type": "ensemble"}}

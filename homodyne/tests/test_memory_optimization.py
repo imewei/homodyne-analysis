@@ -315,14 +315,14 @@ class GarbageCollectionOptimizer:
         # Measure with GC enabled
         gc.enable()
         start_time = time.perf_counter()
-        result_with_gc = func(*args, **kwargs)
+        func(*args, **kwargs)
         time_with_gc = time.perf_counter() - start_time
 
         # Clean up and measure with GC disabled
         gc.collect()
         gc.disable()
         start_time = time.perf_counter()
-        result_without_gc = func(*args, **kwargs)
+        func(*args, **kwargs)
         time_without_gc = time.perf_counter() - start_time
         gc.enable()
 

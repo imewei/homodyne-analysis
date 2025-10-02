@@ -15,6 +15,7 @@ import os
 import re
 import time
 import warnings
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -713,7 +714,7 @@ class ValidationPipeline:
         B = np.random.rand(size, size)
 
         start_time = time.perf_counter()
-        C = A @ B
+        A @ B
         execution_time = time.perf_counter() - start_time
 
         # Performance threshold
@@ -840,7 +841,7 @@ class ValidationPipeline:
         for size in sizes:
             data = np.random.rand(size, size)
             start_time = time.perf_counter()
-            result = np.sum(data**2)
+            np.sum(data**2)
             execution_time = time.perf_counter() - start_time
             times.append(execution_time)
 

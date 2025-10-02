@@ -264,26 +264,20 @@ class ParallelizationBenchmarker:
         # Thread-based parallelization
         thread_processor = ThreadParallelProcessor()
         start_time = time.perf_counter()
-        thread_results = thread_processor.parallel_chi_squared_calculation(
-            c2_exp_list, c2_theo_list
-        )
+        thread_processor.parallel_chi_squared_calculation(c2_exp_list, c2_theo_list)
         thread_time = time.perf_counter() - start_time
 
         # Process-based parallelization
         process_processor = ProcessParallelProcessor()
         start_time = time.perf_counter()
-        process_results = process_processor.parallel_chi_squared_calculation(
-            c2_exp_list, c2_theo_list
-        )
+        process_processor.parallel_chi_squared_calculation(c2_exp_list, c2_theo_list)
         process_time = time.perf_counter() - start_time
 
         # Vectorized computation
         c2_exp_batch = np.array(c2_exp_list)
         c2_theo_batch = np.array(c2_theo_list)
         start_time = time.perf_counter()
-        vectorized_results = VectorizationOptimizer.vectorized_chi_squared_batch(
-            c2_exp_batch, c2_theo_batch
-        )
+        VectorizationOptimizer.vectorized_chi_squared_batch(c2_exp_batch, c2_theo_batch)
         vectorized_time = time.perf_counter() - start_time
 
         # Calculate results
@@ -358,15 +352,13 @@ class ParallelizationBenchmarker:
         # Thread-based parallelization
         thread_processor = ThreadParallelProcessor()
         start_time = time.perf_counter()
-        thread_results = thread_processor.parallel_correlation_processing(data_list)
+        thread_processor.parallel_correlation_processing(data_list)
         thread_time = time.perf_counter() - start_time
 
         # Vectorized batch processing
         data_batch = np.array(data_list)
         start_time = time.perf_counter()
-        vectorized_results = VectorizationOptimizer.vectorized_correlation_functions(
-            data_batch
-        )
+        VectorizationOptimizer.vectorized_correlation_functions(data_batch)
         vectorized_time = time.perf_counter() - start_time
 
         thread_speedup = serial_time / thread_time if thread_time > 0 else 0
