@@ -279,17 +279,28 @@ Test complete workflows:
 
    def test_complete_analysis_workflow(self, tmp_path):
        """Test end-to-end analysis workflow."""
+       from homodyne.optimization.classical import ClassicalOptimizer
+       import json
+
        # Create test configuration
        config_file = create_test_config(tmp_path)
 
        # Run complete analysis
-       analysis = HomodyneAnalysisCore(config_file)
-       analysis.load_experimental_data()
-       result = analysis.optimize_classical()
+       with open(config_file) as f:
+           config = json.load(f)
+
+       core = HomodyneAnalysisCore(config)
+       core.load_experimental_data()
+
+       optimizer = ClassicalOptimizer(core, config)
+       params, result = optimizer.run_classical_optimization_optimized(
+           phi_angles=phi_angles,
+           c2_experimental=c2_data
+       )
 
        # Verify results
        assert result.success
-       assert result.fun < threshold
+       assert result.chi_squared < threshold
 
 Documentation Guidelines
 ------------------------

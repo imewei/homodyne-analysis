@@ -781,20 +781,27 @@ Example 7: Performance Monitoring and Optimization
    import numpy as np
 
    # Performance-monitored analysis function
-   def analyze_sample_with_monitoring(config_file, output_dir):
+   def analyze_sample_with_monitoring(config_file, phi_angles, c2_data, output_dir):
        """Analyze sample with comprehensive performance monitoring."""
-       from homodyne import HomodyneAnalysisCore, ConfigManager
+       from homodyne.analysis.core import HomodyneAnalysisCore
+       from homodyne.optimization.classical import ClassicalOptimizer
+       import json
 
        with performance_monitor.time_function("full_analysis"):
-           config = ConfigManager(config_file)
-           analyzer = HomodyneAnalysisCore(config)
+           with open(config_file) as f:
+               config = json.load(f)
+           core = HomodyneAnalysisCore(config)
 
            # Perform analysis with monitoring
-           results = analyzer.optimize_classical()
+           optimizer = ClassicalOptimizer(core, config)
+           params, results = optimizer.run_classical_optimization_optimized(
+               phi_angles=phi_angles,
+               c2_experimental=c2_data
+           )
 
        # Log performance summary
        performance_monitor.log_performance_summary()
-       return results
+       return params, results
 
    # Setup and warmup
    def setup_optimized_environment():

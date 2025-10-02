@@ -196,27 +196,29 @@ Unit Testing
 .. code-block:: python
 
    # test_optimization.py
-   from homodyne.core import HomodyneAnalysisCore
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
 
    class TestClassicalOptimization:
        def test_optimization_convergence(self, config_manager,
                                        synthetic_isotropic_data):
-           tau, g1_data, true_params, q = synthetic_isotropic_data
+           phi_angles, c2_data, true_params, q = synthetic_isotropic_data
 
-           analysis = HomodyneAnalysisCore(config_manager)
-           # Set synthetic data directly for testing
-           analysis._tau = tau
-           analysis._g1_data = g1_data
-           analysis._q = q
+           core = HomodyneAnalysisCore(config_manager)
 
-           result = analysis.optimize_classical()
+           # Run classical optimization
+           optimizer = ClassicalOptimizer(core, config_manager)
+           params, result = optimizer.run_classical_optimization_optimized(
+               phi_angles=phi_angles,
+               c2_experimental=c2_data
+           )
 
            # Check convergence
            assert result.success
-           assert result.fun < 0.1  # Good fit
+           assert result.chi_squared < 0.1  # Good fit
 
            # Check parameter recovery (within 10%)
-           recovered_params = result.x
+           recovered_params = params
            for i, (recovered, true) in enumerate(zip(recovered_params, true_params)):
                relative_error = abs(recovered - true) / true
                assert relative_error < 0.1, f"Parameter {i} error too large"
