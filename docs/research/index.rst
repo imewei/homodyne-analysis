@@ -94,23 +94,6 @@ Analysis Modes
      - O(N²)
      - Flowing systems
 
-Research Validation
--------------------
-
-Statistical Methods
-~~~~~~~~~~~~~~~~~~~
-
-* **Cross-validation**: K-fold validation for parameter estimation reliability
-* **Bootstrap Analysis**: Statistical uncertainty quantification
-* **Residual Analysis**: Goodness-of-fit assessment and outlier detection
-
-Experimental Validation
-~~~~~~~~~~~~~~~~~~~~~~~
-
-* **Synchrotron Data**: Validation against APS Sector 8-ID-I measurements
-* **Sample Systems**: Colloidal suspensions, protein solutions, active matter
-* **Flow Conditions**: Laminar shear, pressure-driven flow, microfluidic geometries
-
 Performance Benchmarks
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -180,13 +163,11 @@ The development of this research software is supported by:
 
 **Funding Agencies**
   * U.S. Department of Energy, Office of Science, Basic Energy Sciences
-  * National Science Foundation (NSF) Division of Materials Research
   * Advanced Photon Source User Facility
 
 **Collaborating Institutions**
   * Argonne National Laboratory - X-ray Science Division
   * University of Chicago - Institute for Molecular Engineering
-  * Northwestern University - Department of Materials Science
 
 **Contact Information**
   * **Principal Investigator**: Wei Chen (wchen@anl.gov)

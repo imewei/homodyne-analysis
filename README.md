@@ -58,36 +58,6 @@ applications to biological systems, colloids, and active matter under flow condi
 - **Experimental validation**: Tested at synchrotron facilities (APS Sector 8-ID-I)
 - **Regression testing**: Comprehensive test suite with performance benchmarks
 
-## Recent Improvements (v1.0.0+)
-
-### Critical Bug Fixes
-
-1. **Frame Counting Convention (2025-10-01)**:
-
-   - Fixed 1-based inclusive counting to 0-based Python slicing conversion
-   - Formula: `time_length = end_frame - start_frame + 1` (inclusive)
-   - Impact: Resolved NaN chi-squared values and cache dimension mismatches
-   - Applied across all 9 modules: analysis core, data loader, classical/robust
-     optimizers, CLI, conversion utilities
-
-2. **Conditional Angle Subsampling**:
-
-   - Preserve all angles when `n_angles < 4` for anisotropic analysis
-   - Prevent angular information loss (e.g., 2 angles → 1 angle)
-   - Time subsampling still applied for performance (~16x reduction)
-
-3. **Memory Optimization**:
-
-   - Increased ellipsoidal optimization memory limit to 90% (from 80%)
-   - Handles large datasets with 8M+ data points without overflow
-   - Fixed stacked decorator issue in robust optimization
-
-### Configuration Updates
-
-- All templates updated with comprehensive subsampling documentation
-- Explicit `n_angles` and `n_time_points` configuration for performance tuning
-- Cache compatibility validation and auto-adjustment
-
 ## Quick Start
 
 ```bash
@@ -857,40 +827,6 @@ points | 892 s | 178 s | 5.0× |
 | Dataset Size | Before | After | Improvement |
 |--------------|--------|-------|-------------| | 8M data points | Memory error | 90%
 limit success | Enabled | | 4M data points | 85% usage | 75% usage | 12% reduction |
-
-## Research Applications
-
-### Soft Matter Physics
-
-- **Colloidal Dynamics**: Particle diffusion in crowded environments
-- **Active Matter**: Self-propelled particle systems under flow
-- **Biological Systems**: Protein dynamics in cellular environments
-
-### Flow Rheology
-
-- **Shear Thinning/Thickening**: Non-Newtonian fluid characterization
-- **Microfluidics**: Flow behavior in confined geometries
-- **Complex Fluids**: Polymer solutions and suspensions
-
-### Materials Science
-
-- **Phase Transitions**: Dynamic behavior near critical points
-- **Glass Transition**: Aging and relaxation dynamics
-- **Crystallization**: Nucleation and growth processes
-
-## Research Validation
-
-### Experimental Validation
-
-- **Synchrotron Facilities**: Advanced Photon Source (APS) Sector 8-ID-I
-- **Sample Systems**: Colloidal suspensions, protein solutions, active matter
-- **Flow Conditions**: Laminar shear, pressure-driven flow, microfluidic geometries
-
-### Statistical Validation
-
-- **Cross-validation**: K-fold validation for parameter estimation reliability
-- **Bootstrap Analysis**: Statistical uncertainty quantification
-- **Residual Analysis**: Goodness-of-fit assessment and outlier detection
 
 ## Testing
 
