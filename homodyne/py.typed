@@ -1,0 +1,3 @@
+# PEP 561 type marker file
+# This file indicates that the homodyne package supports type checking
+# and contains inline type annotations.

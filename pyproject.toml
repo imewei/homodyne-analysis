@@ -116,8 +116,8 @@ test = [
 # Modern code quality and linting ecosystem
 quality = [
     "ruff>=0.13.2",                  # Fast Python linter and formatter
-    "black>=25.9.0",                 # Code formatting
-    "isort>=6.0.1",                  # Import sorting (updated to match pre-commit)
+    "black>=25.9.0",                 # Code formatting (matches pre-commit)
+    "isort>=6.1.0",                  # Import sorting (matches pre-commit)
     "mypy>=1.18.2",                  # Static type checking
     "bandit>=1.8.6",                 # Security linting
     "safety>=3.6.2",                 # Dependency vulnerability scanning
