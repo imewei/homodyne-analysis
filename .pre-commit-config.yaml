@@ -300,7 +300,10 @@ default_language_version:
   node: system # Use system Node.js installation (v24.8.0)
 
 # Performance and behavior optimization
-default_install_hook_types: [pre-commit, pre-push, commit-msg]
+# Note: Removed 'pre-push' to prevent formatting hooks from running during push
+# Formatting (black, ruff-format, isort) should only run on commit
+# Push operations should be fast and not modify files
+default_install_hook_types: [pre-commit, commit-msg]
 fail_fast: false # Run all hooks for comprehensive checking
 minimum_pre_commit_version: "3.0.0"
 
