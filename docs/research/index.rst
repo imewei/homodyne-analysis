@@ -167,7 +167,7 @@ The development of this research software is supported by:
 
 **Collaborating Institutions**
   * Argonne National Laboratory - X-ray Science Division
-  * University of Chicago - Institute for Molecular Engineering
+  * University of Chicago - Pritzker School of Molecular Engineering
 
 **Contact Information**
   * **Principal Investigator**: Wei Chen (wchen@anl.gov)

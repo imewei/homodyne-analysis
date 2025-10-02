@@ -931,7 +931,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guidelines.
 ### Collaborating Institutions
 
 - **Argonne National Laboratory** - X-ray Science Division
-- **University of Chicago** - Institute for Molecular Engineering
+- **University of Chicago** - Pritzker School of Molecular Engineering
 - **Northwestern University** - Department of Materials Science
 
 ### Technical Contributors
