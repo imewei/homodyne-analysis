@@ -86,7 +86,7 @@ class TestConfigManager:
 
         # Create temporary config file
         self.temp_config = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
+            mode="w", suffix=".json", delete=False, encoding="utf-8"
         )
         json.dump(self.sample_config, self.temp_config, indent=2)
         self.temp_config.close()
@@ -94,7 +94,11 @@ class TestConfigManager:
     def teardown_method(self):
         """Cleanup test fixtures."""
         if hasattr(self, "temp_config"):
-            os.unlink(self.temp_config.name)
+            try:
+                os.unlink(self.temp_config.name)
+            except (PermissionError, FileNotFoundError):
+                # Windows may have file locks, ignore cleanup errors
+                pass
 
     def test_config_manager_initialization(self):
         """Test ConfigManager initialization."""
@@ -446,7 +450,9 @@ class TestLoggingConfiguration:
     def test_configure_logging_with_file(self):
         """Test logging configuration with file output."""
         if configure_logging is not None:
-            with tempfile.NamedTemporaryFile(suffix=".log", delete=False) as temp_log:
+            with tempfile.NamedTemporaryFile(
+                suffix=".log", delete=False, mode="w", encoding="utf-8"
+            ) as temp_log:
                 temp_log_path = temp_log.name
 
             try:
@@ -462,7 +468,11 @@ class TestLoggingConfiguration:
                 assert os.path.exists(temp_log_path)
             finally:
                 if os.path.exists(temp_log_path):
-                    os.unlink(temp_log_path)
+                    try:
+                        os.unlink(temp_log_path)
+                    except (PermissionError, FileNotFoundError):
+                        # Windows may have file locks, ignore cleanup errors
+                        pass
 
 
 @pytest.mark.skipif(not CONFIG_AVAILABLE, reason="Configuration module not available")

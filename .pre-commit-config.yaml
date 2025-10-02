@@ -213,13 +213,19 @@ repos:
           - --output=bandit_security_report.json
           - --severity-level=medium
           - --confidence-level=medium
-          - --skip=B101,B102,B103,B110,B303,B403,B404,B603,B607
+          - --skip=B101,B102,B103,B110,B112,B301,B403,B404,B603,B607
         exclude: ^(homodyne/tests/|tests/|build/|dist/|docs/)
         types: [python]
-        # Skipped tests:
-        # B102: exec - used in performance baseline code generation
-        # B103: chmod - used for CI script file permissions
-        # B303: MD5 - used for non-security hashing (cache keys)
+        # Skipped tests (matches pyproject.toml [tool.bandit]):
+        # B101: assert_used (test assertions are intentional)
+        # B102: exec_used (used only for controlled import timing benchmarks)
+        # B103: set_bad_file_permissions (chmod 0o755 for executable scripts is intentional)
+        # B110: try_except_pass (used for graceful degradation in optional features)
+        # B112: try_except_continue (used for robust iteration over fallible operations)
+        # B301: pickle.loads (used for internal cache only, not untrusted data)
+        # B403: pickle import (used for internal caching only)
+        # B404: subprocess import (used for controlled test execution)
+        # B603: subprocess_without_shell_equals_true (no shell=True, safe usage)
 
   # ═══════════════════════════════════════════════════════════════════
   # PHASE 8: CUSTOM HOMODYNE-SPECIFIC QUALITY CHECKS

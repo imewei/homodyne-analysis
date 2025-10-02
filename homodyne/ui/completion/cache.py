@@ -442,8 +442,10 @@ class CompletionCache:
 
         # Add config file hash for context sensitivity
         if context.homodyne_config:
+            # MD5 used for cache key generation only, not security
             config_hash = hashlib.md5(
-                json.dumps(context.homodyne_config, sort_keys=True).encode()
+                json.dumps(context.homodyne_config, sort_keys=True).encode(),
+                usedforsecurity=False,
             ).hexdigest()[:8]
             key_parts.append(f"cfg:{config_hash}")
 

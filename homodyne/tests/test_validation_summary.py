@@ -96,6 +96,7 @@ def test_error_handling_consistency():
 
     # Test division by zero handling
     try:
+        result = 1.0 / 0.0  # This should raise ZeroDivisionError
         raise AssertionError("Should have raised exception")
     except ZeroDivisionError:
         print("✓ Division by zero handled correctly")

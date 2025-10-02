@@ -596,7 +596,17 @@ ignore_missing_imports = true
 
 [tool.bandit]
 exclude_dirs = ["tests", "test_*", "homodyne/tests"]
-skips = ["B101", "B601"]
+# B101: assert_used (test assertions are intentional)
+# B102: exec_used (used only for controlled import timing benchmarks)
+# B103: set_bad_file_permissions (chmod 0o755 for executable scripts is intentional)
+# B110: try_except_pass (used for graceful degradation in optional features)
+# B112: try_except_continue (used for robust iteration over fallible operations)
+# B301: pickle.loads (used for internal cache only, not untrusted data)
+# B403: pickle import (used for internal caching only)
+# B404: subprocess import (used for controlled test execution)
+# B601: paramiko calls (not applicable)
+# B603: subprocess_without_shell_equals_true (no shell=True, safe usage)
+skips = ["B101", "B102", "B103", "B110", "B112", "B301", "B403", "B404", "B601", "B603"]
 
 # =============================================================================
 # Performance and Benchmarking Configuration

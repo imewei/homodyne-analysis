@@ -178,7 +178,8 @@ class ContentAddressableStore:
         elif algorithm == "sha256":
             hasher = hashlib.sha256()
         elif algorithm == "md5":
-            hasher = hashlib.md5()
+            # MD5 used only for cache key generation, not security
+            hasher = hashlib.md5(usedforsecurity=False)
         else:
             raise ValueError(f"Unsupported hash algorithm: {algorithm}")
 
@@ -316,6 +317,7 @@ class ContentAddressableStore:
                     compressed_content = f.read()
 
                 decompressed = self._decompress_content(compressed_content)
+                # Pickle used for internal cache only - data is self-generated, not from untrusted sources
                 content = pickle.loads(decompressed)
 
                 # Load metadata

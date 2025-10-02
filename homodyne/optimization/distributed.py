@@ -29,6 +29,7 @@ Institution: Argonne National Laboratory
 
 import logging
 import multiprocessing as mp
+import sys
 import threading
 import time
 from abc import ABC
@@ -40,6 +41,20 @@ from multiprocessing import Pool
 from typing import Any
 
 import numpy as np
+
+# Set multiprocessing start method for cross-platform compatibility
+# Use 'fork' on Unix (faster, but not available on Windows)
+# Use 'spawn' on Windows/macOS (slower but safer)
+if sys.platform != "win32" and "fork" in mp.get_all_start_methods():
+    try:
+        mp.set_start_method("fork", force=False)
+    except RuntimeError:
+        pass  # Already set
+else:
+    try:
+        mp.set_start_method("spawn", force=False)
+    except RuntimeError:
+        pass  # Already set
 
 # Backend Detection and Imports
 _BACKENDS_AVAILABLE = {}

@@ -312,7 +312,10 @@ SCIENTIFIC_DEPENDENCIES = {
         "module_name": "numba",
         "attribute": "jit",
         "required": False,
-        "fallback": lambda *args, **kwargs: lambda f: f,  # No-op decorator
+        # No-op decorator that works both as @jit and @jit(...)
+        "fallback": lambda *args, **kwargs: (
+            args[0] if args and callable(args[0]) else lambda f: f
+        ),
     },
     "matplotlib": {
         "module_name": "matplotlib",
