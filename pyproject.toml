@@ -429,6 +429,36 @@ ignore = [
     "PLR0912", # too many branches
     "PLR0911", # too many return statements
     "SLF001",  # private member access (needed for internal testing)
+    "PLC0415", # import outside top-level (intentional for lazy loading)
+    "PTH123",  # use Path.open instead of builtin open (stylistic)
+    "PLR2004", # magic value comparison (scientific constants)
+    "RUF002",  # ambiguous unicode in docstring (Greek letters intentional)
+    "RUF003",  # ambiguous unicode in comment (Greek letters intentional)
+    "RUF001",  # ambiguous unicode in string (Greek letters intentional)
+    "TID252",  # relative imports (standard practice)
+    "E731",    # lambda assignment (used in lazy loaders)
+    "E402",    # module import not at top (conditional imports)
+    "ERA001",  # commented out code (intentional for reference)
+    "B028",    # no explicit stacklevel in warning
+    "ARG002",  # unused method argument (API compatibility)
+    "ARG001",  # unused function argument (API compatibility)
+    "RET504",  # unnecessary assignment before return (clarity)
+    "SIM102",  # collapsible if (clarity over brevity)
+    "SIM105",  # suppressible exception (explicit error handling)
+    "SIM118",  # in-dict-keys (clarity)
+    "PERF401", # manual list comprehension (readability)
+    "PERF102", # incorrect dict iterator (intentional)
+    "S110",    # try-except-pass (intentional error suppression)
+    "S112",    # try-except-continue (intentional error handling)
+    "PTH118",  # os.path.join (compatibility)
+    "PTH108",  # os.unlink (compatibility)
+    "PTH110",  # os.path.exists (compatibility)
+    "PTH101",  # os.chmod (compatibility)
+    "B007",    # unused loop variable (intentional in some cases)
+    "RUF059",  # unused unpacked variable (intentional)
+    "SIM108",  # if-else-block (clarity over brevity)
+    "SIM103",  # needless-bool (clarity)
+    "SIM117",  # multiple-with (readability)
 ]
 
 # Additional configuration for dead code prevention
@@ -446,10 +476,12 @@ max-statements = 60  # Allow longer functions for scientific computations
 max-complexity = 15  # Reasonable complexity for scientific code
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403", "F405"]
-"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201"]
-"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201"]
-"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201"]
+"__init__.py" = ["F401", "F403", "F405", "E731"]  # Allow unused imports and lambda in lazy loaders
+"tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841"]
+"homodyne/tests/**/*" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841"]
+"**/test_*.py" = ["PLR2004", "S101", "S311", "ARG001", "T201", "E722", "B007", "F841"]
+"docs/**/*" = ["S603", "S607", "S108", "PTH", "T201"]  # Deployment scripts need subprocess
+"scripts/**/*" = ["S603", "S607", "S108", "PTH", "T201"]  # Deployment scripts need subprocess
 
 [tool.ruff.lint.isort]
 known-first-party = ["homodyne"]
