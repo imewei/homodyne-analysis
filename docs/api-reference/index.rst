@@ -36,19 +36,33 @@ Quick Reference
 
 .. code-block:: python
 
-   # 1. Configuration
-   config = ConfigManager("config.json")
+   import json
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.optimization.robust import RobustHomodyneOptimizer
 
-   # 2. Analysis setup
-   analysis = HomodyneAnalysisCore(config)
-   analysis.load_experimental_data()
+   # 1. Load configuration
+   with open("config.json") as f:
+       config = json.load(f)
 
-   # 3. Run optimization methods
-   classical_result = analysis.optimize_classical()    # Classical methods
-   robust_result = analysis.optimize_robust()         # Robust methods
+   # 2. Initialize analysis core
+   core = HomodyneAnalysisCore(config)
+   core.load_experimental_data()
 
-   # Or run all methods
-   all_results = analysis.optimize_all()
+   # 3. Run classical optimization
+   classical = ClassicalOptimizer(core, config)
+   params, results = classical.run_classical_optimization_optimized(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data
+   )
+
+   # 4. Or run robust optimization for noisy data
+   robust = RobustHomodyneOptimizer(core, config)
+   robust_results = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="wasserstein"
+   )
 
 Module Index
 ------------
