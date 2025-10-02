@@ -33,16 +33,11 @@ Optional Installation Extras
 
 You can install specific feature sets using pip extras:
 
-**For Enhanced Performance (Numba JIT + JAX acceleration):**
+**For Enhanced Performance (Numba JIT acceleration):**
 
 .. code-block:: bash
 
    pip install homodyne-analysis[performance]
-   # OR for JAX-specific features:
-   pip install homodyne-analysis[jax]
-
-
-.. code-block:: bash
 
 
 **For Robust Optimization (Noise-Resistant Methods):**

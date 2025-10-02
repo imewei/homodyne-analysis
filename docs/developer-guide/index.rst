@@ -12,7 +12,11 @@ This guide is for developers who want to contribute to the homodyne package or e
    security
    performance
    testing
+   testing-coverage
    troubleshooting
+   version-updates
+   completion-features
+   completion-comparison
 
 Quick Developer Setup
 ---------------------

@@ -344,9 +344,9 @@ Alignment:** Contiguous arrays ensure optimal memory alignment
 
 ### Future Roadmap
 
-- **GPU Acceleration:** Foundation laid for CuPy/JAX migration
 - **Distributed Computing:** Vectorized operations ready for parallel scaling
 - **Performance Monitoring:** Continuous optimization framework established
+- **Memory Optimization:** Further cache hierarchy exploitation opportunities
 
 ## Benchmarking Results Summary
 
@@ -398,7 +398,7 @@ a new standard for high-performance scientific computing in Python.
 
 - Research-scale computational problems to run in interactive timeframes
 - Resource-efficient scientific computing workflows
-- Foundation for future GPU and distributed computing enhancements
+- Foundation for future distributed computing enhancements
 
 **Quality Assurance:** Comprehensive testing, numerical validation, and performance
 benchmarking ensure production-ready, scientifically sound optimizations.

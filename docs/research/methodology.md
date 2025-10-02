@@ -24,26 +24,26 @@ conditions.
 
 The normalized intensity correlation function is:
 
-$$g_2(\\vec{q}, t_1, t_2) = \\frac{\\langle I(\\vec{q}, t_1) I(\\vec{q}, t_2)
+$$c_2(\\vec{q}, t_1, t_2) = \\frac{\\langle I(\\vec{q}, t_1) I(\\vec{q}, t_2)
 \\rangle}{\\langle I(\\vec{q}, t_1) \\rangle \\langle I(\\vec{q}, t_2) \\rangle}$$
 
 For homodyne scattering with Gaussian statistics (Siegert relation):
 
-$$g_2(\\vec{q}, t_1, t_2) = 1 + \\beta |g_1(\\vec{q}, t_1, t_2)|^2$$
+$$c_2(\\vec{q}, t_1, t_2) = 1 + \\beta |c_1(\\vec{q}, t_1, t_2)|^2$$
 
-where $\\beta$ is the instrumental contrast parameter (0 < β ≤ 1) and $g_1$ is the
+where $\\beta$ is the instrumental contrast parameter (0 < β ≤ 1) and $c_1$ is the
 intermediate scattering function (field correlation function).
 
 #### Field Correlation Function
 
 The field correlation function separates into diffusion and flow contributions:
 
-$$g_1(\\vec{q}, t_1, t_2) = g_1^{\\text{diff}}(q, t_1, t_2) \\times
-g_1^{\\text{flow}}(\\vec{q}, t_1, t_2)$$
+$$c_1(\\vec{q}, t_1, t_2) = c_1^{\\text{diff}}(q, t_1, t_2) \\times
+c_1^{\\text{flow}}(\\vec{q}, t_1, t_2)$$
 
 **Diffusion Contribution:**
 
-$$g_1^{\\text{diff}}(q, t_1, t_2) = \\exp\\left\[-\\frac{q^2}{2} \\int\_{t_1}^{t_2}
+$$c_1^{\\text{diff}}(q, t_1, t_2) = \\exp\\left\[-\\frac{q^2}{2} \\int\_{t_1}^{t_2}
 D(t') dt'\\right\]$$
 
 where:
@@ -53,7 +53,7 @@ where:
 
 **Flow Contribution:**
 
-$$g_1^{\\text{flow}}(\\vec{q}, t_1, t_2) = \\text{sinc}^2\\left\[\\Phi(\\vec{q}, t_1,
+$$c_1^{\\text{flow}}(\\vec{q}, t_1, t_2) = \\text{sinc}^2\\left\[\\Phi(\\vec{q}, t_1,
 t_2)\\right\]$$
 
 $$\\Phi(\\vec{q}, t_1, t_2) = \\frac{1}{2\\pi} q L \\cos(\\phi_0 - \\phi)
@@ -125,7 +125,7 @@ motion only, isotropic systems
 - Angular dependence removed: $\\phi_0$ irrelevant
 - Correlation function simplifies to:
 
-$$g_2(q, t_1, t_2) = 1 + \\beta \\exp\\left[-q^2 \\int\_{t_1}^{t_2} D(t') dt'\\right]$$
+$$c_2(q, t_1, t_2) = 1 + \\beta \\exp\\left[-q^2 \\int\_{t_1}^{t_2} D(t') dt'\\right]$$
 
 **Use Cases:**
 

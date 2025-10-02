@@ -63,6 +63,48 @@ Quick Configuration
 Configuration Sections
 ----------------------
 
+v1.0.0 Configuration Features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Frame Counting Convention (Critical)**:
+
+Frame counting uses 1-based inclusive indexing that is converted to 0-based Python slicing:
+
+.. code-block:: javascript
+
+   {
+     "experimental_data": {
+       "start_frame": 401,  // First frame (1-based, inclusive)
+       "end_frame": 1000    // Last frame (1-based, inclusive)
+     }
+   }
+
+**Formula**: ``time_length = end_frame - start_frame + 1``
+
+**Examples**:
+- ``start_frame=1, end_frame=100`` → ``time_length=100`` (not 99!)
+- ``start_frame=401, end_frame=1000`` → ``time_length=600`` (not 599!)
+
+**Conditional Angle Subsampling**:
+
+Automatically preserves angular information when ``n_angles < 4``:
+
+.. code-block:: javascript
+
+   {
+     "subsampling": {
+       "n_angles": 4,        // Target number of angles for subsampling
+       "n_time_points": 16,  // Target number of time points
+       "strategy": "conditional",  // Automatic angle preservation
+       "preserve_angular_info": true
+     }
+   }
+
+**Behavior**:
+- When ``n_angles < 4``: All angles preserved (e.g., 2 angles → 2 angles)
+- When ``n_angles >= 4``: Subsample to 4 angles (e.g., 10 angles → 4 angles)
+- Time subsampling still applied for performance (~16x reduction)
+
 Analysis Settings
 ~~~~~~~~~~~~~~~~~
 

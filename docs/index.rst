@@ -22,8 +22,8 @@ This package analyzes time-dependent intensity correlation functions c₂(φ,t�
 
 - **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params), Laminar Flow (7 params)
 - **Multiple optimization methods**: Classical (Nelder-Mead, Iterative Gurobi with Trust Regions), Robust (Wasserstein DRO, Scenario-based, Ellipsoidal)
-- **High performance**: Numba JIT compilation with 3-5x speedup, JAX backend for GPU acceleration, comprehensive performance monitoring
-- **Scientific accuracy**: Automatic g₂ = offset + contrast × g₁ fitting for proper chi-squared calculations
+- **High performance**: Numba JIT compilation with 3-5x speedup, vectorized NumPy operations, comprehensive performance monitoring
+- **Scientific accuracy**: Automatic c₂ = offset + contrast × c₁ fitting for proper chi-squared calculations
 
 Quick Start
 -----------
@@ -38,13 +38,36 @@ Quick Start
 
 .. code-block:: python
 
-   from homodyne import HomodyneAnalysisCore, ConfigManager
+   import numpy as np
+   import json
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
-   config = ConfigManager("config.json")
-   analysis = HomodyneAnalysisCore(config)
-   results = analysis.optimize_classical()  # Classical methods
-   results = analysis.optimize_robust()     # Robust methods only
-   results = analysis.optimize_all()        # All methods
+   # Load configuration
+   with open("config.json", 'r') as f:
+       config = json.load(f)
+
+   # Initialize analysis core
+   core = HomodyneAnalysisCore(config)
+
+   # Load experimental data
+   phi_angles = np.array([0, 36, 72, 108, 144])
+   c2_data = load_xpcs_data(
+       data_path=config['experimental_data']['data_folder_path'],
+       phi_angles=phi_angles,
+       n_angles=len(phi_angles)
+   )
+
+   # Run optimization
+   optimizer = ClassicalOptimizer(core, config)
+   params, results = optimizer.run_classical_optimization_optimized(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data
+   )
+
+   print(f"D₀ = {params[0]:.3e} Å²/s")
+   print(f"χ² = {results.chi_squared:.6e}")
 
 **Command Line Interface:**
 
@@ -72,6 +95,34 @@ Quick Start
    # Configuration and output
    homodyne --config my_config.json --output-dir ./results --verbose
    homodyne --quiet                            # File logging only, no console output
+
+What's New in v1.0.0
+--------------------
+
+**Critical Bug Fixes:**
+
+* **Frame Counting Convention** - Fixed 1-based inclusive counting to 0-based Python slicing conversion
+
+  - Formula: ``time_length = end_frame - start_frame + 1`` (inclusive)
+  - Resolves NaN chi-squared values and cache dimension mismatches
+  - Applied across all 9 modules: analysis core, data loader, optimizers, CLI
+
+* **Conditional Angle Subsampling** - Preserve angular information when ``n_angles < 4``
+
+  - Prevents loss of critical angular information (e.g., 2 angles → 1 angle)
+  - Time subsampling still applied for performance (~16x reduction)
+  - Implemented in both classical and robust optimizers
+
+* **Memory Optimization** - Increased ellipsoidal optimization memory limit to 90%
+
+  - Handles large datasets with 8M+ data points without overflow
+  - Fixed stacked decorator issue in robust optimization
+
+**Performance Improvements:**
+
+* **Numba JIT Compilation** - 3-5x speedup for core calculations
+* **Vectorized Operations** - Optimized NumPy array processing throughout
+* **Smart Caching** - Intelligent data caching with automatic dimension validation
 
 Analysis Modes
 --------------
@@ -111,7 +162,7 @@ Key Features
    Numba JIT compilation, smart angle filtering, and optimized computational kernels
 
 **Scientific Accuracy**
-   Automatic g₂ = offset + contrast × g₁ fitting for accurate chi-squared calculations
+   Automatic c₂ = offset + contrast × c₁ fitting for accurate chi-squared calculations
 
 **Multiple Optimization Methods**
 
@@ -137,6 +188,7 @@ User Guide
    user-guide/analysis-modes
    user-guide/configuration
    user-guide/plotting
+   user-guide/ml-acceleration
    user-guide/examples
 
 API Reference
@@ -172,7 +224,7 @@ The package implements three key equations describing correlation functions in n
    c₂(q⃗, t₁, t₂) = 1 + β[e^(-6q²D(t₂-t₁))] sinc²[1/(2π) qh cos(φ)γ̇(t₂-t₁)]
 
 **Equation S-76 - One-time Correlation (Siegert Relation):**
-   g₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
+   c₂(q⃗, τ) = 1 + β[e^(-6q²Dτ)] sinc²[1/(2π) qh cos(φ)γ̇τ]
 
 **Key Parameters:**
 

@@ -7,7 +7,7 @@
 scripts | Unified plugin-based engine | | **Files** | `cli_completion.py`,
 `completion_fast.py`, standalone scripts | Modular system in `homodyne/ui/completion/` |
 | **Caching** | Basic file-based cache | Environment-aware intelligent caching | |
-**Method Names** | `classical`, `robust`, `all` | `vi`, `mcmc`, `hybrid` | |
+**Method Names** | `classical`, `robust`, `all` | `classical`, `robust`, `all` | |
 **Installation** | Simple shell script injection | Atomic installation with rollback | |
 **Environment Support** | System-wide only | Per-environment isolation | | **Project
 Awareness** | None | Auto-detects project structure | | **Plugin Support** | None |
@@ -70,15 +70,15 @@ homodyne --config <TAB>              # 50ms first time, <10ms cached
 ### Method Completion Evolution
 
 ```bash
-# Legacy Methods
-homodyne --method classical          # Removed
-homodyne --method robust             # Removed
-homodyne --method all                # Removed
+# Legacy Methods (Fragmented implementation)
+homodyne --method classical          # Old classical optimizer
+homodyne --method robust             # Old robust optimizer
+homodyne --method all                # Old combined analysis
 
-# Current Methods (Updated for new analysis engine)
-homodyne --method vi                 # Fast variational inference
-homodyne --method mcmc               # MCMC sampling
-homodyne --method hybrid             # VI→MCMC pipeline
+# Current Methods (Unified CPU-optimized engine)
+homodyne --method classical          # Classical optimization (Nelder-Mead, Gurobi)
+homodyne --method robust             # Robust optimization (DRO, Scenario-based)
+homodyne --method all                # Complete analysis pipeline
 ```
 
 ## Intelligence Improvements

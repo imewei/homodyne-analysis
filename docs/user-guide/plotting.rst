@@ -298,7 +298,7 @@ Data Quality Assessment
    homodyne --plot-experimental-data --config experiment.json --verbose
 
 **Look for:**
-- Correlation values around 1.0-2.0 for proper g₂ functions
+- Correlation values around 1.0-2.0 for proper c₂ functions
 - Clear time-dependent decay patterns
 - Consistent behavior across different phi angles
 - Absence of artifacts or discontinuities

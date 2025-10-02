@@ -25,21 +25,18 @@ Main class for distributionally robust optimization methods.
 Key Methods
 -----------
 
-**optimize_robust(theta_init, phi_angles, c2_experimental)**
+**optimize(phi_angles, c2_experimental, method="wasserstein", epsilon=0.1, **kwargs)**
 
-Run all available robust optimization methods and return the best result.
+Run robust optimization using the specified method. This is the main public API for robust optimization.
 
-**_solve_wasserstein_dro(theta_init, phi_angles, c2_experimental, uncertainty_radius=0.02)**
+**Parameters:**
+- ``phi_angles``: Array of scattering angles [degrees]
+- ``c2_experimental``: Experimental correlation data
+- ``method``: Optimization method ("wasserstein", "scenario", or "ellipsoidal")
+- ``epsilon``: Uncertainty radius (for Wasserstein) or related parameter
+- ``**kwargs``: Method-specific options
 
-Solve using Wasserstein distributionally robust optimization.
-
-**_solve_scenario_robust(theta_init, phi_angles, c2_experimental, n_scenarios=30)**
-
-Solve using scenario-based robust optimization with bootstrap resampling.
-
-**_solve_ellipsoidal_robust(theta_init, phi_angles, c2_experimental, gamma=0.08)**
-
-Solve using ellipsoidal uncertainty sets for robust least squares.
+**Returns:** Dictionary with optimal parameters, chi-squared value, and method-specific results
 
 Configuration
 -------------
@@ -79,37 +76,67 @@ Usage Examples
 
 .. code-block:: python
 
+   import numpy as np
+   import json
+   from homodyne.analysis.core import HomodyneAnalysisCore
    from homodyne.optimization.robust import RobustHomodyneOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
-   optimizer = RobustHomodyneOptimizer(analysis_core, config)
+   # Load configuration
+   with open("config.json", 'r') as f:
+       config = json.load(f)
 
-   # Run all robust methods
-   results = optimizer.optimize_robust(
-       theta_init=np.array([1000, -0.5, 100]),
+   # Initialize analysis core
+   core = HomodyneAnalysisCore(config)
+
+   # Load experimental data
+   phi_angles = np.array([0, 36, 72, 108, 144])
+   c2_data = load_xpcs_data(
+       data_path=config['experimental_data']['data_folder_path'],
        phi_angles=phi_angles,
-       c2_experimental=c2_data
+       n_angles=len(phi_angles)
    )
 
-**Individual Methods:**
+   # Create robust optimizer
+   robust = RobustHomodyneOptimizer(core, config)
+
+   # Run Wasserstein DRO
+   result = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="wasserstein",
+       epsilon=0.1
+   )
+
+   print(f"Optimal parameters: {result['optimal_params']}")
+   print(f"Chi-squared: {result['chi_squared']:.6e}")
+
+**Different Robust Methods:**
 
 .. code-block:: python
 
-   # Wasserstein DRO only
-   result = optimizer._solve_wasserstein_dro(
-       theta_init, phi_angles, c2_experimental,
-       uncertainty_radius=0.02
+   # Wasserstein distributionally robust optimization
+   wasserstein_result = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="wasserstein",
+       epsilon=0.1  # Uncertainty radius
    )
 
    # Scenario-based robust optimization
-   result = optimizer._solve_scenario_robust(
-       theta_init, phi_angles, c2_experimental,
-       n_scenarios=30
+   scenario_result = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="scenario",
+       n_scenarios=30  # Number of bootstrap scenarios
    )
 
-   # Ellipsoidal uncertainty sets
-   result = optimizer._solve_ellipsoidal_robust(
-       theta_init, phi_angles, c2_experimental,
-       gamma=0.08
+   # Ellipsoidal uncertainty robust optimization
+   ellipsoidal_result = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="ellipsoidal",
+       gamma=0.08  # Uncertainty bound
    )
 
 Performance Notes

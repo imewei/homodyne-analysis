@@ -5,8 +5,10 @@ Complete API documentation for the homodyne analysis package.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Core Modules
+   :caption: API Documentation
 
+   overview
+   analysis-core
    core
    robust
    utilities

@@ -34,13 +34,13 @@ Example 1: Basic Isotropic Analysis
 .. code-block:: bash
 
    # Run classical analysis (results saved to ./homodyne_results/)
-   python run_homodyne.py --config isotropic_example.json --method classical
+   homodyne --config isotropic_example.json --method classical
 
    # Generate data validation plots only (saved to ./homodyne_results/exp_data/)
-   python run_homodyne.py --config isotropic_example.json --plot-experimental-data
+   homodyne --config isotropic_example.json --plot-experimental-data
 
    # Run in quiet mode for batch processing
-   python run_homodyne.py --config isotropic_example.json --method classical --quiet
+   homodyne --config isotropic_example.json --method classical --quiet
 
 **Expected Output**:
 
@@ -96,16 +96,16 @@ Example 2: Flow Analysis with Robust Methods
 .. code-block:: bash
 
    # Step 1: Data validation (optional, saves to ./homodyne_results/exp_data/)
-   python run_homodyne.py --config flow_robust_example.json --plot-experimental-data
+   homodyne --config flow_robust_example.json --plot-experimental-data
 
    # Step 2: Classical optimization for initial estimates (saves to ./homodyne_results/classical/)
-   python run_homodyne.py --config flow_robust_example.json --method classical
+   homodyne --config flow_robust_example.json --method classical
 
    # Step 3: Robust optimization for uncertainty resistance (saves to ./homodyne_results/robust/)
-   python run_homodyne.py --config flow_robust_example.json --method robust
+   homodyne --config flow_robust_example.json --method robust
 
    # Step 4: Complete analysis with both methods (recommended)
-   python run_homodyne.py --config flow_robust_example.json --method all
+   homodyne --config flow_robust_example.json --method all
 
 **Expected Output**:
 
@@ -170,7 +170,10 @@ Example 4: Batch Processing Multiple Samples
 
    import os
    import json
-   from homodyne import HomodyneAnalysisCore, ConfigManager
+   import numpy as np
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
    # Sample list
    samples = [
@@ -187,6 +190,9 @@ Example 4: Batch Processing Multiple Samples
        },
        "initial_parameters": {
            "values": [1000, -0.5, 100]
+       },
+       "experimental_data": {
+           "data_folder_path": "data/"
        }
    }
 
@@ -200,31 +206,37 @@ Example 4: Batch Processing Multiple Samples
        config["file_paths"] = {"c2_data_file": sample["file"]}
        config["metadata"] = {"sample_name": sample["name"]}
 
-       # Save temporary config
-       config_file = f"temp_{sample['name']}.json"
-       with open(config_file, 'w') as f:
-           json.dump(config, f, indent=2)
-
        # Run analysis
        try:
-           config_manager = ConfigManager(config_file)
-           analysis = HomodyneAnalysisCore(config_manager)
-           result = analysis.optimize_classical()
+           # Initialize analysis core
+           core = HomodyneAnalysisCore(config)
+
+           # Load experimental data
+           phi_angles = np.array([0])  # Isotropic mode uses single angle
+           c2_data = load_xpcs_data(
+               data_path=config['experimental_data']['data_folder_path'],
+               phi_angles=phi_angles,
+               n_angles=1
+           )
+
+           # Run optimization
+           optimizer = ClassicalOptimizer(core, config)
+           params, result = optimizer.run_classical_optimization_optimized(
+               phi_angles=phi_angles,
+               c2_experimental=c2_data
+           )
 
            results[sample['name']] = {
-               "parameters": result.x,
-               "chi_squared": result.fun,
-               "success": result.success
+               "parameters": params.tolist(),
+               "chi_squared": result.chi_squared,
+               "best_method": result.best_method
            }
 
-           print(f"✅ {sample['name']}: χ² = {result.fun:.3f}")
+           print(f"✅ {sample['name']}: χ² = {result.chi_squared:.3f}")
 
        except Exception as e:
            print(f"❌ {sample['name']}: {str(e)}")
            results[sample['name']] = {"error": str(e)}
-
-       # Cleanup
-       os.remove(config_file)
 
    # Save batch results
    with open("batch_results.json", 'w') as f:
@@ -241,8 +253,11 @@ Example 5: Progressive Analysis Workflow
 
 .. code-block:: python
 
-   from homodyne import HomodyneAnalysisCore, ConfigManager
    import json
+   import numpy as np
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
    def progressive_analysis(data_file, angles_file):
        """
@@ -256,10 +271,11 @@ Example 5: Progressive Analysis Workflow
        iso_config = {
            "analysis_settings": {"static_mode": True, "static_submode": "isotropic"},
            "file_paths": {"c2_data_file": data_file},
-           "initial_parameters": {"values": [1000, -0.5, 100]}
+           "initial_parameters": {"values": [1000, -0.5, 100]},
+           "experimental_data": {"data_folder_path": "data/"}
        }
 
-       iso_result = run_analysis(iso_config, "isotropic")
+       iso_result = run_analysis(iso_config, "isotropic", np.array([0]), 1)
        results["isotropic"] = iso_result
 
        # Step 2: Anisotropic analysis
@@ -269,7 +285,8 @@ Example 5: Progressive Analysis Workflow
        aniso_config["analysis_settings"]["enable_angle_filtering"] = True
        aniso_config["file_paths"]["phi_angles_file"] = angles_file
 
-       aniso_result = run_analysis(aniso_config, "anisotropic")
+       phi_angles = np.array([0, 36, 72, 108, 144])
+       aniso_result = run_analysis(aniso_config, "anisotropic", phi_angles, len(phi_angles))
        results["anisotropic"] = aniso_result
 
        # Compare isotropic vs anisotropic
@@ -290,34 +307,41 @@ Example 5: Progressive Analysis Workflow
                "active_parameters": ["D0", "alpha", "D_offset", "gamma_dot_t0"]
            }
 
-           flow_result = run_analysis(flow_config, "flow")
+           flow_result = run_analysis(flow_config, "flow", phi_angles, len(phi_angles))
            results["flow"] = flow_result
        else:
            print("Skipping flow analysis - anisotropic improvement < 5%")
 
        return results
 
-   def run_analysis(config_dict, mode_name):
+   def run_analysis(config_dict, mode_name, phi_angles, n_angles):
        """Run analysis with given configuration"""
-       config_file = f"temp_{mode_name}.json"
-
-       with open(config_file, 'w') as f:
-           json.dump(config_dict, f, indent=2)
-
        try:
-           config = ConfigManager(config_file)
-           analysis = HomodyneAnalysisCore(config)
-           result = analysis.optimize_classical()
+           # Initialize analysis core
+           core = HomodyneAnalysisCore(config_dict)
+
+           # Load experimental data
+           c2_data = load_xpcs_data(
+               data_path=config_dict['experimental_data']['data_folder_path'],
+               phi_angles=phi_angles,
+               n_angles=n_angles
+           )
+
+           # Run optimization
+           optimizer = ClassicalOptimizer(core, config_dict)
+           params, result = optimizer.run_classical_optimization_optimized(
+               phi_angles=phi_angles,
+               c2_experimental=c2_data
+           )
 
            return {
-               "parameters": result.x.tolist(),
-               "chi_squared": float(result.fun),
-               "success": bool(result.success)
+               "parameters": params.tolist(),
+               "chi_squared": float(result.chi_squared),
+               "best_method": result.best_method
            }
-       finally:
-           import os
-           if os.path.exists(config_file):
-               os.remove(config_file)
+       except Exception as e:
+           print(f"Analysis failed: {str(e)}")
+           return {"error": str(e)}
 
    # Run progressive analysis
    if __name__ == "__main__":
@@ -336,14 +360,27 @@ Common Patterns
 
 .. code-block:: python
 
-   try:
-       analysis = HomodyneAnalysisCore(config)
-       result = analysis.optimize_classical()
+   import numpy as np
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
-       if result.success:
-           print(f"✅ Optimization successful: χ² = {result.fun:.3f}")
-       else:
-           print(f"⚠️ Optimization failed: {result.message}")
+   try:
+       # Initialize analysis
+       core = HomodyneAnalysisCore(config)
+       optimizer = ClassicalOptimizer(core, config)
+
+       # Load data and run optimization
+       phi_angles = np.array([0, 36, 72, 108, 144])
+       c2_data = load_xpcs_data(data_path="data/", phi_angles=phi_angles, n_angles=5)
+
+       params, result = optimizer.run_classical_optimization_optimized(
+           phi_angles=phi_angles,
+           c2_experimental=c2_data
+       )
+
+       print(f"✅ Optimization successful: χ² = {result.chi_squared:.3f}")
+       print(f"Best method: {result.best_method}")
 
    except FileNotFoundError as e:
        print(f"❌ File not found: {e}")
@@ -376,7 +413,8 @@ Common Patterns
    def compare_results(result1, result2, labels=["Method 1", "Method 2"]):
        """Compare two analysis results"""
 
-       chi2_1, chi2_2 = result1.fun, result2.fun
+       chi2_1 = result1.chi_squared
+       chi2_2 = result2.chi_squared
        improvement = (chi2_1 - chi2_2) / chi2_1 * 100
 
        print(f"{labels[0]} χ²: {chi2_1:.4f}")
@@ -626,13 +664,13 @@ The homodyne package provides two main optimization approaches:
 .. code-block:: bash
 
    # Classical optimization (default)
-   python run_homodyne.py --method classical
+   homodyne --method classical
 
    # Robust optimization for noisy data
-   python run_homodyne.py --method robust
+   homodyne --method robust
 
    # Run both methods for comparison
-   python run_homodyne.py --method all
+   homodyne --method all
 
 **Uncertainty Quantification**:
 - Classical methods provide parameter error estimates

@@ -96,7 +96,6 @@ Create a comprehensive configuration file `distributed_ml_config.json`:
     "backend_preference": ["ray", "mpi", "multiprocessing"],
     "ray_config": {
       "num_cpus": 16,
-      "num_gpus": 2,
       "memory_mb": 32768
     },
     "load_balancing": {
@@ -156,7 +155,6 @@ from homodyne.optimization.distributed import create_distributed_optimizer
 ray_config = {
     'ray_config': {
         'num_cpus': 16,
-        'num_gpus': 2,
         'memory_mb': 32768
     }
 }
@@ -243,7 +241,6 @@ requirements = SystemResourceDetector.check_system_requirements()
 
 print(f"CPUs: {capabilities['cpu_count']}")
 print(f"Memory: {capabilities['memory_total_gb']:.1f}GB")
-print(f"GPUs: {capabilities['gpu_count']}")
 print(f"Ray recommended: {requirements['ray_recommended']}")
 ```
 
@@ -348,7 +345,7 @@ setup_logging_for_optimization(
 
 1. **Use appropriate backend for your setup:**
 
-   - **Ray**: Best for heterogeneous clusters, GPUs, large memory
+   - **Ray**: Best for heterogeneous clusters, large memory, dynamic workloads
    - **MPI**: Best for HPC environments, homogeneous clusters
    - **Multiprocessing**: Best for single-node, simple parallelization
 
@@ -442,7 +439,6 @@ pip install optuna       # Hyperparameter optimization
 
 # Performance monitoring
 pip install psutil
-pip install GPUtil       # GPU detection
 ```
 
 ### Optional Dependencies

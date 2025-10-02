@@ -123,11 +123,9 @@ optimizer = EnhancedClassicalOptimizer()
 
 ### Near-term Opportunities
 
-- GPU acceleration: Infrastructure prepared for future GPU integration (potential
-  100-1000x additional speedup)
 - Distributed computing: Multi-node processing capabilities ready for implementation
-- Machine learning integration: Framework ready for ML-accelerated optimization
-  predictions
+- Advanced caching: Enhanced memory management and data reuse strategies
+- Algorithmic improvements: Further optimization of core computational kernels
 - Advanced analytics: Foundation established for deeper performance insights
 
 ### Continuous Improvement Infrastructure

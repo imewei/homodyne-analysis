@@ -56,9 +56,9 @@ Cache features:
 ### 4. Method Completions
 
 ```bash
-# Updated method names for new system
+# Method completion for CPU-optimized system
 homodyne --method <TAB>
-# Shows: vi, mcmc, hybrid (updated from classical/robust/all)
+# Shows: classical, robust, all (CPU-based optimization methods)
 ```
 
 Smart suggestions:

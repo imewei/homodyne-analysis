@@ -309,39 +309,34 @@ Adaptive Quadrature
            return (adaptive_simpson_integration(func, a, mid, tol/2.0) +
                    adaptive_simpson_integration(func, mid, b, tol/2.0))
 
-Automatic Differentiation
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Numerical Gradient Computation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   import jax
-   import jax.numpy as jnp
+   import numpy as np
+   from scipy.optimize import approx_fprime
 
-   def jax_gradient_computation(params, data):
+   def numerical_gradient_computation(params, data, epsilon=1e-8):
        """
-       JAX-based automatic differentiation for gradient computation.
+       Finite-difference gradient computation for optimization.
 
-       Enables second-order optimization methods:
-       - Newton's method
-       - Quasi-Newton (BFGS)
-       - Trust region methods
+       Uses central differences for improved accuracy:
+       - Second-order accurate O(h²)
+       - Numerically stable
+       - Efficient with vectorization
        """
 
-       @jax.jit
        def objective_function(theta):
-           """Objective function for JAX differentiation."""
+           """Objective function for gradient computation."""
            model_predictions = compute_correlation_model(theta, data)
-           chi_squared = jnp.sum((data.experimental - model_predictions)**2)
+           chi_squared = np.sum((data.experimental - model_predictions)**2)
            return chi_squared
 
-       # Compute gradient and Hessian
-       grad_func = jax.grad(objective_function)
-       hessian_func = jax.hessian(objective_function)
+       # Compute gradient using finite differences
+       gradient = approx_fprime(params, objective_function, epsilon)
 
-       gradient = grad_func(params)
-       hessian = hessian_func(params)
-
-       return gradient, hessian
+       return gradient
 
 Parallel Computing
 -----------------

@@ -104,9 +104,9 @@ Cumulative Speedup | 100-500x | 100-500x | ✓ | | Scientific Accuracy | \<1% er
 
 ### Short-term (Next 3 months)
 
-- GPU acceleration with JAX/CuPy
-- Distributed computing framework
-- Advanced memory management
+- Distributed computing framework for multi-node processing
+- Advanced memory management and caching
+- Further CPU optimization and vectorization
 
 ### Long-term (6+ months)
 

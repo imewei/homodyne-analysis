@@ -13,21 +13,6 @@ Installation
 5-Minute Tutorial
 -----------------
 
-**Step 0: Optional Shell Enhancement (Recommended)**
-
-.. code-block:: bash
-
-   # Enable shell completion and shortcuts for faster workflow
-   pip install homodyne-analysis[completion]
-   homodyne --install-completion zsh  # or bash, fish, powershell
-   source ~/.zshrc                    # Restart shell or reload config
-
-   # To remove completion later:
-   # homodyne --uninstall-completion zsh
-
-   # Test shortcuts (work immediately)
-   homodyne_help                      # Show all available options
-
 **Step 1: Create a Configuration**
 
 .. code-block:: bash
@@ -35,9 +20,8 @@ Installation
    # Create a configuration for isotropic analysis (fastest)
    homodyne-config --mode static_isotropic --sample my_sample
 
-   # Or using shortcuts after shell enhancement:
-   # Tab completion: homodyne-config --mode <TAB>  (shows modes)
-   # Fast reference: homodyne_help                (shows all options)
+   # Tab completion works automatically in most shells:
+   # homodyne-config --mode <TAB>  (shows available modes)
 
 **Step 2: Prepare Your Data**
 
@@ -52,20 +36,15 @@ Ensure your experimental data is in the correct format:
 
    # Data validation first (optional, saves plots to ./homodyne_results/exp_data/)
    homodyne --config my_sample_config.json --plot-experimental-data
-   # Or with shortcuts: hplot (if config file is homodyne_config.json)
 
    # Basic analysis (fastest, saves results to ./homodyne_results/)
    homodyne --config my_sample_config.json --method classical
-   # Or with shortcuts: hc --config my_sample_config.json
 
    # Run all methods with verbose output
    homodyne --config my_sample_config.json --method all --verbose
-   # Or with shortcuts: ha --config my_sample_config.json --verbose
 
-   # Quick analysis using different methods:
-   # hc        # homodyne --method classical
-   # hr        # homodyne --method robust
-   # ha        # homodyne --method all
+   # Run robust optimization for noisy data
+   homodyne --config my_sample_config.json --method robust
 
 **Step 4: View Results**
 
@@ -87,20 +66,48 @@ Python API Example
 
 .. code-block:: python
 
-   from homodyne import HomodyneAnalysisCore, ConfigManager
+   import numpy as np
+   import json
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.optimization.robust import RobustHomodyneOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
    # Load configuration
-   config = ConfigManager("my_experiment.json")
+   with open("my_experiment.json", 'r') as f:
+       config = json.load(f)
 
-   # Initialize analysis
-   analysis = HomodyneAnalysisCore(config)
+   # Initialize analysis core
+   core = HomodyneAnalysisCore(config)
 
    # Load experimental data
-   analysis.load_experimental_data()
+   phi_angles = np.array([0, 36, 72, 108, 144])  # Example angles
+   c2_data = load_xpcs_data(
+       data_path=config['experimental_data']['data_folder_path'],
+       phi_angles=phi_angles,
+       n_angles=len(phi_angles)
+   )
 
    # Run classical optimization
-   classical_results = analysis.optimize_classical()
-   print(f"Classical chi-squared: {classical_results.fun:.3f}")
+   classical = ClassicalOptimizer(core, config)
+   params, results = classical.run_classical_optimization_optimized(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data
+   )
+
+   print(f"Optimal D₀: {params[0]:.3e} Å²/s")
+   print(f"Chi-squared: {results.chi_squared:.6e}")
+   print(f"Best method: {results.best_method}")
+
+   # For noisy data, use robust optimization
+   robust = RobustHomodyneOptimizer(core, config)
+   robust_result = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="wasserstein",  # Options: wasserstein, scenario, ellipsoidal
+       epsilon=0.1  # Uncertainty radius
+   )
+   print(f"Robust D₀: {robust_result['optimal_params'][0]:.3e} Å²/s")
 
 
 Analysis Modes Quick Reference

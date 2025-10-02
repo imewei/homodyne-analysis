@@ -266,18 +266,21 @@ Expensive computations are cached:
 
 .. code-block:: python
 
-   with pm.Model():
-       trace = pm.sample(
-           draws=2000,
-           chains=4,
-           cores=4
-       )
-
-   # Data processing
    from concurrent.futures import ProcessPoolExecutor
+   import multiprocessing
 
-   with ProcessPoolExecutor(max_workers=4) as executor:
+   # Parallel data processing
+   num_workers = multiprocessing.cpu_count()
+
+   with ProcessPoolExecutor(max_workers=num_workers) as executor:
        results = executor.map(process_angle_data, angle_chunks)
+
+   # Parallel optimization runs
+   with ProcessPoolExecutor(max_workers=4) as executor:
+       optimization_results = executor.map(
+           run_optimization,
+           parameter_sets
+       )
 
 Plugin Architecture
 -------------------
@@ -380,8 +383,8 @@ Memory Management
 Future Architecture Considerations
 ----------------------------------
 
-1. **Distributed Computing**: Support for cluster computing
-2. **GPU Acceleration**: CUDA/OpenCL support for model computations
+1. **Distributed Computing**: Support for multi-node cluster computing
+2. **Advanced CPU Optimization**: Further vectorization and JIT improvements
 3. **Streaming Data**: Real-time analysis capabilities
 4. **Cloud Integration**: Cloud storage and computing support
 5. **Web Interface**: Browser-based analysis frontend

@@ -10,7 +10,7 @@ This comprehensive guide covers performance optimization, monitoring, and best p
 Performance Overview (v0.6.5+)
 ===============================
 
-The homodyne package includes performance optimizations for classical and robust optimization methods. Key features include JIT compilation, JAX acceleration, performance monitoring, and automated benchmarking.
+The homodyne package includes performance optimizations for classical and robust optimization methods. Key features include JIT compilation, vectorized NumPy operations, performance monitoring, and automated benchmarking.
 
 Key Performance Features
 ------------------------
@@ -20,9 +20,9 @@ Key Performance Features
    - Automatic warmup and caching
    - Optimized for chi-squared calculations and correlation functions
 
-**JAX Backend Integration**
-   - High-performance numerical computations
-   - Automatic fallback to CPU when needed
+**Vectorized NumPy Operations**
+   - High-performance array computations
+   - Optimized memory access patterns
 
 **Performance Monitoring**
    - Built-in profiling decorators
@@ -118,42 +118,63 @@ Robust Optimization
 2. **Wasserstein DRO** - Moderate speed, good uncertainty modeling
 3. **Scenario-based** - Slowest, most robust to outliers
 
------------------
+Optimization Performance Configuration
+---------------------------------------
 
-**JAX Acceleration:**
+**Classical Optimization Configuration:**
 
 .. code-block:: python
 
-   # Enable JAX backend for GPU acceleration
+   # Configure for optimal CPU performance
    config = {
        "optimization_config": {
-               "use_jax": True,  # Automatically detects GPU availability
-               "cores": 4        # Multi-core CPU if JAX unavailable
+           "classical_optimization": {
+               "methods": ["Nelder-Mead"],
+               "method_options": {
+                   "Nelder-Mead": {
+                       "maxiter": 5000,
+                       "xatol": 1e-6,
+                       "fatol": 1e-6
+                   }
+               }
+           }
+       },
+       "performance_settings": {
+           "num_threads": 4,              # Multi-core CPU parallelism
+           "enable_jit": True,            # Numba JIT compilation
+           "data_type": "float64"         # Precision control
+       }
+   }
+
+**Optimization Strategy by Problem Size:**
+
+.. code-block:: python
+
+   # Static mode (3 parameters) - Faster convergence
+   static_config = {
+       "optimization_config": {
+           "classical_optimization": {
+               "methods": ["Nelder-Mead"],
+               "method_options": {
+                   "Nelder-Mead": {"maxiter": 2000}
+               }
            }
        }
    }
 
-**Sampling Efficiency:**
-
-.. code-block:: python
-
-
-   # Static mode (3 parameters)
-   static_config = {
-       "draws": 8000,
-       "tune": 1000,
-       "thin": 2,        # Effective samples: 4000
-       "chains": 4,
-       "target_accept": 0.95
-   }
-
-   # Laminar flow (7 parameters)
+   # Laminar flow (7 parameters) - More iterations needed
    flow_config = {
-       "draws": 10000,
-       "tune": 2000,
-       "thin": 1,        # All samples needed for complex posterior
-       "chains": 6,
-       "target_accept": 0.95
+       "optimization_config": {
+           "classical_optimization": {
+               "methods": ["Nelder-Mead"],
+               "method_options": {
+                   "Nelder-Mead": {"maxiter": 5000}
+               }
+           }
+       },
+       "performance_settings": {
+           "num_threads": 8  # More parallelism for complex problems
+       }
    }
 
 **Memory Optimization:**
@@ -257,7 +278,7 @@ Troubleshooting Performance Issues
 
 **Common Issues and Solutions:**
 
-   - Enable JAX backend: ``pip install jax jaxlib``
+   - Enable JIT compilation: Already included with Numba
    - Reduce problem size: Use angle filtering
 
 2. **High Memory Usage**
@@ -302,7 +323,7 @@ Best Practices
 
 **Production Deployment:**
 
-1. **Install performance extras**: ``pip install homodyne-analysis[performance,jax]``
+1. **Install performance extras**: ``pip install homodyne-analysis[performance]``
 2. **Configure environment variables** for optimal threading
 3. **Enable caching** in robust optimization settings
 5. **Validate with benchmarks** before deployment

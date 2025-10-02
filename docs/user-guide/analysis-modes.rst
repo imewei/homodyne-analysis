@@ -44,7 +44,7 @@ Static Isotropic Mode
 
 .. math::
 
-   g_1(t_1,t_2) = \exp(-q^2 \int_{t_1}^{t_2} D(t) dt)
+   c_1(t_1,t_2) = \exp(-q^2 \int_{t_1}^{t_2} D(t) dt)
 
 where there is no angular dependence in the correlation function.
 

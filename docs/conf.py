@@ -1,23 +1,23 @@
 # Configuration file for the Sphinx documentation builder.
 # Research-grade documentation for homodyne-analysis package
 
-import os
 import sys
+from pathlib import Path
 
 # Add the parent directory (containing homodyne package) to Python path
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, str(Path("..").resolve()))
 
 # Also add the homodyne package directory itself
-homodyne_path = os.path.join(os.path.abspath(".."), "homodyne")
-if os.path.exists(homodyne_path):
-    sys.path.insert(0, homodyne_path)
+homodyne_path = Path("..").resolve() / "homodyne"
+if homodyne_path.exists():
+    sys.path.insert(0, str(homodyne_path))
 
 # -- Project information -----------------------------------------------------
 project = "Homodyne Analysis: Research Documentation"
 copyright = "2025, Wei Chen, Hongrui He - Argonne National Laboratory"
 author = "Wei Chen, Hongrui He"
-release = "0.7.1"
-version = "0.7.1"
+release = "1.0.0"
+version = "1.0.0"
 
 # Research-specific metadata
 project_description = "High-performance XPCS analysis with robust optimization for nonequilibrium soft matter"

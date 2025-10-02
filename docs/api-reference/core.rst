@@ -62,42 +62,74 @@ Data input/output utilities for loading experimental data and saving results.
 Example Usage
 -------------
 
-**Basic Analysis**:
+**Basic Classical Optimization**:
 
 .. code-block:: python
 
-   from homodyne import HomodyneAnalysisCore, ConfigManager
+   import numpy as np
+   import json
+   from homodyne.analysis.core import HomodyneAnalysisCore
+   from homodyne.optimization.classical import ClassicalOptimizer
+   from homodyne.data.xpcs_loader import load_xpcs_data
 
-   # Initialize configuration
-   config = ConfigManager("my_experiment.json")
+   # Load configuration
+   with open("my_experiment.json", 'r') as f:
+       config = json.load(f)
 
-   # Create analysis instance
-   analysis = HomodyneAnalysisCore(config)
+   # Initialize analysis core
+   core = HomodyneAnalysisCore(config)
 
-   # Load data and run analysis
-   analysis.load_experimental_data()
-   results = analysis.run_analysis()
+   # Load experimental data
+   phi_angles = np.array([0, 36, 72, 108, 144])
+   c2_data = load_xpcs_data(
+       data_path=config['experimental_data']['data_folder_path'],
+       phi_angles=phi_angles,
+       n_angles=len(phi_angles)
+   )
 
-   print(f"Analysis completed: {len(results)} angle analyses")
-   print(f"Best chi-squared: {min(r['chi_squared'] for r in results):.4f}")
+   # Run optimization
+   optimizer = ClassicalOptimizer(core, config)
+   params, results = optimizer.run_classical_optimization_optimized(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data
+   )
 
-**Advanced Configuration**:
+   print(f"Optimal parameters: {params}")
+   print(f"Chi-squared: {results.chi_squared:.6e}")
+   print(f"Best method: {results.best_method}")
+
+**Robust Optimization for Noisy Data**:
 
 .. code-block:: python
 
-   from homodyne import ConfigManager
+   from homodyne.optimization.robust import RobustHomodyneOptimizer
 
-   config = ConfigManager("advanced_config.json")
+   # Initialize robust optimizer
+   robust = RobustHomodyneOptimizer(core, config)
 
-   # Check analysis mode
-   mode = config.get_analysis_mode()
-   print(f"Analysis mode: {mode}")
+   # Run Wasserstein DRO optimization
+   result_dict = robust.optimize(
+       phi_angles=phi_angles,
+       c2_experimental=c2_data,
+       method="wasserstein",  # Options: wasserstein, scenario, ellipsoidal
+       epsilon=0.1  # Uncertainty radius
+   )
 
-   # Get active parameters
-   params = config.get_active_parameters()
-   print(f"Active parameters: {params}")
+   print(f"Optimal parameters: {result_dict['optimal_params']}")
+   print(f"Chi-squared: {result_dict['chi_squared']:.6e}")
 
-   # Check if angle filtering is enabled
+**Configuration Access**:
+
+.. code-block:: python
+
+   # Access configuration values
+   analysis_mode = config.get('analysis_settings', {}).get('static_mode', False)
+   print(f"Static mode: {analysis_mode}")
+
+   # Check subsampling settings
+   subsampling = config.get('subsampling', {})
+   n_angles = subsampling.get('n_angles', 4)
+   print(f"Angle subsampling: {n_angles} angles")
    if config.is_angle_filtering_enabled():
        ranges = config.get_target_angle_ranges()
        print(f"Target angle ranges: {ranges}")
