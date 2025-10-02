@@ -331,10 +331,11 @@ jobs:
 
       - name: "🔒 Run Security Tests"
         run: |
+          # Run security-marked tests, skip if none exist (exit code 5)
           pytest homodyne/tests \
             -m "security" \
             --junit-xml=security-junit.xml \
-            -v
+            -v || test $? -eq 5 || exit $?
 
       - name: "🛡️ Advanced Security Scanning"
         run: |
