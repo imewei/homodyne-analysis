@@ -647,9 +647,9 @@ jobs:
 
 ## Import External Tools
 
-1. Open PyCharm Settings (File → Settings)
-2. Navigate to Tools → External Tools
-3. Click the gear icon → Import
+1. Open PyCharm Settings (File -> Settings)
+2. Navigate to Tools -> External Tools
+3. Click the gear icon -> Import
 4. Select the file: `.import_integration/pycharm_external_tools.xml`
 5. Click OK to import the tools
 
@@ -664,12 +664,12 @@ After import, you'll have these tools available:
 ## Usage
 
 - Right-click in the editor or project tree
-- Select External Tools → [Tool Name]
-- Or use Tools menu → External Tools → [Tool Name]
+- Select External Tools -> [Tool Name]
+- Or use Tools menu -> External Tools -> [Tool Name]
 
 ## Keyboard Shortcuts (Optional)
 
-You can assign keyboard shortcuts in Settings → Keymap → External Tools.
+You can assign keyboard shortcuts in Settings -> Keymap -> External Tools.
 """
                 )
 

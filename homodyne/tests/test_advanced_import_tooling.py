@@ -728,7 +728,7 @@ class TestWorkflowIntegration:
 
         report_content = report_file.read_text()
         assert "Import Workflow Integration Report" in report_content
-        assert "✅ SUCCESS" in report_content
+        assert "[PASS] SUCCESS" in report_content
 
 
 class TestIntegrationWithRealAnalyzer:
