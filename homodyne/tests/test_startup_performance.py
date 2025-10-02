@@ -268,12 +268,12 @@ class TestStartupPerformance:
         max_memory_usage = 50.0  # MB
 
         assert import_time is not None, "Import time measurement failed"
-        assert import_time < max_import_time, (
-            f"Basic import too slow: {import_time:.2f}s (max: {max_import_time}s)"
-        )
-        assert memory_usage < max_memory_usage, (
-            f"Basic import uses too much memory: {memory_usage:.1f}MB (max: {max_memory_usage}MB)"
-        )
+        assert (
+            import_time < max_import_time
+        ), f"Basic import too slow: {import_time:.2f}s (max: {max_import_time}s)"
+        assert (
+            memory_usage < max_memory_usage
+        ), f"Basic import uses too much memory: {memory_usage:.1f}MB (max: {max_memory_usage}MB)"
 
     @pytest.mark.performance
     def test_warm_import_performance(self, startup_benchmark):
@@ -286,9 +286,9 @@ class TestStartupPerformance:
         avg_time = result["avg_time"]
         max_warm_import_time = 0.01  # 10ms
 
-        assert avg_time < max_warm_import_time, (
-            f"Warm import too slow: {avg_time:.4f}s (max: {max_warm_import_time}s)"
-        )
+        assert (
+            avg_time < max_warm_import_time
+        ), f"Warm import too slow: {avg_time:.4f}s (max: {max_warm_import_time}s)"
 
     @pytest.mark.performance
     def test_progressive_loading_performance(self, startup_benchmark):
@@ -347,9 +347,9 @@ class TestStartupPerformance:
 
         # Accessing lazy objects should have reasonable overhead
         max_lazy_overhead = 5.0  # 5x overhead is acceptable
-        assert lazy_overhead < max_lazy_overhead, (
-            f"Lazy loading overhead too high: {lazy_overhead:.1f}x (max: {max_lazy_overhead}x)"
-        )
+        assert (
+            lazy_overhead < max_lazy_overhead
+        ), f"Lazy loading overhead too high: {lazy_overhead:.1f}x (max: {max_lazy_overhead}x)"
 
     @pytest.mark.performance
     def test_conditional_import_performance(self, startup_benchmark):
@@ -386,13 +386,13 @@ class TestStartupPerformance:
         max_import_memory = 100.0  # MB for basic import
         max_peak_memory = 500.0  # MB total process memory
 
-        assert memory_usage < max_import_memory, (
-            f"Basic import uses too much memory: {memory_usage:.1f}MB (max: {max_import_memory}MB)"
-        )
+        assert (
+            memory_usage < max_import_memory
+        ), f"Basic import uses too much memory: {memory_usage:.1f}MB (max: {max_import_memory}MB)"
 
-        assert peak_memory < max_peak_memory, (
-            f"Peak memory usage too high: {peak_memory:.1f}MB (max: {max_peak_memory}MB)"
-        )
+        assert (
+            peak_memory < max_peak_memory
+        ), f"Peak memory usage too high: {peak_memory:.1f}MB (max: {max_peak_memory}MB)"
 
     @pytest.mark.slow
     @pytest.mark.performance
@@ -496,9 +496,9 @@ class TestStartupOptimization:
             overhead = numba_time / no_numba_time
             max_overhead = 10.0  # 10x overhead is acceptable for JIT compilation
 
-            assert overhead < max_overhead, (
-                f"Numba compilation overhead too high: {overhead:.1f}x (max: {max_overhead}x)"
-            )
+            assert (
+                overhead < max_overhead
+            ), f"Numba compilation overhead too high: {overhead:.1f}x (max: {max_overhead}x)"
 
     @pytest.mark.performance
     def test_import_order_optimization(self, startup_benchmark):
@@ -532,9 +532,9 @@ class TestStartupOptimization:
 
             # Each workflow should complete reasonably quickly
             max_workflow_time = 5.0  # seconds
-            assert total_time < max_workflow_time, (
-                f"Import order {i + 1} too slow: {total_time:.2f}s (max: {max_workflow_time}s)"
-            )
+            assert (
+                total_time < max_workflow_time
+            ), f"Import order {i + 1} too slow: {total_time:.2f}s (max: {max_workflow_time}s)"
 
     @pytest.mark.integration
     def test_circular_import_prevention(self):
@@ -586,9 +586,9 @@ class TestStartupOptimization:
 
         # Memory growth should be minimal
         max_memory_growth = 20.0  # MB
-        assert memory_growth < max_memory_growth, (
-            f"Memory leak detected: {memory_growth:.1f}MB growth (max: {max_memory_growth}MB)"
-        )
+        assert (
+            memory_growth < max_memory_growth
+        ), f"Memory leak detected: {memory_growth:.1f}MB growth (max: {max_memory_growth}MB)"
 
 
 # Benchmarking utilities for continuous monitoring

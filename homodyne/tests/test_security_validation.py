@@ -411,9 +411,9 @@ class TestSecureFileOperations:
 
         for rel_path in legitimate_paths:
             full_path = self._secure_join(base_dir, rel_path)
-            assert full_path.startswith(base_dir), (
-                f"Path {full_path} outside base directory"
-            )
+            assert full_path.startswith(
+                base_dir
+            ), f"Path {full_path} outside base directory"
 
         # Test malicious paths
         malicious_paths = [
@@ -427,9 +427,9 @@ class TestSecureFileOperations:
             try:
                 full_path = self._secure_join(base_dir, mal_path)
                 # If join succeeds, result should still be within base directory
-                assert full_path.startswith(base_dir), (
-                    f"Directory traversal vulnerability: {full_path}"
-                )
+                assert full_path.startswith(
+                    base_dir
+                ), f"Directory traversal vulnerability: {full_path}"
             except ValueError:
                 # Acceptable to reject malicious paths
                 pass

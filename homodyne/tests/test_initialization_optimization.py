@@ -373,9 +373,9 @@ class TestPerformanceBenchmarks:
 
         # Memory usage should be reasonable
         memory_increase = final_memory - initial_memory
-        assert memory_increase < 100.0, (
-            f"Memory increase too high: {memory_increase:.2f}MB"
-        )
+        assert (
+            memory_increase < 100.0
+        ), f"Memory increase too high: {memory_increase:.2f}MB"
 
 
 if __name__ == "__main__":

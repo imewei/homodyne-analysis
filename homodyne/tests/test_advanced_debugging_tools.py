@@ -446,9 +446,7 @@ class DiagnosticAnalyzer:
             severity = (
                 "high"
                 if (write_time > max_write_time * 2 or read_time > max_read_time * 2)
-                else "medium"
-                if issues
-                else "low"
+                else "medium" if issues else "low"
             )
 
             return {
@@ -512,9 +510,7 @@ class DiagnosticAnalyzer:
         severity = (
             "high"
             if complexity_efficiency > max_complexity_ratio * 2
-            else "medium"
-            if issues
-            else "low"
+            else "medium" if issues else "low"
         )
 
         return {

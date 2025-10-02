@@ -319,9 +319,9 @@ def load_config(file_path: Path) -> dict:
         any(item.get("module") == "typing" for item in unused_list)
 
         # Either Dict is unused, or typing analysis is working correctly
-        assert has_dict_unused or len(unused_from_modules) == 0, (
-            f"Expected Dict unused or no from imports, got: {unused_from_modules}"
-        )
+        assert (
+            has_dict_unused or len(unused_from_modules) == 0
+        ), f"Expected Dict unused or no from imports, got: {unused_from_modules}"
 
         # sys should NOT be in unused (it's used)
         assert "sys" not in unused_modules

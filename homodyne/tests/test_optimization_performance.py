@@ -213,9 +213,9 @@ class TestClassicalOptimizationPerformance:
         size_ratio = medium_size / small_size
 
         # Performance should not degrade more than 2x the data size ratio
-        assert medium_ratio < 2 * size_ratio, (
-            f"Performance degradation too severe: {medium_ratio} vs {size_ratio}"
-        )
+        assert (
+            medium_ratio < 2 * size_ratio
+        ), f"Performance degradation too severe: {medium_ratio} vs {size_ratio}"
 
     def test_chi_squared_calculation_performance(self):
         """Test chi-squared calculation performance."""
@@ -286,9 +286,9 @@ class TestClassicalOptimizationPerformance:
         assert speedup > 5, f"Numba speedup insufficient: {speedup:.1f}x"
 
         # Individual optimized calls should be very fast
-        assert optimized_time < 1e-4, (
-            f"Numba optimized call too slow: {optimized_time:.6f}s"
-        )
+        assert (
+            optimized_time < 1e-4
+        ), f"Numba optimized call too slow: {optimized_time:.6f}s"
 
     def test_memory_efficiency(self):
         """Test memory efficiency of optimization algorithms."""
@@ -324,9 +324,9 @@ class TestClassicalOptimizationPerformance:
             memory_increase = peak_memory - initial_memory
 
             # Memory increase should be reasonable (< 500 MB for large dataset)
-            assert memory_increase < 500, (
-                f"Memory usage too high: {memory_increase:.1f} MB"
-            )
+            assert (
+                memory_increase < 500
+            ), f"Memory usage too high: {memory_increase:.1f} MB"
 
     def test_convergence_performance(self):
         """Test optimization convergence performance."""
@@ -384,9 +384,9 @@ class TestClassicalOptimizationPerformance:
         # (allowing some noise in the mock results)
         for i in range(len(chi_squared_values) - 1):
             ratio = chi_squared_values[i + 1] / chi_squared_values[i]
-            assert ratio < 2.0, (
-                f"Chi-squared not improving with tighter tolerance: {ratio}"
-            )
+            assert (
+                ratio < 2.0
+            ), f"Chi-squared not improving with tighter tolerance: {ratio}"
 
 
 @pytest.mark.skipif(not ROBUST_AVAILABLE, reason="Robust optimization not available")
@@ -513,9 +513,9 @@ class TestRobustOptimizationPerformance:
         if classical_time > 0:
             time_ratio = robust_time / classical_time
             # Allow robust optimization to be up to 10x slower (due to complexity)
-            assert time_ratio < 10, (
-                f"Robust optimization too slow: {time_ratio:.1f}x classical"
-            )
+            assert (
+                time_ratio < 10
+            ), f"Robust optimization too slow: {time_ratio:.1f}x classical"
 
         # Both should succeed
         assert classical_result.get("success", False)
@@ -568,9 +568,9 @@ class TestRobustOptimizationPerformance:
         # (allowing some variance in the mock timing)
         for i in range(len(times) - 1):
             ratio = times[i + 1] / times[i] if times[i] > 0 else 1
-            assert ratio < 5.0, (
-                "Performance degradation too severe with uncertainty budget"
-            )
+            assert (
+                ratio < 5.0
+            ), "Performance degradation too severe with uncertainty budget"
 
     def test_scenario_generation_performance(self):
         """Test performance of scenario generation for robust optimization."""
@@ -608,9 +608,9 @@ class TestRobustOptimizationPerformance:
             scenario_ratio = scenario_counts[-1] / scenario_counts[0]
 
             # Allow some overhead, but should be roughly linear
-            assert time_ratio < 2 * scenario_ratio, (
-                f"Scenario generation scaling poor: {time_ratio} vs {scenario_ratio}"
-            )
+            assert (
+                time_ratio < 2 * scenario_ratio
+            ), f"Scenario generation scaling poor: {time_ratio} vs {scenario_ratio}"
 
 
 class TestOptimizationMemoryProfiling:
@@ -682,9 +682,9 @@ class TestOptimizationMemoryProfiling:
         memory_increase = final_memory - initial_memory
 
         # Memory increase should be minimal (< 50 MB after 10 cycles)
-        assert memory_increase < 50, (
-            f"Potential memory leak detected: {memory_increase:.1f} MB increase"
-        )
+        assert (
+            memory_increase < 50
+        ), f"Potential memory leak detected: {memory_increase:.1f} MB increase"
 
     def test_large_data_memory_handling(self):
         """Test memory handling with large datasets."""
@@ -742,9 +742,9 @@ class TestOptimizationMemoryProfiling:
 
                     # Memory overhead should be reasonable (< 2x data size)
                     overhead = optimization_memory - initial_memory - memory_for_data
-                    assert overhead < 2 * memory_for_data, (
-                        f"Memory overhead too high: {overhead:.1f} MB"
-                    )
+                    assert (
+                        overhead < 2 * memory_for_data
+                    ), f"Memory overhead too high: {overhead:.1f} MB"
 
                 except MemoryError:
                     pytest.skip("Insufficient memory for large data test")
@@ -806,9 +806,9 @@ class TestPerformanceRegression:
             baseline = self.performance_baselines["small_data_optimization"]
 
             # Allow 50% performance degradation before flagging regression
-            assert execution_time < 1.5 * baseline, (
-                f"Performance regression detected: {execution_time:.3f}s vs baseline {baseline:.3f}s"
-            )
+            assert (
+                execution_time < 1.5 * baseline
+            ), f"Performance regression detected: {execution_time:.3f}s vs baseline {baseline:.3f}s"
 
     @pytest.mark.skipif(not NUMBA_AVAILABLE, reason="Numba not available")
     def test_kernel_performance_regression(self):
@@ -835,9 +835,9 @@ class TestPerformanceRegression:
         baseline = self.performance_baselines["g1_correlation_single"]
 
         # Allow 2x performance degradation for kernel functions
-        assert avg_time < 2.0 * baseline, (
-            f"Kernel performance regression: {avg_time:.6f}s vs baseline {baseline:.6f}s"
-        )
+        assert (
+            avg_time < 2.0 * baseline
+        ), f"Kernel performance regression: {avg_time:.6f}s vs baseline {baseline:.6f}s"
 
     def save_performance_baseline(self, test_name: str, execution_time: float):
         """Save performance baseline for future regression testing."""

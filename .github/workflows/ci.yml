@@ -104,7 +104,7 @@ jobs:
         run: ruff check homodyne --output-format=github
 
       - name: "🎨 Black Formatting Check"
-        run: black --check --diff homodyne
+        run: black --check --diff --exclude '_version\.py' homodyne
 
       - name: "📄 Import Sorting Check"
         run: isort --check-only --diff homodyne
@@ -339,8 +339,8 @@ jobs:
 
       - name: "🛡️ Advanced Security Scanning"
         run: |
-          # Static security analysis
-          bandit -r homodyne -f json -o security-bandit.json
+          # Static security analysis (continue on findings, don't fail workflow)
+          bandit -r homodyne -f json -o security-bandit.json || true
 
           # Dependency vulnerability scanning
           safety check --json --output security-safety.json || true

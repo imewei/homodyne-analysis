@@ -111,8 +111,7 @@ class Python312TypeHintModernizer:
             # Self type for method return types (PEP 673)
             "self_return_types": {
                 "pattern": r"def\s+(\w+)\(self[^)]*\)\s*->\s*['\"]?([A-Z][A-Za-z0-9_]*)['\"]?:",
-                "replacement": lambda match,
-                class_name: f"def {match.group(1)}(self) -> Self:",
+                "replacement": lambda match, class_name: f"def {match.group(1)}(self) -> Self:",
                 "performance": "improved",
                 "description": "Use Self type for method return types",
             },

@@ -508,9 +508,9 @@ class AdvancedChiSquaredAnalyzer:
 
         computation_time = time.time() - start_time
         self.performance_stats["total_computation_time"] += computation_time
-        self.performance_stats["blas_operations"] += (
-            self.blas_kernels.get_operation_count()
-        )
+        self.performance_stats[
+            "blas_operations"
+        ] += self.blas_kernels.get_operation_count()
 
         return ChiSquaredResult(
             chi_squared=chi_squared,

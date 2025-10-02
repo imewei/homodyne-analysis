@@ -177,9 +177,9 @@ class TestCalculateChiSquaredEquivalence:
             except Exception:
                 error_detected = True
 
-            assert error_detected, (
-                f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
-            )
+            assert (
+                error_detected
+            ), f"Error should be detected for case: {params}, {phi_angles}, {c2_exp}"
 
         print("✓ Error handling equivalence verified")
 

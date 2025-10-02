@@ -121,14 +121,15 @@ repos:
         types_or: [python, pyi]
         require_serial: true
 
-  # Modern Rust-based formatting (final formatter)
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.2
-    hooks:
-      - id: ruff-format
-        name: ruff-format-final
-        description: "Final formatting pass with Ruff"
-        types: [python]
+  # Modern Rust-based formatting (DISABLED - conflicts with Black)
+  # Black is the authoritative formatter, ruff-format creates conflicts
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.13.2
+  #   hooks:
+  #     - id: ruff-format
+  #       name: ruff-format-final
+  #       description: "Final formatting pass with Ruff"
+  #       types: [python]
 
   # ═══════════════════════════════════════════════════════════════════
   # PHASE 5: LINTING AND STATIC ANALYSIS
