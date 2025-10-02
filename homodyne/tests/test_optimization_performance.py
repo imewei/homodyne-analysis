@@ -217,6 +217,7 @@ class TestClassicalOptimizationPerformance:
             medium_ratio < 2 * size_ratio
         ), f"Performance degradation too severe: {medium_ratio} vs {size_ratio}"
 
+    @pytest.mark.slow
     def test_chi_squared_calculation_performance(self):
         """Test chi-squared calculation performance."""
         optimizer = ClassicalOptimizer(create_mock_analysis_core(), self.config)

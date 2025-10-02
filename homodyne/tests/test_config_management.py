@@ -393,7 +393,7 @@ class TestConfigTemplates:
 
                 if template_path and os.path.exists(template_path):
                     # Try to load the template
-                    with open(template_path) as f:
+                    with open(template_path, encoding="utf-8") as f:
                         template_config = json.load(f)
 
                     assert isinstance(template_config, dict)
@@ -410,7 +410,7 @@ class TestConfigTemplates:
                 template_path = get_template_path(template_name)
 
                 if template_path and os.path.exists(template_path):
-                    with open(template_path) as f:
+                    with open(template_path, encoding="utf-8") as f:
                         template_config = json.load(f)
 
                     # Validate template using ConfigManager

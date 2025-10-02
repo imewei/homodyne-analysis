@@ -323,6 +323,7 @@ class TestDistributedMLIntegration:
                 "dask",
             ], "Distributed backend not used"
 
+    @pytest.mark.slow
     def test_performance_benchmarking_integration(self, integration_config):
         """Test performance benchmarking and monitoring integration."""
 

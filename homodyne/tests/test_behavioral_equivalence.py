@@ -489,6 +489,7 @@ class TestNumericalAccuracyValidation:
 
         print("✓ Floating point precision preservation verified")
 
+    @pytest.mark.slow
     def test_matrix_operation_accuracy(self):
         """Test that matrix operations maintain numerical accuracy."""
         # Create test matrices
