@@ -57,7 +57,7 @@ class OptimizationConfig:
             return
 
         try:
-            with open(config_path) as f:
+            with open(config_path, encoding="utf-8") as f:
                 self.config = json.load(f)
             logger.info(f"Loaded configuration from {config_path}")
         except Exception as e:

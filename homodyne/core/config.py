@@ -433,7 +433,7 @@ class ConfigManager:
                     from homodyne.config import get_template_path
 
                     template_path = get_template_path("template")
-                    with open(template_path) as f:
+                    with open(template_path, encoding="utf-8") as f:
                         self.config = json.load(f)
                     logger.info(
                         f"Loaded default template configuration from: {template_path}"
@@ -455,7 +455,7 @@ class ConfigManager:
         Standard configuration loading without security enhancements.
         """
         # Optimized JSON loading with memory pre-allocation hints
-        with open(config_path, buffering=8192) as f:
+        with open(config_path, encoding="utf-8", buffering=8192) as f:
             raw_config = json.load(f)
 
         self.config = raw_config
@@ -1186,7 +1186,7 @@ class ConfigManager:
 
         try:
             template_path = get_template_path(template_name)
-            with open(template_path) as f:
+            with open(template_path, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             raise FileNotFoundError(f"Failed to load template '{template_name}': {e}")

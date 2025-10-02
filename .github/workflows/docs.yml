@@ -116,63 +116,6 @@ jobs:
           path: docs/_build/coverage/
           retention-days: 7
 
-  deploy-github-pages:
-    needs: build-docs
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write
-      id-token: write
-      contents: read
-
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Download documentation artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: documentation-${{ github.sha }}
-          path: docs-build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        continue-on-error: true
-        id: setup-pages
-
-      - name: Upload to GitHub Pages
-        if: steps.setup-pages.outcome == 'success'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs-build/html
-
-      - name: Deploy to GitHub Pages
-        if: steps.setup-pages.outcome == 'success'
-        id: deployment
-        uses: actions/deploy-pages@v3
-
-      - name: Post deployment notification
-        if: steps.setup-pages.outcome == 'success'
-        run: |
-          echo "📚 Documentation deployed successfully!"
-          echo "🔗 URL: ${{ steps.deployment.outputs.page_url }}"
-          echo "📊 Documentation statistics:"
-          cat docs-build/doc_stats.txt || echo "Statistics not available"
-
-      - name: Pages not enabled notification
-        if: steps.setup-pages.outcome != 'success'
-        run: |
-          echo "ℹ️  GitHub Pages is not enabled for this repository"
-          echo "📦 Documentation artifacts have been uploaded and are available for download"
-          echo "🔧 To enable Pages deployment:"
-          echo "   1. Go to Settings > Pages"
-          echo "   2. Select 'GitHub Actions' as the source"
-          echo "   3. Re-run this workflow"
-
   validate-research-standards:
     runs-on: ubuntu-latest
     needs: build-docs
@@ -272,23 +215,22 @@ jobs:
 
   notify-completion:
     runs-on: ubuntu-latest
-    needs: [build-docs, deploy-github-pages, validate-research-standards]
-    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.deploy-github-pages.result != 'cancelled'
+    needs: [build-docs, validate-research-standards]
+    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: Documentation deployment summary
+      - name: Documentation build summary
         run: |
-          echo "📚 Research-Grade Documentation Deployment Complete!"
+          echo "📚 Research-Grade Documentation Build Complete!"
           echo ""
           echo "🔍 Build Status:"
           echo "  - Documentation Build: ${{ needs.build-docs.result }}"
-          echo "  - GitHub Pages Deploy: ${{ needs.deploy-github-pages.result }}"
           echo "  - Research Standards Validation: ${{ needs.validate-research-standards.result }}"
           echo ""
-          echo "📖 Available Documentation:"
-          echo "  - Main Site: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          echo "  - Research Documentation: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/research/"
-          echo "  - API Reference: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/api-reference/"
+          echo "📦 Documentation Artifacts:"
+          echo "  - HTML documentation available in workflow artifacts"
+          echo "  - PDF documentation available in workflow artifacts"
+          echo "  - Quality reports available in workflow artifacts"
           echo ""
           echo "📊 Documentation Features:"
           echo "  - Research-grade mathematical framework"

@@ -102,6 +102,7 @@ class TestDistributedMLIntegration:
             "performance_monitoring": {"enabled": True, "benchmark_mode": True},
         }
 
+    @pytest.mark.slow
     def test_end_to_end_distributed_optimization_workflow(
         self, temp_workspace, sample_optimization_data, integration_config
     ):
@@ -372,6 +373,7 @@ class TestDistributedMLIntegration:
             execution_time = case.get("execution_time", case.get("total_time", 0))
             assert execution_time > 0, f"Invalid execution time for {case['name']}"
 
+    @pytest.mark.slow
     def test_error_recovery_and_fault_tolerance(self, integration_config):
         """Test error recovery and fault tolerance in distributed/ML systems."""
 

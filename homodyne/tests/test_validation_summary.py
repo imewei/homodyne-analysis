@@ -114,10 +114,7 @@ def test_error_handling_consistency():
     try:
         a = np.array([[1, 2]])
         b = np.array([[1], [2], [3]])
-        a @ b  # This should work (1x2 @ 3x1 -> error actually)
-        # Let's test a real mismatch
-        c = np.array([1, 2, 3])
-        a + c  # This should fail
+        a @ b  # This should fail: 1x2 @ 3x1 incompatible dimensions
         raise AssertionError("Should have raised exception")
     except ValueError:
         print("✓ Array shape mismatch handling working")

@@ -314,7 +314,7 @@ SCIENTIFIC_DEPENDENCIES = {
         "required": False,
         # No-op decorator that works both as @jit and @jit(...)
         "fallback": lambda *args, **kwargs: (
-            args[0] if args and callable(args[0]) else lambda f: f
+            args[0] if (args and callable(args[0])) else (lambda f: f)
         ),
     },
     "matplotlib": {
