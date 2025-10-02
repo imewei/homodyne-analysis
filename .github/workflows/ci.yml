@@ -179,6 +179,7 @@ jobs:
 
       - name: "🧪 Run Tests - ${{ matrix.test-category }}"
         run: |
+          # Exit code 5 means "no tests collected" - treat as success for missing markers
           pytest homodyne/tests \
             -m "${{ matrix.test-category }}" \
             --cov=homodyne \
@@ -186,7 +187,7 @@ jobs:
             --cov-report=json:coverage-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}.json \
             --junit-xml=junit-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-category }}.xml \
             --maxfail=5 \
-            -n auto
+            -n auto || test $? -eq 5 || exit $?
 
       - name: "📊 Upload Coverage"
         uses: codecov/codecov-action@v4
