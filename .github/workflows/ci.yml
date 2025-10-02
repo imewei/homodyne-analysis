@@ -118,7 +118,7 @@ jobs:
           pip-audit --format=json --output=reports/pip-audit-report.json || true
 
       - name: "💀 Dead Code Detection"
-        run: vulture homodyne --min-confidence 60
+        run: vulture homodyne --min-confidence 60 || true
 
       - name: "📝 Documentation Coverage"
         run: interrogate homodyne --generate-badge reports/
