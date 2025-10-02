@@ -179,6 +179,8 @@ jobs:
 
       - name: "🧪 Run Tests - ${{ matrix.test-category }}"
         shell: bash
+        env:
+          PYTHONUTF8: "1" # Enable UTF-8 encoding on Windows
         run: |
           # Exit code 5 means "no tests collected" - treat as success for missing markers
           pytest homodyne/tests \

@@ -18,6 +18,7 @@ import ast
 import json
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 import time
@@ -196,7 +197,13 @@ class TestEnterpriseImportAnalyzer:
     def teardown_method(self):
         """Cleanup test environment."""
         if self.temp_dir.exists():
-            shutil.rmtree(self.temp_dir)
+
+            def handle_remove_readonly(func, path, exc):
+                """Handle permission errors on Windows by removing readonly flag."""
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+
+            shutil.rmtree(self.temp_dir, onerror=handle_remove_readonly)
 
     def _create_test_files(self):
         """Create test Python files with various import patterns."""
@@ -426,7 +433,13 @@ class TestSafetyChecker:
     def teardown_method(self):
         """Cleanup test environment."""
         if self.temp_dir.exists():
-            shutil.rmtree(self.temp_dir)
+
+            def handle_remove_readonly(func, path, exc):
+                """Handle permission errors on Windows by removing readonly flag."""
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+
+            shutil.rmtree(self.temp_dir, onerror=handle_remove_readonly)
 
     def test_git_status_check(self):
         """Test git repository status checking."""
@@ -585,7 +598,13 @@ class TestWorkflowIntegration:
     def teardown_method(self):
         """Cleanup test environment."""
         if self.temp_dir.exists():
-            shutil.rmtree(self.temp_dir)
+
+            def handle_remove_readonly(func, path, exc):
+                """Handle permission errors on Windows by removing readonly flag."""
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+
+            shutil.rmtree(self.temp_dir, onerror=handle_remove_readonly)
 
     def test_pre_commit_hook_setup(self):
         """Test pre-commit hook installation."""
@@ -839,7 +858,13 @@ if __name__ == '__main__':
     def teardown_method(self):
         """Cleanup test environment."""
         if self.temp_dir.exists():
-            shutil.rmtree(self.temp_dir)
+
+            def handle_remove_readonly(func, path, exc):
+                """Handle permission errors on Windows by removing readonly flag."""
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+
+            shutil.rmtree(self.temp_dir, onerror=handle_remove_readonly)
 
     def test_complete_analysis_and_cleanup_workflow(self):
         """Test complete workflow from analysis to cleanup."""
