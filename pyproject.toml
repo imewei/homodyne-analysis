@@ -150,6 +150,7 @@ docs = [
     "sphinx-autoapi>=3.4.0",
     "numpydoc>=1.9.0",
     "sphinx-gallery>=0.18.0",
+    "linkify-it-py>=2.0.0",  # Required for myst-parser linkify extension
 ]
 
 # Complete development environment (CPU-only)
