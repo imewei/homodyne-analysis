@@ -1,6 +1,6 @@
 {
   "_template_info": {
-    "_comment": "COMPREHENSIVE HOMODYNE CONFIGURATION TEMPLATE - Based on current codebase v0.6.5.dev0",
+    "_comment": "COMPREHENSIVE HOMODYNE CONFIGURATION TEMPLATE - Based on current codebase v1.0.0",
     "_creation_date": "2025-09-29",
     "_based_on_analysis": "All existing config files (static_isotropic, static_anisotropic, laminar_flow) merged with recent enhancements",
     "_usage": "Copy this template and customize the analysis_mode, initial_parameters, and experimental_data sections for your specific experiment",
@@ -12,7 +12,7 @@
   },
   "metadata": {
     "_comment": "Template metadata - Customize description and analysis_mode for your experiment",
-    "config_version": "0.6.5.dev0",
+    "config_version": "1.0.0",
     "description": "TEMPLATE: Comprehensive homodyne scattering analysis configuration",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach",
     "analysis_mode": "CHANGE_ME: static_isotropic | static_anisotropic | laminar_flow",
@@ -23,7 +23,7 @@
       "multi_method_support": "Separate plots generated for each optimization method (Nelder-Mead, Gurobi, etc.)"
     },
     "parameters_optimized": "DEPENDS_ON_MODE: [D0,alpha,D_offset] for static modes, [D0,alpha,D_offset,gamma0,beta,gamma_offset,phi0] for laminar_flow",
-    "script_compatibility": "homodyne v0.6.5.dev0 with enhanced Gurobi optimization and code quality improvements",
+    "script_compatibility": "homodyne v1.0.0 with enhanced Gurobi optimization and code quality improvements",
     "_solver_optimization": {
       "optimized_for": "Large datasets (0.1M - 4M datapoints)",
       "optimization_date": "2025-09-30",
@@ -221,7 +221,7 @@
     },
     "robust_optimization": {
       "_comment": "ENHANCED: 100x-5000x performance improvements with caching and optimized solvers",
-      "_performance_upgrades": "v0.6.5+ optimizations: adaptive Jacobians, CLARABEL/SCS solvers, smart caching",
+      "_performance_upgrades": "v1.0.0+ optimizations: adaptive Jacobians, CLARABEL/SCS solvers, smart caching",
       "_usage_examples": [
         "python run_homodyne.py --method robust  # Run only robust methods",
         "python run_homodyne.py --method classical  # Include robust in classical analysis",

@@ -575,7 +575,7 @@ class CodeQualityTracker:
         baseline = CodeQualityBaseline(
             name=name,
             created_at=metrics.timestamp,
-            package_version="0.7.1",  # Current version
+            package_version="1.0.0",  # Current version
             metrics=metrics,
             targets=targets,
             thresholds=thresholds,

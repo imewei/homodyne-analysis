@@ -2,6 +2,7 @@
 # =========================================================
 # Revolutionary test suite configuration with latest pytest features,
 # CI/CD integration, containerization support, and modern tooling ecosystem
+# Last updated: v1.0.0 (2025-10-01)
 
 [build-system]
 requires = ["setuptools>=80.9.0", "setuptools-scm>=8.1.0", "wheel>=0.45.1"]
@@ -10,7 +11,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "homodyne-analysis"
 dynamic = ["version"]
-description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS)"
+description = "High-performance Python package for analyzing homodyne scattering in X-ray Photon Correlation Spectroscopy (XPCS) with frame counting fixes (v1.0.0+) and conditional angle subsampling for preserving angular information"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -25,7 +26,7 @@ keywords = [
     "scientific-computing", "physics", "materials-science"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",

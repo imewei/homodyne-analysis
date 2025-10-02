@@ -554,8 +554,14 @@ class TestComplexityBaseline:
 
     def test_high_complexity_function_identification(self):
         """Test that all high-complexity functions are properly identified."""
+        complexity_file = Path("high_complexity_functions.json")
+        if not complexity_file.exists():
+            pytest.skip(
+                "high_complexity_functions.json not found - generate with complexity analysis tool"
+            )
+
         try:
-            with open("high_complexity_functions.json") as f:
+            with open(complexity_file) as f:
                 complexity_data = json.load(f)
 
             high_complexity_funcs = complexity_data["high_complexity_functions"]

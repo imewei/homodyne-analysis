@@ -18,6 +18,7 @@ nonexistent_template
 static_isotropic
 test_*.npz
 test_*.json
+phi_angles_list.txt
 
 # Development scripts
 scripts/dev_cleanup/

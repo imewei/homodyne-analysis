@@ -111,7 +111,8 @@ class Python312TypeHintModernizer:
             # Self type for method return types (PEP 673)
             "self_return_types": {
                 "pattern": r"def\s+(\w+)\(self[^)]*\)\s*->\s*['\"]?([A-Z][A-Za-z0-9_]*)['\"]?:",
-                "replacement": lambda match, class_name: f"def {match.group(1)}(self) -> Self:",
+                "replacement": lambda match,
+                class_name: f"def {match.group(1)}(self) -> Self:",
                 "performance": "improved",
                 "description": "Use Self type for method return types",
             },
@@ -663,6 +664,9 @@ def test_func(x: str | None, y: int | float) -> list[str]:
 
 if __name__ == "__main__":
     # Example usage
+    import json
+    from tempfile import TemporaryDirectory
+
     logging.basicConfig(level=logging.INFO)
 
     package_root = Path("homodyne")
@@ -675,22 +679,25 @@ if __name__ == "__main__":
         # Generate report
         report = modernizer.generate_modernization_report(results)
 
-        # Save report
-        import json
+        # Save report to temporary directory
+        with TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "type_hint_modernization_report.json"
+            with open(report_path, "w") as f:
+                json.dump(report, f, indent=2)
 
-        with open("type_hint_modernization_report.json", "w") as f:
-            json.dump(report, f, indent=2)
+            print(f"Report saved to: {report_path}")
+            print("Type hint analysis complete:")
+            print(f"  Files analyzed: {results.total_files}")
+            print(f"  Modernizable hints: {results.modernizable_hints}")
+            print(f"  Performance improvements: {results.performance_improvements}")
+            print(f"  Coverage: {results.coverage_percentage:.1f}%")
 
-        print("Type hint analysis complete:")
-        print(f"  Files analyzed: {results.total_files}")
-        print(f"  Modernizable hints: {results.modernizable_hints}")
-        print(f"  Performance improvements: {results.performance_improvements}")
-        print(f"  Coverage: {results.coverage_percentage:.1f}%")
-
-        # Show sample modernizations
-        if results.modernizations:
-            print("\nSample modernizations:")
-            for mod in results.modernizations[:5]:
-                print(f"  {mod.old_hint} -> {mod.new_hint} ({mod.modernization_type})")
+            # Show sample modernizations
+            if results.modernizations:
+                print("\nSample modernizations:")
+                for mod in results.modernizations[:5]:
+                    print(
+                        f"  {mod.old_hint} -> {mod.new_hint} ({mod.modernization_type})"
+                    )
     else:
         print("Package directory 'homodyne' not found")

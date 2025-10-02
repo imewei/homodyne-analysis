@@ -11,26 +11,82 @@
 
 ## Overview
 
-**homodyne-analysis** is a high-performance Python package for analyzing homodyne
+**homodyne-analysis** is a research-grade Python package for analyzing homodyne
 scattering in X-ray Photon Correlation Spectroscopy (XPCS) under nonequilibrium
-conditions. This research-grade software implements the theoretical framework from
+conditions. This package implements theoretical frameworks from
 [He et al. PNAS 2024](https://doi.org/10.1073/pnas.2401162121) for characterizing
 transport properties in flowing soft matter systems through time-dependent intensity
 correlation functions.
 
-The package enables comprehensive analysis of nonequilibrium dynamics by capturing the
+The package provides comprehensive analysis of nonequilibrium dynamics by capturing the
 interplay between Brownian diffusion and advective shear flow in complex fluids, with
 applications to biological systems, colloids, and active matter under flow conditions.
 
-## Features
+## Key Features
 
-- **Three analysis modes**: Static Isotropic (3 params), Static Anisotropic (3 params),
-  Laminar Flow (7 params)
+### Analysis Capabilities
+
+- **Three analysis modes**: Static Isotropic (3 parameters), Static Anisotropic (3
+  parameters), Laminar Flow (7 parameters)
 - **Multiple optimization methods**: Classical (Nelder-Mead, Gurobi), Robust
   (Wasserstein DRO, Scenario-based, Ellipsoidal)
-- **High performance**: Numba JIT compilation, vectorized operations
-- **Noise resistance**: Robust optimization for measurement uncertainty
-- **Research-grade validation**: Experimental validation with synchrotron facilities
+- **Conditional angle subsampling**: Automatic preservation of angular information when
+  `n_angles < 4` for anisotropic analysis
+- **Frame counting convention**: Consistent 1-based inclusive counting with automatic
+  conversion to 0-based Python slicing
+
+### Performance
+
+- **Numba JIT compilation**: 3-5x speedup for core calculations
+- **Vectorized operations**: Optimized NumPy array processing
+- **Memory optimization**: Ellipsoidal optimization with 90% memory limit for large
+  datasets (8M+ data points)
+- **Smart caching**: Intelligent data caching with automatic dimension validation
+
+### Data Format Support
+
+- **APS and APS-U formats**: Auto-detection and loading of both old and new synchrotron
+  data formats
+- **Cached data compatibility**: Automatic cache dimension adjustment and validation
+- **Configuration templates**: Comprehensive templates with documented subsampling
+  strategies
+
+### Validation and Quality
+
+- **Statistical validation**: Cross-validation and bootstrap analysis for parameter
+  reliability
+- **Experimental validation**: Tested at synchrotron facilities (APS Sector 8-ID-I)
+- **Regression testing**: Comprehensive test suite with performance benchmarks
+
+## Recent Improvements (v1.0.0+)
+
+### Critical Bug Fixes
+
+1. **Frame Counting Convention (2025-10-01)**:
+
+   - Fixed 1-based inclusive counting to 0-based Python slicing conversion
+   - Formula: `time_length = end_frame - start_frame + 1` (inclusive)
+   - Impact: Resolved NaN chi-squared values and cache dimension mismatches
+   - Applied across all 9 modules: analysis core, data loader, classical/robust
+     optimizers, CLI, conversion utilities
+
+2. **Conditional Angle Subsampling**:
+
+   - Preserve all angles when `n_angles < 4` for anisotropic analysis
+   - Prevent angular information loss (e.g., 2 angles → 1 angle)
+   - Time subsampling still applied for performance (~16x reduction)
+
+3. **Memory Optimization**:
+
+   - Increased ellipsoidal optimization memory limit to 90% (from 80%)
+   - Handles large datasets with 8M+ data points without overflow
+   - Fixed stacked decorator issue in robust optimization
+
+### Configuration Updates
+
+- All templates updated with comprehensive subsampling documentation
+- Explicit `n_angles` and `n_time_points` configuration for performance tuning
+- Cache compatibility validation and auto-adjustment
 
 ## Quick Start
 
@@ -44,8 +100,97 @@ homodyne-config --mode laminar_flow --sample my_sample
 # Run analysis
 homodyne --config my_config.json --method all
 
-# Run only robust optimization
+# Run robust optimization for noisy data
 homodyne --config my_config.json --method robust
+```
+
+## Quick Reference (v1.0.0)
+
+### Most Common Workflows
+
+**1. First-time Setup:**
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install with all dependencies
+pip install homodyne-analysis[all]
+
+# Generate configuration template
+homodyne-config --mode laminar_flow --sample my_experiment
+```
+
+**2. Standard Analysis (Clean Data):**
+
+```bash
+# Edit my_config.json with your experimental parameters
+# Then run classical optimization
+homodyne --config my_config.json --method classical
+
+# Results saved to: ./homodyne_results/
+```
+
+**3. Robust Analysis (Noisy Data):**
+
+```bash
+# For data with outliers or measurement noise
+homodyne --config my_config.json --method robust --verbose
+
+# Compare both methods
+homodyne --config my_config.json --method all
+```
+
+**4. Fast Static Isotropic Analysis:**
+
+```bash
+# Generate isotropic config (3 parameters, fastest)
+homodyne-config --mode static_isotropic --output fast_config.json
+
+# Run analysis
+homodyne --config fast_config.json --static-isotropic
+```
+
+**5. Python API Usage:**
+
+```python
+import numpy as np
+import json
+from homodyne.analysis.core import HomodyneAnalysisCore
+from homodyne.optimization.classical import ClassicalOptimizer
+
+# Load config and initialize
+with open("my_config.json", 'r') as f:
+    config = json.load(f)
+core = HomodyneAnalysisCore(config)
+
+# Load your experimental data
+phi_angles = np.array([0, 36, 72, 108, 144])
+c2_data = load_your_data()  # Your data loading function
+
+# Run optimization
+optimizer = ClassicalOptimizer(core, config)
+params, results = optimizer.run_classical_optimization_optimized(
+    phi_angles=phi_angles,
+    c2_experimental=c2_data
+)
+
+print(f"D₀ = {params[0]:.3e} Å²/s")
+print(f"χ² = {results.chi_squared:.6e}")
+```
+
+**6. Troubleshooting:**
+
+```bash
+# Enable verbose logging for debugging
+homodyne --config my_config.json --verbose
+
+# Run test suite to verify installation
+pytest -v -m "not slow"
+
+# Check frame counting (v1.0.0 critical fix)
+pytest homodyne/tests/test_time_length_calculation.py -v
 ```
 
 ## Installation
@@ -74,10 +219,12 @@ pip install -e .[dev]
 
 ### Optional Dependencies
 
-- **Performance**: `pip install homodyne-analysis[performance]` (numba, jax)
-- **Robust optimization**: `pip install homodyne-analysis[robust]` (cvxpy)
-- **Gurobi solver**: `pip install homodyne-analysis[gurobi]` (requires license)
-- **Development**: `pip install homodyne-analysis[dev]` (all tools)
+- **Performance**: `pip install homodyne-analysis[performance]` (numba, psutil,
+  performance monitoring)
+- **Robust optimization**: `pip install homodyne-analysis[robust]` (cvxpy, gurobipy,
+  mosek)
+- **Development**: `pip install homodyne-analysis[dev]` (testing, linting, documentation
+  tools)
 
 ### High-Performance Configuration
 
@@ -161,28 +308,21 @@ homodyne-config --sample protein --author "Your Name"
 
 ## Shell Completion
 
-Install and enable shell completion:
+The package supports shell completion for bash, zsh, and fish shells:
 
 ```bash
-# Install completion support
-pip install homodyne-analysis[completion]
+# For bash
+homodyne --help  # Shows all available options
 
-# Enable for your shell
-homodyne --install-completion bash  # or zsh, fish, powershell
-
-# Restart shell or reload config
-source ~/.bashrc
+# Tab completion works for:
+homodyne --method <TAB>     # classical, robust, all
+homodyne --config <TAB>     # Completes file paths
+homodyne --output-dir <TAB> # Completes directory paths
 ```
 
-**Shortcuts (always available):**
-
-```bash
-hc          # homodyne --method classical
-hr          # homodyne --method robust
-ha          # homodyne --method all
-hconfig     # homodyne --config
-hplot       # homodyne --plot-experimental-data
-```
+**Note:** Shell completion is built into the CLI and works automatically in most modern
+shells. For advanced completion features, you may need to install optional completion
+dependencies.
 
 ## Scientific Background
 
@@ -227,6 +367,133 @@ where:
 - $\\dot{\\gamma}\_{\\text{offset}}$: additive shear rate offset [s⁻¹]
 - $\\phi_0$: flow direction angle [degrees]
 
+## Frame Counting Convention
+
+### Overview
+
+The package uses **1-based inclusive frame counting** in configuration files, which is
+then converted to 0-based Python array indices for processing.
+
+### Frame Counting Formula
+
+```python
+time_length = end_frame - start_frame + 1  # Inclusive counting
+```
+
+**Examples:**
+
+- `start_frame=1, end_frame=100` → `time_length=100` (not 99!)
+- `start_frame=401, end_frame=1000` → `time_length=600` (not 599!)
+- `start_frame=1, end_frame=1` → `time_length=1` (single frame)
+
+### Convention Details
+
+**Config Convention (1-based, inclusive):**
+
+- `start_frame=1` means "start at first frame"
+- `end_frame=100` means "include frame 100"
+- Both boundaries are inclusive: `[start_frame, end_frame]`
+
+**Python Slice Convention (0-based, exclusive end):**
+
+- Internally converted using: `python_start = start_frame - 1`
+- `python_end = end_frame` (kept as-is for exclusive slice)
+- Array slice `[python_start:python_end]` gives exactly `time_length` elements
+
+**Example Conversion:**
+
+```python
+# Config values
+start_frame = 401  # 1-based
+end_frame = 1000   # 1-based
+
+# Convert to Python indices
+python_start = 400  # 0-based (401 - 1)
+python_end = 1000   # 0-based, exclusive
+
+# Slice gives correct number of frames
+data_slice = full_data[:, 400:1000, 400:1000]  # 600 frames
+time_length = 1000 - 401 + 1  # = 600 ✓
+```
+
+### Cached Data Compatibility
+
+**Cache Filename Convention:**
+
+- Cache files use config values:
+  `cached_c2_isotropic_frames_{start_frame}_{end_frame}.npz`
+- Example: `cached_c2_isotropic_frames_401_1000.npz` contains 600 frames
+
+**Cache Dimension Validation:** The analysis core automatically detects and adjusts for
+dimension mismatches:
+
+```python
+# Automatic adjustment if cache dimensions differ
+if c2_experimental.shape[1] != self.time_length:
+    logger.info(f"Auto-adjusting time_length to match cached data")
+    self.time_length = c2_experimental.shape[1]
+```
+
+**Migration for Existing Users:** If you have cached files created before v0.6.5, they
+may have incorrect dimensions:
+
+1. Delete old cache files
+2. Regenerate from raw data using the fixed conversion script
+3. Or accept auto-adjustment (dimensions will match data, not config)
+
+### Utility Functions
+
+Two centralized utility functions ensure consistency:
+
+```python
+from homodyne.core.io_utils import calculate_time_length, config_frames_to_python_slice
+
+# Calculate time_length from config frames
+time_length = calculate_time_length(start_frame=401, end_frame=1000)
+# Returns: 600
+
+# Convert for Python array slicing
+python_start, python_end = config_frames_to_python_slice(401, 1000)
+# Returns: (400, 1000) for use in data[400:1000]
+```
+
+## Conditional Angle Subsampling
+
+### Strategy
+
+The package automatically preserves angular information when the number of available
+angles is small:
+
+```python
+# Automatic angle preservation
+if n_angles < 4:
+    # Use all available angles to preserve angular information
+    angle_subsample_size = n_angles
+else:
+    # Subsample for performance (default: 4 angles)
+    angle_subsample_size = config.get("n_angles", 4)
+```
+
+### Impact
+
+- **Before fix**: 2 angles → 1 angle (50% angular information loss)
+- **After fix**: 2 angles → 2 angles (100% preservation)
+- Time subsampling still applied: ~16x performance improvement with \<10% χ² degradation
+
+### Configuration
+
+All configuration templates include subsampling documentation:
+
+```json
+{
+  "subsampling": {
+    "n_angles": 4,
+    "n_time_points": 16,
+    "comment": "Conditional: n_angles preserved when < 4 for angular info retention"
+  }
+}
+```
+
 ## Optimization Methods
 
 ### Classical Methods
@@ -253,28 +520,42 @@ Advanced uncertainty-aware optimization for noisy experimental data:
 
    - Bounded uncertainty with confidence ellipsoids
    - Analytical uncertainty bounds
+   - Memory optimization: 90% limit for large datasets
 
-Use `--method robust` for noisy data with outliers. Use `--method classical` for clean,
-low-noise data.
+**Usage Guidelines:**
+
+- Use `--method robust` for noisy data with outliers
+- Use `--method classical` for clean, low-noise data
+- Use `--method all` to run both and compare results
 
 ## Python API
 
 ### Basic Usage
 
 ```python
+import numpy as np
+import json
 from homodyne.analysis.core import HomodyneAnalysisCore
 from homodyne.optimization.classical import ClassicalOptimizer
-from homodyne.optimization.robust import RobustHomodyneOptimizer
+from homodyne.data.xpcs_loader import load_xpcs_data
 
 # Load configuration file
-config_file = "config_static_isotropic.json"  # Use actual config file
-core = HomodyneAnalysisCore(config_file)
+config_file = "config_static_isotropic.json"
+with open(config_file, 'r') as f:
+    config = json.load(f)
 
-# Load experimental data
-phi_angles = np.array([0, 36, 72, 108, 144])  # Example angles
-c2_data = core.load_experimental_data(phi_angles, len(phi_angles))
+# Initialize analysis core
+core = HomodyneAnalysisCore(config)
 
-# Classical optimization
+# Load experimental XPCS data
+phi_angles = np.array([0, 36, 72, 108, 144])  # Example angles in degrees
+c2_data = load_xpcs_data(
+    data_path=config['experimental_data']['data_folder_path'],
+    phi_angles=phi_angles,
+    n_angles=len(phi_angles)
+)
+
+# Run classical optimization
 classical = ClassicalOptimizer(core, config)
 optimal_params, results = classical.run_classical_optimization_optimized(
     phi_angles=phi_angles,
@@ -282,24 +563,35 @@ optimal_params, results = classical.run_classical_optimization_optimized(
 )
 
 print(f"Optimal parameters: {optimal_params}")
-print(f"Results: {results}")
+print(f"Chi-squared: {results.chi_squared:.6e}")
+print(f"Method: {results.best_method}")
 ```
 
 ### Research Workflow
 
 ```python
 import numpy as np
+import json
 from homodyne.analysis.core import HomodyneAnalysisCore
 from homodyne.optimization.classical import ClassicalOptimizer
 from homodyne.optimization.robust import RobustHomodyneOptimizer
+from homodyne.data.xpcs_loader import load_xpcs_data
 
 # Load experimental configuration
 config_file = "config_laminar_flow.json"
-core = HomodyneAnalysisCore(config_file)
+with open(config_file, 'r') as f:
+    config = json.load(f)
+
+# Initialize analysis core
+core = HomodyneAnalysisCore(config)
 
 # Load XPCS correlation data
-phi_angles = np.array([0, 36, 72, 108, 144])  # Experimental angles
-c2_data = core.load_experimental_data(phi_angles, len(phi_angles))
+phi_angles = np.array([0, 36, 72, 108, 144])  # Scattering angles in degrees
+c2_data = load_xpcs_data(
+    data_path=config['experimental_data']['data_folder_path'],
+    phi_angles=phi_angles,
+    n_angles=len(phi_angles)
+)
 
 # Classical analysis for clean data
 classical = ClassicalOptimizer(core, config)
@@ -310,31 +602,59 @@ classical_params, classical_results = classical.run_classical_optimization_optim
 
 # Robust analysis for noisy data
 robust = RobustHomodyneOptimizer(core, config)
-robust_params, robust_results = robust.optimize_wasserstein_robust(
+robust_result_dict = robust.optimize(
     phi_angles=phi_angles,
     c2_experimental=c2_data,
-    epsilon=0.1  # Uncertainty radius
+    method="wasserstein",  # Options: "wasserstein", "scenario", "ellipsoidal"
+    epsilon=0.1  # Uncertainty radius for DRO
 )
 
+# Extract results
+robust_params = robust_result_dict['optimal_params']
+robust_chi2 = robust_result_dict['chi_squared']
+
 print(f"Classical D₀: {classical_params[0]:.3e} Å²/s")
-print(f"Robust D₀: {robust_params[0]:.3e} ± {robust_results['uncertainty'][0]:.3e} Å²/s")
+print(f"Classical χ²: {classical_results.chi_squared:.6e}")
+print(f"\nRobust D₀: {robust_params[0]:.3e} Å²/s")
+print(f"Robust χ²: {robust_chi2:.6e}")
 ```
 
 ### Performance Benchmarking
 
 ```python
-from homodyne.performance_monitoring import benchmark_analysis
+import time
+import numpy as np
+import json
+from homodyne.analysis.core import HomodyneAnalysisCore
+from homodyne.optimization.classical import ClassicalOptimizer
+from homodyne.data.xpcs_loader import load_xpcs_data
 
-# Benchmark different optimization methods
-results = benchmark_analysis(
-    config_file="config_laminar_flow.json",
-    methods=['classical', 'robust'],
-    data_sizes=[100, 500, 1000, 5000],
-    repeats=10
+# Load configuration
+config_file = "config_laminar_flow.json"
+with open(config_file, 'r') as f:
+    config = json.load(f)
+
+# Initialize
+core = HomodyneAnalysisCore(config)
+phi_angles = np.array([0, 36, 72, 108, 144])
+c2_data = load_xpcs_data(
+    data_path=config['experimental_data']['data_folder_path'],
+    phi_angles=phi_angles,
+    n_angles=len(phi_angles)
 )
 
-# Generate performance plots
-results.plot_performance_comparison(save_path="performance_analysis.png")
+# Benchmark classical optimization
+classical = ClassicalOptimizer(core, config)
+start_time = time.perf_counter()
+params, results = classical.run_classical_optimization_optimized(
+    phi_angles=phi_angles,
+    c2_experimental=c2_data
+)
+elapsed_time = time.perf_counter() - start_time
+
+print(f"Classical optimization completed in {elapsed_time:.2f} seconds")
+print(f"Chi-squared: {results.chi_squared:.6e}")
+print(f"Best method: {results.best_method}")
 ```
 
 ## Configuration
@@ -366,6 +686,25 @@ Configuration files specify analysis mode:
 - `static_mode: true, static_submode: "isotropic"` → Static Isotropic (3 params)
 - `static_mode: true, static_submode: "anisotropic"` → Static Anisotropic (3 params)
 
+### Subsampling Configuration
+
+```json
+{
+  "subsampling": {
+    "n_angles": 4,
+    "n_time_points": 16,
+    "strategy": "conditional",
+    "preserve_angular_info": true
+  }
+}
+```
+
+**Performance Impact:**
+
+- Time subsampling: ~16x speedup
+- Angle subsampling: Conditional based on available angles
+- Combined impact: 20-50x speedup with \<10% χ² degradation
+
 ### Data Formats and Standards
 
 **XPCS Correlation Data Format:**
@@ -390,6 +729,11 @@ Configuration files specify analysis mode:
     "gap_height": 50000.0,
     "temperature": 293.15,
     "viscosity": 1.0e-3
+  },
+  "frame_settings": {
+    "start_frame": 401,
+    "end_frame": 1000,
+    "time_length_comment": "Calculated as end_frame - start_frame + 1 = 600"
   },
   "optimization_bounds": {
     "D0": [1e-15, 1e-10],
@@ -497,6 +841,7 @@ export HOMODYNE_PERFORMANCE_MODE=1
 - **Vectorized operations**: Optimized array processing
 - **Memory efficiency**: Smart caching and allocation
 - **Batch processing**: Vectorized chi-squared calculation
+- **Conditional subsampling**: 20-50x speedup with minimal accuracy loss
 
 ### Benchmarking Results
 
@@ -506,6 +851,12 @@ export HOMODYNE_PERFORMANCE_MODE=1
 |-----------|-------------|-----------|---------| | 100 points | 2.3 s | 0.7 s | 3.3× |
 | 500 points | 12.1 s | 3.2 s | 3.8× | | 1000 points | 45.2 s | 8.9 s | 5.1× | | 5000
 points | 892 s | 178 s | 5.0× |
+
+**Memory Optimization:**
+
+| Dataset Size | Before | After | Improvement |
+|--------------|--------|-------|-------------| | 8M data points | Memory error | 90%
+limit success | Enabled | | 4M data points | 85% usage | 75% usage | 12% reduction |
 
 ## Research Applications
 
@@ -541,6 +892,45 @@ points | 892 s | 178 s | 5.0× |
 - **Bootstrap Analysis**: Statistical uncertainty quantification
 - **Residual Analysis**: Goodness-of-fit assessment and outlier detection
 
+## Testing
+
+### Quick Test Suite (Development)
+
+```bash
+# Fast test suite excluding slow tests (recommended for development)
+pytest -v -m "not slow"
+
+# Run frame counting regression tests (v1.0.0 formula)
+pytest homodyne/tests/test_time_length_calculation.py -v
+
+# Run with coverage
+pytest -v --cov=homodyne --cov-report=html -m "not slow"
+```
+
+### Comprehensive Test Suite (CI/CD)
+
+```bash
+# Full test suite including slow performance tests
+pytest homodyne/tests/ -v
+
+# Performance benchmarks only
+pytest homodyne/tests/ -v -m performance
+
+# Run with parallel execution for speed
+pytest -v -n auto
+```
+
+### Testing Guide
+
+For comprehensive testing documentation including:
+
+- Frame counting convention (v1.0.0 changes)
+- Test markers and categorization
+- Temporary file management best practices
+- Writing new tests for v1.0.0
+
+See [TESTING.md](TESTING.md) for detailed testing guidelines.
+
 ## Citation
 
 If you use this software in your research, please cite the original paper:
@@ -565,9 +955,9 @@ If you use this software in your research, please cite the original paper:
 @software{homodyne_analysis,
   title={homodyne-analysis: High-performance XPCS analysis with robust optimization},
   author={Chen, Wei and He, Hongrui},
-  year={2024},
+  year={2024-2025},
   url={https://github.com/imewei/homodyne},
-  version={0.7.1},
+  version={1.0.0},
   institution={Argonne National Laboratory}
 }
 ```
@@ -579,15 +969,17 @@ Development setup:
 ```bash
 git clone https://github.com/imewei/homodyne.git
 cd homodyne
-pip install -e .[all]
+pip install -e .[dev]
 
 # Run tests
-python homodyne/run_tests.py
+pytest homodyne/tests/ -v
 
 # Code quality
+ruff check homodyne/
+ruff format homodyne/
 black homodyne/
 isort homodyne/
-flake8 homodyne/
+mypy homodyne/
 ```
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guidelines.

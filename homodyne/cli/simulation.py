@@ -182,7 +182,7 @@ def create_default_analysis_core(
     # Create a minimal core for calculation
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         temp_config = {
-            "metadata": {"config_version": "0.6.5.dev0"},
+            "metadata": {"config_version": "1.0.0"},
             "analyzer_parameters": DEFAULT_ANALYZER_CONFIG,
             "experimental_data": {
                 "data_folder_path": "./data/",

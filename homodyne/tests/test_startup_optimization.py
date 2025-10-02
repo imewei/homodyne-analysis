@@ -13,6 +13,7 @@ import importlib
 import json
 import subprocess
 import sys
+import tempfile
 import time
 import warnings
 from pathlib import Path
@@ -90,7 +91,7 @@ class StartupOptimizer:
         }
 
 
-def create_lazy_import_example():
+def create_lazy_import_example(output_dir: Path):
     """Create example of lazy import optimization."""
     lazy_import_code = '''
 # Lazy import example
@@ -112,10 +113,11 @@ def compute_with_numpy():
     return np.array([1, 2, 3])
 '''
 
-    with open("lazy_import_example.py", "w") as f:
+    example_file = output_dir / "lazy_import_example.py"
+    with open(example_file, "w") as f:
         f.write(lazy_import_code)
 
-    print("✓ Created lazy import example: lazy_import_example.py")
+    print(f"✓ Created lazy import example: {example_file}")
 
 
 def run_startup_optimization():
@@ -153,32 +155,38 @@ def run_startup_optimization():
     for rec in optimization_results["recommendations"]:
         print(f"  • {rec}")
 
-    # Create lazy import example
-    create_lazy_import_example()
+    # Create temporary directory for output files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
 
-    # Calculate total import time
-    total_import_time = sum(
-        t for t in optimization_results["import_times"].values() if t != float("inf")
-    )
+        # Create lazy import example
+        create_lazy_import_example(temp_path)
 
-    # Save results
-    results = {
-        "cold_startup_time": cold_startup,
-        "total_import_time": total_import_time,
-        "optimization_analysis": optimization_results,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-    }
+        # Calculate total import time
+        total_import_time = sum(
+            t
+            for t in optimization_results["import_times"].values()
+            if t != float("inf")
+        )
 
-    results_file = Path("startup_optimization_results.json")
-    with open(results_file, "w") as f:
-        json.dump(results, f, indent=2)
+        # Save results
+        results = {
+            "cold_startup_time": cold_startup,
+            "total_import_time": total_import_time,
+            "optimization_analysis": optimization_results,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
 
-    print(f"\n📄 Results saved to: {results_file}")
-    print(f"⚡ Total import time: {total_import_time * 1000:.2f} ms")
-    print(f"🚀 Cold startup time: {cold_startup:.3f} seconds")
-    print("✅ Task 4.7 Startup Optimization Complete!")
+        results_file = temp_path / "startup_optimization_results.json"
+        with open(results_file, "w") as f:
+            json.dump(results, f, indent=2)
 
-    return results
+        print(f"\n📄 Results saved to: {results_file}")
+        print(f"⚡ Total import time: {total_import_time * 1000:.2f} ms")
+        print(f"🚀 Cold startup time: {cold_startup:.3f} seconds")
+        print("✅ Task 4.7 Startup Optimization Complete!")
+
+        return results
 
 
 if __name__ == "__main__":

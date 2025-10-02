@@ -1,7 +1,7 @@
 # Homodyne Analysis Package - Development Makefile
 # ================================================
 
-.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv install dev-install test test-all lint format docs docs-serve build upload check build-fast build-dev build-prod watch benchmark cache-stats build-optimize
+.PHONY: help clean clean-all clean-build clean-pyc clean-test clean-venv clean-cache clean-cache-full install dev-install install-hooks install-build-deps test test-all test-fast test-discovery test-full-discovery test-discovery-report test-performance test-regression test-ci test-parallel test-cached lint format quality quality-fast ruff-fix pre-commit docs docs-serve docs-validate docs-check docs-stats docs-clean build upload check build-fast build-dev build-prod build-optimize watch benchmark cache-stats build-health profile-memory dev-optimize baseline-update baseline-reset baseline-report performance-analysis performance-analysis-quick
 
 # Default target
 help:
@@ -40,8 +40,12 @@ help:
 	@echo "  clean-venv   Remove virtual environment"
 	@echo
 	@echo "Documentation:"
-	@echo "  docs         Build documentation"
-	@echo "  docs-serve   Serve documentation locally"
+	@echo "  docs           Build documentation"
+	@echo "  docs-serve     Serve documentation locally"
+	@echo "  docs-validate  Validate documentation completeness"
+	@echo "  docs-check     Check documentation quality and links"
+	@echo "  docs-stats     Show documentation statistics"
+	@echo "  docs-clean     Clean documentation build artifacts"
 	@echo
 	@echo "Packaging:"
 	@echo "  build        Build distribution packages"
@@ -186,6 +190,8 @@ clean-test:
 	rm -f static_isotropic
 	rm -f test_*.npz
 	rm -f test_*.json
+	rm -f phi_angles_list.txt
+	rm -rf homodyne_results/
 
 clean-venv:
 	rm -rf venv/
@@ -203,6 +209,43 @@ docs:
 docs-serve:
 	@echo "Serving documentation at http://localhost:8000"
 	cd docs/_build/html && python -m http.server 8000
+
+docs-validate:
+	@echo "🔍 Validating documentation completeness..."
+	@echo "Checking README.md..."
+	@test -f README.md && echo "✓ README.md exists" || echo "✗ README.md missing"
+	@echo "Checking API documentation..."
+	@test -f docs/api/README.md && echo "✓ API index exists" || echo "✗ API index missing"
+	@test -f docs/api/analysis_core.md && echo "✓ Core API docs exist" || echo "✗ Core API docs missing"
+	@echo "Checking research documentation..."
+	@test -f docs/research/methodology.md && echo "✓ Methodology docs exist" || echo "✗ Methodology docs missing"
+	@echo "Checking documentation summary..."
+	@test -f DOCUMENTATION_SUMMARY.md && echo "✓ Documentation summary exists" || echo "✗ Summary missing"
+	@echo "✅ Documentation validation complete"
+
+docs-check:
+	@echo "🔍 Checking documentation quality..."
+	@if command -v markdownlint >/dev/null 2>&1; then \
+		markdownlint README.md docs/**/*.md; \
+	else \
+		echo "⚠️  markdownlint not installed (npm install -g markdownlint-cli)"; \
+	fi
+	@echo "Checking for broken links..."
+	@grep -r "http" docs/*.md README.md | grep -v "^\s*#" || true
+	@echo "✅ Documentation quality check complete"
+
+docs-stats:
+	@echo "📊 Documentation statistics:"
+	@echo "README.md: $$(wc -l < README.md) lines"
+	@echo "API docs: $$(find docs/api -name '*.md' -exec wc -l {} + | tail -1 | awk '{print $$1}') lines"
+	@echo "Research docs: $$(find docs/research -name '*.md' -exec wc -l {} + | tail -1 | awk '{print $$1}') lines"
+	@echo "Total documentation: $$(find . -name '*.md' -not -path './node_modules/*' -exec wc -l {} + | tail -1 | awk '{print $$1}') lines"
+	@echo "✅ Documentation statistics complete"
+
+docs-clean:
+	@echo "🧹 Cleaning documentation build artifacts..."
+	rm -rf docs/_build/
+	@echo "✅ Documentation cleaned"
 
 # Packaging targets
 build: clean

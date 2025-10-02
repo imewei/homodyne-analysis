@@ -23,11 +23,13 @@ import gc
 import io
 import json
 import pstats
+import tempfile
 import threading
 import time
 import tracemalloc
 import warnings
 from contextlib import contextmanager
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -549,36 +551,36 @@ class PerformanceTestSuite:
         )
         print(f"  Performance alerts: {len(alerts)}")
 
-        # Save detailed reports
-        reports_dir = Path("performance_reports")
-        reports_dir.mkdir(exist_ok=True)
+        # Save detailed reports to temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            reports_dir = Path(temp_dir)
 
-        # Save matrix profiling report
-        with open(reports_dir / "matrix_profiling_report.txt", "w") as f:
-            f.write(matrix_report)
+            # Save matrix profiling report
+            with open(reports_dir / "matrix_profiling_report.txt", "w") as f:
+                f.write(matrix_report)
 
-        # Save array profiling report
-        with open(reports_dir / "array_profiling_report.txt", "w") as f:
-            f.write(array_report)
+            # Save array profiling report
+            with open(reports_dir / "array_profiling_report.txt", "w") as f:
+                f.write(array_report)
 
-        # Save monitoring summary
-        with open(reports_dir / "monitoring_summary.txt", "w") as f:
-            f.write(summary_report)
+            # Save monitoring summary
+            with open(reports_dir / "monitoring_summary.txt", "w") as f:
+                f.write(summary_report)
 
-        # Save performance data as JSON
-        performance_data = {
-            "memory_stats": memory_stats,
-            "alerts": [asdict(alert) for alert in alerts],
-            "profiled_functions": list(
-                self.monitor.function_profiler.profile_data.keys()
-            ),
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        }
+            # Save performance data as JSON
+            performance_data = {
+                "memory_stats": memory_stats,
+                "alerts": [asdict(alert) for alert in alerts],
+                "profiled_functions": list(
+                    self.monitor.function_profiler.profile_data.keys()
+                ),
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
 
-        with open(reports_dir / "performance_data.json", "w") as f:
-            json.dump(performance_data, f, indent=2)
+            with open(reports_dir / "performance_data.json", "w") as f:
+                json.dump(performance_data, f, indent=2)
 
-        print(f"\n📄 Detailed reports saved to: {reports_dir}")
+            print(f"\n📄 Detailed reports saved to temporary directory: {reports_dir}")
         print("✅ Performance profiling infrastructure test completed!")
 
         return performance_data

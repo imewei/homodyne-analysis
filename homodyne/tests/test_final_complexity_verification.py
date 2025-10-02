@@ -14,6 +14,8 @@ Institution: Argonne National Laboratory
 
 import ast
 import json
+import tempfile
+from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -248,10 +250,12 @@ def main():
         analyze_specific_refactored_functions()
 
         # Save report
-        with open("final_complexity_report.json", "w") as f:
-            json.dump(report, f, indent=2)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_file = Path(temp_dir) / "final_complexity_report.json"
+            with open(report_file, "w") as f:
+                json.dump(report, f, indent=2)
 
-        print("\n📄 Detailed report saved to: final_complexity_report.json")
+            print(f"\n📄 Detailed report saved to: {report_file}")
 
         # Return success status
         if report["target_met"]:

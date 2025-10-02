@@ -1,8 +1,13 @@
+# Package Manifest for Homodyne Analysis
+# =======================================
+# Last updated: v1.0.0 (2025-10-01)
+#
 # Include the README and other documentation
 include README.md
 include LICENSE
 include CHANGELOG.md
 include DEVELOPMENT.md
+include DOCUMENTATION_SUMMARY.md
 include pyproject.toml
 include Makefile
 include requirements*.txt
@@ -21,13 +26,15 @@ recursive-include homodyne/performance *.py
 
 # Developer and CI scripts were consolidated into main package
 
-# Include documentation files
+# Include documentation files (v1.0.0+ comprehensive docs)
 recursive-include docs *.md
 recursive-include docs *.rst
 recursive-include docs *.py
 include docs/Makefile
 include docs/conf.py
 recursive-include docs/_static *
+recursive-include docs/api *
+recursive-include docs/research *
 recursive-include docs/api-reference *
 recursive-include docs/dev *
 recursive-include docs/developer-guide *

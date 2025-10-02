@@ -19,6 +19,7 @@ import time
 import pytest
 
 
+@pytest.mark.slow
 class TestStartupTimeValidation:
     """Test startup time meets performance targets."""
 
@@ -64,14 +65,14 @@ print(f"Import successful: {homodyne.__version__}")
 
         # Critical test: All times must be under 2 seconds
         for i, time_val in enumerate(import_times):
-            assert (
-                time_val < 2.0
-            ), f"Import {i + 1} took {time_val:.3f}s (exceeds 2s target)"
+            assert time_val < 2.0, (
+                f"Import {i + 1} took {time_val:.3f}s (exceeds 2s target)"
+            )
 
         # Bonus: Average should be well under target
-        assert (
-            avg_time < 1.5
-        ), f"Average import time {avg_time:.3f}s should be well under 2s"
+        assert avg_time < 1.5, (
+            f"Average import time {avg_time:.3f}s should be well under 2s"
+        )
 
     @pytest.mark.performance
     def test_optimized_startup_time(self):
@@ -112,13 +113,13 @@ print(f"VERSION:{homodyne.__version__}")
                 print(f"Optimized import time: {import_time:.3f}s")
 
                 # With optimization, should be even faster
-                assert (
-                    import_time < 2.0
-                ), f"Optimized import took {import_time:.3f}s (exceeds 2s target)"
+                assert import_time < 2.0, (
+                    f"Optimized import took {import_time:.3f}s (exceeds 2s target)"
+                )
                 # Allow 1.5s for optimized import (includes subprocess overhead)
-                assert (
-                    import_time < 1.5
-                ), f"Optimized import should be under 1.5s, got {import_time:.3f}s"
+                assert import_time < 1.5, (
+                    f"Optimized import should be under 1.5s, got {import_time:.3f}s"
+                )
                 return
 
         pytest.fail("Could not parse optimized import time")
@@ -161,9 +162,9 @@ print(f"UNOPTIMIZED_TIME:{end - start:.6f}")
                 print(f"Unoptimized import time: {import_time:.3f}s")
 
                 # Even without optimization, should still meet target due to other improvements
-                assert (
-                    import_time < 2.0
-                ), f"Unoptimized import took {import_time:.3f}s (exceeds 2s target)"
+                assert import_time < 2.0, (
+                    f"Unoptimized import took {import_time:.3f}s (exceeds 2s target)"
+                )
                 return
 
         pytest.fail("Could not parse unoptimized import time")
@@ -202,9 +203,9 @@ import homodyne
                 )
                 end_time = time.perf_counter()
 
-                assert (
-                    result.returncode == 0
-                ), f"Cold start {i + 1} failed: {result.stderr}"
+                assert result.returncode == 0, (
+                    f"Cold start {i + 1} failed: {result.stderr}"
+                )
                 import_time = end_time - start_time
                 import_times.append(import_time)
 
@@ -215,9 +216,9 @@ import homodyne
 
             # Cold starts include subprocess overhead, so allow more lenient target (5s instead of 2s)
             # The actual import time measured inside subprocess will still be under 2s
-            assert (
-                avg_cold_start < 5.0
-            ), f"Cold start average {avg_cold_start:.3f}s exceeds 5s target (includes subprocess overhead)"
+            assert avg_cold_start < 5.0, (
+                f"Cold start average {avg_cold_start:.3f}s exceeds 5s target (includes subprocess overhead)"
+            )
 
     @pytest.mark.performance
     def test_repeated_import_performance(self):
@@ -366,23 +367,24 @@ print(f"MEMORY_CONSTRAINED_TIME:{end - start:.6f}")
             timeout=10,
         )
 
-        assert (
-            result.returncode == 0
-        ), f"Memory constrained test failed: {result.stderr}"
+        assert result.returncode == 0, (
+            f"Memory constrained test failed: {result.stderr}"
+        )
 
         for line in result.stdout.split("\n"):
             if "MEMORY_CONSTRAINED_TIME:" in line:
                 import_time = float(line.split(":")[1])
                 print(f"Memory constrained import time: {import_time:.3f}s")
 
-                assert (
-                    import_time < 2.0
-                ), f"Memory constrained import took {import_time:.3f}s"
+                assert import_time < 2.0, (
+                    f"Memory constrained import took {import_time:.3f}s"
+                )
                 return
 
         pytest.fail("Could not parse memory constrained import time")
 
 
+@pytest.mark.slow
 class TestPerformanceRegression:
     """Test for performance regressions."""
 
@@ -398,17 +400,17 @@ class TestPerformanceRegression:
             "excellent",
             "good",
         ], f"Health status is {health['status']}"
-        assert (
-            health["import_time"] < 2.0
-        ), f"Import time {health['import_time']:.3f}s exceeds target"
+        assert health["import_time"] < 2.0, (
+            f"Import time {health['import_time']:.3f}s exceeds target"
+        )
 
         # Establish and validate baseline
         baseline = homodyne.establish_performance_baseline(
             "performance_validation", 2.0
         )
-        assert baseline[
-            "meets_target"
-        ], f"Does not meet 2s baseline: {baseline['current_time']:.3f}s"
+        assert baseline["meets_target"], (
+            f"Does not meet 2s baseline: {baseline['current_time']:.3f}s"
+        )
 
         print(
             f"Baseline validation: {baseline['current_time']:.3f}s vs {baseline['target_time']}s target"
@@ -426,9 +428,9 @@ class TestPerformanceRegression:
         print(f"Monitored import time: {monitored_time:.3f}s")
 
         # Should be under target
-        assert (
-            monitored_time < 2.0
-        ), f"Monitored time {monitored_time:.3f}s exceeds 2s target"
+        assert monitored_time < 2.0, (
+            f"Monitored time {monitored_time:.3f}s exceeds 2s target"
+        )
 
         # Should be consistent with health check (allow larger tolerance due to measurement variance)
         health = homodyne.check_performance_health()
@@ -458,16 +460,17 @@ class TestPerformanceRegression:
             assert time_val < 2.0, f"Measurement {i + 1} took {time_val:.3f}s"
 
         # Performance should be consistent (allow reasonable variance due to subprocess overhead)
-        assert (
-            std_dev < 0.3
-        ), f"Performance too variable: std={std_dev:.3f}s (should be < 0.3s)"
+        assert std_dev < 0.3, (
+            f"Performance too variable: std={std_dev:.3f}s (should be < 0.3s)"
+        )
 
         # Average should be well under target
-        assert (
-            avg_time < 1.5
-        ), f"Average performance {avg_time:.3f}s should be well under 2s"
+        assert avg_time < 1.5, (
+            f"Average performance {avg_time:.3f}s should be well under 2s"
+        )
 
 
+@pytest.mark.slow
 class TestEnvironmentVariations:
     """Test performance under various environment conditions."""
 
@@ -512,9 +515,9 @@ print(f"OPTIMIZATION_TIME:{end - start:.6f}")
 
                     # Python optimization flags can slow down import slightly due to bytecode compilation
                     # Allow up to 5s to account for this overhead
-                    assert (
-                        import_time < 5.0
-                    ), f"Python {opt_level} took {import_time:.3f}s (exceeds 5s with optimization overhead)"
+                    assert import_time < 5.0, (
+                        f"Python {opt_level} took {import_time:.3f}s (exceeds 5s with optimization overhead)"
+                    )
 
     @pytest.mark.performance
     def test_with_warnings_enabled(self):
@@ -554,9 +557,9 @@ print(f"WARNINGS_TIME:{end - start:.6f}")
                 print(f"Import time with warnings: {import_time:.3f}s")
 
                 # Warnings can add overhead, allow up to 3s
-                assert (
-                    import_time < 3.5
-                ), f"With warnings took {import_time:.3f}s (exceeds 3.5s with warnings overhead)"
+                assert import_time < 3.5, (
+                    f"With warnings took {import_time:.3f}s (exceeds 3.5s with warnings overhead)"
+                )
 
     @pytest.mark.performance
     def test_import_from_different_directories(self):
@@ -631,6 +634,7 @@ except Exception as e:
             assert import_time < 2.0, f"Different directory took {import_time:.3f}s"
 
 
+@pytest.mark.slow
 class TestPerformanceTargetValidation:
     """Final validation that all performance targets are met."""
 
@@ -654,9 +658,9 @@ class TestPerformanceTargetValidation:
         print(f"   Import time: {health_time:.3f}s")
         print(f"   Target met: {'✅' if health_time < TARGET_TIME else '❌'}")
 
-        assert (
-            health_time < TARGET_TIME
-        ), f"Health check failed: {health_time:.3f}s > {TARGET_TIME}s"
+        assert health_time < TARGET_TIME, (
+            f"Health check failed: {health_time:.3f}s > {TARGET_TIME}s"
+        )
 
         # Test 2: Detailed monitoring
         print("\n2️⃣ Detailed Monitoring:")
@@ -666,9 +670,9 @@ class TestPerformanceTargetValidation:
         print(f"   Iterations: {perf_data['measurement_iterations']}")
         print(f"   Target met: {'✅' if monitor_time < TARGET_TIME else '❌'}")
 
-        assert (
-            monitor_time < TARGET_TIME
-        ), f"Monitoring failed: {monitor_time:.3f}s > {TARGET_TIME}s"
+        assert monitor_time < TARGET_TIME, (
+            f"Monitoring failed: {monitor_time:.3f}s > {TARGET_TIME}s"
+        )
 
         # Test 3: Baseline validation
         print("\n3️⃣ Baseline Validation:")
@@ -717,9 +721,9 @@ print('SUCCESS')
                 f"   Run {i + 1}: {subprocess_time:.3f}s {'✅' if subprocess_time < TARGET_TIME else '❌'}"
             )
 
-            assert (
-                subprocess_time < TARGET_TIME
-            ), f"Subprocess {i + 1} failed: {subprocess_time:.3f}s > {TARGET_TIME}s"
+            assert subprocess_time < TARGET_TIME, (
+                f"Subprocess {i + 1} failed: {subprocess_time:.3f}s > {TARGET_TIME}s"
+            )
 
         avg_subprocess = statistics.mean(subprocess_times)
         print(f"   Average: {avg_subprocess:.3f}s")
@@ -751,12 +755,12 @@ print('SUCCESS')
         print(f"   • Performance improvement: {((2.0 - overall_avg) / 2.0 * 100):.1f}%")
 
         # Critical assertions
-        assert (
-            target_met
-        ), f"❌ PERFORMANCE TARGET FAILED: max time {max_time:.3f}s > {TARGET_TIME}s"
-        assert (
-            overall_avg < 1.5
-        ), f"❌ AVERAGE PERFORMANCE POOR: {overall_avg:.3f}s should be < 1.5s"
+        assert target_met, (
+            f"❌ PERFORMANCE TARGET FAILED: max time {max_time:.3f}s > {TARGET_TIME}s"
+        )
+        assert overall_avg < 1.5, (
+            f"❌ AVERAGE PERFORMANCE POOR: {overall_avg:.3f}s should be < 1.5s"
+        )
 
         print("\n🎉 PERFORMANCE TARGET VALIDATION: ✅ SUCCESSFUL!")
         print(f"   Startup time consistently under {TARGET_TIME}s target")

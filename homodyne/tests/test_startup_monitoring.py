@@ -39,7 +39,7 @@ class TestStartupMetrics:
             import_time=1.5,
             memory_usage_mb=100.0,
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Linux x86_64",
             cpu_count=8,
             optimization_enabled=True,
@@ -161,7 +161,7 @@ class TestStartupPerformanceMonitor:
                 import_time=1.8,
                 memory_usage_mb=120.0,
                 python_version="3.12.0",
-                package_version="0.7.1",
+                package_version="1.0.0",
                 platform="Test Platform",
                 cpu_count=4,
                 optimization_enabled=True,
@@ -206,7 +206,7 @@ class TestStartupPerformanceMonitor:
             import_time=3.0,  # Exceeds baseline
             memory_usage_mb=200.0,  # Exceeds baseline
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Test Platform",
             cpu_count=4,
             optimization_enabled=True,
@@ -232,7 +232,7 @@ class TestStartupPerformanceMonitor:
                     import_time=1.5 + i * 0.1,  # Degrading trend
                     memory_usage_mb=100.0 + i * 5,
                     python_version="3.12.0",
-                    package_version="0.7.1",
+                    package_version="1.0.0",
                     platform="Test Platform",
                     cpu_count=4,
                     optimization_enabled=True,
@@ -267,7 +267,7 @@ class TestStartupPerformanceMonitor:
                         import_time=1.5,
                         memory_usage_mb=100.0,
                         python_version="3.12.0",
-                        package_version="0.7.1",
+                        package_version="1.0.0",
                         platform="Test Platform",
                         cpu_count=4,
                         optimization_enabled=True,
@@ -339,7 +339,7 @@ class TestStartupPerformanceMonitor:
             import_time=1.5,
             memory_usage_mb=100.0,
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Test Platform",
             cpu_count=4,
             optimization_enabled=True,
@@ -367,7 +367,7 @@ class TestStartupPerformanceMonitor:
             import_time=0.8,
             memory_usage_mb=80.0,
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Test Platform",
             cpu_count=4,
             optimization_enabled=True,
@@ -450,7 +450,7 @@ class TestGlobalFunctions:
             import_time=expected_import_time,  # Good performance
             memory_usage_mb=100.0,  # Good memory usage
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Test Platform",
             cpu_count=4,
             optimization_enabled=True,
@@ -486,7 +486,7 @@ class TestGlobalFunctions:
             import_time=5.0,  # Poor performance (>3.0 threshold)
             memory_usage_mb=400.0,  # High memory usage (>300 threshold)
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Test Platform",
             cpu_count=4,
             optimization_enabled=True,
@@ -562,7 +562,7 @@ class TestIntegrationWithMainPackage:
             mock_health.return_value = {
                 "status": "good",
                 "import_time": 1.5,
-                "package_version": "0.7.1",
+                "package_version": "1.0.0",
                 "python_version": "3.12.0",
                 "optimization_enabled": True,
                 "timestamp": datetime.now(UTC).isoformat(),
@@ -588,7 +588,7 @@ class TestIntegrationWithMainPackage:
             mock_metrics = SimpleStartupMetrics(
                 timestamp=datetime.now(UTC).isoformat(),
                 import_time=1.3,
-                package_version="0.7.1",
+                package_version="1.0.0",
                 python_version="3.12.0",
                 optimization_enabled=True,
                 measurement_iterations=3,
@@ -618,9 +618,9 @@ class TestPerformanceBenchmarks:
         initialization_time = end_time - start_time
 
         # Should initialize quickly (adjust threshold as needed)
-        assert (
-            initialization_time < 0.1
-        ), f"Monitor initialization too slow: {initialization_time:.4f}s"
+        assert initialization_time < 0.1, (
+            f"Monitor initialization too slow: {initialization_time:.4f}s"
+        )
 
     def test_baseline_operation_performance(self):
         """Test performance of baseline operations."""
@@ -633,7 +633,7 @@ class TestPerformanceBenchmarks:
             import_time=1.5,
             memory_usage_mb=100.0,
             python_version="3.12.0",
-            package_version="0.7.1",
+            package_version="1.0.0",
             platform="Test Platform",
             cpu_count=4,
             optimization_enabled=True,
@@ -660,9 +660,9 @@ class TestPerformanceBenchmarks:
         operation_time = end_time - start_time
 
         # Should complete quickly
-        assert (
-            operation_time < 1.0
-        ), f"Baseline operations too slow: {operation_time:.4f}s"
+        assert operation_time < 1.0, (
+            f"Baseline operations too slow: {operation_time:.4f}s"
+        )
 
 
 if __name__ == "__main__":

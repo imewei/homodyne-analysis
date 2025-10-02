@@ -1,7 +1,7 @@
 # Development Dependencies for Homodyne Scattering Analysis Package
 # ==================================================================
-# Generated from pyproject.toml [project.optional-dependencies.dev]
-# Last updated: v0.7.1 (2024-12-20)
+# Generated from pyproject.toml [project.optional-dependencies.dev/test/quality/docs]
+# Last updated: v1.0.0 (2025-10-01)
 #
 # This file contains all dependencies needed for development, testing, and maintenance.
 # For production use: pip install -r requirements.txt
@@ -17,84 +17,112 @@
 # -r requirements-optional.txt (all optional features)
 
 # =============================================================================
-# Testing Framework and Utilities
+# Modern Testing Framework and Utilities
 # =============================================================================
-pytest>=6.2.0            # Modern testing framework with fixtures and parametrization
-pytest-cov>=2.12.0       # Coverage reporting for test suite
-pytest-xdist>=2.3.0      # Parallel test execution across multiple cores
-pytest-benchmark>=4.0.0  # Performance benchmarking and regression testing
-pytest-mock>=3.6.0       # Mocking utilities for isolated unit tests
-pytest-html>=4.1.1       # HTML test reports for CI/CD integration
-pytest-metadata>=3.1.1   # Test metadata collection and reporting
-hypothesis>=6.0.0         # Property-based testing for robust validation
-coverage>=6.2.0           # Coverage measurement and reporting
+# Core pytest framework with latest features
+pytest>=8.4.0            # Modern testing framework with fixtures and parametrization
+pytest-cov>=6.0.0        # Coverage reporting for test suite
+pytest-xdist>=3.8.0      # Parallel test execution across multiple cores
+pytest-benchmark>=5.1.0  # Performance benchmarking and regression testing
+pytest-timeout>=2.3.0    # Test timeout handling
+pytest-mock>=3.14.0      # Advanced mocking utilities
+pytest-html>=4.1.1       # Rich HTML test reports
+pytest-json-report>=1.5.0  # JSON reports for CI integration
+pytest-metadata>=3.1.0   # Test metadata collection
+pytest-randomly>=3.16.0  # Randomized test execution for robustness
+pytest-repeat>=0.9.3     # Test repetition for reliability testing
+pytest-picked>=0.5.0     # Run tests based on git changes
+pytest-clarity>=1.0.1    # Better assertion diffs
+pytest-sugar>=1.0.0      # Better progress reporting
+pytest-instafail>=0.5.0  # Instant failure reporting
+
+# Advanced testing capabilities
+hypothesis>=6.112.0      # Property-based testing for robust validation
+faker>=30.0.0            # Realistic test data generation
+factory-boy>=3.3.0       # Test fixture factories
+freezegun>=1.5.0         # Time mocking for temporal tests
+responses>=0.25.0        # HTTP request mocking
+
+# Performance and monitoring
+memory-profiler>=0.61.0  # Memory usage profiling
+py-spy>=0.3.14           # Python profiler for performance analysis
+scalene>=1.5.0           # Advanced performance profiler
+
+# Notebook testing
+nbval>=0.10.0            # Jupyter notebook validation
+jupyter>=1.0.0           # Jupyter notebook support
+
+# Data validation
+pydantic>=2.5.0          # Data validation and settings management
 
 # =============================================================================
-# Code Quality and Formatting Tools
+# Modern Code Quality and Formatting Tools
 # =============================================================================
-black>=23.0.0             # Code formatting with consistent style
-isort>=5.12.0             # Import sorting and organization
-flake8>=6.0.0             # Traditional linting and style checking
-mypy>=1.5.0               # Static type checking with type hints
-ruff>=0.1.0               # Modern fast linter and formatter (Rust-based)
-
-# =============================================================================
-# Security and Vulnerability Scanning
-# =============================================================================
-bandit>=1.8.0             # Security linter for Python code vulnerabilities
-pip-audit>=2.6.0          # Dependency security scanner for known CVEs
-
-# =============================================================================
-# Pre-commit Hooks and Automation
-# =============================================================================
-pre-commit>=3.0.0         # Pre-commit hook framework for quality gates
-mdformat>=0.7.19          # Markdown formatting and standardization
-
-# =============================================================================
-# Type Checking Stubs and Annotations
-# =============================================================================
-types-psutil>=5.9.0       # Type stubs for psutil system monitoring
-types-Pillow>=10.0.0      # Type stubs for Pillow image processing
-types-six>=1.16.0         # Type stubs for six compatibility library
-types-requests>=2.28.0    # Type stubs for requests HTTP library
+ruff>=0.13.2             # Fast Python linter and formatter (Rust-based)
+black>=25.9.0            # Code formatting with consistent style
+isort>=6.0.1             # Import sorting and organization
+mypy>=1.18.2             # Static type checking with type hints
+bandit>=1.8.6            # Security linter for Python vulnerabilities
+safety>=3.6.2            # Dependency vulnerability scanning
+pip-audit>=2.7.0         # Advanced security auditing
+pre-commit>=4.0.0        # Git hook management for quality gates
+vulture>=2.13            # Dead code detection
+interrogate>=1.7.0       # Documentation coverage measurement
+flake8>=7.3.0            # Traditional linting and style checking
 
 # =============================================================================
 # Documentation Generation Tools
 # =============================================================================
-sphinx>=4.0.0                    # Documentation generator with RST/Markdown support
-sphinx-rtd-theme>=1.0.0          # Read the Docs theme for professional documentation
-myst-parser>=0.17.0              # Markdown support for Sphinx documentation
-sphinx-autodoc-typehints>=1.12.0 # Automatic type hints in API documentation
-numpydoc>=1.2.0                  # NumPy-style docstring support and formatting
-linkify-it-py>=2.0.0             # Automatic URL link generation in documentation
+sphinx>=8.2.0                    # Documentation generator with RST/Markdown support
+sphinx-rtd-theme>=3.0.0          # Read the Docs theme for professional docs
+myst-parser>=4.0.0               # Markdown support for Sphinx documentation
+sphinx-autodoc-typehints>=2.5.0  # Automatic type hints in API documentation
+sphinx-copybutton>=0.5.3         # Copy button for code blocks
+sphinx-design>=0.6.0             # Design components for Sphinx
+sphinx-autoapi>=3.4.0            # Automatic API documentation generation
+numpydoc>=1.8.0                  # NumPy-style docstring support and formatting
+sphinx-gallery>=0.18.0           # Example gallery for documentation
+
+# =============================================================================
+# Type Checking Stubs and Annotations
+# =============================================================================
+types-psutil>=5.9.0      # Type stubs for psutil system monitoring
+types-Pillow>=10.0.0     # Type stubs for Pillow image processing
+types-six>=1.16.0        # Type stubs for six compatibility library
+types-requests>=2.28.0   # Type stubs for requests HTTP library
 
 # =============================================================================
 # Development and Distribution Tools
 # =============================================================================
-tox>=4.0.0                # Testing across multiple Python environments
-build>=0.10.0             # Modern Python build tool (PEP 517/518 compatible)
-twine>=4.0.0              # Secure package distribution to PyPI
+build>=1.0.0             # Modern Python build tool (PEP 517/518 compatible)
+twine>=4.0.0             # Secure package distribution to PyPI
+pip-tools>=7.0.0         # Requirements management and pinning
+tox>=4.11.0              # Testing across multiple Python environments
+nox>=2023.4.22           # Modern task automation alternative to tox
 
 # =============================================================================
 # User Experience Tools
 # =============================================================================
-argcomplete>=3.0.0        # Cross-platform shell tab completion
+argcomplete>=3.0.0       # Cross-platform shell tab completion
 
 # =============================================================================
 # Development Features Enabled
 # =============================================================================
 # With these dependencies, you can:
-# ✅ Run comprehensive test suite with coverage
-# ✅ Perform parallel testing for faster feedback
-# ✅ Generate professional HTML test reports
+# ✅ Run comprehensive test suite with modern pytest features
+# ✅ Perform parallel testing for faster feedback (pytest-xdist)
+# ✅ Generate professional HTML and JSON test reports
 # ✅ Benchmark performance and detect regressions
-# ✅ Format code consistently with black and prettier
-# ✅ Lint code with modern tools (ruff, mypy, flake8)
-# ✅ Scan for security vulnerabilities
-# ✅ Generate professional documentation
-# ✅ Build and distribute packages
+# ✅ Property-based testing with hypothesis
+# ✅ Format code consistently with black, ruff, and isort
+# ✅ Lint code with modern tools (ruff, mypy, flake8, bandit)
+# ✅ Scan for security vulnerabilities (bandit, safety, pip-audit)
+# ✅ Generate professional documentation with Sphinx
+# ✅ Build and distribute packages to PyPI
 # ✅ Use pre-commit hooks for quality gates
 # ✅ Test across multiple Python versions with tox
+# ✅ Profile memory and performance
+# ✅ Validate Jupyter notebooks
 #
 # =============================================================================
 # Development Workflow Commands
@@ -109,19 +137,31 @@ argcomplete>=3.0.0        # Cross-platform shell tab completion
 # pytest --cov=homodyne --cov-report=html   # With coverage
 # pytest -n auto                           # Parallel execution
 # pytest --benchmark-only                  # Performance tests only
+# pytest -m "not slow"                     # Skip slow tests
 #
 # Code quality:
-# black homodyne/                          # Format code
-# isort homodyne/                          # Sort imports
 # ruff check homodyne/                     # Modern linting
+# ruff format homodyne/                    # Modern formatting
+# black homodyne/                          # Alternative formatter
+# isort homodyne/                          # Sort imports
 # mypy homodyne/                           # Type checking
 # bandit -r homodyne/                      # Security scan
+# safety check                             # Dependency vulnerabilities
+# pip-audit                                # Advanced security audit
+#
+# Pre-commit hooks:
+# pre-commit install                       # Install hooks
+# pre-commit run --all-files               # Run all hooks manually
 #
 # Documentation:
 # sphinx-build -b html docs/ docs/_build/  # Build docs
-# sphinx-autobuild docs/ docs/_build/      # Live rebuild
+# sphinx-autobuild docs/ docs/_build/      # Live rebuild with preview
 #
 # Package building:
-# python -m build                         # Build wheel and source
-# twine check dist/*                      # Check package
-# twine upload dist/*                     # Upload to PyPI
+# python -m build                         # Build wheel and source distribution
+# twine check dist/*                      # Validate package
+# twine upload dist/*                     # Upload to PyPI (requires credentials)
+#
+# Multi-environment testing:
+# tox                                     # Test across Python versions
+# nox                                     # Alternative task automation

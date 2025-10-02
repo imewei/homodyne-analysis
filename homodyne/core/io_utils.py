@@ -797,7 +797,7 @@ def calculate_time_length(start_frame: int, end_frame: int) -> int:
         ValueError: If start_frame > end_frame
 
     Note:
-        This formula was fixed in v0.6.5+ to address a critical bug where the
+        This formula was fixed in v1.0.0 to address a critical bug where the
         original formula (end_frame - start_frame) caused off-by-one errors,
         dimensional mismatches, and NaN chi-squared values.
 

@@ -72,7 +72,6 @@ try:
     from ..core.security_performance import MemoryLimitError
     from ..core.security_performance import ValidationError
     from ..core.security_performance import monitor_memory
-    from ..core.security_performance import secure_scientific_computation
     from ..core.security_performance import validate_array_dimensions
 
     SECURITY_AVAILABLE = True
@@ -81,11 +80,6 @@ except ImportError as e:
 
     warnings.warn(f"Security features not available: {e}", ImportWarning, stacklevel=2)
     SECURITY_AVAILABLE = False
-
-    # Explicit fallback implementations for missing security features
-    def secure_scientific_computation(func):
-        """Fallback decorator when security features are unavailable."""
-        return func
 
     def monitor_memory(max_usage_percent: float = 80.0):
         """Fallback memory monitor when security features are unavailable."""

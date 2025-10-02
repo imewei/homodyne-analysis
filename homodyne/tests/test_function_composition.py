@@ -378,10 +378,11 @@ class TestWorkflowComponents:
 
         assert result.is_success
         t1, t2, n_time = result.value
-        assert n_time == 10
-        assert len(t1) == 10
-        assert len(t2) == 10
-        assert np.allclose(t1, np.arange(10) * 0.1)
+        # Frame counting: start_frame=1, end_frame=11 → n_time = 11 - 1 + 1 = 11 (inclusive)
+        assert n_time == 11
+        assert len(t1) == 11
+        assert len(t2) == 11
+        assert np.allclose(t1, np.arange(11) * 0.1)
 
 
 class TestComposedFunctionBenefits:

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "_comment": "Static Anisotropic Mode Configuration - 3 parameter optimization (D0, alpha, D_offset) with angle filtering enabled. Supports comprehensive plotting and analysis.",
-    "config_version": "0.6.5.dev0",
+    "config_version": "1.0.0",
     "description": "Static anisotropic homodyne scattering analysis - 3-parameter model with angular filtering",
     "based_on": "He et al. PNAS 2024 - Transport coefficient approach (static case with anisotropy)",
     "analysis_mode": "static_anisotropic",
@@ -13,7 +13,7 @@
     },
     "parameters_optimized": ["D0", "alpha", "D_offset"],
     "angle_filtering": "enabled_for_performance",
-    "script_compatibility": "homodyne v0.6.5.dev0",
+    "script_compatibility": "homodyne v1.0.0",
     "_solver_optimization": {
       "optimized_for": "Large datasets (0.1M - 4M datapoints)",
       "optimization_date": "2025-09-30",
@@ -191,7 +191,7 @@
     },
     "robust_optimization": {
       "_comment": "ENHANCED: 100x-5000x performance improvements with caching and optimized solvers",
-      "_performance_upgrades": "v0.6.5+ optimizations: adaptive Jacobians, CLARABEL/SCS solvers, smart caching",
+      "_performance_upgrades": "v1.0.0+ optimizations: adaptive Jacobians, CLARABEL/SCS solvers, smart caching",
       "_usage_examples": [
         "python run_homodyne.py --method robust  # Run only robust methods",
         "python run_homodyne.py --method classical  # Include robust in classical analysis",
