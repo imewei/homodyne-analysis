@@ -15,7 +15,7 @@ under nonequilibrium laminar flow conditions. The model captures the interplay b
 Brownian diffusion and advective shear flow in the two-time correlation dynamics.
 
 The correlation function has the form:
-    g2(φ,t₁,t₂) = 1 + contrast * [g1(φ,t₁,t₂)]²
+    g2(φ,t₁,t₂) = offset + contrast * [g1(φ,t₁,t₂)]²
 
 where g1 is the field correlation function with separable contributions:
     g1(φ,t₁,t₂) = g1_diff(t₁,t₂) * g1_shear(φ,t₁,t₂)
