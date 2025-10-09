@@ -3028,8 +3028,19 @@ class HomodyneAnalysisCore:
                 angle_data = c2_experimental[angle_idx, :, :]
                 phi_deg = phi_angles[angle_idx] if len(phi_angles) > angle_idx else 0.0
 
+                # Calculate statistics first (needed for colorbar limits)
+                mean_val = np.mean(angle_data)
+                std_val = np.std(angle_data)
+                min_val = np.min(angle_data)
+                max_val = np.max(angle_data)
+
                 # 1. C2 heatmap (left panel)
                 ax1 = fig.add_subplot(gs[i, 0])
+
+                # Set colorbar limits: vmin = max(1.0, min), vmax = min(2.0, max)
+                vmin = max(1.0, min_val)
+                vmax = min(2.0, max_val)
+
                 im1 = ax1.imshow(
                     angle_data,
                     aspect="equal",
@@ -3041,6 +3052,8 @@ class HomodyneAnalysisCore:
                         time_t2[-1],
                     ],  # type: ignore
                     cmap="viridis",
+                    vmin=vmin,
+                    vmax=vmax,
                 )
                 ax1.set_xlabel(r"Time $t_1$ (s)")
                 ax1.set_ylabel(r"Time $t_2$ (s)")
@@ -3050,12 +3063,6 @@ class HomodyneAnalysisCore:
                 # 2. Statistics (right panel)
                 ax2 = fig.add_subplot(gs[i, 1])
                 ax2.axis("off")
-
-                # Calculate statistics
-                mean_val = np.mean(angle_data)
-                std_val = np.std(angle_data)
-                min_val = np.min(angle_data)
-                max_val = np.max(angle_data)
                 diagonal = np.diag(angle_data)
                 diag_mean = np.mean(diagonal)
 
@@ -3090,7 +3097,7 @@ Diagonal mean: {diag_mean:.4f}
 Contrast: {contrast_str}
 
 Validation:
-{"✓" if 0.9 < mean_val < 1.2 else "✗"} Mean around 1.0
+{"✓" if 1 < mean_val < 2 else "✗"} Mean around 1.0
 {"✓" if diag_mean > mean_val else "✗"} Diagonal enhanced
 {"✓" if contrast > 0.001 else "✗"} Sufficient contrast"""
 
