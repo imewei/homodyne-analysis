@@ -10,6 +10,11 @@
 [![DOI](https://img.shields.io/badge/DOI-10.1073/pnas.2401162121-blue.svg)](https://doi.org/10.1073/pnas.2401162121)
 [![Research](https://img.shields.io/badge/Research-XPCS%20Nonequilibrium-purple.svg)](https://github.com/imewei/homodyne_analysis)
 
+> **⚠️ Dataset Size Limitation:** This homodyne analysis package is not recommended for
+> large datasets exceeding 4M data points due to over-subsampling effects and reduced
+> performance without adequate subsampling. For optimal results, use datasets with fewer
+> than 4M data points or enable aggressive subsampling configurations.
+
 ## Overview
 
 **homodyne-analysis** is a research-grade Python package for analyzing homodyne
