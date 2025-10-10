@@ -6,6 +6,46 @@ this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-10-09
+
+### Patch Release - Documentation and Visualization Improvements
+
+This patch release adds critical dataset size limitation warnings and fixes
+visualization colorbar issues.
+
+### Added
+
+- **Dataset Size Limitation Warning**: Added prominent warning in README about 4M data
+  point limitation
+  - Clear guidance on over-subsampling effects and performance degradation
+  - Recommendations for optimal dataset sizes and aggressive subsampling configurations
+  - Positioned prominently at top of README for immediate visibility
+
+### Fixed
+
+- **Visualization Colorbar Limits**: Fixed C2 heatmap visualization colorbar
+  auto-scaling issues
+  - Set explicit colorbar limits: vmin = max(1.0, min), vmax = min(2.0, max)
+  - Prevents matplotlib auto-scaling from creating unreadable heatmaps with extreme
+    values
+  - Moved statistics calculation before plotting to enable proper colorbar limit setting
+  - Adjusted validation range from 0.9-1.2 to 1.0-2.0 to match expected C2 correlation
+    values
+
+### Documentation
+
+- Enhanced README with dataset size limitations section
+- Improved user guidance for optimal analysis configurations
+- Updated visualization best practices
+
+### Compatibility
+
+- Fully backward compatible with v1.0.0
+- No API changes or breaking changes
+- Existing configurations continue to work without modification
+
+______________________________________________________________________
+
 ## [1.0.0] - 2025-10-01
 
 ### Major Release - Production Ready
