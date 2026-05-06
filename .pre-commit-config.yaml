@@ -35,6 +35,7 @@ repos:
         name: check-large-files
         args: [--maxkb=1000]
         description: "Prevent large files from being committed"
+        exclude: ^graphify-out/
       - id: debug-statements
         name: check-debug-statements
         description: "Check for debugger imports and breakpoint() calls"
